@@ -49,7 +49,7 @@ class HrEmployeeGateTicket(models.Model):
     second_approver_id = fields.Many2one(
         'res.users',
         string='Second Approver',
-        domain=lambda self: [('id', 'in', self._get_attendance_officer_user_ids())],
+        domain=lambda self: [('id', 'in', self._get_allowed_approver_user_ids())],
         default=lambda self: self._get_auto_second_approver(),
         tracking=True,
         help='User who will do the second approval',
@@ -57,7 +57,7 @@ class HrEmployeeGateTicket(models.Model):
     third_approver_id = fields.Many2one(
         'res.users',
         string='Third Approver',
-        domain=lambda self: [('id', 'in', self._get_attendance_officer_user_ids())],
+        domain=lambda self: [('id', 'in', self._get_allowed_approver_user_ids())],
         default=lambda self: self._get_auto_third_approver(),
         tracking=True,
         help='User who will do the third approval',
@@ -92,29 +92,54 @@ class HrEmployeeGateTicket(models.Model):
             ]
         ).ids
 
-    def _get_auto_third_approver(self):
-        user = self.env['res.users'].sudo().search(
+    def _get_user_by_employee_barcode(self, barcode):
+        employee = self.env['hr.employee'].sudo().search(
             [
-                ('id', 'in', self._get_attendance_officer_user_ids()),
-                ('employee_id.barcode', '=', self._AUTO_THIRD_APPROVER_BADGE),
+                ('barcode', '=', barcode),
+                ('user_id', '!=', False),
             ],
             limit=1,
         )
+        return employee.user_id
+
+    def _get_allowed_approver_user_ids(self):
+        user_ids = set(self._get_attendance_officer_user_ids())
+        second_user = self._get_user_by_employee_barcode(self._AUTO_SECOND_APPROVER_BADGE)
+        third_user = self._get_user_by_employee_barcode(self._AUTO_THIRD_APPROVER_BADGE)
+        if second_user:
+            user_ids.add(second_user.id)
+        if third_user:
+            user_ids.add(third_user.id)
+        return list(user_ids)
+
+    def _get_auto_third_approver(self):
+        user = self._get_user_by_employee_barcode(self._AUTO_THIRD_APPROVER_BADGE)
         return user if user else False
 
     def _get_auto_second_approver(self):
-        user = self.env['res.users'].sudo().search(
-            [
-                ('id', 'in', self._get_attendance_officer_user_ids()),
-                ('employee_id.barcode', '=', self._AUTO_SECOND_APPROVER_BADGE),
-            ],
-            limit=1,
-        )
+        user = self._get_user_by_employee_barcode(self._AUTO_SECOND_APPROVER_BADGE)
         return user if user else False
+
+    @api.model
+    def default_get(self, fields_list):
+        values = super().default_get(fields_list)
+        auto_second_approver = self._get_auto_second_approver()
+        auto_third_approver = self._get_auto_third_approver()
+        if 'second_approver_id' in fields_list and auto_second_approver and not values.get('second_approver_id'):
+            values['second_approver_id'] = auto_second_approver.id
+        if 'third_approver_id' in fields_list and auto_third_approver and not values.get('third_approver_id'):
+            values['third_approver_id'] = auto_third_approver.id
+        return values
 
     @api.onchange('employee_id')
     def _onchange_approver_domains(self):
-        domain = [('id', 'in', self._get_attendance_officer_user_ids())]
+        domain = [('id', 'in', self._get_allowed_approver_user_ids())]
+        auto_second_approver = self._get_auto_second_approver()
+        auto_third_approver = self._get_auto_third_approver()
+        if auto_second_approver:
+            self.second_approver_id = auto_second_approver
+        if auto_third_approver:
+            self.third_approver_id = auto_third_approver
         return {
             'domain': {
                 'second_approver_id': domain,
@@ -122,26 +147,16 @@ class HrEmployeeGateTicket(models.Model):
             }
         }
 
-    def _is_attendance_officer(self, user):
-        return bool(user and user.has_group('hr_attendance.group_hr_attendance_user'))
+    def _is_valid_approver(self, user):
+        return bool(user and user.id in self._get_allowed_approver_user_ids())
 
     @api.constrains('second_approver_id', 'third_approver_id')
     def _check_attendance_officer_approvers(self):
         for ticket in self:
-            if ticket.second_approver_id and not self._is_attendance_officer(ticket.second_approver_id):
-                raise UserError(_('Second approver must have "Officer: Manage all attendances" role.'))
-            if ticket.third_approver_id and not self._is_attendance_officer(ticket.third_approver_id):
-                raise UserError(_('Third approver must have "Officer: Manage all attendances" role.'))
-
-    @api.onchange('employee_id')
-    def _onchange_employee_id_autofill_third_approver(self):
-        auto_second_approver = self._get_auto_second_approver()
-        auto_approver = self._get_auto_third_approver()
-        for ticket in self:
-            if auto_second_approver:
-                ticket.second_approver_id = auto_second_approver
-            if auto_approver:
-                ticket.third_approver_id = auto_approver
+            if ticket.second_approver_id and not self._is_valid_approver(ticket.second_approver_id):
+                raise UserError(_('Second approver is not in the allowed approver list.'))
+            if ticket.third_approver_id and not self._is_valid_approver(ticket.third_approver_id):
+                raise UserError(_('Third approver is not in the allowed approver list.'))
 
     def _notify_approver(self, approver, message_body):
         self.ensure_one()

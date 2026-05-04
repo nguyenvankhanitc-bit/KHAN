@@ -30,14 +30,14 @@ class HrEmployeeGateTicket(models.Model):
         tracking=True,
     )
     check_in = fields.Datetime(
-        string='Check In',
+        string='Checkin',
         required=True,
         default=fields.Datetime.now,
         tracking=True,
     )
     gate_ticket = fields.Char(string='Reason', tracking=True)
     gate_items = fields.Text(string='Items', tracking=True)
-    checkout_time = fields.Datetime(string='Checkout Time', tracking=True)
+    checkout_time = fields.Datetime(string='Checkout', tracking=True)
 
     approver_id = fields.Many2one(
         'res.users',

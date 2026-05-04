@@ -107,10 +107,10 @@ msgstr "Người duyệt cấp 3"
 
 #. module: hr_employee_gate_ticket
 #: model:ir.model.fields,field_description:hr_employee_gate_ticket.field_hr_employee_gate_ticket__check_in
-msgid "Check In"
+msgid "Checkin"
 msgstr "Giờ vào"
 
 #. module: hr_employee_gate_ticket
 #: model:ir.model.fields,field_description:hr_employee_gate_ticket.field_hr_employee_gate_ticket__checkout_time
-msgid "Checkout Time"
+msgid "Checkout"
 msgstr "Giờ ra"

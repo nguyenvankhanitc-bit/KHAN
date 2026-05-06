@@ -1,5 +1,6 @@
 import base64
 import logging
+from datetime import timedelta
 
 from markupsafe import Markup
 
@@ -195,6 +196,56 @@ class HrEmployeeGateTicket(models.Model):
                 approver.id,
             )
 
+    def _build_ticket_info_message(self, intro_markup):
+        """Build a Markup message with intro text, a details table, and a ticket link."""
+        self.ensure_one()
+        ticket_url = self._notify_get_action_link('view')
+        tz_offset = timedelta(hours=7)
+        check_in_formatted = (self.check_in + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.check_in else ''
+        checkout_formatted = (self.checkout_time + tz_offset).strftime('%H:%M ngày %d/%m/%Y') if self.checkout_time else ''
+
+        table = Markup(
+            '<table style="border-collapse:collapse;margin-top:8px;">'
+            '<tr>'
+            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background:#f5f5f5;">Thông tin</th>'
+            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background:#f5f5f5;">Chi tiết</th>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">Giờ vào</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(check_in)s</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">Giờ ra</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(checkout)s</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">Vật dụng</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(items)s</td>'
+            '</tr>'
+            '<tr>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">Lý do</td>'
+            '<td style="border:1px solid #ccc;padding:4px 10px;">%(reason)s</td>'
+            '</tr>'
+            '</table>'
+        ) % {
+            'check_in': check_in_formatted,
+            'checkout': checkout_formatted,
+            'items': self.gate_items or '',
+            'reason': self.gate_ticket or '',
+        }
+
+        link = Markup(
+            '<p style="margin-top:12px;">'
+            '<a href="%(url)s" style="display:inline-block;padding:8px 16px;background-color:#875a7b;color:#fff;'
+            'text-decoration:none;border-radius:4px;font-weight:bold;">%(label)s</a>'
+            '</p>'
+        ) % {
+            'url': ticket_url,
+            'label': _('Xem phiếu ra cổng %(ref)s', ref=self.name),
+        }
+
+        return intro_markup + table + link
+
     def action_submit(self):
         for ticket in self:
             if ticket.state != 'draft':
@@ -216,15 +267,10 @@ class HrEmployeeGateTicket(models.Model):
 
             ticket.state = 'confirm'
             if ticket.approver_id:
-                check_in_formatted = ticket.check_in.strftime('%H:%M ngày %d/%m/%Y') if ticket.check_in else ''
-                ticket._notify_approver(
-                    ticket.approver_id,
-                    _(
-                        'Nhân viên <b>%(employee)s</b> xin giấy ra cổng lúc %(time)s, Trưởng bộ phận vào GATETICKET -> GATEWAY ĐỂ PHÊ DUYỆT',
-                        employee=ticket.employee_id.name,
-                        time=check_in_formatted,
-                    ),
-                )
+                intro = Markup('<p>Nhân viên <b>%(employee)s</b> xin giấy ra cổng. Trưởng bộ phận vào Giấy Ra Cổng → Phê duyệt ĐỂ PHÊ DUYỆT.</p>') % {
+                    'employee': ticket.employee_id.name,
+                }
+                ticket._notify_approver(ticket.approver_id, ticket._build_ticket_info_message(intro))
 
     def action_first_approve(self):
         for ticket in self:
@@ -234,23 +280,16 @@ class HrEmployeeGateTicket(models.Model):
                 raise UserError(_('Only the assigned first approver or administrators can do first approval.'))
             ticket.state = 'second_approve'
             if ticket.second_approver_id:
-                check_in_formatted = ticket.check_in.strftime('%H:%M ngày %d/%m/%Y') if ticket.check_in else ''
-                ticket._notify_approver(
-                    ticket.second_approver_id,
-                    _(
-                        'Nhân viên <b>%(employee)s</b> xin giấy ra cổng lúc %(time)s, Trưởng bộ phận vào GATETICKET -> GATEWAY ĐỂ PHÊ DUYỆT',
-                        employee=ticket.employee_id.name,
-                        time=check_in_formatted,
-                    ),
-                )
+                intro = Markup('<p>Nhân viên <b>%(employee)s</b> xin giấy ra cổng (đã qua duyệt lần 1). Vào Giấy Ra Cổng → Phê duyệt ĐỂ PHÊ DUYỆT.</p>') % {
+                    'employee': ticket.employee_id.name,
+                }
+                ticket._notify_approver(ticket.second_approver_id, ticket._build_ticket_info_message(intro))
             if ticket.employee_id.user_id:
                 ticket._notify_approver(
                     ticket.employee_id.user_id,
-                    _(
-                        'Your gateway ticket has been approved by <b>%(approver)s</b>. '
-                        'Waiting for second approval.',
-                        approver=self.env.user.name,
-                    ),
+                    Markup('<p>Phiếu ra cổng của bạn đã được <b>%(approver)s</b> duyệt lần 1. Đang chờ duyệt lần 2.</p>') % {
+                        'approver': self.env.user.name,
+                    },
                 )
 
     def action_second_approve(self):
@@ -265,18 +304,17 @@ class HrEmployeeGateTicket(models.Model):
             if ticket.employee_id.user_id:
                 ticket._notify_approver(
                     ticket.employee_id.user_id,
-                    _('Đơn ra cổng của bạn đã được chấp nhận.'),
+                    Markup('<p>Đơn ra cổng của bạn đã được chấp nhận.</p>'),
                 )
             if ticket.third_approver_id:
                 ticket._notify_approver(
                     ticket.third_approver_id,
-                    _(
-                        'Nhân viên <b>%(employee)s</b> đã được chấp thuận ra cổng. (Notification only)',
-                        employee=ticket.employee_id.name,
-                    ),
+                    Markup('<p>Nhân viên <b>%(employee)s</b> đã được chấp thuận ra cổng. (Notification only)</p>') % {
+                        'employee': ticket.employee_id.name,
+                    },
                 )
             ticket.message_post(
-                body=_('Gateway ticket fully approved.'),
+                body=Markup('<p>%s</p>') % _('Gateway ticket fully approved.'),
                 subtype_xmlid='mail.mt_comment',
             )
 
@@ -289,10 +327,9 @@ class HrEmployeeGateTicket(models.Model):
             if ticket.employee_id.user_id:
                 ticket._notify_approver(
                     ticket.employee_id.user_id,
-                    _(
-                        'Your gateway ticket has been <b>refused</b> by <b>%(approver)s</b>.',
-                        approver=self.env.user.name,
-                    ),
+                    Markup('<p>Phiếu ra cổng của bạn đã bị <b>từ chối</b> bởi <b>%(approver)s</b>.</p>') % {
+                        'approver': self.env.user.name,
+                    },
                 )
             approvers_to_notify = []
             if ticket.approver_id and ticket.approver_id != self.env.user:
@@ -304,11 +341,10 @@ class HrEmployeeGateTicket(models.Model):
             for approver in approvers_to_notify:
                 ticket._notify_approver(
                     approver,
-                    _(
-                        'Gateway ticket for <b>%(employee)s</b> has been refused by <b>%(refuser)s</b>.',
-                        employee=ticket.employee_id.name,
-                        refuser=self.env.user.name,
-                    ),
+                    Markup('<p>Phiếu ra cổng của <b>%(employee)s</b> đã bị từ chối bởi <b>%(refuser)s</b>.</p>') % {
+                        'employee': ticket.employee_id.name,
+                        'refuser': self.env.user.name,
+                    },
                 )
 
     def action_draft(self):

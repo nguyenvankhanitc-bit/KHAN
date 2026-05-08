@@ -6,31 +6,32 @@
         <field name="inherit_id" ref="hr_holidays.hr_leave_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='employee_id']" position="after">
+                <field name="validation_type" invisible="1"/>
                 <field name="can_multi_step_approve" invisible="1"/>
                 <field name="can_responsible_approve" invisible="1"/>
             </xpath>
             <xpath expr="//header/button[@name='action_approve'][1]" position="attributes">
-                <attribute name="invisible">holiday_status_id.leave_validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_approve or not id</attribute>
+                <attribute name="invisible">validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_approve or not id</attribute>
             </xpath>
             <xpath expr="//header/button[@name='action_approve'][2]" position="attributes">
-                <attribute name="invisible">holiday_status_id.leave_validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_validate or can_approve or not id</attribute>
+                <attribute name="invisible">validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_validate or can_approve or not id</attribute>
             </xpath>
             <xpath expr="//header/button[@name='action_refuse']" position="attributes">
-                <attribute name="invisible">holiday_status_id.leave_validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_refuse or not id</attribute>
+                <attribute name="invisible">validation_type in ['multi_step_6','employee_hr_responsibles'] or not can_refuse or not id</attribute>
             </xpath>
             <xpath expr="//header/button[@name='action_refuse']" position="attributes">
                 <attribute name="name">action_open_refuse_wizard</attribute>
             </xpath>
 
-            <xpath expr="//header" position="inside">
-                <button string="Approve Step" name="action_multi_step_approve" type="object" class="oe_highlight"
-                        invisible="holiday_status_id.leave_validation_type != 'multi_step_6' or not can_multi_step_approve or state != 'confirm'"/>
-                <button string="Refuse Step" name="action_open_multi_step_refuse_wizard" type="object"
-                        invisible="holiday_status_id.leave_validation_type != 'multi_step_6' or not can_multi_step_approve or state != 'confirm'"/>
-                <button string="Approve Responsible" name="action_responsible_approve" type="object" class="oe_highlight"
-                        invisible="holiday_status_id.leave_validation_type != 'employee_hr_responsibles' or not can_responsible_approve or state != 'confirm'"/>
-                <button string="Refuse Responsible" name="action_open_responsible_refuse_wizard" type="object"
-                        invisible="holiday_status_id.leave_validation_type != 'employee_hr_responsibles' or not can_responsible_approve or state != 'confirm'"/>
+            <xpath expr="//header/button[@name='action_cancel']" position="before">
+                <button string="Approve" name="action_multi_step_approve" type="object" class="oe_highlight"
+                        invisible="validation_type != 'multi_step_6' or not can_multi_step_approve or not id"/>
+                <button string="Refuse" name="action_open_multi_step_refuse_wizard" type="object"
+                        invisible="validation_type != 'multi_step_6' or not can_multi_step_approve or not id"/>
+                <button string="Approve" name="action_responsible_approve" type="object" class="oe_highlight"
+                        invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve or not id"/>
+                <button string="Refuse" name="action_open_responsible_refuse_wizard" type="object"
+                        invisible="validation_type != 'employee_hr_responsibles' or not can_responsible_approve or not id"/>
             </xpath>
         </field>
     </record>

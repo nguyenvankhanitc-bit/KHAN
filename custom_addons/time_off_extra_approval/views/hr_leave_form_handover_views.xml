@@ -190,6 +190,11 @@
         <field name="priority">90</field>
         <field name="inherit_id" ref="hr_holidays.hr_leave_view_form_dashboard_new_time_off"/>
         <field name="arch" type="xml">
+            <xpath expr="//field[@name='holiday_status_id']" position="attributes">
+                <!-- In dashboard popup, existing requests should not mutate leave type (avoids access errors on hr.leave.type). -->
+                <attribute name="readonly">id</attribute>
+                <attribute name="options">{'no_create': True, 'no_open': True, 'no_create_edit': True, 'request_type': 'leave'}</attribute>
+            </xpath>
             <xpath expr="//sheet" position="inside">
                 <field name="is_emergency_leave" invisible="1"/>
                 <div

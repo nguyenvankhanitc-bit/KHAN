@@ -1672,6 +1672,18 @@ class HolidaysRequest(models.Model):
                 ),
             )
 
+    def _notify_handover_bot_leave_form_open_button_markup(self):
+        """Purple pill link to this leave form (Discuss-safe HTML, sanitizer whitelist)."""
+        self.ensure_one()
+        base = (self.get_base_url() or "").rstrip("/")
+        leave_url = f"{base}/web#id={self.id}&model=hr.leave&view_type=form"
+        return Markup(
+            '<a href="{href}" target="_blank" rel="noreferrer noopener" '
+            'style="display:inline-block;padding:8px 18px;background-color:#714B67;'
+            'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
+            'font-size:14px;line-height:1.2;">{label}</a>'
+        ).format(href=leave_url, label=_("Mở Time Off"))
+
     def _notify_specific_handover_recipients_via_bot(self, employees):
         """Discuss DM from handover bot: same wording as khi nộp đơn — chỉ gửi cho subset người nhận."""
         self.ensure_one()
@@ -1682,8 +1694,7 @@ class HolidaysRequest(models.Model):
         )
         date_from = self.request_date_from or (self.date_from and self.date_from.date())
         date_text = date_from.strftime("%d/%m/%Y") if date_from else ""
-        base = (self.get_base_url() or "").rstrip("/")
-        leave_url = f"{base}/web#id={self.id}&model=hr.leave&view_type=form"
+        button_html = self._notify_handover_bot_leave_form_open_button_markup()
         bot_user = self.env.ref("business_discuss_bots.user_bot_handover", raise_if_not_found=False) or self.env.ref(
             "base.user_root"
         )
@@ -1710,12 +1721,6 @@ class HolidaysRequest(models.Model):
                     "Nội dung: "
                 )
             ).format(requester=requester_name, date=date_text)
-            button_html = Markup(
-                '<a href="{href}" target="_blank" rel="noreferrer noopener" '
-                'style="display:inline-block;padding:8px 18px;background-color:#714B67;'
-                'color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;'
-                'font-size:14px;line-height:1.2;">{label}</a>'
-            ).format(href=leave_url, label=_("Mở Time Off"))
             body = (
                 intro
                 + escape(str(content_text))
@@ -1832,32 +1837,52 @@ class HolidaysRequest(models.Model):
             return
         refuser_name = refused_employee.name or refused_employee.display_name
         reason = (reason or "").strip()
+        button_html = self._notify_handover_bot_leave_form_open_button_markup()
         if reason:
-            bot_body = _(
-                "%(refuser)s đã từ chối nhận bàn giao công việc cho bạn với lý do %(reason)s, "
-                "vui lòng vào mục Time Off để chọn lại người nhận bàn giao."
-            ) % {"refuser": refuser_name, "reason": reason}
+            bot_body = (
+                Markup(
+                    _(
+                        "{refuser} đã từ chối nhận bàn giao công việc cho bạn với lý do "
+                    )
+                ).format(refuser=refuser_name)
+                + escape(str(reason))
+                + Markup(
+                    _(
+                        ", vui lòng vào mục Time Off để chọn lại người nhận bàn giao.<br/><br/>"
+                    )
+                )
+                + button_html
+            )
         else:
-            bot_body = _(
-                "%(refuser)s đã từ chối nhận bàn giao công việc cho bạn, "
-                "vui lòng vào mục Time Off để chọn lại người nhận bàn giao."
-            ) % {"refuser": refuser_name}
+            bot_body = (
+                Markup(
+                    _(
+                        "{refuser} đã từ chối nhận bàn giao công việc cho bạn, "
+                        "vui lòng vào mục Time Off để chọn lại người nhận bàn giao.<br/><br/>"
+                    )
+                ).format(refuser=refuser_name)
+                + button_html
+            )
         try:
             bot_user = (
                 self.env.ref("business_discuss_bots.user_bot_handover", raise_if_not_found=False)
                 or self.env.ref("base.user_root")
             )
+            bot_partner_id = bot_user.partner_id.id if bot_user and bot_user.partner_id else False
             chat = (
                 self.env["discuss.channel"]
                 .with_user(bot_user)
                 .sudo()
                 ._get_or_create_chat([requester_user.partner_id.id], pin=True)
             )
-            chat.with_user(bot_user).sudo().message_post(
-                body=bot_body,
-                message_type="comment",
-                subtype_xmlid="mail.mt_comment",
-            )
+            post_vals = {
+                "body": bot_body,
+                "message_type": "comment",
+                "subtype_xmlid": "mail.mt_comment",
+            }
+            if bot_partner_id:
+                post_vals["author_id"] = bot_partner_id
+            chat.with_user(bot_user).sudo().message_post(**post_vals)
         except Exception:
             _logger.exception(
                 "time_off_extra_approval: failed to send handover-refusal bot chat leave_id=%s requester_user_id=%s",

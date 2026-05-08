@@ -8,6 +8,7 @@
     "data": [
         "data/mail_activity_type_data.xml",
         "security/extra_approvers_security.xml",
+        "security/hr_leave_type_write_access.xml",
         "security/ir.model.access.csv",
         "security/hr_leave_handover_replacement_draft_access.xml",
         "data/ir_cron_data.xml",
@@ -28,6 +29,7 @@
             "time_off_extra_approval/static/src/js/emergency_leave_form_controller.js",
             "time_off_extra_approval/static/src/js/error_dialog_vi_patch.js",
             "time_off_extra_approval/static/src/xml/error_dialog_vi_patch.xml",
+            "time_off_extra_approval/static/src/xml/timeoff_form_dialog_buttons_patch.xml",
         ],
     },
     "installable": True,

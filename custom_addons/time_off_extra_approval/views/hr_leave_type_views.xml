@@ -33,17 +33,32 @@
                        class="o_inner_group"
                        invisible="leave_validation_type != 'employee_hr_responsibles'">
                     <p class="text-muted" colspan="2">
-                        Nhân viên trong bảng: ở chế độ duyệt tuần tự, luồng theo sơ đồ giữ nguyên tới khi gặp cấp có
-                        chức danh Giám đốc; sau đó từng Giám đốc (cùng chức danh, có user nội bộ) trong công ty đều
-                        phải duyệt lần lượt.
+                        Nhân viên trong bảng dưới: ở chế độ duyệt tuần tự theo sơ đồ cho tới khi tới cấp Giám đốc.
+                        Nếu không tích "Duyệt theo thứ tự Giám đốc", tất cả Giám đốc cùng nhận thông báo và có thể
+                        duyệt song song (tới khi đủ chữ ký). Nếu tích, thứ tự duyệt giữa các Giám đốc theo STT trong
+                        bảng thứ hai (bảng trống thì dùng danh sách Giám đốc trong công ty như mặc định).
                     </p>
                     <field name="special_director_employee_line_ids"
                            colspan="2"
                            nolabel="1">
                         <list string="Danh sách nhân viên đặc biệt" editable="bottom" create="true" delete="true">
-                            <field name="sequence" string="STT"/>
+                            <field name="sequence" string="STT" readonly="1"/>
                             <field name="employee_id"
                                    string="Tên nhân viên"
+                                   options="{'no_create': True, 'no_create_edit': True}"
+                                   context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
+                        </list>
+                    </field>
+                    <field name="special_director_sequential_approval"/>
+                    <field name="special_director_order_line_ids"
+                           colspan="2"
+                           nolabel="1"
+                           invisible="not special_director_sequential_approval">
+                        <list string="Thứ tự Giám đốc" editable="bottom" create="true" delete="true">
+                            <field name="sequence" string="STT" readonly="1"/>
+                            <field name="employee_id"
+                                   string="Giám đốc"
+                                   domain="[('job_title', '=', 'giám đốc')]"
                                    options="{'no_create': True, 'no_create_edit': True}"
                                    context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
                         </list>

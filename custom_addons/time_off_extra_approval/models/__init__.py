@@ -1,5 +1,6 @@
 from . import hr_leave_type
 from . import hr_leave_type_special_employee_line
+from . import hr_leave_type_special_director_order_line
 from . import hr_leave_handover_acceptance
 from . import hr_leave_handover_replacement_draft
 from . import hr_leave_handover_refuse_wizard

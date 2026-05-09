@@ -1088,6 +1088,9 @@ class HolidaysRequest(models.Model):
         "holiday_status_id.employee_responsible_source",
         "holiday_status_id.special_director_employee_line_ids",
         "holiday_status_id.special_director_employee_line_ids.employee_id",
+        "holiday_status_id.special_director_sequential_approval",
+        "holiday_status_id.special_director_order_line_ids",
+        "holiday_status_id.special_director_order_line_ids.employee_id",
         "employee_id.parent_id",
         "employee_id.parent_id.parent_id",
         "employee_id.parent_id.parent_id.parent_id",
@@ -1151,13 +1154,13 @@ class HolidaysRequest(models.Model):
             if leave.validation_type == "employee_hr_responsibles":
                 pending = leave.responsible_approval_line_ids.filtered(
                     lambda l: l.state == "pending" and l.user_id and not l.user_id.share
-                ).sorted("sequence")
+                ).sorted(lambda l: (l.sequence, l.id))
                 if not pending:
                     leave.approval_actionable_user_ids = Users
                     continue
                 mode = leave.holiday_status_id.employee_responsible_approval_mode or "any"
                 if mode == "sequential":
-                    leave.approval_actionable_user_ids = pending[:1].mapped("user_id")
+                    leave.approval_actionable_user_ids = leave._responsible_pending_current_wave().mapped("user_id")
                 else:
                     leave.approval_actionable_user_ids = pending.mapped("user_id")
                 continue
@@ -1276,6 +1279,45 @@ class HolidaysRequest(models.Model):
         users = employees.user_id.filtered(lambda u: u and not u.share)
         return users.sorted(key=lambda u: ((u.name or "").casefold(), u.id))
 
+    def _get_configured_director_order_users(self):
+        """Directors explicitly ordered on the leave type (STT); empty recordset when not configured."""
+        self.ensure_one()
+        lt = self.holiday_status_id
+        if not lt or not lt.special_director_sequential_approval or not lt.special_director_order_line_ids:
+            return self.env["res.users"]
+        Users = self.env["res.users"]
+        out_ids = []
+        seen = set()
+        for line in lt.special_director_order_line_ids.sorted(lambda l: (l.sequence, l.id)):
+            emp = line.sudo().employee_id
+            if (
+                not emp
+                or not emp.user_id
+                or emp.user_id.share
+                or (emp.job_title or "") != _DIRECTOR_JOB_TITLE_KEY
+            ):
+                continue
+            uid = emp.user_id.id
+            if uid not in seen:
+                out_ids.append(uid)
+                seen.add(uid)
+        return Users.browse(out_ids)
+
+    def _employee_hr_expanded_director_suffix_users(self):
+        """Director users substituted at end of chain for multi-director-special employees."""
+        self.ensure_one()
+        lt = self.holiday_status_id
+        configured = self._get_configured_director_order_users()
+        if lt and lt.special_director_sequential_approval and configured:
+            return configured
+        return self._get_company_director_users()
+
+    def _is_special_parallel_directors_leave(self):
+        """Special employee flow: directors act in parallel (same step, simultaneous notify)."""
+        self.ensure_one()
+        lt = self.holiday_status_id
+        return bool(lt and self._is_multi_director_special_employee() and not lt.special_director_sequential_approval)
+
     def _is_multi_director_special_employee(self):
         self.ensure_one()
         lt = self.holiday_status_id
@@ -1285,11 +1327,11 @@ class HolidaysRequest(models.Model):
         return bool(specials and self.employee_id in specials)
 
     def _employee_hr_maybe_expand_multi_director(self, users):
-        """Sequential special list: replace from first Director in the chain with every company director."""
+        """Sequential special list: replace from first Director in the chain with configured/all company directors."""
         self.ensure_one()
         if not self._is_multi_director_special_employee():
             return users
-        directors = self._get_company_director_users()
+        directors = self._employee_hr_expanded_director_suffix_users()
         Users = self.env["res.users"]
         ordered_ids = list(users.ids)
         first_dir_idx = None
@@ -1320,6 +1362,55 @@ class HolidaysRequest(models.Model):
                     out_ids.append(uid)
                     seen.add(uid)
         return Users.browse(out_ids)
+
+    def _employee_hr_chain_contains_director(self, users):
+        self.ensure_one()
+        UsersMdl = self.env["res.users"]
+        for uid in users.ids:
+            u = UsersMdl.browse(uid).sudo()
+            emp = u.employee_id
+            if emp and (emp.job_title or "") == _DIRECTOR_JOB_TITLE_KEY:
+                return True
+        return False
+
+    def _responsible_pending_current_wave(self):
+        """Smallest-sequence pending line(s): one record, except parallel director wave → all directors at once."""
+        self.ensure_one()
+        pending = self.responsible_approval_line_ids.filtered(lambda l: l.state == "pending").sorted(
+            lambda l: (l.sequence, l.id)
+        )
+        if not pending:
+            return pending
+        if not self._is_special_parallel_directors_leave():
+            return pending[:1]
+        wave_seq = pending[0].sequence
+        return pending.filtered(lambda l: l.sequence == wave_seq)
+
+    def _build_responsible_approval_sequences(self):
+        """(user_record, sequence) after director expansion — parallel directors share same sequence."""
+        self.ensure_one()
+        Users = self.env["res.users"]
+        users = self._get_responsible_approval_users()
+        ids_order = list(users.ids)
+        if not ids_order:
+            return []
+        if not self._is_special_parallel_directors_leave():
+            return [(Users.browse(uid), idx + 1) for idx, uid in enumerate(ids_order)]
+        split = None
+        for i, uid in enumerate(ids_order):
+            u = Users.browse(uid).sudo()
+            emp = u.employee_id
+            if emp and (emp.job_title or "") == _DIRECTOR_JOB_TITLE_KEY:
+                split = i
+                break
+        if split is None:
+            return [(Users.browse(uid), idx + 1) for idx, uid in enumerate(ids_order)]
+        prefix = ids_order[:split]
+        suffix = ids_order[split:]
+        wave_seq = len(prefix) + 1
+        pairs = [(Users.browse(uid), idx + 1) for idx, uid in enumerate(prefix)]
+        pairs.extend((Users.browse(uid), wave_seq) for uid in suffix)
+        return pairs
 
     def _get_responsible_approval_users(self):
         self.ensure_one()
@@ -2656,6 +2747,8 @@ class HolidaysRequest(models.Model):
         "holiday_status_id.employee_responsible_source",
         "holiday_status_id.special_director_employee_line_ids",
         "holiday_status_id.special_director_employee_line_ids.employee_id",
+        "holiday_status_id.special_director_sequential_approval",
+        "holiday_status_id.special_director_order_line_ids",
         "employee_id",
         "employee_id.job_title",
         "employee_id.hr_responsible_ids",
@@ -2693,10 +2786,12 @@ class HolidaysRequest(models.Model):
                             user_line = leave.responsible_approval_line_ids.filtered(
                                 lambda l: l.user_id == leave.env.user and l.state == "pending"
                             )[:1]
-                            first_pending = leave.responsible_approval_line_ids.filtered(
-                                lambda l: l.state == "pending"
-                            ).sorted("sequence")[:1]
-                            can = bool(user_line and first_pending and user_line == first_pending)
+                            wave = leave._responsible_pending_current_wave()
+                            can = bool(
+                                user_line
+                                and wave
+                                and user_line in wave
+                            )
                     elif is_manager:
                         can = True
                     elif leave.env.user in approvers:
@@ -2717,6 +2812,8 @@ class HolidaysRequest(models.Model):
         "state",
         "multi_step_current",
         "holiday_status_id.employee_responsible_approval_mode",
+        "holiday_status_id.special_director_sequential_approval",
+        "holiday_status_id.special_director_order_line_ids",
         "holiday_status_id.multi_approval_step_ids",
         "responsible_approval_line_ids",
         "responsible_approval_line_ids.state",
@@ -2733,18 +2830,21 @@ class HolidaysRequest(models.Model):
             if vt == "employee_hr_responsibles":
                 pending = leave.responsible_approval_line_ids.filtered(
                     lambda line: line.state == "pending"
-                ).sorted("sequence")
+                ).sorted(lambda ln: (ln.sequence, ln.id))
                 if not pending:
                     continue
                 mode = leave.holiday_status_id.employee_responsible_approval_mode or "any"
                 total = len(leave.responsible_approval_line_ids)
                 if mode == "sequential":
-                    cur = pending[:1]
-                    name = cur.user_id.name or ""
+                    wave = leave._responsible_pending_current_wave()
+                    if not wave:
+                        continue
+                    step_num = wave[0].sequence
+                    names = ", ".join(n for n in wave.mapped("user_id.name") if n)
                     leave.approval_current_step_label = _("Bước %(step)d / %(total)d · %(name)s") % {
-                        "step": cur.sequence,
+                        "step": step_num,
                         "total": total,
-                        "name": name,
+                        "name": names,
                     }
                 else:
                     leave.approval_current_step_label = ", ".join(
@@ -2775,13 +2875,24 @@ class HolidaysRequest(models.Model):
                 continue
             lt = leave.holiday_status_id
             approvers = leave._get_responsible_approval_users()
-            if leave._is_multi_director_special_employee() and not leave._get_company_director_users():
+            if leave._is_multi_director_special_employee() and (
+                not leave._employee_hr_chain_contains_director(approvers)
+            ):
                 raise UserError(
                     _(
-                        "Loại nghỉ được cấu hình nhân viên đặc biệt (duyệt đồng loạt Giám đốc) nhưng chưa có nhân "
-                        "viên nào mang chức danh Giám đốc với user nội bộ trong công ty để làm người duyệt."
+                        "Loại nghỉ được cấu hình nhân viên đặc biệt (chặn Giám đốc) nhưng không có người duyệt nào "
+                        "mang chức danh Giám đốc (user nội bộ) trong chuỗi duyệt. Kiểm tra sơ đồ tổ chức hoặc bảng "
+                        "thứ tự Giám đốc trên loại nghỉ."
                     )
                 )
+            if leave._is_multi_director_special_employee() and lt.special_director_sequential_approval:
+                if lt.special_director_order_line_ids and not leave._get_configured_director_order_users():
+                    raise UserError(
+                        _(
+                            "Đã bật 'Duyệt theo thứ tự Giám đốc' và có dòng trong bảng, nhưng không có Giám đốc nào "
+                            "hợp lệ (chức danh Giám đốc và user nội bộ). Vui lòng sửa danh sách."
+                        )
+                    )
             if not approvers:
                 if lt.employee_responsible_source == "org_chart":
                     raise UserError(
@@ -2802,13 +2913,16 @@ class HolidaysRequest(models.Model):
                     % {"max": slot_limit}
                 )
             now = fields.Datetime.now()
-            for sequence, user in enumerate(approvers, start=1):
+            pairs = leave._build_responsible_approval_sequences()
+            seqs_present = [s for _, s in pairs]
+            min_seq = min(seqs_present) if seqs_present else 1
+            for user, seq in pairs:
                 vals = {
                     "leave_id": leave.id,
                     "user_id": user.id,
-                    "sequence": sequence,
+                    "sequence": seq,
                 }
-                if sequence == 1 and lt.employee_responsible_approval_mode == "sequential":
+                if lt.employee_responsible_approval_mode == "sequential" and seq == min_seq:
                     vals["pending_since"] = now
                 line_model.create(vals)
 
@@ -2839,14 +2953,15 @@ class HolidaysRequest(models.Model):
                 continue
             if leave.holiday_status_id.employee_responsible_approval_mode != "sequential":
                 continue
-            first = leave.responsible_approval_line_ids.filtered(
-                lambda ln: ln.state == "pending"
-            ).sorted("sequence")[:1]
-            if not first or first.pending_since:
+            wave = leave._responsible_pending_current_wave()
+            if not wave:
                 continue
             hours = leave.holiday_status_id.employee_responsible_escalation_hours or 2.0
             threshold = fields.Datetime.now() - timedelta(hours=hours)
-            first.write({"pending_since": threshold - timedelta(seconds=1)})
+            missing = wave.filtered(lambda ln: not ln.pending_since)
+            if not missing:
+                continue
+            missing.write({"pending_since": threshold - timedelta(seconds=1)})
 
     def _notify_responsible_approvers_submission(self):
         """FYI notification to all configured approvers when a leave is submitted."""
@@ -2869,7 +2984,7 @@ class HolidaysRequest(models.Model):
         )
 
     def _notify_responsible_current_turn(self, user=None):
-        """Direct notification to the approver whose pending step is currently active."""
+        """Notify approver(s) for the active sequential wave (one user, or all parallel directors)."""
         self.ensure_one()
         if self.validation_type != "employee_hr_responsibles":
             _logger.info(
@@ -2878,26 +2993,25 @@ class HolidaysRequest(models.Model):
                 self.validation_type,
             )
             return
-        line = False
+        lines = self.env["hr.leave.responsible.approval"]
         if user:
-            line = self.responsible_approval_line_ids.filtered(
+            lines = self.responsible_approval_line_ids.filtered(
                 lambda l: l.state == "pending" and l.user_id == user
-            )[:1]
-        if not line:
-            line = self.responsible_approval_line_ids.filtered(
-                lambda l: l.state == "pending"
-            ).sorted("sequence")[:1]
-        if not line or not line.user_id.partner_id:
+            )
+        if not lines:
+            lines = self._responsible_pending_current_wave()
+        if not lines:
             _logger.info(
-                "time_off_extra_approval: skip current-turn notify leave_id=%s reason=no_pending_line_or_partner user=%s",
+                "time_off_extra_approval: skip current-turn notify leave_id=%s reason=no_pending_wave user=%s",
                 self.id,
                 user.id if user else None,
             )
             return
         if not self._handover_ready_for_approval():
             _logger.info(
-                "time_off_extra_approval: skip current-turn notify leave_id=%s reason=handover_not_ready",
+                "time_off_extra_approval: skip current-turn notify leave_id=%s reason=handover_not_ready user=%s",
                 self.id,
+                user.id if user else None,
             )
             return
         body_text = _(
@@ -2906,37 +3020,27 @@ class HolidaysRequest(models.Model):
             "leave": self.display_name,
             "employee": self.employee_id.name or "",
         }
-        # Avoid duplicate message_post notifications for the same approver step
-        # without introducing new database schema fields.
-        duplicate_message = self.env["mail.message"].sudo().search(
-            [
-                ("model", "=", self._name),
-                ("res_id", "=", self.id),
-                ("body", "=", body_text),
-                ("partner_ids", "in", [line.user_id.partner_id.id]),
-            ],
-            limit=1,
-        )
-        if duplicate_message:
-            _logger.info(
-                "time_off_extra_approval: skip current-turn notify leave_id=%s reason=duplicate_mail_message message_id=%s",
-                self.id,
-                duplicate_message.id,
+        for line in lines:
+            if not line.user_id.partner_id:
+                continue
+            duplicate_message = self.env["mail.message"].sudo().search(
+                [
+                    ("model", "=", self._name),
+                    ("res_id", "=", self.id),
+                    ("body", "=", body_text),
+                    ("partner_ids", "in", [line.user_id.partner_id.id]),
+                ],
+                limit=1,
             )
-            return
-        _logger.info(
-            "time_off_extra_approval: current-turn notify leave_id=%s approver_user_id=%s approver_login=%s",
-            self.id,
-            line.user_id.id,
-            line.user_id.login,
-        )
-        self.message_post(
-            body=body_text,
-            message_type="notification",
-            subtype_xmlid="mail.mt_comment",
-            partner_ids=[line.user_id.partner_id.id],
-        )
-        self._notify_responsible_current_turn_via_approval_bot(line.user_id)
+            if duplicate_message:
+                continue
+            self.message_post(
+                body=body_text,
+                message_type="notification",
+                subtype_xmlid="mail.mt_comment",
+                partner_ids=[line.user_id.partner_id.id],
+            )
+            self._notify_responsible_current_turn_via_approval_bot(line.user_id)
 
     def _notify_responsible_current_turn_via_approval_bot(self, approver_user):
         """Send Discuss DM from approval bot to current responsible approver."""
@@ -3099,7 +3203,11 @@ class HolidaysRequest(models.Model):
                 lambda line: line.state == "pending"
             ).sorted("sequence")
             mode = self.holiday_status_id.employee_responsible_approval_mode or "any"
-            current_lines = pending[:1] if mode == "sequential" else pending
+            current_lines = (
+                self._responsible_pending_current_wave()
+                if mode == "sequential"
+                else pending
+            )
             for line in current_lines:
                 user = line.user_id
                 if not user:
@@ -3423,21 +3531,23 @@ class HolidaysRequest(models.Model):
             raise UserError(_("Bạn đã xử lý duyệt đơn nghỉ phép này rồi."))
 
         if mode == "sequential":
-            first_pending = self.responsible_approval_line_ids.filtered(
-                lambda l: l.state == "pending"
-            ).sorted("sequence")[:1]
-            if not user_line or not first_pending or user_line != first_pending:
+            wave = self._responsible_pending_current_wave()
+            if not user_line or not wave or user_line not in wave:
                 raise UserError(_("Đơn nghỉ phép này phải được duyệt đúng thứ tự tuần tự."))
 
         if is_responsible and user_line:
             user_line.write({"state": "approved", "action_date": fields.Datetime.now()})
             if mode == "sequential":
-                next_pending = self.responsible_approval_line_ids.filtered(
-                    lambda l: l.state == "pending"
-                ).sorted("sequence")[:1]
-                if next_pending:
-                    next_pending.write({"pending_since": fields.Datetime.now()})
-                    self._notify_responsible_current_turn(next_pending.user_id)
+                approved_seq = user_line.sequence
+                next_wave = self._responsible_pending_current_wave()
+                if next_wave:
+                    if next_wave[0].sequence != approved_seq:
+                        next_wave.write({"pending_since": fields.Datetime.now()})
+                    else:
+                        missing_since = next_wave.filtered(lambda ln: not ln.pending_since)
+                        if missing_since:
+                            missing_since.write({"pending_since": fields.Datetime.now()})
+                    self._notify_responsible_current_turn()
 
         if mode == "any":
             return self._action_validate(check_state=False)
@@ -3482,10 +3592,8 @@ class HolidaysRequest(models.Model):
             lambda l: l.user_id == self.env.user
         )[:1]
         if mode == "sequential":
-            first_pending = self.responsible_approval_line_ids.filtered(
-                lambda l: l.state == "pending"
-            ).sorted("sequence")[:1]
-            if not user_line or not first_pending or user_line != first_pending:
+            wave = self._responsible_pending_current_wave()
+            if not user_line or not wave or user_line not in wave:
                 raise UserError(_("Đơn nghỉ phép này phải được từ chối đúng thứ tự tuần tự."))
 
         if user_line and user_line.state == "pending":
@@ -3752,35 +3860,35 @@ class HolidaysRequest(models.Model):
             return
         hours = self.holiday_status_id.employee_responsible_escalation_hours or 2.0
         threshold = fields.Datetime.now() - timedelta(hours=hours)
-        first_pending = self.responsible_approval_line_ids.filtered(
-            lambda l: l.state == "pending"
-        ).sorted("sequence")[:1]
-        if not first_pending:
+        wave = self._responsible_pending_current_wave()
+        if not wave:
             return
-        if not first_pending.pending_since:
-            first_pending.write({"pending_since": threshold - timedelta(seconds=1)})
-        if first_pending.pending_since > threshold:
+        for ln in wave:
+            if not ln.pending_since:
+                ln.write({"pending_since": threshold - timedelta(seconds=1)})
+        earliest = min(ln.pending_since for ln in wave)
+        if earliest > threshold:
             return
-        skipped_user = first_pending.user_id
-        first_pending.write(
-            {
-                "state": "skipped",
-                "action_date": fields.Datetime.now(),
-            }
-        )
-        self.message_post(
-            body=_(
-                "Approval step for %(user)s was skipped due to timeout (%(hours)s h); escalated to the next level."
+        for first_pending in wave:
+            skipped_user = first_pending.user_id
+            first_pending.write(
+                {
+                    "state": "skipped",
+                    "action_date": fields.Datetime.now(),
+                }
             )
-            % {"user": skipped_user.display_name, "hours": hours},
-            subtype_xmlid="mail.mt_note",
-        )
-        next_pending = self.responsible_approval_line_ids.filtered(
-            lambda l: l.state == "pending"
-        ).sorted("sequence")[:1]
-        if next_pending:
-            next_pending.write({"pending_since": fields.Datetime.now()})
+            self.message_post(
+                body=_(
+                    "Approval step for %(user)s was skipped due to timeout (%(hours)s h); escalated to the next level."
+                )
+                % {"user": skipped_user.display_name, "hours": hours},
+                subtype_xmlid="mail.mt_note",
+            )
+        next_wave = self._responsible_pending_current_wave()
+        if next_wave:
+            now = fields.Datetime.now()
+            next_wave.write({"pending_since": now})
             self.activity_update()
-            self._notify_responsible_current_turn(next_pending.user_id)
+            self._notify_responsible_current_turn()
         else:
             self._action_validate(check_state=False)

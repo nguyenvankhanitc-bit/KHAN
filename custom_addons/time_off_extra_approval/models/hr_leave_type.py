@@ -73,6 +73,20 @@ class HolidaysType(models.Model):
         "chức danh Giám đốc; từ đó mỗi người có chức danh Giám đốc (có user nội bộ) trong công ty đều phải duyệt "
         "theo thứ tự trước khi hoàn tất.",
     )
+    special_director_sequential_approval = fields.Boolean(
+        string="Duyệt theo thứ tự Giám đốc",
+        default=False,
+        help="Áp dụng với nhân viên đặc biệt: khi bật, thứ tự duyệt giữa các Giám đốc lấy theo bảng bên dưới (STT 1 "
+        "trước). Khi tắt, tất cả Giám đốc cùng một bước (nhận thông báo và có thể duyệt đồng thời cho tới khi tất cả "
+        "đã duyệt).",
+    )
+    special_director_order_line_ids = fields.One2many(
+        comodel_name="hr.leave.type.special.director.order.line",
+        inverse_name="leave_type_id",
+        string="Thứ tự duyệt Giám đốc",
+        help="Danh sách Giám đốc (chức danh Giám đốc). Chỉ dùng khi bật 'Duyệt theo thứ tự Giám đốc'. Nếu bật nhưng "
+        "bảng trống, hệ thống dùng tất cả Giám đốc trong công ty theo thứ tự mặc định.",
+    )
     handover_escalation_after_hours = fields.Float(
         string="Bàn giao: Chuyển cấp sau (giờ)",
         default=2.0,

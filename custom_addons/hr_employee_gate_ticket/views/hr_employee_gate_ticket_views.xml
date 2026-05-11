@@ -7,22 +7,22 @@
             <form string="Gateway Ticket" duplicate="false">
                 <header>
                     <field name="state" widget="statusbar" statusbar_visible="draft,confirm,second_approve,validate"/>
-                    <button name="action_submit" string="Submit" type="object"
+                    <button name="action_submit" string="Gửi" type="object"
                             class="oe_highlight"
                             invisible="state != 'draft'"
                             groups="base.group_user"/>
-                    <button name="action_first_approve" string="First Approve" type="object"
+                    <button name="action_first_approve" string="Duyệt" type="object"
                             class="oe_highlight"
                             invisible="state not in ['confirm', 'refuse']"
                             groups="hr_attendance.group_hr_attendance_user"/>
-                    <button name="action_second_approve" string="Second Approve" type="object"
+                    <button name="action_second_approve" string="Duyệt" type="object"
                             class="oe_highlight"
                             invisible="state != 'second_approve'"
                             groups="hr_attendance.group_hr_attendance_user"/>
-                    <button name="action_refuse" string="Refuse" type="object"
+                    <button name="action_refuse" string="Từ chối" type="object"
                             invisible="state not in ['confirm', 'second_approve', 'validate']"
                             groups="hr_attendance.group_hr_attendance_user"/>
-                    <button name="action_draft" string="Reset to Draft" type="object"
+                    <button name="action_draft" string="Lưu vào nháp" type="object"
                             invisible="state == 'draft'"
                             groups="base.group_system"/>
                 </header>
@@ -75,17 +75,17 @@
                        decoration-muted="state == 'second_approve'"
                        decoration-success="state == 'validate'"
                        decoration-danger="state == 'refuse'"/>
-                <button name="action_first_approve" type="object" string="First Approve"
+                <button name="action_first_approve" type="object" string="Duyệt"
                         class="btn-primary"
                         icon="fa-check"
                         invisible="state not in ['confirm', 'refuse']"
                         groups="hr_attendance.group_hr_attendance_user"/>
-                <button name="action_second_approve" type="object" string="Second Approve"
+                <button name="action_second_approve" type="object" string="Duyệt"
                         class="btn-success"
                         icon="fa-check-double"
                         invisible="state != 'second_approve'"
                         groups="hr_attendance.group_hr_attendance_user"/>
-                <button name="action_refuse" type="object" string="Refuse"
+                <button name="action_refuse" type="object" string="Từ chối"
                         class="btn-danger"
                         icon="fa-times"
                         invisible="state not in ['confirm', 'second_approve', 'validate']"

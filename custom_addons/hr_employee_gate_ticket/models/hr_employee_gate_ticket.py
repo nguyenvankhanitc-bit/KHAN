@@ -271,6 +271,24 @@ class HrEmployeeGateTicket(models.Model):
             'second_approver_status': second_approver_status,
         }
 
+        attachments = self.env['ir.attachment'].search([
+            ('res_model', '=', self._name),
+            ('res_id', '=', self.id),
+        ])
+        attachment_section = Markup('')
+        if attachments:
+            attachment_links = Markup('').join(
+                Markup('<li><a href="/web/content/%(id)s?download=true">%(name)s</a></li>') % {
+                    'id': att.id,
+                    'name': att.name,
+                }
+                for att in attachments
+            )
+            attachment_section = Markup(
+                '<p style="margin-top:10px;"><b>Tệp đính kèm:</b></p>'
+                '<ul style="margin:0;padding-left:20px;">%(links)s</ul>'
+            ) % {'links': attachment_links}
+
         link = Markup(
             '<p style="margin-top:12px;">'
             '<a href="%(url)s" style="display:inline-block;padding:8px 16px;background-color:#875a7b;color:#fff;'
@@ -281,7 +299,7 @@ class HrEmployeeGateTicket(models.Model):
             'label': _('Xem phiếu ra cổng %(ref)s', ref=self.name),
         }
 
-        return intro_markup + table + link
+        return intro_markup + table + attachment_section + link
 
     def action_submit(self):
         for ticket in self:

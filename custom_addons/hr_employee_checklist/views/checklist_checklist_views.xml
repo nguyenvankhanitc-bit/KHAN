@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+<odoo><data>
+
+    <!-- ============================================================
+         CHECKLIST.CHECKLIST — main monthly inspection sheet
+    ============================================================ -->
+
+    <!-- FORM VIEW -->
+    <record model="ir.ui.view" id="view_checklist_form">
+        <field name="name">checklist.checklist.form</field>
+        <field name="model">checklist.checklist</field>
+        <field name="arch" type="xml">
+            <form string="Employee Checklist">
+                <header>
+                    <field name="stage_id" widget="statusbar" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <widget name="web_ribbon" text="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <label for="name" string="Checklist Title"/>
+                        <h1>
+                            <field name="name" placeholder="e.g. Bảng kiểm tra tháng 1/2025"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="month"/>
+                            <field name="year"/>
+                        </group>
+                        <group>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Danh sách nhân viên" name="employee_entries">
+                            <!-- Each row is an employee, expandable to show their checklist items -->
+                            <field name="employee_entry_ids"
+                                   context="{'list_view_ref': 'hr_employee_checklist.view_checklist_employee_entry_list_inline',
+                                             'form_view_ref': 'hr_employee_checklist.view_checklist_employee_entry_form'}">
+                                <list string="Employees"
+                                      create="true" delete="true"
+                                      expand="1">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="employee_id" string="Nhân viên" required="1"/>
+                                    <field name="total_lines"   string="Số mục"     readonly="1"/>
+                                    <field name="total_so_diem" string="Tổng điểm"  readonly="1"/>
+                                    <field name="xep_loai" string="Xếp loại" readonly="1"
+                                           decoration-success="xep_loai == 'excellent'"
+                                           decoration-info="xep_loai == 'good'"
+                                           decoration-warning="xep_loai == 'average'"
+                                           decoration-danger="xep_loai == 'poor'"/>
+                                    <field name="line_ids" widget="one2many" column_invisible="True"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Lịch làm việc" name="scheduler">
+                            <field name="schedule_line_ids"
+                                   context="{
+                                       'default_checklist_id': id,
+                                       'list_view_ref': 'hr_employee_checklist.view_checklist_schedule_line_list_inline',
+                                       'form_view_ref': 'hr_employee_checklist.view_checklist_schedule_line_form'
+                                   }">
+                                <list string="Lịch làm việc" editable="bottom"
+                                      create="true" delete="true">
+                                    <field name="sequence"     widget="handle"/>
+                                    <field name="employee_id"  string="Họ và tên"    required="1"/>
+                                    <field name="mien"         string="Miền"/>
+                                    <field name="ma_bo_phan"   string="Mã bộ phận"/>
+                                    <field name="ma_chuc_vu"   string="Mã chức vụ"/>
+                                    <field name="n01"  string="N1"  optional="show"/>
+                                    <field name="n02"  string="N2"  optional="show"/>
+                                    <field name="n03"  string="N3"  optional="show"/>
+                                    <field name="n04"  string="N4"  optional="show"/>
+                                    <field name="n05"  string="N5"  optional="show"/>
+                                    <field name="n06"  string="N6"  optional="show"/>
+                                    <field name="n07"  string="N7"  optional="show"/>
+                                    <field name="n08"  string="N8"  optional="show"/>
+                                    <field name="n09"  string="N9"  optional="show"/>
+                                    <field name="n10"  string="N10" optional="show"/>
+                                    <field name="n11"  string="N11" optional="show"/>
+                                    <field name="n12"  string="N12" optional="show"/>
+                                    <field name="n13"  string="N13" optional="show"/>
+                                    <field name="n14"  string="N14" optional="show"/>
+                                    <field name="n15"  string="N15" optional="show"/>
+                                    <field name="n16"  string="N16" optional="show"/>
+                                    <field name="n17"  string="N17" optional="show"/>
+                                    <field name="n18"  string="N18" optional="show"/>
+                                    <field name="n19"  string="N19" optional="show"/>
+                                    <field name="n20"  string="N20" optional="show"/>
+                                    <field name="n21"  string="N21" optional="show"/>
+                                    <field name="n22"  string="N22" optional="show"/>
+                                    <field name="n23"  string="N23" optional="show"/>
+                                    <field name="n24"  string="N24" optional="show"/>
+                                    <field name="n25"  string="N25" optional="show"/>
+                                    <field name="n26"  string="N26" optional="show"/>
+                                    <field name="n27"  string="N27" optional="show"/>
+                                    <field name="n28"  string="N28" optional="show"/>
+                                    <field name="n29"  string="N29" optional="show"/>
+                                    <field name="n30"  string="N30" optional="show"/>
+                                    <field name="n31"  string="N31" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="notes">
+                            <field name="note" placeholder="Ghi chú nội bộ..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- LIST VIEW -->
+    <record model="ir.ui.view" id="view_checklist_tree">
+        <field name="name">checklist.checklist.list</field>
+        <field name="model">checklist.checklist</field>
+        <field name="arch" type="xml">
+            <list string="Checklists" sample="1">
+                <field name="name"/>
+                <field name="month"/>
+                <field name="year"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="company_id" groups="base.group_multi_company" optional="show"/>
+                <field name="stage_id"/>
+                <field name="message_needaction" column_invisible="True"/>
+                <field name="activity_exception_decoration" widget="activity_exception"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- SEARCH VIEW -->
+    <record model="ir.ui.view" id="view_checklist_search">
+        <field name="name">checklist.checklist.search</field>
+        <field name="model">checklist.checklist</field>
+        <field name="arch" type="xml">
+            <search string="Checklists">
+                <field name="name" string="Title"/>
+                <field name="user_id"/>
+                <field name="stage_id"/>
+                <filter string="My Checklists" name="my_checklists"
+                    domain="[('user_id', '=', uid)]"/>
+                <separator/>
+                <filter string="Archived" name="filter_inactive" domain="[('active', '=', False)]"/>
+                <separator/>
+                <filter invisible="1" string="My Activities" name="filter_activities_my"
+                    domain="[('activity_user_id', '=', uid)]"/>
+                <group>
+                    <filter string="Month" name="group_month" context="{'group_by': 'month'}"/>
+                    <filter string="Year"  name="group_year"  context="{'group_by': 'year'}"/>
+                    <filter string="Responsible" name="group_user" context="{'group_by': 'user_id'}"/>
+                    <filter string="Stage" name="group_stage" context="{'group_by': 'stage_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record model="ir.actions.act_window" id="action_checklist_view">
+        <field name="name">Checklists</field>
+        <field name="path">checklists</field>
+        <field name="res_model">checklist.checklist</field>
+        <field name="view_mode">list,form,activity</field>
+        <field name="search_view_id" ref="view_checklist_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo bảng kiểm tra mới
+            </p>
+            <p>
+                Quản lý bảng kiểm tra hàng tháng cho nhân viên với theo dõi
+                kết quả theo từng ngày trong tháng.
+            </p>
+        </field>
+    </record>
+
+    <record id="hr_employee_checklist.menu_checklist_checklist" model="ir.ui.menu">
+        <field name="action" ref="hr_employee_checklist.action_checklist_view"/>
+    </record>
+
+</data></odoo>

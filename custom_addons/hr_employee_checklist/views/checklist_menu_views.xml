@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<odoo><data>
+
+    <!-- MAIN MENU -->
+    <menuitem name="Employee Checklist"
+        id="checklist_main_menu"
+        sequence="130"
+        groups="hr_employee_checklist.group_checklist_user"
+        web_icon="hr_employee_checklist,static/description/icon.png"/>
+
+    <!-- Checklists -->
+    <menuitem name="Checklists"
+        id="menu_checklist_checklist"
+        sequence="1"
+        parent="hr_employee_checklist.checklist_main_menu"
+        groups="hr_employee_checklist.group_checklist_user"/>
+
+    <!-- Reporting -->
+    <menuitem name="Reporting"
+        id="menu_reporting_checklists"
+        sequence="50"
+        parent="checklist_main_menu"
+        groups="hr_employee_checklist.group_checklist_user"/>
+
+    <!-- Configuration -->
+    <menuitem name="Configuration"
+        id="menu_checklist_configuration"
+        sequence="99"
+        parent="checklist_main_menu"
+        groups="hr_employee_checklist.group_checklist_manager"/>
+    <menuitem name="Stages"
+        id="checklist_stage_menu"
+        sequence="1"
+        parent="menu_checklist_configuration"/>
+    <menuitem name="Tags"
+        id="menu_checklist_category"
+        sequence="2"
+        parent="menu_checklist_configuration"/>
+
+</data></odoo>

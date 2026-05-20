@@ -227,8 +227,8 @@ class HrEmployeeGateTicket(models.Model):
         table = Markup(
             '<table style="border-collapse:collapse;margin-top:8px;">'
             '<tr>'
-            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background:#f5f5f5;">Thông tin</th>'
-            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background:#f5f5f5;">Chi tiết</th>'
+            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background-color:#f5f5f5;">Thông tin</th>'
+            '<th style="border:1px solid #ccc;padding:4px 10px;text-align:left;background-color:#f5f5f5;">Chi tiết</th>'
             '</tr>'
             '<tr>'
             '<td style="border:1px solid #ccc;padding:4px 10px;">Tạo lúc</td>'

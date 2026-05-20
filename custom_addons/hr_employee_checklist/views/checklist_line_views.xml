@@ -1,0 +1,137 @@
+<?xml version="1.0"?>
+<odoo><data>
+
+    <!-- ============================================================
+         CHECKLIST.LINE — inline list used inside employee entry
+         This is the core 31-day inspection table.
+    ============================================================ -->
+    <record id="view_checklist_line_list_inline" model="ir.ui.view">
+        <field name="name">checklist.line.list.inline</field>
+        <field name="model">checklist.line</field>
+        <field name="arch" type="xml">
+            <list string="Checklist Items" editable="bottom"
+                  create="true" delete="true"
+                  no_open="false">
+                <field name="sequence" widget="handle"/>
+                <field name="noi_dung" string="Nội dung" required="1"/>
+                <field name="nguoi_ks" string="Người KS"/>
+                <field name="pham_vi" string="Phạm vi"/>
+                <field name="khung_gio" string="Khung giờ"/>
+                <field name="lan_1" string="Lần 1"/>
+                <field name="lan_2" string="Lần 2"/>
+                <field name="lan_3" string="Lần 3"/>
+                <field name="diem" string="Điểm"/>
+                <!-- 31 day columns -->
+                <field name="day_01"  string="1"  widget="boolean_toggle" optional="show"/>
+                <field name="day_02"  string="2"  widget="boolean_toggle" optional="show"/>
+                <field name="day_03"  string="3"  widget="boolean_toggle" optional="show"/>
+                <field name="day_04"  string="4"  widget="boolean_toggle" optional="show"/>
+                <field name="day_05"  string="5"  widget="boolean_toggle" optional="show"/>
+                <field name="day_06"  string="6"  widget="boolean_toggle" optional="show"/>
+                <field name="day_07"  string="7"  widget="boolean_toggle" optional="show"/>
+                <field name="day_08"  string="8"  widget="boolean_toggle" optional="show"/>
+                <field name="day_09"  string="9"  widget="boolean_toggle" optional="show"/>
+                <field name="day_10"  string="10" widget="boolean_toggle" optional="show"/>
+                <field name="day_11"  string="11" widget="boolean_toggle" optional="show"/>
+                <field name="day_12"  string="12" widget="boolean_toggle" optional="show"/>
+                <field name="day_13"  string="13" widget="boolean_toggle" optional="show"/>
+                <field name="day_14"  string="14" widget="boolean_toggle" optional="show"/>
+                <field name="day_15"  string="15" widget="boolean_toggle" optional="show"/>
+                <field name="day_16"  string="16" widget="boolean_toggle" optional="show"/>
+                <field name="day_17"  string="17" widget="boolean_toggle" optional="show"/>
+                <field name="day_18"  string="18" widget="boolean_toggle" optional="show"/>
+                <field name="day_19"  string="19" widget="boolean_toggle" optional="show"/>
+                <field name="day_20"  string="20" widget="boolean_toggle" optional="show"/>
+                <field name="day_21"  string="21" widget="boolean_toggle" optional="show"/>
+                <field name="day_22"  string="22" widget="boolean_toggle" optional="show"/>
+                <field name="day_23"  string="23" widget="boolean_toggle" optional="show"/>
+                <field name="day_24"  string="24" widget="boolean_toggle" optional="show"/>
+                <field name="day_25"  string="25" widget="boolean_toggle" optional="show"/>
+                <field name="day_26"  string="26" widget="boolean_toggle" optional="show"/>
+                <field name="day_27"  string="27" widget="boolean_toggle" optional="show"/>
+                <field name="day_28"  string="28" widget="boolean_toggle" optional="show"/>
+                <field name="day_29"  string="29" widget="boolean_toggle" optional="show"/>
+                <field name="day_30"  string="30" widget="boolean_toggle" optional="show"/>
+                <field name="day_31"  string="31" widget="boolean_toggle" optional="show"/>
+                <!-- Summary columns (readonly, computed) -->
+                <field name="ty_le_dat"   string="TL(%)Đạt"       readonly="1"/>
+                <field name="so_lan_dat"  string="Số lần Đạt"     readonly="1"/>
+                <field name="co_th_ko_dat" string="Có TH ko Đạt"  readonly="1" widget="boolean"/>
+                <field name="so_diem"     string="Số điểm"        readonly="1"/>
+                <field name="xep_loai"    string="Xếp loại"       readonly="1"
+                       decoration-success="xep_loai == 'excellent'"
+                       decoration-info="xep_loai == 'good'"
+                       decoration-warning="xep_loai == 'average'"
+                       decoration-danger="xep_loai == 'poor'"/>
+                <field name="ghi_chu" string="Ghi chú"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Standalone form for a single checklist line -->
+    <record id="view_checklist_line_form" model="ir.ui.view">
+        <field name="name">checklist.line.form</field>
+        <field name="model">checklist.line</field>
+        <field name="arch" type="xml">
+            <form string="Checklist Item">
+                <sheet>
+                    <group>
+                        <group string="Item Details">
+                            <field name="noi_dung" string="Nội dung"/>
+                            <field name="nguoi_ks" string="Người KS"/>
+                            <field name="pham_vi"  string="Phạm vi"/>
+                            <field name="khung_gio" string="Khung giờ"/>
+                            <field name="lan_1" string="Lần 1"/>
+                            <field name="lan_2" string="Lần 2"/>
+                            <field name="lan_3" string="Lần 3"/>
+                            <field name="diem"  string="Điểm"/>
+                        </group>
+                        <group string="Summary">
+                            <field name="so_lan_dat"   string="Số lần Đạt"    readonly="1"/>
+                            <field name="ty_le_dat"    string="TL(%)Đạt"      readonly="1"/>
+                            <field name="co_th_ko_dat" string="Có TH ko Đạt"  readonly="1"/>
+                            <field name="so_diem"      string="Số điểm"       readonly="1"/>
+                            <field name="xep_loai"     string="Xếp loại"      readonly="1"/>
+                            <field name="ghi_chu"      string="Ghi chú"/>
+                        </group>
+                    </group>
+                    <separator string="Kết quả theo ngày (1–31)"/>
+                    <group col="16">
+                        <field name="day_01"  string="1"/>
+                        <field name="day_02"  string="2"/>
+                        <field name="day_03"  string="3"/>
+                        <field name="day_04"  string="4"/>
+                        <field name="day_05"  string="5"/>
+                        <field name="day_06"  string="6"/>
+                        <field name="day_07"  string="7"/>
+                        <field name="day_08"  string="8"/>
+                        <field name="day_09"  string="9"/>
+                        <field name="day_10"  string="10"/>
+                        <field name="day_11"  string="11"/>
+                        <field name="day_12"  string="12"/>
+                        <field name="day_13"  string="13"/>
+                        <field name="day_14"  string="14"/>
+                        <field name="day_15"  string="15"/>
+                        <field name="day_16"  string="16"/>
+                        <field name="day_17"  string="17"/>
+                        <field name="day_18"  string="18"/>
+                        <field name="day_19"  string="19"/>
+                        <field name="day_20"  string="20"/>
+                        <field name="day_21"  string="21"/>
+                        <field name="day_22"  string="22"/>
+                        <field name="day_23"  string="23"/>
+                        <field name="day_24"  string="24"/>
+                        <field name="day_25"  string="25"/>
+                        <field name="day_26"  string="26"/>
+                        <field name="day_27"  string="27"/>
+                        <field name="day_28"  string="28"/>
+                        <field name="day_29"  string="29"/>
+                        <field name="day_30"  string="30"/>
+                        <field name="day_31"  string="31"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</data></odoo>

@@ -1,0 +1,159 @@
+<?xml version="1.0"?>
+<odoo><data>
+
+    <!-- ============================================================
+         CHECKLIST.SCHEDULE.LINE
+         Inline list used inside the Scheduler tab of the checklist form.
+         Also has a standalone list view that enables Odoo's built-in
+         CSV / XLSX import (base_import).
+    ============================================================ -->
+
+    <!-- Inline editable list — used inside the notebook tab -->
+    <record id="view_checklist_schedule_line_list_inline" model="ir.ui.view">
+        <field name="name">checklist.schedule.line.list.inline</field>
+        <field name="model">checklist.schedule.line</field>
+        <field name="arch" type="xml">
+            <list string="Lịch làm việc" editable="bottom"
+                  create="true" delete="true">
+                <field name="sequence"     widget="handle"/>
+                <field name="employee_id"  string="Họ và tên"    required="1"/>
+                <field name="mien"         string="Miền"/>
+                <field name="ma_bo_phan"   string="Mã bộ phận"/>
+                <field name="ma_chuc_vu"   string="Mã chức vụ"/>
+                <!-- 31 daily shift-code columns -->
+                <field name="n01"  string="N1"  optional="show"/>
+                <field name="n02"  string="N2"  optional="show"/>
+                <field name="n03"  string="N3"  optional="show"/>
+                <field name="n04"  string="N4"  optional="show"/>
+                <field name="n05"  string="N5"  optional="show"/>
+                <field name="n06"  string="N6"  optional="show"/>
+                <field name="n07"  string="N7"  optional="show"/>
+                <field name="n08"  string="N8"  optional="show"/>
+                <field name="n09"  string="N9"  optional="show"/>
+                <field name="n10"  string="N10" optional="show"/>
+                <field name="n11"  string="N11" optional="show"/>
+                <field name="n12"  string="N12" optional="show"/>
+                <field name="n13"  string="N13" optional="show"/>
+                <field name="n14"  string="N14" optional="show"/>
+                <field name="n15"  string="N15" optional="show"/>
+                <field name="n16"  string="N16" optional="show"/>
+                <field name="n17"  string="N17" optional="show"/>
+                <field name="n18"  string="N18" optional="show"/>
+                <field name="n19"  string="N19" optional="show"/>
+                <field name="n20"  string="N20" optional="show"/>
+                <field name="n21"  string="N21" optional="show"/>
+                <field name="n22"  string="N22" optional="show"/>
+                <field name="n23"  string="N23" optional="show"/>
+                <field name="n24"  string="N24" optional="show"/>
+                <field name="n25"  string="N25" optional="show"/>
+                <field name="n26"  string="N26" optional="show"/>
+                <field name="n27"  string="N27" optional="show"/>
+                <field name="n28"  string="N28" optional="show"/>
+                <field name="n29"  string="N29" optional="show"/>
+                <field name="n30"  string="N30" optional="show"/>
+                <field name="n31"  string="N31" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form view (opened when clicking a row) -->
+    <record id="view_checklist_schedule_line_form" model="ir.ui.view">
+        <field name="name">checklist.schedule.line.form</field>
+        <field name="model">checklist.schedule.line</field>
+        <field name="arch" type="xml">
+            <form string="Lịch làm việc">
+                <sheet>
+                    <group>
+                        <group string="Thông tin nhân viên">
+                            <field name="checklist_id" readonly="1"/>
+                            <field name="employee_id"  string="Họ và tên"/>
+                            <field name="mien"         string="Miền"/>
+                            <field name="ma_bo_phan"   string="Mã bộ phận"/>
+                            <field name="ma_chuc_vu"   string="Mã chức vụ"/>
+                        </group>
+                    </group>
+                    <separator string="Ca làm việc theo ngày (N1–N31)"/>
+                    <group col="8">
+                        <field name="n01"  string="N1"/>
+                        <field name="n02"  string="N2"/>
+                        <field name="n03"  string="N3"/>
+                        <field name="n04"  string="N4"/>
+                        <field name="n05"  string="N5"/>
+                        <field name="n06"  string="N6"/>
+                        <field name="n07"  string="N7"/>
+                        <field name="n08"  string="N8"/>
+                        <field name="n09"  string="N9"/>
+                        <field name="n10"  string="N10"/>
+                        <field name="n11"  string="N11"/>
+                        <field name="n12"  string="N12"/>
+                        <field name="n13"  string="N13"/>
+                        <field name="n14"  string="N14"/>
+                        <field name="n15"  string="N15"/>
+                        <field name="n16"  string="N16"/>
+                        <field name="n17"  string="N17"/>
+                        <field name="n18"  string="N18"/>
+                        <field name="n19"  string="N19"/>
+                        <field name="n20"  string="N20"/>
+                        <field name="n21"  string="N21"/>
+                        <field name="n22"  string="N22"/>
+                        <field name="n23"  string="N23"/>
+                        <field name="n24"  string="N24"/>
+                        <field name="n25"  string="N25"/>
+                        <field name="n26"  string="N26"/>
+                        <field name="n27"  string="N27"/>
+                        <field name="n28"  string="N28"/>
+                        <field name="n29"  string="N29"/>
+                        <field name="n30"  string="N30"/>
+                        <field name="n31"  string="N31"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search view for standalone list -->
+    <record id="view_checklist_schedule_line_search" model="ir.ui.view">
+        <field name="name">checklist.schedule.line.search</field>
+        <field name="model">checklist.schedule.line</field>
+        <field name="arch" type="xml">
+            <search string="Lịch làm việc">
+                <field name="employee_id" string="Nhân viên"/>
+                <field name="checklist_id"/>
+                <field name="mien"       string="Miền"/>
+                <field name="ma_bo_phan" string="Mã bộ phận"/>
+                <field name="ma_chuc_vu" string="Mã chức vụ"/>
+                <group>
+                    <filter string="Nhân viên"   name="group_employee"  context="{'group_by': 'employee_id'}"/>
+                    <filter string="Checklist"   name="group_checklist" context="{'group_by': 'checklist_id'}"/>
+                    <filter string="Miền"        name="group_mien"      context="{'group_by': 'mien'}"/>
+                    <filter string="Bộ phận"     name="group_dept"      context="{'group_by': 'ma_bo_phan'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Standalone list action — enables the Import button (base_import) -->
+    <record id="action_checklist_schedule_line" model="ir.actions.act_window">
+        <field name="name">Lịch làm việc</field>
+        <field name="res_model">checklist.schedule.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_checklist_schedule_line_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có lịch làm việc nào
+            </p>
+            <p>
+                Tạo mới hoặc nhập từ file Excel/CSV bằng nút <b>Nhập</b> ở góc trên bên phải.
+            </p>
+        </field>
+    </record>
+
+    <!-- Reporting sub-menu entry for standalone access + import -->
+    <menuitem name="Lịch làm việc"
+        id="menu_checklist_schedule_line"
+        parent="hr_employee_checklist.menu_reporting_checklists"
+        sequence="10"
+        action="action_checklist_schedule_line"
+        groups="hr_employee_checklist.group_checklist_user"/>
+
+</data></odoo>

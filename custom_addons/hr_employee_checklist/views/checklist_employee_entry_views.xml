@@ -1,0 +1,61 @@
+<?xml version="1.0"?>
+<odoo><data>
+
+    <!-- ============================================================
+         CHECKLIST.EMPLOYEE.ENTRY — collapsible employee rows
+         Used inline inside the main checklist form.
+    ============================================================ -->
+    <record id="view_checklist_employee_entry_list_inline" model="ir.ui.view">
+        <field name="name">checklist.employee.entry.list.inline</field>
+        <field name="model">checklist.employee.entry</field>
+        <field name="arch" type="xml">
+            <list string="Employee Entries"
+                  create="true" delete="true"
+                  expand="1">
+                <field name="sequence" widget="handle"/>
+                <field name="employee_id" string="Nhân viên" required="1"/>
+                <field name="total_lines"  string="Số mục"   readonly="1"/>
+                <field name="total_so_diem" string="Tổng điểm" readonly="1"/>
+                <field name="xep_loai" string="Xếp loại" readonly="1"
+                       decoration-success="xep_loai == 'excellent'"
+                       decoration-info="xep_loai == 'good'"
+                       decoration-warning="xep_loai == 'average'"
+                       decoration-danger="xep_loai == 'poor'"/>
+                <!-- Expandable child lines -->
+                <field name="line_ids"
+                       widget="one2many"
+                       context="{'list_view_ref': 'hr_employee_checklist.view_checklist_line_list_inline',
+                                 'form_view_ref': 'hr_employee_checklist.view_checklist_line_form'}"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_checklist_employee_entry_form" model="ir.ui.view">
+        <field name="name">checklist.employee.entry.form</field>
+        <field name="model">checklist.employee.entry</field>
+        <field name="arch" type="xml">
+            <form string="Employee Checklist Entry">
+                <sheet>
+                    <group>
+                        <field name="checklist_id" readonly="1"/>
+                        <field name="employee_id"/>
+                        <field name="sequence"/>
+                    </group>
+                    <group string="Summary" col="4">
+                        <field name="total_lines"   readonly="1"/>
+                        <field name="total_so_diem" readonly="1"/>
+                        <field name="xep_loai"      readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Checklist Items" name="lines">
+                            <field name="line_ids"
+                                   context="{'list_view_ref': 'hr_employee_checklist.view_checklist_line_list_inline',
+                                             'form_view_ref': 'hr_employee_checklist.view_checklist_line_form'}"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</data></odoo>

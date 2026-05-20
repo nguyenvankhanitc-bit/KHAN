@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+        <!-- CHECKLIST.TAG.CATEGORY VIEWS -->
+        <record id="checklist_tag_category_view_tree" model="ir.ui.view">
+            <field name="name">checklist.tag.category.view.list</field>
+            <field name="model">checklist.tag.category</field>
+            <field name="arch" type="xml">
+                <list string="Checklist Tag Categories">
+                    <field name="sequence" widget="handle"/>
+                    <field name="name"/>
+                    <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="checklist_tag_category_view_form" model="ir.ui.view">
+            <field name="name">checklist.tag.category.view.form</field>
+            <field name="model">checklist.tag.category</field>
+            <field name="arch" type="xml">
+                <form string="Checklist Tag Category">
+                    <sheet>
+                        <div class="oe_title">
+                            <h1><field nolabel="1" name="name" placeholder='e.g. "Department"'/></h1>
+                        </div>
+                        <group>
+                            <field name="tag_ids" context="{'default_category_id': id}">
+                                <list string="Tags" editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name" placeholder='e.g. "Engineering"'/>
+                                    <field name="color" widget="color_picker"/>
+                                </list>
+                            </field>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="checklist_tag_category_action_tree" model="ir.actions.act_window">
+            <field name="name">Checklist Tag Categories</field>
+            <field name="res_model">checklist.tag.category</field>
+            <field name="view_mode">list,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create a Checklist Tag Category
+                </p><p>
+                    Use Tag Categories to classify and organize your checklist tags.
+                </p>
+            </field>
+        </record>
+
+        <record id="menu_checklist_category" model="ir.ui.menu">
+            <field name="action" ref="hr_employee_checklist.checklist_tag_category_action_tree"/>
+        </record>
+
+    </data>
+</odoo>

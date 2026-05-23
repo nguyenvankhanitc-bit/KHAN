@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <templates xml:space="preserve">
     <t t-inherit="hr_holidays.TimeOffDashboard" t-inherit-mode="extension">
-        <xpath expr="//div[strong[@class='o_timeoff_name']]" position="inside">
-            <div class="d-flex gap-3 mt-1 text-muted small">
-                <span>Đã sử dụng: <strong t-esc="state.daSuDung"/></span>
-                <span>Còn lại: <strong t-esc="state.conLai"/></span>
+        <xpath expr="//div[hasclass('o_timeoff_card')]/div[strong[@class='o_timeoff_name']]" position="before">
+            <div class="d-flex flex-column justify-content-center align-items-center w-100">
+                <strong class="o_timeoff_name">Đã sử dụng</strong>
+                <span class="o_timeoff_duration"><t t-esc="state.daSuDung"/></span>
+            </div>
+        </xpath>
+        <xpath expr="//div[hasclass('o_timeoff_card')]/div[strong[@class='o_timeoff_name']]" position="after">
+            <div class="d-flex flex-column justify-content-center align-items-center w-100">
+                <strong class="o_timeoff_name">Còn lại</strong>
+                <span class="o_timeoff_duration"><t t-esc="state.conLai"/></span>
             </div>
         </xpath>
     </t>

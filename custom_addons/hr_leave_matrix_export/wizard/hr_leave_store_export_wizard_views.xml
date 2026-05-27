@@ -10,7 +10,7 @@
                     <field name="month"/>
                 </group>
                 <p class="text-muted">
-                    Xuất đơn nghỉ phép cửa hàng (luồng vp_chain / Cửa hàng trưởng) theo form kết xuất nghỉ phép.
+                    Xuất đơn nghỉ phép nhân viên miền Bắc, Nam, ĐTT theo form kết xuất nghỉ phép.
                 </p>
                 <field name="domain_json" invisible="1"/>
                 <footer>

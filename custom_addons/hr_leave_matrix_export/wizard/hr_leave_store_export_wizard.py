@@ -2,6 +2,7 @@
 
 import calendar
 import json
+import re
 from datetime import date, datetime
 from io import BytesIO
 
@@ -27,6 +28,7 @@ STORE_HEADERS = [
     "AD DUYỆT",
     "NGÀY AD DUYỆT",
     "trạng thái",
+    "ký hiệu",
 ]
 
 MIEN_DISPLAY = {
@@ -48,10 +50,8 @@ JOB_TITLE_SHORT = {
     "admin tổng": "AD",
 }
 
-_EMERGENCY_STATUS_TEXT = (
-    "Bạn đang gửi đơn nghỉ khẩn cấp (thời gian báo trước ngắn hơn quy định). "
-    "Bạn có chắc chắn muốn tiếp tục không?"
-)
+# Khớp time_off_extra_approval._DEFAULT_LEAD_DAYS (giám đốc miễn rule nhưng vẫn có ngưỡng 7 ngày)
+_DEFAULT_EMERGENCY_LEAD_DAYS = 7
 
 
 class HrLeaveStoreExportMixin(models.AbstractModel):
@@ -59,6 +59,10 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
 
     _name = "hr.leave.store.export.mixin"
     _description = "Export store time off (FORM KẾT XUẤT NGHỈ PHÉP)"
+
+    # Kết xuất CH: Bắc / Nam / ĐTT — Kết xuất VP (ma trận): VP
+    MIEN_CH_CODES = frozenset({"Bắc", "Nam", "ĐTT"})
+    MIEN_VP_CODES = frozenset({"VP"})
 
     @staticmethod
     def _format_date(value):
@@ -70,14 +74,20 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             return f"{value.day}/{value.month}/{value.year}"
         return str(value)
 
-    def _is_store_leave(self, leave):
-        """Store export: vp_chain flow (cửa hàng trưởng chain)."""
-        if leave.validation_type != "vp_chain":
-            return False
-        if hasattr(leave, "_is_store_chain_flow"):
-            return leave._is_store_chain_flow()
-        emp = leave.employee_id
-        return bool(emp and (emp.job_title or "") == "cửa hàng trưởng")
+    def _employee_mien(self, employee):
+        """Miền nhân viên (trực tiếp hoặc từ mã bộ phận)."""
+        if not employee:
+            return None
+        mien = getattr(employee, "mien", None)
+        if mien:
+            return mien
+        dept = getattr(employee, "ma_bo_phan_id", None)
+        if dept and getattr(dept, "mien", None):
+            return dept.mien
+        return None
+
+    def _leave_in_mien(self, leave, allowed_miens):
+        return self._employee_mien(leave.employee_id) in allowed_miens
 
     def _mien_label(self, employee):
         mien = getattr(employee, "mien", None) or ""
@@ -132,12 +142,75 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             return (emp.name or line.user_id.name or "").upper(), ""
         return "", ""
 
-    def _status_text(self, leave):
+    def _leave_emergency_reference_date(self, leave):
+        """Ngày đối chiếu báo trước (lần tạo / cập nhật đơn gần nhất)."""
+        days = []
+        if leave.create_date:
+            days.append(fields.Date.to_date(leave.create_date))
+        if leave.write_date:
+            days.append(fields.Date.to_date(leave.write_date))
+        return max(days) if days else fields.Date.context_today(self)
+
+    def _is_emergency_leave_for_export(self, leave):
+        """Khớp logic UI (kể cả giám đốc: báo trước < 7 ngày vẫn là khẩn cấp)."""
         if getattr(leave, "is_emergency_leave", False):
-            return _EMERGENCY_STATUS_TEXT
-        if getattr(leave, "status_display_label", None):
-            return leave.status_display_label
-        return dict(leave._fields["state"].selection).get(leave.state, leave.state or "")
+            return True
+        hr_leave = self.env["hr.leave"]
+        if hasattr(hr_leave, "_needs_emergency_leave_confirmation"):
+            return hr_leave._needs_emergency_leave_confirmation(
+                res_id=leave.id,
+                vals={
+                    "employee_id": leave.employee_id.id,
+                    "request_date_from": leave.request_date_from,
+                    "request_date_to": leave.request_date_to,
+                    "holiday_status_id": leave.holiday_status_id.id,
+                },
+            )
+        if not hasattr(leave, "_required_lead_days_for_job_title"):
+            return False
+        employee = leave.employee_id
+        start = leave.request_date_from
+        if not employee or not start:
+            return False
+        ref_day = self._leave_emergency_reference_date(leave)
+        delta = (start - ref_day).days
+        required = leave._required_lead_days_for_job_title(employee.job_title)
+        if required is not None:
+            return delta < required
+        return delta < _DEFAULT_EMERGENCY_LEAD_DAYS
+
+    def _status_text(self, leave):
+        """Bình thường vs khẩn cấp (theo quy định báo trước, không phải trạng thái duyệt)."""
+        if self._is_emergency_leave_for_export(leave):
+            return "khẩn cấp"
+        return "bình thường"
+
+    @staticmethod
+    def _normalize_leave_type_code(raw):
+        """P1, P2, O — không có dấu ngoặc."""
+        code = (raw or "").strip()
+        code = code.replace("（", "(").replace("）", ")")
+        if code.startswith("(") and code.endswith(")"):
+            code = code[1:-1].strip()
+        return code
+
+    def _leave_type_symbol(self, leave):
+        """Mã loại nghỉ, vd. Nghỉ Phép (P1) -> P1."""
+        leave_type = leave.holiday_status_id
+        if not leave_type:
+            return ""
+        leave_type_model = self.env["hr.leave.type"]
+        if hasattr(leave_type_model, "code_from_name"):
+            code = leave_type_model.code_from_name(leave_type.name)
+            if code:
+                return self._normalize_leave_type_code(code)
+        name = (leave_type.name or "").strip().replace("（", "(").replace("）", ")")
+        if not name:
+            return ""
+        match = re.search(r"\(([^)]+)\)", name)
+        if match:
+            return self._normalize_leave_type_code(match.group(1))
+        return self._normalize_leave_type_code(name)
 
     def _leave_reason(self, leave):
         return (leave.private_name or leave.name or "").strip()
@@ -163,6 +236,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             ad_name,
             ad_date,
             self._status_text(leave),
+            self._leave_type_symbol(leave),
         ]
 
     def _search_store_leaves(self, year, month, base_domain):
@@ -178,7 +252,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             domain,
             order="employee_id, request_date_from, id",
         )
-        return leaves.filtered(lambda leave: self._is_store_leave(leave))
+        return leaves.filtered(lambda leave: self._leave_in_mien(leave, self.MIEN_CH_CODES))
 
     def action_export_store_excel(self):
         self.ensure_one()
@@ -206,7 +280,6 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
             }
         )
         cell_fmt = workbook.add_format({"border": 1, "valign": "top", "text_wrap": True})
-        status_fmt = workbook.add_format({"border": 1, "valign": "top", "text_wrap": True})
 
         sheet.merge_range(0, 0, 0, len(STORE_HEADERS) - 1, "FORM KẾT XUẤT NGHỈ PHÉP", title_fmt)
         for col, title in enumerate(STORE_HEADERS):
@@ -216,8 +289,7 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         for leave in leaves:
             values = self._row_for_leave(leave)
             for col, value in enumerate(values):
-                fmt = status_fmt if col == len(STORE_HEADERS) - 1 else cell_fmt
-                sheet.write(row, col, value, fmt)
+                sheet.write(row, col, value, cell_fmt)
             row += 1
 
         if row == 2:
@@ -233,7 +305,8 @@ class HrLeaveStoreExportMixin(models.AbstractModel):
         sheet.set_column(9, 9, 32)
         sheet.set_column(10, 10, 28)
         sheet.set_column(11, 14, 18)
-        sheet.set_column(15, 15, 55)
+        sheet.set_column(15, 15, 14)
+        sheet.set_column(16, 16, 10)
 
         workbook.close()
         buffer.seek(0)

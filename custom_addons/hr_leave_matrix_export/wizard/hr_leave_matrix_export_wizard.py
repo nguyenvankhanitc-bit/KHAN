@@ -145,6 +145,8 @@ class HrLeaveMatrixExportWizard(models.TransientModel):
         for leave in leaves:
             if not leave.employee_id or not leave.request_date_from or not leave.request_date_to:
                 continue
+            if not self._leave_in_mien(leave, self.MIEN_VP_CODES):
+                continue
             employees |= leave.employee_id
             label = self._leave_type_cell_label(leave.holiday_status_id)
             span_start = max(leave.request_date_from, month_start)

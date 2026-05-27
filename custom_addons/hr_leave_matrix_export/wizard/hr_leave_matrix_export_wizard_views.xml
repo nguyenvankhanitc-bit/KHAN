@@ -5,6 +5,9 @@
         <field name="model">hr.leave.matrix.export.wizard</field>
         <field name="arch" type="xml">
             <form string="Export time off matrix">
+                <p class="text-muted">
+                    Xuất bảng ma trận ngày nghỉ nhân viên miền VP.
+                </p>
                 <group>
                     <field name="year"/>
                     <field name="month"/>

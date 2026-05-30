@@ -1095,26 +1095,52 @@ class HrLeaveResponsibleApproval(models.Model):
             )
             return
         details = self._get_approval_bot_leave_notification_details()
+        lt_name = (self.holiday_status_id.name or "").strip() or "—"
+        days_value = self.number_of_days or 0.0
+        segment_line = _("• %(type)s: %(period)s (%(days)s ngày)") % {
+            "type": lt_name,
+            "period": details["period"],
+            "days": ("%g" % days_value) if days_value else "0",
+        }
+        plan_details = {
+            "requester": details["requester"],
+            "id_hrm": details["id_hrm"],
+            "department": details["department"],
+            "period": details["period"],
+            "total_days": details["total_days"],
+            "reason": details["reason"],
+            "segment_lines": segment_line,
+            "segment_count": 1,
+            "primary": self,
+        }
+        if hasattr(self, "_notify_approval_bot_monthly_plan_message"):
+            return self._notify_approval_bot_monthly_plan_message(
+                approver_user, plan_details
+            )
+        segments_html = Markup(escape(segment_line))
         intro = Markup(
             _(
-                "<b>ĐƠN XIN NGHỈ PHÉP</b><br/>"
+                "<b>ĐƠN XIN NGHỈ PHÉP</b> ({count} phần)<br/>"
                 "Nhân viên: <b>{requester}</b><br/>"
                 "Mã nhân viên: <b>{id_hrm}</b><br/>"
                 "Bộ phận: <b>{department}</b><br/>"
                 "Thời gian nghỉ: <b>{period}</b><br/>"
                 "Tổng số ngày nghỉ: <b>{total_days}</b><br/>"
+                "Chi tiết:<br/>{segments}<br/>"
                 "Lý do: <b>{reason}</b><br/>"
-                'Vui lòng bấm vào "Time Off" để phê duyệt<br/><br/>'
+                "Vui lòng bấm <b>Phê duyệt tất cả</b> hoặc <b>Từ chối tất cả</b><br/><br/>"
             )
         ).format(
+            count=1,
             requester=escape(str(details["requester"])),
             id_hrm=escape(str(details["id_hrm"])),
             department=escape(str(details["department"])),
             period=escape(str(details["period"])),
             total_days=escape(str(details["total_days"])),
+            segments=segments_html,
             reason=escape(str(details["reason"])),
         )
-        button_html = self._notify_approval_bot_leave_form_open_button_markup()
+        button_html = self._notify_approval_bot_split_group_action_buttons_markup(self)
         body = intro + button_html
         try:
             # Current-turn approver notifications must come from approval bot.

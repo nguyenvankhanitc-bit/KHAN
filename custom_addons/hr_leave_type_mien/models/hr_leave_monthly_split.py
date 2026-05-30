@@ -276,20 +276,14 @@ class HrLeaveMonthlySplit(models.Model):
             segments=segments_html,
             reason=escape(str(details["reason"])),
         )
-        if (
-            primary.split_group_id
-            and hasattr(primary, "_split_group_is_multi_segment")
-            and primary._split_group_is_multi_segment()
-            and hasattr(primary, "_notify_approval_bot_split_group_action_buttons_markup")
-        ):
-            button_html = primary._notify_approval_bot_split_group_action_buttons_markup(
-                primary
-            )
+        button_html = primary._notify_approval_bot_split_group_action_buttons_markup(
+            primary
+        )
+        if primary.split_group_id:
             marker = Markup(
                 '<span data-oe-split-group="%s" style="display:none"></span>'
             ) % escape(primary.split_group_id or "")
         else:
-            button_html = primary._notify_approval_bot_leave_form_open_button_markup()
             marker = Markup("")
         body = marker + intro + button_html
         try:

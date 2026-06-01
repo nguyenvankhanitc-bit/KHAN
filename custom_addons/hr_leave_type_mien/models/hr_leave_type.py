@@ -61,13 +61,19 @@ class HrLeaveType(models.Model):
         return {n for n in names if n}
 
     @api.model
-    def search_by_code(self, code, limit=1):
-        """Tìm loại ngày nghỉ theo mã trong () — quét toàn bộ loại phép."""
+    def search_by_code(self, code, limit=1, allowed_ids=None):
+        """Tìm loại ngày nghỉ theo mã trong () — quét toàn bộ loại phép.
+
+        allowed_ids: nếu truyền, chỉ xét trong tập id này (vd. loại phép của Miền)
+        để tránh nhập nhằng khi nhiều loại trùng mã, ví dụ (O) của
+        «Làm Online (O)» và «Nghỉ không lương (O)».
+        """
         code_norm = (code or "").strip().upper()
         if not code_norm:
             return self.browse()
+        domain = [("id", "in", list(allowed_ids))] if allowed_ids is not None else []
         matches = self.browse()
-        for leave_type in self.sudo().search([]):
+        for leave_type in self.sudo().search(domain):
             for name in self._leave_type_name_variants(leave_type):
                 if self.code_from_name(name).upper() == code_norm:
                     matches |= leave_type
@@ -77,9 +83,17 @@ class HrLeaveType(models.Model):
         return matches
 
     @api.model
-    def leave_type_from_selection(self, leave_type, code):
-        """Ưu tiên tìm theo mã; nếu không có thì dùng bản ghi đang chọn nếu mã khớp."""
+    def leave_type_from_selection(self, leave_type, code, allowed_ids=None):
+        """Ưu tiên tìm theo mã; nếu không có thì dùng bản ghi đang chọn nếu mã khớp.
+
+        Khi truyền allowed_ids (loại phép của Miền), ưu tiên tìm trong tập đó trước
+        để chọn đúng loại khi nhiều loại trùng mã.
+        """
         code_norm = (code or "").strip().upper()
+        if allowed_ids is not None:
+            scoped = self.search_by_code(code, limit=1, allowed_ids=allowed_ids)
+            if scoped:
+                return scoped
         found = self.search_by_code(code, limit=1)
         if found:
             return found

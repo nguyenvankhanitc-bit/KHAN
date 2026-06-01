@@ -243,11 +243,12 @@ class HrLeaveTimeOffSummary(models.Model):
         """ID các loại phép không tính vào ngân sách Còn lại (Unpaid Leave (O))."""
         unpaid_ids = set()
         LeaveType = self.env["hr.leave.type"]
-        if hasattr(LeaveType, "_get_o_leave_type"):
+        if hasattr(LeaveType, "search_by_code"):
             try:
-                o_type = self.env["hr.leave"]._get_o_leave_type()
-                if o_type:
-                    unpaid_ids.update(o_type.ids)
+                # Mọi loại phép có mã (O) — gồm «Nghỉ không lương (O)» của từng Miền.
+                o_types = LeaveType.search_by_code("O", limit=None)
+                if o_types:
+                    unpaid_ids.update(o_types.ids)
             except Exception:  # pragma: no cover - bảo vệ khi cấu hình thiếu
                 _logger.debug("con_lai: cannot resolve Unpaid Leave (O) type", exc_info=True)
         unpaid_ids.update(

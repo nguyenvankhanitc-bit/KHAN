@@ -45,21 +45,34 @@ class HrLeave(models.Model):
     # ------------------------------------------------------------------
 
     @api.model
-    def _get_p1_leave_type(self, selected=None):
+    def _mien_config_leave_type_ids(self, employee):
+        """ID loại phép cấu hình cho Miền của nhân viên (để chọn đúng loại khi trùng mã)."""
+        if not employee:
+            return None
+        mien = employee._get_leave_mien()
+        if not mien:
+            return None
+        MienConfig = self.env["hr.leave.mien.config"]
+        if not MienConfig._is_mien_configured(mien):
+            return None
+        return MienConfig._get_leave_type_ids_for_mien(mien)
+
+    @api.model
+    def _get_p1_leave_type(self, selected=None, allowed_ids=None):
         return self.env["hr.leave.type"].leave_type_from_selection(
-            selected, P1_LEAVE_TYPE_CODE
+            selected, P1_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
     @api.model
-    def _get_p2_leave_type(self, selected=None):
+    def _get_p2_leave_type(self, selected=None, allowed_ids=None):
         return self.env["hr.leave.type"].leave_type_from_selection(
-            selected, P2_LEAVE_TYPE_CODE
+            selected, P2_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
     @api.model
-    def _get_o_leave_type(self, selected=None):
+    def _get_o_leave_type(self, selected=None, allowed_ids=None):
         return self.env["hr.leave.type"].leave_type_from_selection(
-            selected, O_LEAVE_TYPE_CODE
+            selected, O_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
     def _get_leave_start_date(self):
@@ -328,27 +341,15 @@ class HrLeave(models.Model):
         domain = list(self._leave_type_base_domain())
         if not employee:
             return domain
-        mien = employee._get_leave_mien()
-        if mien:
-            MienConfig = self.env["hr.leave.mien.config"]
-            if MienConfig._is_mien_configured(mien):
-                allowed_ids = MienConfig._get_leave_type_ids_for_mien(mien)
-                domain = ["&"] + domain + [("id", "in", allowed_ids or [0])]
+        config_ids = self._mien_config_leave_type_ids(employee)
+        if config_ids is not None:
+            domain = ["&"] + domain + [("id", "in", config_ids or [0])]
         rule = self._monthly_leave_rule_kind(
             employee, start_date, leave=leave, end_date=end_date
         )
-        if rule == "p1":
-            p1_type = self._get_p1_leave_type()
-            if p1_type:
-                domain = ["&"] + domain + [("id", "=", p1_type.id)]
-        elif rule == "p2":
-            p2_type = self._get_p2_leave_type()
-            if p2_type:
-                domain = ["&"] + domain + [("id", "=", p2_type.id)]
-        elif rule == "o":
-            o_type = self._get_o_leave_type()
-            if o_type:
-                domain = ["&"] + domain + [("id", "=", o_type.id)]
+        rule_type = self._leave_type_for_rule(rule, employee=employee)
+        if rule_type:
+            domain = ["&"] + domain + [("id", "=", rule_type.id)]
         return domain
 
     def _search_allowed_leave_types(
@@ -363,13 +364,16 @@ class HrLeave(models.Model):
             domain
         )
 
-    def _leave_type_for_rule(self, rule, selected=None):
+    def _leave_type_for_rule(self, rule, selected=None, employee=None):
+        if employee is None:
+            employee = self.employee_id if self else False
+        allowed_ids = self._mien_config_leave_type_ids(employee)
         if rule == "p1":
-            return self._get_p1_leave_type(selected)
+            return self._get_p1_leave_type(selected, allowed_ids=allowed_ids)
         if rule == "p2":
-            return self._get_p2_leave_type(selected)
+            return self._get_p2_leave_type(selected, allowed_ids=allowed_ids)
         if rule == "o":
-            return self._get_o_leave_type(selected)
+            return self._get_o_leave_type(selected, allowed_ids=allowed_ids)
         return self.env["hr.leave.type"]
 
     def _apply_monthly_leave_rule_to_vals(self, vals, employee, start_date, leave=None):
@@ -383,7 +387,7 @@ class HrLeave(models.Model):
         rule = self._monthly_leave_rule_kind(
             employee, start_date, leave=leave, end_date=end_date
         )
-        leave_type = self._leave_type_for_rule(rule, selected)
+        leave_type = self._leave_type_for_rule(rule, selected, employee=employee)
         if leave_type:
             vals["holiday_status_id"] = leave_type.id
         return vals
@@ -447,7 +451,7 @@ class HrLeave(models.Model):
         rule = self._monthly_leave_rule_kind(
             employee, start_date, end_date=end_date
         )
-        leave_type = self._leave_type_for_rule(rule)
+        leave_type = self._leave_type_for_rule(rule, employee=employee)
         if leave_type:
             res["holiday_status_id"] = leave_type.id
             res["request_unit_hours"] = leave_type.request_unit == "hour"

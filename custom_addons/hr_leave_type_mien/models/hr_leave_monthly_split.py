@@ -387,13 +387,16 @@ class HrLeaveMonthlySplit(models.Model):
         )
         return len(plan) > 1
 
-    def _monthly_mien_leave_type_for_kind(self, kind, selected=None):
+    def _monthly_mien_leave_type_for_kind(self, kind, selected=None, employee=None):
+        if employee is None:
+            employee = self.employee_id if self else False
+        allowed_ids = self._mien_config_leave_type_ids(employee)
         if kind == "p1":
-            return self._get_p1_leave_type(selected)
+            return self._get_p1_leave_type(selected, allowed_ids=allowed_ids)
         if kind == "p2":
-            return self._get_p2_leave_type(selected)
+            return self._get_p2_leave_type(selected, allowed_ids=allowed_ids)
         if kind == "o":
-            return self._get_o_leave_type(selected)
+            return self._get_o_leave_type(selected, allowed_ids=allowed_ids)
         return self.env["hr.leave.type"]
 
     def _monthly_mien_make_companion_vals(self, leave, leave_type, date_from, date_to, group_id):
@@ -428,7 +431,9 @@ class HrLeaveMonthlySplit(models.Model):
             else str(uuid.uuid4())
         )
         first_kind, first_from, first_to = plan[0]
-        first_type = self._monthly_mien_leave_type_for_kind(first_kind)
+        first_type = self._monthly_mien_leave_type_for_kind(
+            first_kind, employee=leave.employee_id
+        )
         if not first_type:
             _logger.warning(
                 "monthly_mien_split: missing leave type %s for leave %s",
@@ -448,7 +453,9 @@ class HrLeaveMonthlySplit(models.Model):
 
         companions = []
         for kind, seg_from, seg_to in plan[1:]:
-            lt = self._monthly_mien_leave_type_for_kind(kind)
+            lt = self._monthly_mien_leave_type_for_kind(
+                kind, employee=leave.employee_id
+            )
             if not lt:
                 _logger.warning(
                     "monthly_mien_split: missing leave type %s — skip segment",

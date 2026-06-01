@@ -10,10 +10,12 @@ O_LEAVE_TYPE_CODE = "O"
 class HrLeave(models.Model):
     _inherit = "hr.leave"
 
-    @api.model
-    def _get_tenure_unpaid_o_leave_type(self, selected=None):
+    def _get_tenure_unpaid_o_leave_type(self, selected=None, employee=None):
+        if employee is None:
+            employee = self.employee_id if self else False
+        allowed_ids = self._mien_config_leave_type_ids(employee)
         return self.env["hr.leave.type"].leave_type_from_selection(
-            selected, O_LEAVE_TYPE_CODE
+            selected, O_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
     def _employee_requires_mien_unpaid_o(self):
@@ -30,6 +32,7 @@ class HrLeave(models.Model):
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
         "employee_id.ngay_vao_lam",
+        "employee_id.job_id",
         "request_date_from",
         "request_date_to",
         "date_from",
@@ -49,7 +52,7 @@ class HrLeave(models.Model):
         if employee and employee._mien_unpaid_o_required(
             date_from=start_date, date_to=end_date
         ):
-            o_type = self._get_tenure_unpaid_o_leave_type()
+            o_type = self._get_tenure_unpaid_o_leave_type(employee=employee)
             base = list(self._leave_type_base_domain())
             if o_type:
                 return ["&"] + base + [("id", "=", o_type.id)]
@@ -82,6 +85,7 @@ class HrLeave(models.Model):
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
         "employee_id.ngay_vao_lam",
+        "employee_id.job_id",
         "request_date_from",
         "request_date_to",
         "date_from",

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Time Off — Miền tenure unpaid (O)",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "category": "Human Resources",
     "summary": "Bắt buộc (O) khi chưa đủ 4 năm hoặc nghỉ trùng ngày lễ (Bắc, Nam, ĐTT)",
     "description": """

@@ -9,6 +9,8 @@ from odoo import fields, models
 # Miền áp dụng quy tắc (trùng Bắc / Nam / ĐTT trong hr_employee_hrm_detail).
 MIEN_TENURE_UNPAID_CODES = frozenset({"Bắc", "Nam", "ĐTT"})
 TENURE_YEARS_FOR_NORMAL_LEAVE = 4
+# Quy tắc thâm niên/ngày lễ chỉ áp dụng cho chức danh «Nhóm trưởng».
+TENURE_UNPAID_JOB_POSITION = "nhóm trưởng"
 
 
 class HrEmployee(models.Model):
@@ -24,9 +26,17 @@ class HrEmployee(models.Model):
             return self.ma_bo_phan_id.mien
         return False
 
-    def _mien_tenure_unpaid_applies(self):
-        """Miền nhân viên thuộc nhóm Bắc / Nam / ĐTT."""
+    def _is_tenure_unpaid_job_position(self):
+        """Chức danh «Nhóm trưởng» — chỉ nhóm này mới áp quy tắc thâm niên/ngày lễ."""
         self.ensure_one()
+        job_name = (self.job_id.name or "").strip().casefold()
+        return job_name == TENURE_UNPAID_JOB_POSITION
+
+    def _mien_tenure_unpaid_applies(self):
+        """Miền Bắc / Nam / ĐTT và chức danh «Nhóm trưởng»."""
+        self.ensure_one()
+        if not self._is_tenure_unpaid_job_position():
+            return False
         return self._get_leave_mien_for_rules() in MIEN_TENURE_UNPAID_CODES
 
     def _mien_tenure_has_four_years(self, reference_date=None):

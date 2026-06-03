@@ -8,8 +8,7 @@ import { effect } from "@web/core/utils/reactive";
 import { EmployeeFormController } from "@hr/views/form_view";
 
 /**
- * Employees=No: employee form is always readonly (no typing), including own profile.
- * Flag is computed on hr.employee (HR Manager bypasses).
+ * Edit Employee Profile = No: employee form is always readonly (no typing).
  */
 patch(EmployeeFormController.prototype, {
     setup() {
@@ -19,9 +18,12 @@ patch(EmployeeFormController.prototype, {
         this._employeesNoClickBlocker = null;
         this._employeesNoObserver = null;
         onWillStart(async () => {
-            this._employeesNoUiLock = await user.hasGroup(
-                "hr_employee_self_only.group_hr_employees_no"
+            const canEdit = await user.hasGroup(
+                "hr_employee_self_only.group_hr_employee_edit_allowed"
             );
+            const isManager = await user.hasGroup("hr.group_hr_manager");
+            const isOfficer = await user.hasGroup("hr.group_hr_user");
+            this._employeesNoUiLock = isOfficer && !canEdit && !isManager;
             if (this._employeesNoUiLock) {
                 this.canCreate = false;
                 this.canEdit = false;

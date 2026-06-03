@@ -21,9 +21,14 @@ msgid "Delete Time Off"
 msgstr "Xoá ngày phép"
 
 #. module: hr_leave_delete_cancel
-#: model:res.groups,comment:hr_leave_delete_cancel.group_hr_holidays_leave_delete
-msgid "The user can delete and cancel time off requests of employees."
-msgstr "Người dùng được phép xoá và huỷ đơn nghỉ phép của nhân viên."
+#: model:res.groups.privilege,placeholder:hr_leave_delete_cancel.res_groups_privilege_leave_delete
+msgid "Không"
+msgstr "Không"
+
+#. module: hr_leave_delete_cancel
+#: model:res.groups,name:hr_leave_delete_cancel.group_hr_holidays_leave_delete
+msgid "Allowed"
+msgstr "Cho phép"
 
 #. module: hr_leave_delete_cancel
 #: model:res.groups.privilege,description:hr_leave_delete_cancel.res_groups_privilege_leave_delete

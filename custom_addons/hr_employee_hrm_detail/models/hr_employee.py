@@ -3,8 +3,41 @@ from odoo.exceptions import ValidationError
 from odoo.tools.translate import _
 
 
+MIEN_ACCESS_FIELDS = frozenset({'mien', 'ma_bo_phan_id'})
+
+
 class HrEmployee(models.Model):
     _inherit = 'hr.employee'
+
+    @api.model
+    def _search(
+        self,
+        domain,
+        offset=0,
+        limit=None,
+        order=None,
+        *,
+        active_test=True,
+        bypass_access=False,
+    ):
+        domain = self.env['hr.employee.access.mixin']._hr_employee_apply_access_domain(
+            domain, model_name=self._name
+        )
+        return super()._search(
+            domain,
+            offset=offset,
+            limit=limit,
+            order=order,
+            active_test=active_test,
+            bypass_access=bypass_access,
+        )
+
+    @api.model
+    def search_fetch(self, domain, field_names=None, offset=0, limit=None, order=None):
+        domain = self.env['hr.employee.access.mixin']._hr_employee_apply_access_domain(
+            domain, model_name=self._name
+        )
+        return super().search_fetch(domain, field_names, offset, limit, order)
 
     def _get_id_hrm_duplicate(self, id_hrm):
         """Return another employee using the same ID HRM, or an empty recordset."""
@@ -60,7 +93,10 @@ class HrEmployee(models.Model):
             if duplicate:
                 vals['id_hrm'] = False
                 self._raise_id_hrm_duplicate_error(id_hrm, duplicate)
-        return super().create(vals_list)
+        employees = super().create(vals_list)
+        if any(MIEN_ACCESS_FIELDS & set(vals) for vals in vals_list):
+            self.env.registry.clear_cache()
+        return employees
 
     def write(self, vals):
         if 'id_hrm' in vals:
@@ -73,7 +109,11 @@ class HrEmployee(models.Model):
                         vals['id_hrm'] = False
                         employee.id_hrm = False
                         employee._raise_id_hrm_duplicate_error(id_hrm, duplicate)
-        return super().write(vals)
+        res = super().write(vals)
+        if MIEN_ACCESS_FIELDS & set(vals):
+            # ir.rule domains are ormcache'd per uid; refresh when Miền scope changes.
+            self.env.registry.clear_cache()
+        return res
 
     # Regional and ID Information
     mien = fields.Selection([

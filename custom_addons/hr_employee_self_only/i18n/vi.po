@@ -81,9 +81,53 @@ msgid "Managed Departments"
 msgstr ""
 
 #. module: hr_employee_self_only
+#: model:res.groups.privilege,name:hr_employee_self_only.res_groups_privilege_employee_edit
+msgid "Edit Employee Profile"
+msgstr "Chỉnh sửa hồ sơ"
+
+#. module: hr_employee_self_only
+#: model:res.groups.privilege,description:hr_employee_self_only.res_groups_privilege_employee_edit
+msgid "Controls whether the user can create or edit employee records."
+msgstr "Kiểm soát người dùng có được tạo hoặc chỉnh sửa hồ sơ nhân viên hay không."
+
+#. module: hr_employee_self_only
+#: model:res.groups.privilege,placeholder:hr_employee_self_only.res_groups_privilege_employee_edit
+msgid "Không"
+msgstr "Không"
+
+#. module: hr_employee_self_only
+#: model:res.groups,name:hr_employee_self_only.group_hr_employee_edit_allowed
+msgid "Allowed"
+msgstr "Cho phép"
+
+#. module: hr_employee_self_only
+#: model:res.groups,comment:hr_employee_self_only.group_hr_employee_edit_allowed
+msgid "The user can create and edit employee records within their access scope."
+msgstr "Người dùng được tạo và chỉnh sửa hồ sơ nhân viên trong phạm vi quyền truy cập."
+
+#. module: hr_employee_self_only
+#. odoo-python
+#: code:addons/hr_employee_self_only/models/hr_employee_privacy.py:0
+msgid "Bạn không có quyền chỉnh sửa hồ sơ nhân viên."
+msgstr "Bạn không có quyền chỉnh sửa hồ sơ nhân viên."
+
+#. module: hr_employee_self_only
+#. odoo-python
+#: code:addons/hr_employee_self_only/models/hr_employee_privacy.py:0
+msgid "Bạn không có quyền tạo nhân viên."
+msgstr "Bạn không có quyền tạo nhân viên."
+
+#. module: hr_employee_self_only
+#: model:ir.model.fields,help:hr_employee_self_only.field_hr_employee__employee_form_force_readonly_ui
+msgid ""
+"When true, employee form opens in readonly mode (Edit Employee Profile: No)."
+msgstr ""
+"Khi bật, form nhân viên mở ở chế độ chỉ xem (Chỉnh sửa hồ sơ: Không)."
+
+#. module: hr_employee_self_only
 #: model:res.groups,name:hr_employee_self_only.group_hr_employees_no
 msgid "No"
-msgstr ""
+msgstr "Không"
 
 #. module: hr_employee_self_only
 #: model:ir.model.fields,field_description:hr_employee_self_only.field_hr_employee__personal_tab_hidden_for_privacy
@@ -107,6 +151,36 @@ msgstr ""
 msgid ""
 "When true, employee form opens in readonly mode (Employees privilege: No)."
 msgstr ""
+
+#. module: hr_employee_self_only
+#: model:res.groups.privilege,name:hr_employee_self_only.res_groups_privilege_view_personal
+msgid "View Personal Information"
+msgstr "Xem thông tin cá nhân"
+
+#. module: hr_employee_self_only
+#: model:res.groups.privilege,description:hr_employee_self_only.res_groups_privilege_view_personal
+msgid "Controls whether the user can see the Personal tab on employee profiles."
+msgstr "Kiểm soát người dùng có được xem tab Cá nhân trên hồ sơ nhân viên hay không."
+
+#. module: hr_employee_self_only
+#: model:res.groups.privilege,placeholder:hr_employee_self_only.res_groups_privilege_view_personal
+msgid "Không"
+msgstr "Không"
+
+#. module: hr_employee_self_only
+#: model:res.groups,name:hr_employee_self_only.group_hr_employee_view_personal_allowed
+msgid "Allowed"
+msgstr "Cho phép"
+
+#. module: hr_employee_self_only
+#: model:res.groups,comment:hr_employee_self_only.group_hr_employee_view_personal_allowed
+msgid "The user can open the Personal tab on employee profiles within their access scope."
+msgstr "Người dùng được mở tab Cá nhân trên hồ sơ nhân viên trong phạm vi quyền truy cập."
+
+#. module: hr_employee_self_only
+#: model:ir.model.fields,help:hr_employee_self_only.field_hr_employee__personal_tab_hidden_for_privacy
+msgid "When true, the Personal tab is hidden (View Personal Information: No)."
+msgstr "Khi bật, tab Cá nhân bị ẩn (Xem thông tin cá nhân: Không)."
 
 #. module: hr_employee_self_only
 #: model:ir.model.fields,help:hr_employee_self_only.field_hr_employee__personal_tab_hidden_for_privacy

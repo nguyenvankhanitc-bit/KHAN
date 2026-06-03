@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="hr_employee_officer_mien_rule" model="ir.rule">
+        <field name="name">HR Employee: Officer filtered by Miền</field>
+        <field name="model_id" ref="hr.model_hr_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+
+    <record id="hr_employee_public_officer_mien_rule" model="ir.rule">
+        <field name="name">HR Employee Public: Officer filtered by Miền</field>
+        <field name="model_id" ref="hr.model_hr_employee_public"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+</odoo>

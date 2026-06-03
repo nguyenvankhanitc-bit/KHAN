@@ -1,6 +1,6 @@
 {
     'name': 'HR Employee HRM Detail',
-    'version': '19.0.1.1.11',
+    'version': '19.0.1.1.23',
     'category': 'Human Resources/Employees',
     'summary': 'Add HRM detail fields to employee Personal tab',
     'description': """
@@ -17,8 +17,9 @@
         - Employment dates (Ngày vào làm, Ngày nghỉ việc, Ngày chính thức)
         - Additional info (Nguồn tuyển dụng, Ghi chú, Nhân viên cũ)
     """,
-    'depends': ['hr', 'hr_store', 'hr_holidays'],
+    'depends': ['hr', 'hr_store', 'hr_holidays', 'hr_employee_self_only'],
     'data': [
+        'security/hr_employee_mien_access_security.xml',
         'security/ir.model.access.csv',
         'data/ir_cron.xml',
         'views/hr_employee_views.xml',

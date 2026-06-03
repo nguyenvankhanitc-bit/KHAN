@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="hr.menu_hr_employee_payroll" model="ir.ui.menu">
+        <field name="group_ids" eval="[(6, 0, [ref('hr.group_hr_user'), ref('hr_employee_hrm_detail.group_hr_employees_staff')])]"/>
+    </record>
+</odoo>

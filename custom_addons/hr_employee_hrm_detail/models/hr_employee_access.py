@@ -63,12 +63,31 @@ class HrEmployeeAccessMixin(models.AbstractModel):
         return "mien", "ma_bo_phan_id.mien"
 
     @api.model
+    def _hr_employee_staff_department_domain(self, user=None, model_name=None):
+        """Employees privilege = Employee: same ma_bo_phan_id (+ own profile)."""
+        user = user or self.env.user
+        model_name = model_name or "hr.employee"
+        ma_field = (
+            "employee_id.ma_bo_phan_id"
+            if model_name == "hr.employee.public"
+            else "ma_bo_phan_id"
+        )
+        emp = user.employee_id
+        if not emp or not emp.ma_bo_phan_id:
+            return self._hr_employee_access_self_domain(user)
+        return Domain([(ma_field, "=", emp.ma_bo_phan_id.id)]) | self._hr_employee_access_self_domain(
+            user
+        )
+
+    @api.model
     def _hr_employee_access_extra_domain(self, user=None, model_name=None):
         """Extra AND domain; None = no additional restriction."""
         user = user or self.env.user
         model_name = model_name or "hr.employee"
         if user._is_superuser() or user.has_group("hr.group_hr_manager"):
             return None
+        if user.has_group("hr_employee_hrm_detail.group_hr_employees_staff"):
+            return self._hr_employee_staff_department_domain(user, model_name=model_name)
         if not user.has_group("hr.group_hr_user"):
             return None
         allowed = self._hr_employee_allowed_miens(user)

@@ -16,5 +16,15 @@ msgstr ""
 "Plural-Forms: nplurals=1; plural=0;\n"
 
 #. module: hr_employee_hrm_detail
+#: model:res.groups,name:hr_employee_hrm_detail.group_hr_employees_staff
+msgid "Employee"
+msgstr "Nhân viên"
+
+#. module: hr_employee_hrm_detail
+#: model:res.groups,comment:hr_employee_hrm_detail.group_hr_employees_staff
+msgid "The user can view employees who share the same department code (Mã bộ phận)."
+msgstr "Người dùng chỉ xem được nhân viên có cùng mã bộ phận."
+
+#. module: hr_employee_hrm_detail
 msgid "HRM"
 msgstr "Nhân sự"

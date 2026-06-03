@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!--
+    Third Employees privilege level (between Officer and Administrator).
+    Users see only employees sharing the same Mã bộ phận (ma_bo_phan_id).
+    -->
+    <record id="group_hr_employees_staff" model="res.groups">
+        <field name="name">Employee</field>
+        <field name="sequence">12</field>
+        <field name="privilege_id" ref="hr.res_groups_privilege_employees"/>
+        <field name="implied_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
+        <field name="comment">The user can view employees who share the same department code (Mã bộ phận).</field>
+    </record>
+</odoo>

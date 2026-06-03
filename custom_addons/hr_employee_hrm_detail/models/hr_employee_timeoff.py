@@ -21,6 +21,37 @@ _MONTHLY_CAP_EDITOR_JOB_POSITION = "sale admin"
 class HrEmployeeTimeoff(models.Model):
     _inherit = "hr.employee"
 
+    @api.model
+    def _coerce_context_employee_id(self, emp_id):
+        if emp_id in (None, False):
+            return False
+        if isinstance(emp_id, (list, tuple)):
+            emp_id = emp_id[0] if emp_id else False
+        return emp_id or False
+
+    @api.model
+    def _search_accessible_employee(self, emp_id):
+        """Resolve employee id from context only when visible to current user."""
+        emp_id = self._coerce_context_employee_id(emp_id)
+        if not emp_id:
+            return self.env["hr.employee"]
+        return self.search([("id", "=", emp_id)], limit=1)
+
+    @api.model
+    def _get_contextual_employee(self):
+        ctx = self.env.context
+        for key in ("employee_id", "default_employee_id"):
+            if ctx.get(key) is not None:
+                employee = self._search_accessible_employee(ctx.get(key))
+                if employee:
+                    return employee
+        return self.env.user.employee_id
+
+    def get_mandatory_days(self, start_date, end_date):
+        if self:
+            self = self.env["hr.employee"].search([("id", "in", self.ids)])
+        return super().get_mandatory_days(start_date, end_date)
+
     phep_chuan = fields.Float(string="Phép chuẩn")
     tong_so_phep = fields.Float(string="Tổng số phép")
     da_su_dung = fields.Float(

@@ -1,5 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_hr_employee_hrm_user,hr.employee.hrm.user,hr.model_hr_employee,hr.group_hr_user,1,1,1,0
 access_hr_employee_hrm_manager,hr.employee.hrm.manager,hr.model_hr_employee,hr.group_hr_manager,1,1,1,1
+access_hr_employee_hrm_staff,hr.employee.hrm.staff,hr.model_hr_employee,hr_employee_hrm_detail.group_hr_employees_staff,1,0,0,0
 access_hr_store_code_user,hr.store.code.user,model_hr_store_code,hr.group_hr_user,1,0,0,0
 access_hr_store_code_manager,hr.store.code.manager,model_hr_store_code,hr.group_hr_manager,1,0,0,0

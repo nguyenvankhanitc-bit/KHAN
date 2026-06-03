@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+  <!-- Chỉ patch MessagingMenu — tránh xung đột template BurgerMenu với module mail -->
+  <t t-inherit="mail.MessagingMenu.content" t-inherit-mode="extension">
+    <xpath expr="//*[@name='before-content']" position="before">
+      <header
+        t-if="ui.isSmall and env.inDiscussApp"
+        class="o-mail-LarkHeader flex-shrink-0 w-100 bg-view px-3 pb-1"
+      >
+        <div class="o-mail-LarkHeader-toolbar d-flex align-items-center justify-content-end gap-1 pt-1">
+          <button
+            type="button"
+            class="o-mail-LarkHeader-iconBtn btn btn-link text-reset p-2"
+            title="Search"
+            aria-label="Search"
+            t-on-click="onLarkSearchClick"
+          >
+            <i class="fa fa-search"/>
+          </button>
+          <button
+            type="button"
+            class="o-mail-LarkHeader-iconBtn btn btn-link text-reset p-2"
+            title="New"
+            aria-label="New"
+            t-on-click="onLarkComposeClick"
+          >
+            <i class="fa fa-plus-circle"/>
+          </button>
+        </div>
+        <div
+          t-if="!['inbox', 'starred'].includes(store.discuss.activeTab)"
+          class="o-mail-LarkFilters d-flex align-items-center gap-2 mt-1 mb-1"
+        >
+          <button
+            type="button"
+            class="o-mail-LarkFilters-menu btn btn-link text-reset p-1 lh-1 border-0"
+            aria-label="Menu"
+            t-on-click="onLarkAppMenuClick"
+          >
+            <i class="fa fa-bars"/>
+          </button>
+          <div class="o-mail-LarkFilters-pills d-flex flex-grow-1 gap-1 p-1 rounded-pill">
+            <button
+              t-foreach="larkFilterTabs"
+              t-as="pill"
+              t-key="pill.id"
+              type="button"
+              class="o-mail-LarkFilters-pill btn border-0 flex-grow-1 text-nowrap"
+              t-att-class="{ 'o-active': larkActiveFilterId === pill.id }"
+              t-on-click="() => this.onLarkFilterClick(pill.id)"
+            >
+              <t t-esc="pill.label"/>
+              <span
+                t-if="pill.counter"
+                class="o-mail-LarkFilters-pillCount ms-1"
+                t-esc="pill.counter"
+              />
+            </button>
+          </div>
+        </div>
+      </header>
+    </xpath>
+  </t>
+</templates>

@@ -6,7 +6,7 @@ from datetime import date, datetime, time, timedelta
 
 from markupsafe import Markup, escape
 
-from odoo import Command, api, fields, models
+from odoo import Command, SUPERUSER_ID, api, fields, models
 from odoo.exceptions import UserError, ValidationError
 from odoo.tools.translate import _
 
@@ -122,7 +122,9 @@ class HrLeaveResponsibleApproval(models.Model):
     )
     def _odoobot_notify_config(self):
         self.ensure_one()
-        return self.env["hr.leave.odoobot.notify.config"]._get_for_company(self.company_id)
+        return self.env["hr.leave.odoobot.notify.config"].sudo()._get_for_company(
+            self.company_id
+        )
 
     def _responsible_skip_level_hours(self):
         self.ensure_one()
@@ -550,19 +552,31 @@ class HrLeaveResponsibleApproval(models.Model):
                     seen.add(uid)
         return Users.browse(out_ids)
 
+    def _get_direct_manager_approver_user(self):
+        employee = self.employee_id
+        if not employee:
+            return self.env["res.users"]
+        parent_id = self._org_chart_sql_parent_id(employee.id)
+        if not parent_id:
+            return self.env["res.users"]
+        mgr = self.env["hr.employee"].with_user(SUPERUSER_ID).browse(parent_id)
+        if mgr.user_id and not mgr.user_id.share:
+            return mgr.user_id
+        return self.env["res.users"]
+
     def _employee_hr_responsible_users_core(self):
         """Approver users from org chart or manual HR responsible fields (no sequential sort / director expansion)."""
         self.ensure_one()
         if self.holiday_status_id.employee_responsible_source == "org_chart":
             users = self._get_org_chart_approver_users_ordered()
-            # Direct manager must be able to approve first: org-chart tiers can omit them if title read failed.
-            parent = self.employee_id.parent_id.sudo() if self.employee_id else self.env["hr.employee"]
-            if parent and parent.user_id and not parent.user_id.share:
-                pu = parent.user_id
-                if pu.id not in users.ids:
-                    users = pu | users
-                elif users.ids and users.ids[0] != pu.id:
-                    users = self.env["res.users"].browse([pu.id] + [uid for uid in users.ids if uid != pu.id])
+            parent_user = self._get_direct_manager_approver_user()
+            if parent_user:
+                if parent_user.id not in users.ids:
+                    users = parent_user | users
+                elif users.ids and users.ids[0] != parent_user.id:
+                    users = self.env["res.users"].browse(
+                        [parent_user.id] + [uid for uid in users.ids if uid != parent_user.id]
+                    )
             return users
         return self._get_employee_responsible_users()
 
@@ -757,6 +771,16 @@ class HrLeaveResponsibleApproval(models.Model):
             return _ORG_CHART_STOP_JOB_POSITIONS_GIAM_SAT
         return _ORG_CHART_STOP_JOB_POSITIONS
 
+    def _org_chart_sql_parent_id(self, employee_id):
+        if not employee_id:
+            return False
+        self.env.cr.execute(
+            "SELECT parent_id FROM hr_employee WHERE id = %s",
+            (employee_id,),
+        )
+        row = self.env.cr.fetchone()
+        return row[0] if row and row[0] else False
+
     def _get_org_chart_approver_users_ordered(self):
         """Walk reporting line (parent_id) from direct manager upward: one approver per org level.
 
@@ -770,10 +794,10 @@ class HrLeaveResponsibleApproval(models.Model):
         stop_positions = self._get_org_chart_stop_positions()
         user_ids = []
         seen = set()
-        Users = self.env["res.users"]
-        cur = employee.parent_id
-        while cur:
-            mgr = cur.sudo()
+        Employee = self.env["hr.employee"].with_user(SUPERUSER_ID)
+        cur_id = self._org_chart_sql_parent_id(employee.id)
+        while cur_id:
+            mgr = Employee.browse(cur_id)
             if mgr.user_id and not mgr.user_id.share:
                 uid = mgr.user_id.id
                 if uid not in seen:
@@ -781,8 +805,8 @@ class HrLeaveResponsibleApproval(models.Model):
                     seen.add(uid)
                 if (mgr.job_id.name or "").strip().casefold() in stop_positions:
                     break
-            cur = mgr.parent_id
-        return Users.browse(user_ids)
+            cur_id = mgr.parent_id.id
+        return self.env["res.users"].browse(user_ids)
 
     def _get_responsible_approval_users(self):
         self.ensure_one()

@@ -1,0 +1,299 @@
+// Lark-inspired Discuss UI (mobile / PWA). Active when body has .o-mail-lark-ui.
+
+$o-lark-blue: #3370ff;
+$o-lark-blue-light: #e8f0ff;
+$o-lark-bg: #ffffff;
+$o-lark-surface: #f5f6f7;
+$o-lark-text: #1f2329;
+$o-lark-text-muted: #8f959e;
+$o-lark-border: #e5e6eb;
+$o-lark-red: #f54a45;
+
+// Navbar: avatar trái, menu Apps phải — giữ màu tím Odoo mặc định
+@mixin o-mail-lark-main-navbar {
+    .o_navbar .o_main_navbar,
+    .o_main_navbar {
+        position: relative !important;
+        min-height: 48px !important;
+        height: auto;
+        padding: 0.25rem 3.25rem 0.25rem 3.5rem !important;
+        align-items: center !important;
+
+        .o_menu_systray {
+            gap: 0.35rem;
+            align-items: center !important;
+            margin-left: auto !important;
+            flex: 1 1 auto;
+            justify-content: flex-end;
+
+            > div:has(.o_mobile_menu_toggle) {
+                width: 0 !important;
+                min-width: 0 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                overflow: visible !important;
+            }
+        }
+
+        .o_mobile_menu_toggle {
+            position: absolute !important;
+            left: 0.4rem !important;
+            top: 50% !important;
+            right: auto !important;
+            transform: translateY(-50%) !important;
+            z-index: 6 !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .o_burger_menu_avatar {
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px;
+            min-height: 40px;
+            border-radius: 50% !important;
+            object-fit: cover;
+        }
+
+        > a.o_menu_toggle {
+            position: absolute !important;
+            right: 0.35rem !important;
+            left: auto !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            z-index: 6 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            padding: 0.4rem 0.5rem !important;
+            margin: 0 !important;
+            font-size: 1.15rem;
+        }
+    }
+}
+
+// Fallback khi class body chưa kịp gắn (PWA / cache)
+@media (max-width: 767.98px) {
+    body:has(.o-mail-Discuss) {
+        @include o-mail-lark-main-navbar;
+    }
+}
+
+body.o-mail-lark-ui {
+    --mail-MessagingMenu-bg: #{$o-lark-bg};
+    --mail-MessagingMenu-listBorderColor: transparent;
+    --o-discuss-badge-bg: #{$o-lark-red};
+    --o-enterprise-action-color: #{$o-lark-blue};
+    --o-action: #{$o-lark-blue};
+    background-color: $o-lark-bg;
+
+    @include o-mail-lark-main-navbar;
+
+    .o_action_manager,
+    .o-mail-Discuss {
+        background-color: $o-lark-bg;
+        width: 100%;
+        align-items: stretch !important;
+    }
+
+    .o-mail-MessagingMenu.o-small {
+        width: 100%;
+        max-height: none;
+        min-height: 0;
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        background-color: $o-lark-bg;
+
+        .o-mail-MessagingMenu-list {
+            flex: 1 1 auto;
+            min-height: 0;
+        }
+    }
+
+    // Không cần nút 3 gạch trùng trong Discuss (đã có trên navbar phải)
+    .o-mail-LarkFilters-menu {
+        display: none !important;
+    }
+
+    .o-mail-LarkHeader {
+        border-bottom: none;
+    }
+
+    .o-mail-LarkHeader-iconBtn {
+        font-size: 1.15rem;
+        opacity: 0.85;
+
+        &:active {
+            opacity: 1;
+        }
+    }
+
+    // Pill filters (Trò chuyện / Chưa đọc / …)
+    .o-mail-LarkFilters-pills {
+        background: $o-lark-surface;
+    }
+
+    .o-mail-LarkFilters-pill {
+        font-size: 0.8rem;
+        color: $o-lark-text-muted;
+        background: transparent;
+        border-radius: 999px;
+        padding: 0.35rem 0.65rem;
+        line-height: 1.2;
+
+        &.o-active {
+            background: $o-lark-bg;
+            color: $o-lark-blue;
+            font-weight: 600;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+        }
+    }
+
+    .o-mail-LarkFilters-pillCount {
+        font-size: 0.75em;
+        opacity: 0.9;
+    }
+
+    // Search bar
+    .o-mail-MessagingMenu-header {
+        background: $o-lark-bg;
+        padding-top: 0.25rem !important;
+    }
+
+    .o-mail-DiscussSearch-inputContainer {
+        background: $o-lark-surface !important;
+        border: none !important;
+        border-radius: 8px !important;
+
+        &,
+        & input {
+            background-color: $o-lark-surface !important;
+        }
+
+        input::placeholder {
+            color: $o-lark-text-muted;
+        }
+    }
+
+    .o-mail-DiscussSearch .btn-primary {
+        background-color: $o-lark-blue !important;
+        border-color: $o-lark-blue !important;
+        border-radius: 8px !important;
+    }
+
+    // Conversation list
+    .o-mail-MessagingMenu-list {
+        background: $o-lark-bg;
+
+        .list-group-item {
+            border-color: transparent !important;
+        }
+    }
+
+    .o-mail-NotificationItem {
+        border-bottom: none !important;
+
+        &:hover,
+        &.o-active {
+            backdrop-filter: none;
+            background-color: $o-lark-surface !important;
+        }
+    }
+
+    .o-mail-NotificationItem-avatarContainer {
+        &.o-small {
+            height: 48px;
+        }
+
+        img {
+            border-radius: 50% !important;
+        }
+    }
+
+    .o-mail-NotificationItem-name {
+        color: $o-lark-text;
+        font-weight: 600 !important;
+    }
+
+    .o-mail-NotificationItem-text {
+        color: $o-lark-text-muted;
+        opacity: 1;
+    }
+
+    .o-mail-NotificationItem-date {
+        color: $o-lark-text-muted !important;
+        font-weight: 400 !important;
+    }
+
+    .o-mail-NotificationItem-badge.o-discuss-badge {
+        background-color: $o-lark-red !important;
+        min-width: 1.15rem;
+    }
+
+    // Bottom navigation (Messenger / Chat / …)
+    .o-mail-MessagingMenu-navbar {
+        background: $o-lark-bg !important;
+        border-top: 1px solid $o-lark-border !important;
+        box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.04);
+        padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom, 0px)) !important;
+        gap: 0.15rem !important;
+    }
+
+    .o-mail-MessagingMenu-tab {
+        color: $o-lark-text-muted;
+
+        .o-xsmaller {
+            font-size: 0.65rem;
+            margin-top: 0.1rem;
+        }
+
+        &:hover .o-mail-MessagingMenu-tabIcon {
+            background: transparent;
+        }
+
+        &.active {
+            --btn-active-color: #{$o-lark-blue};
+
+            .o-xsmaller {
+                color: $o-lark-blue;
+                font-weight: 600;
+            }
+
+            .o-mail-MessagingMenu-tabIcon {
+                background: $o-lark-blue-light;
+                color: $o-lark-blue;
+            }
+        }
+
+        .o-mail-MessagingMenu-tabIcon {
+            width: auto;
+            min-width: 2rem;
+            padding: 0.4rem 0.55rem !important;
+            border-radius: 10px;
+            font-size: 1.1rem !important;
+        }
+
+        .o-mail-MessagingMenu-tabCounter {
+            background-color: $o-lark-red !important;
+            font-size: 0.6rem;
+            min-width: 1rem;
+            padding: 0.1rem 0.35rem !important;
+        }
+    }
+
+    // Thread view header when opening a chat
+    .o-mail-DiscussContent-header {
+        background: $o-lark-bg;
+        border-bottom-color: $o-lark-border !important;
+    }
+
+    .o-mail-DiscussContent-threadAvatar img,
+    .o-mail-DiscussContent-selfAvatar {
+        border-radius: 50% !important;
+    }
+}

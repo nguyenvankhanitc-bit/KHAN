@@ -1,14 +1,15 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { onMounted, onWillStart, onWillUnmount, status } from "@odoo/owl";
-import { user } from "@web/core/user";
+import { onMounted, onWillUnmount, status } from "@odoo/owl";
 import { effect } from "@web/core/utils/reactive";
 
 import { EmployeeFormController } from "@hr/views/form_view";
 
 /**
- * Edit Employee Profile = No: employee form is always readonly (no typing).
+ * Edit Employee Profile = No: employee form is readonly.
+ * Lock state comes from server field employee_form_force_readonly_ui
+ * (not client session groups, which stay stale until re-login).
  */
 patch(EmployeeFormController.prototype, {
     setup() {
@@ -17,18 +18,9 @@ patch(EmployeeFormController.prototype, {
         this._employeesNoInteractionClass = "o_hr_employee_no_interaction";
         this._employeesNoClickBlocker = null;
         this._employeesNoObserver = null;
-        onWillStart(async () => {
-            const canEdit = await user.hasGroup(
-                "hr_employee_self_only.group_hr_employee_edit_allowed"
-            );
-            const isManager = await user.hasGroup("hr.group_hr_manager");
-            const isOfficer = await user.hasGroup("hr.group_hr_user");
-            this._employeesNoUiLock = isOfficer && !canEdit && !isManager;
-            if (this._employeesNoUiLock) {
-                this.canCreate = false;
-                this.canEdit = false;
-            }
-        });
+        this._baseCanCreate = this.canCreate;
+        this._baseCanEdit = this.canEdit;
+
         onMounted(() => {
             const lockInteractiveElements = () => {
                 if (!this.el || !this._employeesNoUiLock) {
@@ -43,6 +35,21 @@ patch(EmployeeFormController.prototype, {
                         node.style.cursor = "default";
                     });
             };
+
+            const applyLockState = (lock) => {
+                if (this._employeesNoUiLock === lock) {
+                    return;
+                }
+                this._employeesNoUiLock = lock;
+                if (lock) {
+                    this.canCreate = false;
+                    this.canEdit = false;
+                } else {
+                    this.canCreate = this._baseCanCreate;
+                    this.canEdit = this._baseCanEdit;
+                }
+            };
+
             this._employeesNoClickBlocker = (ev) => {
                 if (!this._employeesNoUiLock) {
                     return;
@@ -64,16 +71,7 @@ patch(EmployeeFormController.prototype, {
                 }
             };
             this.el?.addEventListener("click", this._employeesNoClickBlocker, true);
-            if (this._employeesNoUiLock && this.el) {
-                this._employeesNoObserver = new MutationObserver(() => {
-                    lockInteractiveElements();
-                });
-                this._employeesNoObserver.observe(this.el, {
-                    childList: true,
-                    subtree: true,
-                });
-                lockInteractiveElements();
-            }
+
             effect(
                 (model) => {
                     if (status(this) !== "mounted") {
@@ -83,22 +81,35 @@ patch(EmployeeFormController.prototype, {
                     if (!root || root.isNew || !root.resId) {
                         return;
                     }
+                    const lock = Boolean(root.data?.employee_form_force_readonly_ui);
+                    applyLockState(lock);
+
                     if (this._employeesNoUiLock) {
                         this.el?.classList.add(this._employeesNoInteractionClass);
+                        if (!this._employeesNoObserver && this.el) {
+                            this._employeesNoObserver = new MutationObserver(() => {
+                                lockInteractiveElements();
+                            });
+                            this._employeesNoObserver.observe(this.el, {
+                                childList: true,
+                                subtree: true,
+                            });
+                        }
                         lockInteractiveElements();
                         if (root.config.mode !== "readonly") {
                             root.switchMode("readonly");
                         }
-                    } else if (this.canEdit && root.config.mode === "readonly") {
-                        this.el?.classList.remove(this._employeesNoInteractionClass);
-                        root.switchMode("edit");
                     } else {
                         this.el?.classList.remove(this._employeesNoInteractionClass);
+                        if (this.canEdit && root.config.mode === "readonly") {
+                            root.switchMode("edit");
+                        }
                     }
                 },
                 [this.model]
             );
         });
+
         onWillUnmount(() => {
             if (this._employeesNoClickBlocker) {
                 this.el?.removeEventListener("click", this._employeesNoClickBlocker, true);

@@ -18,6 +18,11 @@ _CON_LAI_ZERO_CONFIRMED_CTX = "con_lai_zero_confirmed"
 _SKIP_CON_LAI_ZERO_CHECK_CTX = "skip_con_lai_zero_check"
 _SKIP_CON_LAI_NEGATIVE_CHECK_CTX = "skip_con_lai_negative_check"
 _TIMEOFF_SELF_SERVICE_CTX = "hr_employee_timeoff_self_service"
+_MONTHLY_LEAVE_BONUS_DATE_CTX = "monthly_leave_bonus_date"
+_SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX = (
+    "skip_departure_monthly_leave_cutoff"
+)
+_DEPARTURE_MONTHLY_LEAVE_CUTOFF_DAY = 20
 # HR-only fields that time-off logic must read on the user's own employee record.
 _TIMEOFF_SELF_READ_FIELDS = frozenset({"version_id", "mien", "ma_bo_phan_id"})
 # Tên Job Position được phép chỉnh `monthly_paid_leave_cap`.
@@ -250,7 +255,66 @@ class HrEmployeeTimeoff(models.Model):
                     _("Hạn mức phép có lương / tháng không được là số âm.")
                 )
 
+    @api.model
+    def _monthly_leave_bonus_date(self):
+        value = self.env.context.get(_MONTHLY_LEAVE_BONUS_DATE_CTX)
+        return fields.Date.to_date(value) if value else fields.Date.context_today(self)
+
+    def _blocks_departure_monthly_leave_bonus(self, bonus_date):
+        self.ensure_one()
+        departure_date = self.sudo().ngay_nghi_viec
+        return bool(
+            departure_date
+            and departure_date.day < _DEPARTURE_MONTHLY_LEAVE_CUTOFF_DAY
+            and (departure_date.year, departure_date.month)
+            == (bonus_date.year, bonus_date.month)
+        )
+
+    def _is_single_day_monthly_leave_bonus(self, new_total):
+        self.ensure_one()
+        return isinstance(new_total, (int, float)) and abs(
+            new_total - (self.tong_so_phep or 0.0) - 1.0
+        ) < 0.000001
+
     def write(self, vals):
+        if (
+            "tong_so_phep" in vals
+            and not self.env.context.get(_SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX)
+        ):
+            bonus_date = self._monthly_leave_bonus_date()
+            blocked_ids = self.sudo().filtered(
+                lambda employee: employee._is_single_day_monthly_leave_bonus(
+                    vals["tong_so_phep"]
+                )
+                and employee._blocks_departure_monthly_leave_bonus(bonus_date)
+            ).ids
+            if blocked_ids:
+                blocked = self.browse(blocked_ids)
+                allowed = self - blocked
+                result = True
+                if allowed:
+                    result = allowed.with_context(
+                        **{_SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX: True}
+                    ).write(vals)
+                remaining_vals = dict(vals)
+                remaining_vals.pop("tong_so_phep")
+                if remaining_vals:
+                    result = (
+                        blocked.with_context(
+                            **{_SKIP_DEPARTURE_MONTHLY_LEAVE_CUTOFF_CTX: True}
+                        ).write(remaining_vals)
+                        and result
+                    )
+                _logger.info(
+                    "Skipped monthly leave bonus for employees %s: departure "
+                    "before day %s in %s-%02d",
+                    blocked.ids,
+                    _DEPARTURE_MONTHLY_LEAVE_CUTOFF_DAY,
+                    bonus_date.year,
+                    bonus_date.month,
+                )
+                return result
+
         if "monthly_paid_leave_cap" in vals:
             if not self._monthly_paid_leave_cap_editor_allowed():
                 raise AccessError(
@@ -276,15 +340,23 @@ class HrEmployeeTimeoff(models.Model):
                 )
         return []
 
-    def _get_leave_days_used_for_summary(self):
-        """Tổng ngày phép có lương đã được phê duyệt (state = validate).
+    @api.model
+    def _time_off_summary_period_bounds(self, target_date=None):
+        target_date = fields.Date.to_date(target_date) or fields.Date.context_today(self)
+        return date(target_date.year, 1, 1), date(target_date.year, 12, 31)
+
+    def _get_leave_days_used_for_summary(self, target_date=None):
+        """Tổng ngày phép có lương đã duyệt trong năm của ``target_date``.
 
         Không tính ngày nghỉ không lương (mã O) vì chúng không trừ vào quỹ phép.
         """
         self.ensure_one()
+        period_start, period_end = self._time_off_summary_period_bounds(target_date)
         domain = [
             ("employee_id", "=", self.id),
             ("state", "in", _LEAVES_DEDUCT_STATES),
+            ("request_date_from", ">=", period_start),
+            ("request_date_from", "<=", period_end),
         ]
         unpaid_ids = self._summary_unpaid_leave_type_ids()
         if unpaid_ids:
@@ -314,8 +386,17 @@ class HrEmployeeTimeoff(models.Model):
         for employee in employees:
             # Chỉ đơn validate; không dùng virtual_leaves_taken (Odoo có thể tính cả đơn chờ duyệt).
             leave_taken = employee._get_leave_days_used_for_summary()
+            raw_remaining = (employee.tong_so_phep or 0.0) - leave_taken
             employee.da_su_dung = leave_taken
-            employee.con_lai = (employee.tong_so_phep or 0.0) - leave_taken
+            employee.con_lai = max(0.0, raw_remaining)
+            if raw_remaining < 0:
+                _logger.warning(
+                    "Employee %s has historical negative leave balance: "
+                    "budget=%s, approved=%s",
+                    employee.id,
+                    employee.tong_so_phep or 0.0,
+                    leave_taken,
+                )
 
     @api.model
     def get_time_off_dashboard_data(self, target_date=None):
@@ -338,20 +419,19 @@ class HrEmployeeTimeoff(models.Model):
 
         Không reset tong_so_phep hay da_su_dung — HR tự xử lý việc đó.
         """
-        prev_year = date.today().year - 1
+        today = fields.Date.context_today(self)
+        prev_year = today.year - 1
+        previous_year_date = date(prev_year, 12, 31)
         employees = self.sudo().search([("active", "=", True)])
         if not employees:
             return
 
-        # Refresh computed balances (sudo + time-off privacy bypass for stored fields).
-        employees.with_context(
-            employees_no_timeoff_write=True,
-            employees_no_allowed_employee_ids=employees.ids,
-        )._compute_time_off_summary()
-
         for emp in employees:
+            leave_taken = emp._get_leave_days_used_for_summary(previous_year_date)
             emp.write({
-                "con_lai_nam_truoc": emp.con_lai,
+                "con_lai_nam_truoc": max(
+                    0.0, (emp.tong_so_phep or 0.0) - leave_taken
+                ),
                 "nam_chot_con_lai": prev_year,
             })
         _logger.info(
@@ -435,7 +515,6 @@ class HrLeaveTimeOffSummary(models.Model):
         ctx = self.env.context
         return bool(
             ctx.get(_SKIP_CON_LAI_NEGATIVE_CHECK_CTX)
-            or ctx.get(_SKIP_CON_LAI_ZERO_CHECK_CTX)
             or ctx.get("leave_fast_create")
         )
 
@@ -452,17 +531,21 @@ class HrLeaveTimeOffSummary(models.Model):
                     unpaid_ids.update(o_types.ids)
             except Exception:  # pragma: no cover - bảo vệ khi cấu hình thiếu
                 _logger.debug("con_lai: cannot resolve Unpaid Leave (O) type", exc_info=True)
-        unpaid_ids.update(
-            LeaveType.sudo().search([("requires_allocation", "=", False)]).ids
-        )
         return list(unpaid_ids)
 
     @api.model
-    def _con_lai_committed_days(self, employee, exclude_leave_ids=None):
-        """Tổng số ngày phép tính phí (loại trừ O / unpaid) đang chiếm chỗ."""
+    def _con_lai_committed_days(
+        self, employee, exclude_leave_ids=None, target_date=None
+    ):
+        """Ngày phép có lương đang chiếm quỹ trong năm của ``target_date``."""
+        period_start, period_end = self.env[
+            "hr.employee"
+        ]._time_off_summary_period_bounds(target_date)
         domain = [
             ("employee_id", "=", employee.id),
             ("state", "in", _LEAVES_BUDGET_STATES),
+            ("request_date_from", ">=", period_start),
+            ("request_date_from", "<=", period_end),
         ]
         unpaid_ids = self._con_lai_unpaid_leave_type_ids()
         if unpaid_ids:
@@ -503,12 +586,16 @@ class HrLeaveTimeOffSummary(models.Model):
         return leave.number_of_days if leave else 0.0
 
     @api.model
-    def _assert_con_lai_not_negative(self, employee, projected_days, exclude_leave_ids=None):
+    def _assert_con_lai_not_negative(
+        self, employee, projected_days, exclude_leave_ids=None, target_date=None
+    ):
         """Chặn cứng khi đơn sẽ kéo Còn lại < 0 (==0 vẫn cho phép)."""
         if not employee or projected_days <= 0:
             return
         committed = self._con_lai_committed_days(
-            employee, exclude_leave_ids=exclude_leave_ids
+            employee,
+            exclude_leave_ids=exclude_leave_ids,
+            target_date=target_date,
         )
         budget = employee.tong_so_phep or 0.0
         if budget - committed - projected_days < 0:
@@ -524,6 +611,30 @@ class HrLeaveTimeOffSummary(models.Model):
                     "new": projected_days,
                 }
             )
+
+    def _assert_active_leave_balances_not_negative(self):
+        """Validate aggregate paid requests after split/batch workflows settle."""
+        active = self.filtered(
+            lambda leave: leave.employee_id
+            and leave.state in _LEAVES_BUDGET_STATES
+            and not self._is_unpaid_leave_type(leave.holiday_status_id.id)
+        )
+        for employee in active.mapped("employee_id"):
+            committed = self._con_lai_committed_days(employee)
+            budget = employee.sudo().tong_so_phep or 0.0
+            if budget - committed < 0:
+                raise ValidationError(
+                    _(
+                        "Không thể gửi hoặc duyệt đơn nghỉ của %(name)s vì "
+                        "Số phép Còn lại sẽ bị âm.\n"
+                        "Tổng phép: %(budget).2f — Đã dùng/đang chờ: %(used).2f"
+                    )
+                    % {
+                        "name": employee.name or employee.display_name or "",
+                        "budget": budget,
+                        "used": committed,
+                    }
+                )
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -582,6 +693,20 @@ class HrLeaveTimeOffSummary(models.Model):
                     exclude_leave_ids=[leave.id],
                 )
         res = super().write(vals)
+        if (
+            not self._con_lai_negative_check_skipped()
+            and {
+                "employee_id",
+                "holiday_status_id",
+                "number_of_days",
+                "request_date_from",
+                "request_date_to",
+                "date_from",
+                "date_to",
+                "state",
+            }.intersection(vals)
+        ):
+            self._assert_active_leave_balances_not_negative()
         if not self.env.context.get("leave_fast_create") and {
             "employee_id",
             "holiday_status_id",
@@ -595,11 +720,15 @@ class HrLeaveTimeOffSummary(models.Model):
 
     def action_confirm(self):
         res = super().action_confirm()
+        if not self._con_lai_negative_check_skipped():
+            self._assert_active_leave_balances_not_negative()
         self._recompute_employee_time_off_summary()
         return res
 
     def action_validate(self):
         res = super().action_validate()
+        if not self._con_lai_negative_check_skipped():
+            self._assert_active_leave_balances_not_negative()
         self._recompute_employee_time_off_summary()
         return res
 

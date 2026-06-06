@@ -18,7 +18,7 @@ ASM, RSM, and Giám sát use the leave type's configured org-chart approvers
 
 Balance warning (con_lai):
   When con_lai ≤ 0, hr_employee_hrm_detail shows a confirmation dialog on save
-  (all employees, all leave types). This module does not hard-block creation.
+  and hard-blocks paid requests that would make the current-year balance negative.
 """
 
 import logging

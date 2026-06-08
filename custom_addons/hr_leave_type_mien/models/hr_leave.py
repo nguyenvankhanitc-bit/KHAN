@@ -429,6 +429,14 @@ class HrLeave(models.Model):
         leave_type = self._leave_type_for_rule(rule, selected, employee=employee)
         if leave_type:
             vals["holiday_status_id"] = leave_type.id
+        elif rule:
+            raise ValidationError(
+                _(
+                    "Không tìm thấy loại ngày nghỉ có mã (%(code)s) cho Miền của "
+                    "nhân viên. Vui lòng liên hệ HR."
+                )
+                % {"code": rule.upper()}
+            )
         return vals
 
     def _monthly_leave_warning_missing_type(self, code):
@@ -647,14 +655,6 @@ class HrLeave(models.Model):
                 return True
         return False
 
-    def _monthly_mien_assert_balance_after_split(self):
-        if (
-            hasattr(self, "_assert_active_leave_balances_not_negative")
-            and not self.env.context.get("skip_con_lai_negative_check")
-            and not self.env.context.get("leave_fast_create")
-        ):
-            self._assert_active_leave_balances_not_negative()
-
     @api.model_create_multi
     def create(self, vals_list):
         rebalance_skip = self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX)
@@ -687,7 +687,6 @@ class HrLeave(models.Model):
             records._run_monthly_mien_rebalance(
                 records._collect_monthly_mien_rebalance_targets()
             )
-            records._monthly_mien_assert_balance_after_split()
         return records
 
     def write(self, vals):
@@ -751,7 +750,6 @@ class HrLeave(models.Model):
         if not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
             targets |= self._collect_monthly_mien_rebalance_targets()
             self._run_monthly_mien_rebalance(targets)
-            self._monthly_mien_assert_balance_after_split()
         return res
 
     def unlink(self):

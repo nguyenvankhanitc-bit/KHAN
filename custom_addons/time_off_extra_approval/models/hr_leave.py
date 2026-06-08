@@ -670,16 +670,6 @@ class HolidaysRequest(models.Model):
                 "title": _("Backdated time off is too old"),
                 "message": self._past_leave_limit_error_message(past_start),
             }
-        con_lai_negative = self.check_con_lai_negative_block(
-            res_id=res_id,
-            vals=vals,
-        )
-        if con_lai_negative.get("blocked"):
-            return {
-                **con_lai_negative,
-                "set_emergency_confirmed": False,
-                "set_con_lai_zero_confirmed": False,
-            }
         emergency_preview = self.check_emergency_leave_lead_time(res_id=res_id, vals=vals)
         con_lai_preview = self.check_con_lai_zero_confirmation(res_id=res_id, vals=vals)
         need_emergency = self._needs_emergency_leave_confirmation(

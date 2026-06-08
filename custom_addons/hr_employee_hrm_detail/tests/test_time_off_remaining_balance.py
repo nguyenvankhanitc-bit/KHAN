@@ -1,7 +1,6 @@
 from datetime import date
 from unittest.mock import patch
 
-from odoo.exceptions import ValidationError
 from odoo.tests import TransactionCase, tagged
 
 
@@ -38,54 +37,60 @@ class TestTimeOffRemainingBalance(TransactionCase):
         self.assertEqual(self.employee.da_su_dung, 7)
         self.assertEqual(self.employee.con_lai, 0)
 
-    def test_projected_negative_balance_is_blocked(self):
+    def test_zero_balance_does_not_request_confirmation(self):
         Leave = self.env["hr.leave"]
-        with patch.object(
-            type(Leave),
-            "_con_lai_committed_days",
-            autospec=True,
-            return_value=5,
-        ):
-            with self.assertRaises(ValidationError):
-                Leave._assert_con_lai_not_negative(self.employee, 1)
-
-    def test_projected_zero_balance_is_allowed(self):
-        Leave = self.env["hr.leave"]
-        with patch.object(
-            type(Leave),
-            "_con_lai_committed_days",
-            autospec=True,
-            return_value=4,
-        ):
-            Leave._assert_con_lai_not_negative(self.employee, 1)
-
-    def test_date_only_request_days_are_used_for_negative_check(self):
-        Leave = self.env["hr.leave"]
-        days = Leave._vals_days_for_negative_check(
-            {
-                "employee_id": self.employee.id,
-                "request_date_from": date(2026, 6, 1),
-                "request_date_to": date(2026, 6, 5),
-            },
-            employee=self.employee,
+        preview = Leave.check_con_lai_zero_confirmation(
+            vals={"employee_id": self.employee.id}
         )
 
-        self.assertEqual(days, 5)
+        self.assertFalse(preview["needs_confirmation"])
 
-    def test_negative_preview_blocks_when_request_exceeds_remaining(self):
+    def test_summary_counts_only_p1_p2_leave_types(self):
         Leave = self.env["hr.leave"]
-        vals = {
-            "employee_id": self.employee.id,
-            "request_date_from": date(2026, 6, 1),
-            "request_date_to": date(2026, 6, 5),
-        }
-        with patch.object(
-            type(Leave),
-            "_con_lai_committed_days",
-            autospec=True,
-            return_value=1,
+        with (
+            patch.object(
+                type(self.employee),
+                "_summary_paid_leave_type_ids",
+                autospec=True,
+                return_value=[11, 12],
+            ),
+            patch.object(
+                type(Leave),
+                "read_group",
+                autospec=True,
+                return_value=[{"number_of_days": 4}],
+            ) as read_group,
         ):
-            preview = Leave.check_con_lai_negative_block(vals=vals)
+            used = self.employee._get_leave_days_used_for_summary(date(2026, 6, 15))
 
-        self.assertTrue(preview["blocked"])
-        self.assertIn("Không đủ số phép còn lại", preview["title"])
+        self.assertEqual(used, 4)
+        self.assertIn(
+            ("holiday_status_id", "in", [11, 12]),
+            read_group.call_args.kwargs["domain"],
+        )
+
+    def test_committed_budget_counts_only_p1_p2_leave_types(self):
+        Leave = self.env["hr.leave"]
+        with (
+            patch.object(
+                type(self.employee),
+                "_summary_paid_leave_type_ids",
+                autospec=True,
+                return_value=[11, 12],
+            ),
+            patch.object(
+                type(Leave),
+                "read_group",
+                autospec=True,
+                return_value=[{"number_of_days": 3}],
+            ) as read_group,
+        ):
+            committed = Leave._con_lai_committed_days(
+                self.employee, target_date=date(2026, 6, 15)
+            )
+
+        self.assertEqual(committed, 3)
+        self.assertIn(
+            ("holiday_status_id", "in", [11, 12]),
+            read_group.call_args.kwargs["domain"],
+        )

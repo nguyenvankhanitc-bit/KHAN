@@ -9,6 +9,7 @@ from datetime import date, timedelta
 from markupsafe import Markup, escape
 
 from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = "skip_responsible_submit_notify"
 
@@ -403,6 +404,25 @@ class HrLeaveMonthlySplit(models.Model):
             return self._get_o_leave_type(selected, allowed_ids=allowed_ids)
         return self.env["hr.leave.type"]
 
+    def _monthly_mien_plan_leave_types(self, employee, plan):
+        leave_types = {}
+        for kind, _date_from, _date_to in plan:
+            if kind in leave_types:
+                continue
+            leave_type = self._monthly_mien_leave_type_for_kind(
+                kind, employee=employee
+            )
+            if not leave_type:
+                raise ValidationError(
+                    _(
+                        "Không tìm thấy loại ngày nghỉ có mã (%(code)s) cho Miền "
+                        "của nhân viên. Vui lòng liên hệ HR."
+                    )
+                    % {"code": kind.upper()}
+                )
+            leave_types[kind] = leave_type
+        return leave_types
+
     def _monthly_mien_make_companion_vals(self, leave, leave_type, date_from, date_to, group_id):
         vals = {
             "employee_id": leave.employee_id.id,
@@ -429,22 +449,16 @@ class HrLeaveMonthlySplit(models.Model):
         if len(plan) <= 1:
             return
 
+        plan_leave_types = self._monthly_mien_plan_leave_types(
+            leave.employee_id, plan
+        )
         group_id = (
             leave.split_group_id
             if "split_group_id" in leave._fields and leave.split_group_id
             else str(uuid.uuid4())
         )
         first_kind, first_from, first_to = plan[0]
-        first_type = self._monthly_mien_leave_type_for_kind(
-            first_kind, employee=leave.employee_id
-        )
-        if not first_type:
-            _logger.warning(
-                "monthly_mien_split: missing leave type %s for leave %s",
-                first_kind,
-                leave.id,
-            )
-            return
+        first_type = plan_leave_types[first_kind]
 
         write_vals = {
             "holiday_status_id": first_type.id,
@@ -460,15 +474,7 @@ class HrLeaveMonthlySplit(models.Model):
 
         companions = []
         for kind, seg_from, seg_to in plan[1:]:
-            lt = self._monthly_mien_leave_type_for_kind(
-                kind, employee=leave.employee_id
-            )
-            if not lt:
-                _logger.warning(
-                    "monthly_mien_split: missing leave type %s — skip segment",
-                    kind,
-                )
-                continue
+            lt = plan_leave_types[kind]
             companions.append(
                 self._monthly_mien_make_companion_vals(
                     leave, lt, seg_from, seg_to, group_id
@@ -486,18 +492,6 @@ class HrLeaveMonthlySplit(models.Model):
             Leave = self.with_context(**create_ctx)
             for companion_vals in companions:
                 Leave.create([companion_vals])
-        elif len(plan) > 1:
-            _logger.warning(
-                "monthly_mien_split: no companion records for leave %s "
-                "(missing leave types for segments %s)",
-                leave.id,
-                [p[0] for p in plan[1:]],
-            )
-            if "split_group_id" in leave._fields:
-                leave.with_context(leave_skip_state_check=True).write(
-                    {"split_group_id": False}
-                )
-
         if hasattr(leave, "_notify_split_group_after_companion_create"):
             leave._notify_split_group_after_companion_create()
 
@@ -642,17 +636,16 @@ class HrLeaveMonthlySplit(models.Model):
         return segments
 
     def _rebalance_split_record_into_segments(self, leave, segments):
+        plan_leave_types = self._monthly_mien_plan_leave_types(
+            leave.employee_id, segments
+        )
         group_id = (
             leave.split_group_id
             if "split_group_id" in leave._fields and leave.split_group_id
             else str(uuid.uuid4())
         )
         first_kind, first_from, first_to = segments[0]
-        first_type = self._monthly_mien_leave_type_for_kind(
-            first_kind, employee=leave.employee_id
-        )
-        if not first_type:
-            return self.env["hr.leave"]
+        first_type = plan_leave_types[first_kind]
         write_vals = {
             "holiday_status_id": first_type.id,
             "request_date_from": first_from,
@@ -664,11 +657,7 @@ class HrLeaveMonthlySplit(models.Model):
 
         companion_vals = []
         for kind, seg_from, seg_to in segments[1:]:
-            leave_type = self._monthly_mien_leave_type_for_kind(
-                kind, employee=leave.employee_id
-            )
-            if not leave_type:
-                continue
+            leave_type = plan_leave_types[kind]
             vals = self._monthly_mien_make_companion_vals(
                 leave, leave_type, seg_from, seg_to, group_id
             )
@@ -703,7 +692,15 @@ class HrLeaveMonthlySplit(models.Model):
             new_type = self._monthly_mien_leave_type_for_kind(
                 target_kind, employee=leave.employee_id
             )
-            if not new_type or new_type == leave.holiday_status_id:
+            if not new_type:
+                raise ValidationError(
+                    _(
+                        "Không tìm thấy loại ngày nghỉ có mã (%(code)s) cho Miền "
+                        "của nhân viên. Vui lòng liên hệ HR."
+                    )
+                    % {"code": target_kind.upper()}
+                )
+            if new_type == leave.holiday_status_id:
                 return self.env["hr.leave"]
             leave.with_context(**self._rebalance_write_ctx()).write(
                 {"holiday_status_id": new_type.id}
@@ -729,6 +726,8 @@ class HrLeaveMonthlySplit(models.Model):
                 continue
             try:
                 touched |= self._reconcile_monthly_mien_record(leave, desired)
+            except ValidationError:
+                raise
             except Exception:
                 _logger.exception(
                     "monthly_mien_rebalance: reconcile failed leave_id=%s", leave.id

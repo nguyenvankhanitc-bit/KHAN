@@ -141,8 +141,8 @@ class HrLeaveType(models.Model):
         if not self._should_apply_mien_leave_type_filter():
             return domain
         employee_id = self._get_employee_id_for_mien_filter()
-        employee = self.env["hr.employee"].browse(employee_id)
-        if not employee.exists():
+        employee = self.env["hr.employee"]._search_accessible_employee(employee_id)
+        if not employee:
             return domain
         mien_domain = self.env["hr.leave"]._leave_type_domain_for_employee(employee)
         return Domain(domain or []) & Domain(mien_domain)

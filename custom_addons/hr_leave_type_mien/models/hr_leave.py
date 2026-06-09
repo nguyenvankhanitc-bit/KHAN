@@ -7,8 +7,6 @@ from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 from odoo.tools.translate import _
 
-from odoo.addons.hr_holidays.models.hr_leave import get_employee_from_context
-
 from .hr_leave_mien_config import (
     FIRST_MONTH_LEAVE_P1_MIEN_CODES,
     MAX_PAID_LEAVE_DAYS_PER_MONTH,
@@ -349,13 +347,14 @@ class HrLeave(models.Model):
 
     def onchange(self, values, field_names, fields_spec):
         if values and "employee_id" in fields_spec:
-            employee_id = get_employee_from_context(
-                values, self.env.context, self.env.user.employee_id.id
-            )
-            if employee_id:
+            Employee = self.env["hr.employee"]
+            employee = Employee._search_accessible_employee(values.get("employee_id"))
+            if not employee:
+                employee = self._safe_timeoff_context_employee()
+            if employee:
                 self = self.with_context(
-                    employee_id=employee_id,
-                    default_employee_id=employee_id,
+                    employee_id=employee.id,
+                    default_employee_id=employee.id,
                 )
         return super().onchange(values, field_names, fields_spec)
 

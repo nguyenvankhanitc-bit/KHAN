@@ -31,6 +31,8 @@ class HrEmployeeTimeoff(models.Model):
     def _coerce_context_employee_id(self, emp_id):
         if emp_id in (None, False):
             return False
+        if isinstance(emp_id, dict):
+            emp_id = emp_id.get("id")
         if isinstance(emp_id, (list, tuple)):
             emp_id = emp_id[0] if emp_id else False
         return emp_id or False

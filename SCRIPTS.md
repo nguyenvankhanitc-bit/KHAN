@@ -12,3 +12,4 @@ docker exec -it odoo-db-1 psql -U odoo -d master -c "SELECT u.login, p.lang, u.a
 
 docker exec -it odoo-db-1 psql -U odoo -d master -c "SELECT u.login, p.lang FROM res_users u JOIN res_partner p ON p.id=u.partner_id WHERE u.active IS TRUE ORDER BY u.id;"
 
+docker exec -it odoo-db-1 psql -U odoo -d master -c "SELECT latest_version FROM ir_module_module WHERE name='time_off_work_handover';"

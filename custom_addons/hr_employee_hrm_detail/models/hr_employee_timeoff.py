@@ -379,16 +379,11 @@ class HrEmployeeTimeoff(models.Model):
             unpaid_ids = self._summary_unpaid_leave_type_ids()
             if unpaid_ids:
                 domain.append(("holiday_status_id", "not in", unpaid_ids))
-        groups = self.env["hr.leave"].sudo().read_group(
+        groups = self.env["hr.leave"].sudo()._read_group(
             domain=domain,
-            fields=["number_of_days:sum"],
-            groupby=[],
+            aggregates=["number_of_days:sum"],
         )
-        if not groups:
-            return 0.0
-        row = groups[0]
-        # Odoo 19 read_group tráº£ vá» key number_of_days (khÃ´ng cÃ²n number_of_days_sum).
-        return row.get("number_of_days_sum") or row.get("number_of_days") or 0.0
+        return groups[0][0] if groups else 0.0
 
     @api.depends("tong_so_phep")
     def _compute_time_off_summary(self):
@@ -507,15 +502,11 @@ class HrLeaveTimeOffSummary(models.Model):
                 domain.append(("holiday_status_id", "not in", unpaid_ids))
         if exclude_leave_ids:
             domain.append(("id", "not in", list(exclude_leave_ids)))
-        groups = self.sudo().read_group(
+        groups = self.sudo()._read_group(
             domain=domain,
-            fields=["number_of_days:sum"],
-            groupby=[],
+            aggregates=["number_of_days:sum"],
         )
-        if not groups:
-            return 0.0
-        row = groups[0]
-        return row.get("number_of_days_sum") or row.get("number_of_days") or 0.0
+        return groups[0][0] if groups else 0.0
 
     @api.model_create_multi
     def create(self, vals_list):

@@ -56,9 +56,9 @@ class TestTimeOffRemainingBalance(TransactionCase):
             ),
             patch.object(
                 type(Leave),
-                "read_group",
+                "_read_group",
                 autospec=True,
-                return_value=[{"number_of_days": 4}],
+                return_value=[(4,)],
             ) as read_group,
         ):
             used = self.employee._get_leave_days_used_for_summary(date(2026, 6, 15))
@@ -84,9 +84,9 @@ class TestTimeOffRemainingBalance(TransactionCase):
             ),
             patch.object(
                 type(Leave),
-                "read_group",
+                "_read_group",
                 autospec=True,
-                return_value=[{"number_of_days": 3}],
+                return_value=[(3,)],
             ) as read_group,
         ):
             committed = Leave._con_lai_committed_days(

@@ -2164,10 +2164,13 @@ class HrLeaveHandover(models.Model):
                 self.write(vals)
             else:
                 self = self.create(vals)
+            # Odoo flushes immediately after the RPC method returns. Flush here
+            # so deferred stored computes remain inside this diagnostic boundary.
+            self.env.flush_all()
         except MissingError:
             _logger.exception(
                 "time_off_work_handover: MissingError during hr.leave web_save "
-                "write/create uid=%s leave_ids=%s employee_id=%s "
+                "write/create/flush uid=%s leave_ids=%s employee_id=%s "
                 "handover_employee_ids=%s acceptance_employee_ids=%s",
                 self.env.uid,
                 self.ids,

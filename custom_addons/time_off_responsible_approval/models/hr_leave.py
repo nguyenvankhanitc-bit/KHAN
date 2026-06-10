@@ -257,6 +257,20 @@ class HrLeaveResponsibleApproval(models.Model):
         pairs.extend((Users.browse(uid), wave_seq) for uid in suffix)
         return pairs
 
+    @api.depends(
+        "state",
+        "validation_type",
+        "employee_id",
+        "employee_id.leave_manager_id",
+        "holiday_status_id",
+        "holiday_status_id.responsible_ids",
+        "multi_step_current",
+        "extra_approver_user_ids",
+        "responsible_approval_line_ids",
+        "responsible_approval_line_ids.state",
+        "responsible_approval_line_ids.sequence",
+        "responsible_approval_line_ids.user_id",
+    )
     def _compute_approval_actionable_user_ids(self):
         """Users for whom at least one approval action would be allowed (matches Kanban/form buttons)."""
         Users = self.env["res.users"]
@@ -289,7 +303,9 @@ class HrLeaveResponsibleApproval(models.Model):
                     continue
                 mode = leave._responsible_approval_mode()
                 if mode == "sequential":
-                    leave.approval_actionable_user_ids = leave._responsible_pending_current_wave().mapped("user_id")
+                    leave.approval_actionable_user_ids = (
+                        leave._responsible_pending_current_wave_raw().mapped("user_id")
+                    )
                 else:
                     leave.approval_actionable_user_ids = pending.mapped("user_id")
                 continue
@@ -1641,6 +1657,14 @@ class HrLeaveResponsibleApproval(models.Model):
         )
         leaves._compute_approval_actionable_user_ids()
         leaves.flush_recordset(["approval_actionable_user_ids"])
+        _logger.info(
+            "time_off_responsible_approval: refreshed actionable users leaves=%s users=%s",
+            leaves.ids,
+            {
+                leave.id: leave.approval_actionable_user_ids.ids
+                for leave in leaves
+            },
+        )
 
     def action_responsible_approve(self):
         self.ensure_one()
@@ -1682,17 +1706,24 @@ class HrLeaveResponsibleApproval(models.Model):
                 raise UserError(_("Đơn nghỉ phép này phải được duyệt đúng thứ tự tuần tự."))
 
         if is_responsible and user_line:
-            user_line.write({"state": "approved", "action_date": fields.Datetime.now()})
+            # Membership and sequence were checked above. Elevate only the technical
+            # approval-log write so a configured internal employee does not need the
+            # Time Off Officer group to perform their assigned approval.
+            user_line.sudo().write(
+                {"state": "approved", "action_date": fields.Datetime.now()}
+            )
             if mode == "sequential":
                 approved_seq = user_line.sequence
                 next_wave = self._responsible_pending_current_wave()
                 if next_wave:
                     if next_wave[0].sequence != approved_seq:
-                        next_wave.write({"pending_since": fields.Datetime.now()})
+                        next_wave.sudo().write({"pending_since": fields.Datetime.now()})
                     else:
                         missing_since = next_wave.filtered(lambda ln: not ln.pending_since)
                         if missing_since:
-                            missing_since.write({"pending_since": fields.Datetime.now()})
+                            missing_since.sudo().write(
+                                {"pending_since": fields.Datetime.now()}
+                            )
                     self._refresh_responsible_actionable_users()
                     self._notify_responsible_current_turn()
             self._responsible_approval_after_approve(approved_line=user_line)
@@ -1745,7 +1776,9 @@ class HrLeaveResponsibleApproval(models.Model):
                 raise UserError(_("Đơn nghỉ phép này phải được từ chối đúng thứ tự tuần tự."))
 
         if user_line and user_line.state == "pending":
-            user_line.write({"state": "refused", "action_date": fields.Datetime.now()})
+            user_line.sudo().write(
+                {"state": "refused", "action_date": fields.Datetime.now()}
+            )
 
         return self.action_refuse(reason=reason)
 

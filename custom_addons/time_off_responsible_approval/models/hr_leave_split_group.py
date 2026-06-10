@@ -620,6 +620,7 @@ class HrLeaveSplitGroup(models.Model):
                         sibling.id,
                         exc_info=True,
                     )
+        self.browse(group_leave_ids).exists()._refresh_responsible_actionable_users()
         return res
 
     def action_responsible_refuse(self, reason=False):

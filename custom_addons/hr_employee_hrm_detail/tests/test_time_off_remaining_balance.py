@@ -120,7 +120,7 @@ class TestTimeOffRemainingBalance(TransactionCase):
             read_group.call_args.kwargs["domain"],
         )
 
-    def test_summary_paid_leave_types_include_maternity_p(self):
+    def test_summary_paid_leave_types_include_p1_p2_only(self):
         paid_p = self.env["hr.leave.type"].create(
             {
                 "name": "Paid Time Off (P)",
@@ -152,14 +152,26 @@ class TestTimeOffRemainingBalance(TransactionCase):
 
         paid_ids = self.employee._summary_paid_leave_type_ids()
 
-        self.assertIn(paid_p.id, paid_ids)
+        self.assertNotIn(paid_p.id, paid_ids)
         self.assertIn(paid_p1.id, paid_ids)
         self.assertIn(paid_p2.id, paid_ids)
         self.assertNotIn(unpaid_o.id, paid_ids)
-        self.assertIn(
-            ("holiday_status_id", "in", [11, 12]),
-            read_group.call_args.kwargs["domain"],
-        )
+
+    def test_maternity_first_day_license_adds_one_remaining_day_and_recomputes(self):
+        with patch.object(
+            type(self.employee),
+            "_get_leave_days_used_for_summary",
+            autospec=True,
+            return_value=0,
+        ):
+            self.employee.write({"thai_san_ngay_cap_phep": date(2026, 2, 1)})
+            self.assertEqual(self.employee.con_lai, 6)
+
+            self.employee.write({"thai_san_ngay_cap_phep": date(2026, 2, 2)})
+            self.assertEqual(self.employee.con_lai, 5)
+
+            self.employee.write({"thai_san_ngay_cap_phep": date(2026, 3, 1)})
+            self.assertEqual(self.employee.con_lai, 6)
 
     def test_retroactive_previous_year_leave_deducts_and_restores_snapshot(self):
         leave_type = self.env["hr.leave.type"].create(

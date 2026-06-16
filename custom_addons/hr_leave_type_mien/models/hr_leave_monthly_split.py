@@ -158,7 +158,9 @@ class HrLeaveMonthlySplit(models.Model):
         return MAX_PAID_LEAVE_DAYS_PER_MONTH
 
     @api.model
-    def _monthly_mien_paid_budget_for_employee(self, employee, exclude_leave_ids=None):
+    def _monthly_mien_paid_budget_for_employee(
+        self, employee, exclude_leave_ids=None, target_date=None
+    ):
         """Ngân sách phép có lương còn lại của nhân viên (tong_so_phep − đã cam kết, không tính O).
 
         Trả về None khi không xác định được (không chặn theo Còn lại — chỉ áp dụng quy tắc 3 ngày/tháng).
@@ -170,7 +172,10 @@ class HrLeaveMonthlySplit(models.Model):
         committed = self._con_lai_committed_days(
             employee, exclude_leave_ids=exclude_leave_ids
         )
-        budget = (employee.tong_so_phep or 0.0) - committed
+        bonus = 0.0
+        if hasattr(employee, "_maternity_first_day_balance_bonus"):
+            bonus = employee._maternity_first_day_balance_bonus(target_date)
+        budget = (employee.tong_so_phep or 0.0) + bonus - committed
         if budget < 0:
             budget = 0
         return int(budget)
@@ -192,7 +197,7 @@ class HrLeaveMonthlySplit(models.Model):
             date_from, date_to = date_to, date_from
 
         paid_budget = self._monthly_mien_paid_budget_for_employee(
-            employee, exclude_leave_ids=exclude_leave_ids
+            employee, exclude_leave_ids=exclude_leave_ids, target_date=date_from
         )
         monthly_cap = self._monthly_mien_employee_monthly_cap(employee)
         segments = []
@@ -375,10 +380,6 @@ class HrLeaveMonthlySplit(models.Model):
         if self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
             return False
         if not leave.employee_id or not leave.request_date_from or not leave.request_date_to:
-            return False
-        if hasattr(leave, "_maternity_leave_rule_applies") and leave._maternity_leave_rule_applies(
-            leave.employee_id
-        ):
             return False
         if not self._monthly_p1p2_mien_applies(leave.employee_id):
             return False
@@ -738,10 +739,6 @@ class HrLeaveMonthlySplit(models.Model):
         targets = set()
         for leave in self:
             employee = leave.employee_id
-            if hasattr(leave, "_maternity_leave_rule_applies") and leave._maternity_leave_rule_applies(
-                employee
-            ):
-                continue
             if not employee or not self._monthly_p1p2_mien_applies(employee):
                 continue
             date_from = leave._get_leave_start_date()

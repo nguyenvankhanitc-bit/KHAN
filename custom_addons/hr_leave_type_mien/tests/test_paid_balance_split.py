@@ -61,15 +61,17 @@ class TestPaidBalanceSplit(TransactionCase):
         )
         self.assertEqual(paid_used, 3)
 
-    def test_maternity_license_on_first_day_splits_first_day_to_paid(self):
+    def test_maternity_license_keeps_monthly_p1p2o_flow(self):
         employee = self.env["hr.employee"].create(
             {
-                "name": "Maternity First Day",
+                "name": "Maternity Monthly Flow",
                 "thai_san_ngay_cap_phep": date(2026, 2, 1),
+                "mien": "Bắc",
+                "tong_so_phep": 5,
             }
         )
 
-        segments = self.env["hr.leave"]._maternity_leave_split_plan(
+        segments = self.env["hr.leave"]._monthly_mien_split_plan(
             employee,
             date(2026, 2, 10),
             date(2026, 2, 12),
@@ -78,26 +80,7 @@ class TestPaidBalanceSplit(TransactionCase):
         self.assertEqual(
             segments,
             [
-                ("maternity_p", date(2026, 2, 10), date(2026, 2, 10)),
-                ("o", date(2026, 2, 11), date(2026, 2, 12)),
+                ("p1", date(2026, 2, 10), date(2026, 2, 10)),
+                ("p2", date(2026, 2, 11), date(2026, 2, 12)),
             ],
-        )
-
-    def test_maternity_license_on_other_day_assigns_all_to_unpaid(self):
-        employee = self.env["hr.employee"].create(
-            {
-                "name": "Maternity Other Day",
-                "thai_san_ngay_cap_phep": date(2026, 2, 2),
-            }
-        )
-
-        segments = self.env["hr.leave"]._maternity_leave_split_plan(
-            employee,
-            date(2026, 2, 10),
-            date(2026, 2, 12),
-        )
-
-        self.assertEqual(
-            segments,
-            [("o", date(2026, 2, 10), date(2026, 2, 12))],
         )

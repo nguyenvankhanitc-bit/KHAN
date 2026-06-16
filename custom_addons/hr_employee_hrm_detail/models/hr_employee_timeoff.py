@@ -444,18 +444,18 @@ class HrEmployeeTimeoff(models.Model):
 
     @api.model
     def _summary_paid_leave_type_ids(self):
-        """ID các loại phép có lương làm giảm quỹ: P, P1 và P2."""
+        """ID các loại phép có lương làm giảm quỹ: P1 và P2."""
         LeaveType = self.env["hr.leave.type"]
         if hasattr(LeaveType, "search_by_code"):
             try:
                 paid_types = LeaveType
-                for code in ("P", "P1", "P2"):
+                for code in ("P1", "P2"):
                     paid_types |= LeaveType.search_by_code(code, limit=None)
                 if paid_types:
                     return paid_types.ids
             except Exception:  # pragma: no cover
                 _logger.debug(
-                    "summary: cannot resolve paid leave types P/P1/P2", exc_info=True
+                    "summary: cannot resolve paid leave types P1/P2", exc_info=True
                 )
         return []
 
@@ -480,7 +480,7 @@ class HrEmployeeTimeoff(models.Model):
         return date(target_date.year, 1, 1), date(target_date.year, 12, 31)
 
     def _get_leave_days_used_for_summary(self, target_date=None):
-        """Tổng ngày P/P1/P2 đang hiệu lực trong năm của ``target_date``.
+        """Tổng ngày P1/P2 đang hiệu lực trong năm của ``target_date``.
 
         Tính cả đơn đang chờ duyệt; không tính O, đơn hủy hoặc đơn bị từ chối.
         """
@@ -505,7 +505,16 @@ class HrEmployeeTimeoff(models.Model):
         )
         return groups[0][0] if groups else 0.0
 
-    @api.depends("tong_so_phep")
+    def _maternity_first_day_balance_bonus(self, target_date=None):
+        self.ensure_one()
+        license_date = getattr(self.sudo(), "thai_san_ngay_cap_phep", False)
+        license_date = fields.Date.to_date(license_date) if license_date else False
+        if not license_date or license_date.day != 1:
+            return 0.0
+        period_start, period_end = self._time_off_summary_period_bounds(target_date)
+        return 1.0 if period_start <= license_date <= period_end else 0.0
+
+    @api.depends("tong_so_phep", "thai_san_ngay_cap_phep")
     def _compute_time_off_summary(self):
         employees = self._employees_for_timeoff_summary_compute()
         if not employees:
@@ -519,7 +528,10 @@ class HrEmployeeTimeoff(models.Model):
         for employee in employees:
             # Dùng cùng tập đơn đang chiếm quỹ với bộ chia P/P1/P2/O.
             leave_taken = employee._get_leave_days_used_for_summary()
-            raw_remaining = (employee.tong_so_phep or 0.0) - leave_taken
+            maternity_bonus = employee._maternity_first_day_balance_bonus()
+            raw_remaining = (
+                (employee.tong_so_phep or 0.0) + maternity_bonus - leave_taken
+            )
             employee.da_su_dung = leave_taken
             employee.con_lai = max(0.0, raw_remaining)
             if raw_remaining < 0:

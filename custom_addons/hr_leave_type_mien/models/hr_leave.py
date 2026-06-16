@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import calendar
-import uuid
 from datetime import date, datetime, timedelta
 
 from odoo import api, fields, models
@@ -20,9 +19,6 @@ from .hr_leave_monthly_split import (
     _SKIP_MONTHLY_MIEN_SPLIT_CTX,
     _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX,
 )
-
-MATERNITY_PAID_LEAVE_TYPE_CODE = "P"
-_SKIP_MATERNITY_LEAVE_SPLIT_CTX = "skip_maternity_leave_split"
 
 
 class HrLeave(models.Model):
@@ -76,12 +72,6 @@ class HrLeave(models.Model):
     def _get_o_leave_type(self, selected=None, allowed_ids=None):
         return self.env["hr.leave.type"].leave_type_from_selection(
             selected, O_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
-        )
-
-    @api.model
-    def _get_maternity_paid_leave_type(self, selected=None, allowed_ids=None):
-        return self.env["hr.leave.type"].leave_type_from_selection(
-            selected, MATERNITY_PAID_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
     def _get_leave_start_date(self):
@@ -141,42 +131,6 @@ class HrLeave(models.Model):
         return bool(
             employee and employee._get_leave_mien() in FIRST_MONTH_LEAVE_P1_MIEN_CODES
         )
-
-    @api.model
-    def _maternity_license_date(self, employee):
-        if not employee or "thai_san_ngay_cap_phep" not in employee._fields:
-            return False
-        return self._coerce_to_date(employee.sudo().thai_san_ngay_cap_phep)
-
-    @api.model
-    def _maternity_leave_rule_applies(self, employee):
-        return bool(self._maternity_license_date(employee))
-
-    @api.model
-    def _maternity_leave_rule_kind(self, employee, start_date, leave=None, end_date=None):
-        start_date = self._coerce_to_date(start_date)
-        if not self._maternity_leave_rule_applies(employee) or not start_date:
-            return None
-        license_date = self._maternity_license_date(employee)
-        return "maternity_p" if license_date and license_date.day == 1 else "o"
-
-    @api.model
-    def _maternity_leave_split_plan(self, employee, date_from, date_to):
-        date_from = self._coerce_to_date(date_from)
-        date_to = self._coerce_to_date(date_to)
-        if not self._maternity_leave_rule_applies(employee) or not date_from or not date_to:
-            return []
-        if date_to < date_from:
-            date_from, date_to = date_to, date_from
-        license_date = self._maternity_license_date(employee)
-        if license_date and license_date.day == 1:
-            if date_from == date_to:
-                return [("maternity_p", date_from, date_to)]
-            return [
-                ("maternity_p", date_from, date_from),
-                ("o", date_from + timedelta(days=1), date_to),
-            ]
-        return [("o", date_from, date_to)]
 
     @api.model
     def _month_date_bounds(self, year, month):
@@ -350,7 +304,6 @@ class HrLeave(models.Model):
         "employee_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "employee_id.thai_san_ngay_cap_phep",
         "request_date_from",
         "request_date_to",
         "date_from",
@@ -359,13 +312,6 @@ class HrLeave(models.Model):
     def _compute_holiday_status_id_month_leave_type_locked(self):
         for leave in self:
             leave.holiday_status_id_month_leave_type_locked = bool(
-                leave._maternity_leave_rule_kind(
-                    leave.employee_id,
-                    leave._get_leave_start_date(),
-                    leave=leave,
-                    end_date=leave._get_leave_end_date(),
-                )
-                or
                 leave._monthly_leave_rule_kind(
                     leave.employee_id,
                     leave._get_leave_start_date(),
@@ -378,7 +324,6 @@ class HrLeave(models.Model):
         "employee_id",
         "employee_id.mien",
         "employee_id.ma_bo_phan_id.mien",
-        "employee_id.thai_san_ngay_cap_phep",
         "request_date_from",
         "request_date_to",
         "date_from",
@@ -434,13 +379,10 @@ class HrLeave(models.Model):
         domain = list(self._leave_type_base_domain())
         if not employee:
             return domain
-        maternity_rule = self._maternity_leave_rule_kind(
-            employee, start_date, leave=leave, end_date=end_date
-        )
         config_ids = self._mien_config_leave_type_ids(employee)
-        if config_ids is not None and not maternity_rule:
+        if config_ids is not None:
             domain = ["&"] + domain + [("id", "in", config_ids or [0])]
-        rule = maternity_rule or self._monthly_leave_rule_kind(
+        rule = self._monthly_leave_rule_kind(
             employee, start_date, leave=leave, end_date=end_date
         )
         rule_type = self._leave_type_for_rule(rule, employee=employee)
@@ -464,8 +406,6 @@ class HrLeave(models.Model):
         if employee is None:
             employee = self.employee_id if self else False
         allowed_ids = self._mien_config_leave_type_ids(employee)
-        if rule == "maternity_p":
-            return self._get_maternity_paid_leave_type(selected, allowed_ids=allowed_ids)
         if rule == "p1":
             return self._get_p1_leave_type(selected, allowed_ids=allowed_ids)
         if rule == "p2":
@@ -497,113 +437,6 @@ class HrLeave(models.Model):
                 % {"code": rule.upper()}
             )
         return vals
-
-    def _maternity_leave_plan_leave_types(self, employee, plan):
-        leave_types = {}
-        for kind, _date_from, _date_to in plan:
-            if kind in leave_types:
-                continue
-            leave_type = self._leave_type_for_rule(kind, employee=employee)
-            if not leave_type:
-                code = (
-                    MATERNITY_PAID_LEAVE_TYPE_CODE
-                    if kind == "maternity_p"
-                    else O_LEAVE_TYPE_CODE
-                )
-                raise ValidationError(
-                    _(
-                        "Không tìm thấy loại ngày nghỉ có mã (%(code)s). "
-                        "Vui lòng tạo loại nghỉ có tên chứa (%(code)s) hoặc liên hệ HR."
-                    )
-                    % {"code": code}
-                )
-            leave_types[kind] = leave_type
-        return leave_types
-
-    def _apply_maternity_leave_rule_to_vals(self, vals, employee, start_date, leave=None):
-        vals = dict(vals)
-        end_date = self._parse_end_date_from_vals(vals, leave=leave) or start_date
-        plan = self._maternity_leave_split_plan(employee, start_date, end_date)
-        if not plan:
-            return vals
-        leave_types = self._maternity_leave_plan_leave_types(employee, plan)
-        first_kind = plan[0][0]
-        vals["holiday_status_id"] = leave_types[first_kind].id
-        return vals
-
-    def _maternity_leave_should_split(self, leave):
-        if self.env.context.get(_SKIP_MATERNITY_LEAVE_SPLIT_CTX):
-            return False
-        if not leave.employee_id or not leave.request_date_from or not leave.request_date_to:
-            return False
-        return len(
-            self._maternity_leave_split_plan(
-                leave.employee_id, leave.request_date_from, leave.request_date_to
-            )
-        ) > 1
-
-    def _maternity_leave_make_companion_vals(self, leave, leave_type, date_from, date_to, group_id):
-        vals = {
-            "employee_id": leave.employee_id.id,
-            "holiday_status_id": leave_type.id,
-            "request_date_from": date_from,
-            "request_date_to": date_to,
-            "name": leave.name or "",
-            "state": leave.state,
-        }
-        if "split_group_id" in leave._fields:
-            vals["split_group_id"] = group_id
-        if leave.department_id:
-            vals["department_id"] = leave.department_id.id
-        return vals
-
-    def _maternity_leave_do_split(self, leave):
-        plan = self._maternity_leave_split_plan(
-            leave.employee_id, leave.request_date_from, leave.request_date_to
-        )
-        if len(plan) <= 1:
-            return
-        plan_leave_types = self._maternity_leave_plan_leave_types(
-            leave.employee_id, plan
-        )
-        group_id = (
-            leave.split_group_id
-            if "split_group_id" in leave._fields and leave.split_group_id
-            else str(uuid.uuid4())
-        )
-        first_kind, first_from, first_to = plan[0]
-        write_vals = {
-            "holiday_status_id": plan_leave_types[first_kind].id,
-            "request_date_from": first_from,
-            "request_date_to": first_to,
-        }
-        if "split_group_id" in leave._fields:
-            write_vals["split_group_id"] = group_id
-        leave.with_context(
-            leave_skip_state_check=True,
-            **{
-                _SKIP_MATERNITY_LEAVE_SPLIT_CTX: True,
-                _SKIP_MONTHLY_MIEN_SPLIT_CTX: True,
-                _SKIP_MONTHLY_MIEN_REBALANCE_CTX: True,
-            },
-        ).write(write_vals)
-
-        create_ctx = {
-            _SKIP_MATERNITY_LEAVE_SPLIT_CTX: True,
-            _SKIP_MONTHLY_MIEN_SPLIT_CTX: True,
-            _SKIP_MONTHLY_MIEN_REBALANCE_CTX: True,
-            "leave_fast_create": True,
-            "mail_activity_automation_skip": True,
-            _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX: True,
-        }
-        Leave = self.with_context(**create_ctx)
-        for kind, seg_from, seg_to in plan[1:]:
-            vals = self._maternity_leave_make_companion_vals(
-                leave, plan_leave_types[kind], seg_from, seg_to, group_id
-            )
-            Leave.create([vals])
-        if hasattr(leave, "_notify_split_group_after_companion_create"):
-            leave._notify_split_group_after_companion_create()
 
     def _monthly_leave_warning_missing_type(self, code):
         return {
@@ -657,12 +490,7 @@ class HrLeave(models.Model):
                     start_date = self._coerce_to_date(ctx_val)
                     break
         end_date = self._coerce_to_date(res.get("request_date_to")) or start_date
-        rule = self._monthly_leave_rule_kind(
-            employee, start_date, end_date=end_date
-        )
-        rule = self._maternity_leave_rule_kind(
-            employee, start_date, end_date=end_date
-        ) or rule
+        rule = self._monthly_leave_rule_kind(employee, start_date, end_date=end_date)
         leave_type = self._leave_type_for_rule(rule, employee=employee)
         if leave_type:
             res["holiday_status_id"] = leave_type.id
@@ -696,15 +524,12 @@ class HrLeave(models.Model):
         self._refresh_monthly_leave_split_preview()
         if not employee:
             return {}
-        rule = self._maternity_leave_rule_kind(
-            employee, start_date, leave=self, end_date=end_date
-        ) or self._monthly_leave_rule_kind(
+        rule = self._monthly_leave_rule_kind(
             employee, start_date, leave=self, end_date=end_date
         )
         if rule:
             leave_type = self._leave_type_for_rule(rule, self.holiday_status_id)
             code_map = {
-                "maternity_p": MATERNITY_PAID_LEAVE_TYPE_CODE,
                 "p1": P1_LEAVE_TYPE_CODE,
                 "p2": P2_LEAVE_TYPE_CODE,
                 "o": O_LEAVE_TYPE_CODE,
@@ -823,19 +648,9 @@ class HrLeave(models.Model):
                 return True
         return False
 
-    def _maternity_leave_any_will_split_vals_list(self, vals_list):
-        if self.env.context.get(_SKIP_MATERNITY_LEAVE_SPLIT_CTX):
-            return False
-        Leave = self.env["hr.leave"]
-        for vals in vals_list:
-            if Leave._maternity_leave_should_split(Leave.new(dict(vals))):
-                return True
-        return False
-
     @api.model_create_multi
     def create(self, vals_list):
         rebalance_skip = self.env.context.get(_SKIP_MONTHLY_MIEN_REBALANCE_CTX)
-        maternity_skip = self.env.context.get(_SKIP_MATERNITY_LEAVE_SPLIT_CTX)
         new_vals_list = []
         for vals in vals_list:
             if rebalance_skip:
@@ -848,36 +663,21 @@ class HrLeave(models.Model):
             )
             start_date = self._parse_start_date_from_vals(vals)
             if employee and start_date:
-                if not maternity_skip and self._maternity_leave_rule_applies(employee):
-                    vals = self._apply_maternity_leave_rule_to_vals(
-                        vals, employee, start_date
-                    )
-                else:
-                    vals = self._apply_monthly_leave_rule_to_vals(
-                        vals, employee, start_date
-                    )
+                vals = self._apply_monthly_leave_rule_to_vals(
+                    vals, employee, start_date
+                )
             new_vals_list.append(vals)
         ctx = dict(self.env.context)
         will_split = (
             not rebalance_skip
-            and (
-                self._maternity_leave_any_will_split_vals_list(new_vals_list)
-                or self._monthly_mien_any_will_split_vals_list(new_vals_list)
-            )
+            and self._monthly_mien_any_will_split_vals_list(new_vals_list)
         )
         if will_split:
             ctx[_SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX] = True
         records = super(HrLeave, self.with_context(ctx)).create(new_vals_list)
-        if not maternity_skip:
-            for leave in records:
-                if leave._maternity_leave_should_split(leave):
-                    leave._maternity_leave_do_split(leave)
         if not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX):
             for leave in records:
-                if (
-                    not leave._maternity_leave_rule_applies(leave.employee_id)
-                    and leave._monthly_mien_should_split(leave)
-                ):
+                if leave._monthly_mien_should_split(leave):
                     leave._monthly_mien_do_split(leave)
             records._run_monthly_mien_rebalance(
                 records._collect_monthly_mien_rebalance_targets()
@@ -920,21 +720,12 @@ class HrLeave(models.Model):
                 else leave.employee_id
             )
             start_date = self._parse_start_date_from_vals(vals, leave=leave)
-            if self._maternity_leave_rule_applies(employee):
-                vals = self._apply_maternity_leave_rule_to_vals(
-                    vals, employee, start_date, leave=leave
-                )
-            else:
-                vals = self._apply_monthly_leave_rule_to_vals(
-                    vals, employee, start_date, leave=leave
-                )
+            vals = self._apply_monthly_leave_rule_to_vals(
+                vals, employee, start_date, leave=leave
+            )
             res = super().write(vals)
-            if not self.env.context.get(_SKIP_MATERNITY_LEAVE_SPLIT_CTX):
-                if leave._maternity_leave_should_split(leave):
-                    leave._maternity_leave_do_split(leave)
             if (
                 not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX)
-                and not leave._maternity_leave_rule_applies(leave.employee_id)
                 and leave._monthly_mien_should_split(leave)
             ):
                 leave._monthly_mien_do_split(leave)
@@ -947,21 +738,11 @@ class HrLeave(models.Model):
                     else leave.employee_id
                 )
                 start_date = self._parse_start_date_from_vals(row_vals, leave=leave)
-                if self._maternity_leave_rule_applies(employee):
-                    row_vals = self._apply_maternity_leave_rule_to_vals(
-                        row_vals, employee, start_date, leave=leave
-                    )
-                else:
-                    row_vals = self._apply_monthly_leave_rule_to_vals(
-                        row_vals, employee, start_date, leave=leave
-                    )
+                row_vals = self._apply_monthly_leave_rule_to_vals(
+                    row_vals, employee, start_date, leave=leave
+                )
                 super(HrLeave, leave).write(row_vals)
                 if (
-                    not self.env.context.get(_SKIP_MATERNITY_LEAVE_SPLIT_CTX)
-                    and leave._maternity_leave_should_split(leave)
-                ):
-                    leave._maternity_leave_do_split(leave)
-                elif (
                     not self.env.context.get(_SKIP_MONTHLY_MIEN_SPLIT_CTX)
                     and leave._monthly_mien_should_split(leave)
                 ):

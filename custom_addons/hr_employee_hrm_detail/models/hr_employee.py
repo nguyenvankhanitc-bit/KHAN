@@ -158,6 +158,10 @@ class HrEmployee(models.Model):
         employees = super().create(vals_list)
         if any(MIEN_ACCESS_FIELDS & set(vals) for vals in vals_list):
             self.env.registry.clear_cache()
+        if any("thai_san_ngay_cap_phep" in vals for vals in vals_list) and hasattr(
+            employees, "_compute_time_off_summary"
+        ):
+            employees._compute_time_off_summary()
         return employees
 
     def write(self, vals):
@@ -183,6 +187,10 @@ class HrEmployee(models.Model):
         if MIEN_ACCESS_FIELDS & set(vals):
             # ir.rule domains are ormcache'd per uid; refresh when Miền scope changes.
             self.env.registry.clear_cache()
+        if "thai_san_ngay_cap_phep" in vals and hasattr(
+            self, "_compute_time_off_summary"
+        ):
+            self._compute_time_off_summary()
         return res
 
     # Regional and ID Information

@@ -330,8 +330,7 @@ class HrLeaveMonthlySplit(models.Model):
                 "Thời gian nghỉ: <b>{period}</b><br/>"
                 "Tổng số ngày nghỉ: <b>{total_days}</b><br/>"
                 "Chi tiết:<br/>{segments}<br/>"
-                "Lý do: <b>{reason}</b><br/>"
-                "Vui lòng bấm <b>Phê duyệt tất cả</b> hoặc <b>Từ chối tất cả</b><br/><br/>"
+                "Lý do: <b>{reason}</b><br/><br/>"
             )
         ).format(
             count=details["segment_count"],
@@ -343,8 +342,9 @@ class HrLeaveMonthlySplit(models.Model):
             segments=segments_html,
             reason=escape(str(details["reason"])),
         )
-        button_html = primary._notify_approval_bot_split_group_action_buttons_markup(
-            primary
+        button_html = primary._notify_discuss_leave_open_button_markup(
+            _("Xem thông tin chi tiết ngày nghỉ phép"),
+            discuss_link_type="approval",
         )
         if primary.split_group_id:
             marker = Markup(

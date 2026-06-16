@@ -1585,8 +1585,7 @@ class HrLeaveResponsibleApproval(models.Model):
                 "Thời gian nghỉ: <b>{period}</b><br/>"
                 "Tổng số ngày nghỉ: <b>{total_days}</b><br/>"
                 "Chi tiết:<br/>{segments}<br/>"
-                "Lý do: <b>{reason}</b><br/>"
-                "Vui lòng bấm <b>Phê duyệt tất cả</b> hoặc <b>Từ chối tất cả</b><br/><br/>"
+                "Lý do: <b>{reason}</b><br/><br/>"
             )
         ).format(
             count=1,
@@ -1598,7 +1597,10 @@ class HrLeaveResponsibleApproval(models.Model):
             segments=segments_html,
             reason=escape(str(details["reason"])),
         )
-        button_html = self._notify_approval_bot_split_group_action_buttons_markup(self)
+        button_html = self._notify_discuss_leave_open_button_markup(
+            _("Xem thông tin chi tiết ngày nghỉ phép"),
+            discuss_link_type="approval",
+        )
         body = intro + button_html
         try:
             # Current-turn approver notifications must come from approval bot.

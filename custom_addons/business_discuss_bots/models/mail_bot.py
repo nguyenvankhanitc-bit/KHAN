@@ -18,7 +18,7 @@ class MailBot(models.AbstractModel):
         "business_discuss_bots.partner_bot_handover": "handover",
         "business_discuss_bots.partner_bot_gate_ticket": "gate_ticket",
     }
-    _APPROVAL_SUPPORTED_INTENTS = {"approval_status", "approval_who", "help"}
+    _APPROVAL_SUPPORTED_INTENTS = {"approval_status", "approval_who", "pending_approval_detail", "help"}
     _HANDOVER_SUPPORTED_INTENTS = {
         "handover_status",
         "handover_accepted",
@@ -91,8 +91,10 @@ class MailBot(models.AbstractModel):
         if "hr.leave" not in self.env:
             return _("Bot chưa truy cập được dữ liệu Time Off trên hệ thống hiện tại.")
         intent = self._classify_intent(body)
-        if intent == "daily_tasks":
-            return self._run_secretary_daily_tasks_skill()
+        if intent in ("daily_tasks", "pending_approval_detail"):
+            if intent == "daily_tasks":
+                return self._run_secretary_daily_tasks_skill()
+            return self._run_pending_approval_detail_skill()
         if skill_key == "main":
             _logger.info("business_discuss_bots: route channel_id=%s skill=main", channel.id)
             return self._run_main_router_skill(body)
@@ -122,11 +124,23 @@ class MailBot(models.AbstractModel):
                 return skill_key
         return False
 
+    _SECRETARY_CLEAN_INTENTS = frozenset({"daily_tasks", "pending_approval_detail"})
+    _HANDOVER_INTENTS = frozenset({
+        "handover_status",
+        "handover_accepted",
+        "handover_pending",
+        "handover_refused",
+    })
+
     def _run_main_router_skill(self, body):
         normalized = self._normalize_text(body)
         if not normalized:
             return False
         intent = self._classify_intent(body)
+        if intent in self._SECRETARY_CLEAN_INTENTS:
+            if intent == "daily_tasks":
+                return self._run_secretary_daily_tasks_skill()
+            return self._run_pending_approval_detail_skill()
         hr_tokens = (
             "time off",
             "xin nghi",
@@ -143,6 +157,7 @@ class MailBot(models.AbstractModel):
         hr_related = intent in {
             "approval_status",
             "approval_who",
+            "pending_approval_detail",
             "latest_leave",
             "handover_status",
             "handover_accepted",
@@ -164,13 +179,22 @@ class MailBot(models.AbstractModel):
             )
 
         core = False
-        if intent in ("handover_status", "handover_accepted", "handover_pending", "handover_refused"):
-            core = self._run_handover_skill(intent)
+        if intent in self._HANDOVER_INTENTS:
+            if "ban giao" in normalized or "handover" in normalized:
+                core = self._run_handover_skill(intent)
+            elif self._is_pending_approval_detail_intent(normalized):
+                return self._run_pending_approval_detail_skill()
+            else:
+                return False
         elif intent in ("latest_leave", "approval_who", "approval_status"):
             core = self.with_context(business_discuss_leave_on_main_bot=True)._run_approval_skill(intent)
+        elif intent == "help" and self._is_pending_approval_detail_intent(normalized):
+            return self._run_pending_approval_detail_skill()
         elif intent == "help" and any(t in normalized for t in hr_tokens):
             core = self._run_main_help_with_leave_summary()
         elif any(t in normalized for t in hr_tokens):
+            if self._is_pending_approval_detail_intent(normalized):
+                return self._run_pending_approval_detail_skill()
             core = self._run_approval_skill("latest_leave")
         else:
             core = self._run_main_help_with_leave_summary()
@@ -206,17 +230,73 @@ class MailBot(models.AbstractModel):
             )
         return "<br/>".join(lines)
 
-    def _count_pending_approval_leaves_for_user(self, user=None):
+    def _search_pending_approval_leaves_for_user(self, user=None):
         user = user or self.env.user
         Leave = self.env["hr.leave"].sudo()
         if "approval_actionable_user_ids" not in Leave._fields:
-            return 0
-        return Leave.search_count(
+            return Leave.browse()
+        return Leave.search(
             [
                 ("state", "in", ("confirm", "validate1")),
                 ("approval_actionable_user_ids", "in", user.id),
-            ]
+            ],
+            order="request_date_from asc, create_date asc, id asc",
         )
+
+    def _count_pending_approval_leaves_for_user(self, user=None):
+        return len(self._search_pending_approval_leaves_for_user(user=user))
+
+    def _employee_display_id(self, employee):
+        id_hrm = (getattr(employee, "id_hrm", None) or "").strip()
+        if id_hrm:
+            return id_hrm
+        barcode = (employee.barcode or "").strip()
+        if barcode:
+            return barcode
+        return str(employee.id)
+
+    def _leave_date_range_text(self, leave):
+        date_from = leave.request_date_from or (leave.date_from and leave.date_from.date())
+        date_to = leave.request_date_to or (leave.date_to and leave.date_to.date()) or date_from
+        if not date_from:
+            return leave.display_name or ""
+        from_str = date_from.strftime("%d/%m/%Y")
+        if not date_to or date_to == date_from:
+            return _("ngày %(date)s") % {"date": from_str}
+        return _("ngày %(date_from)s đến ngày %(date_to)s") % {
+            "date_from": from_str,
+            "date_to": date_to.strftime("%d/%m/%Y"),
+        }
+
+    def _format_pending_approval_detail_line(self, leave):
+        employee = leave.employee_id
+        name = employee.name if employee else _("Không rõ")
+        emp_id = self._employee_display_id(employee) if employee else "—"
+        title = (employee.job_title or "").strip() if employee else ""
+        title = title or _("không rõ")
+        date_range = self._leave_date_range_text(leave)
+        return _(
+            "_ đơn nghỉ phép của <b>%(name)s</b> (ID nhân viên: %(emp_id)s) "
+            "với chức danh là %(title)s, xin nghỉ %(date_range)s"
+        ) % {
+            "name": name,
+            "emp_id": emp_id,
+            "title": title,
+            "date_range": date_range,
+        }
+
+    def _run_pending_approval_detail_skill(self):
+        leaves = self._search_pending_approval_leaves_for_user()
+        if not leaves:
+            return _("Hiện bạn không có đơn nghỉ phép nào đang chờ duyệt.")
+        count = len(leaves)
+        if count == 1:
+            header = _("1 đơn nghỉ phép đang chờ bạn duyệt:")
+        else:
+            header = _("%(count)s đơn nghỉ phép đó lần lượt là:") % {"count": count}
+        lines = [header]
+        lines.extend(self._format_pending_approval_detail_line(leave) for leave in leaves)
+        return "<br/>".join(lines)
 
     def _count_pending_handover_leaves_for_user(self, user=None):
         user = user or self.env.user
@@ -299,25 +379,202 @@ class MailBot(models.AbstractModel):
                 author_ids.add(partner.id)
         return author_ids
 
+    def _is_daily_tasks_intent(self, text):
+        """Detect secretary-style questions about pending work (flexible Vietnamese/English)."""
+        if not text:
+            return False
+        strong_phrases = (
+            "hom nay co viec",
+            "hom nay co gi can lam",
+            "hom nay co gi can xu ly",
+            "hom nay lam gi",
+            "hom nay can lam gi",
+            "hom nay can xu ly gi",
+            "hom nay can duyet gi",
+            "co viec gi can lam",
+            "co viec gi can xu ly",
+            "viec gi can lam",
+            "viec gi can xu ly",
+            "co gi can lam",
+            "co gi can xu ly",
+            "nhung viec can lam",
+            "nhung viec can xu ly",
+            "viec can lam hom nay",
+            "viec can xu ly hom nay",
+            "cong viec can lam",
+            "cong viec can xu ly",
+            "can lam gi hom nay",
+            "con viec gi can lam",
+            "con viec gi can xu ly",
+            "viec dang cho",
+            "nhung viec dang cho",
+            "dang cho toi duyet",
+            "dang cho toi xu ly",
+            "co don nao can duyet",
+            "co don nao can xu ly",
+            "bao nhieu don can duyet",
+            "bao nhieu don can xu ly",
+            "tom tat viec",
+            "nhac viec hom nay",
+            "what do i need to do",
+            "what should i do today",
+            "tasks today",
+            "pending tasks",
+            "to do today",
+            "my pending work",
+        )
+        if any(phrase in text for phrase in strong_phrases):
+            return True
+
+        time_words = ("hom nay", "today", "bay gio", "luc nay", "ngay hom nay")
+        action_words = (
+            "can lam",
+            "can xu ly",
+            "can duyet",
+            "lam gi",
+            "xu ly gi",
+            "duyet gi",
+            "lam gi khong",
+            "viec gi",
+        )
+        has_time = any(word in text for word in time_words)
+        has_action = any(word in text for word in action_words)
+        if has_time and has_action:
+            return True
+        if has_time and "co gi" in text and any(
+            word in text for word in ("lam", "xu ly", "duyet", "viec", "don")
+        ):
+            return True
+        if ("viec" in text or "cong viec" in text or "don" in text) and has_action:
+            return True
+        if text.startswith("hom nay") and any(
+            word in text for word in ("viec", "lam", "xu ly", "duyet", "don", "gi")
+        ):
+            return True
+        return False
+
+    def _mentions_leave_request(self, text):
+        return any(
+            token in text
+            for token in (
+                "don nghi",
+                "nghi phep",
+                "don xin nghi",
+                "xin nghi phep",
+                "xin nghi",
+                "time off",
+                "leave",
+            )
+        )
+
+    def _is_leave_detail_followup_intent(self, text):
+        if not text:
+            return False
+        if any(marker in text for marker in ("cua toi", "cua minh", "don cua toi", "don cua minh")):
+            return False
+        if "ban giao" in text or "handover" in text:
+            return False
+        asks_detail = any(
+            word in text
+            for word in ("chi tiet", "liet ke", "danh sach", "noi ro", "noi chi tiet", "ke chi tiet")
+        )
+        return asks_detail and self._mentions_leave_request(text)
+
+    def _is_pending_approval_detail_intent(self, text):
+        """Approver asks who submitted leave requests waiting for their approval."""
+        if not text:
+            return False
+        if any(marker in text for marker in ("cua toi", "cua minh", "don cua toi", "don cua minh")):
+            return False
+        strong_phrases = (
+            "don nghi phep can duyet la cua ai",
+            "don nghi can duyet la cua ai",
+            "don can duyet la cua ai",
+            "can duyet la cua ai",
+            "ai xin nghi can duyet",
+            "ai xin nghi can toi duyet",
+            "ai xin nghi cho toi duyet",
+            "danh sach don can duyet",
+            "danh sach don nghi can duyet",
+            "liet ke don can duyet",
+            "liet ke don nghi can duyet",
+            "chi tiet don can duyet",
+            "chi tiet don nghi can duyet",
+            "chi tiet don nghi phep",
+            "chi tiet don nghi",
+            "noi chi tiet don nghi",
+            "noi chi tiet don nghi phep",
+            "ke chi tiet don nghi",
+            "noi ro don nghi",
+            "don nao can toi duyet",
+            "nhung don can duyet",
+            "nhung don nghi can duyet",
+            "don nghi phep can duyet la ai",
+            "don nghi phep nao can duyet",
+            "whose leave needs approval",
+            "list pending leave approvals",
+        )
+        if any(phrase in text for phrase in strong_phrases):
+            return True
+        if self._is_leave_detail_followup_intent(text):
+            return True
+        has_leave = self._mentions_leave_request(text)
+        needs_approval = any(
+            word in text
+            for word in ("can duyet", "can toi duyet", "cho duyet", "cho toi duyet", "dang cho duyet")
+        )
+        asks_detail = any(
+            word in text
+            for word in (
+                "cua ai",
+                "la ai",
+                "danh sach",
+                "chi tiet",
+                "liet ke",
+                "nhung don",
+                "don nao",
+                "noi chi tiet",
+                "noi ro",
+                "ke chi tiet",
+            )
+        )
+        if has_leave and asks_detail and not needs_approval:
+            if any(
+                phrase in text
+                for phrase in (
+                    "chi tiet don nghi",
+                    "chi tiet don nghi phep",
+                    "liet ke don nghi",
+                    "danh sach don nghi",
+                )
+            ):
+                return True
+        return has_leave and needs_approval and asks_detail
+
+    def _is_handover_pending_intent(self, text):
+        if not text:
+            return False
+        if any(token in text for token in ("pending", "chua phan hoi", "dang doi")):
+            return "ban giao" in text or "handover" in text
+        return any(
+            phrase in text
+            for phrase in (
+                "dang cho ban giao",
+                "dang cho phan hoi ban giao",
+                "cho phan hoi ban giao",
+                "ban giao dang cho",
+                "ban giao chua phan hoi",
+            )
+        )
+
     def _classify_intent(self, body):
         text = self._normalize_text(body)
         if not text:
             return "help"
-        daily_task_tokens = (
-            "hom nay co viec",
-            "co viec gi can lam",
-            "viec gi can lam",
-            "nhung viec can lam",
-            "viec can lam hom nay",
-            "cong viec can lam",
-            "can lam gi hom nay",
-            "what do i need to do",
-            "tasks today",
-            "pending tasks",
-            "to do today",
-        )
-        if any(token in text for token in daily_task_tokens):
+        if self._is_daily_tasks_intent(text):
             return "daily_tasks"
+        if self._is_pending_approval_detail_intent(text):
+            return "pending_approval_detail"
         if any(token in text for token in ("menu", "help", "giup", "tro giup", "huong dan")):
             return "help"
         if any(token in text for token in ("gan nhat", "ngay nao", "khi nao")):
@@ -326,7 +583,7 @@ class MailBot(models.AbstractModel):
             return "approval_who"
         if any(token in text for token in ("accepted", "chap nhan", "dong y")):
             return "handover_accepted"
-        if any(token in text for token in ("pending", "cho", "chua phan hoi", "dang doi")):
+        if self._is_handover_pending_intent(text):
             return "handover_pending"
         if any(token in text for token in ("refused", "tu choi", "khong nhan")):
             return "handover_refused"
@@ -364,6 +621,8 @@ class MailBot(models.AbstractModel):
         latest = leaves[:1]
         if intent == "help":
             return self._approval_help_message()
+        if intent == "pending_approval_detail":
+            return self._run_pending_approval_detail_skill()
         if intent == "latest_leave":
             return self._format_latest_leave_answer(latest)
 
@@ -560,7 +819,8 @@ class MailBot(models.AbstractModel):
         return _(
             "Bạn có thể hỏi mình:<br/>"
             "1) Đơn đang ở bước nào<br/>"
-            "2) Ai đang duyệt đơn"
+            "2) Ai đang duyệt đơn<br/>"
+            "3) Đơn nghỉ phép cần duyệt là của ai (chi tiết từng đơn)"
         )
 
     def _handover_help_message(self):
@@ -580,6 +840,7 @@ class MailBot(models.AbstractModel):
 
     def _normalize_text(self, text):
         normalized = (text or "").strip().lower()
+        normalized = normalized.replace("đ", "d").replace("Đ", "d")
         normalized = unicodedata.normalize("NFKD", normalized)
         normalized = "".join(ch for ch in normalized if not unicodedata.combining(ch))
         normalized = re.sub(r"\s+", " ", normalized)

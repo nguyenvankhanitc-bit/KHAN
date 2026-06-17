@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_leave_daily_report_view_list" model="ir.ui.view">
+        <field name="name">hr.leave.daily.report.list</field>
+        <field name="model">hr.leave.daily.report</field>
+        <field name="arch" type="xml">
+            <list string="Ngày nghỉ theo ngày" create="0" edit="0" delete="0" import="0">
+                <field name="stt" string="STT" width="48px"/>
+                <field name="employee_leave_mien" string="Miền" optional="show"/>
+                <field name="employee_id_hrm" string="ID" optional="show"/>
+                <field name="employee_name" string="Họ và Tên NV"/>
+                <field name="employee_ma_bo_phan" string="Mã bộ phận" optional="show"/>
+                <field name="job_title_display" string="Chức danh" optional="show"/>
+                <field name="request_date_from" string="Ngày nghỉ bắt đầu"/>
+                <field name="request_date_to" string="Ngày nghỉ kết thúc"/>
+                <field name="number_of_days" string="Số ngày nghỉ"/>
+                <field
+                    name="status_display_label"
+                    string="Trạng thái"
+                    widget="badge"
+                    decoration-warning="state in ('confirm', 'validate1')"
+                    decoration-success="state == 'validate'"
+                    decoration-danger="state == 'refuse'"
+                />
+                <field name="state" column_invisible="1"/>
+                <field name="job_title" column_invisible="1"/>
+                <field name="leave_id" column_invisible="1"/>
+                <button
+                    name="action_open_leave"
+                    type="object"
+                    string="Xem đơn"
+                    icon="fa-external-link"
+                    class="btn-link"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_daily_report_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.daily.report.search</field>
+        <field name="model">hr.leave.daily.report</field>
+        <field name="arch" type="xml">
+            <search string="Ngày nghỉ theo ngày">
+                <field name="employee_name" string="Nhân viên"/>
+                <field name="employee_id_hrm" string="ID"/>
+                <field name="employee_ma_bo_phan" string="Mã bộ phận"/>
+                <field name="employee_leave_mien" string="Miền"/>
+                <filter
+                    string="Hôm nay"
+                    name="today"
+                    domain="[
+                        ('request_date_from', '&lt;=', context_today()),
+                        ('request_date_to', '&gt;=', context_today()),
+                    ]"
+                />
+                <separator/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_leave_mien', '=', 'Bắc')]"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_leave_mien', '=', 'Nam')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_leave_mien', '=', 'ĐTT')]"/>
+                <filter string="VP" name="mien_vp" domain="[('employee_leave_mien', '=', 'VP')]"/>
+                <separator/>
+                <filter string="Đã xác thực" name="validated" domain="[('state', '=', 'validate')]"/>
+                <filter string="Cần phê duyệt" name="to_approve" domain="[('state', 'in', ('confirm', 'validate1'))]"/>
+                <filter string="Bị từ chối" name="refused" domain="[('state', '=', 'refuse')]"/>
+                <group>
+                    <filter string="Miền" name="group_mien" context="{'group_by': 'employee_leave_mien'}"/>
+                    <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Nhân viên" name="group_employee" context="{'group_by': 'employee_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_leave_daily_report" model="ir.actions.act_window">
+        <field name="name">Ngày nghỉ theo ngày</field>
+        <field name="res_model">hr.leave.daily.report</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="hr_leave_daily_report_view_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Không có nhân viên nghỉ phép trong khoảng thời gian đã chọn.
+            </p>
+            <p>
+                Bảng được cập nhật theo thời gian thực từ các đơn nghỉ phép.
+                Dùng bộ lọc <b>Hôm nay</b> để xem danh sách nghỉ phép trong ngày.
+            </p>
+        </field>
+    </record>
+
+    <menuitem
+        id="menu_hr_leave_daily_report"
+        name="Ngày nghỉ theo ngày"
+        parent="hr_holidays.menu_hr_holidays_management"
+        action="action_hr_leave_daily_report"
+        groups="hr_holidays.group_hr_holidays_responsible"
+        sequence="10"
+    />
+</odoo>

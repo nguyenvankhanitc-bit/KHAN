@@ -32,21 +32,20 @@
         <field name="comment">The user can view "Ngày nghỉ theo ngày" records of Miền Bắc, Nam and ĐTT.</field>
     </record>
 
-    <data noupdate="1">
-        <!--
-        Global record rule: applies to every reader of hr.leave.daily.report.
-        HR managers and Time Off administrators keep full access; all other users
-        are limited to the Miền granted through the privilege above.
-        -->
-        <record id="hr_leave_daily_report_mien_rule" model="ir.rule">
-            <field name="name">Ngày nghỉ theo ngày: lọc theo Miền</field>
-            <field name="model_id" ref="model_hr_leave_daily_report"/>
-            <field name="global" eval="True"/>
-            <field name="perm_read" eval="True"/>
-            <field name="perm_write" eval="False"/>
-            <field name="perm_create" eval="False"/>
-            <field name="perm_unlink" eval="False"/>
-            <field name="domain_force">[(1, '=', 1)] if (user.has_group('hr.group_hr_manager') or user.has_group('hr_holidays.group_hr_holidays_manager')) else ([('employee_leave_mien', 'in', ['VP', 'Bắc', 'Nam', 'ĐTT'])] if (user.has_group('hr_leave_daily_report.group_daily_report_mien_vp') and user.has_group('hr_leave_daily_report.group_daily_report_mien_bnd')) else ([('employee_leave_mien', '=', 'VP')] if user.has_group('hr_leave_daily_report.group_daily_report_mien_vp') else ([('employee_leave_mien', 'in', ['Bắc', 'Nam', 'ĐTT'])] if user.has_group('hr_leave_daily_report.group_daily_report_mien_bnd') else [(0, '=', 1)])))</field>
-        </record>
-    </data>
+    <!--
+    Global record rule: applies to every reader of hr.leave.daily.report.
+    HR managers and Time Off administrators keep full access; all other users
+    are limited to the Miền granted through the privilege above. Records with no
+    Miền are only visible to managers.
+    -->
+    <record id="hr_leave_daily_report_mien_rule" model="ir.rule">
+        <field name="name">Ngày nghỉ theo ngày: lọc theo Miền</field>
+        <field name="model_id" ref="model_hr_leave_daily_report"/>
+        <field name="groups" eval="[]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+        <field name="domain_force">[(1, '=', 1)] if (user.has_group('hr.group_hr_manager') or user.has_group('hr_holidays.group_hr_holidays_manager')) else ([('employee_leave_mien', 'in', ['VP', 'Bắc', 'Nam', 'ĐTT'])] if (user.has_group('hr_leave_daily_report.group_daily_report_mien_vp') and user.has_group('hr_leave_daily_report.group_daily_report_mien_bnd')) else ([('employee_leave_mien', '=', 'VP')] if user.has_group('hr_leave_daily_report.group_daily_report_mien_vp') else ([('employee_leave_mien', 'in', ['Bắc', 'Nam', 'ĐTT'])] if user.has_group('hr_leave_daily_report.group_daily_report_mien_bnd') else [(0, '=', 1)])))</field>
+    </record>
 </odoo>

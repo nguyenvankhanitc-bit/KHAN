@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Phân chia ngày nghỉ",
-    "version": "19.0.1.0.40",
+    "version": "19.0.1.0.41",
     "category": "Human Resources",
     "summary": "Gán và sắp xếp loại ngày nghỉ theo từng Miền",
     "description": """

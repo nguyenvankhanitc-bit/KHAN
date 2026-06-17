@@ -12,6 +12,9 @@
             <xpath expr="//list" position="attributes">
                 <attribute name="class">o_hr_leave_handover_list</attribute>
             </xpath>
+            <xpath expr="//field[@name='employee_id'][@widget='many2one_avatar_employee']" position="replace">
+                <field name="employee_id" readonly="state in ['cancel', 'refuse', 'validate', 'validate1']"/>
+            </xpath>
             <xpath expr="//field[@name='employee_id']" position="before">
                 <field name="validation_type" column_invisible="1"/>
                 <field name="can_responsible_approve" column_invisible="1"/>
@@ -22,7 +25,22 @@
                 <field
                     name="handover_recipient_display"
                     optional="show"
-                    string="Người nhận bàn giao công việc"
+                    string="Người nhận&#10; bàn giao CV"
+                    width="78px"
+                    class="o_handover_recipient_wrap"
+                />
+                <field
+                    name="handover_work_content_display"
+                    optional="show"
+                    string="Nội Dung&#10; CV bàn giao"
+                    width="88px"
+                    class="o_handover_content_wrap"
+                />
+                <field
+                    name="leave_reason_display"
+                    optional="show"
+                    string="Lý do xin nghỉ phép"
+                    class="o_leave_reason_wrap"
                 />
             </xpath>
             <xpath expr="//field[@name='state']" position="replace">

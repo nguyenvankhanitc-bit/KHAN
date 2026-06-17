@@ -9,6 +9,7 @@ from markupsafe import Markup, escape
 from odoo import Command, api, fields, models
 from odoo.exceptions import MissingError, UserError, ValidationError
 from odoo.tools import sql
+from odoo.tools.float_utils import float_round
 from odoo.tools.misc import format_date
 from odoo.tools.translate import _
 
@@ -187,6 +188,14 @@ class HrLeaveHandover(models.Model):
     handover_recipient_display = fields.Char(
         string="Work handover recipients",
         compute="_compute_handover_recipient_display",
+    )
+    handover_work_content_display = fields.Text(
+        string="Work handover content",
+        compute="_compute_handover_work_content_display",
+    )
+    leave_reason_display = fields.Char(
+        string="Leave reason",
+        compute="_compute_leave_reason_display",
     )
     handover_refused_label = fields.Char(
         string="Handover refused status",
@@ -906,6 +915,40 @@ class HrLeaveHandover(models.Model):
         for leave in self:
             names = leave.handover_employee_ids.mapped("name")
             leave.handover_recipient_display = ", ".join(name for name in names if name)
+
+    @api.depends(
+        "handover_acceptance_ids.handover_work_content",
+        "handover_acceptance_ids.sequence",
+    )
+    def _compute_handover_work_content_display(self):
+        Acceptance = self.env["hr.leave.handover.acceptance"].sudo()
+        for leave in self:
+            lines = Acceptance.search(
+                [("leave_id", "=", leave.id)],
+                order="sequence, id",
+            )
+            parts = [
+                (line.handover_work_content or "").strip()
+                for line in lines
+                if (line.handover_work_content or "").strip()
+            ]
+            leave.handover_work_content_display = "\n".join(parts)
+
+    @api.depends("name", "private_name", "employee_id", "user_id")
+    def _compute_leave_reason_display(self):
+        is_officer = self.env.user.has_group("hr_holidays.group_hr_holidays_user")
+        for leave in self:
+            if (
+                is_officer
+                or leave.user_id == self.env.user
+                or leave.employee_id.leave_manager_id == self.env.user
+            ):
+                leave.leave_reason_display = (
+                    leave.sudo().private_name or leave.name or ""
+                ).strip()
+            else:
+                reason = (leave.name or "").strip()
+                leave.leave_reason_display = "" if reason == "*****" else reason
 
     @api.depends(
         "request_date_from",
@@ -2139,7 +2182,9 @@ class HrLeaveHandover(models.Model):
         selection = dict(self._fields["state"].selection)
         for leave in self:
             label = selection.get(leave.state)
-            if leave.state in ("confirm", "validate1"):
+            if leave.state == "validate":
+                label = _("Được duyệt")
+            elif leave.state in ("confirm", "validate1"):
                 if leave._get_handover_blocking_employees():
                     label = _("Đang chờ bàn giao công việc")
                 elif leave.validation_type == "employee_hr_responsibles" and leave.responsible_approval_line_ids.filtered(
@@ -2151,6 +2196,22 @@ class HrLeaveHandover(models.Model):
                 elif leave.validation_type not in ("employee_hr_responsibles", "multi_step_6"):
                     label = _("Đang chờ duyệt")
             leave.status_display_label = label
+
+    @api.depends("number_of_hours", "number_of_days", "leave_type_request_unit")
+    def _compute_duration_display(self):
+        for leave in self:
+            if leave.leave_type_request_unit == "hour":
+                hours, minutes = divmod(abs(leave.number_of_hours) * 60, 60)
+                minutes = round(minutes)
+                if minutes == 60:
+                    minutes = 0
+                    hours += 1
+                leave.duration_display = _("%d:%02d giờ") % (hours, minutes)
+            else:
+                duration = float_round(leave.number_of_days, precision_digits=2)
+                if duration == int(duration):
+                    duration = int(duration)
+                leave.duration_display = _("%g ngày") % duration
 
     def _compute_can_multi_step_approve(self):
         super()._compute_can_multi_step_approve()

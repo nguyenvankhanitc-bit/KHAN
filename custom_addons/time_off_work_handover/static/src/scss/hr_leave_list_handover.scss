@@ -39,4 +39,42 @@
     .o_field_widget.text-truncate {
         text-overflow: unset !important;
     }
+
+    .o_data_cell[name="handover_recipient_display"],
+    .o_data_cell[name="handover_work_content_display"],
+    .o_data_cell[name="leave_reason_display"] {
+        white-space: pre-wrap !important;
+        word-break: break-word;
+        min-width: 10rem;
+        max-width: 16rem;
+        line-height: 1.4;
+    }
+
+    .o_list_table th[data-name="handover_recipient_display"],
+    .o_list_table th[data-name="handover_work_content_display"] {
+        max-width: 6rem;
+        vertical-align: bottom;
+
+        span.text-truncate,
+        .d-flex span {
+            display: block !important;
+            white-space: pre-line !important;
+            text-overflow: unset !important;
+            overflow: visible !important;
+            word-break: break-word;
+            line-height: 1.25;
+            min-width: 0;
+            flex: none !important;
+        }
+
+        .d-flex {
+            align-items: flex-end !important;
+        }
+    }
+
+    .o_data_cell[name="employee_id"] .o_m2o_avatar,
+    .o_data_cell[name="employee_id"] .o_avatar,
+    .o_data_cell[name="employee_id"] img {
+        display: none !important;
+    }
 }

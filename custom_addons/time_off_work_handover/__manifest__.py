@@ -1,6 +1,6 @@
 {
     "name": "Time Off Work Handover",
-    "version": "19.0.1.0.17",
+    "version": "19.0.1.0.20",
     "category": "Human Resources",
     "summary": "Work handover workflow for time off requests",
     "depends": [

@@ -5,6 +5,8 @@ HANDOVER_ACTIVE_STATES = ("confirm", "validate1")
 SKIP_SUBMIT_BOT_NOTIFY_CTX = "skip_handover_submit_bot_notify"
 # Same key as time_off_responsible_approval (handover cancel must not double-notify outcome).
 SKIP_OUTCOME_BOT_NOTIFY_CTX = "skip_outcome_bot_notify"
+# Public-holiday create/write re-evaluates overlapping hr.leave rows — skip handover checks.
+SKIP_HANDOVER_CONSTRAINTS_ON_LEAVE_SYNC_CTX = "skip_handover_constraints_on_leave_sync"
 
 HANDOVER_ESCALATION_MINUTES = 5
 HANDOVER_ESCALATION_TO_MANAGER_HOURS = 2

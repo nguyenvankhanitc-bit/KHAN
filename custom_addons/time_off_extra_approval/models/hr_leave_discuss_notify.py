@@ -31,7 +31,9 @@ class HrLeaveDiscussNotify(models.Model):
         required=True,
         index=True,
     )
-    split_group_id = fields.Integer(default=0, index=True)
+    # `hr.leave.split_group_id` is a UUID stored as Char (see p1/p2 split logic),
+    # so the tracker must store it as Char as well (server may pass UUID strings).
+    split_group_id = fields.Char(default=False, index=True)
     message_id = fields.Many2one("mail.message", ondelete="set null")
     approval_status = fields.Selection(
         [
@@ -196,16 +198,33 @@ class HrLeaveDiscussNotifyMixin(models.Model):
             primary._register_discuss_approval_notify(message, recipient_user, gid)
         return message
 
+    def _discuss_notify_normalize_split_group_id(self, split_group_id):
+        """Normalize split_group_id to a stable string key (or False).
+
+        Supports UUID strings (current) and legacy numeric ids.
+        """
+        if not split_group_id:
+            return False
+        # Odoo sometimes passes recordsets/ids around; keep only a scalar.
+        try:
+            if hasattr(split_group_id, "id"):
+                split_group_id = split_group_id.id
+        except Exception:
+            pass
+        if isinstance(split_group_id, (int, float)):
+            split_group_id = int(split_group_id)
+        return str(split_group_id)
+
     def _discuss_notify_find_trackers(self, user, split_group_id=0):
         self.ensure_one()
         Notify = self.env["hr.leave.discuss.notify"].sudo()
-        gid = int(split_group_id or 0)
+        gid = self._discuss_notify_normalize_split_group_id(split_group_id)
         domain = [("leave_id", "=", self.id), ("user_id", "=", user.id)]
         if gid:
             trackers = Notify.search(domain + [("split_group_id", "=", gid)])
             if trackers:
                 return trackers
-        return Notify.search(domain + [("split_group_id", "=", gid)])
+        return Notify.search(domain + [("split_group_id", "=", gid or False)])
 
     def _discuss_notify_update_status(
         self,
@@ -248,7 +267,7 @@ class HrLeaveDiscussNotifyMixin(models.Model):
         if not leave:
             return False
         leave.check_access("read")
-        gid = int(split_group_id or 0)
+        gid = leave._discuss_notify_normalize_split_group_id(split_group_id)
         leave._discuss_notify_update_status(
             self.env.user,
             split_group_id=gid,

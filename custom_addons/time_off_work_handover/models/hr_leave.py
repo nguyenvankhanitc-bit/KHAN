@@ -31,6 +31,9 @@ _DEPARTMENT_HEAD_JOB_TITLE_KEY = handover_constants.DEPARTMENT_HEAD_JOB_TITLE_KE
 _DEPARTMENT_MANAGER_JOB_TITLE_KEY = handover_constants.DEPARTMENT_MANAGER_JOB_TITLE_KEY
 _SKIP_SUBMIT_BOT_NOTIFY_CTX = handover_constants.SKIP_SUBMIT_BOT_NOTIFY_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = handover_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
+_SKIP_HANDOVER_CONSTRAINTS_ON_LEAVE_SYNC_CTX = (
+    handover_constants.SKIP_HANDOVER_CONSTRAINTS_ON_LEAVE_SYNC_CTX
+)
 _STORE_REGION_HANDOVER_MIEN_CODES = handover_constants.STORE_REGION_HANDOVER_MIEN_CODES
 _STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS = (
     handover_constants.STORE_LEADER_HANDOVER_REQUIRED_JOB_TITLE_KEYS
@@ -530,6 +533,9 @@ class HrLeaveHandover(models.Model):
             return False
         return rank >= threshold_rank
 
+    def _should_skip_handover_constraints(self):
+        return bool(self.env.context.get(_SKIP_HANDOVER_CONSTRAINTS_ON_LEAVE_SYNC_CTX))
+
     def _check_handover_content_required_on_submit(self):
         for leave in self:
             if leave.state not in ("confirm", "validate1", "validate"):
@@ -549,6 +555,8 @@ class HrLeaveHandover(models.Model):
 
     @api.constrains("state", "handover_employee_ids")
     def _check_handover_duplicate_recipients(self):
+        if self._should_skip_handover_constraints():
+            return
         for leave in self:
             employees = leave.handover_acceptance_ids.mapped("employee_id")
             if len(employees.ids) != len(set(employees.ids)):
@@ -556,6 +564,8 @@ class HrLeaveHandover(models.Model):
 
     @api.constrains("state", "handover_acceptance_ids")
     def _check_handover_employee_availability(self):
+        if self._should_skip_handover_constraints():
+            return
         for leave in self.filtered("handover_employee_ids"):
             unavailable = leave._get_unavailable_handover_employees()
             if unavailable:
@@ -582,7 +592,7 @@ class HrLeaveHandover(models.Model):
 
     @api.constrains("handover_acceptance_ids")
     def _check_handover_required_on_submit(self):
-        if self.env.context.get("import_file"):
+        if self.env.context.get("import_file") or self._should_skip_handover_constraints():
             return
         for leave in self:
             if (

@@ -18,6 +18,7 @@ _logger = logging.getLogger(__name__)
 _MULTI_STEP_RESET_CTX = approval_constants.MULTI_STEP_RESET_CTX
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = approval_constants.SKIP_OUTCOME_BOT_NOTIFY_CTX
 _SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX = approval_constants.SKIP_RESPONSIBLE_SUBMIT_NOTIFY_CTX
+_SKIP_PUBLIC_HOLIDAY_LEAVE_SYNC_CTX = "skip_handover_constraints_on_leave_sync"
 _SKIP_RESPONSIBLE_AUTO_SKIP_CTX = "skip_responsible_auto_skip_pending"
 _HR_RESPONSIBLE_APPROVAL_JOB_TITLE_ORDER = tuple(
     key for key, _label in JOB_TITLE_SELECTION if key != "nhân viên"
@@ -2002,6 +2003,8 @@ class HrLeaveResponsibleApproval(models.Model):
 
     def _approval_write_before(self, vals):
         ctx = {}
+        if self.env.context.get(_SKIP_PUBLIC_HOLIDAY_LEAVE_SYNC_CTX):
+            return ctx
         if (
             vals.get("state") in ("validate", "refuse", "cancel")
             and not self.env.context.get("leave_fast_create")
@@ -2023,6 +2026,8 @@ class HrLeaveResponsibleApproval(models.Model):
         return ctx
 
     def _approval_write_after(self, vals, ctx):
+        if self.env.context.get(_SKIP_PUBLIC_HOLIDAY_LEAVE_SYNC_CTX):
+            return
         reset_leaves = ctx.get("reset_leaves") or self.env["hr.leave"]
         if reset_leaves:
             reset_leaves.mapped("multi_approval_line_ids").unlink()

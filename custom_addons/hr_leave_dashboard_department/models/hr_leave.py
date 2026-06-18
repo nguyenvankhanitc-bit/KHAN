@@ -83,6 +83,8 @@ class HrLeave(models.Model):
         # sudo().write({'state': 'confirm'}) — not a user submit action.
         if self.env.su and set(vals.keys()) <= {"state"}:
             return False
+        if self.env.context.get("skip_handover_constraints_on_leave_sync"):
+            return False
         tracked = {
             "name",
             "private_name",

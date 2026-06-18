@@ -203,7 +203,7 @@ class HrLeaveDiscussNotifyMixin(models.Model):
 
         Supports UUID strings (current) and legacy numeric ids.
         """
-        if not split_group_id:
+        if split_group_id in (None, False, "", 0):
             return False
         # Odoo sometimes passes recordsets/ids around; keep only a scalar.
         try:
@@ -213,7 +213,8 @@ class HrLeaveDiscussNotifyMixin(models.Model):
             pass
         if isinstance(split_group_id, (int, float)):
             split_group_id = int(split_group_id)
-        return str(split_group_id)
+        normalized = str(split_group_id).strip()
+        return normalized or False
 
     def _discuss_notify_find_trackers(self, user, split_group_id=0):
         self.ensure_one()

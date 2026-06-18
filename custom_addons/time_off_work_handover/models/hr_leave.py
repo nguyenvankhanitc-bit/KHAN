@@ -197,6 +197,10 @@ class HrLeaveHandover(models.Model):
         string="Leave reason",
         compute="_compute_leave_reason_display",
     )
+    handover_status_waiting = fields.Boolean(
+        string="Waiting for handover",
+        compute="_compute_handover_status_waiting",
+    )
     handover_refused_label = fields.Char(
         string="Handover refused status",
         compute="_compute_handover_refused_label",
@@ -949,6 +953,21 @@ class HrLeaveHandover(models.Model):
             else:
                 reason = (leave.name or "").strip()
                 leave.leave_reason_display = "" if reason == "*****" else reason
+
+    @api.depends(
+        "state",
+        "handover_employee_ids",
+        "handover_acceptance_ids.state",
+        "validation_type",
+        "responsible_approval_line_ids.state",
+        "multi_step_current",
+    )
+    def _compute_handover_status_waiting(self):
+        for leave in self:
+            leave.handover_status_waiting = (
+                leave.state in ("confirm", "validate1")
+                and bool(leave._get_handover_blocking_employees())
+            )
 
     @api.depends(
         "request_date_from",

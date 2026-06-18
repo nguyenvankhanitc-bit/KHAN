@@ -19,22 +19,21 @@
                 <field name="validation_type" column_invisible="1"/>
                 <field name="can_responsible_approve" column_invisible="1"/>
                 <field name="can_multi_step_approve" column_invisible="1"/>
+                <field name="handover_status_waiting" column_invisible="1"/>
             </xpath>
             <xpath expr="//field[@name='employee_id']" position="after">
-                <field name="approval_current_step_label" optional="show" string="Awaiting"/>
+                <field name="approval_current_step_label" optional="show" string="Bước duyệt"/>
                 <field
                     name="handover_recipient_display"
                     optional="show"
-                    string="Người nhận&#10; bàn giao CV"
-                    width="78px"
-                    class="o_handover_recipient_wrap"
+                    string="Người nhận bàn giao CV"
+                    class="o_handover_recipient_col"
                 />
                 <field
                     name="handover_work_content_display"
                     optional="show"
-                    string="Nội Dung&#10; CV bàn giao"
-                    width="88px"
-                    class="o_handover_content_wrap"
+                    string="Nội dung CV bàn giao"
+                    class="o_handover_content_col"
                 />
                 <field
                     name="leave_reason_display"
@@ -47,9 +46,11 @@
                 <field name="state" column_invisible="1"/>
                 <field
                     name="status_display_label"
-                    string="Status"
+                    string="Trạng thái"
                     widget="badge"
-                    decoration-warning="state in ('confirm','validate1')"
+                    class="o_hr_leave_status_col"
+                    decoration-muted="handover_status_waiting"
+                    decoration-warning="state in ('confirm','validate1') and not handover_status_waiting"
                     decoration-success="state == 'validate'"
                     decoration-danger="state == 'refuse'"
                 />

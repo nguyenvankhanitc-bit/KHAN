@@ -8,11 +8,16 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='date_from']" position="replace">
                 <field name="date_from" column_invisible="1"/>
-                <field name="leave_list_date_from_display"/>
+                <field name="create_date" string="Ngày tạo đơn" class="o_hr_leave_date_col o_hr_leave_create_date_col"/>
+                <field name="leave_list_date_from_display" string="Ngày bắt đầu" class="o_hr_leave_date_col"/>
             </xpath>
             <xpath expr="//field[@name='date_to']" position="replace">
                 <field name="date_to" column_invisible="1"/>
-                <field name="leave_list_date_to_display"/>
+                <field name="leave_list_date_to_display" string="Ngày kết thúc" class="o_hr_leave_date_col"/>
+            </xpath>
+            <xpath expr="//field[@name='duration_display']" position="attributes">
+                <attribute name="string">Tổng thời gian</attribute>
+                <attribute name="class">o_hr_leave_date_col</attribute>
             </xpath>
         </field>
     </record>

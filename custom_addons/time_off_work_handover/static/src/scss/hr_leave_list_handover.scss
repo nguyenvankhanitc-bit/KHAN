@@ -40,41 +40,100 @@
         text-overflow: unset !important;
     }
 
+    .o_list_table th[data-name="handover_recipient_display"],
+    .o_list_table th[data-name="handover_work_content_display"] {
+        white-space: nowrap !important;
+        min-width: 11rem;
+
+        span.text-truncate,
+        .d-flex span {
+            white-space: nowrap !important;
+            text-overflow: unset !important;
+            overflow: visible !important;
+            display: inline !important;
+            flex: 1 1 auto !important;
+        }
+    }
+
     .o_data_cell[name="handover_recipient_display"],
-    .o_data_cell[name="handover_work_content_display"],
+    .o_data_cell[name="handover_work_content_display"] {
+        min-width: 11rem;
+        max-width: none;
+        white-space: normal !important;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+
     .o_data_cell[name="leave_reason_display"] {
         white-space: pre-wrap !important;
         word-break: break-word;
         min-width: 10rem;
-        max-width: 16rem;
         line-height: 1.4;
-    }
-
-    .o_list_table th[data-name="handover_recipient_display"],
-    .o_list_table th[data-name="handover_work_content_display"] {
-        max-width: 6rem;
-        vertical-align: bottom;
-
-        span.text-truncate,
-        .d-flex span {
-            display: block !important;
-            white-space: pre-line !important;
-            text-overflow: unset !important;
-            overflow: visible !important;
-            word-break: break-word;
-            line-height: 1.25;
-            min-width: 0;
-            flex: none !important;
-        }
-
-        .d-flex {
-            align-items: flex-end !important;
-        }
     }
 
     .o_data_cell[name="employee_id"] .o_m2o_avatar,
     .o_data_cell[name="employee_id"] .o_avatar,
     .o_data_cell[name="employee_id"] img {
         display: none !important;
+    }
+
+    // Date / duration columns: even header spacing and alignment.
+    .o_list_table th[data-name="create_date"],
+    .o_list_table th[data-name="leave_list_date_from_display"],
+    .o_list_table th[data-name="leave_list_date_to_display"],
+    .o_list_table th[data-name="duration_display"],
+    .o_list_table th[data-name="status_display_label"] {
+        white-space: nowrap !important;
+        text-align: center;
+        vertical-align: middle;
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+
+        span.text-truncate,
+        .d-flex span {
+            white-space: nowrap !important;
+            text-overflow: unset !important;
+            overflow: visible !important;
+            text-align: center;
+            width: 100%;
+        }
+
+        .d-flex {
+            justify-content: center !important;
+        }
+    }
+
+    .o_data_cell[name="create_date"],
+    .o_data_cell[name="leave_list_date_from_display"],
+    .o_data_cell[name="leave_list_date_to_display"],
+    .o_data_cell[name="duration_display"],
+    .o_data_cell[name="status_display_label"] {
+        text-align: center;
+        vertical-align: middle;
+        white-space: nowrap !important;
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+    }
+
+    .o_list_table th[data-name="create_date"],
+    .o_data_cell[name="create_date"] {
+        min-width: 10.5rem;
+    }
+
+    .o_list_table th[data-name="leave_list_date_from_display"],
+    .o_list_table th[data-name="leave_list_date_to_display"],
+    .o_data_cell[name="leave_list_date_from_display"],
+    .o_data_cell[name="leave_list_date_to_display"] {
+        min-width: 7.75rem;
+    }
+
+    .o_list_table th[data-name="duration_display"],
+    .o_data_cell[name="duration_display"] {
+        min-width: 6.5rem;
+    }
+
+    .o_list_table th[data-name="status_display_label"],
+    .o_data_cell[name="status_display_label"] {
+        min-width: 9.5rem;
     }
 }

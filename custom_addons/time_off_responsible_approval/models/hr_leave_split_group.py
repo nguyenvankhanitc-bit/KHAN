@@ -484,7 +484,10 @@ class HrLeaveSplitGroup(models.Model):
             discuss_link_type="approval",
             split_group_id=primary.split_group_id or None,
         )
-        body = intro + button_html
+        status_html = primary._approval_bot_notify_status_html(
+            "pending", "unseen", approver_user, primary.split_group_id or 0
+        )
+        body = intro + status_html + button_html
         try:
             bot_user = self.env.ref(
                 "business_discuss_bots.user_bot_approval", raise_if_not_found=False
@@ -505,10 +508,13 @@ class HrLeaveSplitGroup(models.Model):
                 )
                 return
             self._split_group_approval_notify_mark_done(primary.split_group_id)
-            chat.with_user(bot_user).sudo().message_post(
+            message = chat.with_user(bot_user).sudo().message_post(
                 body=body,
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
+            )
+            primary._register_discuss_approval_notify(
+                message, approver_user, primary.split_group_id or 0
             )
             _logger.info(
                 "time_off_extra_approval: sent grouped bot notify split_group=%s leave_id=%s approver=%s",

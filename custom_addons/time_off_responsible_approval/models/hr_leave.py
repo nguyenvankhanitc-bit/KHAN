@@ -1596,32 +1596,17 @@ class HrLeaveResponsibleApproval(models.Model):
             segments=segments_html,
             reason=escape(str(details["reason"])),
         )
-        button_html = self._notify_discuss_leave_open_button_markup(
-            _("Xem thông tin chi tiết ngày nghỉ phép"),
-            discuss_link_type="approval",
-        )
-        body = intro + button_html
         try:
-            # Current-turn approver notifications must come from approval bot.
-            bot_user = self.env.ref("business_discuss_bots.user_bot_approval", raise_if_not_found=False)
-            if not bot_user:
-                bot_user = self.env.ref("base.user_root")
-            chat = (
-                self.env["discuss.channel"]
-                .with_user(bot_user)
-                .sudo()
-                ._get_or_create_chat([approver_user.partner_id.id], pin=True)
+            message = self._post_discuss_approval_bot_message(
+                approver_user,
+                intro,
             )
-            chat.with_user(bot_user).sudo().message_post(
-                body=body,
-                message_type="comment",
-                subtype_xmlid="mail.mt_comment",
-            )
+            if not message:
+                return
             _logger.info(
-                "time_off_extra_approval: sent bot current-turn notify leave_id=%s approver_login=%s bot_user=%s",
+                "time_off_extra_approval: sent bot current-turn notify leave_id=%s approver_login=%s",
                 self.id,
                 approver_user.login,
-                bot_user.login,
             )
         except Exception:
             _logger.exception(
@@ -1707,6 +1692,7 @@ class HrLeaveResponsibleApproval(models.Model):
         )
 
         max_seq = max(self.holiday_status_id.multi_approval_step_ids.mapped("sequence") or [1])
+        self._discuss_notify_mark_approved_for_user(self.env.user)
         if self.multi_step_current < max_seq:
             self.write({"multi_step_current": self.multi_step_current + 1})
             self.sudo().activity_update()
@@ -1846,6 +1832,7 @@ class HrLeaveResponsibleApproval(models.Model):
                     self._refresh_responsible_actionable_users()
                     self._notify_responsible_current_turn()
             self._responsible_approval_after_approve(approved_line=user_line)
+            self._discuss_notify_mark_approved_for_user(self.env.user)
 
         if mode == "any":
             return self.sudo()._action_validate(check_state=False)
@@ -2073,6 +2060,8 @@ class HrLeaveResponsibleApproval(models.Model):
                             refusal_reason=self.env.context.get("refusal_reason"),
                             refuser_name=self.env.context.get("refuser_name"),
                         )
+                    if leave.state == "validate" and leave.state != prev:
+                        leave._discuss_notify_mark_approved_for_user(self.env.user)
 
     def write(self, vals):
         ctx = self._approval_write_before(vals)

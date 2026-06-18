@@ -349,7 +349,10 @@ class HrLeaveMonthlySplit(models.Model):
             discuss_link_type="approval",
             split_group_id=primary.split_group_id or None,
         )
-        body = intro + button_html
+        status_html = primary._approval_bot_notify_status_html(
+            "pending", "unseen", approver_user, primary.split_group_id or 0
+        )
+        body = intro + status_html + button_html
         try:
             bot_user = self.env.ref(
                 "business_discuss_bots.user_bot_approval", raise_if_not_found=False
@@ -362,10 +365,13 @@ class HrLeaveMonthlySplit(models.Model):
                 .sudo()
                 ._get_or_create_chat([approver_user.partner_id.id], pin=True)
             )
-            chat.with_user(bot_user).sudo().message_post(
+            message = chat.with_user(bot_user).sudo().message_post(
                 body=body,
                 message_type="comment",
                 subtype_xmlid="mail.mt_comment",
+            )
+            primary._register_discuss_approval_notify(
+                message, approver_user, primary.split_group_id or 0
             )
         except Exception:
             _logger.exception(

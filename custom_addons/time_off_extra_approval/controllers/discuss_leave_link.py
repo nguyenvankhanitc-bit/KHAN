@@ -37,6 +37,8 @@ class DiscussLeaveLink(http.Controller):
             raise Forbidden() from None
         leave = leave[0]
 
+        request.env["hr.leave"].action_discuss_mark_leave_notification_viewed(leave.id)
+
         ref = request.httprequest.headers.get("Referer") or ""
         base = "/scoped_app" if "/scoped_app/" in ref or ref.rstrip("/").endswith("/scoped_app") else "/odoo"
         location = f"{base}/hr.leave/{leave.id}"

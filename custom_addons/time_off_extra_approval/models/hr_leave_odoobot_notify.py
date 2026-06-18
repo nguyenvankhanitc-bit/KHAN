@@ -141,15 +141,26 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
 
     def _post_odoobot_bot_discuss_message(self, bot_user_xmlid, recipient_user, body):
         """Post a Discuss DM from a configured OdooBot user."""
+        return bool(
+            self._post_odoobot_bot_discuss_message_returning(
+                bot_user_xmlid, recipient_user, body
+            )
+        )
+
+    def _post_odoobot_bot_discuss_message_returning(
+        self, bot_user_xmlid, recipient_user, body
+    ):
+        """Post a Discuss DM and return the created mail.message (or empty recordset)."""
         self.ensure_one()
+        Message = self.env["mail.message"]
         if not recipient_user or recipient_user.share or not recipient_user.partner_id:
-            return False
+            return Message
         bot_user = self.env.ref(bot_user_xmlid, raise_if_not_found=False)
         if not bot_user:
             bot_user = self.env.ref("base.user_root")
         bot_partner_id = bot_user.partner_id.id if bot_user and bot_user.partner_id else False
         if not bot_partner_id:
-            return False
+            return Message
         try:
             chat = (
                 self.env["discuss.channel"]
@@ -163,8 +174,7 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
                 "subtype_xmlid": "mail.mt_comment",
                 "author_id": bot_partner_id,
             }
-            chat.with_user(bot_user).sudo().message_post(**post_vals)
-            return True
+            return chat.with_user(bot_user).sudo().message_post(**post_vals)
         except Exception:
             _logger.exception(
                 "time_off_extra_approval: OdooBot DM failed leave_id=%s recipient_user_id=%s bot=%s",
@@ -172,4 +182,4 @@ class HrLeaveOdoobotNotifyMixin(models.Model):
                 recipient_user.id,
                 bot_user_xmlid,
             )
-            return False
+            return Message

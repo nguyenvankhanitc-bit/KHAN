@@ -87,6 +87,22 @@ function openApprovalPendingList(env) {
     return env.services.action.doAction("hr_holidays.hr_leave_action_action_approve_department");
 }
 
+async function markLeaveNotificationViewed(orm, resId, link) {
+    if ((link.dataset.oeType || "") !== "approval") {
+        return;
+    }
+    const splitGroupId = link.dataset.oeSplitGroup || false;
+    try {
+        await orm.call(
+            "hr.leave",
+            "action_discuss_mark_leave_notification_viewed",
+            [resId, splitGroupId]
+        );
+    } catch {
+        // Best-effort: opening the leave form must still work.
+    }
+}
+
 function handleApprovalListLink(ev, store, thread) {
     const link = findApprovalListLink(ev.target);
     if (!link) {
@@ -168,6 +184,7 @@ function handleTimeOffLeaveLink(ev, store, thread) {
     ev.preventDefault();
     ev.stopPropagation();
     foldMobileChatWindow(store, ev, thread, link);
+    void markLeaveNotificationViewed(store.env.services.orm, resId, link);
     openLeaveForm(store.env, resId);
     return true;
 }

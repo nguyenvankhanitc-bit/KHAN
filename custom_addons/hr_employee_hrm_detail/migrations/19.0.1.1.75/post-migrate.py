@@ -1,22 +1,32 @@
 # -*- coding: utf-8 -*-
-
+"""Legacy regional CH supporter scope — superseded by visibility_policy (safe)."""
 import logging
 
 from odoo import SUPERUSER_ID, api
+
+from odoo.addons.hr_employee_hrm_detail.migration_schema import (
+    ensure_res_users_visibility_schema,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
+    ensure_res_users_visibility_schema(cr)
+    env = api.Environment(cr, SUPERUSER_ID, {})
     from odoo.addons.hr_employee_hrm_detail.hooks import _sync_mien_access_rules
 
-    env = api.Environment(cr, SUPERUSER_ID, {})
-    users = env["res.users"].search([])
-    env.add_to_compute(env["res.users"]._fields["hr_user_workforce_scope"], users)
-    env["res.users"].flush_model(["hr_user_workforce_scope"])
+    Users = env["res.users"]
+    users = Users.search([])
+    if "hr_user_workforce_scope" in Users._fields:
+        env.add_to_compute(Users._fields["hr_user_workforce_scope"], users)
+        Users.flush_model(["hr_user_workforce_scope"])
     _sync_mien_access_rules(env)
-    env["hr.employee.public"].init()
+    try:
+        env["hr.employee.public"].init()
+    except Exception:
+        pass
     env.registry.clear_cache()
     _logger.info(
-        "hr_employee_hrm_detail: regional CH supporters scoped; workforce scope recomputed"
+        "hr_employee_hrm_detail 19.0.1.1.75: legacy migration completed safely"
     )

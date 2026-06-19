@@ -61,8 +61,10 @@ def migrate(cr, version):
         )
 
     users = env["res.users"].search([])
-    env.add_to_compute(env["res.users"]._fields["hr_user_workforce_scope"], users)
-    env["res.users"].flush_model(["hr_user_workforce_scope"])
+    Users = env["res.users"]
+    if "hr_user_workforce_scope" in Users._fields:
+        env.add_to_compute(Users._fields["hr_user_workforce_scope"], users)
+        Users.flush_model(["hr_user_workforce_scope"])
     _sync_mien_access_rules(env)
     env["hr.employee.public"].init()
     env.registry.clear_cache()

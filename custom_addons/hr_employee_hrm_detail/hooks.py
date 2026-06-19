@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from .migration_schema import ensure_res_users_visibility_schema
 from .models.hr_employee_mien_rule_domains import (
     HR_EMPLOYEE_MIEN_RULE_DOMAIN,
     HR_EMPLOYEE_PUBLIC_MIEN_RULE_DOMAIN,
@@ -54,6 +55,7 @@ def _sync_user_visibility_policy(env, users=None, force=False):
 
 
 def post_init_hook(env):
+    ensure_res_users_visibility_schema(env.cr)
     users = env["res.users"].search([])
     env.add_to_compute(env["res.users"]._fields["employee_ma_bo_phan_id"], users)
     env.add_to_compute(env["res.users"]._fields["employee_department_id"], users)

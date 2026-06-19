@@ -1,56 +1,32 @@
 # -*- coding: utf-8 -*-
-
+"""Legacy CH miền scope sync — superseded by visibility_policy (safe no-op)."""
 import logging
 
 from odoo import SUPERUSER_ID, api
+
+from odoo.addons.hr_employee_hrm_detail.migration_schema import (
+    ensure_res_users_visibility_schema,
+)
 
 _logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
-    from odoo.addons.hr_employee_hrm_detail.hooks import _sync_mien_access_rules
-    from odoo.addons.hr_employee_hrm_detail.models.hr_employee import (
-        STORE_MIENS,
-        VISIBILITY_OFFICE,
-        VISIBILITY_STORE,
-        WORKFORCE_GROUP_CH,
-        WORKFORCE_GROUP_VP,
-    )
-
+    ensure_res_users_visibility_schema(cr)
     env = api.Environment(cr, SUPERUSER_ID, {})
-    employees = env["hr.employee"].with_context(active_test=False).search([])
-    for employee in employees:
-        mien = employee.mien or (
-            employee.ma_bo_phan_id.mien if employee.ma_bo_phan_id else False
-        )
-        workforce_group = employee.workforce_group
-        if not workforce_group:
-            if mien == WORKFORCE_GROUP_VP:
-                workforce_group = WORKFORCE_GROUP_VP
-            elif mien in STORE_MIENS:
-                workforce_group = WORKFORCE_GROUP_CH
-        visibility = employee.employee_visibility
-        if visibility not in (VISIBILITY_OFFICE, VISIBILITY_STORE, "all"):
-            if workforce_group == WORKFORCE_GROUP_VP:
-                visibility = VISIBILITY_OFFICE
-            elif workforce_group == WORKFORCE_GROUP_CH:
-                visibility = VISIBILITY_STORE
-            else:
-                visibility = False
-        write_vals = {}
-        if workforce_group and employee.workforce_group != workforce_group:
-            write_vals["workforce_group"] = workforce_group
-        if visibility and employee.employee_visibility != visibility:
-            write_vals["employee_visibility"] = visibility
-        if write_vals:
-            employee.write(write_vals)
+    from odoo.addons.hr_employee_hrm_detail.hooks import _sync_mien_access_rules
 
-    users = env["res.users"].search([])
-    env.add_to_compute(env["res.users"]._fields["hr_user_workforce_scope"], users)
-    env["res.users"].flush_model(["hr_user_workforce_scope"])
+    Users = env["res.users"]
+    users = Users.search([])
+    if "hr_user_workforce_scope" in Users._fields:
+        env.add_to_compute(Users._fields["hr_user_workforce_scope"], users)
+        Users.flush_model(["hr_user_workforce_scope"])
     _sync_mien_access_rules(env)
-    env["hr.employee.public"].init()
+    try:
+        env["hr.employee.public"].init()
+    except Exception:
+        pass
     env.registry.clear_cache()
     _logger.info(
-        "hr_employee_hrm_detail: CH officers scoped by miền Bắc/Nam/ĐTT; workforce data synced"
+        "hr_employee_hrm_detail 19.0.1.1.74: legacy migration completed safely"
     )

@@ -9,10 +9,15 @@ import logging
 
 from odoo import SUPERUSER_ID, api
 
+from odoo.addons.hr_employee_hrm_detail.migration_schema import (
+    ensure_res_users_visibility_schema,
+)
+
 _logger = logging.getLogger(__name__)
 
 
 def migrate(cr, version):
+    ensure_res_users_visibility_schema(cr)
     env = api.Environment(cr, SUPERUSER_ID, {})
     from odoo.addons.hr_employee_hrm_detail.hooks import _sync_mien_access_rules
 

@@ -19,7 +19,7 @@ HR_EMP_ALL_LOGINS = frozenset({
 
 def migrate(cr, version):
     env = api.Environment(cr, SUPERUSER_ID, {})
-    from odoo.addons.hr_employee_hrm_detail.hooks import _sync_user_visibility_groups
+    from odoo.addons.hr_employee_hrm_detail.hooks import _sync_user_visibility_policy
 
     group_all = env.ref("hr_employee_hrm_detail.group_emp_all")
     supporter = env.ref("hr_employee_hrm_detail.group_hr_employees_supporter")
@@ -27,7 +27,7 @@ def migrate(cr, version):
         supporter.write({"implied_ids": [(3, group_all.id)]})
 
     users = env["res.users"].search([("share", "=", False), ("id", "!=", SUPERUSER_ID)])
-    _sync_user_visibility_groups(env, users)
+    _sync_user_visibility_policy(env, users)
     for user in users:
         login = (user.login or "").lower()
         if login in HR_EMP_ALL_LOGINS and not user.has_group("hr.group_hr_manager"):

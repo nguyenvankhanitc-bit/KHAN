@@ -56,6 +56,19 @@
                         <field name="visibility_policy" readonly="1"
                                string="Phạm vi xem (đồng bộ)"/>
                     </group>
+                    <separator string="Quyền sửa hồ sơ nhân viên"/>
+                    <group>
+                        <field name="lug_hr_employee_edit_policy" widget="radio"/>
+                        <group invisible="lug_hr_employee_edit_policy != 'zones'">
+                            <field name="lug_hr_employee_edit_mien_zone_ids"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True, 'no_create_edit': True}"/>
+                            <div class="text-muted" colspan="2">
+                                Chỉ giới hạn thao tác <b>sửa/tạo hồ sơ nhân viên</b>.
+                                Không ảnh hưởng quyền xem, nghỉ phép, chấm công, menu.
+                            </div>
+                        </group>
+                    </group>
                     <separator string="Quyền bổ sung riêng"/>
                     <div class="text-muted mb-2">
                         Quyền hiệu lực = Nhóm quyền + Quyền bổ sung riêng.

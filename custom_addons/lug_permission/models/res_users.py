@@ -38,6 +38,64 @@ class ResUsers(models.Model):
         string="Áp dụng LUG Permission",
     )
 
+    lug_hr_employee_edit_policy = fields.Selection(
+        selection=[
+            ("none", "Không giới hạn (mặc định)"),
+            ("zones", "Giới hạn theo Miền"),
+        ],
+        string="Quyền sửa hồ sơ nhân viên",
+        default="none",
+        help=(
+            "Chỉ áp dụng cho thao tác sửa/tạo hồ sơ nhân viên (hr.employee). "
+            "Không ảnh hưởng các chức năng khác."
+        ),
+    )
+    lug_hr_employee_edit_mien_zone_ids = fields.Many2many(
+        "hr.mien.zone",
+        "lug_user_hr_employee_edit_mien_zone_rel",
+        "user_id",
+        "mien_zone_id",
+        string="Miền được sửa hồ sơ",
+        help="Chỉ áp dụng khi 'Quyền sửa hồ sơ nhân viên' = 'Giới hạn theo Miền'.",
+    )
+
+    def lug_allowed_employee_edit_legacy_miens(self):
+        """Return a set of allowed legacy_mien strings for employee profile edits."""
+        self.ensure_one()
+        user = self.sudo()
+        if user.has_group("base.group_system") or user.has_group("hr.group_hr_manager"):
+            return None  # unrestricted
+        if (user.lug_hr_employee_edit_policy or "none") != "zones":
+            return None
+        return set(
+            (z.legacy_mien or "").strip()
+            for z in user.lug_hr_employee_edit_mien_zone_ids
+            if (z.legacy_mien or "").strip()
+        )
+
+    @api.model
+    def _lug_set_default_employee_edit_scopes(self):
+        """Apply requested defaults; safe to rerun on upgrades."""
+        Zone = self.env["hr.mien.zone"].sudo()
+        zone_map = {z.legacy_mien: z for z in Zone.search([]) if z.legacy_mien}
+
+        def _set_user_zones(login, legacy_miens):
+            user = self.sudo().search([("login", "=", login)], limit=1)
+            if not user:
+                return
+            zones = Zone.browse([zone_map[m].id for m in legacy_miens if m in zone_map])
+            if not zones:
+                return
+            user.write(
+                {
+                    "lug_hr_employee_edit_policy": "zones",
+                    "lug_hr_employee_edit_mien_zone_ids": [(6, 0, zones.ids)],
+                }
+            )
+
+        _set_user_zones("admin.lug@sangtam.com", ["Nam", "ĐTT", "Bắc"])
+        _set_user_zones("anh.trinh@sangtam.com", ["VP"])
+
     @api.depends("lug_group_ids", "lug_user_permission_ids")
     def _compute_lug_permission_enforced(self):
         for user in self:

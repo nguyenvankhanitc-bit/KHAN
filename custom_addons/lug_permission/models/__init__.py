@@ -7,4 +7,5 @@ from . import lug_user_permission
 from . import res_users
 from . import ir_ui_menu
 from . import hr_employee_access
+from . import hr_employee_edit_access
 from . import ir_http

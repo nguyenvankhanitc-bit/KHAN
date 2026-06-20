@@ -9,6 +9,8 @@ from odoo.tools.translate import _
 
 from odoo.addons.time_off_responsible_approval import constants as approval_constants
 
+from .hr_leave import _normalize_job_title_key
+
 _logger = logging.getLogger(__name__)
 _SKIP_OUTCOME_BOT_NOTIFY_CTX = "skip_outcome_bot_notify"
 _DEFAULT_MAX_TITLE = "trưởng bộ phận"
@@ -95,19 +97,33 @@ class HrLeaveApprovalEscalation(models.Model):
             return rank_fn(title_key)
         return -1
 
-    def _get_approval_escalation_cap_user_for_max_title(self):
+    def _get_approval_org_chart_user_for_exact_job_title(self, title_key):
+        """First manager on the requester's chain with an exact job title match (internal user)."""
         self.ensure_one()
-        max_rank = self._approval_job_title_rank(self._approval_max_escalation_job_title())
-        if max_rank < 0:
+        exact_fn = getattr(super(), "_get_org_chart_user_for_exact_job_title", None)
+        if exact_fn:
+            return exact_fn(title_key)
+        if not title_key:
             return self.env["res.users"]
+        expected = _normalize_job_title_key(title_key)
         employee = self.employee_id
         while employee and employee.parent_id:
             manager = employee.parent_id.sudo()
-            mgr_rank = self._approval_job_title_rank(manager.job_title)
-            if mgr_rank >= max_rank and manager.user_id and not manager.user_id.share:
+            if (
+                _normalize_job_title_key(manager.job_title) == expected
+                and manager.user_id
+                and not manager.user_id.share
+            ):
                 return manager.user_id
             employee = manager
         return self.env["res.users"]
+
+    def _get_approval_escalation_cap_user_for_max_title(self):
+        """Exact match for configured approval max job title on the requester's org chart."""
+        self.ensure_one()
+        return self._get_approval_org_chart_user_for_exact_job_title(
+            self._approval_max_escalation_job_title()
+        )
 
     def _get_next_approval_manager_user_from_user(self, user):
         next_fn = getattr(super(), "_get_next_manager_user_from_user", None)
@@ -135,11 +151,10 @@ class HrLeaveApprovalEscalation(models.Model):
             return True
         employee_fn = getattr(super(), "_handover_employee_for_assigner_user", None)
         owner_emp = employee_fn(owner) if employee_fn else owner.sudo().employee_id
-        owner_rank = self._approval_job_title_rank(owner_emp.job_title if owner_emp else False)
-        max_rank = self._approval_job_title_rank(self._approval_max_escalation_job_title())
-        if max_rank < 0:
+        owner_title = _normalize_job_title_key(owner_emp.job_title if owner_emp else False)
+        if owner_title == _normalize_job_title_key(self._approval_max_escalation_job_title()):
             return True
-        return owner_rank >= max_rank
+        return False
 
     def _approval_escalation_owner_acted(self):
         self.ensure_one()

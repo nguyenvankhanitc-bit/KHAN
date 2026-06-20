@@ -367,12 +367,12 @@ class HrLeaveHandover(models.Model):
             return
         if not self._handover_past_due_without_any_acceptance():
             return
-        # Sequential: immediate next manager; direct: max configured job title on org chain.
+        # Sequential: jump to max title on chain when present; direct: max title only.
         # Further sequential steps are handled by _apply_handover_timeout_escalation_to_department_manager().
         if self._handover_escalation_is_direct():
             dept_head_user = self._get_handover_escalation_cap_user_for_max_title()
         else:
-            dept_head_user = self._get_next_manager_user_from_user(self.employee_id.user_id)
+            dept_head_user = self._get_handover_sequential_escalation_target_user(self.employee_id.user_id)
         first_hours = self._handover_escalation_after_hours()
         if not dept_head_user:
             self.message_post(
@@ -423,7 +423,7 @@ class HrLeaveHandover(models.Model):
         threshold = fields.Datetime.now() - timedelta(hours=second_hours)
         if base_time > threshold:
             return
-        manager_user = self._get_next_manager_user_from_user(self.handover_escalation_user_id)
+        manager_user = self._get_handover_sequential_escalation_target_user(self.handover_escalation_user_id)
         if not manager_user or manager_user == self.handover_escalation_user_id:
             self.message_post(
                 body=_(
@@ -1112,19 +1112,48 @@ class HrLeaveHandover(models.Model):
         ]).mapped("employee_id")
         return active_recipients - accepted
 
-    def _get_handover_escalation_cap_user_for_max_title(self):
-        """First manager on the requester's chain whose job title rank >= configured max (has internal user)."""
+    def _get_org_chart_user_for_exact_job_title(self, title_key):
+        """First manager on the requester's chain with an exact job title match (internal user)."""
         self.ensure_one()
-        max_rank = self._handover_job_title_rank(self._handover_max_escalation_job_title())
-        if max_rank < 0:
+        if not title_key:
             return self.env["res.users"]
+        expected = _normalize_job_title_key(title_key)
         employee = self.employee_id
         while employee and employee.parent_id:
             manager = employee.parent_id.sudo()
-            mgr_rank = self._handover_job_title_rank(manager.job_title)
-            if mgr_rank >= max_rank and manager.user_id and not manager.user_id.share:
+            if (
+                _normalize_job_title_key(manager.job_title) == expected
+                and manager.user_id
+                and not manager.user_id.share
+            ):
                 return manager.user_id
             employee = manager
+        return self.env["res.users"]
+
+    def _handover_approval_fallback_escalation_job_title(self):
+        """Approval max title used when the handover max title is absent on the org chart."""
+        self.ensure_one()
+        leave_type = self.holiday_status_id
+        if leave_type and leave_type.approval_escalation_max_job_title:
+            return leave_type.approval_escalation_max_job_title
+        return False
+
+    def _get_handover_escalation_cap_user_for_max_title(self):
+        """Resolve handover escalation target on the requester's org chart.
+
+        1. Exact match for configured handover max job title (e.g. ASM).
+        2. If not found, exact match for approval escalation max job title (fallback).
+        """
+        self.ensure_one()
+        primary_title = self._handover_max_escalation_job_title()
+        user = self._get_org_chart_user_for_exact_job_title(primary_title)
+        if user:
+            return user
+        fallback_title = self._handover_approval_fallback_escalation_job_title()
+        if fallback_title and _normalize_job_title_key(fallback_title) != _normalize_job_title_key(
+            primary_title
+        ):
+            return self._get_org_chart_user_for_exact_job_title(fallback_title)
         return self.env["res.users"]
 
     def _get_next_manager_user_from_user(self, user):
@@ -1139,6 +1168,30 @@ class HrLeaveHandover(models.Model):
                 return manager.user_id
             employee = manager
         return self.env["res.users"]
+
+    def _user_is_ancestor_manager(self, ancestor_user, descendant_user):
+        """True when ancestor_user appears above descendant_user on the org-chart parent chain."""
+        self.ensure_one()
+        if not ancestor_user or not descendant_user or ancestor_user == descendant_user:
+            return False
+        employee = self._handover_employee_for_assigner_user(descendant_user)
+        while employee and employee.parent_id:
+            manager = employee.parent_id.sudo()
+            if manager.user_id == ancestor_user:
+                return True
+            employee = manager
+        return False
+
+    def _get_handover_sequential_escalation_target_user(self, from_user):
+        """Sequential handover: skip intermediate managers when max title exists above on the chain."""
+        self.ensure_one()
+        cap_user = self._get_handover_escalation_cap_user_for_max_title()
+        if cap_user:
+            if not from_user:
+                from_user = self.employee_id.user_id
+            if from_user and cap_user != from_user and self._user_is_ancestor_manager(cap_user, from_user):
+                return cap_user
+        return self._get_next_manager_user_from_user(from_user)
 
     def _get_org_chart_department_head_user(self):
         self.ensure_one()
@@ -1334,11 +1387,13 @@ class HrLeaveHandover(models.Model):
         if cap_user and owner == cap_user:
             return True
         owner_emp = self._handover_employee_for_assigner_user(owner)
-        owner_rank = self._handover_job_title_rank(owner_emp.job_title if owner_emp else False)
-        max_rank = self._handover_job_title_rank(self._handover_max_escalation_job_title())
-        if max_rank < 0:
+        owner_title = _normalize_job_title_key(owner_emp.job_title if owner_emp else False)
+        if owner_title == _normalize_job_title_key(self._handover_max_escalation_job_title()):
             return True
-        return owner_rank >= max_rank
+        fallback_title = self._handover_approval_fallback_escalation_job_title()
+        if fallback_title and owner_title == _normalize_job_title_key(fallback_title):
+            return True
+        return False
 
     def _handover_job_title_rank(self, title_key):
         if not title_key:

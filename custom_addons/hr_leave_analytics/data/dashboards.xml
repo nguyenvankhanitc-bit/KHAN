@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="spreadsheet_dashboard_group_leave" model="spreadsheet.dashboard.group">
+        <field name="name">Nghỉ phép</field>
+        <field name="sequence">150</field>
+    </record>
+
+    <record id="spreadsheet_dashboard_leave" model="spreadsheet.dashboard">
+        <field name="name">Báo cáo tổng nghỉ phép</field>
+        <field name="spreadsheet_binary_data" type="base64" file="hr_leave_analytics/data/files/leave_dashboard.json"/>
+        <field name="dashboard_group_id" ref="spreadsheet_dashboard_group_leave"/>
+        <field name="group_ids" eval="[Command.link(ref('hr_holidays.group_hr_holidays_user'))]"/>
+        <field name="sequence">1</field>
+        <field name="is_published">True</field>
+    </record>
+</odoo>

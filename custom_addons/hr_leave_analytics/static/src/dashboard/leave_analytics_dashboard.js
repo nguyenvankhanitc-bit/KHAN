@@ -1,64 +1,65 @@
 /** @odoo-module **/
 
+import { loadBundle } from "@web/core/assets";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
-import { DateTimeInput } from "@web/core/datetime/datetime_input";
+import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
+import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 
-const MIEN_OPTIONS = [
-    { value: false, label: "Tất cả miền" },
-    { value: "Nam", label: "Miền Nam" },
-    { value: "Bắc", label: "Miền Bắc" },
-    { value: "ĐTT", label: "Miền ĐTT" },
-    { value: "VP", label: "VP" },
-];
-
-const WORKFORCE_OPTIONS = [
-    { value: false, label: "Tất cả khối" },
-    { value: "office", label: "Văn phòng" },
-    { value: "store", label: "Cửa hàng" },
-];
+const MIEN_COLORS = {
+    Nam: "#2563eb",
+    Bắc: "#dc2626",
+    ĐTT: "#16a34a",
+    VP: "#9333ea",
+};
 
 export class LeaveAnalyticsDashboard extends Component {
     static template = "hr_leave_analytics.LeaveAnalyticsDashboard";
-    static components = { DateTimeInput };
-    static props = ["*"];
+    static props = { ...standardActionServiceProps };
 
     setup() {
         this.orm = useService("orm");
         this.actionService = useService("action");
+        this.mienChartRef = useRef("mienPieChart");
+        this.mienChart = null;
+        const actionContext = this.props.action.context || {};
+        this.fixedMien = actionContext.dashboard_mien || false;
         this.state = useState({
             loading: true,
-            filters: {
-                date_from: luxon.DateTime.now().startOf("month"),
-                date_to: luxon.DateTime.now(),
-                employee_mien: false,
-                department_id: false,
-                store_id: false,
-                workforce_block: false,
-                holiday_status_id: false,
-            },
             data: null,
         });
-        this.mienOptions = MIEN_OPTIONS;
-        this.workforceOptions = WORKFORCE_OPTIONS;
-
         onWillStart(async () => {
+            await loadBundle("web.chartjs_lib");
             await this.loadDashboard();
+        });
+        useEffect(() => {
+            if (!this.state.loading && this.state.data) {
+                this.renderMienPieChart();
+            }
+            return () => {
+                if (this.mienChart) {
+                    this.mienChart.destroy();
+                    this.mienChart = null;
+                }
+            };
         });
     }
 
     get filtersPayload() {
-        const filters = this.state.filters;
         return {
-            date_from: filters.date_from ? filters.date_from.toISODate() : false,
-            date_to: filters.date_to ? filters.date_to.toISODate() : false,
-            employee_mien: filters.employee_mien || false,
-            department_id: filters.department_id || false,
-            store_id: filters.store_id || false,
-            workforce_block: filters.workforce_block || false,
-            holiday_status_id: filters.holiday_status_id || false,
+            employee_mien: this.fixedMien || false,
         };
+    }
+
+    get mienTotalDays() {
+        if (!this.state.data?.mien_comparison) {
+            return 0;
+        }
+        return this.state.data.mien_comparison.reduce((sum, item) => sum + (item.leave_days || 0), 0);
+    }
+
+    getMienColor(mien) {
+        return MIEN_COLORS[mien] || "#6b7280";
     }
 
     async loadDashboard() {
@@ -72,87 +73,77 @@ export class LeaveAnalyticsDashboard extends Component {
         this.state.loading = false;
     }
 
-    async onFilterChange() {
-        await this.loadDashboard();
-    }
-
-    onDateFromChange(date) {
-        this.state.filters.date_from = date;
-        this.onFilterChange();
-    }
-
-    onDateToChange(date) {
-        this.state.filters.date_to = date;
-        this.onFilterChange();
-    }
-
-    onMienChange(ev) {
-        const value = ev.target.value;
-        this.state.filters.employee_mien = value || false;
-        this.onFilterChange();
-    }
-
-    onWorkforceChange(ev) {
-        const value = ev.target.value;
-        this.state.filters.workforce_block = value || false;
-        this.onFilterChange();
-    }
-
-    maxChartValue(items) {
-        if (!items || !items.length) {
-            return 1;
+    renderMienPieChart() {
+        const canvas = this.mienChartRef.el;
+        const items = this.state.data?.mien_comparison || [];
+        if (!canvas || !items.length) {
+            return;
         }
-        return Math.max(...items.map((item) => item.value), 1);
-    }
+        if (this.mienChart) {
+            this.mienChart.destroy();
+            this.mienChart = null;
+        }
+        const labels = items.map((item) => item.label);
+        const data = items.map((item) => item.leave_days || 0);
+        const backgroundColor = items.map((item) => this.getMienColor(item.mien));
+        const hasData = data.some((value) => value > 0);
 
-    barWidth(value, items) {
-        return `${Math.round((value / this.maxChartValue(items)) * 100)}%`;
-    }
-
-    pieStyle(items, index) {
-        const total = items.reduce((sum, item) => sum + item.value, 0) || 1;
-        const colors = ["#4c86f9", "#28a745", "#ffc107", "#dc3545", "#6f42c1", "#17a2b8", "#fd7e14"];
-        let start = 0;
-        const segments = items.map((item, idx) => {
-            const pct = (item.value / total) * 100;
-            const segment = `${colors[idx % colors.length]} ${start}% ${start + pct}%`;
-            start += pct;
-            return segment;
+        this.mienChart = new Chart(canvas, {
+            type: "pie",
+            data: {
+                labels,
+                datasets: [
+                    {
+                        data: hasData ? data : [1].slice(0, items.length),
+                        backgroundColor: hasData
+                            ? backgroundColor
+                            : items.map(() => "#e9ecef"),
+                        borderWidth: 2,
+                        borderColor: "#ffffff",
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        enabled: hasData,
+                        callbacks: {
+                            label: (context) => {
+                                const value = items[context.dataIndex]?.leave_days || 0;
+                                return `${context.label}: ${value} ngày`;
+                            },
+                        },
+                    },
+                },
+            },
         });
-        return {
-            background: `conic-gradient(${segments.join(", ")})`,
-            opacity: index === null ? 1 : 0.35,
-        };
     }
 
-    formatPercent(value) {
-        return `${value}%`;
+    async openList(exportType) {
+        const action = await this.orm.call(
+            "hr.leave.analytics.dashboard",
+            "action_export_excel",
+            [],
+            { export_type: exportType, filters: this.filtersPayload }
+        );
+        this.actionService.doAction(action);
     }
 
-    async drillDown(drillType, recordId = false) {
+    async drillDown(type, recordId) {
         const action = await this.orm.call(
             "hr.leave.analytics.dashboard",
             "action_drill_down",
             [],
             {
-                drill_type: drillType,
+                drill_type: type,
                 filters: this.filtersPayload,
                 record_id: recordId || false,
             }
         );
         this.actionService.doAction(action);
-    }
-
-    async drillDownChart(chartType, item) {
-        const mapping = {
-            by_type: ["leave_type", item.id],
-            by_department: ["department", item.id],
-            by_mien: ["mien", item.id],
-            by_store: ["store", item.id],
-            by_workforce: ["approved_period", false],
-        };
-        const [drillType, recordId] = mapping[chartType] || ["approved_period", false];
-        await this.drillDown(drillType, recordId);
     }
 }
 

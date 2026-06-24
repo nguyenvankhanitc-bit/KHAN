@@ -405,7 +405,7 @@
               },
               "a1111111-1111-4111-8111-111111111102": {
                 "chain": "employee_mien",
-                "type": "char"
+                "type": "selection"
               },
               "a1111111-1111-4111-8111-111111111103": {
                 "chain": "department_id",
@@ -417,7 +417,7 @@
               },
               "a1111111-1111-4111-8111-111111111105": {
                 "chain": "workforce_block",
-                "type": "char"
+                "type": "selection"
               }
             }
           },
@@ -477,7 +477,7 @@
               },
               "a1111111-1111-4111-8111-111111111102": {
                 "chain": "employee_mien",
-                "type": "char"
+                "type": "selection"
               },
               "a1111111-1111-4111-8111-111111111103": {
                 "chain": "department_id",
@@ -489,7 +489,7 @@
               },
               "a1111111-1111-4111-8111-111111111105": {
                 "chain": "workforce_block",
-                "type": "char"
+                "type": "selection"
               }
             }
           },
@@ -867,7 +867,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -879,7 +879,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -934,7 +934,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -946,7 +946,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -1001,7 +1001,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -1013,7 +1013,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -1068,7 +1068,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -1080,7 +1080,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -1135,7 +1135,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -1147,7 +1147,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -1193,7 +1193,7 @@
         },
         "a1111111-1111-4111-8111-111111111102": {
           "chain": "employee_mien",
-          "type": "char"
+          "type": "selection"
         },
         "a1111111-1111-4111-8111-111111111103": {
           "chain": "department_id",
@@ -1205,7 +1205,7 @@
         },
         "a1111111-1111-4111-8111-111111111105": {
           "chain": "workforce_block",
-          "type": "char"
+          "type": "selection"
         }
       },
       "context": {
@@ -1253,9 +1253,10 @@
     },
     {
       "id": "a1111111-1111-4111-8111-111111111102",
-      "type": "text",
+      "type": "selection",
       "label": "Miền",
-      "defaultValue": ""
+      "resModel": "hr.leave.analytics.report",
+      "selectionField": "employee_mien"
     },
     {
       "id": "a1111111-1111-4111-8111-111111111103",
@@ -1273,9 +1274,10 @@
     },
     {
       "id": "a1111111-1111-4111-8111-111111111105",
-      "type": "text",
+      "type": "selection",
       "label": "Khối (VP/CH)",
-      "defaultValue": ""
+      "resModel": "hr.leave.analytics.report",
+      "selectionField": "workforce_block"
     }
   ],
   "lists": {},

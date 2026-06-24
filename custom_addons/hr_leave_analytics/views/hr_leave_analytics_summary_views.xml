@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 2. So sánh miền -->
+    <record id="hr_leave_analytics_mien_summary_view_graph" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.mien.summary.graph</field>
+        <field name="model">hr.leave.analytics.mien.summary</field>
+        <field name="arch" type="xml">
+            <graph string="So sánh nghỉ phép giữa các miền" type="bar" sample="1">
+                <field name="employee_mien"/>
+                <field name="leave_days" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_mien_summary_view_list" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.mien.summary.list</field>
+        <field name="model">hr.leave.analytics.mien.summary</field>
+        <field name="arch" type="xml">
+            <list string="Nghỉ phép theo miền" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="employee_mien" string="Miền"/>
+                <field name="employee_count" string="Tổng NV"/>
+                <field name="leave_days" string="Ngày nghỉ" sum="Tổng"/>
+                <field name="leave_rate" string="Tỷ lệ nghỉ phép (%)"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_mien_summary_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.mien.summary.search</field>
+        <field name="model">hr.leave.analytics.mien.summary</field>
+        <field name="arch" type="xml">
+            <search string="Theo miền">
+                <field name="employee_mien"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_mien', '=', 'Nam')]"/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_mien', '=', 'Bắc')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_mien', '=', 'ĐTT')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- 3. Top nhân viên cần chú ý -->
+    <record id="hr_leave_analytics_employee_watch_view_list" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.employee.watch.list</field>
+        <field name="model">hr.leave.analytics.employee.watch</field>
+        <field name="arch" type="xml">
+            <list string="Top nhân viên cần chú ý" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="employee_name" string="Nhân viên"/>
+                <field name="store_name" string="Cửa hàng"/>
+                <field name="job_title_display" string="Chức danh"/>
+                <field name="leave_days" string="Số ngày" sum="Tổng"/>
+                <field name="employee_mien" string="Miền" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_employee_watch_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.employee.watch.search</field>
+        <field name="model">hr.leave.analytics.employee.watch</field>
+        <field name="arch" type="xml">
+            <search string="Top nhân viên">
+                <field name="employee_name"/>
+                <field name="store_name"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_mien', '=', 'Nam')]"/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_mien', '=', 'Bắc')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_mien', '=', 'ĐTT')]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- 4. Top cửa hàng -->
+    <record id="hr_leave_analytics_store_summary_view_list_rank" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.store.summary.list.rank</field>
+        <field name="model">hr.leave.analytics.store.summary</field>
+        <field name="arch" type="xml">
+            <list string="Top cửa hàng nghỉ nhiều nhất" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="store_name" string="Cửa hàng"/>
+                <field name="top_job_title_display" string="Chức danh"/>
+                <field name="employee_count" string="Tổng NV"/>
+                <field name="leave_days" string="Ngày nghỉ" sum="Tổng"/>
+                <field name="employee_mien" string="Miền" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- 5. Cảnh báo cửa hàng -->
+    <record id="hr_leave_analytics_store_summary_view_list_alert" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.store.summary.list.alert</field>
+        <field name="model">hr.leave.analytics.store.summary</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách cảnh báo cửa hàng" create="0" edit="0" delete="0" export_xlsx="1">
+                <field name="store_name" string="Cửa hàng"/>
+                <field name="on_leave_job_titles_display" string="Chức danh"/>
+                <field name="employee_count" string="Tổng NV"/>
+                <field name="on_leave_today" string="Đang nghỉ"/>
+                <field name="on_leave_rate" string="Tỷ lệ (%)"/>
+                <field name="employee_mien" string="Miền" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_analytics_store_summary_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.analytics.store.summary.search</field>
+        <field name="model">hr.leave.analytics.store.summary</field>
+        <field name="arch" type="xml">
+            <search string="Theo cửa hàng">
+                <field name="store_name"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_mien', '=', 'Nam')]"/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_mien', '=', 'Bắc')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_mien', '=', 'ĐTT')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_leave_analytics_mien_compare" model="ir.actions.act_window">
+        <field name="name">So sánh giữa các miền</field>
+        <field name="res_model">hr.leave.analytics.mien.summary</field>
+        <field name="view_mode">graph,list</field>
+        <field name="view_id" ref="hr_leave_analytics_mien_summary_view_graph"/>
+        <field name="search_view_id" ref="hr_leave_analytics_mien_summary_view_search"/>
+    </record>
+
+    <record id="action_hr_leave_analytics_employee_watch" model="ir.actions.act_window">
+        <field name="name">Top nhân viên cần chú ý</field>
+        <field name="res_model">hr.leave.analytics.employee.watch</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="hr_leave_analytics_employee_watch_view_list"/>
+        <field name="search_view_id" ref="hr_leave_analytics_employee_watch_view_search"/>
+    </record>
+
+    <record id="action_hr_leave_analytics_store_rank" model="ir.actions.act_window">
+        <field name="name">Top cửa hàng nghỉ nhiều nhất</field>
+        <field name="res_model">hr.leave.analytics.store.summary</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="hr_leave_analytics_store_summary_view_list_rank"/>
+        <field name="search_view_id" ref="hr_leave_analytics_store_summary_view_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_store_alert" model="ir.actions.act_window">
+        <field name="name">Danh sách cảnh báo cửa hàng</field>
+        <field name="res_model">hr.leave.analytics.store.summary</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="hr_leave_analytics_store_summary_view_list_alert"/>
+        <field name="search_view_id" ref="hr_leave_analytics_store_summary_view_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_client" model="ir.actions.client">
+        <field name="name">Báo cáo tổng</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_mien_nam" model="ir.actions.client">
+        <field name="name">Dashboard Miền Nam</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+        <field name="context">{'dashboard_mien': 'Nam'}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_mien_bac" model="ir.actions.client">
+        <field name="name">Dashboard Miền Bắc</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+        <field name="context">{'dashboard_mien': 'Bắc'}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_mien_dtt" model="ir.actions.client">
+        <field name="name">Dashboard Miền ĐTT</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+        <field name="context">{'dashboard_mien': 'ĐTT'}</field>
+    </record>
+
+    <record id="action_hr_leave_analytics_dashboard_mien_vp" model="ir.actions.client">
+        <field name="name">Dashboard VP</field>
+        <field name="tag">hr_leave_analytics_dashboard</field>
+        <field name="context">{'dashboard_mien': 'VP'}</field>
+    </record>
+</odoo>

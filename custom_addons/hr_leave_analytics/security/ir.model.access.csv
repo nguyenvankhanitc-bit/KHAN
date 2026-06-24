@@ -1,3 +1,6 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_hr_leave_analytics_report_user,hr.leave.analytics.report.user,model_hr_leave_analytics_report,hr_holidays.group_hr_holidays_user,1,0,0,0
 access_hr_leave_analytics_report_manager,hr.leave.analytics.report.manager,model_hr_leave_analytics_report,hr_holidays.group_hr_holidays_manager,1,0,0,0
+access_hr_leave_analytics_mien_summary_user,hr.leave.analytics.mien.summary.user,model_hr_leave_analytics_mien_summary,hr_holidays.group_hr_holidays_user,1,0,0,0
+access_hr_leave_analytics_store_summary_user,hr.leave.analytics.store.summary.user,model_hr_leave_analytics_store_summary,hr_holidays.group_hr_holidays_user,1,0,0,0
+access_hr_leave_analytics_employee_watch_user,hr.leave.analytics.employee.watch.user,model_hr_leave_analytics_employee_watch,hr_holidays.group_hr_holidays_user,1,0,0,0

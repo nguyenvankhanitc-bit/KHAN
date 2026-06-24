@@ -1,80 +1,100 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Mở đúng dashboard nghỉ phép (Spreadsheet) — giao diện giống Báo cáo tổng quan Odoo -->
-    <record id="action_hr_leave_analytics_spreadsheet_dashboard" model="ir.actions.client">
-        <field name="name">Báo cáo tổng</field>
-        <field name="tag">action_spreadsheet_dashboard</field>
-        <field name="params" eval="{'dashboard_id': ref('spreadsheet_dashboard_leave')}"/>
-    </record>
-
-    <!-- Menu gốc: Ngày nghỉ → Báo cáo → Báo cáo tổng (mở thẳng dashboard) -->
     <menuitem
         id="menu_hr_leave_analytics_root"
         name="Báo cáo tổng"
         parent="hr_holidays.menu_hr_holidays_report"
-        action="action_hr_leave_analytics_spreadsheet_dashboard"
+        action="action_hr_leave_analytics_entry"
         sequence="0"
-        groups="hr_holidays.group_hr_holidays_user"
-    />
+        groups="hr_holidays.group_hr_holidays_user"/>
 
     <menuitem
         id="menu_hr_leave_analytics_dashboard"
         name="Tổng quan"
         parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_spreadsheet_dashboard"
+        action="action_hr_leave_analytics_dashboard_client"
         sequence="1"
-    />
+        groups="hr_leave_analytics.group_hr_leave_analytics_manager"/>
 
     <menuitem
-        id="menu_hr_leave_analytics_by_type"
-        name="Theo loại nghỉ"
+        id="menu_hr_leave_analytics_mien_root"
+        name="Dashboard theo Miền"
         parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_by_type"
+        sequence="2"/>
+
+    <menuitem
+        id="menu_hr_leave_analytics_mien_nam"
+        name="Dashboard Miền Nam"
+        parent="menu_hr_leave_analytics_mien_root"
+        action="action_hr_leave_analytics_dashboard_mien_nam"
+        sequence="1"
+        groups="hr_leave_analytics.group_hr_leave_analytics_mien_nam,hr_leave_analytics.group_hr_leave_analytics_manager"/>
+
+    <menuitem
+        id="menu_hr_leave_analytics_mien_bac"
+        name="Dashboard Miền Bắc"
+        parent="menu_hr_leave_analytics_mien_root"
+        action="action_hr_leave_analytics_dashboard_mien_bac"
         sequence="2"
-    />
+        groups="hr_leave_analytics.group_hr_leave_analytics_mien_bac,hr_leave_analytics.group_hr_leave_analytics_manager"/>
 
     <menuitem
-        id="menu_hr_leave_analytics_by_department"
-        name="Theo phòng ban"
-        parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_by_department"
+        id="menu_hr_leave_analytics_mien_dtt"
+        name="Dashboard Miền ĐTT"
+        parent="menu_hr_leave_analytics_mien_root"
+        action="action_hr_leave_analytics_dashboard_mien_dtt"
         sequence="3"
-    />
+        groups="hr_leave_analytics.group_hr_leave_analytics_mien_dtt,hr_leave_analytics.group_hr_leave_analytics_manager"/>
 
     <menuitem
-        id="menu_hr_leave_analytics_by_mien"
-        name="Theo miền"
-        parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_by_mien"
+        id="menu_hr_leave_analytics_mien_vp"
+        name="Dashboard VP"
+        parent="menu_hr_leave_analytics_mien_root"
+        action="action_hr_leave_analytics_dashboard_mien_vp"
         sequence="4"
-    />
+        groups="hr_leave_analytics.group_hr_leave_analytics_mien_vp,hr_leave_analytics.group_hr_leave_analytics_manager"/>
 
     <menuitem
-        id="menu_hr_leave_analytics_by_store"
-        name="Theo cửa hàng"
+        id="menu_hr_leave_analytics_mien_compare"
+        name="So sánh giữa các Miền"
         parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_by_store"
+        action="action_hr_leave_analytics_mien_compare"
+        sequence="3"
+        groups="hr_leave_analytics.group_hr_leave_analytics_manager"/>
+
+    <menuitem
+        id="menu_hr_leave_analytics_employee_watch"
+        name="Top nhân viên cần chú ý"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_employee_watch"
+        sequence="4"
+        groups="hr_holidays.group_hr_holidays_user"/>
+
+    <menuitem
+        id="menu_hr_leave_analytics_store_rank"
+        name="Top cửa hàng nghỉ nhiều"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_analytics_store_rank"
         sequence="5"
-    />
+        groups="hr_holidays.group_hr_holidays_user"/>
 
     <menuitem
-        id="menu_hr_leave_analytics_trend"
-        name="Xu hướng"
+        id="menu_hr_leave_analytics_store_alert"
+        name="Danh sách cảnh báo"
         parent="menu_hr_leave_analytics_root"
-        action="action_hr_leave_analytics_trend"
+        action="action_hr_leave_analytics_store_alert"
         sequence="6"
-    />
+        groups="hr_holidays.group_hr_holidays_user"/>
 
     <menuitem
         id="menu_hr_leave_analytics_detail"
-        name="Chi tiết"
+        name="Chi tiết đơn nghỉ"
         parent="menu_hr_leave_analytics_root"
         action="action_hr_leave_analytics_report"
         sequence="7"
-    />
+        groups="hr_holidays.group_hr_holidays_user"/>
 
-    <!-- Gắn mặc định cho menu Báo cáo: click vào Báo cáo cũng mở Báo cáo tổng nghỉ phép -->
     <record id="hr_holidays.menu_hr_holidays_report" model="ir.ui.menu">
-        <field name="action" ref="action_hr_leave_analytics_spreadsheet_dashboard"/>
+        <field name="action" ref="action_hr_leave_analytics_entry"/>
     </record>
 </odoo>

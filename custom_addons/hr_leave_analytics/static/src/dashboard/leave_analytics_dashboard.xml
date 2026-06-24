@@ -2,242 +2,100 @@
 <templates xml:space="preserve">
     <t t-name="hr_leave_analytics.LeaveAnalyticsDashboard">
         <div class="o_leave_analytics_dashboard o_action">
-            <div class="o_leave_analytics_header">
-                <h1>Báo cáo tổng — Nghỉ phép</h1>
-                <p class="text-muted mb-0">Dashboard tổng quan cho HR và Ban Giám đốc (Sáng Tâm)</p>
-            </div>
-
-            <div class="o_leave_analytics_filters card mb-3">
-                <div class="card-body d-flex flex-wrap gap-3 align-items-end">
-                    <div>
-                        <label class="form-label">Từ ngày</label>
-                        <DateTimeInput
-                            type="'date'"
-                            value="state.filters.date_from"
-                            onChange="(date) => this.onDateFromChange(date)"
-                        />
-                    </div>
-                    <div>
-                        <label class="form-label">Đến ngày</label>
-                        <DateTimeInput
-                            type="'date'"
-                            value="state.filters.date_to"
-                            onChange="(date) => this.onDateToChange(date)"
-                        />
-                    </div>
-                    <div>
-                        <label class="form-label">Miền</label>
-                        <select class="form-select" t-on-change="onMienChange">
-                            <t t-foreach="mienOptions" t-as="option" t-key="option.value || 'all'">
-                                <option t-att-value="option.value || ''" t-att-selected="state.filters.employee_mien === option.value ? 'selected' : None" t-esc="option.label"/>
-                            </t>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="form-label">Khối</label>
-                        <select class="form-select" t-on-change="onWorkforceChange">
-                            <t t-foreach="workforceOptions" t-as="option" t-key="option.value || 'all'">
-                                <option t-att-value="option.value || ''" t-att-selected="state.filters.workforce_block === option.value ? 'selected' : None" t-esc="option.label"/>
-                            </t>
-                        </select>
-                    </div>
+            <div class="o_leave_analytics_header d-flex justify-content-between align-items-start flex-wrap gap-2">
+                <div>
+                    <h1 t-esc="state.data ? state.data.title : 'Báo cáo nghỉ phép'"/>
+                    <p class="text-muted mb-0">Dữ liệu tháng hiện tại — Sáng Tâm</p>
                 </div>
             </div>
 
             <t t-if="state.loading">
-                <div class="text-center p-5">
-                    <i class="fa fa-spinner fa-spin fa-2x"/>
-                </div>
+                <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
             </t>
 
             <t t-elif="state.data">
-                <div class="o_leave_analytics_kpis row g-3 mb-4">
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100" t-on-click="() => this.drillDown('approved_period')">
-                            <div class="card-body">
-                                <div class="o_kpi_value" t-esc="state.data.kpis.total_employees"/>
-                                <div class="o_kpi_label">Tổng NV đang làm việc</div>
-                            </div>
-                        </div>
+                <!-- Biểu đồ: tổng quan = 4 miền, dashboard theo miền = chỉ 1 miền -->
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span t-esc="state.data.mien_chart_title"/>
+                        <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('mien_compare')">
+                            <i class="fa fa-table me-1"/>Xem bảng / Xuất Excel
+                        </button>
                     </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100" t-on-click="() => this.drillDown('leave_today')">
-                            <div class="card-body">
-                                <div class="o_kpi_value" t-esc="state.data.kpis.leave_today"/>
-                                <div class="o_kpi_label">Nghỉ phép hôm nay</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100" t-on-click="() => this.drillDown('approved_period')">
-                            <div class="card-body">
-                                <div class="o_kpi_value" t-esc="state.data.kpis.leave_month"/>
-                                <div class="o_kpi_label">Nghỉ phép tháng này</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100" t-on-click="() => this.drillDown('to_approve')">
-                            <div class="card-body">
-                                <div class="o_kpi_value text-warning" t-esc="state.data.kpis.to_approve"/>
-                                <div class="o_kpi_label">Đang chờ duyệt</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100">
-                            <div class="card-body">
-                                <div class="o_kpi_value" t-esc="formatPercent(state.data.kpis.leave_rate)"/>
-                                <div class="o_kpi_label">Tỷ lệ nghỉ phép</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6 col-md-4 col-xl-2">
-                        <div class="o_kpi_card card h-100" t-on-click="() => this.drillDown('employee', state.data.kpis.top_leave_employee.id)">
-                            <div class="card-body">
-                                <div class="o_kpi_value small" t-esc="state.data.kpis.top_leave_employee.label"/>
-                                <div class="o_kpi_label">NV nghỉ nhiều nhất (<t t-esc="state.data.kpis.top_leave_employee.value"/> ngày)</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-lg-6">
-                        <div class="card h-100">
-                            <div class="card-header">Nghỉ phép theo loại</div>
-                            <div class="card-body">
-                                <div class="o_chart_pie" t-att-style="pieStyle(state.data.charts.by_type)"/>
-                                <div class="o_chart_legend mt-3">
-                                    <t t-foreach="state.data.charts.by_type" t-as="item" t-key="item.label">
-                                        <div class="o_legend_row cursor-pointer" t-on-click="() => this.drillDownChart('by_type', item)">
-                                            <span t-esc="item.label"/>
-                                            <strong t-esc="item.value"/>
-                                        </div>
-                                    </t>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-7">
+                                <div class="o_mien_pie_section">
+                                    <div class="o_mien_pie_chart_wrap">
+                                        <canvas t-ref="mienPieChart"/>
+                                    </div>
+                                    <div class="o_mien_pie_legend">
+                                        <t t-foreach="state.data.mien_comparison" t-as="item" t-key="item.mien">
+                                            <div class="o_mien_legend_item">
+                                                <span class="o_mien_legend_dot" t-att-style="'background-color: ' + getMienColor(item.mien)"/>
+                                                <span class="o_mien_legend_label" t-esc="item.label"/>
+                                                <span class="o_mien_legend_value">
+                                                    <t t-esc="item.leave_days"/> ngày
+                                                </span>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </div>
+                                <p t-if="!mienTotalDays" class="text-muted text-center mb-0 mt-2">
+                                    Chưa có ngày nghỉ trong tháng này
+                                </p>
                             </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card h-100">
-                            <div class="card-header">Nghỉ phép theo khối (Văn phòng / Cửa hàng)</div>
-                            <div class="card-body">
-                                <div class="o_chart_pie" t-att-style="pieStyle(state.data.charts.by_workforce)"/>
-                                <div class="o_chart_legend mt-3">
-                                    <t t-foreach="state.data.charts.by_workforce" t-as="item" t-key="item.label">
-                                        <div class="o_legend_row">
-                                            <span t-esc="item.label"/>
-                                            <strong t-esc="item.value"/>
-                                        </div>
-                                    </t>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-lg-6">
-                        <div class="card h-100">
-                            <div class="card-header">Nghỉ phép theo phòng ban</div>
-                            <div class="card-body">
-                                <t t-foreach="state.data.charts.by_department" t-as="item" t-key="item.label">
-                                    <div class="o_bar_row cursor-pointer" t-on-click="() => this.drillDownChart('by_department', item)">
-                                        <div class="o_bar_label" t-esc="item.label"/>
-                                        <div class="o_bar_track">
-                                            <div class="o_bar_fill" t-att-style="'width: ' + barWidth(item.value, state.data.charts.by_department)"/>
-                                        </div>
-                                        <div class="o_bar_value" t-esc="item.value"/>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card h-100">
-                            <div class="card-header">Nghỉ phép theo miền</div>
-                            <div class="card-body">
-                                <t t-foreach="state.data.charts.by_mien" t-as="item" t-key="item.label">
-                                    <div class="o_bar_row cursor-pointer" t-on-click="() => this.drillDownChart('by_mien', item)">
-                                        <div class="o_bar_label" t-esc="item.label"/>
-                                        <div class="o_bar_track">
-                                            <div class="o_bar_fill o_bar_fill_mien" t-att-style="'width: ' + barWidth(item.value, state.data.charts.by_mien)"/>
-                                        </div>
-                                        <div class="o_bar_value" t-esc="item.value"/>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-lg-8">
-                        <div class="card h-100">
-                            <div class="card-header">Xu hướng nghỉ phép theo tháng</div>
-                            <div class="card-body">
-                                <t t-foreach="state.data.charts.by_month" t-as="item" t-key="item.label">
-                                    <div class="o_bar_row">
-                                        <div class="o_bar_label" t-esc="item.label"/>
-                                        <div class="o_bar_track">
-                                            <div class="o_bar_fill o_bar_fill_trend" t-att-style="'width: ' + barWidth(item.value, state.data.charts.by_month)"/>
-                                        </div>
-                                        <div class="o_bar_value" t-esc="item.value"/>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-lg-4">
-                        <div class="card h-100">
-                            <div class="card-header">Heatmap theo thứ</div>
-                            <div class="card-body">
-                                <t t-foreach="state.data.charts.by_weekday" t-as="item" t-key="item.label">
-                                    <div class="o_bar_row">
-                                        <div class="o_bar_label" t-esc="item.label"/>
-                                        <div class="o_bar_track">
-                                            <div class="o_bar_fill o_bar_fill_heat" t-att-style="'width: ' + barWidth(item.value, state.data.charts.by_weekday)"/>
-                                        </div>
-                                        <div class="o_bar_value" t-esc="item.value"/>
-                                    </div>
-                                </t>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row g-3 mb-4">
-                    <div class="col-lg-12">
-                        <div class="card">
-                            <div class="card-header">Top 10 cửa hàng nghỉ nhiều nhất</div>
-                            <div class="card-body">
-                                <t t-foreach="state.data.charts.by_store" t-as="item" t-key="item.label">
-                                    <div class="o_bar_row cursor-pointer" t-on-click="() => this.drillDownChart('by_store', item)">
-                                        <div class="o_bar_label" t-esc="item.label"/>
-                                        <div class="o_bar_track">
-                                            <div class="o_bar_fill o_bar_fill_store" t-att-style="'width: ' + barWidth(item.value, state.data.charts.by_store)"/>
-                                        </div>
-                                        <div class="o_bar_value" t-esc="item.value"/>
-                                    </div>
-                                </t>
+                            <div class="col-lg-5">
+                                <table class="table table-sm table-striped mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Miền</th>
+                                            <th class="text-end">Ngày nghỉ</th>
+                                            <th class="text-end">Tỷ lệ (%)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="state.data.mien_comparison" t-as="item" t-key="item.mien + '_rate'">
+                                            <tr>
+                                                <td t-esc="item.label"/>
+                                                <td class="text-end" t-esc="item.leave_days"/>
+                                                <td class="text-end" t-esc="item.leave_rate"/>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="row g-3">
-                    <div class="col-lg-4">
+                    <!-- 3. Top nhân viên cần chú ý -->
+                    <div class="col-lg-6">
                         <div class="card h-100">
-                            <div class="card-header">Top nhân viên nghỉ nhiều</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Top nhân viên cần chú ý</span>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('watch_employees')">
+                                    <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                                </button>
+                            </div>
                             <div class="card-body p-0">
-                                <table class="table table-sm mb-0">
-                                    <thead><tr><th>Nhân viên</th><th class="text-end">Ngày nghỉ</th></tr></thead>
+                                <table class="table table-sm mb-0 o_excel_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nhân viên</th>
+                                            <th>Cửa hàng</th>
+                                            <th>Chức danh</th>
+                                            <th class="text-end">Số ngày</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        <t t-foreach="state.data.alerts.top_employees" t-as="item" t-key="item.id">
-                                            <tr class="cursor-pointer" t-on-click="() => this.drillDown('employee', item.id)">
-                                                <td t-esc="item.label"/>
-                                                <td class="text-end" t-esc="item.value"/>
+                                        <t t-foreach="state.data.watch_employees" t-as="row" t-key="row.employee_id">
+                                            <tr class="cursor-pointer" t-on-click="() => this.drillDown('employee', row.employee_id)">
+                                                <td t-esc="row.employee_name"/>
+                                                <td t-esc="row.store_name"/>
+                                                <td t-esc="row.job_title"/>
+                                                <td class="text-end" t-esc="row.leave_days"/>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -245,17 +103,33 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
+
+                    <!-- 4. Top cửa hàng nghỉ nhiều nhất -->
+                    <div class="col-lg-6">
                         <div class="card h-100">
-                            <div class="card-header">Sắp hết phép năm</div>
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span>Top cửa hàng nghỉ nhiều nhất</span>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('top_stores')">
+                                    <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                                </button>
+                            </div>
                             <div class="card-body p-0">
-                                <table class="table table-sm mb-0">
-                                    <thead><tr><th>Nhân viên</th><th class="text-end">Còn lại</th></tr></thead>
+                                <table class="table table-sm mb-0 o_excel_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Cửa hàng</th>
+                                            <th>Chức danh</th>
+                                            <th class="text-end">Tổng NV</th>
+                                            <th class="text-end">Ngày nghỉ</th>
+                                        </tr>
+                                    </thead>
                                     <tbody>
-                                        <t t-foreach="state.data.alerts.low_balance" t-as="item" t-key="item.id">
-                                            <tr>
-                                                <td t-esc="item.label"/>
-                                                <td class="text-end text-danger" t-esc="item.value"/>
+                                        <t t-foreach="state.data.top_stores" t-as="row" t-key="row.store_id">
+                                            <tr class="cursor-pointer" t-on-click="() => this.drillDown('store', row.store_id)">
+                                                <td t-esc="row.store_name"/>
+                                                <td t-esc="row.job_title"/>
+                                                <td class="text-end" t-esc="row.employee_count"/>
+                                                <td class="text-end" t-esc="row.leave_days"/>
                                             </tr>
                                         </t>
                                     </tbody>
@@ -263,23 +137,41 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-lg-4">
-                        <div class="card h-100">
-                            <div class="card-header">Chưa sử dụng phép</div>
-                            <div class="card-body p-0">
-                                <table class="table table-sm mb-0">
-                                    <thead><tr><th>Nhân viên</th><th class="text-end">Còn lại</th></tr></thead>
-                                    <tbody>
-                                        <t t-foreach="state.data.alerts.unused_leave" t-as="item" t-key="item.id">
-                                            <tr>
-                                                <td t-esc="item.label"/>
-                                                <td class="text-end" t-esc="item.value"/>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
+                </div>
+
+                <!-- 5. Danh sách cảnh báo -->
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Danh sách cảnh báo cửa hàng</span>
+                        <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.openList('store_alerts')">
+                            <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                        </button>
+                    </div>
+                    <div class="card-body p-0">
+                        <table class="table table-sm mb-0 o_excel_table">
+                            <thead>
+                                <tr>
+                                    <th>Cửa hàng</th>
+                                    <th>Chức danh</th>
+                                    <th class="text-end">Tổng NV</th>
+                                    <th class="text-end">Đang nghỉ</th>
+                                    <th class="text-end">Tỷ lệ (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.data.store_alerts" t-as="row" t-key="row.store_id">
+                                    <tr class="cursor-pointer" t-on-click="() => this.drillDown('store', row.store_id)">
+                                        <td t-esc="row.store_name"/>
+                                        <td t-esc="row.job_title"/>
+                                        <td class="text-end" t-esc="row.employee_count"/>
+                                        <td class="text-end" t-esc="row.on_leave_today"/>
+                                        <td class="text-end">
+                                            <span t-att-class="row.on_leave_rate >= 30 ? 'text-danger fw-bold' : ''" t-esc="row.on_leave_rate"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </t>

@@ -20,10 +20,10 @@ OLD_TO_NEW = {
 
 FIELD_MATCHING = {
     F_DATE: {"chain": "request_date_from", "type": "date", "offset": 0},
-    F_MIEN: {"chain": "employee_mien", "type": "char"},
+    F_MIEN: {"chain": "employee_mien", "type": "selection"},
     F_DEPT: {"chain": "department_id", "type": "many2one"},
     F_STORE: {"chain": "store_id", "type": "many2one"},
-    F_BLOCK: {"chain": "workforce_block", "type": "char"},
+    F_BLOCK: {"chain": "workforce_block", "type": "selection"},
 }
 
 
@@ -84,7 +84,13 @@ def main():
     out = walk(data)
     out["globalFilters"] = [
         {"id": F_DATE, "type": "date", "label": "Kỳ báo cáo", "defaultValue": "last_30_days"},
-        {"id": F_MIEN, "type": "text", "label": "Miền", "defaultValue": ""},
+        {
+            "id": F_MIEN,
+            "type": "selection",
+            "label": "Miền",
+            "resModel": "hr.leave.analytics.report",
+            "selectionField": "employee_mien",
+        },
         {
             "id": F_DEPT,
             "type": "relation",
@@ -99,7 +105,13 @@ def main():
             "modelName": "hr.store",
             "defaultValueDisplayNames": [],
         },
-        {"id": F_BLOCK, "type": "text", "label": "Khối (VP/CH)", "defaultValue": ""},
+        {
+            "id": F_BLOCK,
+            "type": "selection",
+            "label": "Khối (VP/CH)",
+            "resModel": "hr.leave.analytics.report",
+            "selectionField": "workforce_block",
+        },
     ]
 
     for pivot in out.get("pivots", {}).values():

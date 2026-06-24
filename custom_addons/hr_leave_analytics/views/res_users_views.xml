@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_hr_leave_analytics_permission" model="ir.ui.view">
+        <field name="name">res.users.form.hr.leave.analytics.permission</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="lug_permission.view_users_form_lug_permission"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='lug_permission']//field[@name='lug_user_permission_ids']"
+                   position="before">
+                <separator string="Báo cáo nghỉ phép (dashboard)"/>
+                <div class="text-muted mb-2">
+                    Chọn miền được xem trên menu
+                    <b>Ngày nghỉ → Báo cáo → Dashboard theo Miền</b>.
+                    Chọn <b>Toàn quyền</b> để mở thêm báo cáo tổng quan toàn hệ thống.
+                    Phần này độc lập với phạm vi dữ liệu LUG ở trên.
+                </div>
+                <group>
+                    <field name="hr_leave_analytics_dashboard_group_ids"
+                           widget="many2many_checkboxes"
+                           nolabel="1"/>
+                    <field name="hr_leave_analytics_access_summary" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

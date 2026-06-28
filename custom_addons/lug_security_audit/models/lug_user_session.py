@@ -407,6 +407,22 @@ class LugUserSession(models.Model):
                 session.write({"job_title_label": title})
 
     @api.model
+    def rebuild_month_summary(self, year, month):
+        import calendar
+
+        y, m = int(year), int(month)
+        first_day = date(y, m, 1)
+        last_day = date(y, m, calendar.monthrange(y, m)[1])
+        sessions = self.sudo().search([
+            ("login_date", ">=", first_day),
+            ("login_date", "<=", last_day),
+        ])
+        for day in sorted(set(sessions.mapped("login_date"))):
+            self._build_daily_summary_for_date(day)
+        self._cron_monthly_summary(y, m)
+        return True
+
+    @api.model
     def _cron_monthly_summary(self, year=None, month=None):
         today = fields.Date.context_today(self)
         if year and month:

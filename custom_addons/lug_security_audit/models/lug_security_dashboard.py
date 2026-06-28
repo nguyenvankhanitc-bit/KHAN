@@ -5,6 +5,8 @@ from datetime import date
 
 from odoo import api, fields, models, SUPERUSER_ID
 
+from .lug_hr_snapshot import job_title_label_from_employee
+
 MIEN_COLORS = {
     "company": ("#22c55e", "#94a3b8"),
     "Tất cả": ("#0d6efd", "#bfdbfe"),
@@ -62,6 +64,19 @@ class LugSecurityDashboard(models.TransientModel):
             "summary_date": summary_date,
             "search": search_text,
             "selected_mien": (filters.get("selected_mien") or "").strip(),
+        }
+
+    @api.model
+    def _parse_month_filters(self, filters):
+        filters = filters or {}
+        today = fields.Date.context_today(self)
+        year = int(filters.get("year") or today.year)
+        month = int(filters.get("month") or today.month)
+        month = min(max(month, 1), 12)
+        return {
+            "year": year,
+            "month": month,
+            "search": (filters.get("search") or "").strip(),
         }
 
     @api.model
@@ -528,6 +543,72 @@ class LugSecurityDashboard(models.TransientModel):
             },
             "filter_options": self._filter_options_payload(),
         }
+
+    @api.model
+    def _month_summary_row(self, record):
+        employee = record.employee_id
+        if employee:
+            employee = self.env(user=SUPERUSER_ID)["hr.employee"].browse(employee.id)
+        job_title = job_title_label_from_employee(employee)
+        if not job_title and record.job_id:
+            job_title = record.job_id.name
+        return {
+            "id": record.id,
+            "month_label": record.month_label or "",
+            "user_login": record.user_id.login or "",
+            "user_name": record.employee_name or record.user_id.name or "",
+            "user_id": record.user_id.id,
+            "job_title_label": job_title or "",
+            "department_name": record.department_id.name or "",
+            "mien_label": record.mien_label or "",
+            "total_login_days": record.total_login_days or 0,
+            "total_hours_display": record.total_hours_display or "0h",
+            "average_hours_display": record.average_hours_display or "0h",
+            "total_sessions": record.total_sessions or 0,
+            "device_count": record.device_count or 0,
+        }
+
+    @api.model
+    def get_month_report_data(self, filters=None):
+        parsed = self._parse_month_filters(filters)
+        self.env["lug.user.session"].sudo().rebuild_month_summary(
+            parsed["year"],
+            parsed["month"],
+        )
+        MonthSummary = self.env["lug.user.month.summary"].sudo()
+        records = MonthSummary.search([
+            ("year", "=", parsed["year"]),
+            ("month", "=", parsed["month"]),
+        ], order="employee_name, user_id")
+        search_user_ids = self._search_employee_user_ids(parsed["search"])
+        rows = []
+        for record in records:
+            if search_user_ids is not None and record.user_id.id not in search_user_ids:
+                continue
+            rows.append(self._month_summary_row(record))
+        return {
+            "rows": rows,
+            "total": len(rows),
+            "filters": parsed,
+            "filter_options": self._filter_options_payload(),
+        }
+
+    @api.model
+    def action_export_month_report(self, filters=None):
+        parsed = self._parse_month_filters(filters)
+        action = self.env.ref("lug_security_audit.action_lug_user_month_summary").read()[0]
+        domain = [
+            ("year", "=", parsed["year"]),
+            ("month", "=", parsed["month"]),
+        ]
+        search_user_ids = self._search_employee_user_ids(parsed["search"])
+        if search_user_ids is not None:
+            if not search_user_ids:
+                domain.append(("user_id", "=", False))
+            else:
+                domain.append(("user_id", "in", list(search_user_ids)))
+        action["domain"] = domain
+        return action
 
     @api.model
     def get_online_table_rows(self, filters=None):

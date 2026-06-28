@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_security_audit.LugMonthReport">
+        <div class="o_lug_security_dashboard o_action">
+            <div class="o_lug_dashboard_header">
+                <div class="o_lug_title_row">
+                    <h2 class="o_lug_main_title">Báo cáo thống kê theo User trong tháng</h2>
+                    <button type="button" class="btn btn-sm btn-outline-success" t-on-click="exportExcel">
+                        <i class="fa fa-file-excel-o me-1"/>Xuất Excel
+                    </button>
+                </div>
+            </div>
+
+            <div class="o_lug_dashboard_body">
+                <t t-if="state.loading">
+                    <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-else="">
+                    <div class="o_lug_table_section">
+                        <div class="o_lug_table_toolbar">
+                            <div class="o_lug_filter_item">
+                                <label class="o_lug_filter_label">Tháng</label>
+                                <select class="form-select form-select-sm" t-model.number="state.filterMonth" t-on-change="onFilterChange">
+                                    <t t-foreach="state.data?.filter_options?.months || []" t-as="month" t-key="month.value">
+                                        <option t-att-value="month.value" t-esc="month.label"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_lug_filter_item">
+                                <label class="o_lug_filter_label">Năm</label>
+                                <select class="form-select form-select-sm" t-model.number="state.filterYear" t-on-change="onFilterChange">
+                                    <t t-foreach="state.data?.filter_options?.years || []" t-as="year" t-key="year">
+                                        <option t-att-value="year" t-esc="year"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_lug_table_search">
+                                <label class="o_lug_filter_label">Tìm kiếm</label>
+                                <div class="o_lug_table_search_inputs">
+                                    <input type="text"
+                                           class="form-control form-control-sm"
+                                           placeholder="Tên, login, mã HRM, phòng ban, chức danh..."
+                                           t-model="state.searchText"
+                                           t-on-keydown="onSearchKeydown"/>
+                                    <button type="button" class="btn btn-sm btn-primary" t-on-click="loadReport">
+                                        <i class="fa fa-search me-1"/>Tìm
+                                    </button>
+                                    <button type="button"
+                                            class="btn btn-sm btn-light"
+                                            t-if="state.searchText"
+                                            t-on-click="clearSearch">
+                                        Xóa
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light" t-on-click="resetFilters" title="Đặt lại">
+                                        <i class="fa fa-refresh"/>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 class="o_lug_section_title">
+                            Chi tiết thống kê tháng
+                            <span class="o_lug_row_count" t-if="state.data?.total !== undefined">
+                                (<t t-esc="state.data.total"/> user)
+                            </span>
+                        </h3>
+                        <div class="o_lug_table_wrap o_lug_table_wrap_sticky">
+                            <table class="o_lug_data_table o_lug_data_table_blue">
+                                <thead>
+                                    <tr>
+                                        <th>Kỳ</th>
+                                        <th>User</th>
+                                        <th>Họ tên</th>
+                                        <th>Chức danh</th>
+                                        <th>Phòng ban</th>
+                                        <th>Miền</th>
+                                        <th>Số ngày Login</th>
+                                        <th>Tổng giờ</th>
+                                        <th>TB/ngày</th>
+                                        <th>Số phiên</th>
+                                        <th>Số thiết bị</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="!state.data?.rows?.length">
+                                        <tr>
+                                            <td colspan="11" class="o_lug_empty">Không có dữ liệu theo bộ lọc.</td>
+                                        </tr>
+                                    </t>
+                                    <t t-foreach="state.data?.rows || []" t-as="row" t-key="row.id">
+                                        <tr>
+                                            <td t-esc="row.month_label"/>
+                                            <td t-esc="row.user_login"/>
+                                            <td t-esc="row.user_name"/>
+                                            <td t-esc="row.job_title_label"/>
+                                            <td t-esc="row.department_name"/>
+                                            <td t-esc="row.mien_label"/>
+                                            <td t-esc="row.total_login_days"/>
+                                            <td t-esc="row.total_hours_display"/>
+                                            <td t-esc="row.average_hours_display"/>
+                                            <td t-esc="row.total_sessions"/>
+                                            <td t-esc="row.device_count"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

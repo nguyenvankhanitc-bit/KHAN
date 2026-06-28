@@ -37,7 +37,7 @@
     <menuitem id="menu_lug_security_monthly"
               name="Báo cáo tháng theo User"
               parent="menu_lug_security_root"
-              action="action_lug_user_month_summary"
+              action="action_lug_security_month_report"
               sequence="50"
               groups="base.group_system,lug_security_audit.group_lug_security_user"/>
 </odoo>

@@ -300,6 +300,11 @@
     background: #fff;
 }
 
+.o_lug_table_wrap_sticky {
+    max-height: 65vh;
+    overflow-y: auto;
+}
+
 .o_lug_data_table {
     width: 100%;
     border-collapse: collapse;
@@ -316,6 +321,16 @@
     padding: 10px 8px;
     border: 1px solid #3d4654;
     white-space: nowrap;
+}
+
+.o_lug_data_table_blue thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #2563eb;
+    color: #fff;
+    border: 1px solid #1d4ed8;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.15);
 }
 
 .o_lug_data_table tbody td {

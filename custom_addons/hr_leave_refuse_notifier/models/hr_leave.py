@@ -39,7 +39,14 @@ class HrLeave(models.Model):
             )
             if not user_ids:
                 continue
-            leave_name = leave.holiday_status_id.display_name or leave.display_name
+            # Use Odoo's canonical full leave label (employee, type, duration,
+            # and date).  Explicitly clear compact/grouped display contexts so
+            # refusal notifications never collapse this to only the leave type.
+            leave_name = leave.with_context(
+                short_name=False,
+                hide_employee_name=False,
+                group_by=[],
+            ).display_name or leave.holiday_status_id.display_name
             reason = (leave.last_refusal_reason or "").strip()
             if reason:
                 body = Markup(

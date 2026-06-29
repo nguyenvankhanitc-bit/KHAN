@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Refuse Ticket Notifier",
-    "version": "19.0.1.0.2",
+    "version": "19.0.1.0.3",
     "category": "Human Resources",
     "summary": "Notify all approvers via OdooBot when time off requests are refused",
     "description": """

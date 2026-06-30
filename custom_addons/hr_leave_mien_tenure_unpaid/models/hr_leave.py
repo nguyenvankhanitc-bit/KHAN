@@ -23,6 +23,20 @@ class HrLeave(models.Model):
             selected, O_LEAVE_TYPE_CODE, allowed_ids=allowed_ids
         )
 
+    def _is_mien_unpaid_o_leave_type(self, leave_type, employee=None):
+        """True when leave_type has code (O) and belongs to the employee's Miền config."""
+        if employee is None:
+            employee = self.employee_id if self else False
+        if not leave_type or not employee:
+            return False
+        LeaveType = self.env["hr.leave.type"]
+        if LeaveType.code_from_name(leave_type.name).upper() != O_LEAVE_TYPE_CODE:
+            return False
+        allowed_ids = self._mien_config_leave_type_ids(employee)
+        if allowed_ids is not None:
+            return leave_type.id in allowed_ids
+        return True
+
     def _employee_requires_mien_unpaid_o(self):
         self.ensure_one()
         employee = self.employee_id._sudo_for_timeoff_access() if self.employee_id else False
@@ -87,6 +101,23 @@ class HrLeave(models.Model):
             return False
         return super()._monthly_mien_should_split(leave)
 
+    @api.model
+    def _monthly_mien_desired_day_kinds(self, employee, year, month):
+        """Giữ (O) khi rebalance tháng — tránh ghi đè P1/P2 lên ngày lễ hoặc < 4 năm."""
+        desired = super()._monthly_mien_desired_day_kinds(employee, year, month)
+        if not desired or not employee:
+            return desired
+        employee = employee._sudo_for_timeoff_access()
+        if not employee._mien_tenure_unpaid_applies():
+            return desired
+        if employee._mien_tenure_unpaid_required():
+            return {day: "o" for day in desired}
+        result = dict(desired)
+        for day in result:
+            if employee._leave_range_overlaps_public_holiday(day, day):
+                result[day] = "o"
+        return result
+
     @api.depends(
         "employee_id",
         "employee_id.mien",
@@ -131,7 +162,11 @@ class HrLeave(models.Model):
                 continue
             if not leave._employee_requires_mien_unpaid_o():
                 continue
-            o_type = leave._get_tenure_unpaid_o_leave_type(leave.holiday_status_id)
+            if leave._is_mien_unpaid_o_leave_type(
+                leave.holiday_status_id, employee=employee
+            ):
+                continue
+            o_type = leave._get_tenure_unpaid_o_leave_type(employee=employee)
             if not o_type:
                 raise ValidationError(
                     _(
@@ -139,19 +174,18 @@ class HrLeave(models.Model):
                         "(ví dụ: «Nghỉ không lương (O)»). Vui lòng liên hệ HR."
                     )
                 )
-            if leave.holiday_status_id.id != o_type.id:
-                mien = employee._get_leave_mien_for_rules()
-                start = leave._get_leave_start_date()
-                end = leave._get_leave_end_date() or start
-                if employee._mien_public_holiday_unpaid_required(start, end):
-                    raise ValidationError(
-                        _(
-                            "Nhân viên miền %(mien)s: khoảng nghỉ có ngày trùng "
-                            "ngày lễ (Public Holiday). Chỉ được đăng ký loại "
-                            "«%(required)s»."
-                        )
-                        % {
-                            "mien": mien or "",
-                            "required": o_type.display_name,
-                        }
+            mien = employee._get_leave_mien_for_rules()
+            start = leave._get_leave_start_date()
+            end = leave._get_leave_end_date() or start
+            if employee._mien_public_holiday_unpaid_required(start, end):
+                raise ValidationError(
+                    _(
+                        "Nhân viên miền %(mien)s: khoảng nghỉ có ngày trùng "
+                        "ngày lễ (Public Holiday). Chỉ được đăng ký loại "
+                        "«%(required)s»."
                     )
+                    % {
+                        "mien": mien or "",
+                        "required": o_type.display_name,
+                    }
+                )

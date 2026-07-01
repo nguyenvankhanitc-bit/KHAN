@@ -26,13 +26,9 @@ LUG_APP_ODOO_GROUPS = {
         "delete": ["hr.group_hr_manager"],
     },
     "leave": {
-        # View/create/edit own + peer leaves in visibility_policy are handled by
-        # base.group_user rules + hr_leave_peer_read_rule. Do NOT grant
-        # hr_holidays.group_hr_holidays_user here: that group can read ALL leaves
-        # and widens employee visibility through the access mixin.
-        "view": [],
-        "create": [],
-        "edit": [],
+        "view": ["hr_holidays.group_hr_holidays_user"],
+        "create": ["hr_holidays.group_hr_holidays_user"],
+        "edit": ["hr_holidays.group_hr_holidays_user"],
         "delete": ["hr_holidays.group_hr_holidays_manager"],
         "approve": ["hr_holidays.group_hr_holidays_responsible"],
     },

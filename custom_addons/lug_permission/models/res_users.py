@@ -228,17 +228,12 @@ class ResUsers(models.Model):
 
     def _sync_lug_odoo_groups(self):
         managed = self._lug_managed_group_ids()
-        holidays_user = self.env.ref(
-            "hr_holidays.group_hr_holidays_user", raise_if_not_found=False
-        )
         for user in self:
             if not user._lug_permission_is_enforced():
                 continue
             target = user._lug_target_group_ids()
             keep = user.group_ids.filtered(lambda g: g.id not in managed)
             new_groups = keep | self.env["res.groups"].browse(list(target))
-            if holidays_user:
-                new_groups -= holidays_user
             if set(new_groups.ids) != set(user.group_ids.ids):
                 super(
                     ResUsers,

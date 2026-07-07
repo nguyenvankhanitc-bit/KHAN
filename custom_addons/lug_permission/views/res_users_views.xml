@@ -39,13 +39,31 @@
                                 còn áp dụng.
                             </div>
                         </group>
-                        <group string="Phạm vi dữ liệu (Data Scope)">
-                            <field name="lug_data_scope" widget="radio"/>
-                            <div class="text-muted" colspan="2">
-                                Phạm vi xem nhân viên và đơn nghỉ phép. Tự đồng bộ nội bộ
-                                (visibility_policy) — không cần tab riêng.
-                            </div>
-                        </group>
+                    <group string="Phạm vi dữ liệu (Data Scope)">
+                        <field name="lug_data_scope" widget="radio"/>
+                        <div class="text-muted" colspan="2">
+                            Phạm vi xem nhân viên và đơn nghỉ phép. Tự đồng bộ nội bộ
+                            (visibility_policy) — không cần tab riêng.
+                        </div>
+                    </group>
+                    </group>
+
+                    <separator string="Ngày nghỉ"/>
+                    <group>
+                        <field name="lug_time_off_role" widget="radio"/>
+                        <div class="text-muted" colspan="2">
+                            Vai trò Ngày nghỉ (trước đây nằm ở tab Quyền truy cập → Nhân sự).
+                            Khi user đã dùng LUG Permission, mục này được quản lý tại đây.
+                        </div>
+                    </group>
+                    <group string="Phạm vi Ngày nghỉ">
+                        <field name="lug_leave_mien_scope_group_ids"
+                               widget="many2many_checkboxes"
+                               nolabel="1"/>
+                        <div class="text-muted" colspan="2">
+                            Giới hạn Miền được xem trên đơn nghỉ phép.
+                            Để trống = không giới hạn thêm (hoặc tự suy từ Miền sửa hồ sơ nhân viên).
+                        </div>
                     </group>
 
                     <group string="Vai trò nhanh (chỉ khi chưa dùng LUG)"

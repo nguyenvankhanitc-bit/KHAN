@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lug_email_status_list" model="ir.ui.view">
+        <field name="name">lug.email.account.status.list</field>
+        <field name="model">lug.email.account.status</field>
+        <field name="arch" type="xml">
+            <list string="Trạng thái email" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="badge_style"/>
+                <field name="is_closed"/>
+                <field name="account_count" readonly="1"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_email_status_form" model="ir.ui.view">
+        <field name="name">lug.email.account.status.form</field>
+        <field name="model">lug.email.account.status</field>
+        <field name="arch" type="xml">
+            <form string="Trạng thái email">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="badge_style"/>
+                            <field name="is_closed"/>
+                            <field name="active"/>
+                            <field name="account_count"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lug_email_status_search" model="ir.ui.view">
+        <field name="name">lug.email.account.status.search</field>
+        <field name="model">lug.email.account.status</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="filter_active" string="Đang dùng"
+                        domain="[('active', '=', True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_lug_email_status" model="ir.actions.act_window">
+        <field name="name">Trạng thái email</field>
+        <field name="res_model">lug.email.account.status</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo trạng thái mới
+            </p>
+            <p>Thêm, sửa hoặc xóa trạng thái dùng cho danh mục tài khoản email.</p>
+        </field>
+    </record>
+</odoo>

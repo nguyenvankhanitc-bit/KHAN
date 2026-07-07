@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="res.groups.privilege" id="res_groups_privilege_lug_email">
+        <field name="name">Quản lý tài khoản email</field>
+        <field name="category_id" ref="base.module_category_operations"/>
+        <field name="sequence">47</field>
+    </record>
+
+    <record id="group_lug_email_user" model="res.groups">
+        <field name="name">Nhân viên</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Xem danh sách tài khoản email.</field>
+    </record>
+
+    <record id="group_lug_email_manager" model="res.groups">
+        <field name="name">Quản lý</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_email_user'))]"/>
+        <field name="comment">Tạo và cập nhật tài khoản email.</field>
+    </record>
+
+    <record id="group_lug_email_admin" model="res.groups">
+        <field name="name">Quản trị</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_email"/>
+        <field name="implied_ids" eval="[(4, ref('group_lug_email_manager'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+
+    <record id="rule_lug_email_multi_company" model="ir.rule">
+        <field name="name">Email account: multi-company</field>
+        <field name="model_id" ref="model_lug_email_account"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+</odoo>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="lug_app_email_account" model="lug.app">
+        <field name="name">Quản lý tài khoản email</field>
+        <field name="code">email_account</field>
+        <field name="sequence">47</field>
+        <field name="module_name">lug_email_account</field>
+        <field name="menu_xmlid">lug_email_account.menu_lug_email_root</field>
+    </record>
+</odoo>

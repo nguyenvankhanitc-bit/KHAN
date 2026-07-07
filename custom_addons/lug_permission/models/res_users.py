@@ -19,6 +19,16 @@ from .lug_odoo_groups import (
     ROLE_MANAGED_GROUP_XMLIDS,
 )
 
+LUG_TIME_OFF_ROLE_XMLIDS = {
+    "officer": "hr_holidays.group_hr_holidays_user",
+    "manager": "hr_holidays.group_hr_holidays_manager",
+}
+
+LUG_LEAVE_MIEN_SCOPE_GROUP_XMLIDS = [
+    "hr_leave_type_mien.group_leave_mien_vp",
+    "hr_leave_type_mien.group_leave_mien_store",
+]
+
 
 class ResUsers(models.Model):
     _inherit = "res.users"
@@ -75,6 +85,32 @@ class ResUsers(models.Model):
             "chưa tới lượt duyệt của họ. Giúp người quản lý nắm được có bao nhiêu đơn đang "
             "chờ và đang ở bước nào để nhắc người phụ trách bước đó."
         ),
+    )
+    lug_time_off_role = fields.Selection(
+        selection=[
+            ("none", "Không"),
+            (
+                "officer",
+                "Người phụ trách: Quản lý tất cả đơn",
+            ),
+            ("manager", "Quản trị viên"),
+        ],
+        string="Ngày nghỉ",
+        default="none",
+        help="Vai trò Ngày nghỉ tương đương mục Nhân sự trên tab Quyền truy cập.",
+    )
+    lug_leave_mien_scope_group_ids = fields.Many2many(
+        "res.groups",
+        "lug_user_leave_mien_scope_group_rel",
+        "user_id",
+        "group_id",
+        string="Phạm vi Ngày nghỉ",
+        compute="_compute_lug_leave_mien_scope_group_ids",
+        inverse="_inverse_lug_leave_mien_scope_group_ids",
+        domain=lambda self: [
+            ("id", "in", self._lug_leave_mien_scope_managed_group_ids()),
+        ],
+        help="Giới hạn Miền được xem trên đơn nghỉ phép.",
     )
 
     def lug_allowed_employee_edit_legacy_miens(self):
@@ -140,6 +176,70 @@ class ResUsers(models.Model):
         for user in self:
             user.lug_permission_enforced = user._lug_permission_is_enforced()
 
+    @api.model
+    def _lug_leave_mien_scope_managed_group_ids(self):
+        ids = []
+        for xmlid in LUG_LEAVE_MIEN_SCOPE_GROUP_XMLIDS:
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                ids.append(group.id)
+        return ids
+
+    @api.depends("group_ids")
+    def _compute_lug_leave_mien_scope_group_ids(self):
+        managed = self.env["res.groups"].browse(self._lug_leave_mien_scope_managed_group_ids())
+        for user in self:
+            user.lug_leave_mien_scope_group_ids = user.group_ids & managed
+
+    def _inverse_lug_leave_mien_scope_group_ids(self):
+        managed = self.env["res.groups"].browse(self._lug_leave_mien_scope_managed_group_ids())
+        for user in self:
+            user.group_ids = (user.group_ids - managed) | user.lug_leave_mien_scope_group_ids
+
+    @api.model
+    def _lug_time_off_role_from_group_ids(self, group_ids):
+        manager = self.env.ref(
+            "hr_holidays.group_hr_holidays_manager", raise_if_not_found=False
+        )
+        officer = self.env.ref(
+            "hr_holidays.group_hr_holidays_user", raise_if_not_found=False
+        )
+        group_ids = set(group_ids)
+        if manager and manager.id in group_ids:
+            return "manager"
+        if officer and officer.id in group_ids:
+            return "officer"
+        return "none"
+
+    def _lug_time_off_role_managed_group_ids(self):
+        ids = set()
+        for xmlid in LUG_TIME_OFF_ROLE_XMLIDS.values():
+            group = self.env.ref(xmlid, raise_if_not_found=False)
+            if group:
+                ids.add(group.id)
+        return ids
+
+    def _lug_time_off_role_group_ids(self):
+        self.ensure_one()
+        role = self.lug_time_off_role or "none"
+        xmlid = LUG_TIME_OFF_ROLE_XMLIDS.get(role)
+        if not xmlid:
+            return set()
+        group = self.env.ref(xmlid, raise_if_not_found=False)
+        return {group.id} if group else set()
+
+    def _apply_lug_time_off_role_to_groups(self):
+        managed = self._lug_time_off_role_managed_group_ids()
+        for user in self:
+            keep = user.group_ids.filtered(lambda group: group.id not in managed)
+            role_groups = self.env["res.groups"].browse(list(user._lug_time_off_role_group_ids()))
+            target = keep | role_groups
+            if set(target.ids) != set(user.group_ids.ids):
+                super(
+                    ResUsers,
+                    user.with_context(skip_lug_sync=True, skip_role_apply=True),
+                ).write({"group_ids": [(6, 0, target.ids)]})
+
     def _lug_permission_bypass(self):
         self.ensure_one()
         return self.has_group("base.group_system")
@@ -196,10 +296,13 @@ class ResUsers(models.Model):
             result[line.app_id.code].update(line._active_permission_codes())
         return result
 
-    def _lug_leave_mien_scope_group_ids(self):
-        """Map VP-only / store-only edit zones to Time Off Miền scope groups."""
+    def _lug_leave_mien_scope_target_group_ids(self):
+        """Miền scope groups granted by LUG sync."""
         self.ensure_one()
         user = self._lug_sudo()
+        explicit = set(user.lug_leave_mien_scope_group_ids.ids)
+        if explicit:
+            return explicit
         if (user.lug_hr_employee_edit_policy or "none") != "zones":
             return set()
         zones = {
@@ -233,17 +336,26 @@ class ResUsers(models.Model):
                     group = self.env.ref(xmlid, raise_if_not_found=False)
                     if group:
                         target.add(group.id)
-        target.update(user._lug_leave_mien_scope_group_ids())
+        target.update(user._lug_time_off_role_group_ids())
+        target.update(user._lug_leave_mien_scope_target_group_ids())
         return target
 
     def _sync_lug_odoo_groups(self):
         managed = self._lug_managed_group_ids()
+        holidays_user = self.env.ref(
+            "hr_holidays.group_hr_holidays_user", raise_if_not_found=False
+        )
         for user in self:
             if not user._lug_permission_is_enforced():
                 continue
             target = user._lug_target_group_ids()
             keep = user.group_ids.filtered(lambda g: g.id not in managed)
             new_groups = keep | self.env["res.groups"].browse(list(target))
+            if holidays_user and (user.lug_time_off_role or "none") not in (
+                "officer",
+                "manager",
+            ):
+                new_groups -= holidays_user
             if set(new_groups.ids) != set(user.group_ids.ids):
                 super(
                     ResUsers,
@@ -413,9 +525,15 @@ class ResUsers(models.Model):
             "assigned_ma_bo_phan_ids",
             "lug_hr_employee_edit_policy",
             "lug_hr_employee_edit_mien_zone_ids",
+            "lug_time_off_role",
+            "lug_leave_mien_scope_group_ids",
         }
         scope_fields = {"lug_data_scope", "assigned_ma_bo_phan_ids"}
         should_sync = bool(lug_fields & set(vals))
+        if "lug_time_off_role" in vals:
+            non_enforced = self.filtered(lambda u: not u._lug_permission_is_enforced())
+            if non_enforced:
+                non_enforced._apply_lug_time_off_role_to_groups()
         if scope_fields & set(vals):
             self._sync_lug_visibility_policy()
         if "group_ids" in vals:
@@ -445,6 +563,18 @@ class ResUsers(models.Model):
         ):
             users._lug_clear_menu_cache()
         return users
+
+    @api.model
+    def _lug_backfill_time_off_role_from_groups(self):
+        """Align lug_time_off_role with existing Time Off groups after upgrade."""
+        users = self.sudo().search([])
+        for user in users:
+            role = self._lug_time_off_role_from_group_ids(user.group_ids.ids)
+            if user.lug_time_off_role != role:
+                super(
+                    ResUsers,
+                    user.with_context(skip_lug_sync=True, skip_role_apply=True),
+                ).write({"lug_time_off_role": role})
 
     @api.model
     def _lug_cleanup_legacy_visibility_views(self):

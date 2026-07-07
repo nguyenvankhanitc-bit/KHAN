@@ -1,0 +1,10 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lug_email_account_user,lug.email.account.user,model_lug_email_account,group_lug_email_user,1,0,0,0
+access_lug_email_account_manager,lug.email.account.manager,model_lug_email_account,group_lug_email_manager,1,1,1,0
+access_lug_email_account_admin,lug.email.account.admin,model_lug_email_account,group_lug_email_admin,1,1,1,1
+access_lug_email_status_user,lug.email.account.status.user,model_lug_email_account_status,group_lug_email_user,1,0,0,0
+access_lug_email_status_manager,lug.email.account.status.manager,model_lug_email_account_status,group_lug_email_manager,1,1,1,1
+access_lug_email_status_admin,lug.email.account.status.admin,model_lug_email_account_status,group_lug_email_admin,1,1,1,1
+access_lug_email_dashboard_user,lug.email.dashboard.user,model_lug_email_dashboard,group_lug_email_user,1,0,0,0
+access_lug_email_dashboard_manager,lug.email.dashboard.manager,model_lug_email_dashboard,group_lug_email_manager,1,0,0,0
+access_lug_email_dashboard_admin,lug.email.dashboard.admin,model_lug_email_dashboard,group_lug_email_admin,1,0,0,0

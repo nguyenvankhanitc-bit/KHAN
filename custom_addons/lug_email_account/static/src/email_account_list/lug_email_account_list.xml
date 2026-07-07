@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="lug_email_account.ListView" t-inherit="web.ListView" t-inherit-mode="primary">
+        <xpath expr="//t[@t-component='props.Renderer']" position="before">
+            <div class="o_lug_email_filter_bar">
+                <div class="o_lug_email_filter_item">
+                    <label class="o_lug_email_filter_label">Mã bộ phận</label>
+                    <select class="form-select form-select-sm o_lug_email_filter_select"
+                            t-model="filterState.departmentId"
+                            t-on-keydown="onFilterKeydown">
+                        <option value="">Tất cả</option>
+                        <t t-foreach="departmentOptions" t-as="dept" t-key="dept.id">
+                            <option t-att-value="dept.id" t-esc="dept.name"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_lug_email_filter_item">
+                    <label class="o_lug_email_filter_label">Trạng thái</label>
+                    <select class="form-select form-select-sm o_lug_email_filter_select"
+                            t-model="filterState.state"
+                            t-on-keydown="onFilterKeydown">
+                        <option value="">Tất cả</option>
+                        <t t-foreach="stateOptions" t-as="status" t-key="status.value">
+                            <option t-att-value="status.value" t-esc="status.label"/>
+                        </t>
+                    </select>
+                </div>
+                <div class="o_lug_email_filter_item o_lug_email_filter_item--search">
+                    <label class="o_lug_email_filter_label">Tìm kiếm</label>
+                    <div class="o_lug_email_search_group">
+                        <div class="o_lug_email_search_input_wrap">
+                            <i class="fa fa-search o_lug_email_search_icon" aria-hidden="true"/>
+                            <input type="text"
+                                   class="o_lug_email_search_input"
+                                   placeholder="Nhập email hoặc tên user..."
+                                   t-model="filterState.query"
+                                   t-on-keydown="onFilterKeydown"
+                                   autocomplete="off"/>
+                        </div>
+                        <button type="button"
+                                class="btn btn-sm o_lug_email_filter_search_btn"
+                                t-on-click="onFilterSearch"
+                                t-att-disabled="filterState.loading">
+                            <i t-if="filterState.loading" class="fa fa-spinner fa-spin me-1"/>
+                            Tìm kiếm
+                        </button>
+                        <button type="button"
+                                class="btn btn-sm o_lug_email_filter_reset_btn"
+                                t-on-click="onFilterReset"
+                                title="Đặt lại bộ lọc">
+                            <i class="fa fa-refresh"/>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+    </t>
+
+</templates>

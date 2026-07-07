@@ -1,0 +1,218 @@
+.o_lug_email_dashboard.o_action {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    background: #f4f6f9;
+    overflow: hidden;
+
+    .o_lug_email_dashboard_header {
+        flex: 0 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem 1.25rem 0.75rem;
+        background: #f4f6f9;
+        border-bottom: 1px solid #e5e7eb;
+
+        h2 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+    }
+
+    .o_lug_email_dashboard_subtitle {
+        margin: 0.35rem 0 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .o_lug_email_dashboard_scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        overflow: auto;
+        padding: 1rem 1.25rem 2rem;
+    }
+
+    .o_lug_email_kpi_row {
+        display: flex;
+        flex-wrap: nowrap;
+        gap: 0.75rem;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: 0.25rem;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .o_lug_email_kpi_card {
+        flex: 0 0 auto;
+        min-width: 220px;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: #fff;
+        border-radius: 0.75rem;
+        padding: 1rem 1.15rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+
+    .o_lug_email_kpi_card--total {
+        border-top: 4px solid #714b67;
+    }
+
+    .o_lug_email_kpi_card--status {
+        min-width: 240px;
+        border-top-width: 4px;
+        border-top-style: solid;
+    }
+
+    .o_lug_email_kpi_card--active {
+        border-top-color: #22c55e;
+    }
+
+    .o_lug_email_kpi_card--cancel {
+        border-top-color: #ef4444;
+    }
+
+    .o_lug_email_kpi_card--lock {
+        border-top-color: #f59e0b;
+    }
+
+    .o_lug_email_status_chart_wrap {
+        width: 4.5rem;
+        height: 4.5rem;
+        flex: 0 0 auto;
+    }
+
+    .o_lug_email_kpi_percent {
+        color: #6c757d;
+        font-size: 0.8rem;
+        margin-top: 0.15rem;
+    }
+
+    .o_lug_email_kpi_card--total .o_lug_email_kpi_icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(113, 75, 103, 0.12);
+        color: #714b67;
+        font-size: 1.25rem;
+    }
+
+    .o_lug_email_kpi_value {
+        font-size: 2rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .o_lug_email_kpi_label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.2rem;
+    }
+
+    .o_lug_email_panel {
+        background: #fff;
+        border-radius: 0.75rem;
+        padding: 1rem 1.1rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        height: 100%;
+        min-width: 280px;
+
+        h5 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+    }
+
+    .o_lug_email_panel_hint {
+        color: #6c757d;
+        font-size: 0.82rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .o_lug_email_chart_wrap {
+        height: 260px;
+        position: relative;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .o_lug_email_chart_wrap--bar {
+        height: 300px;
+        min-width: 640px;
+    }
+
+    .o_lug_email_table_scroll {
+        max-height: 360px;
+        overflow: auto;
+        border: 1px solid #eef0f2;
+        border-radius: 0.5rem;
+    }
+
+    .o_lug_email_recent_table {
+        min-width: 760px;
+        margin-bottom: 0;
+
+        th,
+        td {
+            vertical-align: middle;
+            white-space: nowrap;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #fff;
+            box-shadow: inset 0 -1px 0 #dee2e6;
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: center;
+            width: 4rem;
+        }
+    }
+
+    .o_lug_email_row_link {
+        cursor: pointer;
+    }
+
+    .o_lug_email_dashboard_scroll,
+    .o_lug_email_kpi_row,
+    .o_lug_email_table_scroll,
+    .o_lug_email_chart_wrap {
+        scrollbar-width: thin;
+        scrollbar-color: #9ca3af #f3f4f6;
+
+        &::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: #f3f4f6;
+            border-radius: 8px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #9ca3af;
+            border-radius: 8px;
+            border: 2px solid #f3f4f6;
+
+            &:hover {
+                background: #6b7280;
+            }
+        }
+    }
+}

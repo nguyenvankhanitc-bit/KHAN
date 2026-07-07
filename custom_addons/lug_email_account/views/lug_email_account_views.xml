@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lug_email_account_list" model="ir.ui.view">
+        <field name="name">lug.email.account.list</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách tổng email"
+                  class="o_lug_email_account_list"
+                  default_order="stt asc">
+                <field name="stt" string="STT" width="60" class="o_lug_email_stt_center"/>
+                <field name="department_id" string="Phòng ban" width="120"/>
+                <field name="department" column_invisible="1"/>
+                <field name="function_name" string="Chức năng" width="130"/>
+                <field name="employee_name" string="Họ và tên NV" width="150"/>
+                <field name="email" string="Email" widget="email" width="220"/>
+                <field name="position" string="Vị trí" width="100"/>
+                <field name="purpose" string="Mục đích sử dụng" width="180"/>
+                <field name="date_created" string="Ngày tạo" width="100"/>
+                <field name="usage_target" string="Đối tượng sử dụng" width="110"/>
+                <field name="status_code" column_invisible="1"/>
+                <field name="status_id" string="Trạng thái" width="140"
+                       widget="badge"
+                       options="{'no_create': True, 'no_open': True}"
+                       decoration-success="status_code == 'active'"
+                       decoration-warning="status_code == 'lock'"
+                       decoration-danger="status_code == 'cancel'"
+                       decoration-muted="status_code == 'cancel'"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_email_account_list_filter" model="ir.ui.view">
+        <field name="name">lug.email.account.list.filter</field>
+        <field name="model">lug.email.account</field>
+        <field name="inherit_id" ref="view_lug_email_account_list"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="js_class">lug_email_account_list</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_lug_email_account_form" model="ir.ui.view">
+        <field name="name">lug.email.account.form</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <form string="Nhập tạo user email">
+                <sheet>
+                    <group string="Thông tin chung">
+                        <group>
+                            <field name="department_id" options="{'no_create': True}"/>
+                            <field name="department" invisible="1"/>
+                            <field name="function_name" placeholder="VD: Tuyển dụng, Kho tổng, Công nợ..."/>
+                            <field name="employee_name"/>
+                            <field name="employee_id" options="{'no_create': True}" optional="hide"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                        <group>
+                            <field name="email" placeholder="vd: hr@company.com" widget="email"/>
+                            <field name="position"/>
+                            <field name="status_id" string="Trạng thái" required="1"
+                                   options="{'no_create': True, 'no_open': True}"/>
+                            <field name="usage_target" placeholder="VD: Nội bộ, Cá nhân, Đối tác..."/>
+                        </group>
+                    </group>
+                    <group string="Mục đích sử dụng">
+                        <field name="purpose" nolabel="1"
+                               placeholder="Mô tả mục đích sử dụng email..."/>
+                    </group>
+                    <group string="Ngày tạo">
+                        <field name="date_created" placeholder="VD: 06/07/2026"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lug_email_account_search" model="ir.ui.view">
+        <field name="name">lug.email.account.search</field>
+        <field name="model">lug.email.account</field>
+        <field name="arch" type="xml">
+            <search string="Bộ lọc tìm tên email">
+                <field name="email" string="Tìm tên email"
+                       filter_domain="[('email', 'ilike', self)]"/>
+                <field name="employee_name" string="Họ tên nhân viên"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="department" string="Phòng ban (text)"/>
+                <field name="function_name" string="Chức năng"/>
+                <field name="position" string="Vị trí"/>
+                <field name="status_id" string="Trạng thái"/>
+                <separator/>
+                <filter name="filter_archived" string="Đã lưu trữ"
+                        domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_department" string="Phòng ban"
+                            context="{'group_by': 'department_id'}"/>
+                    <filter name="group_position" string="Vị trí"
+                            context="{'group_by': 'position'}"/>
+                    <filter name="group_status" string="Trạng thái"
+                            context="{'group_by': 'status_id'}"/>
+                    <filter name="group_date_created" string="Ngày tạo"
+                            context="{'group_by': 'date_created'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_lug_email_list_all" model="ir.actions.act_window">
+        <field name="name">Danh sách tổng email</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_lug_email_account_list_filter')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_lug_email_account_form')})]"/>
+        <field name="search_view_id" ref="view_lug_email_account_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có tài khoản email nào
+            </p>
+            <p>
+                Danh sách tổng hợp tất cả tài khoản email theo phòng ban, chức năng và trạng thái.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_lug_email_create" model="ir.actions.act_window">
+        <field name="name">Nhập tạo user email</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_lug_email_account_form"/>
+        <field name="target">current</field>
+    </record>
+
+    <record id="action_lug_email_search" model="ir.actions.act_window">
+        <field name="name">Bộ lọc tìm tên email</field>
+        <field name="res_model">lug.email.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_lug_email_account_search"/>
+        <field name="context">{'search_view_ref': 'lug_email_account.view_lug_email_account_search'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Không tìm thấy email
+            </p>
+            <p>
+                Nhập tên email vào ô tìm kiếm phía trên để lọc nhanh.
+            </p>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="lug_email_demo_1" model="lug.email.account">
+        <field name="stt">1</field>
+        <field name="date_created">06/07/2026</field>
+        <field name="department">HCNS</field>
+        <field name="function_name">Tuyển dụng</field>
+        <field name="employee_name">Nguyễn Văn A</field>
+        <field name="email">hr@company.com</field>
+        <field name="position">dept_head</field>
+        <field name="purpose">Tuyển dụng, tiếp nhận hồ sơ ứng viên</field>
+        <field name="usage_target">Nội bộ</field>
+        <field name="status_id" ref="status_active"/>
+    </record>
+
+    <record id="lug_email_demo_2" model="lug.email.account">
+        <field name="stt">2</field>
+        <field name="date_created">06/07/2026</field>
+        <field name="department">Kế toán CN</field>
+        <field name="function_name">Công nợ</field>
+        <field name="employee_name">Trần Thị B</field>
+        <field name="email">congno@company.com</field>
+        <field name="position">staff</field>
+        <field name="purpose">Gửi đối chiếu công nợ, nhận hóa đơn</field>
+        <field name="usage_target">Nội bộ</field>
+        <field name="status_id" ref="status_active"/>
+    </record>
+
+    <record id="lug_email_demo_3" model="lug.email.account">
+        <field name="stt">3</field>
+        <field name="date_created">06/07/2026</field>
+        <field name="department">Marketing</field>
+        <field name="function_name">Marketing</field>
+        <field name="employee_name">Lê Văn C</field>
+        <field name="email">marketing@company.com</field>
+        <field name="position">marketing</field>
+        <field name="purpose">Chạy quảng cáo, chăm sóc khách hàng</field>
+        <field name="usage_target">Nội bộ</field>
+        <field name="status_id" ref="status_active"/>
+    </record>
+
+    <record id="lug_email_demo_4" model="lug.email.account">
+        <field name="stt">4</field>
+        <field name="date_created">06/07/2026</field>
+        <field name="department">Kho vận</field>
+        <field name="function_name">Kho tổng</field>
+        <field name="employee_name">Phạm Văn D</field>
+        <field name="email">kho@company.com</field>
+        <field name="position">warehouse_keeper</field>
+        <field name="purpose">Quản lý nhập - xuất - tồn</field>
+        <field name="usage_target">Nội bộ</field>
+        <field name="status_id" ref="status_active"/>
+    </record>
+
+    <record id="lug_email_demo_5" model="lug.email.account">
+        <field name="stt">5</field>
+        <field name="date_created">06/07/2026</field>
+        <field name="department">Giám đốc</field>
+        <field name="function_name">Điều hành</field>
+        <field name="employee_name">Nguyễn Văn E</field>
+        <field name="email">ceo@company.com</field>
+        <field name="position">director</field>
+        <field name="purpose">Giao dịch đối tác, điều hành</field>
+        <field name="usage_target">Cá nhân</field>
+        <field name="status_id" ref="status_active"/>
+    </record>
+</odoo>

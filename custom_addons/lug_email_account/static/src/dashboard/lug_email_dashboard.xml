@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_email_account.LugEmailDashboard">
+        <div class="o_lug_email_dashboard o_action">
+            <div class="o_lug_email_dashboard_header">
+                <div>
+                    <h2>Dashboard Email</h2>
+                    <p class="o_lug_email_dashboard_subtitle">
+                        Tổng quan tài khoản email theo phòng ban, trạng thái và xu hướng tạo mới.
+                    </p>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm" t-on-click="openAllEmails">
+                    <i class="fa fa-list me-1"/> Danh sách email
+                </button>
+            </div>
+
+            <div class="o_lug_email_dashboard_scroll">
+            <t t-if="state.loading">
+                <div class="text-center p-5">
+                    <i class="fa fa-spinner fa-spin fa-2x"/>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="o_lug_email_kpi_row">
+                    <div class="o_lug_email_kpi_card o_lug_email_kpi_card--total">
+                        <div class="o_lug_email_kpi_icon">
+                            <i class="fa fa-envelope"/>
+                        </div>
+                        <div>
+                            <div class="o_lug_email_kpi_value" t-esc="state.data.total || 0"/>
+                            <div class="o_lug_email_kpi_label">Tổng Email</div>
+                        </div>
+                    </div>
+                    <div class="o_lug_email_kpi_card o_lug_email_kpi_card--status o_lug_email_kpi_card--active">
+                        <div class="o_lug_email_status_chart_wrap">
+                            <canvas t-ref="activeChart"/>
+                        </div>
+                        <div>
+                            <div class="o_lug_email_kpi_value" t-esc="state.data.kpi.active || 0"/>
+                            <div class="o_lug_email_kpi_label">Đang hoạt động</div>
+                            <div class="o_lug_email_kpi_percent">
+                                <t t-esc="state.data.kpi.active_percent || 0"/>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_lug_email_kpi_card o_lug_email_kpi_card--status o_lug_email_kpi_card--cancel">
+                        <div class="o_lug_email_status_chart_wrap">
+                            <canvas t-ref="cancelChart"/>
+                        </div>
+                        <div>
+                            <div class="o_lug_email_kpi_value" t-esc="state.data.kpi.cancel || 0"/>
+                            <div class="o_lug_email_kpi_label">Đang hủy</div>
+                            <div class="o_lug_email_kpi_percent">
+                                <t t-esc="state.data.kpi.cancel_percent || 0"/>%
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_lug_email_kpi_card o_lug_email_kpi_card--status o_lug_email_kpi_card--lock">
+                        <div class="o_lug_email_status_chart_wrap">
+                            <canvas t-ref="lockChart"/>
+                        </div>
+                        <div>
+                            <div class="o_lug_email_kpi_value" t-esc="state.data.kpi.lock || 0"/>
+                            <div class="o_lug_email_kpi_label">Tạm dừng</div>
+                            <div class="o_lug_email_kpi_percent">
+                                <t t-esc="state.data.kpi.lock_percent || 0"/>%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-lg-6">
+                        <div class="o_lug_email_panel">
+                            <h5>Tỷ lệ email theo phòng ban</h5>
+                            <p class="o_lug_email_panel_hint">Phân bố số lượng email theo từng phòng ban.</p>
+                            <div class="o_lug_email_chart_wrap">
+                                <canvas t-ref="departmentChart"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="o_lug_email_panel">
+                            <h5>Trạng thái Email</h5>
+                            <p class="o_lug_email_panel_hint">Tỷ lệ email theo trạng thái sử dụng.</p>
+                            <div class="o_lug_email_chart_wrap">
+                                <canvas t-ref="statusChart"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mt-1">
+                    <div class="col-12">
+                        <div class="o_lug_email_panel">
+                            <h5>Email tạo theo tháng</h5>
+                            <p class="o_lug_email_panel_hint">Số lượng email được tạo mới trong 12 tháng gần nhất.</p>
+                            <div class="o_lug_email_chart_wrap o_lug_email_chart_wrap--bar">
+                                <canvas t-ref="monthChart"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_lug_email_panel mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h5 class="mb-0">Danh sách email mới</h5>
+                            <p class="o_lug_email_panel_hint mb-0">10 email mới nhất trong hệ thống.</p>
+                        </div>
+                    </div>
+                    <div class="o_lug_email_table_scroll table-responsive">
+                        <table class="table table-sm table-hover mb-0 o_lug_email_recent_table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Email</th>
+                                    <th>Họ và tên NV</th>
+                                    <th>Phòng ban</th>
+                                    <th>Ngày tạo</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!(state.data.recent_emails || []).length">
+                                    <tr>
+                                        <td colspan="6" class="text-muted">Chưa có dữ liệu email</td>
+                                    </tr>
+                                </t>
+                                <t t-foreach="state.data.recent_emails || []" t-as="row" t-key="row.id">
+                                    <tr class="o_lug_email_row_link" t-on-click="() => this.openEmail(row.id)">
+                                        <td t-esc="row.stt"/>
+                                        <td t-esc="row.email"/>
+                                        <td t-esc="row.employee_name"/>
+                                        <td t-esc="row.department"/>
+                                        <td t-esc="row.date_created"/>
+                                        <td t-esc="row.status"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_lug_email_root"
+              name="Quản lý tài khoản email"
+              sequence="47"
+              groups="lug_email_account.group_lug_email_user"/>
+
+    <menuitem id="menu_lug_email_dashboard"
+              name="Dashboard"
+              parent="menu_lug_email_root"
+              action="action_lug_email_dashboard"
+              sequence="5"/>
+
+    <menuitem id="menu_lug_email_list_all"
+              name="Danh sách tổng email"
+              parent="menu_lug_email_root"
+              action="action_lug_email_list_all"
+              sequence="10"/>
+
+    <menuitem id="menu_lug_email_create"
+              name="Nhập tạo user email"
+              parent="menu_lug_email_root"
+              action="action_lug_email_create"
+              sequence="20"
+              groups="lug_email_account.group_lug_email_manager"/>
+
+    <menuitem id="menu_lug_email_search"
+              name="Bộ lọc tìm tên email"
+              parent="menu_lug_email_root"
+              action="action_lug_email_search"
+              sequence="30"/>
+
+    <menuitem id="menu_lug_email_config"
+              name="Cấu hình"
+              parent="menu_lug_email_root"
+              sequence="90"
+              groups="lug_email_account.group_lug_email_manager"/>
+
+    <menuitem id="menu_lug_email_status"
+              name="Trạng thái email"
+              parent="menu_lug_email_config"
+              action="action_lug_email_status"
+              sequence="10"/>
+</odoo>

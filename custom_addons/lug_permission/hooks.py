@@ -15,6 +15,7 @@ def post_init_hook(env):
     Users = env["res.users"]
     Users._lug_cleanup_legacy_visibility_views()
     Users._lug_backfill_data_scope_from_visibility()
+    Users._lug_backfill_time_off_role_from_groups()
     _sync_lug_leave_access_rules(env)
     users = Users.search([]).filtered(lambda user: user._lug_permission_is_enforced())
     if users:

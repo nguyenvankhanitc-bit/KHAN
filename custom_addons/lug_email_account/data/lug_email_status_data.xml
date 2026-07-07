@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="status_active" model="lug.email.account.status">
+        <field name="name">Đang sử dụng</field>
+        <field name="code">active</field>
+        <field name="sequence">10</field>
+        <field name="badge_style">success</field>
+        <field name="is_closed" eval="False"/>
+    </record>
+    <record id="status_lock" model="lug.email.account.status">
+        <field name="name">Tạm khóa</field>
+        <field name="code">lock</field>
+        <field name="sequence">20</field>
+        <field name="badge_style">warning</field>
+        <field name="is_closed" eval="False"/>
+    </record>
+    <record id="status_cancel" model="lug.email.account.status">
+        <field name="name">Hủy</field>
+        <field name="code">cancel</field>
+        <field name="sequence">30</field>
+        <field name="badge_style">danger</field>
+        <field name="is_closed" eval="True"/>
+    </record>
+</odoo>

@@ -2542,6 +2542,13 @@ class HrLeaveHandover(models.Model):
 
     def web_save(self, vals, specification, next_id=None):
         """Keep the create/read boundary visible when relational reads fail."""
+        if hasattr(self, "_leave_form_attachment_block_preview") and not self.env.context.get("import_file"):
+            block_message = self._leave_form_attachment_block_preview(
+                res_id=self.id if self else False,
+                vals=vals,
+            )
+            if block_message:
+                raise ValidationError(block_message)
         try:
             if self:
                 self.write(vals)

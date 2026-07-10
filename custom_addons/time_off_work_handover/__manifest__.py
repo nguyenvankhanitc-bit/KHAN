@@ -8,6 +8,7 @@
         "business_discuss_bots",
         "time_off_extra_approval",
         "time_off_responsible_approval",
+        "hr_leave_dashboard_department",
     ],
     "post_init_hook": "post_init_hook",
     "data": [

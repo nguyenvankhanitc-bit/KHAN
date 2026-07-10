@@ -30,6 +30,15 @@
                 <attribute name="string">Lý do</attribute>
                 <attribute name="placeholder">Nhập lý do nghỉ phép...</attribute>
             </xpath>
+            <xpath expr="//field[@name='supported_attachment_ids'][@widget='many2many_binary']" position="before">
+                <div class="alert alert-secondary mb-2" colspan="2" invisible="state != 'confirm'">
+                    <span>Bắt buộc đính kèm file </span>
+                    <strong>Đơn xin nghỉ phép</strong>
+                    <span> (tải mẫu </span>
+                    <a href="/hr_leave/download_leave_form_template">tại đây</a>
+                    <span>).</span>
+                </div>
+            </xpath>
         </field>
     </record>
 

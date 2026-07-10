@@ -15,6 +15,8 @@ const LEAVE_PREVIEW_FIELDS = [
     "request_date_to",
     "date_from",
     "date_to",
+    "supported_attachment_ids",
+    "attachment_ids",
 ];
 
 /**
@@ -22,6 +24,9 @@ const LEAVE_PREVIEW_FIELDS = [
  */
 function serializeFieldValue(value) {
     if (value === undefined || value === null || value === false) {
+        return value;
+    }
+    if (Array.isArray(value)) {
         return value;
     }
     if (typeof value === "object" && "id" in value) {

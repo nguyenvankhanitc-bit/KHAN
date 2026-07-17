@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="res.groups.privilege" id="res_groups_privilege_daily_work">
+        <field name="name">Quản lý công việc hàng ngày</field>
+        <field name="category_id" ref="base.module_category_operations"/>
+        <field name="sequence">50</field>
+        <field name="placeholder">Không</field>
+    </record>
+
+    <!-- Nhân viên: chỉ việc của mình -->
+    <record id="group_daily_work_user" model="res.groups">
+        <field name="name">Nhân viên</field>
+        <field name="privilege_id" ref="res_groups_privilege_daily_work"/>
+        <field name="comment">Xem/cập nhật trạng thái công việc được giao cho mình.</field>
+    </record>
+
+    <!-- Người xem (User A): xem việc của nhân viên được cấu hình -->
+    <record id="group_daily_work_viewer" model="res.groups">
+        <field name="name">Người xem</field>
+        <field name="privilege_id" ref="res_groups_privilege_daily_work"/>
+        <field name="implied_ids" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="comment">Xem công việc của nhân viên B (theo bảng Phân quyền).</field>
+    </record>
+
+    <!-- Người giao việc (User C) -->
+    <record id="group_daily_work_assigner" model="res.groups">
+        <field name="name">Người giao việc</field>
+        <field name="privilege_id" ref="res_groups_privilege_daily_work"/>
+        <field name="implied_ids" eval="[(4, ref('group_daily_work_viewer'))]"/>
+        <field name="comment">Giao việc cho nhân viên B (theo bảng Phân quyền).</field>
+    </record>
+
+    <!-- Quản lý / Toàn quyền (User D) -->
+    <record id="group_daily_work_manager" model="res.groups">
+        <field name="name">Quản lý / Toàn quyền</field>
+        <field name="privilege_id" ref="res_groups_privilege_daily_work"/>
+        <field name="implied_ids" eval="[(4, ref('group_daily_work_assigner'))]"/>
+        <field name="comment">Toàn quyền xem / sửa / xóa / giao việc mọi nhân viên.</field>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+    </record>
+
+    <!-- Mọi user nội bộ đều thấy app -->
+    <record id="base.group_user" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_daily_work_user'))]"/>
+    </record>
+
+    <!-- Nhân viên: chỉ việc của mình -->
+    <record id="rule_daily_task_user_own" model="ir.rule">
+        <field name="name">CVHN: nhân viên — chỉ việc của mình</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assignee_id.employee_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Người xem / giao việc: đọc việc của NV trong bảng phân quyền.
+         Lấy ID qua daily.task.access + sudo để không bị rule hr.employee lọc M2M. -->
+    <record id="rule_daily_task_viewer_extra" model="ir.rule">
+        <field name="name">CVHN: người xem — việc NV được phân quyền</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assignee_id.employee_id', 'in', user.env['daily.task'].rule_viewable_employee_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_viewer'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Người giao việc: ghi / tạo việc của NV được tick Giao -->
+    <record id="rule_daily_task_assigner_write" model="ir.rule">
+        <field name="name">CVHN: người giao — ghi việc NV được giao</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assignee_id.employee_id', 'in', user.env['daily.task'].rule_assignable_employee_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_assigner'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Người có tick Chỉnh sửa: ghi việc của NV được chọn -->
+    <record id="rule_daily_task_editor_write" model="ir.rule">
+        <field name="name">CVHN: chỉnh sửa — ghi việc NV được phép sửa</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assignee_id.employee_id', 'in', user.env['daily.task'].rule_editable_employee_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_viewer'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Người có tick Xóa -->
+    <record id="rule_daily_task_deleter_unlink" model="ir.rule">
+        <field name="name">CVHN: xóa — xóa việc NV được phép xóa</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assignee_id.employee_id', 'in', user.env['daily.task'].rule_deletable_employee_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_viewer'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Người giao: vẫn ghi được việc mình đã giao (kể cả khi đổi quyền sau này) -->
+    <record id="rule_daily_task_assigner_own_created" model="ir.rule">
+        <field name="name">CVHN: người giao — việc mình đã giao</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('assigned_by_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_assigner'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Quản lý: tất cả -->
+    <record id="rule_daily_task_manager_all" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả công việc</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_daily_task_employee_user_own" model="ir.rule">
+        <field name="name">CVHN: nhân viên — chỉ hồ sơ bridge của mình</field>
+        <field name="model_id" ref="model_daily_task_employee"/>
+        <field name="domain_force">[('employee_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_employee_viewer" model="ir.rule">
+        <field name="name">CVHN: người xem — bridge NV được phân quyền</field>
+        <field name="model_id" ref="model_daily_task_employee"/>
+        <field name="domain_force">[('employee_id', 'in', user.env['daily.task'].rule_viewable_employee_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_viewer'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_employee_manager_all" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả bridge nhân viên</field>
+        <field name="model_id" ref="model_daily_task_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Access config: chỉ quản lý cấu hình; user xem dòng của mình -->
+    <record id="rule_daily_task_access_own" model="ir.rule">
+        <field name="name">CVHN: user — xem phân quyền của mình</field>
+        <field name="model_id" ref="model_daily_task_access"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_access_manager" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả phân quyền</field>
+        <field name="model_id" ref="model_daily_task_access"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Phân quyền Báo cáo tổng theo phòng ban -->
+    <record id="rule_daily_task_report_access_own" model="ir.rule">
+        <field name="name">CVHN: user — xem phân quyền BCT của mình</field>
+        <field name="model_id" ref="model_daily_task_report_access"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_report_access_manager" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả phân quyền BCT</field>
+        <field name="model_id" ref="model_daily_task_report_access"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Công việc lặp: nhân viên chỉ mẫu của mình -->
+    <record id="rule_daily_task_recurring_user_own" model="ir.rule">
+        <field name="name">CVHN: nhân viên — chỉ mẫu lặp của mình</field>
+        <field name="model_id" ref="model_daily_task_recurring"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_daily_task_recurring_manager_all" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả mẫu lặp</field>
+        <field name="model_id" ref="model_daily_task_recurring"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Phân quyền Báo cáo hiệu suất -->
+    <record id="rule_daily_task_perf_access_own" model="ir.rule">
+        <field name="name">CVHN: user — xem phân quyền BCHS của mình</field>
+        <field name="model_id" ref="model_daily_task_performance_access"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_perf_access_manager" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả phân quyền BCHS</field>
+        <field name="model_id" ref="model_daily_task_performance_access"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

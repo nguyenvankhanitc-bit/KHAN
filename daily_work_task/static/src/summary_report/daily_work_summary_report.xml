@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkSummaryReport">
+        <div class="o_daily_work_summary_report o_action">
+            <div class="o_content o_dwsr_scroll">
+                <div class="o_dwsr_header">
+                    <h2><i class="fa fa-bar-chart"/> <t t-esc="reportTitle"/></h2>
+                    <p class="o_dwsr_subtitle">
+                        Bấm phòng ban để xem bảng tổng hợp nhân viên trong tháng.
+                    </p>
+                    <div class="o_dwsr_filters">
+                        <div class="o_dwsr_field o_dwsr_filter_search">
+                            <label>Lọc nhanh</label>
+                            <div class="o_dwsr_search_wrap">
+                                <i class="fa fa-search"/>
+                                <input type="text" class="form-control"
+                                       placeholder="Gõ tên NV hoặc phòng ban..."
+                                       autocomplete="off"
+                                       t-model="state.filterQuery"/>
+                            </div>
+                        </div>
+                        <div class="o_dwsr_field">
+                            <label>Tháng</label>
+                            <select class="form-select form-select-sm" t-model.number="state.monthMonth">
+                                <t t-foreach="state.months" t-as="m" t-key="m.value">
+                                    <option t-att-value="m.value" t-esc="m.label"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_dwsr_field">
+                            <label>Năm</label>
+                            <select class="form-select form-select-sm" t-model.number="state.monthYear">
+                                <t t-foreach="state.years" t-as="y" t-key="y">
+                                    <option t-att-value="y" t-esc="y"/>
+                                </t>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm align-self-end"
+                                t-on-click="onApply" t-att-disabled="state.loading">
+                            <i class="fa fa-refresh"/> Xem báo cáo
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm align-self-end"
+                                t-on-click="onExportExcel"
+                                t-att-disabled="state.exporting || state.loading">
+                            <i class="fa fa-file-excel-o"/>
+                            <t t-if="state.exporting"> Đang xuất...</t>
+                            <t t-else=""> Xuất Excel</t>
+                        </button>
+                    </div>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-elif="state.message">
+                    <div class="alert alert-warning" t-esc="state.message"/>
+                </t>
+                <t t-else="">
+                    <div class="o_dwsr_kpi_block">
+                        <div class="o_dwsr_kpi_caption">
+                            Tổng hợp toàn công ty — tháng <t t-esc="monthLabel"/>
+                        </div>
+                        <div class="o_dwsr_totals">
+                            <div class="o_dwsr_total_card o_dwsr_done">
+                                <span class="o_dwsr_total_label">Đã hoàn thành</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.done"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                            <div class="o_dwsr_total_card o_dwsr_progress">
+                                <span class="o_dwsr_total_label">Đang xử lý</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.in_progress"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                            <div class="o_dwsr_total_card o_dwsr_todo">
+                                <span class="o_dwsr_total_label">Chưa bắt đầu</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.not_started"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                            <div class="o_dwsr_total_card o_dwsr_overdue">
+                                <span class="o_dwsr_total_label">Quá hạn</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.overdue"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                            <div class="o_dwsr_total_card o_dwsr_hours">
+                                <span class="o_dwsr_total_label">Tổng công (giờ)</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.duration_hours || 0"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                            <div class="o_dwsr_total_card">
+                                <span class="o_dwsr_total_label">Tổng việc</span>
+                                <span class="o_dwsr_total_value" t-esc="companyTotals.total"/>
+                                <span class="o_dwsr_total_hint">toàn Cty</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <t t-if="!filteredDepartments.length">
+                        <div class="alert alert-info">
+                            <t t-if="state.filterQuery">Không có phòng ban / nhân viên khớp bộ lọc.</t>
+                            <t t-else="">Không có dữ liệu phòng ban / nhân viên.</t>
+                        </div>
+                    </t>
+                    <t t-else="">
+                    <div class="o_dwsr_accordion">
+                        <t t-foreach="filteredDepartments" t-as="dept" t-key="dept.key">
+                            <t t-set="deptOpen" t-value="isDeptOpen(dept.key)"/>
+                            <div t-att-class="'o_dwsr_dept_group' + (deptOpen ? ' o_dwsr_dept_open' : '')">
+                                <button type="button" class="o_dwsr_dept_header"
+                                        t-on-click="() => this.toggleDept(dept.key)">
+                                    <span class="o_dwsr_dept_chevron">
+                                        <i t-att-class="deptOpen ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"/>
+                                    </span>
+                                    <span class="o_dwsr_dept_title" t-esc="dept.name"/>
+                                    <span class="o_dwsr_dept_meta">
+                                        <t t-esc="dept.employees.length"/> nhân viên
+                                        · <t t-esc="deptTaskTotal(dept)"/> việc
+                                    </span>
+                                </button>
+
+                                <div class="o_dwsr_dept_body" t-if="deptOpen">
+                                    <div class="o_dwsr_table_wrap">
+                                        <table class="o_dwsr_table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="o_dwsr_col_stt">STT</th>
+                                                    <th class="o_dwsr_col_name">HỌ VÀ TÊN NV</th>
+                                                    <th>Tổng số</th>
+                                                    <th>Hoàn Thành</th>
+                                                    <th>Đang xử lý</th>
+                                                    <th>Chưa bắt đầu</th>
+                                                    <th>Quá hạn</th>
+                                                    <th>Tổng giờ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-if="!dept.employees.length">
+                                                    <tr>
+                                                        <td colspan="8" class="text-center text-muted py-3"
+                                                            style="white-space: normal;">
+                                                            Không có nhân viên.
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                                <t t-foreach="dept.employees" t-as="emp" t-key="emp.id">
+                                                    <tr>
+                                                        <td class="o_dwsr_col_stt" t-esc="emp_index + 1"/>
+                                                        <td class="o_dwsr_col_name" t-esc="emp.name"/>
+                                                        <td t-esc="emp.total"/>
+                                                        <td t-esc="emp.done"/>
+                                                        <td t-esc="emp.in_progress"/>
+                                                        <td t-esc="emp.not_started"/>
+                                                        <td>
+                                                            <t t-if="emp.overdue">
+                                                                <span class="o_dwsr_overdue_val">
+                                                                    <i class="fa fa-exclamation-triangle"/>
+                                                                    <t t-esc="emp.overdue"/>
+                                                                </span>
+                                                            </t>
+                                                            <t t-else="">0</t>
+                                                        </td>
+                                                        <td t-esc="emp.duration_hours || 0"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                    </t>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

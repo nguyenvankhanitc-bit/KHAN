@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_employee_list" model="ir.ui.view">
+        <field name="name">daily.task.employee.list</field>
+        <field name="model">daily.task.employee</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách nhân viên">
+                <field name="employee_id"/>
+                <field name="name"/>
+                <field name="email"/>
+                <field name="department_id"/>
+                <field name="task_count"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_employee_form" model="ir.ui.view">
+        <field name="name">daily.task.employee.form</field>
+        <field name="model">daily.task.employee</field>
+        <field name="arch" type="xml">
+            <form string="Nhân viên">
+                <header>
+                    <button name="action_open_hr_employee" type="object"
+                            string="Mở hồ sơ nhân viên" class="btn-primary"
+                            invisible="not employee_id"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <field name="name"/>
+                            <field name="email"/>
+                        </group>
+                        <group>
+                            <field name="department_id"/>
+                            <field name="active"/>
+                            <field name="task_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Công việc" name="tasks">
+                            <field name="task_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="deadline"/>
+                                    <field name="department_id"/>
+                                    <field name="priority"/>
+                                    <field name="state"/>
+                                    <field name="is_overdue"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_daily_task_employee" model="ir.actions.act_window">
+        <field name="name">Danh sách nhân viên</field>
+        <field name="res_model">daily.task.employee</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm nhân viên từ hồ sơ HR</p>
+            <p>Chọn hồ sơ nhân viên để liên kết. Bộ phận lấy từ phòng ban trên hồ sơ HR.</p>
+        </field>
+    </record>
+</odoo>

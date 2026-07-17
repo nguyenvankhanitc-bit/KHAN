@@ -1,0 +1,470 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkDashboard">
+        <div class="o_daily_work_dashboard o_action">
+            <div class="o_dwd_shell">
+                <!-- Top bar -->
+                <header class="o_dwd_topbar">
+                    <div class="o_dwd_topbar_left">
+                        <button type="button" class="o_dwd_burger" t-on-click="() => this.state.sidebarCollapsed = !state.sidebarCollapsed">
+                            <i class="fa fa-bars"/>
+                        </button>
+                        <strong class="o_dwd_brand">CÔNG VIỆC</strong>
+                    </div>
+                    <nav class="o_dwd_topnav">
+                        <button type="button" class="o_dwd_topnav_item active" t-on-click="() => this.openNav('dashboard')">
+                            <i class="fa fa-th-large"/><span>Dashboard</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
+                            <i class="fa fa-share-square-o"/><span>Giao việc</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
+                            <i class="fa fa-users"/><span>Xem CV NV</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
+                            <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overview')">
+                            <i class="fa fa-user"/><span>Công việc của tôi</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('calendar')">
+                            <i class="fa fa-calendar"/><span>Calendar</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('notebook')">
+                            <i class="fa fa-book"/><span>Sổ tay</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overdue')">
+                            <i class="fa fa-exclamation-triangle"/><span>Quá hạn</span>
+                            <t t-if="kpi.overdue"><em class="o_dwd_nav_badge" t-esc="kpi.overdue"/></t>
+                        </button>
+                    </nav>
+                    <div class="o_dwd_topbar_right">
+                        <span class="o_dwd_notif">
+                            <i class="fa fa-bell"/>
+                            <t t-if="kpi.overdue">
+                                <em class="o_dwd_badge red" t-esc="kpi.overdue"/>
+                            </t>
+                        </span>
+                        <span class="o_dwd_notif">
+                            <i class="fa fa-commenting-o"/>
+                            <t t-if="kpi.upcoming">
+                                <em class="o_dwd_badge green" t-esc="kpi.upcoming"/>
+                            </t>
+                        </span>
+                        <div class="o_dwd_userchip">
+                            <i class="fa fa-user-circle"/>
+                            <div>
+                                <strong t-esc="state.userName || 'Administrator'"/>
+                                <small t-esc="state.companyName"/>
+                            </div>
+                        </div>
+                    </div>
+                </header>
+
+                <div class="o_dwd_body">
+                    <!-- Sidebar -->
+                    <aside t-att-class="'o_dwd_sidebar' + (state.sidebarCollapsed ? ' collapsed' : '')">
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">QUẢN LÝ CÔNG VIỆC</div>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('overview')">
+                                <i class="fa fa-user"/><span>Công việc của tôi</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('assign')">
+                                <i class="fa fa-share"/><span>Giao việc</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('viewer')">
+                                <i class="fa fa-eye"/><span>Xem công việc NV</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('overdue')">
+                                <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>
+                                <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('notebook')">
+                                <i class="fa fa-book"/><span>Sổ tay</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('calendar')">
+                                <i class="fa fa-calendar-check-o"/><span>Calendar To Do List</span>
+                            </button>
+                        </div>
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">BÁO CÁO</div>
+                            <button type="button" class="o_dwd_side_item active" t-on-click="() => this.openNav('dashboard')">
+                                <i class="fa fa-dashboard"/><span>Tổng quan</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('report')">
+                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                            </button>
+                            <t t-if="state.canSeePerformance">
+                                <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('performance')">
+                                    <i class="fa fa-line-chart"/><span>Báo cáo hiệu suất</span>
+                                </button>
+                            </t>
+                        </div>
+                        <t t-if="state.isManager">
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">QUẢN TRỊ HỆ THỐNG</div>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('send_mail')">
+                                <i class="fa fa-envelope"/><span>Email nhắc việc</span>
+                            </button>
+                            <button type="button"
+                                    t-att-class="'o_dwd_side_item o_dwd_side_toggle' + (state.configOpen ? ' open' : '')"
+                                    t-on-click="() => this.state.configOpen = !state.configOpen">
+                                <i class="fa fa-sliders"/><span>Cấu hình hệ thống</span>
+                                <i t-att-class="'fa o_dwd_side_chev ' + (state.configOpen ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                            </button>
+                            <t t-if="state.configOpen">
+                                <div class="o_dwd_side_sub">
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('config')">
+                                        <i class="fa fa-sitemap"/><span>Phòng ban / Hạng mục</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('recurring')">
+                                        <i class="fa fa-refresh"/><span>Công việc lặp lại</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('employees')">
+                                        <i class="fa fa-address-book-o"/><span>Danh sách nhân viên</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('access')">
+                                        <i class="fa fa-lock"/><span>Phân quyền xem / giao / sửa / xóa</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('report_access')">
+                                        <i class="fa fa-shield"/><span>Phân quyền Báo cáo tổng</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" t-on-click="() => this.openNav('performance_access')">
+                                        <i class="fa fa-line-chart"/><span>Phân quyền Báo cáo hiệu suất</span>
+                                    </button>
+                                </div>
+                            </t>
+                        </div>
+                        </t>
+                    </aside>
+
+                    <!-- Main -->
+                    <main class="o_dwd_main">
+                        <t t-if="state.loading">
+                            <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                        </t>
+                        <t t-else="">
+                            <div class="o_dwd_pagehead">
+                                <div>
+                                    <h1>DASHBOARD TỔNG QUAN</h1>
+                                    <p t-esc="greeting"/>
+                                </div>
+                            </div>
+
+                            <!-- Các mục đã chuyển từ menu Odoo vào đây -->
+                            <div class="o_dwd_module_links">
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('assign')">
+                                    <i class="fa fa-share-square-o"/><span>Giao việc</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('viewer')">
+                                    <i class="fa fa-users"/><span>Xem công việc NV</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('report')">
+                                    <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('overview')">
+                                    <i class="fa fa-user"/><span>Công việc của tôi</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('calendar')">
+                                    <i class="fa fa-calendar"/><span>Calendar To Do List</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('notebook')">
+                                    <i class="fa fa-book"/><span>Sổ tay</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod danger" t-on-click="() => this.openNav('overdue')">
+                                    <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>
+                                    <t t-if="kpi.overdue"><em t-esc="kpi.overdue"/></t>
+                                </button>
+                            </div>
+
+                            <div class="o_dwd_filters">
+                                <div class="o_dwd_filter_group">
+                                    <label>Từ ngày</label>
+                                    <input type="date" class="form-control form-control-sm" t-model="state.dateFrom"/>
+                                </div>
+                                <div class="o_dwd_filter_group">
+                                    <label>Đến ngày</label>
+                                    <input type="date" class="form-control form-control-sm" t-model="state.dateTo"/>
+                                </div>
+                                <div class="o_dwd_filter_group">
+                                    <label>Phòng ban</label>
+                                    <select class="form-select form-select-sm" t-model.number="state.departmentId">
+                                        <option value="0">Tất cả phòng ban</option>
+                                        <t t-foreach="state.departments" t-as="d" t-key="d.id">
+                                            <option t-att-value="d.id" t-esc="d.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dwd_filter_group">
+                                    <label>Nhân viên</label>
+                                    <select class="form-select form-select-sm" t-model.number="state.assigneeId">
+                                        <option value="0">Tất cả nhân viên</option>
+                                        <t t-foreach="state.employees" t-as="e" t-key="e.id">
+                                            <option t-att-value="e.id" t-esc="e.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dwd_filter_group">
+                                    <label>Trạng thái</label>
+                                    <select class="form-select form-select-sm" t-model="state.stateFilter">
+                                        <option value="">Tất cả</option>
+                                        <option value="done">Hoàn thành</option>
+                                        <option value="in_progress">Đang xử lý</option>
+                                        <option value="not_started">Chưa bắt đầu</option>
+                                    </select>
+                                </div>
+                                <div class="o_dwd_filter_actions">
+                                    <button type="button" class="btn btn-primary btn-sm" t-on-click="onFilter">
+                                        <i class="fa fa-filter"/> Lọc dữ liệu
+                                    </button>
+                                    <button type="button" class="btn btn-light btn-sm" t-on-click="onRefresh">
+                                        <i class="fa fa-refresh"/> Làm mới
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
+                                        <i class="fa fa-file-excel-o"/> Xuất Excel
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- KPI row 1 -->
+                            <div class="o_dwd_kpi_grid">
+                                <div class="o_dwd_kpi blue">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-briefcase"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Tổng công việc</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.total || 0"/>
+                                        <div t-att-class="'o_dwd_kpi_growth ' + growthClass(kpi.growth_pct)">
+                                            <t t-esc="growthLabel(kpi.growth_pct)"/> so với kỳ trước
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi green">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-check-circle"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Hoàn thành</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.done || 0"/>
+                                        <div class="o_dwd_kpi_sub" t-esc="(kpi.done_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi orange">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-spinner"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Đang xử lý</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.in_progress || 0"/>
+                                        <div class="o_dwd_kpi_sub" t-esc="(kpi.in_progress_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi gray">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-circle-o"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Chưa bắt đầu</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.not_started || 0"/>
+                                        <div class="o_dwd_kpi_sub" t-esc="(kpi.not_started_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi red">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-exclamation-triangle"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Quá hạn</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.overdue || 0"/>
+                                        <div class="o_dwd_kpi_sub" t-esc="(kpi.overdue_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- KPI row 2 -->
+                            <div class="o_dwd_kpi_grid o_dwd_kpi_grid_2">
+                                <div class="o_dwd_kpi teal">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-clock-o"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Tổng thời gian</div>
+                                        <div class="o_dwd_kpi_value" t-esc="(kpi.duration_hours || 0) + ' giờ'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi purple">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-line-chart"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Hiệu suất</div>
+                                        <div class="o_dwd_kpi_value" t-esc="(kpi.efficiency || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi amber">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-hourglass-half"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Sắp đến hạn</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.upcoming || 0"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi indigo">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-paper-plane"/></div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">Đã giao</div>
+                                        <div class="o_dwd_kpi_value" t-esc="kpi.assigned || 0"/>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_kpi cyan">
+                                    <div class="o_dwd_kpi_icon"><i class="fa fa-users"/>
+                                    </div>
+                                    <div>
+                                        <div class="o_dwd_kpi_label">NV đang nhập CV</div>
+                                        <div class="o_dwd_kpi_value">
+                                            <t t-esc="kpi.emp_active || 0"/>/<t t-esc="kpi.emp_total || 0"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="o_dwd_charts">
+                                <div class="o_dwd_card">
+                                    <h3>SỐ CÔNG VIỆC THEO MỨC ƯU TIÊN</h3>
+                                    <div class="o_dwd_chart_box"><canvas t-ref="priorityChart"/></div>
+                                </div>
+                                <div class="o_dwd_card">
+                                    <h3>TRẠNG THÁI CÔNG VIỆC</h3>
+                                    <div class="o_dwd_donut_wrap">
+                                        <div class="o_dwd_chart_box sm"><canvas t-ref="stateChart"/></div>
+                                        <div class="o_dwd_donut_center">
+                                            <strong t-esc="kpi.total || 0"/>
+                                            <span>Tổng</span>
+                                        </div>
+                                    </div>
+                                    <div class="o_dwd_mini_legend">
+                                        <span><i class="dot green"/>Hoàn thành</span>
+                                        <span><i class="dot orange"/>Đang xử lý</span>
+                                        <span><i class="dot gray"/>Chưa bắt đầu</span>
+                                    </div>
+                                </div>
+                                <div class="o_dwd_card">
+                                    <h3>XU HƯỚNG HOÀN THÀNH</h3>
+                                    <div class="o_dwd_chart_box"><canvas t-ref="weeklyChart"/></div>
+                                </div>
+                                <div class="o_dwd_card">
+                                    <h3>CÔNG VIỆC THEO PHÒNG BAN</h3>
+                                    <div class="o_dwd_dept_wrap">
+                                        <div class="o_dwd_chart_box sm"><canvas t-ref="deptChart"/></div>
+                                        <div class="o_dwd_dept_legend">
+                                            <t t-foreach="deptLegend" t-as="leg" t-key="leg.name">
+                                                <div class="o_dwd_dept_leg_item">
+                                                    <span class="dot" t-att-style="'background:' + leg.color"/>
+                                                    <span class="name" t-esc="leg.name"/>
+                                                    <strong t-esc="leg.count"/>
+                                                    <em t-esc="'(' + leg.pct + '%)'"/>
+                                                </div>
+                                            </t>
+                                            <t t-if="!deptLegend.length">
+                                                <div class="text-muted small">Chưa có dữ liệu phòng ban.</div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bảng xếp hạng KPI — NV trong phòng ban mình, 3 tháng gần nhất -->
+                            <t t-if="!state.isManager">
+                                <div class="o_dwd_card o_dwd_kpi_rank_card">
+                                    <div class="o_dwd_kpi_rank_head">
+                                        <h3>BẢNG XẾP HẠNG KPI</h3>
+                                        <span class="o_dwd_kpi_rank_period">
+                                            <t t-if="state.data.kpi_rank_dept">
+                                                <t t-esc="state.data.kpi_rank_dept"/> · 
+                                            </t>
+                                            3 tháng gần nhất
+                                        </span>
+                                    </div>
+                                    <div class="o_dwd_kpi_rank_scroll">
+                                    <table class="o_dwd_kpi_rank_table">
+                                        <thead>
+                                            <tr>
+                                                <th class="col-rank">Hạng</th>
+                                                <th class="col-dept">Nhân viên</th>
+                                                <th class="col-num">Tổng CV</th>
+                                                <th class="col-num">Quá hạn</th>
+                                                <th class="col-eff">Hiệu suất</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="kpiRankRows" t-as="row" t-key="row.id">
+                                                <tr>
+                                                    <td class="col-rank">
+                                                        <span t-att-class="'o_dwd_medal m' + row.rank"
+                                                              t-esc="medalLabel(row.rank)"/>
+                                                    </td>
+                                                    <td class="col-dept" t-esc="row.name"/>
+                                                    <td class="col-num" t-esc="row.total"/>
+                                                    <td class="col-num" t-esc="row.overdue"/>
+                                                    <td class="col-eff">
+                                                        <div class="o_dwd_eff_cell">
+                                                            <div class="o_dwd_eff_bar">
+                                                                <i t-att-style="'width:' + row.efficiency + '%'"/>
+                                                            </div>
+                                                            <strong t-esc="row.efficiency + '%'"/>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            <t t-if="!kpiRankRows.length">
+                                                <tr>
+                                                    <td colspan="5" class="text-muted text-center py-3">
+                                                        Chưa có dữ liệu nhân viên trong phòng ban (3 tháng gần nhất).
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                    </div>
+                                </div>
+                            </t>
+
+                            <!-- Cảnh báo — dưới cùng -->
+                            <!-- Nhân viên / user thường: 3 cột ngang theo mẫu -->
+                            <t t-if="!state.isManager">
+                                <div class="o_dwd_mid o_dwd_mid_alerts_only">
+                                    <div class="o_dwd_card o_dwd_alerts_card">
+                                        <h3><i class="fa fa-bell"/> CẢNH BÁO</h3>
+                                        <div class="o_dwd_alerts o_dwd_alerts_cols">
+                                            <t t-foreach="personalAlertCards" t-as="a" t-key="a_index">
+                                                <button type="button"
+                                                        t-att-class="'o_dwd_alert_tile ' + alertClass(a.type)"
+                                                        t-on-click="() => this.onAlertClick(a.action)">
+                                                    <span class="o_dwd_alert_ico">
+                                                        <i t-att-class="'fa ' + a.icon"/>
+                                                    </span>
+                                                    <div class="o_dwd_alert_body">
+                                                        <strong t-esc="a.title"/>
+                                                        <span t-esc="a.subtitle"/>
+                                                    </div>
+                                                    <i class="fa fa-chevron-right o_dwd_alert_chev"/>
+                                                </button>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <!-- Manager / Administrator: danh sách dọc hiện tại -->
+                            <t t-else="">
+                                <div class="o_dwd_mid o_dwd_mid_alerts_only">
+                                    <div class="o_dwd_card">
+                                        <h3><i class="fa fa-bell"/> CẢNH BÁO</h3>
+                                        <div class="o_dwd_alerts">
+                                            <t t-foreach="state.data.alerts or []" t-as="a" t-key="a_index">
+                                                <div t-att-class="'o_dwd_alert ' + alertClass(a.type)">
+                                                    <i t-att-class="'fa ' + a.icon"/>
+                                                    <div>
+                                                        <strong t-esc="a.title"/>
+                                                        <span t-esc="a.subtitle"/>
+                                                    </div>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+
+                        </t>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

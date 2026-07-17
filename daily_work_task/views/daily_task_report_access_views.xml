@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_report_access_list" model="ir.ui.view">
+        <field name="name">daily.task.report.access.list</field>
+        <field name="model">daily.task.report.access</field>
+        <field name="arch" type="xml">
+            <list string="Phân quyền Báo cáo tổng"
+                  editable="bottom"
+                  class="o_daily_task_report_access_list">
+                <field name="employee_id"
+                         string="User được xem"
+                         options="{'no_create': True}"
+                         placeholder="Vd: Nguyễn Văn Khan..."/>
+                <field name="department_ids"
+                         string="Phòng ban được xem"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn phòng ban..."/>
+                <field name="target_ids"
+                         string="User bị xem"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn NV cụ thể..."/>
+                <field name="user_id" optional="hide" readonly="1"/>
+                <field name="note" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_report_access_form" model="ir.ui.view">
+        <field name="name">daily.task.report.access.form</field>
+        <field name="model">daily.task.report.access</field>
+        <field name="arch" type="xml">
+            <form string="Phân quyền Báo cáo tổng">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <b>Cách dùng:</b>
+                        chọn <b>Phòng ban</b> để xem cả phòng,
+                        hoặc chọn <b>User bị xem</b> khi chỉ muốn xem vài người —
+                        có thể dùng một trong hai hoặc kết hợp.
+                    </div>
+                    <group>
+                        <group string="Người được quyền">
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <field name="user_id" readonly="1"/>
+                        </group>
+                        <group string="Ghi chú">
+                            <field name="note"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Phòng ban được xem">
+                            <field name="department_ids" widget="many2many_tags" nolabel="1"
+                                     options="{'no_create': True}"/>
+                        </group>
+                        <group string="User bị xem">
+                            <field name="target_ids" widget="many2many_tags" nolabel="1"
+                                     options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_report_access_search" model="ir.ui.view">
+        <field name="name">daily.task.report.access.search</field>
+        <field name="model">daily.task.report.access</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="department_ids"/>
+                <field name="target_ids"/>
+                <filter name="filter_active" string="Đang dùng" domain="[('active','=',True)]"/>
+                <group>
+                    <filter name="group_employee" string="User được xem"
+                            context="{'group_by': 'employee_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_report_access" model="ir.actions.act_window">
+        <field name="name">Phân quyền Báo cáo tổng</field>
+        <field name="res_model">daily.task.report.access</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chọn user được quyền, rồi tích phòng ban và/hoặc chọn User bị xem.
+            </p>
+        </field>
+    </record>
+</odoo>

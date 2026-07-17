@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_daily_work_notebook" model="ir.actions.client">
+        <field name="name">Sổ tay</field>
+        <field name="tag">daily_work_notebook</field>
+    </record>
+
+    <record id="view_daily_work_notebook_tree" model="ir.ui.view">
+        <field name="name">daily.work.notebook.list</field>
+        <field name="model">daily.work.notebook</field>
+        <field name="arch" type="xml">
+            <list string="Sổ tay">
+                <field name="name"/>
+                <field name="company"/>
+                <field name="contact_name"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="address"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_work_notebook_form" model="ir.ui.view">
+        <field name="name">daily.work.notebook.form</field>
+        <field name="model">daily.work.notebook</field>
+        <field name="arch" type="xml">
+            <form string="Sổ tay">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="company"/>
+                        <field name="contact_name"/>
+                        <field name="phone"/>
+                        <field name="email"/>
+                        <field name="address"/>
+                        <field name="note"/>
+                        <field name="user_id" groups="daily_work_task.group_daily_work_manager"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

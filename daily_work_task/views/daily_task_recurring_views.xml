@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_recurring_list" model="ir.ui.view">
+        <field name="name">daily.task.recurring.list</field>
+        <field name="model">daily.task.recurring</field>
+        <field name="arch" type="xml">
+            <list string="Công việc lặp lại" default_order="active desc, name">
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="employee_id"/>
+                <field name="department_id" optional="show"/>
+                <field name="work_group_id" optional="show"/>
+                <field name="duration_minutes" string="Phút"/>
+                <field name="priority"/>
+                <field name="recurrence_type"/>
+                <field name="recurrence_weekdays" optional="hide"/>
+                <field name="recurrence_day" optional="hide"/>
+                <field name="recurrence_month" optional="hide"/>
+                <field name="skip_saturday" optional="hide"/>
+                <field name="skip_sunday" optional="hide"/>
+                <field name="skip_weekend" optional="hide"/>
+                <field name="last_generated_date"/>
+                <field name="task_count"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_recurring_form" model="ir.ui.view">
+        <field name="name">daily.task.recurring.form</field>
+        <field name="model">daily.task.recurring</field>
+        <field name="arch" type="xml">
+            <form string="Công việc lặp lại">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Mẫu này sẽ tự tạo công việc mỗi sáng khoảng <b>5:00</b>.
+                        Nhân viên khai báo trong «Không gian làm việc» — không cần điền lại mỗi ngày.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="user_id" options="{'no_create': True}"/>
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <field name="department_id" options="{'no_create': True}"/>
+                            <field name="work_group_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="duration_minutes"/>
+                            <field name="priority"/>
+                            <field name="recurrence_type"/>
+                            <field name="recurrence_weekdays"
+                                   invisible="recurrence_type != 'weekly'"/>
+                            <field name="recurrence_day"
+                                   invisible="recurrence_type not in ('monthly', 'yearly')"/>
+                            <field name="recurrence_month"
+                                   invisible="recurrence_type != 'yearly'"/>
+                            <field name="deadline_offset_days"/>
+                            <field name="skip_saturday"/>
+                            <field name="skip_sunday"/>
+                            <field name="active"/>
+                            <field name="last_generated_date"/>
+                            <field name="task_count"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="note" placeholder="Ghi chú mặc định mỗi lần sinh việc..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_recurring_search" model="ir.ui.view">
+        <field name="name">daily.task.recurring.search</field>
+        <field name="model">daily.task.recurring</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <field name="recurrence_type"/>
+                <filter name="active" string="Đang lặp" domain="[('active', '=', True)]"/>
+                <filter name="inactive" string="Đã tắt" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_user" string="Người khai báo"
+                            context="{'group_by': 'user_id'}"/>
+                    <filter name="group_dept" string="Phòng ban"
+                            context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_recurring" model="ir.actions.act_window">
+        <field name="name">Công việc lặp lại</field>
+        <field name="res_model">daily.task.recurring</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_recurring_search"/>
+        <field name="context">{'search_default_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có mẫu công việc lặp.
+            </p>
+            <p>
+                Nhân viên tự khai báo trong Không gian làm việc.
+                Hệ thống tạo việc mỗi sáng ~5:00.
+            </p>
+        </field>
+    </record>
+</odoo>

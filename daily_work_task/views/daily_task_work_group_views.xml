@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_work_group_list" model="ir.ui.view">
+        <field name="name">daily.task.work.group.list</field>
+        <field name="model">daily.task.work.group</field>
+        <field name="arch" type="xml">
+            <list string="Nhóm công việc" editable="bottom" default_order="department_id, sequence, name">
+                <field name="sequence" string="STT" widget="handle"/>
+                <field name="name" string="Tên hạng mục"
+                         placeholder="Vd: Điện, Camera, Máy vi tính..."/>
+                <field name="department_id" string="Phòng ban"
+                         options="{'no_create': True}"/>
+                <field name="user_ids" string="User áp dụng"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn nhiều user..."/>
+                <field name="task_count" string="Số CV" optional="hide"/>
+                <field name="note" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_work_group_form" model="ir.ui.view">
+        <field name="name">daily.task.work.group.form</field>
+        <field name="model">daily.task.work.group</field>
+        <field name="arch" type="xml">
+            <form string="Nhóm công việc">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Mỗi <b>phòng ban</b> có thể có nhiều <b>nhóm công việc</b>.
+                        Cột <b>User áp dụng</b> chọn nhiều user (trình đơn thả xuống / tags).
+                        Để trống User áp dụng = mọi nhân viên thuộc phòng ban đều dùng được nhóm đó.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence" string="STT"/>
+                            <field name="name" string="Tên nhóm công việc"/>
+                            <field name="department_id" string="Phòng ban"
+                                     options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="user_ids" string="User áp dụng"
+                                     widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn nhiều user..."/>
+                            <field name="note"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_work_group_search" model="ir.ui.view">
+        <field name="name">daily.task.work.group.search</field>
+        <field name="model">daily.task.work.group</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Tên nhóm công việc"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="user_ids" string="User áp dụng"/>
+                <group>
+                    <filter name="group_dept" string="Phòng ban"
+                            context="{'group_by': 'department_id'}"/>
+                    <filter name="group_user" string="User áp dụng"
+                            context="{'group_by': 'user_ids'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_work_group" model="ir.actions.act_window">
+        <field name="name">Hạng mục</field>
+        <field name="res_model">daily.task.work.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_work_group_search"/>
+        <field name="context">{'search_default_group_dept': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo nhóm công việc theo phòng ban
+            </p>
+            <p>
+                Cột: STT · Tên nhóm · Phòng ban · User áp dụng (chọn nhiều).<br/>
+                Một phòng ban có thể có rất nhiều nhóm. User chỉ thấy nhóm mình được gắn
+                (hoặc cả phòng ban nếu để trống User áp dụng).
+            </p>
+        </field>
+    </record>
+</odoo>

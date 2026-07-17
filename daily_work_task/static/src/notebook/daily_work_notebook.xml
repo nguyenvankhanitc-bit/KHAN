@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkNotebook">
+        <div class="o_daily_work_notebook o_action">
+            <div class="o_dwn_shell">
+                <header class="o_dwn_header">
+                    <button type="button" class="o_dwn_back" t-on-click="goDashboard" title="Về Dashboard">
+                        <i class="fa fa-arrow-left"/>
+                    </button>
+                    <div class="o_dwn_title_block">
+                        <div class="o_dwn_title_icons">
+                            <i class="fa fa-book o_dwn_ico purple"/>
+                            <i class="fa fa-address-book o_dwn_ico pink"/>
+                            <i class="fa fa-users o_dwn_ico blue"/>
+                        </div>
+                        <h1>SỔ TAY</h1>
+                        <p>
+                            Danh bạ khách hàng ·
+                            <t t-esc="state.userName"/>
+                            · <t t-esc="state.total"/> liên hệ
+                        </p>
+                    </div>
+                    <div class="o_dwn_actions">
+                        <div class="o_dwn_search">
+                            <i class="fa fa-search"/>
+                            <input type="text" placeholder="Tìm khách hàng, công ty, SĐT..."
+                                   t-model="state.search" t-on-keydown="onSearchKey"/>
+                            <button type="button" class="btn btn-sm btn-primary" t-on-click="onSearch">
+                                Tìm
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm o_dwn_btn_add" t-on-click="openCreate">
+                            <i class="fa fa-plus-circle"/> Thêm mới
+                        </button>
+                    </div>
+                </header>
+
+                <t t-if="state.loading">
+                    <div class="o_dwn_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-else="">
+                    <div class="o_dwn_table_frame">
+                        <div class="o_dwn_scroll">
+                            <table class="o_dwn_table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-stt">
+                                            <i class="fa fa-hashtag o_dwn_th_ico indigo"/>
+                                            STT
+                                        </th>
+                                        <th class="col-name">
+                                            <i class="fa fa-user o_dwn_th_ico pink"/>
+                                            Tên khách hàng
+                                        </th>
+                                        <th class="col-company">
+                                            <i class="fa fa-building o_dwn_th_ico blue"/>
+                                            Công ty
+                                        </th>
+                                        <th class="col-contact">
+                                            <i class="fa fa-id-badge o_dwn_th_ico teal"/>
+                                            Người liên hệ
+                                        </th>
+                                        <th class="col-phone">
+                                            <i class="fa fa-phone o_dwn_th_ico green"/>
+                                            Số điện thoại
+                                        </th>
+                                        <th class="col-email">
+                                            <i class="fa fa-envelope o_dwn_th_ico orange"/>
+                                            Email
+                                        </th>
+                                        <th class="col-address">
+                                            <i class="fa fa-map-marker o_dwn_th_ico red"/>
+                                            Địa chỉ
+                                        </th>
+                                        <th class="col-act">
+                                            <i class="fa fa-cogs o_dwn_th_ico purple"/>
+                                            Thao tác
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="!state.rows.length">
+                                        <tr>
+                                            <td colspan="8" class="o_dwn_empty">
+                                                <i class="fa fa-book"/>
+                                                Chưa có dữ liệu. Bấm «Thêm mới» để tạo liên hệ đầu tiên.
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-foreach="state.rows" t-as="row" t-key="row.id">
+                                        <tr>
+                                            <td class="col-stt">
+                                                <span t-att-class="'o_dwn_stt ' + colorClass(row.color)" t-esc="row.stt"/>
+                                            </td>
+                                            <td class="col-name">
+                                                <strong t-esc="row.name"/>
+                                            </td>
+                                            <td class="col-company" t-esc="row.company || '—'"/>
+                                            <td class="col-contact" t-esc="row.contact_name || '—'"/>
+                                            <td class="col-phone">
+                                                <t t-if="row.phone">
+                                                    <a t-att-href="'tel:' + row.phone" class="o_dwn_link phone">
+                                                        <i class="fa fa-phone"/>
+                                                        <t t-esc="row.phone"/>
+                                                    </a>
+                                                </t>
+                                                <t t-else="">—</t>
+                                            </td>
+                                            <td class="col-email">
+                                                <t t-if="row.email">
+                                                    <a t-att-href="'mailto:' + row.email" class="o_dwn_link mail">
+                                                        <i class="fa fa-envelope-o"/>
+                                                        <t t-esc="row.email"/>
+                                                    </a>
+                                                </t>
+                                                <t t-else="">—</t>
+                                            </td>
+                                            <td class="col-address" t-esc="row.address || '—'"/>
+                                            <td class="col-act">
+                                                <button type="button" class="o_dwn_act edit" title="Sửa"
+                                                        t-on-click="() => this.openEdit(row)">
+                                                    <i class="fa fa-pencil"/>
+                                                </button>
+                                                <button type="button" class="o_dwn_act del" title="Xóa"
+                                                        t-on-click="() => this.onDelete(row)">
+                                                    <i class="fa fa-trash"/>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+
+                <t t-if="state.showForm">
+                    <div class="o_dwn_modal_backdrop" t-on-click="closeForm"/>
+                    <div class="o_dwn_modal">
+                        <div class="o_dwn_modal_head">
+                            <h2>
+                                <i class="fa fa-address-card-o"/>
+                                <t t-esc="state.form.id ? 'Sửa liên hệ' : 'Thêm liên hệ'"/>
+                            </h2>
+                            <button type="button" class="o_dwn_modal_close" t-on-click="closeForm">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                        <div class="o_dwn_modal_body">
+                            <label>
+                                <span><i class="fa fa-user"/> Tên khách hàng *</span>
+                                <input type="text" class="form-control" t-model="state.form.name"/>
+                            </label>
+                            <label>
+                                <span><i class="fa fa-building"/> Công ty</span>
+                                <input type="text" class="form-control" t-model="state.form.company"/>
+                            </label>
+                            <label>
+                                <span><i class="fa fa-id-badge"/> Người liên hệ</span>
+                                <input type="text" class="form-control" t-model="state.form.contact_name"/>
+                            </label>
+                            <label>
+                                <span><i class="fa fa-phone"/> Số điện thoại</span>
+                                <input type="text" class="form-control" t-model="state.form.phone"/>
+                            </label>
+                            <label>
+                                <span><i class="fa fa-envelope"/> Email</span>
+                                <input type="email" class="form-control" t-model="state.form.email"/>
+                            </label>
+                            <label class="full">
+                                <span><i class="fa fa-map-marker"/> Địa chỉ</span>
+                                <input type="text" class="form-control" t-model="state.form.address"/>
+                            </label>
+                        </div>
+                        <div class="o_dwn_modal_foot">
+                            <button type="button" class="btn btn-light" t-on-click="closeForm">Hủy</button>
+                            <button type="button" class="btn btn-primary" t-on-click="onSave"
+                                    t-att-disabled="state.saving">
+                                <i class="fa fa-save"/> Lưu
+                            </button>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -1,0 +1,441 @@
+.o_daily_work_task_manager.o_action {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f5f7fa;
+
+    > .o_content.o_dtm_scroll {
+        flex: 1 1 auto;
+        height: 100%;
+        min-height: 0;
+        overflow: auto;
+        padding: 16px 18px 28px;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #e2e8f0;
+
+        &::-webkit-scrollbar {
+            display: block;
+            width: 10px;
+            height: 10px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 6px;
+        }
+        &::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+    }
+
+    .o_dtm_layout {
+        display: grid;
+        grid-template-columns: 320px 8px minmax(0, 1fr);
+        gap: 0;
+        column-gap: 0;
+        align-items: stretch;
+        min-width: 980px;
+        min-height: 100%;
+
+        &.o_dtm_layout_resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+    }
+
+    .o_dtm_splitter {
+        width: 8px;
+        margin: 0 4px;
+        border-radius: 6px;
+        background: #e2e8f0;
+        cursor: col-resize;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        touch-action: none;
+        transition: background 0.15s ease;
+        align-self: stretch;
+        min-height: 200px;
+
+        &:hover,
+        .o_dtm_layout_resizing & {
+            background: #93c5fd;
+        }
+
+        .o_dtm_splitter_grip {
+            width: 3px;
+            height: 36px;
+            border-radius: 3px;
+            background: #64748b;
+            box-shadow: 4px 0 0 #64748b, -4px 0 0 #64748b;
+            opacity: 0.55;
+        }
+
+        &:hover .o_dtm_splitter_grip,
+        .o_dtm_layout_resizing & .o_dtm_splitter_grip {
+            background: #1d4ed8;
+            box-shadow: 4px 0 0 #1d4ed8, -4px 0 0 #1d4ed8;
+            opacity: 1;
+        }
+    }
+
+    .o_dtm_form_panel {
+        background: #fff;
+        border-radius: 10px;
+        padding: 18px 16px 20px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        position: sticky;
+        top: 0;
+        min-width: 0;
+        overflow: auto;
+        max-height: calc(100vh - 120px);
+    }
+
+    .o_dtm_form_title {
+        margin: 0 0 16px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #2563eb;
+
+        .fa {
+            margin-right: 4px;
+        }
+    }
+
+    .o_dtm_field {
+        margin-bottom: 12px;
+
+        label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 4px;
+        }
+
+        .form-control,
+        .form-select {
+            font-size: 0.875rem;
+        }
+    }
+
+    .o_dtm_submit {
+        width: 100%;
+        margin-top: 8px;
+        background: #22c55e;
+        border-color: #22c55e;
+        color: #fff;
+        font-weight: 700;
+        padding: 10px 12px;
+
+        &:hover:not(:disabled) {
+            background: #16a34a;
+            border-color: #16a34a;
+            color: #fff;
+        }
+
+        &:disabled {
+            opacity: 0.7;
+        }
+    }
+
+    .o_dtm_table_panel {
+        background: #fff;
+        border-radius: 10px;
+        padding: 14px 14px 18px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        max-height: calc(100vh - 110px);
+        overflow: hidden;
+    }
+
+    .o_dtm_table_title {
+        margin: 0 0 12px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #111827;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-shrink: 0;
+
+        .o_dtm_table_count {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #64748b;
+            background: #f1f5f9;
+            padding: 3px 10px;
+            border-radius: 999px;
+        }
+    }
+
+    .o_dtm_empty {
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        background: #f8fafc;
+    }
+
+    .o_dtm_dept_list {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        padding-right: 2px;
+        scrollbar-width: thin;
+        scrollbar-color: #94a3b8 #e2e8f0;
+
+        &::-webkit-scrollbar {
+            display: block;
+            width: 8px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+    }
+
+    .o_dtm_dept_block {
+        border: 1.5px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        overflow: hidden;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        max-height: 320px;
+
+        &.o_dtm_dept_color_0 { border-color: #152a45; }
+        &.o_dtm_dept_color_1 { border-color: #0b5a54; }
+        &.o_dtm_dept_color_2 { border-color: #92400e; }
+        &.o_dtm_dept_color_3 { border-color: #6d28d9; }
+        &.o_dtm_dept_color_4 { border-color: #b91c1c; }
+        &.o_dtm_dept_color_5 { border-color: #075985; }
+        &.o_dtm_dept_color_6 { border-color: #166534; }
+        &.o_dtm_dept_color_7 { border-color: #9a3412; }
+        &.o_dtm_dept_color_8 { border-color: #4338ca; }
+        &.o_dtm_dept_color_9 { border-color: #155e75; }
+        &.o_dtm_dept_color_10 { border-color: #854d0e; }
+        &.o_dtm_dept_color_11 { border-color: #475569; }
+    }
+
+    .o_dtm_dept_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 12px;
+        color: #fff;
+        flex-shrink: 0;
+
+        .o_dtm_dept_name {
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.01em;
+
+            .fa {
+                margin-right: 6px;
+                opacity: 0.85;
+            }
+        }
+
+        .o_dtm_dept_count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.18);
+            padding: 2px 10px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+    }
+
+    .o_dtm_table_wrap {
+        overflow: auto;
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: 260px;
+        border-top: 1px solid #e2e8f0;
+        scrollbar-width: thin;
+        scrollbar-color: #64748b #eef2f7;
+
+        &::-webkit-scrollbar {
+            display: block;
+            width: 10px;
+            height: 10px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #64748b;
+            border-radius: 6px;
+        }
+        &::-webkit-scrollbar-track {
+            background: #eef2f7;
+        }
+    }
+
+    .o_dtm_table {
+        width: 100%;
+        min-width: 860px;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #334155;
+            color: #fff;
+            font-weight: 600;
+            padding: 8px;
+            white-space: nowrap;
+            text-align: left;
+            border-right: 1px solid #475569;
+
+            &:last-child {
+                border-right: 0;
+            }
+        }
+
+        tbody td {
+            padding: 8px;
+            border-bottom: 1px solid #e2e8f0;
+            border-right: 1px solid #f1f5f9;
+            vertical-align: middle;
+            background: #fff;
+
+            &:last-child {
+                border-right: 0;
+            }
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        tbody tr:hover td {
+            background: #f0f9ff;
+        }
+    }
+
+    .o_dtm_assignee {
+        color: #2563eb !important;
+        font-weight: 600;
+        padding: 0;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .o_dtm_badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        white-space: nowrap;
+        color: #fff;
+    }
+
+    .o_dtm_badge_high {
+        background: #ef4444;
+    }
+    .o_dtm_badge_medium {
+        background: #38bdf8;
+        color: #0f172a;
+    }
+    .o_dtm_badge_low {
+        background: #94a3b8;
+    }
+    .o_dtm_badge_done {
+        background: #15803d;
+    }
+    .o_dtm_badge_progress {
+        background: #f59e0b;
+        color: #111827;
+    }
+    .o_dtm_badge_todo {
+        background: #111827;
+    }
+
+    .o_dtm_note_cell {
+        min-width: 160px;
+        max-width: 280px;
+
+        .o_dtm_note_text {
+            display: block;
+            color: #334155;
+            white-space: pre-wrap;
+            word-break: break-word;
+            line-height: 1.35;
+        }
+    }
+
+    .o_dtm_col_action {
+        width: 100px;
+        min-width: 100px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .o_dtm_btn_delete {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: #fff;
+        border: 1px solid #dc2626;
+        color: #dc2626;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 4px 12px;
+        border-radius: 4px;
+        white-space: nowrap;
+        line-height: 1.3;
+
+        .fa {
+            color: #dc2626;
+            font-size: 0.85rem;
+        }
+
+        &:hover {
+            background: #fef2f2;
+            border-color: #b91c1c;
+            color: #b91c1c;
+
+            .fa {
+                color: #b91c1c;
+            }
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .o_dtm_layout {
+            grid-template-columns: 1fr !important;
+            min-width: 0;
+        }
+
+        .o_dtm_splitter {
+            display: none;
+        }
+
+        .o_dtm_form_panel {
+            position: static;
+            max-height: none;
+        }
+    }
+}
+
+body.o_dtm_resizing {
+    cursor: col-resize !important;
+    user-select: none !important;
+
+    * {
+        cursor: col-resize !important;
+    }
+}

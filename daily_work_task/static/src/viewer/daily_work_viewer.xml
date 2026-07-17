@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkViewer">
+        <div class="o_daily_work_viewer o_action">
+            <div class="o_content o_dwv_scroll">
+                <div class="o_dwv_header">
+                    <h2><i class="fa fa-eye"/> Xem công việc nhân viên</h2>
+                    <p class="o_dwv_subtitle">
+                        Bấm phòng ban → nhân viên để xem tổng công việc trong tháng (cùng nguồn bảng tổng tháng).
+                    </p>
+                    <div class="o_dwv_filters">
+                        <div class="o_dwv_field o_dwv_filter_search">
+                            <label>Lọc nhanh</label>
+                            <div class="o_dwv_search_wrap">
+                                <i class="fa fa-search"/>
+                                <input type="text" class="form-control"
+                                       placeholder="Gõ tên NV hoặc phòng ban..."
+                                       autocomplete="off"
+                                       t-model="state.filterQuery"/>
+                            </div>
+                        </div>
+                        <div class="o_dwv_field">
+                            <label>Tháng</label>
+                            <select class="form-select form-select-sm" t-model.number="state.monthMonth">
+                                <t t-foreach="state.months" t-as="m" t-key="m.value">
+                                    <option t-att-value="m.value" t-esc="m.label"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_dwv_field">
+                            <label>Năm</label>
+                            <select class="form-select form-select-sm" t-model.number="state.monthYear">
+                                <t t-foreach="state.years" t-as="y" t-key="y">
+                                    <option t-att-value="y" t-esc="y"/>
+                                </t>
+                            </select>
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm align-self-end"
+                                t-on-click="onApplyFilter"
+                                title="Áp dụng tháng cho các NV đang mở">
+                            <i class="fa fa-refresh"/> Xem tháng
+                        </button>
+                    </div>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-elif="state.message">
+                    <div class="alert alert-warning" t-esc="state.message"/>
+                </t>
+                <t t-elif="!filteredEmployees.length">
+                    <div class="alert alert-info">
+                        <t t-if="state.filterQuery">Không có nhân viên khớp bộ lọc.</t>
+                        <t t-else="">Chưa có nhân viên trong quyền xem của bạn.</t>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="o_dwv_accordion">
+                        <t t-foreach="employeesByDepartment" t-as="dept" t-key="dept.id">
+                            <t t-set="deptOpen" t-value="isDeptOpen(dept.id)"/>
+                            <div t-att-class="'o_dwv_dept_group' + (deptOpen ? ' o_dwv_dept_open' : '')">
+                                <button type="button" class="o_dwv_dept_header"
+                                        t-on-click="() => this.toggleDept(dept)">
+                                    <span class="o_dwv_dept_chevron">
+                                        <i t-att-class="deptOpen ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"/>
+                                    </span>
+                                    <span class="o_dwv_dept_title" t-esc="dept.name"/>
+                                    <span class="o_dwv_dept_meta">
+                                        <t t-esc="dept.employees.length"/> nhân viên
+                                    </span>
+                                </button>
+                                <div class="o_dwv_dept_emps" t-if="deptOpen">
+                                    <t t-foreach="dept.employees" t-as="emp" t-key="emp.id">
+                                        <t t-set="panel" t-value="panelOf(emp.id)"/>
+                                        <div t-att-class="'o_dwv_item' + (panel.open ? ' o_dwv_item_open' : '')">
+                                            <button type="button" class="o_dwv_item_header"
+                                                    t-on-click="() => this.toggleEmployee(emp)">
+                                                <span class="o_dwv_chevron">
+                                                    <i t-att-class="panel.open ? 'fa fa-chevron-down' : 'fa fa-chevron-right'"/>
+                                                </span>
+                                                <span class="o_dwv_emp_bullet" aria-hidden="true">–</span>
+                                                <strong class="o_dwv_emp_name" t-esc="emp.name"/>
+                                                <span class="o_dwv_emp_count" t-if="empMonthHint(emp.id)">
+                                                    <t t-esc="empMonthHint(emp.id)"/>
+                                                    <t t-if="panel.open and !panel.canEdit">
+                                                        <span class="o_dwv_readonly_tag">Chỉ xem</span>
+                                                    </t>
+                                                </span>
+                                                <span class="o_dwv_emp_hint" t-else="">
+                                                    <t t-if="panel.loading"><i class="fa fa-spinner fa-spin"/></t>
+                                                    <t t-else="">Bấm để xem tổng tháng</t>
+                                                </span>
+                                            </button>
+
+                                            <t t-if="panel.open">
+                                                <div class="o_dwv_item_body">
+                                                    <t t-if="panel.loading">
+                                                        <div class="o_dwv_body_loading">
+                                                            <i class="fa fa-spinner fa-spin"/> Đang tải tổng công việc tháng...
+                                                        </div>
+                                                    </t>
+                                                    <t t-elif="panel.error">
+                                                        <div class="alert alert-danger mb-0" t-esc="panel.error"/>
+                                                    </t>
+                                                    <t t-else="">
+                                                        <div class="o_dwv_kpi">
+                                                            <div class="o_dwv_kpi_card">
+                                                                <span class="o_dwv_kpi_label">Tổng số</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.total"/>
+                                                            </div>
+                                                            <div class="o_dwv_kpi_card o_dwv_kpi_done">
+                                                                <span class="o_dwv_kpi_label">Hoàn thành</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.done"/>
+                                                            </div>
+                                                            <div class="o_dwv_kpi_card o_dwv_kpi_progress">
+                                                                <span class="o_dwv_kpi_label">Đang xử lý</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.in_progress"/>
+                                                            </div>
+                                                            <div class="o_dwv_kpi_card o_dwv_kpi_todo">
+                                                                <span class="o_dwv_kpi_label">Chưa bắt đầu</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.not_started"/>
+                                                            </div>
+                                                            <div class="o_dwv_kpi_card o_dwv_kpi_overdue">
+                                                                <span class="o_dwv_kpi_label">Quá hạn</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.overdue"/>
+                                                            </div>
+                                                            <div class="o_dwv_kpi_card o_dwv_kpi_hours">
+                                                                <span class="o_dwv_kpi_label">Tổng công (giờ)</span>
+                                                                <span class="o_dwv_kpi_value" t-esc="panel.kpi.duration_hours || 0"/>
+                                                            </div>
+                                                        </div>
+                                                        <div class="o_dwv_table_wrap">
+                                                            <table class="o_dwv_table">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th class="o_dwv_col_stt">STT</th>
+                                                                        <th class="o_dwv_col_name">Tên công việc</th>
+                                                                        <th class="o_dwv_col_assign_date">Ngày giao việc</th>
+                                                                        <th class="o_dwv_col_deadline">Hạn hoàn thành</th>
+                                                                        <th class="o_dwv_col_priority">Mức ưu tiên</th>
+                                                                        <th class="o_dwv_col_state">Trạng thái</th>
+                                                                        <th class="o_dwv_col_min">Phút</th>
+                                                                        <th class="o_dwv_col_hour">Giờ</th>
+                                                                        <th class="o_dwv_col_note">Ghi chú</th>
+                                                                        <th class="o_dwv_col_overdue">Quá hạn</th>
+                                                                        <th t-if="panel.canDelete" class="o_dwv_col_action"/>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <t t-if="!panel.tasks.length">
+                                                                        <tr>
+                                                                            <td t-att-colspan="panel.canDelete ? 11 : 10"
+                                                                                class="text-center text-muted py-4"
+                                                                                style="white-space: normal;">
+                                                                                Không có công việc trong tháng này.
+                                                                            </td>
+                                                                        </tr>
+                                                                    </t>
+                                                                    <t t-foreach="taskGroupsOf(emp.id)" t-as="group" t-key="group.key">
+                                                                        <tr class="o_dwv_group_row">
+                                                                            <td t-att-colspan="panel.canDelete ? 11 : 10">
+                                                                                <span class="o_dwv_group_name">
+                                                                                    <i class="fa fa-folder-open-o"/>
+                                                                                    <t t-esc="group.label"/>
+                                                                                </span>
+                                                                                <span class="o_dwv_group_meta">
+                                                                                    <t t-esc="group.count"/> việc ·
+                                                                                    <t t-esc="group.duration_hours_display"/> giờ
+                                                                                </span>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <t t-foreach="group.rows" t-as="task" t-key="task.id">
+                                                                            <tr t-att-class="monthRowClass(task)">
+                                                                                <td class="o_dwv_col_stt" t-esc="task.stt"/>
+                                                                                <td class="o_dwv_col_name" t-att-title="task.name" t-esc="task.name"/>
+                                                                                <td class="o_dwv_col_assign_date"
+                                                                                    t-esc="task.assign_date_display || '—'"/>
+                                                                                <td class="o_dwv_col_deadline" t-esc="task.deadline_display"/>
+                                                                                <td class="o_dwv_col_priority">
+                                                                                    <span t-att-class="'o_dwv_badge ' + priorityClass(task.priority)"
+                                                                                          t-esc="task.priority_label"/>
+                                                                                </td>
+                                                                                <td class="o_dwv_col_state">
+                                                                                    <t t-if="panel.canEdit">
+                                                                                        <select t-att-class="'form-select form-select-sm ' + stateSelectClass(task.state)"
+                                                                                                t-att-value="task.state"
+                                                                                                t-on-change="(ev) => this.onStateChange(emp.id, task, ev)">
+                                                                                            <t t-foreach="state.states" t-as="s" t-key="s.value">
+                                                                                                <option t-att-value="s.value"
+                                                                                                        t-att-selected="s.value === task.state"
+                                                                                                        t-esc="s.label"/>
+                                                                                            </t>
+                                                                                        </select>
+                                                                                    </t>
+                                                                                    <t t-else="">
+                                                                                        <span t-att-class="'o_dwv_state_badge ' + stateSelectClass(task.state)"
+                                                                                              t-esc="task.state_label"/>
+                                                                                    </t>
+                                                                                </td>
+                                                                                <td class="o_dwv_col_min" t-esc="task.duration_minutes || 0"/>
+                                                                                <td class="o_dwv_col_hour"
+                                                                                    t-esc="task.duration_hours_display || formatHours(task.duration_minutes)"/>
+                                                                                <td class="o_dwv_col_note" t-att-title="task.note" t-esc="task.note"/>
+                                                                                <td class="o_dwv_col_overdue">
+                                                                                    <t t-if="task.overdue_days">
+                                                                                        <span class="o_dwv_overdue_flag" t-att-title="task.overdue_label">
+                                                                                            <i class="fa fa-exclamation-triangle"/>
+                                                                                            <t t-esc="task.overdue_label"/>
+                                                                                        </span>
+                                                                                    </t>
+                                                                                </td>
+                                                                                <td t-if="panel.canDelete" class="o_dwv_col_action">
+                                                                                    <button type="button" class="btn btn-link text-danger p-0"
+                                                                                            t-on-click="() => this.onDelete(emp.id, task)">
+                                                                                        <i class="fa fa-trash"/>
+                                                                                    </button>
+                                                                                </td>
+                                                                            </tr>
+                                                                        </t>
+                                                                    </t>
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </t>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

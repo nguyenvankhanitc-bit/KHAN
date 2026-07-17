@@ -1,0 +1,481 @@
+.o_daily_work_viewer.o_action {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f5f7fa;
+
+    > .o_content.o_dwv_scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 16px 18px 28px;
+    }
+
+    .o_dwv_header {
+        background: #fff;
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-left: 4px solid #2563eb;
+
+        h2 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1d4ed8;
+        }
+    }
+
+    .o_dwv_subtitle {
+        margin: 0 0 12px;
+        color: #64748b;
+        font-size: 0.88rem;
+    }
+
+    .o_dwv_filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+
+    .o_dwv_field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 140px;
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin: 0;
+        }
+    }
+
+    .o_dwv_filter_search {
+        min-width: 240px;
+        flex: 1 1 240px;
+    }
+
+    .o_dwv_search_wrap {
+        position: relative;
+
+        .fa-search {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        input {
+            padding-left: 32px;
+        }
+    }
+
+    .o_dwv_accordion {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    /* Nhóm theo phòng ban */
+    .o_dwv_dept_group {
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    }
+
+    .o_dwv_dept_header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border: 0;
+        background: #1e3a5f;
+        color: #fff;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+            background: #254a73;
+        }
+    }
+
+    .o_dwv_dept_open > .o_dwv_dept_header {
+        background: #16304f;
+    }
+
+    .o_dwv_dept_chevron {
+        flex: 0 0 auto;
+        width: 16px;
+        font-size: 0.75rem;
+        opacity: 0.9;
+        text-align: center;
+    }
+
+    .o_dwv_dept_title {
+        flex: 1 1 auto;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_dwv_dept_meta {
+        flex: 0 0 auto;
+        font-size: 0.78rem;
+        font-weight: 600;
+        opacity: 0.85;
+        white-space: nowrap;
+    }
+
+    .o_dwv_dept_emps {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        padding: 6px 8px 10px;
+        background: #f8fafc;
+    }
+
+    /* Từng nhân viên trong phòng ban */
+    .o_dwv_item {
+        background: #fff;
+        border-radius: 6px;
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        margin: 4px 0;
+
+        &.o_dwv_item_open {
+            border-color: #2563eb;
+            box-shadow: 0 1px 6px rgba(37, 99, 235, 0.12);
+        }
+    }
+
+    .o_dwv_item_header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 12px;
+        border: 0;
+        background: transparent;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+            background: #eff6ff;
+        }
+    }
+
+    .o_dwv_item_open > .o_dwv_item_header {
+        background: #dbeafe;
+        border-bottom: 1px solid #93c5fd;
+    }
+
+    .o_dwv_chevron {
+        width: 16px;
+        color: #64748b;
+        flex: 0 0 auto;
+        text-align: center;
+        font-size: 0.75rem;
+    }
+
+    .o_dwv_emp_bullet {
+        flex: 0 0 auto;
+        color: #94a3b8;
+        font-weight: 700;
+        line-height: 1;
+    }
+
+    .o_dwv_emp_name {
+        flex: 1 1 auto;
+        min-width: 0;
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #0f172a;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .o_dwv_emp_count,
+    .o_dwv_emp_hint {
+        flex: 0 0 auto;
+        font-size: 0.8rem;
+        color: #64748b;
+        white-space: nowrap;
+    }
+
+    .o_dwv_emp_count {
+        color: #1d4ed8;
+        font-weight: 600;
+    }
+
+    .o_dwv_readonly_tag {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        color: #475569;
+        font-size: 0.7rem;
+        font-weight: 700;
+    }
+
+    .o_dwv_item_body {
+        padding: 10px;
+        background: #f8fafc;
+    }
+
+    .o_dwv_kpi {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(90px, 1fr));
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .o_dwv_kpi_card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .o_dwv_kpi_label {
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+    }
+
+    .o_dwv_kpi_value {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0f172a;
+    }
+
+    .o_dwv_kpi_done .o_dwv_kpi_value { color: #166534; }
+    .o_dwv_kpi_progress .o_dwv_kpi_value { color: #a16207; }
+    .o_dwv_kpi_todo .o_dwv_kpi_value { color: #475569; }
+    .o_dwv_kpi_overdue .o_dwv_kpi_value { color: #b91c1c; }
+    .o_dwv_kpi_hours .o_dwv_kpi_value { color: #1d4ed8; }
+
+    .o_dwv_body_loading {
+        text-align: center;
+        color: #64748b;
+        padding: 18px 8px;
+    }
+
+    /* Vùng bảng: cuộn dọc + kéo ngang, tiêu đề cố định */
+    .o_dwv_table_wrap {
+        background: #fff;
+        border: 1px solid #64748b;
+        border-radius: 4px;
+        overflow: auto;
+        overflow-x: auto;
+        overflow-y: auto;
+        max-height: 320px;
+        width: 100%;
+        -webkit-overflow-scrolling: touch;
+
+        &::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 6px;
+            border: 2px solid #fff;
+        }
+        &::-webkit-scrollbar-track {
+            background: #e2e8f0;
+        }
+        &::-webkit-scrollbar-corner {
+            background: #e2e8f0;
+        }
+    }
+
+    .o_dwv_table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        font-size: 0.85rem;
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: #1e40af;
+            color: #fff;
+            font-weight: 700;
+            padding: 10px 12px;
+            text-align: left;
+            white-space: nowrap;
+            border: 1px solid #1e3a8a;
+            box-shadow: 0 2px 0 #1e3a8a;
+        }
+
+        tbody td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            vertical-align: middle;
+            background: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 280px;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        tbody tr:hover td {
+            background: #eff6ff;
+        }
+
+        .o_dwv_col_stt {
+            width: 48px;
+            text-align: center;
+        }
+        .o_dwv_col_name {
+            width: 280px;
+            min-width: 220px;
+        }
+        .o_dwv_col_assign_date {
+            width: 120px;
+        }
+        .o_dwv_col_deadline {
+            width: 120px;
+        }
+        .o_dwv_col_priority {
+            width: 110px;
+        }
+        .o_dwv_col_state {
+            width: 150px;
+        }
+        .o_dwv_col_min,
+        .o_dwv_col_hour {
+            width: 64px;
+            text-align: center;
+        }
+        .o_dwv_col_note {
+            width: 220px;
+        }
+        .o_dwv_col_overdue {
+            width: 110px;
+            text-align: center;
+        }
+        .o_dwv_col_action {
+            width: 48px;
+            text-align: center;
+        }
+    }
+
+    .o_dwv_group_row td {
+        background: #e2e8f0 !important;
+        font-weight: 700;
+        color: #1e3a5f;
+        white-space: normal !important;
+        max-width: none !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+    }
+
+    .o_dwv_group_name {
+        margin-right: 12px;
+    }
+
+    .o_dwv_group_meta {
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+
+    .o_dwv_row_done td {
+        background: #f0fdf4 !important;
+    }
+
+    .o_dwv_row_overdue td {
+        background: #fef2f2 !important;
+    }
+
+    .o_dwv_overdue_flag {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        background: #fee2e2;
+        color: #b91c1c;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        .fa {
+            font-size: 0.85rem;
+        }
+    }
+
+    .o_dwv_badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .o_dwv_badge_high { background: #ef4444; }
+    .o_dwv_badge_medium { background: #38bdf8; color: #0f172a; }
+    .o_dwv_badge_low { background: #94a3b8; }
+
+    .o_dwv_state_done,
+    select.o_dwv_state_done {
+        background: #dcfce7 !important;
+        color: #166534 !important;
+    }
+    .o_dwv_state_progress,
+    select.o_dwv_state_progress {
+        background: #fef08a !important;
+        color: #854d0e !important;
+    }
+    .o_dwv_state_todo,
+    select.o_dwv_state_todo {
+        background: #f1f5f9 !important;
+        color: #475569 !important;
+    }
+
+    .o_dwv_state_badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+}
+
+@media (max-width: 768px) {
+    .o_daily_work_viewer.o_action {
+        .o_dwv_emp_hint {
+            display: none;
+        }
+
+        .o_dwv_item_header {
+            padding: 12px;
+        }
+    }
+}

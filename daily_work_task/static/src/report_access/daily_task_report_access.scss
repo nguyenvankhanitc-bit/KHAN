@@ -1,0 +1,31 @@
+/* List Phân quyền Báo cáo tổng — cột sát nhau, không giãn full màn hình */
+.o_list_view.o_daily_task_report_access_list .o_list_table {
+    width: auto !important;
+    max-width: 100%;
+    table-layout: auto;
+}
+
+.o_list_view.o_daily_task_report_access_list .o_list_table th[data-name="employee_id"],
+.o_list_view.o_daily_task_report_access_list .o_list_table td[data-name="employee_id"] {
+    width: 200px;
+    min-width: 160px;
+    max-width: 240px;
+}
+
+.o_list_view.o_daily_task_report_access_list .o_list_table th[data-name="department_ids"],
+.o_list_view.o_daily_task_report_access_list .o_list_table td[data-name="department_ids"] {
+    width: 320px;
+    min-width: 220px;
+    max-width: 420px;
+}
+
+.o_list_view.o_daily_task_report_access_list .o_list_table th[data-name="target_ids"],
+.o_list_view.o_daily_task_report_access_list .o_list_table td[data-name="target_ids"] {
+    width: 280px;
+    min-width: 180px;
+    max-width: 380px;
+}
+
+.o_list_view.o_daily_task_report_access_list .o_field_tags {
+    max-width: 100%;
+}

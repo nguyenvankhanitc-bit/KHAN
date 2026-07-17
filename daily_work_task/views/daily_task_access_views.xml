@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_access_list" model="ir.ui.view">
+        <field name="name">daily.task.access.list</field>
+        <field name="model">daily.task.access</field>
+        <field name="arch" type="xml">
+            <list string="Phân quyền công việc" editable="bottom">
+                <field name="employee_id"
+                         string="User được phân quyền"
+                         options="{'no_create': True}"
+                         placeholder="Vd: Nguyễn Văn Khan..."/>
+                <field name="department_id" string="Bộ phận"/>
+                <field name="target_ids"
+                         string="Xem việc của (chọn nhiều)"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Vd: Hùng, Phú, Thành..."/>
+                <field name="perm_view" string="Xem"/>
+                <field name="perm_assign" string="Giao"/>
+                <field name="perm_edit" string="Chỉnh sửa"/>
+                <field name="perm_delete" string="Xóa"/>
+                <field name="user_id" optional="hide" readonly="1"/>
+                <field name="note" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_access_form" model="ir.ui.view">
+        <field name="name">daily.task.access.form</field>
+        <field name="model">daily.task.access</field>
+        <field name="arch" type="xml">
+            <form string="Phân quyền công việc">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <b>Ví dụ:</b> User được phân quyền = <b>Nguyễn Văn Khan</b>;
+                        Xem việc của = <b>Hùng, Phú, Thành</b>; tick <b>Xem</b>
+                        → Khan thấy công việc của 3 người đó trên Dashboard / Xem công việc NV.
+                    </div>
+                    <group>
+                        <group string="Người được quyền">
+                            <field name="employee_id" options="{'no_create': True}"/>
+                            <field name="department_id"/>
+                            <field name="user_id" readonly="1"/>
+                        </group>
+                        <group string="Mô tả quyền">
+                            <field name="perm_view" string="Xem"/>
+                            <field name="perm_assign" string="Giao"/>
+                            <field name="perm_edit" string="Chỉnh sửa"/>
+                            <field name="perm_delete" string="Xóa"/>
+                        </group>
+                    </group>
+                    <group string="Xem việc của nhân viên (chọn nhiều)">
+                        <field name="target_ids" widget="many2many_tags" nolabel="1"
+                                 options="{'no_create': True}"/>
+                    </group>
+                    <group>
+                        <field name="note"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_access_search" model="ir.ui.view">
+        <field name="name">daily.task.access.search</field>
+        <field name="model">daily.task.access</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="target_ids"/>
+                <field name="department_id"/>
+                <filter name="filter_view" string="Có Xem" domain="[('perm_view','=',True)]"/>
+                <filter name="filter_assign" string="Có Giao" domain="[('perm_assign','=',True)]"/>
+                <filter name="filter_edit" string="Có Chỉnh sửa" domain="[('perm_edit','=',True)]"/>
+                <filter name="filter_delete" string="Có Xóa" domain="[('perm_delete','=',True)]"/>
+                <group>
+                    <filter name="group_employee" string="User được phân quyền" context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_dept" string="Bộ phận" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_access" model="ir.actions.act_window">
+        <field name="name">Phân quyền xem / giao / sửa / xóa</field>
+        <field name="res_model">daily.task.access</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Khan xem việc Hùng/Phú/Thành: chọn Khan ở cột trái, chọn 3 người ở cột giữa, tick Xem.
+            </p>
+        </field>
+    </record>
+</odoo>

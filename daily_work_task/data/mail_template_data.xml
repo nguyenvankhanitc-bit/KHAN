@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_overdue_reminder" model="mail.template">
+        <field name="name">Nhắc công việc quá hạn</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="subject">[Nhắc việc] Công việc quá hạn</field>
+        <field name="email_to">{{ object.assignee_id.email }}</field>
+        <field name="body_html" type="html">
+            <div>
+                <p>Xin chào <t t-out="object.assignee_id.name"/>,</p>
+                <p>Bạn có công việc quá hạn cần xử lý:</p>
+                <ul>
+                    <li><strong><t t-out="object.name"/></strong></li>
+                    <li>Hạn: <t t-out="object.deadline"/></li>
+                </ul>
+            </div>
+        </field>
+    </record>
+</odoo>

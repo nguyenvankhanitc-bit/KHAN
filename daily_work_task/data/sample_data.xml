@@ -1,0 +1,336 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="emp_le_hoai_an" model="daily.task.employee">
+        <field name="name">Lê Hoài An</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="emp_minh_anh" model="daily.task.employee">
+        <field name="name">Minh Anh</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="emp_duong_thu" model="daily.task.employee">
+        <field name="name">Dương Thu</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="emp_quoc_bao" model="daily.task.employee">
+        <field name="name">Quốc Bảo</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="emp_anh_duong" model="daily.task.employee">
+        <field name="name">Ánh Dương</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="emp_dung_it" model="daily.task.employee">
+        <field name="name">Dũng IT</field>
+        <field name="email">emailcuanhanvien@gmail.com</field>
+    </record>
+    <record id="task_sample_001" model="daily.task">
+        <field name="name">Gửi báo cáo doanh số tuần</field>
+        <field name="deadline">2025-01-04</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_002" model="daily.task">
+        <field name="name">Lập kế hoạch truyền thông tháng tới</field>
+        <field name="deadline">2025-01-05</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_003" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-01-07</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_004" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-01-09</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_005" model="daily.task">
+        <field name="name">Viết bài đăng cho fanpage công ty</field>
+        <field name="deadline">2025-01-12</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_006" model="daily.task">
+        <field name="name">Kiểm tra tồn kho và đặt hàng bổ sung</field>
+        <field name="deadline">2025-01-14</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_007" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-01-16</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">medium</field>
+        <field name="state">not_started</field>
+    </record>
+    <record id="task_sample_008" model="daily.task">
+        <field name="name">Viết bài đăng cho fanpage công ty</field>
+        <field name="deadline">2025-01-18</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">medium</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_009" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-01-22</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_010" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-01-25</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_011" model="daily.task">
+        <field name="name">Cập nhật danh sách sản phẩm mới</field>
+        <field name="deadline">2025-01-26</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_012" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-01-28</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">low</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_013" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-01-29</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_014" model="daily.task">
+        <field name="name">Chuẩn bị tài liệu họp nội bộ</field>
+        <field name="deadline">2025-01-29</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_015" model="daily.task">
+        <field name="name">Viết bài đăng cho fanpage công ty</field>
+        <field name="deadline">2025-01-29</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_016" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-02-08</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_017" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-02-10</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_018" model="daily.task">
+        <field name="name">Lập kế hoạch truyền thông tháng tới</field>
+        <field name="deadline">2025-02-11</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_019" model="daily.task">
+        <field name="name">Hoàn thiện hợp đồng đối tác</field>
+        <field name="deadline">2025-02-12</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_020" model="daily.task">
+        <field name="name">Đào tạo nhân viên mới về quy trình làm việc</field>
+        <field name="deadline">2025-02-15</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_021" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-02-15</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_022" model="daily.task">
+        <field name="name">Đào tạo nhân viên mới về quy trình làm việc</field>
+        <field name="deadline">2025-02-21</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_023" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-02-23</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_024" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-02-24</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">high</field>
+        <field name="state">not_started</field>
+    </record>
+    <record id="task_sample_025" model="daily.task">
+        <field name="name">Viết bài đăng cho fanpage công ty</field>
+        <field name="deadline">2025-02-24</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_026" model="daily.task">
+        <field name="name">Lập kế hoạch truyền thông tháng tới</field>
+        <field name="deadline">2025-02-25</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">medium</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_027" model="daily.task">
+        <field name="name">Chuẩn bị tài liệu họp nội bộ</field>
+        <field name="deadline">2025-02-27</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_028" model="daily.task">
+        <field name="name">Gọi điện xác nhận lịch hẹn với khách</field>
+        <field name="deadline">2025-02-28</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_029" model="daily.task">
+        <field name="name">Cập nhật danh sách sản phẩm mới</field>
+        <field name="deadline">2025-03-15</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">high</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_030" model="daily.task">
+        <field name="name">Đào tạo nhân viên mới về quy trình làm việc</field>
+        <field name="deadline">2025-03-19</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">not_started</field>
+    </record>
+    <record id="task_sample_031" model="daily.task">
+        <field name="name">Gửi báo cáo doanh số tuần</field>
+        <field name="deadline">2025-03-23</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">low</field>
+        <field name="state">not_started</field>
+    </record>
+    <record id="task_sample_032" model="daily.task">
+        <field name="name">Gửi báo cáo doanh số tuần</field>
+        <field name="deadline">2025-03-25</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_033" model="daily.task">
+        <field name="name">Cập nhật danh sách sản phẩm mới</field>
+        <field name="deadline">2025-03-26</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_034" model="daily.task">
+        <field name="name">Cập nhật danh sách sản phẩm mới</field>
+        <field name="deadline">2025-03-30</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_035" model="daily.task">
+        <field name="name">Liên hệ khách hàng tiềm năng</field>
+        <field name="deadline">2025-03-31</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_036" model="daily.task">
+        <field name="name">Kiểm tra tồn kho và đặt hàng bổ sung</field>
+        <field name="deadline">2025-04-02</field>
+        <field name="assignee_id" ref="emp_duong_thu"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_037" model="daily.task">
+        <field name="name">Đào tạo nhân viên mới về quy trình làm việc</field>
+        <field name="deadline">2025-04-06</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">low</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_038" model="daily.task">
+        <field name="name">Chuẩn bị tài liệu họp nội bộ</field>
+        <field name="deadline">2025-04-09</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_039" model="daily.task">
+        <field name="name">Liên hệ khách hàng tiềm năng</field>
+        <field name="deadline">2025-04-13</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">medium</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_040" model="daily.task">
+        <field name="name">Liên hệ khách hàng tiềm năng</field>
+        <field name="deadline">2025-04-14</field>
+        <field name="assignee_id" ref="emp_le_hoai_an"/>
+        <field name="priority">high</field>
+        <field name="state">in_progress</field>
+    </record>
+    <record id="task_sample_041" model="daily.task">
+        <field name="name">Kiểm tra tồn kho và đặt hàng bổ sung</field>
+        <field name="deadline">2025-04-15</field>
+        <field name="assignee_id" ref="emp_minh_anh"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_042" model="daily.task">
+        <field name="name">họp về dự án đổi mới</field>
+        <field name="deadline">2026-05-20</field>
+        <field name="assignee_id" ref="emp_quoc_bao"/>
+        <field name="priority">high</field>
+        <field name="state">not_started</field>
+    </record>
+    <record id="task_sample_043" model="daily.task">
+        <field name="name">Nâng cấp hệ thống máy chủ</field>
+        <field name="deadline">2026-05-31</field>
+        <field name="assignee_id" ref="emp_dung_it"/>
+        <field name="priority">high</field>
+        <field name="state">done</field>
+    </record>
+    <record id="task_sample_044" model="daily.task">
+        <field name="name">Đào tạo nhân viên về AI</field>
+        <field name="deadline">2026-06-05</field>
+        <field name="assignee_id" ref="emp_dung_it"/>
+        <field name="priority">medium</field>
+        <field name="state">in_progress</field>
+        <field name="note">Cập nhật kiến thức về AI</field>
+    </record>
+</odoo>

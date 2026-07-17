@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_daily_work_recompute_overdue" model="ir.cron">
+        <field name="name">QLCV: Cập nhật cờ quá hạn mỗi ngày</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_recompute_overdue()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="ir_cron_daily_work_overdue_mail" model="ir.cron">
+        <field name="name">QLCV: Gửi mail giục quá hạn hàng ngày</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_overdue_reminders()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- Sinh công việc từ mẫu lặp mỗi sáng ~5:00 (theo giờ server / DB) -->
+    <record id="ir_cron_daily_work_generate_recurring" model="ir.cron">
+        <field name="name">QLCV: Sinh công việc lặp hàng ngày (5h00)</field>
+        <field name="model_id" ref="model_daily_task_recurring"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_generate_recurring_tasks()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall" eval="((DateTime.now() + timedelta(days=1)).replace(hour=5, minute=0, second=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

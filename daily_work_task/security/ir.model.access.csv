@@ -1,0 +1,26 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_daily_task_user,daily.task user,model_daily_task,group_daily_work_user,1,1,1,0
+access_daily_task_viewer,daily.task viewer,model_daily_task,group_daily_work_viewer,1,0,0,0
+access_daily_task_assigner,daily.task assigner,model_daily_task,group_daily_work_assigner,1,1,1,0
+access_daily_task_manager,daily.task manager,model_daily_task,group_daily_work_manager,1,1,1,1
+access_daily_task_employee_user,daily.task.employee user,model_daily_task_employee,group_daily_work_user,1,0,0,0
+access_daily_task_employee_viewer,daily.task.employee viewer,model_daily_task_employee,group_daily_work_viewer,1,0,0,0
+access_daily_task_employee_assigner,daily.task.employee assigner,model_daily_task_employee,group_daily_work_assigner,1,1,1,0
+access_daily_task_employee_manager,daily.task.employee manager,model_daily_task_employee,group_daily_work_manager,1,1,1,1
+access_daily_task_dashboard_user,daily.task.dashboard user,model_daily_task_dashboard,group_daily_work_user,1,0,0,0
+access_daily_task_dashboard_manager,daily.task.dashboard manager,model_daily_task_dashboard,group_daily_work_manager,1,0,0,0
+access_daily_task_send_overdue_manager,daily.task.send.overdue.mail manager,model_daily_task_send_overdue_mail,group_daily_work_manager,1,1,1,1
+access_daily_task_access_user,daily.task.access user,model_daily_task_access,group_daily_work_user,1,0,0,0
+access_daily_task_access_manager,daily.task.access manager,model_daily_task_access,group_daily_work_manager,1,1,1,1
+access_daily_task_work_group_user,daily.task.work.group user,model_daily_task_work_group,group_daily_work_user,1,0,0,0
+access_daily_task_work_group_manager,daily.task.work.group manager,model_daily_task_work_group,group_daily_work_manager,1,1,1,1
+access_daily_task_report_access_user,daily.task.report.access user,model_daily_task_report_access,group_daily_work_user,1,0,0,0
+access_daily_task_report_access_manager,daily.task.report.access manager,model_daily_task_report_access,group_daily_work_manager,1,1,1,1
+access_daily_task_perf_access_user,daily.task.performance.access user,model_daily_task_performance_access,group_daily_work_user,1,0,0,0
+access_daily_task_perf_access_manager,daily.task.performance.access manager,model_daily_task_performance_access,group_daily_work_manager,1,1,1,1
+access_daily_task_perf_report_user,daily.task.performance.report user,model_daily_task_performance_report,group_daily_work_user,1,0,0,0
+access_daily_task_perf_report_manager,daily.task.performance.report manager,model_daily_task_performance_report,group_daily_work_manager,1,0,0,0
+access_daily_work_notebook_user,daily.work.notebook user,model_daily_work_notebook,group_daily_work_user,1,1,1,1
+access_daily_work_notebook_manager,daily.work.notebook manager,model_daily_work_notebook,group_daily_work_manager,1,1,1,1
+access_daily_task_recurring_user,daily.task.recurring user,model_daily_task_recurring,group_daily_work_user,1,1,1,1
+access_daily_task_recurring_manager,daily.task.recurring manager,model_daily_task_recurring,group_daily_work_manager,1,1,1,1

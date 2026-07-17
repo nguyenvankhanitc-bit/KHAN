@@ -1,0 +1,507 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkReportOverview">
+        <div class="o_daily_work_report_overview o_action">
+            <div class="o_dro_shell">
+                <!-- Sidebar -->
+                <aside class="o_dro_sidebar">
+                    <div class="o_dro_brand">
+                        <img t-att-src="satacoLogoUrl" alt="SATACO" class="o_dro_brand_logo"/>
+                    </div>
+                    <nav class="o_dro_nav">
+                        <button type="button" t-att-class="'o_dro_nav_item' + (state.nav === 'overview' ? ' active' : '')"
+                                t-on-click="() => this.openNav('overview')">
+                            <i class="fa fa-th-large"/><span>Tổng quan</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('tasks')">
+                            <i class="fa fa-list-ul"/><span>Công việc của tôi</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('calendar')">
+                            <i class="fa fa-calendar"/><span>Lịch làm việc</span>
+                        </button>
+                        <button type="button" t-att-class="'o_dro_nav_item o_dro_nav_reminders' + (state.nav === 'reminders' ? ' active' : '')"
+                                t-on-click="() => this.openNav('reminders')">
+                            <span class="o_dro_nav_bell_wrap">
+                                <i class="fa fa-bell o_dro_nav_bell_red"/>
+                                <t t-if="reminderUpcomingCount">
+                                    <span class="o_dro_nav_bell_badge" t-esc="reminderUpcomingCount"/>
+                                </t>
+                            </span>
+                            <span>Nhắc việc</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('report')">
+                            <i class="fa fa-bar-chart"/><span>Báo cáo thời gian</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('eval')">
+                            <i class="fa fa-star"/><span>Đánh giá</span>
+                        </button>
+                    </nav>
+                </aside>
+
+                <div class="o_dro_main">
+                    <div class="o_dro_scroll">
+                        <t t-if="state.loading">
+                            <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                        </t>
+                        <t t-elif="state.message">
+                            <div class="alert alert-warning m-3" t-esc="state.message"/>
+                        </t>
+                        <t t-else="">
+                            <!-- Header -->
+                            <header class="o_dro_top">
+                                <div class="o_dro_top_left">
+                                    <div class="o_dro_user_chip">
+                                        <img class="o_dro_avatar o_dro_avatar_lg" t-att-src="state.profile.avatar_url" alt=""/>
+                                        <div>
+                                            <strong t-esc="state.profile.name || state.userName"/>
+                                            <div class="o_dro_muted">
+                                                <t t-esc="state.profile.job_title || 'Nhân viên'"/>
+                                                <t t-if="state.profile.department">
+                                                    · <t t-esc="state.profile.department"/>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="o_dro_title_block">
+                                        <h1>BÁO CÁO CÔNG VIỆC CÁ NHÂN</h1>
+                                        <span class="o_dro_month_tag" t-esc="monthLabel"/>
+                                    </div>
+                                </div>
+                                <div class="o_dro_top_right">
+                                    <t t-if="state.canPickEmployee">
+                                        <select class="form-select form-select-sm" t-model.number="state.filterEmp"
+                                                t-on-change="onRefresh">
+                                            <t t-foreach="state.filterOptions.employees" t-as="e" t-key="e.id">
+                                                <option t-att-value="e.id" t-esc="e.name"/>
+                                            </t>
+                                        </select>
+                                    </t>
+                                    <select class="form-select form-select-sm" t-model.number="state.monthMonth"
+                                            t-on-change="onRefresh">
+                                        <t t-foreach="state.months" t-as="m" t-key="m.value">
+                                            <option t-att-value="m.value" t-esc="m.label"/>
+                                        </t>
+                                    </select>
+                                    <select class="form-select form-select-sm" t-model.number="state.monthYear"
+                                            t-on-change="onRefresh">
+                                        <t t-foreach="state.years" t-as="y" t-key="y">
+                                            <option t-att-value="y" t-esc="y"/>
+                                        </t>
+                                    </select>
+                                    <button type="button" class="btn btn-light btn-sm o_dro_btn_icon" t-on-click="onRefresh"
+                                            title="Làm mới">
+                                        <i class="fa fa-refresh"/> Làm mới
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
+                                        <i class="fa fa-file-excel-o"/> Xuất Excel
+                                    </button>
+                                    <button type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">
+                                        <i class="fa fa-file-pdf-o"/> Xuất PDF
+                                    </button>
+                                </div>
+                            </header>
+
+                            <t t-if="state.nav === 'reminders'">
+                                <div class="o_dro_remind_page">
+                                    <div class="o_dro_remind_summary">
+                                        <div class="o_dro_remind_stat overdue">
+                                            <i class="fa fa-exclamation-circle"/>
+                                            <div>
+                                                <strong t-esc="(state.reminders.overdue_tasks || []).length"/>
+                                                <span>Quá hạn</span>
+                                            </div>
+                                        </div>
+                                        <div class="o_dro_remind_stat upcoming">
+                                            <i class="fa fa-hourglass-half"/>
+                                            <div>
+                                                <strong t-esc="(state.reminders.upcoming_tasks || []).length"/>
+                                                <span>Sắp tới hạn (7 ngày)</span>
+                                            </div>
+                                        </div>
+                                        <div class="o_dro_remind_stat total">
+                                            <i class="fa fa-bell"/>
+                                            <div>
+                                                <strong t-esc="((state.reminders.overdue_tasks || []).length + (state.reminders.upcoming_tasks || []).length)"/>
+                                                <span>Tổng cần chú ý</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="o_dro_card o_dro_table_card o_dro_remind_section">
+                                        <div class="o_dro_card_head">
+                                            <h3 class="text-danger">
+                                                <i class="fa fa-exclamation-triangle"/> Công việc quá hạn
+                                            </h3>
+                                            <span class="o_dro_muted"
+                                                  t-esc="(state.reminders.overdue_tasks || []).length + ' việc'"/>
+                                        </div>
+                                        <t t-if="!(state.reminders.overdue_tasks || []).length">
+                                            <div class="text-center text-muted py-4">Không có công việc quá hạn.</div>
+                                        </t>
+                                        <div class="o_dro_table_wrap" t-else="">
+                                            <table class="o_dro_table o_dro_table_grouped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>STT</th>
+                                                        <th>Công việc</th>
+                                                        <th>Ưu tiên</th>
+                                                        <th>Tiến độ</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Deadline</th>
+                                                        <th>Quá hạn</th>
+                                                        <th>Thời gian</th>
+                                                        <th>Ghi chú</th>
+                                                        <th>Thao tác</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="state.reminders.overdue_tasks" t-as="row" t-key="'ov-' + row.id">
+                                                        <tr class="o_dro_row_overdue">
+                                                            <td t-esc="row.stt"/>
+                                                            <td class="o_dro_name" t-esc="row.name"/>
+                                                            <td>
+                                                                <span t-att-class="'o_dro_pri ' + priorityClass(row.priority)">
+                                                                    <i t-att-class="'fa ' + priorityIcon(row.priority)"/>
+                                                                    <t t-esc="row.priority_label"/>
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="o_dro_pct">
+                                                                    <div class="o_dro_pct_bar">
+                                                                        <div t-att-class="'o_dro_pct_fill ' + progressBarClass(row.completion_percent)"
+                                                                             t-att-style="'width:' + (row.completion_percent || 0) + '%'"/>
+                                                                    </div>
+                                                                    <span t-esc="(row.completion_percent || 0) + '%'"/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="o_dro_state">
+                                                                    <i t-att-class="'o_dro_dot ' + stateDotClass(row)"/>
+                                                                    <t t-esc="stateLabel(row)"/>
+                                                                </span>
+                                                            </td>
+                                                            <td class="o_dro_deadline dl-overdue" t-esc="row.deadline_display"/>
+                                                            <td class="text-danger" t-esc="row.overdue_label || '—'"/>
+                                                            <td t-esc="(row.duration_hours_display || 0) + ' giờ'"/>
+                                                            <td t-att-class="'o_dro_note ' + noteClass(row)"
+                                                                t-esc="row.note || '—'"/>
+                                                            <td class="o_dro_actions">
+                                                                <button type="button" class="o_dro_act" title="Xem"
+                                                                        t-on-click="() => this.onView(row)">
+                                                                    <i class="fa fa-eye"/>
+                                                                </button>
+                                                                <button type="button" class="o_dro_act" title="Sửa"
+                                                                        t-on-click="() => this.onEdit(row)">
+                                                                    <i class="fa fa-pencil"/>
+                                                                </button>
+                                                                <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
+                                                                        t-on-click="() => this.onComplete(row)">
+                                                                    <i class="fa fa-check-circle"/>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="o_dro_card o_dro_table_card o_dro_remind_section">
+                                        <div class="o_dro_card_head">
+                                            <h3 class="text-warning">
+                                                <i class="fa fa-clock-o"/> Công việc sắp tới hạn
+                                            </h3>
+                                            <span class="o_dro_muted"
+                                                  t-esc="(state.reminders.upcoming_tasks || []).length + ' việc · trong 7 ngày tới'"/>
+                                        </div>
+                                        <t t-if="!(state.reminders.upcoming_tasks || []).length">
+                                            <div class="text-center text-muted py-4">Không có công việc sắp tới hạn.</div>
+                                        </t>
+                                        <div class="o_dro_table_wrap" t-else="">
+                                            <table class="o_dro_table o_dro_table_grouped">
+                                                <thead>
+                                                    <tr>
+                                                        <th>STT</th>
+                                                        <th>Công việc</th>
+                                                        <th>Ưu tiên</th>
+                                                        <th>Tiến độ</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Deadline</th>
+                                                        <th>Thời gian</th>
+                                                        <th>Ghi chú</th>
+                                                        <th>Thao tác</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="state.reminders.upcoming_tasks" t-as="row" t-key="'up-' + row.id">
+                                                        <tr>
+                                                            <td t-esc="row.stt"/>
+                                                            <td class="o_dro_name" t-esc="row.name"/>
+                                                            <td>
+                                                                <span t-att-class="'o_dro_pri ' + priorityClass(row.priority)">
+                                                                    <i t-att-class="'fa ' + priorityIcon(row.priority)"/>
+                                                                    <t t-esc="row.priority_label"/>
+                                                                </span>
+                                                            </td>
+                                                            <td>
+                                                                <div class="o_dro_pct">
+                                                                    <div class="o_dro_pct_bar">
+                                                                        <div t-att-class="'o_dro_pct_fill ' + progressBarClass(row.completion_percent)"
+                                                                             t-att-style="'width:' + (row.completion_percent || 0) + '%'"/>
+                                                                    </div>
+                                                                    <span t-esc="(row.completion_percent || 0) + '%'"/>
+                                                                </div>
+                                                            </td>
+                                                            <td>
+                                                                <span class="o_dro_state">
+                                                                    <i t-att-class="'o_dro_dot ' + stateDotClass(row)"/>
+                                                                    <t t-esc="stateLabel(row)"/>
+                                                                </span>
+                                                            </td>
+                                                            <td t-att-class="'o_dro_deadline ' + deadlineClass(row)"
+                                                                t-esc="row.deadline_display"/>
+                                                            <td t-esc="(row.duration_hours_display || 0) + ' giờ'"/>
+                                                            <td t-att-class="'o_dro_note ' + noteClass(row)"
+                                                                t-esc="row.note || '—'"/>
+                                                            <td class="o_dro_actions">
+                                                                <button type="button" class="o_dro_act" title="Xem"
+                                                                        t-on-click="() => this.onView(row)">
+                                                                    <i class="fa fa-eye"/>
+                                                                </button>
+                                                                <button type="button" class="o_dro_act" title="Sửa"
+                                                                        t-on-click="() => this.onEdit(row)">
+                                                                    <i class="fa fa-pencil"/>
+                                                                </button>
+                                                                <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
+                                                                        t-on-click="() => this.onComplete(row)"
+                                                                        t-att-disabled="row.state === 'done'">
+                                                                    <i class="fa fa-check-circle"/>
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-else="">
+                            <!-- KPI -->
+                            <div class="o_dro_kpi">
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon blue"><i class="fa fa-briefcase"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Tổng công việc</div>
+                                        <div class="o_dro_kpi_value" t-esc="state.kpi.total || 0"/>
+                                        <div class="o_dro_kpi_sub">100%</div>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon green"><i class="fa fa-check-circle"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Hoàn thành</div>
+                                        <div class="o_dro_kpi_value" t-esc="state.kpi.done || 0"/>
+                                        <div class="o_dro_kpi_sub" t-esc="(state.kpi.done_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon amber"><i class="fa fa-hourglass-half"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Đang thực hiện</div>
+                                        <div class="o_dro_kpi_value" t-esc="state.kpi.in_progress || 0"/>
+                                        <div class="o_dro_kpi_sub" t-esc="(state.kpi.in_progress_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon red"><i class="fa fa-clock-o"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Quá hạn</div>
+                                        <div class="o_dro_kpi_value" t-esc="state.kpi.overdue || 0"/>
+                                        <div class="o_dro_kpi_sub" t-esc="(state.kpi.overdue_pct || 0) + '%'"/>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon purple"><i class="fa fa-hourglass"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Tổng thời gian</div>
+                                        <div class="o_dro_kpi_value o_dro_kpi_value_sm" t-esc="(state.kpi.duration_hours || 0) + ' giờ'"/>
+                                        <div class="o_dro_kpi_sub">Trong tháng</div>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card">
+                                    <div class="o_dro_kpi_icon cyan"><i class="fa fa-line-chart"/></div>
+                                    <div>
+                                        <div class="o_dro_kpi_label">Hiệu suất</div>
+                                        <div class="o_dro_kpi_value" t-esc="(state.kpi.efficiency || 0) + '%'"/>
+                                        <div class="o_dro_kpi_sub">Hiệu suất chung</div>
+                                    </div>
+                                </div>
+                                <div class="o_dro_kpi_card o_dro_kpi_progress_card">
+                                    <div class="o_dro_kpi_label">Tiến độ hoàn thành</div>
+                                    <div class="o_dro_kpi_value" t-esc="(state.kpi.avg_progress || 0) + '%'"/>
+                                    <div class="o_dro_progress">
+                                        <div class="o_dro_progress_fill"
+                                             t-att-style="'width:' + (state.kpi.avg_progress || 0) + '%'"/>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Charts -->
+                            <div class="o_dro_charts">
+                                <div class="o_dro_card" t-ref="statePanel">
+                                    <h3>Tỷ lệ trạng thái công việc</h3>
+                                    <div class="o_dro_donut_wrap">
+                                        <div class="o_dro_donut_box">
+                                            <canvas t-ref="stateChart"/>
+                                            <div class="o_dro_donut_center">
+                                                <strong t-esc="state.kpi.total || 0"/>
+                                                <span>Tổng việc</span>
+                                            </div>
+                                        </div>
+                                        <div class="o_dro_legend">
+                                            <t t-foreach="stateLegend" t-as="leg" t-key="leg.key">
+                                                <div class="o_dro_legend_item">
+                                                    <span class="o_dro_legend_dot" t-att-style="'background:' + leg.color"/>
+                                                    <span class="o_dro_legend_label" t-esc="leg.label"/>
+                                                    <strong t-esc="leg.count"/>
+                                                    <span class="o_dro_muted" t-esc="'(' + leg.pct + '%)'"/>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="o_dro_card" t-ref="weeklyPanel">
+                                    <h3>Xu hướng hoàn thành công việc (theo tuần)</h3>
+                                    <div class="o_dro_chart_box"><canvas t-ref="weeklyChart"/></div>
+                                </div>
+                                <div class="o_dro_card o_dro_eval_chart_card" t-ref="evalPanel">
+                                    <h3>Đánh giá hiệu suất tháng</h3>
+                                    <div class="o_dro_eval_inline">
+                                        <div class="o_dro_eval_gauge">
+                                            <canvas t-ref="evalChart"/>
+                                            <div class="o_dro_eval_center">
+                                                <strong t-esc="(state.evaluation.score || 0) + '%'"/>
+                                            </div>
+                                        </div>
+                                        <div class="o_dro_eval_side">
+                                            <div class="o_dro_stars">
+                                                <t t-foreach="starList" t-as="s" t-key="s_index">
+                                                    <i t-att-class="s === 'full' ? 'fa fa-star' : (s === 'half' ? 'fa fa-star-half-o' : 'fa fa-star-o')"/>
+                                                </t>
+                                            </div>
+                                            <div class="o_dro_eval_rating">
+                                                Đánh giá: <strong t-esc="state.evaluation.rating || '—'"/>
+                                            </div>
+                                            <div class="o_dro_eval_stats">
+                                                <div><span>Tổng công việc</span><strong t-esc="state.evaluation.total || 0"/></div>
+                                                <div><span>Hoàn thành</span><strong t-esc="state.evaluation.done || 0"/></div>
+                                                <div><span>Quá hạn</span><strong class="text-danger" t-esc="state.evaluation.overdue || 0"/></div>
+                                                <div><span>Tổng thời gian</span><strong t-esc="(state.evaluation.hours || 0) + ' giờ'"/></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Table grouped by hạng mục — kiểu Excel -->
+                            <div class="o_dro_bottom">
+                                <div class="o_dro_card o_dro_table_card">
+                                    <div class="o_dro_card_head">
+                                        <h3><i class="fa fa-list-alt"/> Danh sách công việc</h3>
+                                        <span class="o_dro_muted" t-esc="tableSummary"/>
+                                    </div>
+                                    <t t-if="!excelGroups.length">
+                                        <div class="text-center text-muted py-4">Không có dữ liệu.</div>
+                                    </t>
+                                    <div class="o_dro_excel_wrap" t-else="">
+                                        <table class="o_dro_excel_table">
+                                            <thead>
+                                                <tr>
+                                                    <th class="o_dro_excel_stt">STT</th>
+                                                    <th>Tên công việc</th>
+                                                    <th>Ngày giao việc</th>
+                                                    <th>Hạn hoàn thành</th>
+                                                    <th>Mức ưu tiên</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Phút</th>
+                                                    <th>Giờ</th>
+                                                    <th>% Hoàn thành CV</th>
+                                                    <th>Ghi chú</th>
+                                                    <th>Quá hạn</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="excelGroups" t-as="group" t-key="group.key">
+                                                    <tr t-att-class="excelGroupClass(group)"
+                                                        t-on-click="() => this.toggleGroup(group.key)"
+                                                        role="button"
+                                                        t-att-aria-expanded="group.collapsed ? 'false' : 'true'"
+                                                        t-att-title="group.collapsed ? 'Bấm để mở' : 'Bấm để thu gọn'">
+                                                        <td colspan="11">
+                                                            <span class="o_dro_excel_group_toggle">
+                                                                <i t-att-class="group.collapsed ? 'fa fa-chevron-right' : 'fa fa-chevron-down'"/>
+                                                            </span>
+                                                            <span class="o_dro_excel_group_name">
+                                                                <i t-att-class="group.collapsed ? 'fa fa-folder-o' : 'fa fa-folder-open-o'"/>
+                                                                <t t-esc="group.label"/>
+                                                            </span>
+                                                            <span class="o_dro_excel_group_meta">
+                                                                <t t-esc="group.count"/> việc ·
+                                                                <t t-esc="group.duration_hours_display"/> giờ ·
+                                                                % Hoàn thành CV TB hạng mục (AVERAGE):
+                                                                <strong t-esc="formatGroupAvg(group)"/>%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                    <t t-if="!group.collapsed">
+                                                        <t t-foreach="group.rows" t-as="row" t-key="row.id">
+                                                            <tr t-att-class="excelRowClass(row)">
+                                                                <td class="o_dro_excel_stt" t-esc="row.stt"/>
+                                                                <td t-esc="row.name"/>
+                                                                <td t-esc="row.assign_date_display || '—'"/>
+                                                                <td t-esc="row.deadline_display || '—'"/>
+                                                                <td>
+                                                                    <span t-att-class="'o_dro_excel_badge ' + excelPriorityClass(row.priority)"
+                                                                          t-esc="row.priority_label"/>
+                                                                </td>
+                                                                <td>
+                                                                    <span t-att-class="'o_dro_excel_state ' + excelStateClass(row.state)"
+                                                                          t-esc="row.state_label"/>
+                                                                </td>
+                                                                <td t-esc="row.duration_minutes || 0"/>
+                                                                <td t-esc="row.duration_hours_display || 0"/>
+                                                                <td t-esc="(row.completion_percent || 0) + '%'"/>
+                                                                <td t-esc="row.note || ''"/>
+                                                                <td>
+                                                                    <t t-if="row.overdue_days">
+                                                                        <span class="o_dro_excel_overdue" t-att-title="row.overdue_label">
+                                                                            <i class="fa fa-exclamation-triangle"/>
+                                                                            <t t-esc="row.overdue_label"/>
+                                                                        </span>
+                                                                    </t>
+                                                                </td>
+                                                            </tr>
+                                                        </t>
+                                                    </t>
+                                                </t>
+                                                <tr class="o_dro_excel_total" t-if="excelGroups.length">
+                                                    <td colspan="11">
+                                                        Tổng % hoàn thành công việc trong tháng
+                                                        (AVERAGE các hạng mục):
+                                                        <strong t-esc="formatMonthAvg()"/>%
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </t>
+                        </t>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

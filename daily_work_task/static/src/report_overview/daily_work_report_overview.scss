@@ -1,0 +1,1313 @@
+.o_daily_work_report_overview {
+    --dro-bg: #f0f2f5;
+    --dro-card: #ffffff;
+    --dro-text: #1f2937;
+    --dro-muted: #6b7280;
+    --dro-green: #16a34a;
+    --dro-green-soft: #e8f8ee;
+    --dro-green-dark: #14532d;
+    --dro-blue: #2563eb;
+    --dro-amber: #d97706;
+    --dro-red: #dc2626;
+    --dro-purple: #7c3aed;
+    --dro-cyan: #0891b2;
+    --dro-border: #e5e7eb;
+    --dro-sidebar: #ffffff;
+    --dro-radius: 12px;
+    --dro-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --dro-font: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+    height: 100%;
+    font-family: var(--dro-font);
+    background: var(--dro-bg);
+    color: var(--dro-text);
+
+    .o_dro_shell {
+        display: flex;
+        height: 100%;
+        min-height: 0;
+    }
+
+    /* ---- Sidebar ---- */
+    .o_dro_sidebar {
+        width: 250px;
+        flex-shrink: 0;
+        background: var(--dro-sidebar);
+        border-right: 1px solid var(--dro-border);
+        display: flex;
+        flex-direction: column;
+        padding: 1rem 0.85rem;
+    }
+
+    .o_dro_brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.35rem 0.4rem 1rem;
+        border-bottom: 1px solid var(--dro-border);
+        margin-bottom: 0.75rem;
+    }
+
+    .o_dro_brand_logo {
+        height: 126px;
+        width: auto;
+        max-width: 140px;
+        object-fit: contain;
+    }
+
+    .o_dro_brand_text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.2;
+
+        strong {
+            font-size: 1.05rem;
+            color: var(--dro-green-dark);
+            letter-spacing: 0.03em;
+        }
+        span {
+            font-size: 0.68rem;
+            color: var(--dro-muted);
+            margin-top: 0.15rem;
+        }
+    }
+
+    .o_dro_nav {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex: 1;
+        overflow: auto;
+    }
+
+    .o_dro_nav_item {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        border: none;
+        background: transparent;
+        color: #374151;
+        text-align: left;
+        padding: 0.6rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        cursor: pointer;
+        border-left: 3px solid transparent;
+
+        i {
+            width: 1.15rem;
+            text-align: center;
+            color: #6b7280;
+        }
+
+        .o_dro_nav_bell_wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 1.35rem;
+            height: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .o_dro_nav_bell_red {
+            color: #dc2626 !important;
+            font-size: 1.05rem;
+        }
+
+        .o_dro_nav_bell_badge {
+            position: absolute;
+            top: -0.35rem;
+            right: -0.45rem;
+            min-width: 1.05rem;
+            height: 1.05rem;
+            padding: 0 0.28rem;
+            border-radius: 999px;
+            background: #dc2626;
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            line-height: 1.05rem;
+            text-align: center;
+            border: 1.5px solid #fff;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+        }
+
+        &:hover {
+            background: #f3f4f6;
+        }
+
+        &.active {
+            background: var(--dro-green-soft);
+            color: var(--dro-green-dark);
+            font-weight: 600;
+            border-left-color: var(--dro-green);
+
+            i {
+                color: var(--dro-green);
+            }
+
+            .o_dro_nav_bell_red {
+                color: #dc2626 !important;
+            }
+        }
+    }
+
+    .o_dro_profile_card {
+        margin-top: auto;
+        padding: 0.85rem;
+        background: #f8faf9;
+        border: 1px solid var(--dro-border);
+        border-radius: var(--dro-radius);
+    }
+
+    .o_dro_profile_title {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--dro-muted);
+        margin-bottom: 0.55rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .o_dro_profile_body {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-bottom: 0.65rem;
+
+        strong {
+            font-size: 0.9rem;
+            display: block;
+        }
+    }
+
+    .o_dro_btn_profile {
+        width: 100%;
+        border: 1px solid var(--dro-green);
+        color: var(--dro-green-dark);
+        background: #fff;
+        border-radius: 8px;
+        font-weight: 600;
+
+        &:hover {
+            background: var(--dro-green-soft);
+        }
+    }
+
+    .o_dro_avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #e5e7eb;
+        flex-shrink: 0;
+
+        &.o_dro_avatar_lg {
+            width: 52px;
+            height: 52px;
+        }
+    }
+
+    /* ---- Main ---- */
+    .o_dro_main {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .o_dro_scroll {
+        flex: 1;
+        overflow: auto;
+        padding: 1rem 1.25rem 1.5rem;
+    }
+
+    .o_dro_muted {
+        color: var(--dro-muted);
+        font-size: 0.8rem;
+    }
+
+    .o_dro_top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .o_dro_top_left {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .o_dro_user_chip {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+    }
+
+    .o_dro_title_block {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+
+        h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: 0.01em;
+        }
+    }
+
+    .o_dro_month_tag {
+        color: var(--dro-green);
+        font-weight: 700;
+        font-size: 1rem;
+    }
+
+    .o_dro_top_right {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+
+        .form-select {
+            width: auto;
+            min-width: 110px;
+            border-color: var(--dro-border);
+            background: #fff;
+        }
+
+        .btn-success {
+            background: var(--dro-green);
+            border-color: var(--dro-green);
+            font-weight: 600;
+        }
+    }
+
+    .o_dro_btn_icon {
+        border: 1px solid var(--dro-border);
+    }
+
+    /* ---- Cards / KPI ---- */
+    .o_dro_card {
+        background: var(--dro-card);
+        border: 1.5px solid #94a3b8;
+        border-radius: var(--dro-radius);
+        box-shadow: var(--dro-shadow);
+        padding: 1rem 1.1rem;
+
+        h3 {
+            margin: 0 0 0.75rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+            padding-bottom: 0.45rem;
+            border-bottom: 1px solid var(--dro-border);
+        }
+    }
+
+    .o_dro_card_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 0.5rem;
+
+        h3 {
+            margin: 0;
+        }
+    }
+
+    .o_dro_count {
+        color: var(--dro-muted);
+        font-weight: 600;
+    }
+
+    .o_dro_kpi {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1rem;
+    }
+
+    .o_dro_kpi_card {
+        background: var(--dro-card);
+        border: 1.5px solid #94a3b8;
+        border-radius: var(--dro-radius);
+        box-shadow: var(--dro-shadow);
+        padding: 0.8rem 0.85rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 0.65rem;
+        min-height: 92px;
+    }
+
+    .o_dro_kpi_icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.05rem;
+
+        &.blue { background: #dbeafe; color: var(--dro-blue); }
+        &.green { background: #dcfce7; color: var(--dro-green); }
+        &.amber { background: #fef3c7; color: var(--dro-amber); }
+        &.red { background: #fee2e2; color: var(--dro-red); }
+        &.purple { background: #ede9fe; color: var(--dro-purple); }
+        &.cyan { background: #cffafe; color: var(--dro-cyan); }
+    }
+
+    .o_dro_kpi_label {
+        font-size: 0.72rem;
+        color: var(--dro-muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    .o_dro_kpi_value {
+        font-size: 1.45rem;
+        font-weight: 800;
+        line-height: 1.15;
+        color: #111827;
+        margin-top: 0.1rem;
+
+        &.o_dro_kpi_value_sm {
+            font-size: 1.15rem;
+        }
+    }
+
+    .o_dro_kpi_sub {
+        font-size: 0.75rem;
+        color: var(--dro-muted);
+        margin-top: 0.1rem;
+    }
+
+    .o_dro_kpi_progress_card {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .o_dro_progress {
+        height: 8px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+        width: 100%;
+        margin-top: 0.25rem;
+    }
+
+    .o_dro_progress_fill {
+        height: 100%;
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+        border-radius: 999px;
+    }
+
+    /* ---- Charts ---- */
+    .o_dro_charts {
+        display: grid;
+        grid-template-columns: 1.1fr 1.2fr 1fr;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .o_dro_eval_chart_card {
+        .o_dro_eval_inline {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            min-height: 180px;
+        }
+
+        .o_dro_eval_side {
+            flex: 1;
+            min-width: 0;
+            text-align: left;
+        }
+
+        .o_dro_eval_gauge {
+            width: 130px;
+            height: 130px;
+            margin: 0;
+            flex-shrink: 0;
+        }
+
+        .o_dro_stars {
+            margin-bottom: 0.25rem;
+            text-align: left;
+        }
+
+        .o_dro_eval_rating {
+            text-align: left;
+            margin-bottom: 0.55rem;
+        }
+
+        .o_dro_eval_stats {
+            border-top: 1px solid var(--dro-border);
+            padding-top: 0.55rem;
+        }
+    }
+
+    .o_dro_donut_wrap {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 180px;
+    }
+
+    .o_dro_donut_box {
+        position: relative;
+        width: 160px;
+        height: 160px;
+        flex-shrink: 0;
+    }
+
+    .o_dro_donut_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+
+        strong {
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+        span {
+            font-size: 0.7rem;
+            color: var(--dro-muted);
+            margin-top: 0.2rem;
+        }
+    }
+
+    .o_dro_legend {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .o_dro_legend_item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.8rem;
+
+        strong {
+            margin-left: auto;
+        }
+    }
+
+    .o_dro_legend_dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .o_dro_legend_label {
+        flex: 1;
+    }
+
+    .o_dro_chart_box {
+        position: relative;
+        height: 200px;
+
+        &.o_dro_chart_box_sm {
+            height: 180px;
+        }
+    }
+
+    /* ---- Mid panels ---- */
+    .o_dro_mid {
+        display: grid;
+        grid-template-columns: 1.2fr 1.1fr 0.8fr;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+    }
+
+    .o_dro_today_list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+
+        li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            padding: 0.55rem 0;
+            border-bottom: 1px solid #f1f5f9;
+
+            &:last-child {
+                border-bottom: none;
+            }
+        }
+    }
+
+    .o_dro_check {
+        color: #9ca3af;
+        margin-top: 0.2rem;
+    }
+
+    .o_dro_today_main {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .o_dro_today_name {
+        font-size: 0.88rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .o_dro_hours {
+        font-size: 0.8rem;
+        color: var(--dro-muted);
+        white-space: nowrap;
+    }
+
+    .o_dro_today_foot {
+        margin-top: 0.65rem;
+        padding-top: 0.65rem;
+        border-top: 1px dashed var(--dro-border);
+        font-size: 0.85rem;
+        color: var(--dro-muted);
+    }
+
+    .o_dro_pri {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.12rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+
+        &.pri-high { background: #fee2e2; color: var(--dro-red); }
+        &.pri-mid { background: #ffedd5; color: var(--dro-amber); }
+        &.pri-low { background: #dcfce7; color: var(--dro-green); }
+    }
+
+    .o_dro_deadline_group {
+        margin-bottom: 0.75rem;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .o_dro_deadline_label {
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-bottom: 0.35rem;
+
+        &.red { color: var(--dro-red); }
+        &.orange { color: #ea580c; }
+        &.yellow { color: #ca8a04; }
+    }
+
+    .o_dro_deadline_row {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+        font-size: 0.82rem;
+        padding: 0.3rem 0 0.3rem 0.35rem;
+        border-left: 2px solid #e5e7eb;
+        margin-left: 0.2rem;
+    }
+
+    .o_dro_empty,
+    .o_dro_empty_sm {
+        color: var(--dro-muted);
+        font-size: 0.82rem;
+        padding: 0.5rem 0;
+    }
+
+    .o_dro_empty_sm {
+        padding: 0.15rem 0 0.35rem 0.35rem;
+        font-size: 0.78rem;
+    }
+
+    .o_dro_remind_list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+    }
+
+    .o_dro_remind_row {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        width: 100%;
+        border: 1px solid var(--dro-border);
+        background: #fff;
+        border-radius: 10px;
+        padding: 0.65rem 0.75rem;
+        text-align: left;
+        cursor: default;
+
+        span:nth-child(2) {
+            flex: 1;
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+
+        strong {
+            font-size: 1rem;
+        }
+
+        > .fa-chevron-right {
+            color: #9ca3af;
+            font-size: 0.75rem;
+        }
+    }
+
+    .o_dro_remind_icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 0.85rem;
+
+        &.red { background: var(--dro-red); }
+        &.blue { background: var(--dro-blue); }
+        &.amber { background: var(--dro-amber); }
+        &.green { background: var(--dro-green); }
+    }
+
+    .o_dro_remind_page {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 0 0.25rem 1.25rem;
+    }
+
+    .o_dro_remind_summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.75rem;
+    }
+
+    .o_dro_remind_stat {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--dro-border);
+        border-radius: 12px;
+        background: #fff;
+
+        > .fa {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+
+        strong {
+            display: block;
+            font-size: 1.35rem;
+            line-height: 1.1;
+        }
+
+        span {
+            color: var(--dro-muted);
+            font-size: 0.82rem;
+        }
+
+        &.overdue > .fa { background: var(--dro-red); }
+        &.upcoming > .fa { background: var(--dro-amber); }
+        &.total > .fa { background: var(--dro-blue); }
+    }
+
+    .o_dro_remind_section {
+        margin-bottom: 0;
+
+        .o_dro_card_head h3 {
+            margin: 0;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+    }
+
+    .o_dro_row_overdue td {
+        background: #fef2f2;
+    }
+
+    /* ---- Excel-style task table ---- */
+    .o_dro_excel_wrap {
+        overflow: auto;
+        max-height: 480px;
+        border: 1px solid #cbd5e1;
+        border-radius: 4px;
+        margin: 0 0.25rem 0.75rem;
+        scrollbar-width: thin;
+
+        &::-webkit-scrollbar {
+            display: block;
+            width: 10px;
+            height: 10px;
+        }
+        &::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 6px;
+        }
+    }
+
+    .o_dro_excel_table {
+        width: 100%;
+        min-width: 1100px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.82rem;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 3;
+            background: #166534;
+            color: #fff;
+            font-weight: 700;
+            padding: 12px 10px;
+            text-align: center;
+            vertical-align: middle;
+            white-space: normal;
+            line-height: 1.35;
+            border: 1px solid #14532d;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+        }
+
+        tbody td {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            vertical-align: middle;
+            background: #fff;
+            text-align: center;
+            white-space: normal;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+
+        tbody td:nth-child(2),
+        tbody td:nth-child(10) {
+            text-align: left;
+            min-width: 160px;
+        }
+
+        thead th:nth-child(2) { min-width: 180px; }
+        thead th:nth-child(3),
+        thead th:nth-child(4) { min-width: 110px; }
+        thead th:nth-child(5),
+        thead th:nth-child(6) { min-width: 100px; }
+        thead th:nth-child(7),
+        thead th:nth-child(8),
+        thead th:nth-child(9) { min-width: 72px; }
+        thead th:nth-child(10) { min-width: 120px; }
+        thead th:nth-child(11) { min-width: 120px; }
+
+        tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        tbody tr.o_dro_excel_row_done td {
+            background: #dcfce7;
+        }
+
+        tbody tr.o_dro_excel_row_overdue td {
+            background: #fee2e2;
+        }
+
+        tbody tr.o_dro_excel_group td {
+            background: #ecfdf5 !important;
+            border-top: 2px solid #166534;
+            border-bottom: 1px solid #86efac;
+            padding: 10px 12px;
+            color: #14532d;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        tbody tr.o_dro_excel_group:hover td {
+            filter: brightness(0.97);
+        }
+
+        tbody tr.o_dro_excel_group_warn td {
+            background: #fee2e2 !important;
+            border-top: 2px solid #b91c1c;
+            border-bottom: 1px solid #fca5a5;
+            color: #991b1b;
+
+            .o_dro_excel_group_name .fa {
+                color: #b91c1c;
+            }
+
+            .o_dro_excel_group_meta {
+                color: #9f1239;
+            }
+
+            .o_dro_excel_group_toggle {
+                color: #b91c1c;
+            }
+        }
+
+        tbody tr.o_dro_excel_total td {
+            background: #fef3c7 !important;
+            border-top: 2px solid #d97706;
+            border-bottom: 1px solid #fcd34d;
+            padding: 10px 12px;
+            color: #92400e;
+            font-weight: 700;
+            text-align: left;
+        }
+    }
+
+    .o_dro_excel_group_toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 1.1rem;
+        margin-right: 0.35rem;
+        color: #166534;
+        font-size: 0.78rem;
+    }
+
+    .o_dro_excel_group_name {
+        margin-right: 12px;
+
+        .fa {
+            margin-right: 6px;
+            color: #166534;
+        }
+    }
+
+    .o_dro_excel_group_meta {
+        font-weight: 600;
+        color: #3f6212;
+        font-size: 0.85rem;
+    }
+
+    .o_dro_excel_stt {
+        width: 56px;
+        min-width: 56px;
+        text-align: center;
+    }
+
+    .o_dro_excel_badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #fff;
+    }
+    .o_dro_excel_badge_high { background: #ef4444; }
+    .o_dro_excel_badge_medium { background: #38bdf8; color: #0f172a; }
+    .o_dro_excel_badge_low { background: #94a3b8; }
+
+    .o_dro_excel_state {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+    .o_dro_excel_state_done {
+        background: #dcfce7;
+        color: #166534;
+    }
+    .o_dro_excel_state_progress {
+        background: #fef08a;
+        color: #854d0e;
+    }
+    .o_dro_excel_state_todo {
+        background: #f1f5f9;
+        color: #475569;
+    }
+
+    .o_dro_excel_overdue {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 9px;
+        border-radius: 6px;
+        background: #fee2e2;
+        color: #b91c1c;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+
+        .fa {
+            font-size: 0.85rem;
+        }
+    }
+
+    /* ---- Bottom ---- */
+    .o_dro_bottom {
+        display: block;
+        align-items: start;
+    }
+
+    .o_dro_table_card {
+        padding-bottom: 0.5rem;
+    }
+
+    .o_dro_wg {
+        border: 1px solid var(--dro-border);
+        border-radius: 10px;
+        margin-bottom: 0.65rem;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .o_dro_wg_head {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 0.55rem;
+        border: none;
+        background: #f0fdf4;
+        padding: 0.7rem 0.9rem;
+        text-align: left;
+        cursor: pointer;
+        color: var(--dro-green-dark);
+
+        > .fa-chevron-right,
+        > .fa-chevron-down {
+            color: var(--dro-green);
+            width: 0.9rem;
+        }
+
+        strong {
+            font-size: 0.95rem;
+        }
+    }
+
+    .o_dro_wg_folder {
+        color: #ca8a04;
+        font-size: 1rem;
+    }
+
+    .o_dro_wg_meta {
+        margin-left: 0.15rem;
+        font-size: 0.82rem;
+        color: var(--dro-muted);
+        font-weight: 500;
+    }
+
+    .o_dro_assignee {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        white-space: nowrap;
+    }
+
+    .o_dro_assignee_av {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #e5e7eb;
+    }
+
+    .o_dro_deadline {
+        font-weight: 600;
+        white-space: nowrap;
+
+        &.dl-overdue { color: var(--dro-red); }
+        &.dl-done,
+        &.dl-ok { color: var(--dro-green); }
+    }
+
+    .o_dro_note {
+        &.note-urgent {
+            color: var(--dro-red);
+            font-weight: 600;
+        }
+    }
+
+    .o_dro_pct_fill {
+        &.bar-red { background: #ef4444; }
+    }
+
+    .o_dro_table.o_dro_table_grouped {
+        th {
+            background: #f8fafc;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+    }
+
+    .o_dro_table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.8rem;
+
+        th, td {
+            padding: 0.55rem 0.5rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #374151;
+            font-weight: 700;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover td {
+            background: #fafbfc;
+        }
+    }
+
+    .o_dro_name {
+        font-weight: 600;
+        max-width: 200px;
+    }
+
+    .o_dro_note {
+        max-width: 140px;
+        color: var(--dro-muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .o_dro_pct {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        min-width: 95px;
+
+        span {
+            font-size: 0.75rem;
+            font-weight: 700;
+            min-width: 2.2rem;
+        }
+    }
+
+    .o_dro_pct_bar {
+        flex: 1;
+        height: 7px;
+        background: #e5e7eb;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .o_dro_pct_fill {
+        height: 100%;
+        border-radius: 999px;
+
+        &.bar-green { background: #22c55e; }
+        &.bar-blue { background: #3b82f6; }
+        &.bar-gray { background: #9ca3af; }
+    }
+
+    .o_dro_state {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        white-space: nowrap;
+    }
+
+    .o_dro_dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+
+        &.dot-done { background: #22c55e; }
+        &.dot-progress { background: #eab308; }
+        &.dot-overdue { background: #ef4444; }
+        &.dot-todo { background: #94a3b8; }
+    }
+
+    .o_dro_actions {
+        white-space: nowrap;
+    }
+
+    .o_dro_act {
+        border: none;
+        background: #f3f4f6;
+        color: #4b5563;
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        margin-right: 0.2rem;
+        cursor: pointer;
+
+        &:hover {
+            background: #e5e7eb;
+            color: #111827;
+        }
+
+        &.o_dro_act_ok {
+            background: #dcfce7;
+            color: var(--dro-green);
+
+            &:hover {
+                background: #bbf7d0;
+            }
+
+            &:disabled {
+                opacity: 0.4;
+                cursor: default;
+            }
+        }
+    }
+
+    .o_dro_pager {
+        display: flex;
+        justify-content: center;
+        gap: 0.3rem;
+        margin-top: 0.85rem;
+    }
+
+    .o_dro_page_btn {
+        min-width: 32px;
+        height: 32px;
+        border: 1px solid var(--dro-border);
+        background: #fff;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        cursor: pointer;
+
+        &.active {
+            background: var(--dro-green);
+            border-color: var(--dro-green);
+            color: #fff;
+            font-weight: 700;
+        }
+
+        &:disabled {
+            opacity: 0.45;
+            cursor: default;
+        }
+    }
+
+    .o_dro_eval_card {
+        text-align: center;
+    }
+
+    .o_dro_eval_gauge {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        margin: 0.25rem auto 0.75rem;
+    }
+
+    .o_dro_eval_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+
+        strong {
+            font-size: 1.5rem;
+            color: var(--dro-green-dark);
+        }
+    }
+
+    .o_dro_stars {
+        color: #f59e0b;
+        font-size: 1.15rem;
+        margin-bottom: 0.35rem;
+        letter-spacing: 0.08em;
+    }
+
+    .o_dro_eval_rating {
+        font-size: 0.9rem;
+        margin-bottom: 0.85rem;
+        color: #374151;
+    }
+
+    .o_dro_eval_stats {
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+        border-top: 1px solid var(--dro-border);
+        padding-top: 0.75rem;
+
+        div {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.82rem;
+            color: var(--dro-muted);
+
+            strong {
+                color: #111827;
+            }
+        }
+    }
+
+    @media (max-width: 1400px) {
+        .o_dro_kpi {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        .o_dro_charts,
+        .o_dro_mid {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .o_dro_shell {
+            flex-direction: column;
+        }
+        .o_dro_sidebar {
+            width: 100%;
+            max-height: none;
+        }
+        .o_dro_brand_logo {
+            height: 84px;
+        }
+        .o_dro_nav {
+            flex-direction: row;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .o_dro_nav_item span {
+            white-space: nowrap;
+        }
+        .o_dro_remind_summary {
+            grid-template-columns: 1fr;
+        }
+        .o_dro_profile_card {
+            display: none;
+        }
+        .o_dro_kpi {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}

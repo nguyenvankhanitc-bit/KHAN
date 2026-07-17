@@ -1,0 +1,269 @@
+.o_daily_work_summary_report.o_action {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f5f7fa;
+
+    > .o_content.o_dwsr_scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 16px 18px 28px;
+    }
+
+    .o_dwsr_header {
+        background: #fff;
+        border-radius: 10px;
+        padding: 16px 18px;
+        margin-bottom: 14px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-left: 4px solid #1e3a5f;
+
+        h2 {
+            margin: 0 0 6px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #1e3a5f;
+        }
+    }
+
+    .o_dwsr_subtitle {
+        margin: 0 0 12px;
+        color: #64748b;
+        font-size: 0.88rem;
+    }
+
+    .o_dwsr_filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+    }
+
+    .o_dwsr_field {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 120px;
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #6b7280;
+            margin: 0;
+        }
+    }
+
+    .o_dwsr_filter_search {
+        min-width: 240px;
+        flex: 1 1 240px;
+    }
+
+    .o_dwsr_search_wrap {
+        position: relative;
+
+        .fa-search {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+
+        input {
+            padding-left: 32px;
+        }
+    }
+
+    .o_dwsr_kpi_block {
+        margin-bottom: 14px;
+    }
+
+    .o_dwsr_kpi_caption {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: #1e3a5f;
+        margin: 0 0 8px;
+    }
+
+    .o_dwsr_totals {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(100px, 1fr));
+        gap: 10px;
+        margin-bottom: 0;
+    }
+
+    .o_dwsr_total_card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 10px 12px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .o_dwsr_total_label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: #64748b;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .o_dwsr_total_value {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+    }
+
+    .o_dwsr_total_hint {
+        display: block;
+        margin-top: 2px;
+        font-size: 0.68rem;
+        color: #94a3b8;
+        font-weight: 600;
+    }
+
+    .o_dwsr_done .o_dwsr_total_value { color: #166534; }
+    .o_dwsr_progress .o_dwsr_total_value { color: #1d4ed8; }
+    .o_dwsr_todo .o_dwsr_total_value { color: #475569; }
+    .o_dwsr_overdue .o_dwsr_total_value { color: #b91c1c; }
+    .o_dwsr_hours .o_dwsr_total_value { color: #0f766e; }
+
+    .o_dwsr_accordion {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_dwsr_dept_group {
+        background: #fff;
+        border-radius: 10px;
+        border: 1px solid #cbd5e1;
+        overflow: hidden;
+        box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+    }
+
+    .o_dwsr_dept_header {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border: 0;
+        background: #1e3a5f;
+        color: #fff;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover {
+            background: #254a73;
+        }
+    }
+
+    .o_dwsr_dept_open > .o_dwsr_dept_header {
+        background: #16304f;
+    }
+
+    .o_dwsr_dept_chevron {
+        flex: 0 0 auto;
+        width: 16px;
+        font-size: 0.75rem;
+        opacity: 0.9;
+        text-align: center;
+    }
+
+    .o_dwsr_dept_title {
+        flex: 1 1 auto;
+        font-size: 1rem;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        text-transform: uppercase;
+    }
+
+    .o_dwsr_dept_meta {
+        flex: 0 0 auto;
+        font-size: 0.78rem;
+        font-weight: 600;
+        opacity: 0.9;
+        white-space: nowrap;
+    }
+
+    .o_dwsr_dept_body {
+        padding: 10px;
+        background: #f8fafc;
+    }
+
+    .o_dwsr_table_wrap {
+        background: #fff;
+        border: 1px solid #64748b;
+        border-radius: 4px;
+        overflow: auto;
+        max-height: 420px;
+    }
+
+    .o_dwsr_table {
+        width: 100%;
+        min-width: 720px;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #1e3a5f;
+            color: #fff;
+            font-weight: 700;
+            padding: 10px 12px;
+            text-align: center;
+            border: 1px solid #16304f;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 8px 12px;
+            border: 1px solid #cbd5e1;
+            text-align: center;
+            vertical-align: middle;
+            background: #fff;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+
+        .o_dwsr_col_stt {
+            width: 56px;
+        }
+
+        .o_dwsr_col_name {
+            text-align: left;
+            font-weight: 600;
+            color: #0f172a;
+            min-width: 180px;
+        }
+    }
+
+    .o_dwsr_overdue_val {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: #b91c1c;
+        font-weight: 700;
+    }
+}
+
+@media (max-width: 992px) {
+    .o_daily_work_summary_report.o_action {
+        .o_dwsr_totals {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+}

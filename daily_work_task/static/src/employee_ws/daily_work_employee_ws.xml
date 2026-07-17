@@ -1,0 +1,819 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkEmployeeWs">
+        <div class="o_daily_work_employee_ws o_action">
+            <div class="o_content o_ews_scroll">
+                <div class="o_ews_header">
+                    <h2>
+                        <i class="fa fa-user"/> Không Gian Làm Việc Của Nhân Viên
+                    </h2>
+                    <div class="o_ews_filters">
+                        <div class="o_ews_filter_item">
+                            <label>Từ ngày</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-model="state.dateFrom"/>
+                        </div>
+                        <div class="o_ews_filter_item">
+                            <label>Đến ngày</label>
+                            <input type="date" class="form-control form-control-sm"
+                                   t-model="state.dateTo"/>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" t-on-click="onFilter">
+                            <i class="fa fa-search"/> Xem việc của tôi
+                        </button>
+                    </div>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="text-center p-5">
+                        <i class="fa fa-spinner fa-spin fa-2x"/>
+                    </div>
+                </t>
+                <t t-elif="state.message">
+                    <div class="alert alert-warning m-3" t-esc="state.message"/>
+                </t>
+                <t t-else="">
+                    <div class="o_ews_info" t-if="state.employee">
+                        Xin chào <strong t-esc="state.employee.name"/>
+                        <t t-if="state.employee.department">
+                            — <span t-esc="state.employee.department"/>
+                        </t>
+                        · <span t-esc="state.tasks.length"/> công việc
+                    </div>
+
+                    <div class="o_ews_layout" t-ref="layout">
+                        <aside class="o_ews_form_panel" t-att-class="{'o_ews_form_editing': state.editingTaskId}">
+                            <h3 class="o_ews_form_title">
+                                <t t-if="state.editingTaskId">CHỈNH SỬA CÔNG VIỆC</t>
+                                <t t-else="">THÊM CÔNG VIỆC MỚI</t>
+                            </h3>
+                            <form class="o_ews_task_form" t-on-submit="onSubmit">
+                                <div class="o_ews_form_grid">
+                                    <div class="o_ews_field">
+                                        <label>Tên công việc <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control"
+                                               placeholder="Nhập tên nhiệm vụ..."
+                                               t-model="state.form.name" required="required"/>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Người phụ trách <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" readonly="readonly"
+                                               t-att-value="state.employee.name"/>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Ngày giao <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control"
+                                               t-model="state.form.assign_date" required="required"/>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Hạn hoàn thành <span class="text-danger">*</span></label>
+                                        <input type="date" class="form-control"
+                                               t-model="state.form.deadline" required="required"/>
+                                    </div>
+
+                                    <div class="o_ews_field">
+                                        <label>Hạng mục</label>
+                                        <select class="form-select" t-model="state.form.work_group_id">
+                                            <option value="">-- Chọn hạng mục --</option>
+                                            <t t-foreach="state.workGroups" t-as="g" t-key="g.id">
+                                                <option t-att-value="g.id" t-esc="g.name"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Mức ưu tiên</label>
+                                        <select class="form-select" t-model="state.form.priority">
+                                            <t t-foreach="state.priorities" t-as="p" t-key="p.value">
+                                                <option t-att-value="p.value" t-esc="p.label"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Trạng thái</label>
+                                        <select class="form-select" t-model="state.form.state">
+                                            <t t-foreach="state.states" t-as="s" t-key="s.value">
+                                                <option t-att-value="s.value" t-esc="s.label"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Thời gian (phút)</label>
+                                        <input type="number" class="form-control" min="0" step="1"
+                                               placeholder="Vd: 60"
+                                               t-model="state.form.duration_minutes"/>
+                                    </div>
+
+                                    <div class="o_ews_field o_ews_field_note">
+                                        <label>Ghi chú</label>
+                                        <textarea class="form-control" rows="3"
+                                                  placeholder="Nhập mô tả công việc, yêu cầu, tài liệu đính kèm..."
+                                                  t-model="state.form.note"/>
+                                    </div>
+                                    <div class="o_ews_field" t-if="state.editingTaskId">
+                                        <label>% hoàn thành CV</label>
+                                        <input type="number" class="form-control" min="0" max="100" step="1"
+                                               t-model="state.form.completion_percent"/>
+                                    </div>
+                                </div>
+                                <div class="o_ews_form_actions">
+                                    <button type="button" class="btn btn-outline-secondary o_ews_cancel"
+                                            t-att-disabled="state.saving"
+                                            t-on-click="onCancelEdit">
+                                        <i class="fa fa-times"/> Hủy
+                                    </button>
+                                    <button type="submit" class="btn o_ews_submit"
+                                            t-att-disabled="state.saving">
+                                        <i class="fa fa-save"/>
+                                        <t t-if="state.saving"> Đang lưu...</t>
+                                        <t t-elif="state.editingTaskId"> LƯU THAY ĐỔI</t>
+                                        <t t-else=""> LƯU CÔNG VIỆC</t>
+                                    </button>
+                                </div>
+                            </form>
+                        </aside>
+
+                        <section class="o_ews_table_panel" t-if="state.showMyList">
+                            <h3 class="o_ews_table_title">
+                                Danh sách việc của tôi
+                                <span class="o_ews_total_hours" t-if="state.tasks.length">
+                                    · Tổng TG: <strong t-esc="formatHours(state.totalDurationMinutes)"/> giờ
+                                    (<t t-esc="state.totalDurationMinutes"/> phút)
+                                    · % Hoàn thành CV: <strong t-esc="formatAvgCompletion()"/>%
+                                </span>
+                                <button type="button" class="btn btn-link btn-sm o_ews_toggle_list"
+                                        t-on-click="toggleMyList">
+                                    <i class="fa fa-compress"/> Thu gọn
+                                </button>
+                            </h3>
+                            <div class="o_ews_table_wrap">
+                                <table class="o_ews_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_ews_col_stt">STT</th>
+                                            <th>Tên công việc</th>
+                                            <th>Ngày giao việc</th>
+                                            <th>Hạn hoàn thành</th>
+                                            <th>Mức ưu tiên</th>
+                                            <th>Thời gian (phút)</th>
+                                            <th>Tổng TG (giờ)</th>
+                                            <th>% hoàn thành CV</th>
+                                            <th>Trạng thái công việc</th>
+                                            <th>Ghi chú</th>
+                                            <th class="o_ews_col_action">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="!state.tasks.length">
+                                            <tr>
+                                                <td colspan="11" class="text-center text-muted py-4">
+                                                    Chưa có công việc. Hãy thêm việc mới ở biểu mẫu phía trên.
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-foreach="state.tasks" t-as="task" t-key="task.id">
+                                            <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id}">
+                                                <td class="o_ews_col_stt" t-esc="task.stt"/>
+                                                <td>
+                                                    <t t-esc="task.name"/>
+                                                    <span t-if="task.is_from_recurring" class="o_ews_recurring_tag" title="Sinh từ mẫu lặp">
+                                                        <i class="fa fa-refresh"/> Lặp
+                                                    </span>
+                                                </td>
+                                                <td t-esc="task.assign_date_display || '—'"/>
+                                                <td t-esc="task.deadline_display"/>
+                                                <td>
+                                                    <span t-att-class="'o_ews_badge ' + priorityClass(task.priority)"
+                                                          t-esc="task.priority_label"/>
+                                                </td>
+                                                <td>
+                                                    <input type="number" class="form-control form-control-sm o_ews_minutes_input"
+                                                           min="0" step="1"
+                                                           t-att-value="task.duration_minutes || 0"
+                                                           t-on-change="(ev) => this.onDurationChange(task, ev)"/>
+                                                </td>
+                                                <td class="o_ews_hours_cell"
+                                                    t-esc="task.duration_hours_display || formatHours(task.duration_minutes)"/>
+                                                <td class="o_ews_pct_cell">
+                                                    <div class="o_ews_pct_wrap">
+                                                        <input type="number"
+                                                               class="form-control form-control-sm o_ews_pct_input"
+                                                               min="0" max="100" step="1"
+                                                               t-att-value="task.completion_percent || 0"
+                                                               t-on-change="(ev) => this.onCompletionChange(task, ev)"/>
+                                                        <span class="o_ews_pct_suffix">%</span>
+                                                    </div>
+                                                    <div class="o_ews_pct_bar">
+                                                        <div class="o_ews_pct_fill"
+                                                             t-att-style="'width:' + (task.completion_percent || 0) + '%'"/>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <select t-att-class="'form-select form-select-sm o_ews_state_select ' + stateSelectClass(task.state)"
+                                                            t-att-value="task.state"
+                                                            t-on-change="(ev) => this.onStateChange(task, ev)">
+                                                        <t t-foreach="state.states" t-as="s" t-key="s.value">
+                                                            <option t-att-value="s.value"
+                                                                    t-att-selected="s.value === task.state"
+                                                                    t-esc="s.label"/>
+                                                        </t>
+                                                    </select>
+                                                </td>
+                                                <td t-esc="task.note"/>
+                                                <td class="o_ews_col_action">
+                                                    <button type="button"
+                                                            class="btn btn-sm o_ews_btn_edit"
+                                                            t-att-title="'Chỉnh sửa: ' + (task.name || '')"
+                                                            t-on-click="() => this.onEditTask(task)">
+                                                        <i class="fa fa-pencil"/> Chỉnh sửa
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Công việc lặp lại -->
+                    <section class="o_ews_recurring" t-att-class="{'o_ews_recurring_collapsed': !state.recurringSectionOpen}">
+                        <button type="button" class="o_ews_recurring_header o_ews_dropdown_toggle"
+                                t-on-click="toggleRecurringSection"
+                                t-att-aria-expanded="state.recurringSectionOpen ? 'true' : 'false'">
+                            <div class="o_ews_dropdown_toggle_main">
+                                <h3>
+                                    <i class="fa fa-refresh"/> Công việc lặp lại
+                                    <span class="o_ews_recurring_count_badge" t-esc="filteredRecurringItems.length + ' mẫu'"/>
+                                </h3>
+                                <p class="o_ews_recurring_hint">
+                                    Khai báo một lần — hệ thống tự tạo việc theo đúng chu kỳ đã chọn.
+                                </p>
+                            </div>
+                            <i t-att-class="'fa o_ews_chevron ' + (state.recurringSectionOpen ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                        </button>
+
+                        <div class="o_ews_recurring_body" t-if="state.recurringSectionOpen">
+                        <div class="o_ews_recurring_filters">
+                            <div class="o_ews_recurring_search">
+                                <i class="fa fa-search"/>
+                                <input type="search" class="form-control"
+                                       placeholder="Tìm kiếm tên công việc..."
+                                       t-model="state.recurringFilters.query"
+                                       t-on-input="onRecurringFilter"/>
+                            </div>
+                            <div class="o_ews_scroll_select"
+                                 t-att-class="{'o_ews_scroll_select_open': state.workGroupFilterMenuOpen}">
+                                <button type="button" class="o_ews_scroll_select_btn"
+                                        t-on-click="toggleWorkGroupFilterMenu">
+                                    <span t-esc="selectedWorkGroupFilterLabel"/>
+                                    <i class="fa fa-caret-down"/>
+                                </button>
+                                <div class="o_ews_scroll_select_menu" t-if="state.workGroupFilterMenuOpen">
+                                    <button type="button" class="o_ews_scroll_select_option"
+                                            t-att-class="{'active': !state.recurringFilters.work_group_id}"
+                                            t-on-click="() => this.selectWorkGroupFilter('')">
+                                        — Tất cả hạng mục —
+                                    </button>
+                                    <t t-foreach="state.workGroups" t-as="g" t-key="g.id">
+                                        <button type="button" class="o_ews_scroll_select_option"
+                                                t-att-class="{'active': isSelectedWorkGroupFilter(g.id)}"
+                                                t-on-click="() => this.selectWorkGroupFilter(g.id)"
+                                                t-esc="g.name"/>
+                                    </t>
+                                    <div t-if="!state.workGroups.length" class="o_ews_scroll_select_empty">
+                                        Chưa có hạng mục
+                                    </div>
+                                </div>
+                            </div>
+                            <select class="form-select"
+                                    t-model="state.recurringFilters.priority"
+                                    t-on-change="onRecurringFilter">
+                                <option value="">— Tất cả ưu tiên —</option>
+                                <t t-foreach="state.priorities" t-as="p" t-key="p.value">
+                                    <option t-att-value="p.value" t-esc="p.label"/>
+                                </t>
+                            </select>
+                            <select class="form-select"
+                                    t-model="state.recurringFilters.active"
+                                    t-on-change="onRecurringFilter">
+                                <option value="">— Tất cả trạng thái —</option>
+                                <option value="true">Hoạt động</option>
+                                <option value="false">Tạm dừng</option>
+                            </select>
+                            <button type="button" class="btn btn-primary" t-on-click="onRecurringFilter">
+                                <i class="fa fa-search"/> Tìm kiếm
+                            </button>
+                            <button type="button" class="btn btn-light" t-on-click="onResetRecurringFilters">
+                                Xóa lọc
+                            </button>
+                        </div>
+                        <div class="o_ews_recurring_layout">
+                            <aside class="o_ews_recurring_form"
+                                   t-att-class="{'o_ews_panel_collapsed': !state.recurringFormOpen}">
+                                <button type="button" class="o_ews_panel_toggle"
+                                        t-on-click="toggleRecurringFormPanel"
+                                        t-att-aria-expanded="state.recurringFormOpen ? 'true' : 'false'">
+                                    <span>
+                                        <i class="fa fa-file-text-o"/>
+                                        <t t-if="state.editingRecurringId"> Form sửa mẫu công việc lặp lại</t>
+                                        <t t-else=""> Form thêm mẫu công việc lặp lại</t>
+                                    </span>
+                                    <i t-att-class="'fa o_ews_chevron ' + (state.recurringFormOpen ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                                </button>
+                                <div class="o_ews_recurring_form_scroll" t-if="state.recurringFormOpen">
+                                <form t-on-submit="onSubmitRecurring">
+                                    <div class="o_ews_field">
+                                        <label>Tên công việc <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control"
+                                               placeholder="Vd: Kiểm tra email, Báo cáo ca..."
+                                               t-model="state.recurringForm.name" required="required"/>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Hạng mục</label>
+                                        <div class="o_ews_scroll_select"
+                                             t-att-class="{'o_ews_scroll_select_open': state.workGroupFormMenuOpen}">
+                                            <button type="button" class="o_ews_scroll_select_btn"
+                                                    t-on-click="toggleWorkGroupFormMenu">
+                                                <span t-esc="selectedWorkGroupFormLabel"/>
+                                                <i class="fa fa-caret-down"/>
+                                            </button>
+                                            <div class="o_ews_scroll_select_menu" t-if="state.workGroupFormMenuOpen">
+                                                <button type="button" class="o_ews_scroll_select_option"
+                                                        t-att-class="{'active': !state.recurringForm.work_group_id}"
+                                                        t-on-click="() => this.selectWorkGroupForm('')">
+                                                    -- Chọn hạng mục --
+                                                </button>
+                                                <t t-foreach="state.workGroups" t-as="g" t-key="g.id">
+                                                    <button type="button" class="o_ews_scroll_select_option"
+                                                            t-att-class="{'active': isSelectedWorkGroupForm(g.id)}"
+                                                            t-on-click="() => this.selectWorkGroupForm(g.id)"
+                                                            t-esc="g.name"/>
+                                                </t>
+                                                <div t-if="!state.workGroups.length" class="o_ews_scroll_select_empty">
+                                                    Chưa có hạng mục
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Thời gian (phút)</label>
+                                        <input type="number" class="form-control" min="0" step="1"
+                                               t-model="state.recurringForm.duration_minutes"/>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Mức ưu tiên</label>
+                                        <select class="form-select" t-model="state.recurringForm.priority">
+                                            <t t-foreach="state.priorities" t-as="p" t-key="p.value">
+                                                <option t-att-value="p.value" t-esc="p.label"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                    <div class="o_ews_field o_ews_recurring_cycle">
+                                        <label>Chu kỳ lặp <span class="text-danger">*</span></label>
+                                        <div class="o_ews_cycle_options">
+                                            <t t-foreach="state.recurrenceTypes" t-as="type" t-key="type.value">
+                                                <label>
+                                                    <input type="radio" name="recurrence_type"
+                                                           t-att-value="type.value"
+                                                           t-model="state.recurringForm.recurrence_type"/>
+                                                    <span t-esc="type.label"/>
+                                                </label>
+                                            </t>
+                                        </div>
+                                        <div class="o_ews_weekdays"
+                                             t-if="state.recurringForm.recurrence_type === 'weekly'">
+                                            <t t-foreach="state.weekdays" t-as="day" t-key="day.value">
+                                                <label>
+                                                    <input type="checkbox"
+                                                           t-att-checked="isRecurringWeekdaySelected(day.value)"
+                                                           t-on-change="() => this.onToggleRecurringWeekday(day.value)"/>
+                                                    <span t-esc="day.label"/>
+                                                </label>
+                                            </t>
+                                        </div>
+                                        <div class="o_ews_recurrence_date"
+                                             t-if="state.recurringForm.recurrence_type === 'monthly'">
+                                            <label>Ngày trong tháng</label>
+                                            <input type="number" class="form-control" min="1" max="31"
+                                                   t-model="state.recurringForm.recurrence_day"/>
+                                        </div>
+                                        <div class="o_ews_recurrence_date"
+                                             t-if="state.recurringForm.recurrence_type === 'yearly'">
+                                            <label>Ngày</label>
+                                            <input type="number" class="form-control" min="1" max="31"
+                                                   t-model="state.recurringForm.recurrence_day"/>
+                                            <label>Tháng</label>
+                                            <input type="number" class="form-control" min="1" max="12"
+                                                   t-model="state.recurringForm.recurrence_month"/>
+                                        </div>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Giờ tạo công việc</label>
+                                        <input type="time" class="form-control" value="05:00"
+                                               readonly="readonly"/>
+                                    </div>
+                                    <div class="o_ews_field o_ews_field_check">
+                                        <label>
+                                            <input type="checkbox" t-model="state.recurringForm.active"/>
+                                            Trạng thái hoạt động
+                                        </label>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Hạn = ngày giao + N ngày</label>
+                                        <input type="number" class="form-control" min="0" step="1"
+                                               t-model="state.recurringForm.deadline_offset_days"/>
+                                        <small class="text-muted">0 = hạn trong ngày</small>
+                                    </div>
+                                    <div class="o_ews_field o_ews_field_check o_ews_skip_days">
+                                        <label>
+                                            <input type="checkbox" t-model="state.recurringForm.skip_saturday"/>
+                                            Bỏ qua Thứ 7
+                                        </label>
+                                        <label>
+                                            <input type="checkbox" t-model="state.recurringForm.skip_sunday"/>
+                                            Bỏ qua Chủ nhật
+                                        </label>
+                                    </div>
+                                    <div class="o_ews_field">
+                                        <label>Ghi chú</label>
+                                        <textarea class="form-control" rows="2"
+                                                  t-model="state.recurringForm.note"/>
+                                    </div>
+                                    <div class="o_ews_form_actions">
+                                        <button type="submit" class="btn o_ews_submit"
+                                                t-att-disabled="state.recurringSaving">
+                                            <i class="fa fa-save"/>
+                                            <t t-if="state.recurringSaving"> Đang lưu...</t>
+                                            <t t-elif="state.editingRecurringId"> Lưu thay đổi</t>
+                                            <t t-else=""> Lưu mẫu</t>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary"
+                                                t-if="state.editingRecurringId"
+                                                t-on-click="onCancelRecurringEdit">
+                                            Hủy
+                                        </button>
+                                    </div>
+                                </form>
+                                </div>
+                            </aside>
+                            <div class="o_ews_recurring_list_panel"
+                                 t-att-class="{'o_ews_panel_collapsed': !state.recurringListOpen}">
+                                <button type="button" class="o_ews_panel_toggle o_ews_list_toggle"
+                                        t-on-click="toggleRecurringList"
+                                        t-att-aria-expanded="state.recurringListOpen ? 'true' : 'false'">
+                                    <span>
+                                        <i class="fa fa-table"/> Danh sách mẫu
+                                        <em class="o_ews_list_toggle_hint">Hạng mục · kéo ngang / cuộn dọc</em>
+                                    </span>
+                                    <i t-att-class="'fa o_ews_chevron ' + (state.recurringListOpen ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                                </button>
+                                <div class="o_ews_recurring_list_body" t-if="state.recurringListOpen">
+                            <div class="o_ews_recurring_list">
+                                <table class="o_ews_table o_ews_recurring_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_ews_col_stt">#</th>
+                                            <th>Tên công việc</th>
+                                            <th class="o_ews_col_hangmuc">Hạng mục</th>
+                                            <th>Người phụ trách</th>
+                                            <th>Thời gian (phút)</th>
+                                            <th>Ưu tiên</th>
+                                            <th>Chu kỳ lặp</th>
+                                            <th>Hoàn thành sau</th>
+                                            <th>Trạng thái</th>
+                                            <th>Ghi chú</th>
+                                            <th class="o_ews_col_action">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="!pagedRecurringItems.length">
+                                            <tr>
+                                                <td colspan="11" class="text-center text-muted py-3">
+                                                    Không có mẫu công việc phù hợp. Hãy thêm mẫu ở form bên dưới.
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-foreach="pagedRecurringItems" t-as="item" t-key="item.id">
+                                            <tr t-att-class="{'o_ews_row_editing': state.editingRecurringId === item.id, 'o_ews_recurring_off': !item.active}">
+                                                <td class="o_ews_col_stt"
+                                                    t-esc="(state.recurringPage - 1) * state.recurringPageSize + item_index + 1"/>
+                                                <td t-esc="item.name"/>
+                                                <td t-esc="item.work_group_label || '—'"/>
+                                                <td t-esc="state.employee.name"/>
+                                                <td t-esc="item.duration_minutes"/>
+                                                <td>
+                                                    <span t-att-class="'o_ews_badge ' + priorityClass(item.priority)"
+                                                          t-esc="item.priority_label"/>
+                                                </td>
+                                                <td>
+                                                    <span class="o_ews_cycle_badge">
+                                                        <i class="fa fa-refresh"/>
+                                                        <t t-esc="item.recurrence_label"/>
+                                                    </span>
+                                                    <small t-if="item.recurrence_type === 'weekly'"
+                                                           class="d-block text-muted"
+                                                           t-esc="item.recurrence_weekdays_label"/>
+                                                    <small t-if="item.recurrence_type === 'monthly'"
+                                                           class="d-block text-muted"
+                                                           t-esc="'Ngày ' + item.recurrence_day"/>
+                                                    <small t-if="item.recurrence_type === 'yearly'"
+                                                           class="d-block text-muted"
+                                                           t-esc="item.recurrence_day + '/' + item.recurrence_month"/>
+                                                </td>
+                                                <td t-esc="item.deadline_offset_days + ' ngày'"/>
+                                                <td>
+                                                    <span t-att-class="item.active ? 'o_ews_recurring_on_badge' : 'o_ews_recurring_off_badge'"
+                                                          t-esc="item.active ? 'Hoạt động' : 'Tạm dừng'"/>
+                                                </td>
+                                                <td t-esc="item.note || '—'"/>
+                                                <td class="o_ews_col_action o_ews_recurring_actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary"
+                                                            title="Sửa mẫu"
+                                                            t-on-click="() => this.onEditRecurring(item)">
+                                                        <i class="fa fa-pencil"/>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-success"
+                                                            title="Tạo việc hôm nay"
+                                                            t-att-disabled="!item.active"
+                                                            t-on-click="() => this.onGenerateRecurringToday(item)">
+                                                        <i class="fa fa-plus"/>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                            t-att-title="item.active ? 'Tạm dừng' : 'Bật lại'"
+                                                            t-on-click="() => this.onToggleRecurring(item)">
+                                                        <i t-att-class="item.active ? 'fa fa-pause' : 'fa fa-play'"/>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger"
+                                                            title="Xóa mẫu"
+                                                            t-on-click="() => this.onDeleteRecurring(item)">
+                                                        <i class="fa fa-trash"/>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="o_ews_recurring_footer">
+                                <span>
+                                    Hiển thị <strong t-esc="pagedRecurringItems.length"/>
+                                    / <t t-esc="filteredRecurringItems.length"/> mẫu
+                                </span>
+                                <div class="o_ews_recurring_pager" t-if="recurringPageCount &gt; 1">
+                                    <button type="button" class="btn btn-sm btn-light"
+                                            t-att-disabled="state.recurringPage === 1"
+                                            t-on-click="() => this.onRecurringPage(state.recurringPage - 1)">
+                                        <i class="fa fa-chevron-left"/>
+                                    </button>
+                                    <t t-foreach="recurringPageNumbers" t-as="page" t-key="page">
+                                        <button type="button"
+                                                t-att-class="'btn btn-sm ' + (state.recurringPage === page ? 'btn-primary' : 'btn-light')"
+                                                t-on-click="() => this.onRecurringPage(page)"
+                                                t-esc="page"/>
+                                    </t>
+                                    <button type="button" class="btn btn-sm btn-light"
+                                            t-att-disabled="state.recurringPage === recurringPageCount"
+                                            t-on-click="() => this.onRecurringPage(state.recurringPage + 1)">
+                                        <i class="fa fa-chevron-right"/>
+                                    </button>
+                                </div>
+                            </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                    </section>
+
+                    <div class="o_ews_list_toggle_bar" t-if="!state.showMyList">
+                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                t-on-click="toggleMyList">
+                            <i class="fa fa-list"/> Hiện danh sách việc của tôi
+                            <t t-if="state.tasks.length">
+                                (<t t-esc="state.tasks.length"/> việc đang mở)
+                            </t>
+                        </button>
+                        <span class="text-muted">
+                            Đã ẩn danh sách. Thêm/sửa việc dùng biểu mẫu phía trên.
+                        </span>
+                    </div>
+
+                    <!-- Tổng công việc trong tháng — phía dưới (nhóm theo hạng mục) -->
+                    <section class="o_ews_month_panel"
+                             t-att-class="{'o_ews_month_collapsed': !state.monthSectionOpen}">
+                        <button type="button" class="o_ews_month_toggle"
+                                t-on-click="toggleMonthSection"
+                                t-att-aria-expanded="state.monthSectionOpen ? 'true' : 'false'">
+                            <div class="o_ews_month_toggle_main">
+                                <h3 class="o_ews_month_title">
+                                    <i class="fa fa-table"/> <t t-esc="monthTitle"/>
+                                    <span class="o_ews_month_count_badge"
+                                          t-esc="(state.monthKpi.total || 0) + ' việc'"/>
+                                </h3>
+                                <p class="o_ews_month_toggle_hint">
+                                    Báo cáo tháng · kéo ngang / cuộn dọc trong danh sách hạng mục
+                                </p>
+                            </div>
+                            <i t-att-class="'fa o_ews_chevron ' + (state.monthSectionOpen ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                        </button>
+
+                        <div class="o_ews_month_body" t-if="state.monthSectionOpen">
+                        <div class="o_ews_month_header">
+                            <div class="o_ews_month_banner_wrap">
+                                <div class="o_ews_month_banner_row">
+                                    <img class="o_ews_sataco_logo"
+                                         t-att-src="satacoLogoUrl"
+                                         alt="SATACO — Sáng Tâm Co.Ltd"/>
+                                    <div class="o_ews_month_banner" role="heading" aria-level="2">
+                                        BÁO CÁO CÔNG VIỆC
+                                    </div>
+                                </div>
+                                <div class="o_ews_month_employee" t-if="state.employee">
+                                    <span class="o_ews_month_employee_name"
+                                          t-esc="state.employee.name"/>
+                                    <t t-if="state.employee.department">
+                                        <span class="o_ews_month_employee_dept"
+                                              t-esc="'— ' + state.employee.department"/>
+                                    </t>
+                                </div>
+                            </div>
+                            <div class="o_ews_month_filters">
+                                <div class="o_ews_filter_item">
+                                    <label>Tháng</label>
+                                    <select class="form-select form-select-sm" t-model="state.monthMonth">
+                                        <t t-foreach="state.months" t-as="m" t-key="m.value">
+                                            <option t-att-value="m.value" t-esc="m.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_ews_filter_item">
+                                    <label>Năm</label>
+                                    <select class="form-select form-select-sm" t-model="state.monthYear">
+                                        <t t-foreach="state.years" t-as="y" t-key="y">
+                                            <option t-att-value="y" t-esc="y"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <button type="button" class="btn btn-outline-success btn-sm"
+                                        t-on-click="onMonthFilter"
+                                        t-att-disabled="state.monthLoading">
+                                    <i class="fa fa-refresh"/> Xem tháng
+                                </button>
+                                <button type="button" class="btn btn-success btn-sm"
+                                        t-on-click="onExportExcel"
+                                        t-att-disabled="state.exporting || state.monthLoading">
+                                    <i class="fa fa-file-excel-o"/>
+                                    <t t-if="state.exporting"> Đang xuất...</t>
+                                    <t t-else=""> Xuất Excel</t>
+                                </button>
+                            </div>
+                        </div>
+
+                        <t t-if="state.monthLoading">
+                            <div class="text-center py-4">
+                                <i class="fa fa-spinner fa-spin"/>
+                            </div>
+                        </t>
+                        <t t-elif="state.monthMessage">
+                            <div class="alert alert-warning mb-0" t-esc="state.monthMessage"/>
+                        </t>
+                        <t t-else="">
+                            <div class="o_ews_month_kpi">
+                                <div class="o_ews_kpi_card">
+                                    <span class="o_ews_kpi_label">Tổng số</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.total"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_done">
+                                    <span class="o_ews_kpi_label">Hoàn thành</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.done"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_progress">
+                                    <span class="o_ews_kpi_label">Đang xử lý</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.in_progress"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_todo">
+                                    <span class="o_ews_kpi_label">Chưa bắt đầu</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.not_started"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_overdue">
+                                    <span class="o_ews_kpi_label">Quá hạn</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.overdue"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_hours">
+                                    <span class="o_ews_kpi_label">Tổng TG (giờ)</span>
+                                    <span class="o_ews_kpi_value" t-esc="state.monthKpi.duration_hours || 0"/>
+                                </div>
+                                <div class="o_ews_kpi_card o_ews_kpi_pct">
+                                    <span class="o_ews_kpi_label">Tổng % Hoàn thành CV (AVERAGE hạng mục)</span>
+                                    <span class="o_ews_kpi_value"
+                                          t-esc="formatMonthAvgCompletion() + '%'"/>
+                                </div>
+                            </div>
+
+                            <div class="o_ews_month_table_panel"
+                                 t-att-class="{'o_ews_panel_collapsed': !state.monthTableOpen}">
+                                <button type="button" class="o_ews_panel_toggle o_ews_month_list_toggle"
+                                        t-on-click="toggleMonthTable"
+                                        t-att-aria-expanded="state.monthTableOpen ? 'true' : 'false'">
+                                    <span>
+                                        <i class="fa fa-list-alt"/> Danh sách báo cáo tháng
+                                        <em class="o_ews_list_toggle_hint">Hạng mục · kéo ngang / cuộn dọc</em>
+                                    </span>
+                                    <i t-att-class="'fa o_ews_chevron ' + (state.monthTableOpen ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                                </button>
+                                <div class="o_ews_excel_wrap" t-if="state.monthTableOpen">
+                                <table class="o_ews_excel_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_ews_col_stt">STT</th>
+                                            <th>Tên công việc</th>
+                                            <th>Ngày giao việc</th>
+                                            <th>Hạn hoàn thành</th>
+                                            <th>Mức ưu tiên</th>
+                                            <th>Trạng thái</th>
+                                            <th>Phút</th>
+                                            <th>Giờ</th>
+                                            <th>% Hoàn thành CV</th>
+                                            <th>Ghi chú</th>
+                                            <th>Quá hạn</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="!state.monthRows.length">
+                                            <tr>
+                                                <td colspan="11" class="text-center text-muted py-4">
+                                                    Không có công việc trong tháng này.
+                                                </td>
+                                            </tr>
+                                        </t>
+                                        <t t-foreach="monthGroups" t-as="group" t-key="group.key">
+                                            <tr class="o_ews_excel_group">
+                                                <td colspan="11">
+                                                    <button type="button" class="o_ews_excel_group_toggle"
+                                                            t-on-click="() => this.toggleMonthGroup(group.key)"
+                                                            t-att-aria-expanded="isMonthGroupOpen(group.key) ? 'true' : 'false'">
+                                                        <i t-att-class="'fa ' + (isMonthGroupOpen(group.key) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                        <span class="o_ews_excel_group_name">
+                                                            <i class="fa fa-folder-open-o"/>
+                                                            <t t-esc="group.label"/>
+                                                        </span>
+                                                        <span class="o_ews_excel_group_meta">
+                                                            <t t-esc="group.count"/> việc ·
+                                                            <t t-esc="group.duration_hours_display"/> giờ ·
+                                                            % Hoàn thành CV TB hạng mục (AVERAGE):
+                                                            <strong t-esc="formatGroupAvgCompletion(group)"/>%
+                                                        </span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <t t-if="isMonthGroupOpen(group.key)">
+                                            <t t-foreach="group.rows" t-as="row" t-key="row.id">
+                                                <tr t-att-class="monthRowClass(row)">
+                                                    <td class="o_ews_col_stt" t-esc="row.stt"/>
+                                                    <td t-esc="row.name"/>
+                                                    <td t-esc="row.assign_date_display || '—'"/>
+                                                    <td t-esc="row.deadline_display"/>
+                                                    <td>
+                                                        <span t-att-class="'o_ews_badge ' + priorityClass(row.priority)"
+                                                              t-esc="row.priority_label"/>
+                                                    </td>
+                                                    <td>
+                                                        <span t-att-class="'o_ews_state_badge ' + stateBadgeClass(row.state)"
+                                                              t-esc="row.state_label"/>
+                                                    </td>
+                                                    <td t-esc="row.duration_minutes || 0"/>
+                                                    <td t-esc="row.duration_hours_display || formatHours(row.duration_minutes)"/>
+                                                    <td t-esc="(row.completion_percent || 0) + '%'"/>
+                                                    <td t-esc="row.note"/>
+                                                    <td>
+                                                        <t t-if="row.overdue_days">
+                                                            <span class="o_ews_overdue_flag" t-att-title="row.overdue_label">
+                                                                <i class="fa fa-exclamation-triangle"/>
+                                                                <t t-esc="row.overdue_label"/>
+                                                            </span>
+                                                        </t>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                            </t>
+                                        </t>
+                                        <t t-if="monthGroups.length">
+                                            <tr class="o_ews_excel_total_avg">
+                                                <td colspan="11">
+                                                    Tổng % hoàn thành công việc trong tháng
+                                                    (AVERAGE các hạng mục):
+                                                    <strong t-esc="formatMonthAvgCompletion()"/>%
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                                </div>
+                            </div>
+                        </t>
+                        </div>
+                    </section>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

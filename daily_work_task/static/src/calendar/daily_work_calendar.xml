@@ -1,0 +1,483 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkCalendar">
+        <div class="o_daily_work_calendar o_action">
+        <div class="o_content o_dwc_scroll">
+        <div class="o_dwc_root">
+            <t t-if="state.loading">
+                <div class="o_dwc_loading">
+                    <i class="fa fa-spinner fa-spin fa-2x"/>
+                    <span>Đang tải Calendar…</span>
+                </div>
+            </t>
+            <t t-else="">
+                <!-- KPI — theo mockup Fluent -->
+                <div class="o_dwc_kpi_row">
+                    <div class="o_dwc_kpi_card">
+                        <div class="o_dwc_kpi_icon o_dwc_kpi_icon_total"><i class="fa fa-th-large"/></div>
+                        <div class="o_dwc_kpi_body">
+                            <div class="o_dwc_kpi_top">
+                                <span class="o_dwc_kpi_value" t-esc="state.kpi.total || 0"/>
+                                <span class="o_dwc_kpi_unit">Việc</span>
+                            </div>
+                            <div class="o_dwc_kpi_label">Tổng công việc</div>
+                        </div>
+                    </div>
+                    <div class="o_dwc_kpi_card">
+                        <div class="o_dwc_kpi_icon o_dwc_kpi_icon_today"><i class="fa fa-calendar"/></div>
+                        <div class="o_dwc_kpi_body">
+                            <div class="o_dwc_kpi_top">
+                                <span class="o_dwc_kpi_value" t-esc="state.kpi.today || 0"/>
+                                <span class="o_dwc_kpi_unit">Việc</span>
+                            </div>
+                            <div class="o_dwc_kpi_label">Hôm nay</div>
+                        </div>
+                    </div>
+                    <div class="o_dwc_kpi_card">
+                        <div class="o_dwc_kpi_icon o_dwc_kpi_icon_progress"><i class="fa fa-refresh"/></div>
+                        <div class="o_dwc_kpi_body">
+                            <div class="o_dwc_kpi_top">
+                                <span class="o_dwc_kpi_value" t-esc="state.kpi.in_progress || 0"/>
+                                <span class="o_dwc_kpi_unit">Việc</span>
+                            </div>
+                            <div class="o_dwc_kpi_label">Đang thực hiện</div>
+                        </div>
+                    </div>
+                    <div class="o_dwc_kpi_card">
+                        <div class="o_dwc_kpi_icon o_dwc_kpi_icon_rate"><i class="fa fa-check-circle"/></div>
+                        <div class="o_dwc_kpi_body">
+                            <div class="o_dwc_kpi_top">
+                                <span class="o_dwc_kpi_value"><t t-esc="state.kpi.completion_rate || 0"/>%</span>
+                            </div>
+                            <div class="o_dwc_kpi_label">Tỷ lệ hoàn thành</div>
+                        </div>
+                    </div>
+                    <div class="o_dwc_kpi_card">
+                        <div class="o_dwc_kpi_icon o_dwc_kpi_icon_overdue"><i class="fa fa-exclamation-triangle"/></div>
+                        <div class="o_dwc_kpi_body">
+                            <div class="o_dwc_kpi_top">
+                                <span class="o_dwc_kpi_value" t-esc="state.kpi.overdue || 0"/>
+                                <span class="o_dwc_kpi_unit">Việc</span>
+                            </div>
+                            <div class="o_dwc_kpi_label">Quá hạn</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_dwc_main">
+                    <section class="o_dwc_board">
+                        <div class="o_dwc_grid_wrap">
+                            <div class="o_dwc_weekdays">
+                                <t t-foreach="weekdays" t-as="wd" t-key="wd">
+                                    <div class="o_dwc_weekday" t-esc="wd"/>
+                                </t>
+                            </div>
+                            <div class="o_dwc_month_grid">
+                                <t t-foreach="weeks" t-as="week" t-key="week_index">
+                                    <t t-foreach="week" t-as="cell" t-key="cell.key">
+                                        <div t-if="cell.empty"
+                                             t-att-class="'o_dwc_day o_dwc_day_empty' + (cell.otherMonth ? ' o_dwc_day_other' : '')">
+                                            <div t-if="cell.day" class="o_dwc_day_num" t-esc="cell.day"/>
+                                        </div>
+                                        <div t-else=""
+                                             t-att-class="'o_dwc_day'
+                                                + (cell.isToday ? ' o_dwc_day_today' : '')
+                                                + (cell.expanded ? ' o_dwc_day_expanded' : '')">
+                                            <div class="o_dwc_day_head">
+                                                <span class="o_dwc_day_num" t-esc="cell.day"/>
+                                            </div>
+                                            <div class="o_dwc_day_tasks">
+                                                <t t-foreach="cell.visible" t-as="task" t-key="task.id">
+                                                    <button type="button"
+                                                            t-att-class="cardClass(task)"
+                                                            t-on-click="() => this.openTask(task)"
+                                                            t-on-mouseenter="(ev) => this.onTaskHover(task, ev)"
+                                                            t-on-mouseleave="() => this.onTaskHoverLeave()">
+                                                        <span class="o_dwc_card_bar"/>
+                                                        <span class="o_dwc_card_ico"><i t-att-class="'fa ' + taskIcon(task)"/></span>
+                                                        <span class="o_dwc_card_main">
+                                                            <span class="o_dwc_card_title" t-esc="task.name"/>
+                                                            <span class="o_dwc_card_meta">
+                                                                <t t-esc="task.assignee_name"/>
+                                                                <t t-if="task.duration_hours_display and task.duration_hours_display !== '0'">
+                                                                    · <t t-esc="task.duration_hours_display"/>h
+                                                                </t>
+                                                            </span>
+                                                        </span>
+                                                    </button>
+                                                </t>
+                                                <button t-if="cell.more" type="button" class="o_dwc_more"
+                                                        t-att-value="cell.day"
+                                                        t-on-click.stop.prevent="onMoreClick"
+                                                        t-on-mouseenter="closeHover">
+                                                    +<t t-esc="cell.more"/> công việc khác
+                                                </button>
+                                                <button t-if="cell.expanded and cell.tasks.length &gt; 3"
+                                                        type="button" class="o_dwc_more o_dwc_more_collapse"
+                                                        t-att-value="cell.day"
+                                                        t-on-click.stop.prevent="onCollapseClick">
+                                                    Thu gọn
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </t>
+                            </div>
+                        </div>
+                    </section>
+
+                    <aside class="o_dwc_sidebar">
+                        <div class="o_dwc_side_card">
+                            <div class="o_dwc_side_title">Lịch nhỏ</div>
+                            <div class="o_dwc_mini_weekdays">
+                                <t t-foreach="weekdays" t-as="wd" t-key="'m'+wd">
+                                    <span t-esc="wd"/>
+                                </t>
+                            </div>
+                            <div class="o_dwc_mini_grid">
+                                <t t-foreach="miniDays" t-as="d" t-key="d.key">
+                                    <span t-if="d.empty" class="o_dwc_mini_empty"/>
+                                    <span t-else=""
+                                          t-att-class="'o_dwc_mini_day'
+                                            + (d.isToday ? ' is-today' : '')
+                                            + (d.has ? ' has-task' : '')"
+                                          t-esc="d.day"/>
+                                </t>
+                            </div>
+                        </div>
+
+                        <div class="o_dwc_side_card">
+                            <div class="o_dwc_side_head">
+                                <div class="o_dwc_side_title">Việc hôm nay</div>
+                                <button type="button" class="o_dwc_side_link" t-on-click="goToday">Xem tất cả</button>
+                            </div>
+                            <t t-if="!state.sidebar.today.length">
+                                <div class="o_dwc_side_empty">Không có việc hôm nay</div>
+                            </t>
+                            <div t-else="" class="o_dwc_side_list">
+                                <t t-foreach="state.sidebar.today" t-as="t" t-key="'td'+t.id">
+                                    <button type="button" class="o_dwc_side_item"
+                                            t-on-click="() => this.openTask(t)"
+                                            t-on-mouseenter="(ev) => this.onTaskHover(t, ev)"
+                                            t-on-mouseleave="() => this.onTaskHoverLeave()">
+                                        <span t-att-class="'o_dwc_side_dot o_dwc_card_' + (t.color_token || t.state)"/>
+                                        <span class="o_dwc_side_body">
+                                            <span class="o_dwc_side_name" t-esc="t.name"/>
+                                            <span class="o_dwc_side_sub">
+                                                <t t-esc="t.assignee_name"/>
+                                                <t t-if="t.duration_hours_display and t.duration_hours_display !== '0'">
+                                                    · <t t-esc="t.duration_hours_display"/>h
+                                                </t>
+                                            </span>
+                                        </span>
+                                        <span t-att-class="'o_dwc_prio_tag ' + priorityClass(t.priority)"
+                                              t-esc="shortPriority(t.priority)"/>
+                                    </button>
+                                </t>
+                            </div>
+                        </div>
+
+                        <div class="o_dwc_side_card">
+                            <div class="o_dwc_side_title o_dwc_side_overdue">Việc quá hạn</div>
+                            <t t-if="!state.sidebar.overdue.length">
+                                <div class="o_dwc_side_empty">Không có việc quá hạn</div>
+                            </t>
+                            <div t-else="" class="o_dwc_side_list">
+                                <t t-foreach="state.sidebar.overdue" t-as="t" t-key="'od'+t.id">
+                                    <button type="button" class="o_dwc_side_item"
+                                            t-on-click="() => this.openTask(t)"
+                                            t-on-mouseenter="(ev) => this.onTaskHover(t, ev)"
+                                            t-on-mouseleave="() => this.onTaskHoverLeave()">
+                                        <span class="o_dwc_side_dot o_dwc_card_overdue"/>
+                                        <span class="o_dwc_side_body">
+                                            <span class="o_dwc_side_name" t-esc="t.name"/>
+                                            <span class="o_dwc_side_sub" t-esc="t.deadline_display"/>
+                                        </span>
+                                        <span t-att-class="'o_dwc_prio_tag ' + priorityClass(t.priority)"
+                                              t-esc="shortPriority(t.priority)"/>
+                                    </button>
+                                </t>
+                            </div>
+                        </div>
+
+                        <div class="o_dwc_side_card">
+                            <div class="o_dwc_side_title">Sắp tới</div>
+                            <t t-if="!state.sidebar.upcoming.length">
+                                <div class="o_dwc_side_empty">Chưa có việc sắp tới</div>
+                            </t>
+                            <div t-else="" class="o_dwc_side_list">
+                                <t t-foreach="state.sidebar.upcoming" t-as="t" t-key="'up'+t.id">
+                                    <button type="button" class="o_dwc_side_item"
+                                            t-on-click="() => this.openTask(t)"
+                                            t-on-mouseenter="(ev) => this.onTaskHover(t, ev)"
+                                            t-on-mouseleave="() => this.onTaskHoverLeave()">
+                                        <span t-att-class="'o_dwc_side_dot o_dwc_card_' + (t.color_token || t.state)"/>
+                                        <span class="o_dwc_side_body">
+                                            <span class="o_dwc_side_name" t-esc="t.name"/>
+                                            <span class="o_dwc_side_sub" t-esc="t.deadline_display"/>
+                                        </span>
+                                        <span t-att-class="'o_dwc_prio_tag ' + priorityClass(t.priority)"
+                                              t-esc="shortPriority(t.priority)"/>
+                                    </button>
+                                </t>
+                            </div>
+                        </div>
+                    </aside>
+                </div>
+
+                <button t-if="state.canCreate" type="button" class="o_dwc_fab" t-on-click="onCreate" title="Tạo công việc">
+                    <i class="fa fa-plus"/>
+                </button>
+            </t>
+        </div>
+        </div>
+
+            <!-- Hover / panel / modal: ngoài vùng scroll để không bị cắt -->
+            <t t-if="state.hoverTask and !state.selectedTask">
+                <div class="o_dwc_hover_pop"
+                     t-att-style="state.hoverStyle"
+                     t-on-mouseenter="() => this.onPopoverEnter()"
+                     t-on-mouseleave="() => this.onPopoverLeave()">
+                    <div class="o_dwc_hover_head">
+                        <div class="o_dwc_hover_title">
+                            <i t-att-class="'fa ' + taskIcon(state.hoverTask)"/>
+                            <span t-esc="state.hoverTask.name"/>
+                        </div>
+                        <div class="o_dwc_hover_head_right">
+                            <span t-att-class="'o_dwc_state_badge ' + stateClass(state.hoverTask.state)"
+                                  t-esc="state.hoverTask.state_label"/>
+                            <button type="button" class="o_dwc_hover_close" t-on-click="closeHover">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="o_dwc_hover_body">
+                        <div class="o_dwc_hover_col">
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-calendar"/>
+                                <div>
+                                    <label>Deadline</label>
+                                    <div t-att-class="state.hoverTask.is_overdue ? 'o_dwc_deadline_danger' : ''"
+                                         t-esc="deadlineLabel(state.hoverTask)"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-user"/>
+                                <div>
+                                    <label>Người phụ trách</label>
+                                    <div class="o_dwc_hover_link" t-esc="state.hoverTask.assignee_name || '—'"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-building"/>
+                                <div>
+                                    <label>Bộ phận</label>
+                                    <div t-esc="state.hoverTask.department_label || '—'"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-star"/>
+                                <div>
+                                    <label>Mức ưu tiên</label>
+                                    <span t-att-class="'o_dwc_prio_tag ' + priorityClass(state.hoverTask.priority)">
+                                        <i class="fa fa-star"/> <t t-esc="state.hoverTask.priority_label"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-hourglass-half"/>
+                                <div>
+                                    <label>Trạng thái</label>
+                                    <span t-att-class="'o_dwc_state_badge ' + stateClass(state.hoverTask.state)"
+                                          t-esc="state.hoverTask.state_label"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-line-chart"/>
+                                <div class="o_dwc_hover_progress_wrap">
+                                    <label>Tiến độ</label>
+                                    <div class="o_dwc_hover_progress_line">
+                                        <div class="o_dwc_progress">
+                                            <div class="o_dwc_progress_bar"
+                                                 t-att-style="'width:' + (state.hoverTask.progress || 0) + '%'"/>
+                                        </div>
+                                        <span><t t-esc="state.hoverTask.progress || 0"/>%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-clock-o"/>
+                                <div>
+                                    <label>Thời gian dự kiến</label>
+                                    <span class="o_dwc_time_pill" t-esc="durationLabel(state.hoverTask)"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-tag"/>
+                                <div>
+                                    <label>Loại công việc</label>
+                                    <span class="o_dwc_type_tag" t-esc="state.hoverTask.work_group_label || '—'"/>
+                                </div>
+                            </div>
+                            <div class="o_dwc_hover_row">
+                                <i class="fa fa-align-left"/>
+                                <div>
+                                    <label>Mô tả</label>
+                                    <div class="o_dwc_hover_note" t-esc="state.hoverTask.note || '—'"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_dwc_hover_col o_dwc_hover_col_side">
+                            <div class="o_dwc_hover_section">
+                                <div class="o_dwc_hover_section_title">
+                                    <i class="fa fa-check-square-o"/> Checklist
+                                </div>
+                                <div class="o_dwc_side_empty">Chưa có checklist</div>
+                            </div>
+                            <div class="o_dwc_hover_section">
+                                <div class="o_dwc_hover_section_title">
+                                    <i class="fa fa-paperclip"/> Tệp đính kèm
+                                </div>
+                                <div class="o_dwc_side_empty">Chưa có tệp đính kèm</div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary o_dwc_hover_open"
+                                    t-on-click="() => this.openTask(state.hoverTask)">
+                                Mở chi tiết
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </t>
+
+            <t t-if="state.dayPanel">
+                <div class="o_dwc_day_panel_backdrop" t-on-click="onDayPanelBackdropClick"/>
+                <div class="o_dwc_day_panel" role="dialog">
+                    <div class="o_dwc_day_panel_head">
+                        <h3>Ngày <t t-esc="state.dayPanel.day"/> — <t t-esc="state.dayPanel.tasks.length"/> công việc</h3>
+                        <button type="button" class="o_dwc_modal_close" t-on-click="closeDayPanel">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div class="o_dwc_day_panel_list">
+                        <t t-foreach="state.dayPanel.tasks" t-as="task" t-key="'dp'+task.id">
+                            <button type="button" class="o_dwc_day_panel_item"
+                                    t-att-class="cardClass(task)"
+                                    t-on-click="() => this.openTaskFromPanel(task)"
+                                    t-on-mouseenter="(ev) => this.onTaskHover(task, ev)"
+                                    t-on-mouseleave="() => this.onTaskHoverLeave()">
+                                <span class="o_dwc_card_bar"/>
+                                <span class="o_dwc_card_ico"><i t-att-class="'fa ' + taskIcon(task)"/></span>
+                                <span class="o_dwc_card_main">
+                                    <span class="o_dwc_card_title" t-esc="task.name"/>
+                                    <span class="o_dwc_card_meta">
+                                        <t t-esc="task.assignee_name"/>
+                                        <t t-if="task.priority_label"> · <t t-esc="task.priority_label"/></t>
+                                    </span>
+                                </span>
+                                <span t-att-class="'o_dwc_state_badge ' + stateClass(task.state)"
+                                      t-esc="task.state_label"/>
+                            </button>
+                        </t>
+                    </div>
+                </div>
+            </t>
+
+            <t t-if="state.selectedTask">
+                <div class="o_dwc_modal_backdrop" t-on-click="closeModal"/>
+                <div class="o_dwc_modal" role="dialog">
+                    <div class="o_dwc_modal_head">
+                        <div>
+                            <h3 t-esc="state.selectedTask.name"/>
+                            <span t-att-class="'o_dwc_state_badge ' + stateClass(state.selectedTask.state)"
+                                  t-esc="state.selectedTask.state_label"/>
+                        </div>
+                        <button type="button" class="o_dwc_modal_close" t-on-click="closeModal">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div class="o_dwc_modal_body">
+                        <div class="o_dwc_modal_col">
+                            <div class="o_dwc_field">
+                                <label>Hạn hoàn thành</label>
+                                <div t-att-class="state.selectedTask.is_overdue ? 'o_dwc_deadline_danger' : ''"
+                                     t-esc="deadlineLabel(state.selectedTask)"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Người phụ trách</label>
+                                <div t-esc="state.selectedTask.assignee_name || '—'"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Bộ phận</label>
+                                <div t-esc="state.selectedTask.department_label || '—'"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Mức ưu tiên</label>
+                                <span t-att-class="'o_dwc_prio_tag ' + priorityClass(state.selectedTask.priority)">
+                                    <i class="fa fa-star"/> <t t-esc="state.selectedTask.priority_label"/>
+                                </span>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Trạng thái</label>
+                                <span t-att-class="'o_dwc_state_badge ' + stateClass(state.selectedTask.state)"
+                                      t-esc="state.selectedTask.state_label"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Tiến độ</label>
+                                <div class="o_dwc_progress">
+                                    <div class="o_dwc_progress_bar"
+                                         t-att-style="'width:' + (state.selectedTask.progress || 0) + '%'"/>
+                                </div>
+                                <div class="o_dwc_progress_label">
+                                    <t t-esc="state.selectedTask.progress || 0"/>%
+                                </div>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Thời gian dự kiến</label>
+                                <div t-esc="durationLabel(state.selectedTask)"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Loại công việc</label>
+                                <span class="o_dwc_type_tag" t-esc="state.selectedTask.work_group_label || '—'"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Mô tả</label>
+                                <div class="o_dwc_note" t-esc="state.selectedTask.note || '—'"/>
+                            </div>
+                        </div>
+                        <div class="o_dwc_modal_col o_dwc_modal_col_side">
+                            <div class="o_dwc_field">
+                                <label>Người giao</label>
+                                <div t-esc="state.selectedTask.assigned_by_name || '—'"/>
+                            </div>
+                            <div class="o_dwc_field">
+                                <label>Ngày giao</label>
+                                <div t-esc="state.selectedTask.assign_date_display || '—'"/>
+                            </div>
+                            <div class="o_dwc_info_box">
+                                <i class="fa fa-info-circle"/>
+                                Bấm <b>Hoàn thành</b> để đóng việc, hoặc <b>Đang thực hiện</b> để cập nhật tiến độ.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_dwc_modal_foot">
+                        <button type="button" class="btn btn-light" t-on-click="openForm">
+                            Xem chi tiết
+                        </button>
+                        <div class="o_dwc_modal_actions">
+                            <button type="button" class="btn o_dwc_btn_pause"
+                                    t-att-disabled="state.saving || state.selectedTask.state === 'in_progress'"
+                                    t-on-click="markInProgress">
+                                Đang thực hiện
+                            </button>
+                            <button type="button" class="btn o_dwc_btn_done"
+                                    t-att-disabled="state.saving || state.selectedTask.state === 'done'"
+                                    t-on-click="markDone">
+                                <i class="fa fa-check"/> Hoàn thành
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

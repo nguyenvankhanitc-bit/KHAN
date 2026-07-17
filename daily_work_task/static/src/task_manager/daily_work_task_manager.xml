@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkTaskManager">
+        <div class="o_daily_work_task_manager o_action">
+            <div class="o_content o_dtm_scroll">
+                <t t-if="state.loading">
+                    <div class="text-center p-5">
+                        <i class="fa fa-spinner fa-spin fa-2x"/>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div class="o_dtm_layout" t-ref="layout" t-att-style="layoutStyle"
+                         t-att-class="{'o_dtm_layout_resizing': state.resizing}">
+                        <!-- Form trái -->
+                        <aside class="o_dtm_form_panel">
+                            <h3 class="o_dtm_form_title">
+                                <i class="fa fa-plus-circle"/> Thêm Công Việc Mới
+                            </h3>
+                            <form class="o_dtm_form" t-on-submit="onSubmit">
+                                <div class="o_dtm_field">
+                                    <label>Tên công việc <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control"
+                                           placeholder="Nhập tên nhiệm vụ..."
+                                           t-model="state.form.name" required="required"/>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Hạn hoàn thành <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control"
+                                           t-model="state.form.deadline" required="required"/>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Bộ phận</label>
+                                    <select class="form-select" t-model.number="state.form.department_id">
+                                        <option value="0">-- Chọn phòng ban HR --</option>
+                                        <t t-foreach="state.departments" t-as="d" t-key="d.id">
+                                            <option t-att-value="d.id" t-esc="d.name"/>
+                                        </t>
+                                    </select>
+                                    <small class="text-muted">Tự điền theo phòng ban trên hồ sơ nhân viên khi chọn người phụ trách.</small>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Người phụ trách <span class="text-danger">*</span></label>
+                                    <select class="form-select" t-model.number="state.form.assignee_id"
+                                            t-on-change="onAssigneeChange">
+                                        <option value="0">-- Chọn từ hồ sơ nhân viên --</option>
+                                        <t t-foreach="state.employees" t-as="emp" t-key="emp.id">
+                                            <option t-att-value="emp.id" t-esc="emp.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Mức độ ưu tiên</label>
+                                    <select class="form-select" t-model="state.form.priority">
+                                        <t t-foreach="state.priorities" t-as="p" t-key="p.value">
+                                            <option t-att-value="p.value" t-esc="p.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Trạng thái hiện tại</label>
+                                    <select class="form-select" t-model="state.form.state">
+                                        <t t-foreach="state.states" t-as="s" t-key="s.value">
+                                            <option t-att-value="s.value" t-esc="s.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtm_field">
+                                    <label>Ghi chú bổ sung</label>
+                                    <textarea class="form-control" rows="3"
+                                              placeholder="Nhập mô tả chi tiết..."
+                                              t-model="state.form.note"/>
+                                </div>
+                                <button type="submit" class="btn o_dtm_submit"
+                                        t-att-disabled="state.saving">
+                                    <i class="fa fa-save"/>
+                                    <t t-if="state.saving"> Đang lưu...</t>
+                                    <t t-else=""> Cập Nhật Lên Hệ Thống</t>
+                                </button>
+                            </form>
+                        </aside>
+
+                        <!-- Thanh kéo chỉnh độ rộng -->
+                        <div class="o_dtm_splitter"
+                             title="Kéo để chỉnh độ rộng (double-click để về mặc định)"
+                             t-on-pointerdown="onSplitterPointerDown"
+                             t-on-dblclick="onSplitterDblClick">
+                            <span class="o_dtm_splitter_grip"/>
+                        </div>
+
+                        <!-- Bảng phải — nhóm theo bộ phận -->
+                        <section class="o_dtm_table_panel">
+                            <h3 class="o_dtm_table_title">
+                                <i class="fa fa-table"/> DANH SÁCH DỮ LIỆU THEO BỘ PHẬN
+                                <span class="o_dtm_table_count" t-esc="state.tasks.length + ' công việc'"/>
+                            </h3>
+                            <t t-if="!state.tasks.length">
+                                <div class="o_dtm_empty text-center text-muted py-4">
+                                    Chưa có công việc nào.
+                                </div>
+                            </t>
+                            <div class="o_dtm_dept_list" t-else="">
+                                <t t-foreach="taskGroups" t-as="group" t-key="group.key">
+                                    <div class="o_dtm_dept_block" t-att-class="group.colorClass">
+                                        <div class="o_dtm_dept_head" t-att-style="group.colorStyle">
+                                            <span class="o_dtm_dept_name">
+                                                <i class="fa fa-building-o"/>
+                                                <t t-esc="group.name"/>
+                                            </span>
+                                            <span class="o_dtm_dept_count"
+                                                  t-esc="group.tasks.length + ' việc'"/>
+                                        </div>
+                                        <div class="o_dtm_table_wrap">
+                                            <table class="o_dtm_table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tên công việc</th>
+                                                        <th>Hạn hoàn thành</th>
+                                                        <th>Người phụ trách</th>
+                                                        <th>Mức ưu tiên</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Ghi chú</th>
+                                                        <th t-if="state.canDelete" class="o_dtm_col_action">Hành động</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="group.tasks" t-as="task" t-key="task.id">
+                                                        <tr>
+                                                            <td t-esc="task.name"/>
+                                                            <td t-esc="task.deadline_display"/>
+                                                            <td t-esc="task.assignee_name"/>
+                                                            <td>
+                                                                <span t-att-class="'o_dtm_badge ' + priorityClass(task.priority)"
+                                                                      t-esc="task.priority_label"/>
+                                                            </td>
+                                                            <td>
+                                                                <span t-att-class="'o_dtm_badge ' + stateClass(task.state)"
+                                                                      t-esc="task.state_label"/>
+                                                            </td>
+                                                            <td class="o_dtm_note_cell">
+                                                                <span class="o_dtm_note_text"
+                                                                      t-esc="task.note or '—'"/>
+                                                            </td>
+                                                            <td t-if="state.canDelete" class="o_dtm_col_action">
+                                                                <button type="button"
+                                                                        class="btn btn-sm o_dtm_btn_delete"
+                                                                        t-att-title="'Xóa: ' + (task.name || '')"
+                                                                        t-on-click="() => this.onDelete(task)">
+                                                                    <i class="fa fa-trash"/> Xóa
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </section>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

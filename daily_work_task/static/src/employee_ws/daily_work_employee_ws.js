@@ -61,6 +61,7 @@ export class DailyWorkEmployeeWs extends Component {
             totalDurationHours: 0,
             completionPercentAvg: 0,
             showMyList: true,
+            activeTab: "tasks",
             recurringItems: [],
             recurringForm: this.emptyRecurringForm(),
             editingRecurringId: false,
@@ -134,6 +135,55 @@ export class DailyWorkEmployeeWs extends Component {
 
     toggleMyList() {
         this.state.showMyList = !this.state.showMyList;
+    }
+
+    setActiveTab(tab) {
+        this.state.activeTab = tab;
+        if (tab === "recurring") {
+            this.state.recurringSectionOpen = true;
+        }
+        if (tab === "month") {
+            this.state.monthSectionOpen = true;
+        }
+    }
+
+    isActiveTab(tab) {
+        return this.state.activeTab === tab;
+    }
+
+    /** Nguồn dữ liệu bảng trạng thái: ưu tiên dữ liệu tháng (có cả việc hoàn thành). */
+    get statusBoardRows() {
+        if ((this.state.monthRows || []).length) {
+            return this.state.monthRows;
+        }
+        return this.state.tasks || [];
+    }
+
+    get statusBoardDone() {
+        return this.statusBoardRows.filter((t) => t.state === "done");
+    }
+
+    get statusBoardInProgress() {
+        return this.statusBoardRows.filter(
+            (t) => t.state === "in_progress" && !this._isBoardOverdue(t)
+        );
+    }
+
+    get statusBoardNotStarted() {
+        return this.statusBoardRows.filter(
+            (t) => t.state === "not_started" && !this._isBoardOverdue(t)
+        );
+    }
+
+    get statusBoardOverdue() {
+        return this.statusBoardRows.filter((t) => this._isBoardOverdue(t));
+    }
+
+    _isBoardOverdue(task) {
+        if (!task || task.state === "done") {
+            return false;
+        }
+        return Boolean(task.is_active_overdue || task.is_overdue);
     }
 
     get monthTitle() {

@@ -4,8 +4,7 @@
               name="Công việc hàng ngày"
               sequence="36"
               web_icon="daily_work_task,static/description/icon.png"
-              groups="daily_work_task.group_daily_work_user"
-              action="action_daily_work_dashboard"/>
+              groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_dashboard"
               name="Dashboard Tổng Quan"

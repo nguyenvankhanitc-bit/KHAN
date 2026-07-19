@@ -13,6 +13,7 @@ const SELF_APP_XMLIDS = new Set([
 ]);
 
 const SIDEBAR_ICON_FALLBACK = "fa-th-large";
+const DEFAULT_APP_ICON = "/web/static/img/default_icon_app.png";
 
 /** Map common Odoo app xmlids / names to Font Awesome icons for the sidebar. */
 const SIDEBAR_ICONS = {
@@ -97,6 +98,63 @@ export class LugAppCenter extends Component {
     }
 
     /**
+     * Resolve app icon for the grid.
+     * Odoo falls back to default_icon_app.png when ir.ui.menu.web_icon_data
+     * is missing, even if webIcon is still "module,static/.../icon.png".
+     * On some servers attachments are empty → purple box icons; resolve path.
+     */
+    _resolveAppIcon(app) {
+        const rawData = app.webIconData || "";
+        const hasRealImage =
+            rawData &&
+            rawData !== DEFAULT_APP_ICON &&
+            !rawData.includes("default_icon_app.png");
+
+        if (hasRealImage) {
+            if (rawData.startsWith("data:image") || rawData.startsWith("/")) {
+                return { type: "img", src: rawData };
+            }
+            const mime = app.webIconDataMimetype || "image/png";
+            return {
+                type: "img",
+                src: `data:${mime};base64,${String(rawData).replace(/\s/g, "")}`,
+            };
+        }
+
+        const webIcon = app.webIcon;
+        if (webIcon && typeof webIcon === "object") {
+            return {
+                type: "fa",
+                iconClass: webIcon.iconClass || "fa fa-th-large",
+                color: webIcon.color || "#FFFFFF",
+                backgroundColor: webIcon.backgroundColor || "#714B67",
+            };
+        }
+
+        if (typeof webIcon === "string" && webIcon.includes(",")) {
+            const parts = webIcon.split(",").map((p) => p.trim());
+            if (parts.length === 2) {
+                const [moduleName, iconPath] = parts;
+                // Image path: "mail,static/description/icon.png"
+                if (moduleName && iconPath && !moduleName.startsWith("fa")) {
+                    return { type: "img", src: `/${moduleName}/${iconPath}` };
+                }
+            }
+            if (parts.length >= 3) {
+                // Font Awesome: "fa fa-users,#fff,#714B67"
+                return {
+                    type: "fa",
+                    iconClass: parts[0] || "fa fa-th-large",
+                    color: parts[1] || "#FFFFFF",
+                    backgroundColor: parts[2] || "#714B67",
+                };
+            }
+        }
+
+        return { type: "img", src: DEFAULT_APP_ICON };
+    }
+
+    /**
      * All root apps visible to the current user (same source as Odoo Home Menu).
      */
     _collectInstalledApps() {
@@ -104,16 +162,21 @@ export class LugAppCenter extends Component {
         return apps
             .filter((app) => app && app.id && !SELF_APP_XMLIDS.has(app.xmlid))
             .filter((app) => app.actionID)
-            .map((app) => ({
-                id: app.id,
-                key: `menu_${app.id}`,
-                name: app.name,
-                xmlid: app.xmlid || "",
-                actionID: app.actionID,
-                webIconData: app.webIconData || "/web/static/img/default_icon_app.png",
-                icon: SIDEBAR_ICONS[app.xmlid] || SIDEBAR_ICON_FALLBACK,
-                sidebar_label: app.name,
-            }));
+            .map((app) => {
+                const resolved = this._resolveAppIcon(app);
+                return {
+                    id: app.id,
+                    key: `menu_${app.id}`,
+                    name: app.name,
+                    xmlid: app.xmlid || "",
+                    actionID: app.actionID,
+                    iconType: resolved.type,
+                    webIconData: resolved.type === "img" ? resolved.src : DEFAULT_APP_ICON,
+                    faIcon: resolved.type === "fa" ? resolved : null,
+                    icon: SIDEBAR_ICONS[app.xmlid] || SIDEBAR_ICON_FALLBACK,
+                    sidebar_label: app.name,
+                };
+            });
     }
 
     get filteredApps() {

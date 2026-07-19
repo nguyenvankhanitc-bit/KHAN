@@ -558,12 +558,21 @@
         font-size: 1.15rem;
         overflow: hidden;
         background: #f8fafc;
+        flex: 0 0 auto;
 
         &--img img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             display: block;
+        }
+
+        &--fa {
+            font-size: 1.35rem;
+
+            .fa {
+                line-height: 1;
+            }
         }
     }
 

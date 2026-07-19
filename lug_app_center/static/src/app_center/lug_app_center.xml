@@ -132,9 +132,18 @@
                                     <button type="button"
                                             class="o_eac_app_card"
                                             t-on-click="() => this.openApp(app)">
-                                        <span class="o_eac_app_icon o_eac_app_icon--img">
-                                            <img t-att-src="app.webIconData" t-att-alt="app.name"/>
-                                        </span>
+                                        <t t-if="app.iconType === 'fa' and app.faIcon">
+                                            <span class="o_eac_app_icon o_eac_app_icon--fa"
+                                                  t-att-style="'background-color:' + app.faIcon.backgroundColor">
+                                                <i t-att-class="app.faIcon.iconClass"
+                                                   t-att-style="'color:' + app.faIcon.color"/>
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="o_eac_app_icon o_eac_app_icon--img">
+                                                <img t-att-src="app.webIconData" t-att-alt="app.name"/>
+                                            </span>
+                                        </t>
                                         <span class="o_eac_app_meta">
                                             <span class="o_eac_app_name" t-esc="app.name"/>
                                         </span>

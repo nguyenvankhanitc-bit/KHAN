@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+        <record id="announcement_meeting" model="lug.app.announcement">
+            <field name="name">Họp Ban Giám đốc công ty</field>
+            <field name="sequence">10</field>
+            <field name="tag">Quan trọng</field>
+            <field name="tag_type">important</field>
+            <field name="announce_date">2026-07-16</field>
+            <field name="body">Họp định kỳ Ban Giám đốc — kiểm tra lịch Calendar.</field>
+        </record>
+        <record id="announcement_maintenance" model="lug.app.announcement">
+            <field name="name">Bảo trì hệ thống ERP</field>
+            <field name="sequence">20</field>
+            <field name="tag">Cảnh báo</field>
+            <field name="tag_type">warning</field>
+            <field name="announce_date">2026-07-15</field>
+            <field name="body">Hệ thống sẽ bảo trì theo lịch IT — vui lòng lưu công việc đang mở.</field>
+        </record>
+        <record id="announcement_policy" model="lug.app.announcement">
+            <field name="name">Chính sách làm việc mới</field>
+            <field name="sequence">30</field>
+            <field name="tag">Thông tin</field>
+            <field name="tag_type">info</field>
+            <field name="announce_date">2026-07-14</field>
+            <field name="body">Cập nhật chính sách nội bộ — xem chi tiết trên bảng tin công ty.</field>
+        </record>
+        <record id="announcement_birthday" model="lug.app.announcement">
+            <field name="name">Sinh nhật nhân viên tháng 7</field>
+            <field name="sequence">40</field>
+            <field name="tag">Sự kiện</field>
+            <field name="tag_type">event</field>
+            <field name="announce_date">2026-07-01</field>
+            <field name="body">Chúc mừng các thành viên có sinh nhật trong tháng 7.</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <menuitem id="menu_lug_app_center_root"
+              name="App Center"
+              action="action_lug_app_center"
+              web_icon="lug_app_center,static/description/icon.png"
+              sequence="0"/>
+
+    <menuitem id="menu_lug_app_center_announcements"
+              name="Thông báo nội bộ"
+              parent="menu_lug_app_center_root"
+              action="action_lug_app_announcement"
+              sequence="90"
+              groups="base.group_system"/>
+</odoo>

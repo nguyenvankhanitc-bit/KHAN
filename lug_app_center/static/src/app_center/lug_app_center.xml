@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_app_center.LugAppCenter">
+        <div class="o_lug_app_center" t-att-class="{'is-collapsed': state.sidebarCollapsed}">
+            <header class="o_eac_topbar">
+                <button type="button" class="o_eac_burger" t-on-click="toggleSidebar" title="Menu">
+                    <i class="fa fa-bars"/>
+                </button>
+                <div class="o_eac_brand_inline">
+                    <img class="o_eac_logo_img"
+                         t-att-src="state.companyLogoUrl"
+                         alt="SATACO"/>
+                    <div class="o_eac_brand_text">
+                        <span class="o_eac_brand_name" t-esc="state.companyName"/>
+                        <span class="o_eac_brand_address" t-esc="state.companyAddress"/>
+                    </div>
+                </div>
+                <div class="o_eac_top_search">
+                    <i class="fa fa-search"/>
+                    <input type="search"
+                           placeholder="Tìm kiếm ứng dụng..."
+                           t-att-value="state.query"
+                           t-on-input="onSearch"/>
+                </div>
+                <div class="o_eac_top_actions">
+                    <Dropdown menuClass="'o_eac_profile_menu'" position="'bottom-end'">
+                        <button type="button" class="o_eac_profile" title="Thông tin tài khoản">
+                            <t t-if="state.avatarUrl">
+                                <img class="o_eac_avatar_img" t-att-src="state.avatarUrl" alt=""/>
+                            </t>
+                            <t t-else="">
+                                <span class="o_eac_avatar" t-esc="state.userInitial"/>
+                            </t>
+                            <div class="o_eac_profile_text">
+                                <span class="o_eac_profile_name" t-esc="state.userName"/>
+                                <span class="o_eac_profile_role" t-esc="state.userRole"/>
+                            </div>
+                            <i class="fa fa-angle-down o_eac_profile_caret"/>
+                        </button>
+                        <t t-set-slot="content">
+                            <div class="o_eac_profile_menu_head">
+                                <t t-if="state.avatarUrl">
+                                    <img class="o_eac_avatar_img o_eac_avatar_img--lg" t-att-src="state.avatarUrl" alt=""/>
+                                </t>
+                                <t t-else="">
+                                    <span class="o_eac_avatar o_eac_avatar--lg" t-esc="state.userInitial"/>
+                                </t>
+                                <div class="o_eac_profile_menu_identity">
+                                    <div class="o_eac_profile_menu_name" t-esc="state.userName"/>
+                                    <div class="o_eac_profile_menu_role" t-esc="state.userRole"/>
+                                </div>
+                            </div>
+                            <div class="o_eac_profile_menu_info">
+                                <div t-if="state.userLogin">
+                                    <i class="fa fa-user"/>
+                                    <span t-esc="state.userLogin"/>
+                                </div>
+                                <div t-if="state.userEmail">
+                                    <i class="fa fa-envelope"/>
+                                    <span t-esc="state.userEmail"/>
+                                </div>
+                                <div t-if="state.userPhone">
+                                    <i class="fa fa-phone"/>
+                                    <span t-esc="state.userPhone"/>
+                                </div>
+                                <div t-if="state.companyName">
+                                    <i class="fa fa-building"/>
+                                    <span t-esc="state.companyName"/>
+                                </div>
+                            </div>
+                            <DropdownItem onSelected="() => this.openPreferences()">
+                                <i class="fa fa-cog me-2"/> Tùy chọn cá nhân
+                            </DropdownItem>
+                            <DropdownItem onSelected="() => this.logout()">
+                                <i class="fa fa-sign-out me-2"/> Đăng xuất
+                            </DropdownItem>
+                        </t>
+                    </Dropdown>
+                </div>
+            </header>
+
+            <div class="o_eac_shell">
+                <aside class="o_eac_sidebar">
+                    <nav class="o_eac_nav">
+                        <button type="button"
+                                class="o_eac_nav_item"
+                                t-att-class="{'active': state.activeNav === 'home'}"
+                                t-on-click="setHome">
+                            <i class="fa fa-home"/>
+                            <span>Trang chủ</span>
+                        </button>
+                        <t t-foreach="filteredApps" t-as="nav" t-key="'side_' + nav.key">
+                            <button type="button"
+                                    class="o_eac_nav_item"
+                                    t-att-class="{'active': state.activeNav === nav.key}"
+                                    t-on-click="() => this.onNavClick(nav)">
+                                <i t-att-class="'fa ' + nav.icon"/>
+                                <span t-esc="nav.sidebar_label"/>
+                            </button>
+                        </t>
+                    </nav>
+                </aside>
+
+                <main class="o_eac_main">
+                    <t t-if="state.loading">
+                        <div class="o_eac_loading">Đang tải...</div>
+                    </t>
+                    <t t-else="">
+                        <section class="o_eac_welcome">
+                            <div class="o_eac_welcome_text">
+                                <p t-esc="state.welcome"/>
+                            </div>
+                            <div class="o_eac_welcome_art" aria-hidden="true">
+                                <div class="o_eac_building">
+                                    <div class="o_eac_building_sun"/>
+                                    <div class="o_eac_building_block o_eac_building_block--a"/>
+                                    <div class="o_eac_building_block o_eac_building_block--b"/>
+                                    <div class="o_eac_building_block o_eac_building_block--c"/>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="o_eac_apps_section">
+                            <div class="o_eac_section_head">
+                                <h2>Trung tâm ứng dụng</h2>
+                                <span class="o_eac_section_sub">
+                                    <t t-esc="filteredApps.length"/> ứng dụng khả dụng — chọn để mở trong hệ thống
+                                </span>
+                            </div>
+                            <div class="o_eac_app_grid">
+                                <t t-foreach="filteredApps" t-as="app" t-key="app.key">
+                                    <button type="button"
+                                            class="o_eac_app_card"
+                                            t-on-click="() => this.openApp(app)">
+                                        <span class="o_eac_app_icon o_eac_app_icon--img">
+                                            <img t-att-src="app.webIconData" t-att-alt="app.name"/>
+                                        </span>
+                                        <span class="o_eac_app_meta">
+                                            <span class="o_eac_app_name" t-esc="app.name"/>
+                                        </span>
+                                    </button>
+                                </t>
+                            </div>
+                            <t t-if="!filteredApps.length">
+                                <div class="o_eac_empty">Không tìm thấy ứng dụng phù hợp.</div>
+                            </t>
+                        </section>
+                    </t>
+                </main>
+            </div>
+        </div>
+    </t>
+</templates>

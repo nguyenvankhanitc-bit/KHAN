@@ -25,11 +25,21 @@
     }
 
     .o_ews_header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px 24px;
+        flex-wrap: wrap;
         background: transparent;
         border-radius: 0;
         padding: 4px 0 14px;
         margin-bottom: 12px;
         box-shadow: none;
+
+        .o_ews_header_left {
+            min-width: 0;
+            flex: 1 1 auto;
+        }
 
         .o_ews_page_title {
             margin: 0 0 12px;
@@ -38,6 +48,91 @@
             letter-spacing: 0.02em;
             color: #111827;
             text-transform: uppercase;
+        }
+    }
+
+    .o_ews_header_kpis {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+        flex: 0 0 auto;
+        margin-left: auto;
+    }
+
+    .o_ews_header_kpi {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 118px;
+        padding: 8px 12px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+
+        .o_ews_header_kpi_icon {
+            font-size: 1.25rem;
+            width: 1.25em;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .o_ews_header_kpi_body {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            min-width: 0;
+        }
+
+        .o_ews_header_kpi_label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #64748b;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+
+        .o_ews_header_kpi_value {
+            font-size: 1.35rem;
+            font-weight: 800;
+            line-height: 1.1;
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+        }
+
+        &.o_ews_header_kpi_done {
+            .o_ews_header_kpi_icon { color: #16a34a; }
+            .o_ews_header_kpi_value { color: #15803d; }
+        }
+
+        &.o_ews_header_kpi_progress {
+            .o_ews_header_kpi_icon { color: #2563eb; }
+            .o_ews_header_kpi_value { color: #1d4ed8; }
+        }
+
+        &.o_ews_header_kpi_todo {
+            .o_ews_header_kpi_icon { color: #94a3b8; }
+            .o_ews_header_kpi_value { color: #475569; }
+        }
+
+        &.o_ews_header_kpi_overdue {
+            .o_ews_header_kpi_icon { color: #eab308; }
+            .o_ews_header_kpi_value { color: #a16207; }
+        }
+    }
+
+    @media (max-width: 1100px) {
+        .o_ews_header_kpis {
+            width: 100%;
+            margin-left: 0;
+            justify-content: flex-start;
+            overflow-x: auto;
+            padding-bottom: 2px;
+        }
+
+        .o_ews_header_kpi {
+            min-width: 110px;
+            flex: 1 0 auto;
         }
     }
 
@@ -116,7 +211,7 @@
 
     .o_ews_status_col {
         background: #fff;
-        border: 1px solid #d1d5db;
+        border: 1px solid #9ca3af;
         border-radius: 2px;
         overflow: hidden;
         min-width: 0;
@@ -130,6 +225,7 @@
         font-weight: 700;
         color: #fff;
         letter-spacing: 0.01em;
+        border-bottom: 1px solid #9ca3af;
     }
 
     .o_ews_status_done .o_ews_status_col_head {
@@ -152,12 +248,13 @@
     .o_ews_status_table {
         width: 100%;
         border-collapse: collapse;
+        border-spacing: 0;
         table-layout: fixed;
         font-size: 0.88rem;
 
         th, td {
             padding: 9px 10px;
-            border-bottom: 1px solid #e5e7eb;
+            border: 1px solid #d1d5db;
             vertical-align: top;
             word-break: break-word;
         }
@@ -180,10 +277,6 @@
             width: 38%;
             text-align: right;
             white-space: nowrap;
-        }
-
-        tbody tr:last-child td {
-            border-bottom: 0;
         }
     }
 

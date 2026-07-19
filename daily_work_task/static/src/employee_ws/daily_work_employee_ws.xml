@@ -4,36 +4,68 @@
         <div class="o_daily_work_employee_ws o_action">
             <div class="o_content o_ews_scroll">
                 <div class="o_ews_header">
-                    <h2 class="o_ews_page_title">KHÔNG GIAN LÀM VIỆC NHÂN VIÊN</h2>
-                    <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
-                        <button type="button"
-                                t-att-class="'o_ews_tab' + (isActiveTab('tasks') ? ' active' : '')"
-                                t-on-click="() => this.setActiveTab('tasks')">
-                            <i class="fa fa-pencil-square-o o_ews_tab_icon o_ews_tab_icon_tasks"/>
-                            <span>Việc của tôi</span>
-                        </button>
-                        <span class="o_ews_tab_sep" aria-hidden="true">|</span>
-                        <button type="button"
-                                t-att-class="'o_ews_tab' + (isActiveTab('recurring') ? ' active' : '')"
-                                t-on-click="() => this.setActiveTab('recurring')">
-                            <i class="fa fa-refresh o_ews_tab_icon o_ews_tab_icon_recurring"/>
-                            <span>Công việc lặp</span>
-                        </button>
-                        <span class="o_ews_tab_sep" aria-hidden="true">|</span>
-                        <button type="button"
-                                t-att-class="'o_ews_tab' + (isActiveTab('month') ? ' active' : '')"
-                                t-on-click="() => this.setActiveTab('month')">
-                            <i class="fa fa-bar-chart o_ews_tab_icon o_ews_tab_icon_month"/>
-                            <span>Báo cáo tháng</span>
-                        </button>
-                        <span class="o_ews_tab_sep" aria-hidden="true">|</span>
-                        <button type="button"
-                                t-att-class="'o_ews_tab' + (isActiveTab('board') ? ' active' : '')"
-                                t-on-click="() => this.setActiveTab('board')">
-                            <i class="fa fa-th-large o_ews_tab_icon o_ews_tab_icon_board"/>
-                            <span>Danh sách công việc</span>
-                        </button>
-                    </nav>
+                    <div class="o_ews_header_left">
+                        <h2 class="o_ews_page_title">KHÔNG GIAN LÀM VIỆC NHÂN VIÊN</h2>
+                        <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
+                            <button type="button"
+                                    t-att-class="'o_ews_tab' + (isActiveTab('tasks') ? ' active' : '')"
+                                    t-on-click="() => this.setActiveTab('tasks')">
+                                <i class="fa fa-pencil-square-o o_ews_tab_icon o_ews_tab_icon_tasks"/>
+                                <span>Việc của tôi</span>
+                            </button>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button"
+                                    t-att-class="'o_ews_tab' + (isActiveTab('recurring') ? ' active' : '')"
+                                    t-on-click="() => this.setActiveTab('recurring')">
+                                <i class="fa fa-refresh o_ews_tab_icon o_ews_tab_icon_recurring"/>
+                                <span>Công việc lặp</span>
+                            </button>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button"
+                                    t-att-class="'o_ews_tab' + (isActiveTab('month') ? ' active' : '')"
+                                    t-on-click="() => this.setActiveTab('month')">
+                                <i class="fa fa-bar-chart o_ews_tab_icon o_ews_tab_icon_month"/>
+                                <span>Báo cáo tháng</span>
+                            </button>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button"
+                                    t-att-class="'o_ews_tab' + (isActiveTab('board') ? ' active' : '')"
+                                    t-on-click="() => this.setActiveTab('board')">
+                                <i class="fa fa-th-large o_ews_tab_icon o_ews_tab_icon_board"/>
+                                <span>Danh sách công việc</span>
+                            </button>
+                        </nav>
+                    </div>
+                    <div class="o_ews_header_kpis" aria-label="Thống kê trạng thái công việc">
+                        <div class="o_ews_header_kpi o_ews_header_kpi_done">
+                            <i class="fa fa-check-circle o_ews_header_kpi_icon"/>
+                            <div class="o_ews_header_kpi_body">
+                                <span class="o_ews_header_kpi_label">Hoàn thành</span>
+                                <span class="o_ews_header_kpi_value" t-esc="statusBoardDone.length"/>
+                            </div>
+                        </div>
+                        <div class="o_ews_header_kpi o_ews_header_kpi_progress">
+                            <i class="fa fa-refresh o_ews_header_kpi_icon"/>
+                            <div class="o_ews_header_kpi_body">
+                                <span class="o_ews_header_kpi_label">Đang xử lý</span>
+                                <span class="o_ews_header_kpi_value" t-esc="statusBoardInProgress.length"/>
+                            </div>
+                        </div>
+                        <div class="o_ews_header_kpi o_ews_header_kpi_todo">
+                            <i class="fa fa-hourglass-half o_ews_header_kpi_icon"/>
+                            <div class="o_ews_header_kpi_body">
+                                <span class="o_ews_header_kpi_label">Chưa bắt đầu</span>
+                                <span class="o_ews_header_kpi_value" t-esc="statusBoardNotStarted.length"/>
+                            </div>
+                        </div>
+                        <div class="o_ews_header_kpi o_ews_header_kpi_overdue">
+                            <i class="fa fa-exclamation-triangle o_ews_header_kpi_icon"/>
+                            <div class="o_ews_header_kpi_body">
+                                <span class="o_ews_header_kpi_label">Quá hạn</span>
+                                <span class="o_ews_header_kpi_value" t-esc="statusBoardOverdue.length"/>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <t t-if="state.loading">

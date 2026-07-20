@@ -13,8 +13,7 @@
             <field name="name">OdooBot Giao việc</field>
             <field name="login">odoo.bot.assign.task</field>
             <field name="partner_id" ref="partner_bot_assign_task"/>
-            <field name="group_ids" eval="[(6, 0, [ref('base.group_user')])]"/>
-            <field name="notification_type">inbox</field>
+            <field name="group_ids" eval="[Command.set([ref('base.group_user')])]"/>
             <field name="active" eval="True"/>
         </record>
 

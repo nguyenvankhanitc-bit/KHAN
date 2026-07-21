@@ -33,7 +33,7 @@
             <form string="Công việc lặp lại">
                 <sheet>
                     <div class="alert alert-info" role="alert">
-                        Mẫu này sẽ tự tạo công việc mỗi sáng khoảng <b>5:00</b>.
+                        Mẫu này sẽ tự tạo công việc mỗi sáng khoảng <b>5:00 giờ Việt Nam</b>.
                         Nhân viên khai báo trong «Không gian làm việc» — không cần điền lại mỗi ngày.
                     </div>
                     <group>
@@ -104,7 +104,7 @@
             </p>
             <p>
                 Nhân viên tự khai báo trong Không gian làm việc.
-                Hệ thống tạo việc mỗi sáng ~5:00.
+                Hệ thống tạo việc mỗi sáng ~5:00 (giờ Việt Nam).
             </p>
         </field>
     </record>

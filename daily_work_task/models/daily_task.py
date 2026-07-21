@@ -126,7 +126,7 @@ class DailyTask(models.Model):
         index=True,
         ondelete="set null",
         copy=False,
-        help="Công việc được sinh tự động từ mẫu lặp (cron 5h00).",
+        help="Công việc được sinh tự động từ mẫu lặp (cron ~5h00 giờ VN).",
     )
 
     _recurring_assign_date_uniq = models.Constraint(

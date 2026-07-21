@@ -483,6 +483,7 @@
                                             <label>Giờ tạo công việc</label>
                                             <input type="time" class="form-control" value="05:00"
                                                    readonly="readonly"/>
+                                            <small class="text-muted">Cố định 05:00 sáng (giờ Việt Nam)</small>
                                         </div>
                                         <div class="o_ews_field o_ews_field_check">
                                             <label>
@@ -552,6 +553,7 @@
                                                 <th>Ưu tiên</th>
                                                 <th>Chu kỳ lặp</th>
                                                 <th>Hoàn thành sau</th>
+                                                <th>Sinh gần nhất</th>
                                                 <th>Trạng thái</th>
                                                 <th>Ghi chú</th>
                                                 <th class="o_ews_col_action">Thao tác</th>
@@ -560,7 +562,7 @@
                                         <tbody>
                                             <t t-if="!pagedRecurringItems.length">
                                                 <tr>
-                                                    <td colspan="11" class="text-center text-muted py-3">
+                                                    <td colspan="12" class="text-center text-muted py-3">
                                                         Không có mẫu công việc phù hợp. Hãy thêm mẫu ở form bên dưới.
                                                     </td>
                                                 </tr>
@@ -593,6 +595,11 @@
                                                                t-esc="item.recurrence_day + '/' + item.recurrence_month"/>
                                                     </td>
                                                     <td t-esc="item.deadline_offset_days + ' ngày'"/>
+                                                    <td>
+                                                        <t t-esc="item.last_generated_display || '—'"/>
+                                                        <small class="d-block text-muted"
+                                                               t-esc="(item.task_count || 0) + ' lần'"/>
+                                                    </td>
                                                     <td>
                                                         <span t-att-class="item.active ? 'o_ews_recurring_on_badge' : 'o_ews_recurring_off_badge'"
                                                               t-esc="item.active ? 'Hoạt động' : 'Tạm dừng'"/>

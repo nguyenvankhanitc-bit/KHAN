@@ -602,11 +602,28 @@ export class DailyWorkEmployeeWs extends Component {
                 ]);
                 this.notification.add(_t("Đã cập nhật mẫu công việc lặp."), { type: "success" });
             } else {
-                await this.orm.call("daily.task.recurring", "create_from_employee", [payload]);
-                this.notification.add(
-                    _t("Đã lưu mẫu lặp. Việc hôm nay đã được tạo (nếu chưa có). Mỗi sáng ~5:00 sẽ tự tạo tiếp."),
-                    { type: "success" }
+                const created = await this.orm.call(
+                    "daily.task.recurring",
+                    "create_from_employee",
+                    [payload]
                 );
+                if (created?.generate_error) {
+                    this.notification.add(
+                        _t("Đã lưu mẫu, nhưng không tạo được việc hôm nay: ") +
+                            created.generate_error,
+                        { type: "warning" }
+                    );
+                } else if (created?.generated_today) {
+                    this.notification.add(
+                        _t("Đã lưu mẫu lặp và tạo việc hôm nay. Mỗi sáng ~5:00 (giờ VN) sẽ tự tạo tiếp."),
+                        { type: "success" }
+                    );
+                } else {
+                    this.notification.add(
+                        _t("Đã lưu mẫu lặp. Hôm nay chưa tạo việc (có thể đã có hoặc ngoài chu kỳ). Mỗi sáng ~5:00 (giờ VN) sẽ tự tạo tiếp."),
+                        { type: "info" }
+                    );
+                }
             }
             this.state.editingRecurringId = false;
             this.state.recurringForm = this.emptyRecurringForm();

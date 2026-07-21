@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.37.11",
+    "version": "19.0.1.37.13",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -11,7 +11,7 @@ Tính năng:
 - Dashboard tổng quan: KPI, biểu đồ ưu tiên/trạng thái/quá hạn, 3 cột theo trạng thái
 - Quản lý dữ liệu công việc (CRUD)
 - Không gian làm việc nhân viên
-- Công việc lặp lại: user khai báo mẫu, cron ~5h00 tự tạo việc mỗi ngày
+- Công việc lặp lại: user khai báo mẫu, cron ~5h00 (giờ VN) tự tạo việc mỗi ngày
 - Giao việc: quản lý giao việc → hiện trong danh sách của nhân viên được giao
 - Thông báo Discuss/Inbox/Activity khi được giao việc (OdooBot Giao việc)
 - Phân quyền: Xem / Giao việc / Sửa / Xóa (User A xem B, User C giao cho B, User D toàn quyền)

@@ -10,7 +10,7 @@ _logger = logging.getLogger(__name__)
 
 
 class DailyTaskRecurring(models.Model):
-    """Mẫu công việc lặp — user khai báo 1 lần, cron 5h00 sinh daily.task mỗi ngày."""
+    """Mẫu công việc lặp — user khai báo 1 lần, cron ~5h00 (giờ VN) sinh daily.task mỗi ngày."""
 
     _name = "daily.task.recurring"
     _description = "Công việc lặp lại"
@@ -332,14 +332,21 @@ class DailyTaskRecurring(models.Model):
             }
         )
         # Tạo luôn việc hôm nay nếu đang bật — không chờ tới 5h sáng mai
+        generated = False
+        generate_error = False
         if rec.active:
             try:
-                rec._generate_task_for_date(fields.Date.context_today(self))
-            except Exception:  # noqa: BLE001 — không chặn lưu mẫu
+                task = rec._generate_task_for_date(fields.Date.context_today(self))
+                generated = bool(task) or bool(rec.last_generated_date)
+            except Exception as exc:  # noqa: BLE001 — không chặn lưu mẫu
                 _logger.exception(
                     "Không tạo được việc hôm nay từ mẫu lặp %s", rec.id
                 )
-        return rec._to_dict()
+                generate_error = str(exc)
+        result = rec._to_dict()
+        result["generated_today"] = generated
+        result["generate_error"] = generate_error
+        return result
 
     @api.model
     def _sanitize_recurrence_vals(self, vals):
@@ -599,7 +606,7 @@ class DailyTaskRecurring(models.Model):
 
     @api.model
     def cron_generate_recurring_tasks(self):
-        """Cron ~5h00: tạo công việc ngày hôm nay từ mọi mẫu đang bật."""
+        """Cron ~5h00 giờ VN: tạo công việc ngày hôm nay từ mọi mẫu đang bật."""
         today = fields.Date.context_today(self)
         templates = self.sudo().search([("active", "=", True)])
         created = 0

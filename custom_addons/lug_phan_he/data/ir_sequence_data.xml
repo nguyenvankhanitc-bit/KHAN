@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_phan_he_service" model="ir.sequence">
+        <field name="name">Mã hợp đồng</field>
+        <field name="code">phan.he.service</field>
+        <field name="prefix">HD</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_phan_he_payment" model="ir.sequence">
+        <field name="name">Mã thanh toán</field>
+        <field name="code">phan.he.payment</field>
+        <field name="prefix">TT</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_phan_he_payment_file" model="ir.sequence">
+        <field name="name">Mã file thanh toán</field>
+        <field name="code">phan.he.payment.file</field>
+        <field name="prefix">FT</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_phan_he_invoice" model="ir.sequence">
+        <field name="name">Mã hóa đơn nội bộ</field>
+        <field name="code">phan.he.invoice</field>
+        <field name="prefix">INV</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="ir_cron_phan_he_service_alert" model="ir.cron">
+        <field name="name">Quản lý dịch vụ: cảnh báo hợp đồng</field>
+        <field name="model_id" ref="model_phan_he_service"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_update_alerts()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="ir_cron_phan_he_payment_alert" model="ir.cron">
+        <field name="name">Quản lý dịch vụ: cập nhật trạng thái thanh toán</field>
+        <field name="model_id" ref="model_phan_he_payment"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_update_payment_states()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="ir_cron_phan_he_payment_file_monthly" model="ir.cron">
+        <field name="name">Quản lý dịch vụ: tạo File thanh toán tháng</field>
+        <field name="model_id" ref="model_phan_he_payment_file"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_auto_generate_monthly()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

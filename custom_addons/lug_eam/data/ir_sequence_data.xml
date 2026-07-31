@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_eam_asset" model="ir.sequence">
+        <field name="name">Mã tài sản (số thứ tự)</field>
+        <field name="code">eam.asset</field>
+        <field name="prefix"></field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_brand" model="ir.sequence">
+        <field name="name">Mã thương hiệu</field>
+        <field name="code">eam.brand</field>
+        <field name="prefix">BRD</field>
+        <field name="padding">3</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_model" model="ir.sequence">
+        <field name="name">Mã model tài sản</field>
+        <field name="code">eam.model</field>
+        <field name="prefix">MDL</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_txn_in" model="ir.sequence">
+        <field name="name">Phiếu nhập mua</field>
+        <field name="code">eam.txn.in</field>
+        <field name="prefix">NM</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_eam_txn_out" model="ir.sequence">
+        <field name="name">Phiếu xuất kho</field>
+        <field name="code">eam.txn.out</field>
+        <field name="prefix">PX</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_eam_txn_transfer" model="ir.sequence">
+        <field name="name">Phiếu điều chuyển TS</field>
+        <field name="code">eam.txn.transfer</field>
+        <field name="prefix">TF</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_eam_txn_recall" model="ir.sequence">
+        <field name="name">Phiếu thu hồi TS</field>
+        <field name="code">eam.txn.recall</field>
+        <field name="prefix">RC</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_eam_txn_disposal" model="ir.sequence">
+        <field name="name">Phiếu thanh lý TS</field>
+        <field name="code">eam.txn.disposal</field>
+        <field name="prefix">TL</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_inventory_move" model="ir.sequence">
+        <field name="name">Phiếu kho vật tư</field>
+        <field name="code">eam.inventory.move</field>
+        <field name="prefix">VT</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+
+    <record id="seq_eam_work_order" model="ir.sequence">
+        <field name="name">Work Order bảo trì</field>
+        <field name="code">eam.work.order</field>
+        <field name="prefix">WO</field>
+        <field name="padding">6</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

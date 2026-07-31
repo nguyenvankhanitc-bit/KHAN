@@ -1,0 +1,139 @@
+.o_eam_dashboard {
+    --eam-ink: #0f172a;
+    --eam-muted: #64748b;
+    --eam-surface: #f1f5f9;
+    --eam-card: #ffffff;
+    --eam-accent: #0f766e;
+    --eam-border: rgba(15, 23, 42, 0.08);
+    background:
+        radial-gradient(1200px 400px at 10% -10%, rgba(15, 118, 110, 0.12), transparent 60%),
+        radial-gradient(900px 360px at 90% 0%, rgba(3, 105, 161, 0.1), transparent 55%),
+        var(--eam-surface);
+    color: var(--eam-ink);
+    padding: 1.25rem 1.5rem 2rem;
+}
+
+.o_eam_dash_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.o_eam_dash_eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--eam-accent);
+    font-weight: 600;
+}
+
+.o_eam_dash_title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0.15rem 0;
+    line-height: 1.2;
+}
+
+.o_eam_dash_sub {
+    font-size: 0.875rem;
+}
+
+.o_eam_kpi_grid {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.o_eam_kpi_card {
+    text-align: left;
+    border: 1px solid var(--eam-border);
+    background: var(--eam-card);
+    border-radius: 0.75rem;
+    padding: 1rem 1.1rem;
+    box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+    cursor: pointer;
+}
+
+.o_eam_kpi_card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(15, 118, 110, 0.35);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.o_eam_kpi_label {
+    font-size: 0.8rem;
+    color: var(--eam-muted);
+    margin-bottom: 0.35rem;
+}
+
+.o_eam_kpi_value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--eam-ink);
+}
+
+.o_eam_kpi_hint {
+    margin-top: 0.35rem;
+    font-size: 0.75rem;
+    color: var(--eam-muted);
+}
+
+.o_eam_chart_grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.85rem;
+}
+
+.o_eam_chart_card {
+    background: var(--eam-card);
+    border: 1px solid var(--eam-border);
+    border-radius: 0.75rem;
+    padding: 0.85rem 1rem 1rem;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.o_eam_chart_wide {
+    grid-column: 1 / -1;
+}
+
+.o_eam_chart_head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.o_eam_chart_head h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.o_eam_chart_card canvas {
+    flex: 1 1 auto;
+    width: 100% !important;
+    max-height: 240px;
+}
+
+@media (max-width: 1200px) {
+    .o_eam_kpi_grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .o_eam_kpi_grid,
+    .o_eam_chart_grid {
+        grid-template-columns: 1fr;
+    }
+    .o_eam_chart_wide {
+        grid-column: auto;
+    }
+}

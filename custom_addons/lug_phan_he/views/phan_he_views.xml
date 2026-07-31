@@ -1,0 +1,1450 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== DASHBOARD ========== -->
+    <record id="action_phan_he_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard tổng quan</field>
+        <field name="tag">phan_he_dashboard</field>
+    </record>
+
+    <!-- ========== MIỀN ========== -->
+    <record id="view_phan_he_mien_list" model="ir.ui.view">
+        <field name="name">phan.he.mien.list</field>
+        <field name="model">phan.he.mien</field>
+        <field name="arch" type="xml">
+            <list string="Miền">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="area_count" string="Khu vực"/>
+                <field name="store_count" string="Cửa hàng"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_mien_form" model="ir.ui.view">
+        <field name="name">phan.he.mien.form</field>
+        <field name="model">phan.he.mien</field>
+        <field name="arch" type="xml">
+            <form string="Miền">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="VD: Miền Bắc"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="area_count"/>
+                            <field name="store_count"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Khu vực" name="areas">
+                            <field name="area_ids">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="store_count"/>
+                                    <field name="manager_ids" widget="many2many_tags"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_mien_search" model="ir.ui.view">
+        <field name="name">phan.he.mien.search</field>
+        <field name="model">phan.he.mien</field>
+        <field name="arch" type="xml">
+            <search string="Tìm miền">
+                <field name="name"/>
+                <field name="code"/>
+                <filter name="filter_active" string="Đang dùng" domain="[('active', '=', True)]"/>
+                <filter name="filter_inactive" string="Ngừng" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_mien" model="ir.actions.act_window">
+        <field name="name">Miền</field>
+        <field name="res_model">phan.he.mien</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có miền</p>
+        </field>
+    </record>
+
+    <!-- ========== KHU VỰC ========== -->
+    <record id="view_phan_he_area_list" model="ir.ui.view">
+        <field name="name">phan.he.area.list</field>
+        <field name="model">phan.he.area</field>
+        <field name="arch" type="xml">
+            <list string="Khu vực">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="mien_id"/>
+                <field name="store_count" string="Cửa hàng"/>
+                <field name="manager_ids" widget="many2many_tags" optional="show"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_area_form" model="ir.ui.view">
+        <field name="name">phan.he.area.form</field>
+        <field name="model">phan.he.area</field>
+        <field name="arch" type="xml">
+            <form string="Khu vực">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="VD: Hà Nội"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="mien_id"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="store_count"/>
+                            <field name="manager_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Cửa hàng" name="stores">
+                            <field name="store_ids">
+                                <list>
+                                    <field name="code"/>
+                                    <field name="name"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-muted="state == 'inactive'"/>
+                                    <field name="service_count"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_area_search" model="ir.ui.view">
+        <field name="name">phan.he.area.search</field>
+        <field name="model">phan.he.area</field>
+        <field name="arch" type="xml">
+            <search string="Tìm khu vực">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="mien_id"/>
+                <filter name="filter_active" string="Đang dùng" domain="[('active', '=', True)]"/>
+                <group>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_area" model="ir.actions.act_window">
+        <field name="name">Khu vực</field>
+        <field name="res_model">phan.he.area</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có khu vực</p>
+        </field>
+    </record>
+
+    <!-- ========== CỬA HÀNG ========== -->
+    <record id="view_phan_he_store_list" model="ir.ui.view">
+        <field name="name">phan.he.store.list</field>
+        <field name="model">phan.he.store</field>
+        <field name="arch" type="xml">
+            <list string="Cửa hàng">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="mien_id"/>
+                <field name="area_id"/>
+                <field name="address" optional="hide"/>
+                <field name="responsible_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-muted="state == 'inactive'"/>
+                <field name="service_count" string="Hợp đồng"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_store_form" model="ir.ui.view">
+        <field name="name">phan.he.store.form</field>
+        <field name="model">phan.he.store</field>
+        <field name="arch" type="xml">
+            <form string="Cửa hàng">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="active,inactive"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_services" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="service_count" widget="statinfo" string="Hợp đồng"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="Tên cửa hàng"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" placeholder="VD: LUG-KDV"/>
+                            <field name="mien_id"/>
+                            <field name="area_id"/>
+                            <field name="responsible_id" options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="address" placeholder="Địa chỉ cửa hàng..."/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Hợp đồng dịch vụ" name="services">
+                            <field name="service_ids">
+                                <list>
+                                    <field name="service_type_id"/>
+                                    <field name="provider_id"/>
+                                    <field name="date_end"/>
+                                    <field name="state" widget="badge"
+                                           decoration-success="state == 'active'"
+                                           decoration-warning="state == 'waiting'"
+                                           decoration-danger="state in ('expired', 'cancel')"
+                                           decoration-muted="state in ('draft', 'suspend')"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_store_search" model="ir.ui.view">
+        <field name="name">phan.he.store.search</field>
+        <field name="model">phan.he.store</field>
+        <field name="arch" type="xml">
+            <search string="Tìm cửa hàng">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="mien_id"/>
+                <field name="area_id"/>
+                <field name="responsible_id"/>
+                <filter name="filter_active" string="Đang hoạt động" domain="[('state', '=', 'active')]"/>
+                <filter name="filter_inactive" string="Ngừng hoạt động" domain="[('state', '=', 'inactive')]"/>
+                <group>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
+                    <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
+                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_store" model="ir.actions.act_window">
+        <field name="name">Cửa hàng</field>
+        <field name="res_model">phan.he.store</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có cửa hàng</p>
+        </field>
+    </record>
+
+    <!-- ========== LOẠI DỊCH VỤ ========== -->
+    <record id="view_phan_he_service_type_list" model="ir.ui.view">
+        <field name="name">phan.he.service.type.list</field>
+        <field name="model">phan.he.service.type</field>
+        <field name="arch" type="xml">
+            <list string="Loại dịch vụ" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="service_count"/>
+                <field name="color" widget="color_picker" optional="hide"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_type_form" model="ir.ui.view">
+        <field name="name">phan.he.service.type.form</field>
+        <field name="model">phan.he.service.type</field>
+        <field name="arch" type="xml">
+            <form string="Loại dịch vụ">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="sequence"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="active"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_type" model="ir.actions.act_window">
+        <field name="name">Loại dịch vụ</field>
+        <field name="res_model">phan.he.service.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== NHÀ CUNG CẤP ========== -->
+    <record id="view_phan_he_provider_list" model="ir.ui.view">
+        <field name="name">phan.he.provider.list</field>
+        <field name="model">phan.he.provider</field>
+        <field name="arch" type="xml">
+            <list string="Nhà cung cấp">
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <field name="bank_account_count" string="TK ngân hàng"/>
+                <field name="transfer_content_template" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_provider_form" model="ir.ui.view">
+        <field name="name">phan.he.provider.form</field>
+        <field name="model">phan.he.provider</field>
+        <field name="arch" type="xml">
+            <form string="Nhà cung cấp">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_bank_accounts" type="object"
+                                class="oe_stat_button" icon="fa-university">
+                            <field name="bank_account_count" widget="statinfo" string="TK ngân hàng"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="VD: FPT Telecom"/></h1>
+                    </div>
+                    <group>
+                        <group string="Liên hệ">
+                            <field name="phone"/>
+                            <field name="email"/>
+                            <field name="website"/>
+                        </group>
+                        <group string="Chuyển khoản mẫu">
+                            <field name="transfer_content_template"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Tài khoản ngân hàng" name="banks">
+                            <field name="bank_account_ids">
+                                <list editable="bottom">
+                                    <field name="account_name"/>
+                                    <field name="account_number"/>
+                                    <field name="bank_name"/>
+                                    <field name="bank_branch"/>
+                                    <field name="is_default"/>
+                                    <field name="transfer_content_template"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_provider_search" model="ir.ui.view">
+        <field name="name">phan.he.provider.search</field>
+        <field name="model">phan.he.provider</field>
+        <field name="arch" type="xml">
+            <search string="Tìm nhà cung cấp">
+                <field name="name"/>
+                <field name="phone"/>
+                <field name="email"/>
+                <filter name="filter_active" string="Đang dùng" domain="[('active', '=', True)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_provider" model="ir.actions.act_window">
+        <field name="name">Nhà cung cấp</field>
+        <field name="res_model">phan.he.provider</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== TÀI KHOẢN NGÂN HÀNG ========== -->
+    <record id="view_phan_he_bank_account_list" model="ir.ui.view">
+        <field name="name">phan.he.bank.account.list</field>
+        <field name="model">phan.he.bank.account</field>
+        <field name="arch" type="xml">
+            <list string="Tài khoản ngân hàng">
+                <field name="provider_id"/>
+                <field name="account_name"/>
+                <field name="account_number"/>
+                <field name="bank_name"/>
+                <field name="bank_branch"/>
+                <field name="is_default"/>
+                <field name="transfer_content_template" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_bank_account_form" model="ir.ui.view">
+        <field name="name">phan.he.bank.account.form</field>
+        <field name="model">phan.he.bank.account</field>
+        <field name="arch" type="xml">
+            <form string="Tài khoản ngân hàng">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="provider_id"/>
+                            <field name="account_name"/>
+                            <field name="account_number"/>
+                            <field name="is_default"/>
+                        </group>
+                        <group>
+                            <field name="bank_name"/>
+                            <field name="bank_branch"/>
+                            <field name="transfer_content_template"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_bank_account_search" model="ir.ui.view">
+        <field name="name">phan.he.bank.account.search</field>
+        <field name="model">phan.he.bank.account</field>
+        <field name="arch" type="xml">
+            <search string="Tìm tài khoản">
+                <field name="provider_id"/>
+                <field name="account_name"/>
+                <field name="account_number"/>
+                <field name="bank_name"/>
+                <filter name="filter_default" string="Mặc định" domain="[('is_default', '=', True)]"/>
+                <group>
+                    <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_bank_account" model="ir.actions.act_window">
+        <field name="name">Tài khoản ngân hàng</field>
+        <field name="res_model">phan.he.bank.account</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== HỢP ĐỒNG DỊCH VỤ ========== -->
+    <record id="view_phan_he_service_list" model="ir.ui.view">
+        <field name="name">phan.he.service.list</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <list string="Hợp đồng dịch vụ"
+                  decoration-danger="alert_level in ('danger', 'expired')"
+                  decoration-warning="alert_level == 'warn'">
+                <field name="store_id"/>
+                <field name="service_type_id"/>
+                <field name="provider_id"/>
+                <field name="date_end" widget="date" options="{'numeric': True}"/>
+                <field name="alert_level" column_invisible="1"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-info="state == 'waiting'"
+                       decoration-warning="state == 'suspend'"
+                       decoration-danger="state in ('expired', 'cancel')"
+                       decoration-muted="state in ('draft', 'liquidated')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_tracking_list" model="ir.ui.view">
+        <field name="name">phan.he.service.tracking.list</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách internet"
+                  js_class="phan_he_tracking_list"
+                  class="o_phan_he_tracking_list"
+                  multi_edit="1"
+                  default_order="mien_id, stt asc, id asc"
+                  decoration-danger="alert_level in ('danger', 'expired') or remaining_days &lt; 0"
+                  decoration-warning="alert_level == 'warn'">
+                <field name="stt" string="STT" widget="phan_he_stt" width="56px" readonly="1"/>
+                <field name="store_card_html" string="TÊN / CỬA HÀNG" widget="html" readonly="1"/>
+                <field name="date_start" string="NGÀY BẮT ĐẦU" widget="date"
+                       options="{'numeric': True}"/>
+                <field name="date_end" string="NGÀY KẾT THÚC" widget="date"
+                       options="{'numeric': True}"/>
+                <field name="bandwidth" string="BĂNG THÔNG"/>
+                <field name="contract_amount" string="CƯỚC THÁNG" sum="Tổng" widget="monetary"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="ops_status" string="TRẠNG THÁI" widget="phan_he_ops_status"/>
+                <field name="remaining_card_html" string="THỜI GIAN CÒN LẠI" widget="html" readonly="1"/>
+                <field name="id" string=" " widget="phan_he_expand_toggle" width="40px" readonly="1"/>
+                <!-- dữ liệu ẩn / dùng cho nhóm & expand -->
+                <field name="mien_id" column_invisible="1"/>
+                <field name="store_id" column_invisible="1"/>
+                <field name="customer_code" column_invisible="1"/>
+                <field name="package_name" column_invisible="1"/>
+                <field name="state" column_invisible="1"/>
+                <field name="remaining_alert" column_invisible="1"/>
+                <field name="remaining_days" column_invisible="1"/>
+                <field name="remaining_time" column_invisible="1"/>
+                <field name="alert_level" column_invisible="1"/>
+                <field name="usage_address" column_invisible="1"/>
+                <field name="store_address" column_invisible="1"/>
+                <field name="provider_id" column_invisible="1"/>
+                <field name="payment_info_text" column_invisible="1"/>
+                <field name="next_invoice_number" column_invisible="1"/>
+                <field name="next_payment_amount" column_invisible="1"/>
+                <field name="next_payment_date" column_invisible="1"/>
+                <field name="code" column_invisible="1"/>
+                <field name="next_payment_id" column_invisible="1"/>
+                <field name="payment_info_manual" column_invisible="1"/>
+                <field name="service_content" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_tracking_form" model="ir.ui.view">
+        <field name="name">phan.he.service.tracking.form</field>
+        <field name="model">phan.he.service</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="view_phan_he_service_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="string">Nhập liệu hợp đồng / Internet</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- FORM NHẬP LIỆU đúng cột Excel -->
+    <record id="view_phan_he_service_entry_form" model="ir.ui.view">
+        <field name="name">phan.he.service.entry.form</field>
+        <field name="model">phan.he.service</field>
+        <field name="priority">5</field>
+        <field name="arch" type="xml">
+            <form string="Nhập liệu theo dõi Internet" class="o_phan_he_entry_form">
+                <header>
+                    <button name="action_approve" type="object" string="Đang hoạt động"
+                            invisible="state == 'active'" class="btn-primary"/>
+                    <button name="action_suspend" type="object" string="Tạm dừng"
+                            invisible="state != 'active'"/>
+                    <button name="action_liquidate" type="object" string="Thanh lý"
+                            invisible="state == 'liquidated'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="active,suspend,liquidated"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1" force_save="1"
+                                   placeholder="INTERNET - Tên cửa hàng"/>
+                        </h1>
+                    </div>
+
+                    <group string="Thông tin cửa hàng / hợp đồng">
+                        <group>
+                            <field name="stt" string="STT"/>
+                            <field name="mien_id" string="MIỀN" readonly="1"
+                                   force_save="1"
+                                   placeholder="Tự lấy theo cửa hàng"/>
+                            <field name="store_id" string="CỬA HÀNG" required="1"
+                                   options="{'no_quick_create': False}"/>
+                            <field name="customer_code" string="MÃ KH"
+                                   placeholder="VD: SGH414537"/>
+                            <field name="date_start" string="NGÀY BẮT ĐẦU" widget="date"
+                                   options="{'numeric': True}"/>
+                            <field name="date_end" string="NGÀY KẾT THÚC" widget="date"
+                                   options="{'numeric': True}"/>
+                            <field name="bandwidth" string="BĂNG THÔNG"
+                                   placeholder="VD: 100Mbps"/>
+                        </group>
+                        <group>
+                            <field name="package_name" string="Loại thanh toán"
+                                   placeholder="VD: Trả trước / 12 tháng + 1"/>
+                            <field name="contract_amount" string="CƯỚC THÁNG"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="service_type_id" string="HẠNG MỤC" required="1"/>
+                            <field name="ops_status" string="TRẠNG THÁI" required="1"
+                                   widget="phan_he_ops_status"/>
+                            <field name="state" invisible="1"/>
+                            <label for="remaining_alert" string="THỜI GIAN CÒN LẠI"/>
+                            <div class="o_phan_he_remaining_box">
+                                <field name="remaining_alert" nolabel="1" readonly="1"
+                                       widget="html"/>
+                                <div class="alert alert-warning mt-1 mb-0 py-1 px-2"
+                                     role="alert"
+                                     invisible="alert_level != 'warn'">
+                                    <i class="fa fa-exclamation-triangle"/>
+                                    Còn ≤ 30 ngày — cần gia hạn / theo dõi thanh toán
+                                </div>
+                                <div class="alert alert-danger mt-1 mb-0 py-1 px-2"
+                                     role="alert"
+                                     invisible="alert_level not in ('danger', 'expired')">
+                                    <i class="fa fa-exclamation-circle"/>
+                                    Sắp hết hạn hoặc đã hết hạn — xử lý ngay
+                                </div>
+                            </div>
+                            <field name="remaining_time" invisible="1"/>
+                            <field name="remaining_days" invisible="1"/>
+                            <field name="alert_level" invisible="1"/>
+                            <field name="code" string="Mã hợp đồng" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Địa chỉ &amp; thanh toán">
+                        <group>
+                            <field name="usage_address" string="ĐỊA CHỈ"
+                                   placeholder="Địa chỉ lắp đặt / cửa hàng..."
+                                   nolabel="0"/>
+                        </group>
+                        <group>
+                            <field name="provider_id" string="Nhà cung cấp"/>
+                            <field name="payment_info_text" string="THÔNG TIN THANH TOÁN"
+                                   placeholder="Tên TK / STK / Ngân hàng..."/>
+                        </group>
+                    </group>
+
+                    <group string="Thanh toán kỳ hiện tại (HĐ)">
+                        <group>
+                            <field name="next_invoice_number" string="Số hóa đơn (HĐ)"
+                                   placeholder="VD: 1703009"/>
+                            <field name="next_payment_amount" string="Số tiền thanh toán"/>
+                        </group>
+                        <group>
+                            <field name="next_payment_date" string="Ngày TT tiếp theo"
+                                   widget="date" options="{'numeric': True}"/>
+                        </group>
+                    </group>
+
+                    <group string="Ghi chú thêm">
+                        <field name="service_content" string="Mô tả chi tiết" nolabel="1"
+                               placeholder="Ghi chú thêm nếu cần..."/>
+                        <field name="note" invisible="1"/>
+                        <field name="payment_info_manual" invisible="1"/>
+                        <field name="next_payment_id" invisible="1"/>
+                        <field name="alert_level" invisible="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_form" model="ir.ui.view">
+        <field name="name">phan.he.service.form</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <form string="Hợp đồng dịch vụ" class="o_phan_he_service_form">
+                <header>
+                    <button name="action_submit" type="object" string="Gửi duyệt"
+                            invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_approve" type="object" string="Duyệt"
+                            invisible="state != 'waiting'" class="btn-primary"
+                            groups="lug_phan_he.group_phan_he_service_manager"/>
+                    <button name="action_suspend" type="object" string="Tạm dừng"
+                            invisible="state != 'active'"/>
+                    <button name="action_reactivate" type="object" string="Kích hoạt lại"
+                            invisible="state != 'suspend'" class="btn-primary"/>
+                    <button name="action_liquidate" type="object" string="Thanh lý"
+                            invisible="state not in ('active', 'suspend')"/>
+                    <button name="action_cancel" type="object" string="Hủy"
+                            invisible="state in ('cancel', 'liquidated', 'expired')"
+                            confirm="Bạn chắc chắn muốn hủy hợp đồng này?"/>
+                    <button name="action_set_draft" type="object" string="Về nháp"
+                            invisible="state not in ('waiting', 'cancel')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,waiting,active,suspend,liquidated"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_payments" type="object"
+                                class="oe_stat_button" icon="fa-money">
+                            <field name="payment_count" widget="statinfo" string="Thanh toán"/>
+                        </button>
+                        <button name="action_open_invoices" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="invoice_count" widget="statinfo" string="Hóa đơn"/>
+                        </button>
+                        <button name="action_open_documents" type="object"
+                                class="oe_stat_button" icon="fa-folder-open-o">
+                            <field name="document_count" widget="statinfo" string="Chứng từ"/>
+                        </button>
+                    </div>
+                    <div class="oe_title o_phan_he_title_row">
+                        <h1>
+                            <field name="name" readonly="1" force_save="1"
+                                   placeholder="INTERNET - LUG KDV"/>
+                        </h1>
+                        <field name="state" widget="badge"
+                               decoration-success="state == 'active'"
+                               decoration-info="state == 'waiting'"
+                               decoration-warning="state == 'suspend'"
+                               decoration-danger="state in ('expired', 'cancel')"
+                               decoration-muted="state == 'draft'"
+                               nolabel="1"/>
+                    </div>
+
+                    <div class="o_phan_he_summary_box">
+                        <group>
+                            <group>
+                                <field name="store_id"/>
+                                <field name="mien_id"/>
+                                <field name="area_id"/>
+                                <field name="provider_id"/>
+                                <field name="customer_code" placeholder="VD: SGH414537"/>
+                                <field name="service_type_id"/>
+                            </group>
+                            <group>
+                                <field name="date_start" widget="date" options="{'numeric': True}"/>
+                                <field name="date_end" widget="date" options="{'numeric': True}"/>
+                                <field name="bandwidth" string="Băng thông"
+                                       placeholder="VD: 100Mbps"/>
+                                <field name="contract_amount" string="Cước tháng"/>
+                                <field name="currency_id" invisible="1"/>
+                                <field name="remaining_alert" string="Thời gian còn lại"
+                                       widget="html" readonly="1"/>
+                                <field name="remaining_time" invisible="1"/>
+                                <field name="remaining_days" invisible="1"/>
+                                <field name="alert_level" widget="badge"
+                                       decoration-success="alert_level == 'ok'"
+                                       decoration-warning="alert_level == 'warn'"
+                                       decoration-danger="alert_level in ('danger', 'expired')"/>
+                                <field name="code" readonly="1"/>
+                            </group>
+                        </group>
+                    </div>
+
+                    <notebook>
+                        <page string="Tổng quan" name="overview">
+                            <group>
+                                <group string="Thông tin gói">
+                                    <field name="package_name" string="Loại thanh toán"/>
+                                    <field name="service_content"
+                                           placeholder="Nội dung / gói dịch vụ..."/>
+                                    <field name="usage_address"/>
+                                    <field name="technical_info"/>
+                                    <field name="duration" string="Thời hạn"/>
+                                </group>
+                                <group string="Ghi chú">
+                                    <field name="note" nolabel="1" placeholder="Ghi chú thêm..."/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <page string="Thanh toán" name="payments">
+                            <field name="payment_ids">
+                                <list string="Lịch thanh toán"
+                                      decoration-danger="payment_state == 'overdue'"
+                                      decoration-success="payment_state == 'paid'"
+                                      decoration-warning="payment_state == 'due_soon'">
+                                    <field name="code" optional="hide"/>
+                                    <field name="period"/>
+                                    <field name="invoice_number" string="Hóa đơn"/>
+                                    <field name="amount" string="Số tiền"/>
+                                    <field name="date_due" string="Ngày TT tiếp theo"/>
+                                    <field name="date_paid" optional="show"/>
+                                    <field name="payment_state" string="Trạng thái" widget="badge"
+                                           decoration-success="payment_state == 'paid'"
+                                           decoration-warning="payment_state in ('pending', 'due_soon')"
+                                           decoration-info="payment_state == 'not_due'"
+                                           decoration-danger="payment_state == 'overdue'"
+                                           decoration-muted="payment_state in ('draft', 'cancel')"/>
+                                    <field name="provider_id" optional="hide"/>
+                                    <field name="bank_account_id" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Chứng từ" name="documents">
+                            <field name="document_ids">
+                                <list string="Chứng từ" editable="bottom">
+                                    <field name="date"/>
+                                    <field name="doc_type"/>
+                                    <field name="name"/>
+                                    <field name="file" filename="filename"/>
+                                    <field name="filename" column_invisible="1"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                            <separator string="Hóa đơn liên kết"/>
+                            <field name="invoice_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="invoice_number"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount"/>
+                                    <field name="reconcile_state" widget="badge"
+                                           decoration-success="reconcile_state == 'matched'"
+                                           decoration-danger="reconcile_state == 'mismatch'"
+                                           decoration-muted="reconcile_state == 'draft'"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <page string="Lịch sử" name="history">
+                            <div class="text-muted mb-2">
+                                Lịch sử theo dõi ở chatter bên dưới.
+                            </div>
+                            <group>
+                                <field name="note" string="Ghi chú nội bộ"/>
+                                <field name="technical_info" string="Thông tin kỹ thuật"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_search" model="ir.ui.view">
+        <field name="name">phan.he.service.search</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <search string="Tìm hợp đồng">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="store_id"/>
+                <field name="customer_code"/>
+                <field name="provider_id"/>
+                <field name="service_type_id"/>
+                <separator/>
+                <filter name="filter_active" string="Đang hoạt động"
+                        domain="[('state', '=', 'active')]"/>
+                <filter name="filter_suspend" string="Tạm dừng"
+                        domain="[('state', '=', 'suspend')]"/>
+                <filter name="filter_liquidated" string="Thanh lý"
+                        domain="[('state', '=', 'liquidated')]"/>
+                <filter name="filter_expire_soon" string="Sắp hết hạn"
+                        domain="[('state', 'in', ('active', 'suspend')), ('date_end', '!=', False), ('date_end', '&gt;=', context_today().strftime('%Y-%m-%d')), ('date_end', '&lt;=', (context_today() + relativedelta(days=30)).strftime('%Y-%m-%d'))]"/>
+                <filter name="filter_expired" string="Quá hạn (theo ngày)"
+                        domain="[('state', 'not in', ('liquidated', 'cancel')), ('date_end', '!=', False), ('date_end', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="filter_pending_payment" string="Có thanh toán chưa TT"
+                        domain="[('payment_ids.payment_state', 'in', ('pending', 'due_soon', 'not_due', 'overdue'))]"/>
+                <separator/>
+                <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_waiting" string="Chờ duyệt" domain="[('state', '=', 'waiting')]"/>
+                <group>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
+                    <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_type" string="Loại dịch vụ" context="{'group_by': 'service_type_id'}"/>
+                    <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
+                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_all" model="ir.actions.act_window">
+        <field name="name">Hợp đồng dịch vụ</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có hợp đồng dịch vụ</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_tracking" model="ir.actions.act_window">
+        <field name="name">Danh sách internet</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_internet'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có dòng theo dõi Internet</p>
+            <p>Bấm New để mở form nhập liệu, hoặc nhập trực tiếp trên bảng.</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry" model="ir.actions.act_window">
+        <field name="name">Nhập liệu Internet</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_internet'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <record id="action_phan_he_service_active" model="ir.actions.act_window">
+        <field name="name">Đang hoạt động</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'active')]</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
+    </record>
+
+    <record id="action_phan_he_service_recurring" model="ir.actions.act_window">
+        <field name="name">Dịch vụ định kỳ</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('state', '=', 'active')]</field>
+        <field name="context">{'search_default_filter_active': 1}</field>
+    </record>
+
+    <record id="action_phan_he_service_expire_soon" model="ir.actions.act_window">
+        <field name="name">Sắp hết hạn</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_expire_soon': 1}</field>
+    </record>
+
+    <record id="action_phan_he_service_expired" model="ir.actions.act_window">
+        <field name="name">Đã hết hạn</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_filter_expired': 1}</field>
+    </record>
+
+    <!-- ========== LỊCH THANH TOÁN ========== -->
+    <record id="view_phan_he_payment_list" model="ir.ui.view">
+        <field name="name">phan.he.payment.list</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <list string="Lịch thanh toán"
+                  decoration-danger="payment_state == 'overdue'"
+                  decoration-success="payment_state == 'paid'"
+                  decoration-warning="payment_state == 'due_soon'">
+                <field name="code" optional="hide"/>
+                <field name="invoice_number" string="Hóa đơn"/>
+                <field name="service_id"/>
+                <field name="store_id" optional="show"/>
+                <field name="provider_id" optional="show"/>
+                <field name="period" optional="show"/>
+                <field name="amount"/>
+                <field name="date_due" string="Ngày TT tiếp theo"/>
+                <field name="date_paid" optional="show"/>
+                <field name="payment_state" widget="badge"
+                       decoration-success="payment_state == 'paid'"
+                       decoration-warning="payment_state in ('pending', 'due_soon')"
+                       decoration-info="payment_state == 'not_due'"
+                       decoration-danger="payment_state == 'overdue'"
+                       decoration-muted="payment_state in ('draft', 'cancel')"/>
+                <field name="bank_account_id" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_payment_form" model="ir.ui.view">
+        <field name="name">phan.he.payment.form</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <form string="Thanh toán">
+                <header>
+                    <button name="action_mark_paid" type="object" string="Đánh dấu đã TT"
+                            invisible="payment_state == 'paid'" class="btn-primary"/>
+                    <field name="payment_state" widget="statusbar"
+                           statusbar_visible="draft,not_due,due_soon,pending,overdue,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_invoices" type="object"
+                                class="oe_stat_button" icon="fa-file-text-o">
+                            <field name="invoice_count" widget="statinfo" string="Hóa đơn"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="code"/>
+                        <h1><field name="code" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group string="Liên kết">
+                            <field name="service_id"/>
+                            <field name="store_id"/>
+                            <field name="mien_id"/>
+                            <field name="area_id"/>
+                            <field name="period" placeholder="VD: 11/2025 — 11/2026"/>
+                            <field name="amount"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="date_due"/>
+                            <field name="date_paid"/>
+                        </group>
+                        <group string="Hóa đơn">
+                            <field name="invoice_number" placeholder="VD: 1703009"/>
+                            <field name="invoice_file" filename="invoice_filename"/>
+                            <field name="invoice_filename" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Tài khoản nhận">
+                        <group>
+                            <field name="provider_id"/>
+                            <field name="bank_account_id"/>
+                            <field name="provider_account_name"/>
+                            <field name="provider_account_number"/>
+                        </group>
+                        <group>
+                            <field name="provider_bank_name"/>
+                            <field name="provider_bank_branch"/>
+                        </group>
+                    </group>
+                    <group string="Nội dung thanh toán">
+                        <field name="payment_content" nolabel="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Hóa đơn liên kết" name="invoices">
+                            <field name="invoice_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="invoice_number"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount"/>
+                                    <field name="reconcile_state" widget="badge"
+                                           decoration-success="reconcile_state == 'matched'"
+                                           decoration-danger="reconcile_state == 'mismatch'"
+                                           decoration-muted="reconcile_state == 'draft'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Ghi chú" name="note">
+                            <field name="note" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_payment_search" model="ir.ui.view">
+        <field name="name">phan.he.payment.search</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <search string="Tìm thanh toán">
+                <field name="code"/>
+                <field name="service_id"/>
+                <field name="store_id"/>
+                <field name="provider_id"/>
+                <field name="invoice_number"/>
+                <field name="period"/>
+                <separator/>
+                <filter name="filter_pending" string="Chờ thanh toán"
+                        domain="[('payment_state', 'in', ('pending', 'due_soon', 'not_due'))]"/>
+                <filter name="filter_overdue" string="Quá hạn"
+                        domain="[('payment_state', '=', 'overdue')]"/>
+                <filter name="filter_paid" string="Đã thanh toán"
+                        domain="[('payment_state', '=', 'paid')]"/>
+                <filter name="filter_due_soon" string="Sắp đến hạn"
+                        domain="[('payment_state', '=', 'due_soon')]"/>
+                <group>
+                    <filter name="group_service" string="Hợp đồng" context="{'group_by': 'service_id'}"/>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
+                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'payment_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_payment" model="ir.actions.act_window">
+        <field name="name">Lịch thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Calendar: hạn thanh toán theo tháng -->
+    <record id="view_phan_he_payment_calendar" model="ir.ui.view">
+        <field name="name">phan.he.payment.calendar</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <calendar string="Calendar"
+                      date_start="date_due"
+                      mode="month"
+                      color="payment_state"
+                      create_name_field="store_name"
+                      event_open_popup="1"
+                      quick_create="0"
+                      create="0">
+                <field name="store_name"/>
+                <field name="store_id"/>
+                <field name="service_id"/>
+                <field name="amount"/>
+                <field name="payment_state"/>
+                <field name="provider_id"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="action_phan_he_calendar" model="ir.actions.act_window">
+        <field name="name">Calendar</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">calendar,list,form</field>
+        <field name="search_view_id" ref="view_phan_he_payment_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có lịch thanh toán để hiển thị trên Calendar.
+            </p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_payment_pending" model="ir.actions.act_window">
+        <field name="name">Chờ thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('payment_state', 'in', ('pending', 'due_soon', 'not_due'))]</field>
+        <field name="context">{'search_default_filter_pending': 1}</field>
+    </record>
+
+    <record id="action_phan_he_payment_due_soon" model="ir.actions.act_window">
+        <field name="name">Sắp đến hạn thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('payment_state', 'in', ('due_soon', 'pending', 'not_due'))]</field>
+        <field name="context">{'search_default_filter_due_soon': 1}</field>
+    </record>
+
+    <record id="action_phan_he_payment_overdue" model="ir.actions.act_window">
+        <field name="name">Quá hạn</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('payment_state', '=', 'overdue')]</field>
+        <field name="context">{'search_default_filter_overdue': 1}</field>
+    </record>
+
+    <record id="action_phan_he_payment_paid" model="ir.actions.act_window">
+        <field name="name">Đã thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('payment_state', '=', 'paid')]</field>
+        <field name="context">{'search_default_filter_paid': 1}</field>
+    </record>
+
+    <!-- ========== HÓA ĐƠN ========== -->
+    <record id="view_phan_he_invoice_list" model="ir.ui.view">
+        <field name="name">phan.he.invoice.list</field>
+        <field name="model">phan.he.invoice</field>
+        <field name="arch" type="xml">
+            <list string="Hóa đơn"
+                  decoration-success="reconcile_state == 'matched'"
+                  decoration-danger="reconcile_state == 'mismatch'">
+                <field name="name"/>
+                <field name="invoice_number"/>
+                <field name="service_id"/>
+                <field name="store_id" optional="show"/>
+                <field name="provider_id" optional="show"/>
+                <field name="payment_id" optional="show"/>
+                <field name="invoice_date"/>
+                <field name="amount"/>
+                <field name="reconcile_state" widget="badge"
+                       decoration-success="reconcile_state == 'matched'"
+                       decoration-danger="reconcile_state == 'mismatch'"
+                       decoration-muted="reconcile_state == 'draft'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_invoice_form" model="ir.ui.view">
+        <field name="name">phan.he.invoice.form</field>
+        <field name="model">phan.he.invoice</field>
+        <field name="arch" type="xml">
+            <form string="Hóa đơn">
+                <header>
+                    <field name="reconcile_state" widget="statusbar"
+                           statusbar_visible="draft,matched,mismatch"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="invoice_number"/>
+                            <field name="invoice_date"/>
+                            <field name="amount"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="file" filename="filename"/>
+                            <field name="filename" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="service_id"/>
+                            <field name="payment_id"/>
+                            <field name="store_id"/>
+                            <field name="provider_id"/>
+                            <field name="reconcile_state"/>
+                        </group>
+                    </group>
+                    <group string="Đối soát">
+                        <field name="reconcile_note" nolabel="1" placeholder="Ghi chú đối soát..."/>
+                    </group>
+                    <group string="Ghi chú">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_invoice_search" model="ir.ui.view">
+        <field name="name">phan.he.invoice.search</field>
+        <field name="model">phan.he.invoice</field>
+        <field name="arch" type="xml">
+            <search string="Tìm hóa đơn">
+                <field name="name"/>
+                <field name="invoice_number"/>
+                <field name="service_id"/>
+                <field name="store_id"/>
+                <field name="provider_id"/>
+                <filter name="filter_draft" string="Nháp" domain="[('reconcile_state', '=', 'draft')]"/>
+                <filter name="filter_matched" string="Đã đối soát" domain="[('reconcile_state', '=', 'matched')]"/>
+                <filter name="filter_mismatch" string="Lệch" domain="[('reconcile_state', '=', 'mismatch')]"/>
+                <group>
+                    <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_reconcile" string="Đối soát" context="{'group_by': 'reconcile_state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_invoice" model="ir.actions.act_window">
+        <field name="name">Hóa đơn</field>
+        <field name="res_model">phan.he.invoice</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== CHỨNG TỪ / HỒ SƠ ========== -->
+    <record id="view_phan_he_document_list" model="ir.ui.view">
+        <field name="name">phan.he.document.list</field>
+        <field name="model">phan.he.document</field>
+        <field name="arch" type="xml">
+            <list string="Chứng từ">
+                <field name="date"/>
+                <field name="name"/>
+                <field name="doc_type"/>
+                <field name="service_id"/>
+                <field name="store_id" optional="show"/>
+                <field name="file" filename="filename"/>
+                <field name="filename" column_invisible="1"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_document_form" model="ir.ui.view">
+        <field name="name">phan.he.document.form</field>
+        <field name="model">phan.he.document</field>
+        <field name="arch" type="xml">
+            <form string="Chứng từ">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="doc_type"/>
+                            <field name="date"/>
+                            <field name="file" filename="filename"/>
+                            <field name="filename" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="service_id"/>
+                            <field name="store_id"/>
+                            <field name="note"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_document_search" model="ir.ui.view">
+        <field name="name">phan.he.document.search</field>
+        <field name="model">phan.he.document</field>
+        <field name="arch" type="xml">
+            <search string="Tìm chứng từ">
+                <field name="name"/>
+                <field name="service_id"/>
+                <field name="store_id"/>
+                <filter name="filter_contract" string="Hồ sơ hợp đồng" domain="[('doc_type', '=', 'contract')]"/>
+                <filter name="filter_invoice" string="Hóa đơn" domain="[('doc_type', '=', 'invoice')]"/>
+                <filter name="filter_appendix" string="Phụ lục" domain="[('doc_type', '=', 'appendix')]"/>
+                <group>
+                    <filter name="group_type" string="Loại" context="{'group_by': 'doc_type'}"/>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_document_contract" model="ir.actions.act_window">
+        <field name="name">Hồ sơ hợp đồng</field>
+        <field name="res_model">phan.he.document</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('doc_type', '=', 'contract')]</field>
+        <field name="context">{'default_doc_type': 'contract', 'search_default_filter_contract': 1}</field>
+    </record>
+
+    <!-- ========== BÁO CÁO ========== -->
+    <record id="view_phan_he_report_cost_type_pivot" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.type.pivot</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <pivot string="Chi phí theo loại dịch vụ">
+                <field name="service_type_id" type="row"/>
+                <field name="mien_id" type="col"/>
+                <field name="contract_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_phan_he_report_cost_type_graph" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.type.graph</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <graph string="Chi phí theo loại dịch vụ" type="bar">
+                <field name="service_type_id"/>
+                <field name="contract_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_phan_he_report_cost_type" model="ir.actions.act_window">
+        <field name="name">Chi phí dịch vụ</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <record id="view_phan_he_report_cost_store_pivot" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.store.pivot</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <pivot string="Chi phí theo cửa hàng">
+                <field name="store_id" type="row"/>
+                <field name="service_type_id" type="col"/>
+                <field name="contract_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_phan_he_report_cost_store_graph" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.store.graph</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <graph string="Chi phí theo cửa hàng" type="bar">
+                <field name="store_id"/>
+                <field name="contract_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_phan_he_report_cost_store" model="ir.actions.act_window">
+        <field name="name">Chi phí theo cửa hàng</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <record id="view_phan_he_report_cost_provider_pivot" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.provider.pivot</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <pivot string="Chi phí theo nhà cung cấp">
+                <field name="provider_id" type="row"/>
+                <field name="service_type_id" type="col"/>
+                <field name="contract_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_phan_he_report_cost_provider_graph" model="ir.ui.view">
+        <field name="name">phan.he.service.report.cost.provider.graph</field>
+        <field name="model">phan.he.service</field>
+        <field name="arch" type="xml">
+            <graph string="Chi phí theo nhà cung cấp" type="bar">
+                <field name="provider_id"/>
+                <field name="contract_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_phan_he_report_cost_provider" model="ir.actions.act_window">
+        <field name="name">Chi phí theo nhà cung cấp</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <record id="view_phan_he_report_payment_pivot" model="ir.ui.view">
+        <field name="name">phan.he.payment.report.pivot</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <pivot string="Phân tích thanh toán">
+                <field name="payment_state" type="row"/>
+                <field name="store_id" type="col"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_phan_he_report_payment_graph" model="ir.ui.view">
+        <field name="name">phan.he.payment.report.graph</field>
+        <field name="model">phan.he.payment</field>
+        <field name="arch" type="xml">
+            <graph string="Phân tích thanh toán" type="bar">
+                <field name="payment_state"/>
+                <field name="amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="action_phan_he_report_payment" model="ir.actions.act_window">
+        <field name="name">Phân tích thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">pivot,graph,list</field>
+    </record>
+</odoo>

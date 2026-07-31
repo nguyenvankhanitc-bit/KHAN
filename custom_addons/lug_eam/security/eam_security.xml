@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="res.groups.privilege" id="res_groups_privilege_lug_eam">
+        <field name="name">Quản lý tài sản</field>
+        <field name="category_id" ref="base.module_category_operations"/>
+        <field name="sequence">48</field>
+    </record>
+
+    <record id="group_eam_user" model="res.groups">
+        <field name="name">Nhân viên tài sản</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_eam"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user'))]"/>
+        <field name="comment">Xem danh mục và tài sản.</field>
+    </record>
+
+    <record id="group_eam_manager" model="res.groups">
+        <field name="name">Quản lý tài sản</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_user')), (4, ref('maintenance.group_equipment_manager'))]"/>
+        <field name="comment">Tạo / sửa nhóm, danh mục và tài sản.</field>
+    </record>
+
+    <record id="group_eam_admin" model="res.groups">
+        <field name="name">Quản trị tài sản</field>
+        <field name="privilege_id" ref="res_groups_privilege_lug_eam"/>
+        <field name="implied_ids" eval="[(4, ref('group_eam_manager'))]"/>
+        <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
+        <field name="comment">Toàn quyền cấu hình EAM.</field>
+    </record>
+
+    <record id="rule_eam_brand_company" model="ir.rule">
+        <field name="name">EAM Brand: multi-company</field>
+        <field name="model_id" ref="model_eam_brand"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <record id="rule_eam_model_company" model="ir.rule">
+        <field name="name">EAM Model: multi-company</field>
+        <field name="model_id" ref="model_eam_model"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+
+    <!-- Bổ sung rule đọc toàn bộ tài sản cho nhóm EAM (OR với rule follower của maintenance). -->
+    <record id="equipment_rule_eam_user" model="ir.rule">
+        <field name="name">EAM user: xem tất cả tài sản</field>
+        <field name="model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_eam_user'))]"/>
+    </record>
+
+    <record id="rule_eam_transaction_company" model="ir.rule">
+        <field name="name">EAM Transaction: multi-company</field>
+        <field name="model_id" ref="model_eam_transaction"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+    <record id="rule_eam_history_company" model="ir.rule">
+        <field name="name">EAM History: multi-company</field>
+        <field name="model_id" ref="model_eam_asset_history"/>
+        <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+    <record id="rule_eam_warehouse_company" model="ir.rule">
+        <field name="name">EAM Warehouse: multi-company</field>
+        <field name="model_id" ref="model_eam_warehouse"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+    <record id="rule_eam_location_company" model="ir.rule">
+        <field name="name">EAM Location: multi-company</field>
+        <field name="model_id" ref="model_eam_location"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+    <record id="rule_eam_inventory_product_company" model="ir.rule">
+        <field name="name">EAM Inventory product: multi-company</field>
+        <field name="model_id" ref="model_eam_inventory_product"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+    <record id="rule_eam_inventory_move_company" model="ir.rule">
+        <field name="name">EAM Inventory move: multi-company</field>
+        <field name="model_id" ref="model_eam_inventory_move"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="global" eval="True"/>
+    </record>
+</odoo>

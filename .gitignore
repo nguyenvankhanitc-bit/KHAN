@@ -2,3 +2,22 @@ __pycache__/
 *.py[cod]
 *$py.class
 *.egg-info/
+
+# secrets & local deploy
+.env
+deploy/.env
+*.dump
+*.log
+
+# local smoke / verify artifacts
+scripts/*_out.txt
+scripts/*_err.txt
+scripts/_smoke_*.xlsx
+scripts/_verify_*.xlsx
+scripts/*.log
+install.log
+query
+
+# backups
+*.bak
+*.pyc

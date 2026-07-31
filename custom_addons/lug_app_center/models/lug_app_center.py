@@ -23,7 +23,7 @@ class LugAppCenter(models.AbstractModel):
             avatar_url = f"/web/image/res.partner/{partner.id}/image_128"
 
         return {
-            "company_name": company.name or "CÔNG TY TNHH SÁNG TÂM",
+            "company_name": "CÔNG TY TNHH SÁNG TÂM",
             "company_slogan": "Bền vững hôm nay - Thịnh vượng ngày mai",
             "company_website": "www.sangtam.com.vn",
             "company_address": self._format_company_address(company),
@@ -44,7 +44,7 @@ class LugAppCenter(models.AbstractModel):
             ),
             "user_initial": (user.name or "U")[:1].upper(),
             "avatar_url": avatar_url,
-            "welcome": "Chào mừng bạn đến với hệ thống quản trị doanh nghiệp Sáng Tâm ERP",
+            "welcome": "Chào mừng bạn đến với hệ thống quản trị doanh nghiệp",
         }
 
     @api.model

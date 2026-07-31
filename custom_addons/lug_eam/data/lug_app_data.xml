@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="lug_app_eam" model="lug.app">
+        <field name="name">Quản lý tài sản</field>
+        <field name="code">eam</field>
+        <field name="sequence">48</field>
+        <field name="module_name">lug_eam</field>
+        <field name="menu_xmlid">lug_eam.menu_eam_root</field>
+        <field name="description">Enterprise Asset Management — quản lý tài sản và bảo trì</field>
+    </record>
+</odoo>

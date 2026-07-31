@@ -99,17 +99,6 @@
                             </button>
                         </t>
                     </nav>
-                    <div class="o_eac_sidebar_foot">
-                        <img class="o_eac_logo_img o_eac_logo_img--lg"
-                             t-att-src="state.companyLogoUrl"
-                             alt="SATACO"/>
-                        <p class="o_eac_slogan" t-esc="state.companySlogan"/>
-                        <p class="o_eac_address" t-esc="state.companyAddress"/>
-                        <a class="o_eac_web"
-                           t-att-href="'https://' + state.companyWebsite"
-                           target="_blank"
-                           t-esc="state.companyWebsite"/>
-                    </div>
                 </aside>
 
                 <main class="o_eac_main">
@@ -119,10 +108,6 @@
                     <t t-else="">
                         <section class="o_eac_welcome">
                             <div class="o_eac_welcome_text">
-                                <h1>
-                                    <t t-esc="greeting"/>
-                                    <span class="o_eac_wave">👋</span>
-                                </h1>
                                 <p t-esc="state.welcome"/>
                             </div>
                             <div class="o_eac_welcome_art" aria-hidden="true">
@@ -147,9 +132,18 @@
                                     <button type="button"
                                             class="o_eac_app_card"
                                             t-on-click="() => this.openApp(app)">
-                                        <span class="o_eac_app_icon o_eac_app_icon--img">
-                                            <img t-att-src="app.webIconData" t-att-alt="app.name"/>
-                                        </span>
+                                        <t t-if="app.iconType === 'fa' and app.faIcon">
+                                            <span class="o_eac_app_icon o_eac_app_icon--fa"
+                                                  t-att-style="'background-color:' + app.faIcon.backgroundColor">
+                                                <i t-att-class="app.faIcon.iconClass"
+                                                   t-att-style="'color:' + app.faIcon.color"/>
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <span class="o_eac_app_icon o_eac_app_icon--img">
+                                                <img t-att-src="app.webIconData" t-att-alt="app.name"/>
+                                            </span>
+                                        </t>
                                         <span class="o_eac_app_meta">
                                             <span class="o_eac_app_name" t-esc="app.name"/>
                                         </span>

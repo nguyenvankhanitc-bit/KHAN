@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.OpsStatusField">
+        <span class="o_phan_he_ops_status" t-att-class="meta.className">
+            <i t-att-class="'fa ' + meta.icon"/>
+            <select class="o_phan_he_ops_select"
+                    t-att-value="value"
+                    t-on-change="onChange"
+                    t-on-click.stop=""
+                    t-on-mousedown.stop="">
+                <t t-foreach="options" t-as="opt" t-key="opt.value">
+                    <option t-att-value="opt.value" t-esc="opt.label"/>
+                </t>
+            </select>
+        </span>
+    </t>
+</templates>

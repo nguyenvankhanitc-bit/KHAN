@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Client action Dashboard -->
+    <record id="action_eam_dashboard_client" model="ir.actions.client">
+        <field name="name">Dashboard tài sản</field>
+        <field name="tag">eam_dashboard</field>
+    </record>
+
+    <!-- Search filters bổ sung cho báo cáo -->
+    <record id="view_eam_asset_search_report" model="ir.ui.view">
+        <field name="name">maintenance.equipment.search.eam.report</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="asset_code"/>
+                <field name="eam_state"/>
+                <field name="warranty_state"/>
+                <field name="department_id"/>
+                <field name="owner_employee_id"/>
+                <field name="site_location_id"/>
+                <field name="warehouse_id"/>
+                <field name="current_location_id"/>
+                <separator/>
+                <filter string="Đang sử dụng" name="eam_in_use" domain="[('eam_state', '=', 'in_use')]"/>
+                <filter string="Trong kho" name="eam_in_stock" domain="[('eam_state', '=', 'in_stock')]"/>
+                <filter string="Bảo trì / Hỏng" name="eam_maint"
+                        domain="[('eam_state', 'in', ('maintenance', 'broken'))]"/>
+                <filter string="Hết bảo hành" name="eam_warranty_expired"
+                        domain="[('warranty_state', '=', 'expired'), ('eam_state', 'not in', ('disposed', 'draft'))]"/>
+                <filter string="Sắp hết BH" name="eam_warranty_expiring"
+                        domain="[('warranty_state', '=', 'expiring'), ('eam_state', 'not in', ('disposed', 'draft'))]"/>
+                <filter string="Chưa thanh lý" name="eam_active"
+                        domain="[('eam_state', '!=', 'disposed')]"/>
+                <separator/>
+                <group>
+                    <filter string="Trạng thái" name="group_eam_state" context="{'group_by': 'eam_state'}"/>
+                    <filter string="Cửa hàng" name="group_site" context="{'group_by': 'site_location_id'}"/>
+                    <filter string="Phòng ban" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Người sử dụng" name="group_owner" context="{'group_by': 'owner_employee_id'}"/>
+                    <filter string="Kho" name="group_warehouse" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Nhóm TS" name="group_category" context="{'group_by': 'category_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Graph: theo trạng thái -->
+    <record id="view_eam_asset_graph_state" model="ir.ui.view">
+        <field name="name">maintenance.equipment.graph.eam.state</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="arch" type="xml">
+            <graph string="Tài sản theo trạng thái" type="pie" sample="1">
+                <field name="eam_state" type="row"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Pivot: theo cửa hàng × trạng thái -->
+    <record id="view_eam_asset_pivot_site" model="ir.ui.view">
+        <field name="name">maintenance.equipment.pivot.eam.site</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="arch" type="xml">
+            <pivot string="Tài sản theo cửa hàng" sample="1">
+                <field name="site_location_id" type="row"/>
+                <field name="eam_state" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Pivot: theo phòng ban -->
+    <record id="view_eam_asset_pivot_department" model="ir.ui.view">
+        <field name="name">maintenance.equipment.pivot.eam.department</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="arch" type="xml">
+            <pivot string="Tài sản theo phòng ban" sample="1">
+                <field name="department_id" type="row"/>
+                <field name="eam_state" type="col"/>
+                <field name="cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Pivot: theo người sử dụng -->
+    <record id="view_eam_asset_pivot_owner" model="ir.ui.view">
+        <field name="name">maintenance.equipment.pivot.eam.owner</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="arch" type="xml">
+            <pivot string="Tài sản theo người sử dụng" sample="1">
+                <field name="owner_employee_id" type="row"/>
+                <field name="department_id" type="col"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Graph: chi phí bảo trì -->
+    <record id="view_eam_maint_graph_cost" model="ir.ui.view">
+        <field name="name">maintenance.request.graph.eam.cost</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <graph string="Chi phí bảo trì theo tháng" type="line" sample="1">
+                <field name="close_date" interval="month"/>
+                <field name="eam_total_cost" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_eam_maint_pivot_cost" model="ir.ui.view">
+        <field name="name">maintenance.request.pivot.eam.cost</field>
+        <field name="model">maintenance.request</field>
+        <field name="arch" type="xml">
+            <pivot string="Chi phí bảo trì" sample="1">
+                <field name="equipment_id" type="row"/>
+                <field name="close_date" interval="month" type="col"/>
+                <field name="eam_total_cost" type="measure"/>
+                <field name="eam_labor_cost" type="measure"/>
+                <field name="eam_part_cost" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Actions báo cáo -->
+    <record id="action_eam_report_by_state" model="ir.actions.act_window">
+        <field name="name">Tài sản theo trạng thái</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+        <field name="domain">[('eam_state', '!=', 'disposed')]</field>
+        <field name="context">{'search_default_group_eam_state': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'graph', 'view_id': ref('view_eam_asset_graph_state')})]"/>
+    </record>
+
+    <record id="action_eam_report_by_site" model="ir.actions.act_window">
+        <field name="name">Tài sản theo cửa hàng</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list,form</field>
+        <field name="domain">[('eam_state', '=', 'in_use')]</field>
+        <field name="context">{'search_default_group_site': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot_site')})]"/>
+    </record>
+
+    <record id="action_eam_report_by_department" model="ir.actions.act_window">
+        <field name="name">Tài sản theo phòng ban</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,graph,list,form</field>
+        <field name="domain">[('eam_state', '=', 'in_use')]</field>
+        <field name="context">{'search_default_group_department': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot_department')})]"/>
+    </record>
+
+    <record id="action_eam_report_by_owner" model="ir.actions.act_window">
+        <field name="name">Tài sản theo người sử dụng</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">pivot,list,form</field>
+        <field name="domain">[('eam_state', '=', 'in_use')]</field>
+        <field name="context">{'search_default_group_owner': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'pivot', 'view_id': ref('view_eam_asset_pivot_owner')})]"/>
+    </record>
+
+    <record id="action_eam_report_warranty_expired" model="ir.actions.act_window">
+        <field name="name">Tài sản hết bảo hành</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[
+            ('warranty_state', '=', 'expired'),
+            ('eam_state', 'not in', ('disposed', 'draft'))
+        ]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_eam_report_in_stock" model="ir.actions.act_window">
+        <field name="name">Tài sản trong kho</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('eam_state', '=', 'in_stock')]</field>
+        <field name="context">{'search_default_group_warehouse': 1}</field>
+    </record>
+
+    <record id="action_eam_report_in_use" model="ir.actions.act_window">
+        <field name="name">Tài sản đang sử dụng</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('eam_state', '=', 'in_use')]</field>
+    </record>
+
+    <record id="action_eam_report_maintenance" model="ir.actions.act_window">
+        <field name="name">Tài sản bảo trì / hỏng</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('eam_state', 'in', ('maintenance', 'broken'))]</field>
+    </record>
+
+    <record id="action_eam_report_maint_cost" model="ir.actions.act_window">
+        <field name="name">Chi phí bảo trì</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">graph,pivot,list,form</field>
+        <field name="domain">[('stage_id.done', '=', True)]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'graph', 'view_id': ref('view_eam_maint_graph_cost')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'pivot', 'view_id': ref('view_eam_maint_pivot_cost')})]"/>
+    </record>
+</odoo>

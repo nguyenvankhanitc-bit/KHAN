@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <style>
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        background: #fff;
+        color: #1a1a1a;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        -webkit-text-size-adjust: 100%;
+      }
+      .wrap {
+        width: 100%;
+        min-height: 100vh;
+        min-height: 100dvh;
+        padding-bottom: env(safe-area-inset-bottom, 0);
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #1a73e8;
+        color: #fff;
+        padding: 16px;
+        padding-top: calc(16px + env(safe-area-inset-top, 0));
+      }
+      .header .icon { font-size: 26px; }
+      .header h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      form {
+        padding: 14px 14px 40px;
+        max-width: 640px;
+        margin: 0 auto;
+      }
+      label {
+        display: block;
+        margin: 14px 0 6px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #222;
+      }
+      input[type='text'],
+      input[type='number'],
+      select {
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 14px;
+        border: 1px solid #c9d1d9;
+        border-radius: 10px;
+        background: #f6f8fa;
+        font-size: 16px; /* iOS: tránh auto-zoom */
+      }
+      input:focus, select:focus {
+        outline: none;
+        border-color: #1a73e8;
+        background: #fff;
+      }
+      #ten[readonly] {
+        pointer-events: none;
+        background: #eef1f4;
+        color: #333;
+      }
+
+      /* Ô tìm: kính lúp + × như mẫu */
+      .search-box {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 48px;
+        padding: 0 10px 0 12px;
+        border: 1px solid #c9d1d9;
+        border-radius: 10px;
+        background: #f6f8fa;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .search-box .icon { font-size: 15px; opacity: 0.55; }
+      .search-box .value {
+        flex: 1;
+        font-size: 16px;
+        color: #111;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .search-box .value.placeholder { color: #888; font-weight: 400; }
+      .search-box .btn-x {
+        border: none;
+        background: transparent;
+        color: #666;
+        font-size: 22px;
+        padding: 6px 8px;
+        line-height: 1;
+        display: none;
+      }
+      .search-box .btn-x.show { display: block; }
+
+      .row2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .photo-box {
+        border: 1px dashed #c5cdd8;
+        border-radius: 10px;
+        padding: 12px;
+        background: #f6f8fa;
+      }
+      .photo-box input[type='file'] { width: 100%; font-size: 15px; }
+      #preview {
+        display: block;
+        margin-top: 10px;
+        max-width: 100%;
+        max-height: 220px;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+      .photo-actions {
+        display: none;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .photo-actions.show { display: flex; }
+      .photo-actions button {
+        flex: 1;
+        min-height: 44px;
+        border-radius: 10px;
+        border: 1px solid #d0d7de;
+        background: #fff;
+        font-size: 15px;
+        font-weight: 700;
+      }
+      .btn-change { color: #1a73e8; border-color: #1a73e8; }
+      .btn-remove { color: #c5221f; background: #fce8e6; border-color: #f1a8a6; }
+      #btnSave {
+        width: 100%;
+        margin-top: 20px;
+        min-height: 52px;
+        border: none;
+        border-radius: 12px;
+        background: #1a73e8;
+        color: #fff;
+        font-size: 17px;
+        font-weight: 700;
+      }
+      #btnSave:disabled { opacity: 0.6; }
+      .msg {
+        margin: 12px 0 0;
+        font-size: 14px;
+        min-height: 1.3em;
+        line-height: 1.4;
+      }
+      .msg.ok { color: #137333; }
+      .msg.err { color: #c5221f; }
+
+      /* Sheet chọn — ổn định trên iPhone */
+      .sheet-mask {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.4);
+        z-index: 200;
+      }
+      .sheet-mask.open { display: block; }
+      .sheet {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        max-height: 75vh;
+        background: #fff;
+        border-radius: 16px 16px 0 0;
+        display: flex;
+        flex-direction: column;
+        padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0));
+      }
+      .sheet h3 {
+        margin: 4px 0 10px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .sheet .sheet-search {
+        min-height: 46px;
+        border: 1px solid #c9d1d9;
+        border-radius: 10px;
+        padding: 10px 12px;
+        font-size: 16px;
+        margin-bottom: 8px;
+        background: #f6f8fa;
+      }
+      .sheet .list {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .sheet .item {
+        padding: 14px 8px;
+        border-bottom: 1px solid #f0f2f5;
+        font-size: 15px;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .sheet .item:active { background: #e8f0fe; }
+      .sheet .empty {
+        padding: 20px;
+        text-align: center;
+        color: #888;
+      }
+      .sheet .btn-close {
+        margin-top: 8px;
+        min-height: 44px;
+        border: none;
+        border-radius: 10px;
+        background: #eef1f4;
+        font-size: 15px;
+        font-weight: 700;
+      }
+
+      @media (min-width: 640px) {
+        body { background: #e8eef5; }
+        .wrap {
+          max-width: 560px;
+          margin: 16px auto;
+          border-radius: 14px;
+          box-shadow: 0 4px 18px rgba(0,0,0,.12);
+          min-height: auto;
+          background: #fff;
+          overflow: hidden;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="header">
+        <span class="icon">📦</span>
+        <h1>KIỂM KÊ CÔNG CỤ DỤNG CỤ</h1>
+      </header>
+
+      <form id="formKiemKe" autocomplete="off">
+        <label>Cửa hàng</label>
+        <div class="search-box" id="boxCuaHang" role="button">
+          <span class="icon">🔍</span>
+          <span class="value placeholder" id="lblCuaHang">Tìm / chọn cửa hàng...</span>
+          <button type="button" class="btn-x" id="clearCuaHang">×</button>
+        </div>
+        <input type="hidden" id="cuaHang" />
+
+        <label>Mã vật tư</label>
+        <div class="search-box" id="boxMa" role="button">
+          <span class="icon">🔍</span>
+          <span class="value placeholder" id="lblMa">Tìm mã / tên sản phẩm...</span>
+          <button type="button" class="btn-x" id="clearMa">×</button>
+        </div>
+        <input type="hidden" id="ma" />
+
+        <label>Tên vật tư</label>
+        <input type="text" id="ten" readonly tabindex="-1" />
+
+        <div class="row2">
+          <div>
+            <label>Đơn vị tính</label>
+            <input type="text" id="dvt" />
+          </div>
+          <div>
+            <label>Số lượng thực tế</label>
+            <input type="number" id="sl" min="0" step="1" inputmode="numeric" placeholder="Nhập số lượng" />
+          </div>
+        </div>
+
+        <div class="row2">
+          <div>
+            <label>Kích thước</label>
+            <input type="text" id="kichThuoc" />
+          </div>
+          <div>
+            <label>Màu sắc</label>
+            <input type="text" id="mauSac" />
+          </div>
+        </div>
+
+        <label>Chất liệu</label>
+        <input type="text" id="chatLieu" />
+
+        <label>Tình trạng</label>
+        <select id="tinhTrang">
+          <option value="Còn sử dụng được">Còn sử dụng được</option>
+          <option value="Không sử dụng được">Không sử dụng được</option>
+        </select>
+
+        <label>Ghi chú</label>
+        <input type="text" id="ghiChu" />
+
+        <label>Chụp hình</label>
+        <div class="photo-box">
+          <input type="file" id="anh" accept="image/*" capture="environment" />
+          <img id="preview" alt="" hidden />
+          <div class="photo-actions" id="photoActions">
+            <button type="button" class="btn-change" id="btnChangeAnh">Đổi ảnh</button>
+            <button type="button" class="btn-remove" id="btnRemoveAnh">Xóa ảnh</button>
+          </div>
+        </div>
+
+        <button type="submit" id="btnSave">Lưu kiểm kê</button>
+        <p id="msg" class="msg"></p>
+      </form>
+    </div>
+
+    <div class="sheet-mask" id="sheetMask">
+      <div class="sheet">
+        <h3 id="sheetTitle">Chọn</h3>
+        <input type="search" class="sheet-search" id="sheetSearch" placeholder="🔍 Tìm kiếm..." />
+        <div class="list" id="sheetList"></div>
+        <button type="button" class="btn-close" id="sheetClose">Đóng</button>
+      </div>
+    </div>
+
+    <script>
+      var cuaHangOptions = [];
+      var maOptions = [];
+      var vatTuMap = {};
+      var imagePayload = null;
+      var sheetMode = null; // 'store' | 'item'
+      var scrollY = 0;
+
+      document.addEventListener('DOMContentLoaded', function () {
+        loadCuaHang();
+
+        document.getElementById('boxCuaHang').addEventListener('click', function (e) {
+          if (e.target.id === 'clearCuaHang') return;
+          openSheet('store');
+        });
+        document.getElementById('boxMa').addEventListener('click', function (e) {
+          if (e.target.id === 'clearMa') return;
+          if (!document.getElementById('cuaHang').value) {
+            setMsg('Hãy chọn Cửa hàng trước.', 'err');
+            openSheet('store');
+            return;
+          }
+          openSheet('item');
+        });
+        document.getElementById('clearCuaHang').addEventListener('click', function (e) {
+          e.stopPropagation();
+          clearCuaHang();
+        });
+        document.getElementById('clearMa').addEventListener('click', function (e) {
+          e.stopPropagation();
+          clearMa();
+        });
+        document.getElementById('sheetSearch').addEventListener('input', renderSheetList);
+        document.getElementById('sheetClose').addEventListener('click', closeSheet);
+        document.getElementById('sheetMask').addEventListener('click', function (e) {
+          if (e.target.id === 'sheetMask') closeSheet();
+        });
+
+        document.getElementById('anh').addEventListener('change', onAnhChange);
+        document.getElementById('btnChangeAnh').addEventListener('click', function () {
+          document.getElementById('anh').click();
+        });
+        document.getElementById('btnRemoveAnh').addEventListener('click', removeAnh);
+        document.getElementById('formKiemKe').addEventListener('submit', onSubmit);
+      });
+
+      function setMsg(text, type) {
+        var el = document.getElementById('msg');
+        el.textContent = text || '';
+        el.className = 'msg' + (type ? ' ' + type : '');
+      }
+
+      function norm(s) {
+        return String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
+
+      function lockScroll() {
+        scrollY = window.scrollY || 0;
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.top = '-' + scrollY + 'px';
+      }
+
+      function unlockScroll() {
+        document.body.style.position = '';
+        document.body.style.width = '';
+        document.body.style.top = '';
+        window.scrollTo(0, scrollY);
+      }
+
+      function openSheet(mode) {
+        sheetMode = mode;
+        document.getElementById('sheetTitle').textContent =
+          mode === 'store' ? 'Chọn cửa hàng' : 'Chọn sản phẩm';
+        document.getElementById('sheetSearch').value = '';
+        renderSheetList();
+        document.getElementById('sheetMask').classList.add('open');
+        lockScroll();
+        setTimeout(function () {
+          try { document.getElementById('sheetSearch').focus(); } catch (e) {}
+        }, 50);
+      }
+
+      function closeSheet() {
+        document.getElementById('sheetMask').classList.remove('open');
+        sheetMode = null;
+        unlockScroll();
+      }
+
+      function renderSheetList() {
+        var q = norm(document.getElementById('sheetSearch').value);
+        var list = document.getElementById('sheetList');
+        list.innerHTML = '';
+
+        var rows = [];
+        if (sheetMode === 'store') {
+          rows = cuaHangOptions.filter(function (o) {
+            return !q || norm(o.label).indexOf(q) !== -1;
+          });
+        } else {
+          rows = maOptions.filter(function (o) {
+            return !q || norm(o.label).indexOf(q) !== -1 || norm(o.value).indexOf(q) !== -1;
+          });
+        }
+
+        if (!rows.length) {
+          list.innerHTML = '<div class="empty">Không tìm thấy</div>';
+          return;
+        }
+
+        rows.slice(0, 120).forEach(function (o) {
+          var div = document.createElement('div');
+          div.className = 'item';
+          div.textContent = o.label;
+          div.addEventListener('click', function () {
+            if (sheetMode === 'store') selectCuaHang(o.value, o.label);
+            else selectMa(o.value, o.label);
+          });
+          list.appendChild(div);
+        });
+      }
+
+      function setSearchLabel(lblId, clearId, text, isPlaceholder) {
+        var lbl = document.getElementById(lblId);
+        lbl.textContent = text;
+        if (isPlaceholder) lbl.classList.add('placeholder');
+        else lbl.classList.remove('placeholder');
+        document.getElementById(clearId).classList.toggle('show', !isPlaceholder);
+      }
+
+      function loadCuaHang() {
+        setMsg('Đang tải danh sách cửa hàng...');
+        google.script.run
+          .withSuccessHandler(function (list) {
+            cuaHangOptions = (list || []).map(function (name) {
+              return { value: name, label: name };
+            });
+            setMsg(
+              cuaHangOptions.length
+                ? 'Chọn cửa hàng → chọn mã → nhập & chụp ảnh → Lưu.'
+                : 'Không có sheet cửa hàng.',
+              'ok'
+            );
+          })
+          .withFailureHandler(function (err) {
+            setMsg('Lỗi tải cửa hàng: ' + err.message, 'err');
+          })
+          .getCuaHangList();
+      }
+
+      function clearDetailFields() {
+        document.getElementById('ten').value = '';
+        document.getElementById('dvt').value = '';
+        document.getElementById('sl').value = '';
+        document.getElementById('kichThuoc').value = '';
+        document.getElementById('mauSac').value = '';
+        document.getElementById('chatLieu').value = '';
+        document.getElementById('ghiChu').value = '';
+        document.getElementById('tinhTrang').value = 'Còn sử dụng được';
+        removeAnh();
+      }
+
+      function clearMa() {
+        document.getElementById('ma').value = '';
+        setSearchLabel('lblMa', 'clearMa', 'Tìm mã / tên sản phẩm...', true);
+        clearDetailFields();
+      }
+
+      function clearCuaHang() {
+        document.getElementById('cuaHang').value = '';
+        setSearchLabel('lblCuaHang', 'clearCuaHang', 'Tìm / chọn cửa hàng...', true);
+        maOptions = [];
+        vatTuMap = {};
+        clearMa();
+        setMsg('Chọn cửa hàng → chọn mã → nhập & chụp ảnh → Lưu.', 'ok');
+      }
+
+      function selectCuaHang(value, label) {
+        document.getElementById('cuaHang').value = value;
+        setSearchLabel('lblCuaHang', 'clearCuaHang', label, false);
+        closeSheet();
+        clearMa();
+        setMsg('Đang tải vật tư sheet "' + value + '"...');
+        google.script.run
+          .withSuccessHandler(function (list) {
+            vatTuMap = {};
+            maOptions = [];
+            (list || []).forEach(function (item) {
+              var key = item.ma || ('TEN::' + item.ten);
+              vatTuMap[key] = item;
+              maOptions.push({
+                value: key,
+                label: (item.ma ? item.ma + ' — ' : '') + item.ten
+              });
+            });
+            setMsg(
+              maOptions.length
+                ? 'Đã chọn ' + value + ' (' + maOptions.length + ' SP). Chọn mã vật tư.'
+                : 'Sheet ' + value + ' chưa có vật tư.',
+              maOptions.length ? 'ok' : 'err'
+            );
+          })
+          .withFailureHandler(function (err) {
+            setMsg('Lỗi tải vật tư: ' + err.message, 'err');
+          })
+          .getVatTuList(value);
+      }
+
+      function selectMa(value, label) {
+        document.getElementById('ma').value = value;
+        setSearchLabel('lblMa', 'clearMa', label, false);
+        closeSheet();
+        var item = vatTuMap[value];
+        if (!item) {
+          clearDetailFields();
+          return;
+        }
+        document.getElementById('ten').value = item.ten || '';
+        document.getElementById('sl').value = item.sl !== '' && item.sl != null ? item.sl : '';
+        document.getElementById('dvt').value = item.dvt || '';
+        document.getElementById('kichThuoc').value = item.kichThuoc || '';
+        document.getElementById('mauSac').value = item.mauSac || '';
+        document.getElementById('chatLieu').value = item.chatLieu || '';
+        document.getElementById('ghiChu').value = item.ghiChu || '';
+        if (item.tinhTrang) document.getElementById('tinhTrang').value = item.tinhTrang;
+      }
+
+      function showPhotoActions(show) {
+        var el = document.getElementById('photoActions');
+        if (show) el.classList.add('show');
+        else el.classList.remove('show');
+      }
+
+      function removeAnh() {
+        document.getElementById('anh').value = '';
+        imagePayload = null;
+        var preview = document.getElementById('preview');
+        preview.hidden = true;
+        preview.removeAttribute('src');
+        showPhotoActions(false);
+      }
+
+      function onAnhChange(e) {
+        var file = e.target.files && e.target.files[0];
+        imagePayload = null;
+        var preview = document.getElementById('preview');
+        if (!file) {
+          preview.hidden = true;
+          preview.removeAttribute('src');
+          showPhotoActions(false);
+          return;
+        }
+        resizeImage(file, 1280, 0.75, function (result) {
+          imagePayload = result;
+          preview.src = 'data:' + result.mimeType + ';base64,' + result.base64;
+          preview.hidden = false;
+          showPhotoActions(true);
+        });
+      }
+
+      function resizeImage(file, maxSide, quality, cb) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var img = new Image();
+          img.onload = function () {
+            var w = img.width, h = img.height;
+            if (w > maxSide || h > maxSide) {
+              if (w >= h) { h = Math.round(h * maxSide / w); w = maxSide; }
+              else { w = Math.round(w * maxSide / h); h = maxSide; }
+            }
+            var canvas = document.createElement('canvas');
+            canvas.width = w; canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            var dataUrl = canvas.toDataURL('image/jpeg', quality);
+            cb({
+              base64: dataUrl.split(',')[1],
+              mimeType: 'image/jpeg',
+              name: (file.name || 'anh').replace(/\.[^.]+$/, '') + '.jpg'
+            });
+          };
+          img.src = reader.result;
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function onSubmit(e) {
+        e.preventDefault();
+        var cuaHang = document.getElementById('cuaHang').value;
+        var key = document.getElementById('ma').value;
+        var item = vatTuMap[key];
+        if (!cuaHang) { setMsg('Vui lòng chọn cửa hàng.', 'err'); return; }
+        if (!item) { setMsg('Vui lòng chọn mã vật tư.', 'err'); return; }
+
+        var btn = document.getElementById('btnSave');
+        btn.disabled = true;
+        setMsg('Đang lưu vào sheet ' + cuaHang + '...');
+
+        var payload = {
+          cuaHang: cuaHang,
+          ma: item.ma || '',
+          ten: document.getElementById('ten').value.trim(),
+          sl: document.getElementById('sl').value,
+          dvt: document.getElementById('dvt').value.trim(),
+          kichThuoc: document.getElementById('kichThuoc').value.trim(),
+          chatLieu: document.getElementById('chatLieu').value.trim(),
+          mauSac: document.getElementById('mauSac').value.trim(),
+          tinhTrang: document.getElementById('tinhTrang').value,
+          ghiChu: document.getElementById('ghiChu').value.trim(),
+          imageBase64: imagePayload ? imagePayload.base64 : null,
+          imageMimeType: imagePayload ? imagePayload.mimeType : null,
+          imageName: imagePayload ? imagePayload.name : null
+        };
+
+        google.script.run
+          .withSuccessHandler(function (res) {
+            btn.disabled = false;
+            if (res && res.ok) {
+              var keep = cuaHang;
+              var savedMsg = res.message;
+              clearMa();
+              document.getElementById('cuaHang').value = keep;
+              setSearchLabel('lblCuaHang', 'clearCuaHang', keep, false);
+              setMsg(savedMsg, 'ok');
+              google.script.run
+                .withSuccessHandler(function (list) {
+                  vatTuMap = {};
+                  maOptions = [];
+                  (list || []).forEach(function (it) {
+                    var k = it.ma || ('TEN::' + it.ten);
+                    vatTuMap[k] = it;
+                    maOptions.push({
+                      value: k,
+                      label: (it.ma ? it.ma + ' — ' : '') + it.ten
+                    });
+                  });
+                  setMsg(savedMsg, 'ok');
+                })
+                .getVatTuList(keep);
+            } else {
+              setMsg((res && res.message) || 'Lưu thất bại.', 'err');
+            }
+          })
+          .withFailureHandler(function (err) {
+            btn.disabled = false;
+            setMsg('Lỗi: ' + err.message, 'err');
+          })
+          .saveKiemKe(payload);
+      }
+    </script>
+  </body>
+</html>

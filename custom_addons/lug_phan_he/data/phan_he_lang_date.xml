@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Định dạng ngày: dd/mm/yyyy — ví dụ 24/07/2026 -->
+    <record id="base.lang_vi_VN" model="res.lang">
+        <field name="date_format">%d/%m/%Y</field>
+    </record>
+</odoo>

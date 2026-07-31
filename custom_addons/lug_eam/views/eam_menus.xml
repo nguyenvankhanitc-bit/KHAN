@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_eam_root"
+              name="Quản lý tài sản"
+              sequence="48"
+              web_icon="lug_eam,static/description/icon.png"
+              groups="lug_eam.group_eam_user"/>
+
+    <menuitem id="menu_eam_dashboard"
+              name="Dashboard"
+              parent="menu_eam_root"
+              action="action_eam_dashboard_client"
+              sequence="1"/>
+
+    <!-- Tài sản (Asset = mã riêng) -->
+    <menuitem id="menu_eam_asset_root"
+              name="Tài sản"
+              parent="menu_eam_root"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_asset_list"
+              name="Danh sách tài sản"
+              parent="menu_eam_asset_root"
+              action="action_eam_asset"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_asset_by_category"
+              name="Theo nhóm"
+              parent="menu_eam_asset_root"
+              action="action_eam_category"
+              sequence="20"/>
+
+    <menuitem id="menu_eam_asset_qr"
+              name="QR / Tem nhãn"
+              parent="menu_eam_asset_root"
+              action="action_eam_asset_qr"
+              sequence="30"/>
+
+    <menuitem id="menu_eam_asset_history"
+              name="Lịch sử / Timeline"
+              parent="menu_eam_asset_root"
+              action="action_eam_asset_history"
+              sequence="40"/>
+
+    <!-- Quản lý kho -->
+    <menuitem id="menu_eam_wh_root"
+              name="Quản lý kho"
+              parent="menu_eam_root"
+              sequence="15"/>
+
+    <menuitem id="menu_eam_wh_warehouse"
+              name="Kho trung tâm / Danh mục kho"
+              parent="menu_eam_wh_root"
+              action="action_eam_warehouse"
+              sequence="5"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_asset_stock"
+              name="Tồn kho tài sản (theo mã)"
+              parent="menu_eam_wh_root"
+              action="action_eam_asset_stock"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_wh_assets_in_stock"
+              name="Tài sản đang trong kho"
+              parent="menu_eam_wh_root"
+              action="action_eam_assets_in_stock"
+              sequence="15"/>
+
+    <menuitem id="menu_eam_wh_location_stock"
+              name="Vị trí kho"
+              parent="menu_eam_wh_root"
+              action="action_eam_location_stock"
+              sequence="20"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_location_usage"
+              name="Nơi sử dụng"
+              parent="menu_eam_wh_root"
+              action="action_eam_location_usage"
+              sequence="25"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_inventory_root"
+              name="Vật tư (số lượng)"
+              parent="menu_eam_wh_root"
+              sequence="40"/>
+
+    <menuitem id="menu_eam_wh_inv_product"
+              name="Danh mục vật tư"
+              parent="menu_eam_wh_inventory_root"
+              action="action_eam_inventory_product"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_wh_inv_in"
+              name="Nhập vật tư"
+              parent="menu_eam_wh_inventory_root"
+              action="action_eam_inventory_move_in"
+              sequence="20"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_inv_issue"
+              name="Xuất cấp phát vật tư"
+              parent="menu_eam_wh_inventory_root"
+              action="action_eam_inventory_move_issue"
+              sequence="30"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_inv_transfer"
+              name="Điều chuyển vật tư"
+              parent="menu_eam_wh_inventory_root"
+              action="action_eam_inventory_move_transfer"
+              sequence="40"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_wh_inv_moves"
+              name="Tất cả phiếu vật tư"
+              parent="menu_eam_wh_inventory_root"
+              action="action_eam_inventory_move"
+              sequence="90"
+              groups="lug_eam.group_eam_manager"/>
+
+    <!-- Nghiệp vụ vòng đời tài sản -->
+    <menuitem id="menu_eam_ops_root"
+              name="Nghiệp vụ tài sản"
+              parent="menu_eam_root"
+              sequence="20"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_ops_in"
+              name="Nhập mua"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_in"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_ops_out"
+              name="Xuất kho"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_out"
+              sequence="20"/>
+
+    <menuitem id="menu_eam_ops_transfer"
+              name="Điều chuyển"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_transfer"
+              sequence="30"/>
+
+    <menuitem id="menu_eam_ops_recall"
+              name="Thu hồi"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_recall"
+              sequence="40"/>
+
+    <menuitem id="menu_eam_ops_disposal"
+              name="Thanh lý"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_disposal"
+              sequence="50"/>
+
+    <menuitem id="menu_eam_ops_all"
+              name="Tất cả phiếu tài sản"
+              parent="menu_eam_ops_root"
+              action="action_eam_txn_all"
+              sequence="90"/>
+
+    <!-- CMMS Bảo trì -->
+    <menuitem id="menu_eam_maint_root"
+              name="Bảo trì CMMS"
+              parent="menu_eam_root"
+              sequence="25"/>
+
+    <menuitem id="menu_eam_maint_wo"
+              name="Work Order"
+              parent="menu_eam_maint_root"
+              action="action_eam_work_order"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_maint_corrective"
+              name="Sửa chữa / Báo hỏng"
+              parent="menu_eam_maint_root"
+              action="action_eam_work_order_corrective"
+              sequence="20"/>
+
+    <menuitem id="menu_eam_maint_preventive"
+              name="Bảo trì phòng ngừa"
+              parent="menu_eam_maint_root"
+              action="action_eam_work_order_preventive"
+              sequence="30"/>
+
+    <!-- Báo cáo -->
+    <menuitem id="menu_eam_report_root"
+              name="Báo cáo"
+              parent="menu_eam_root"
+              sequence="80"/>
+
+    <menuitem id="menu_eam_report_dashboard"
+              name="Dashboard"
+              parent="menu_eam_report_root"
+              action="action_eam_dashboard_client"
+              sequence="1"/>
+
+    <menuitem id="menu_eam_report_by_state"
+              name="Theo trạng thái"
+              parent="menu_eam_report_root"
+              action="action_eam_report_by_state"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_report_in_use"
+              name="Đang sử dụng"
+              parent="menu_eam_report_root"
+              action="action_eam_report_in_use"
+              sequence="20"/>
+
+    <menuitem id="menu_eam_report_in_stock"
+              name="Trong kho"
+              parent="menu_eam_report_root"
+              action="action_eam_report_in_stock"
+              sequence="30"/>
+
+    <menuitem id="menu_eam_report_maintenance"
+              name="Bảo trì / Hỏng"
+              parent="menu_eam_report_root"
+              action="action_eam_report_maintenance"
+              sequence="40"/>
+
+    <menuitem id="menu_eam_report_warranty"
+              name="Hết bảo hành"
+              parent="menu_eam_report_root"
+              action="action_eam_report_warranty_expired"
+              sequence="50"/>
+
+    <menuitem id="menu_eam_report_maint_cost"
+              name="Chi phí bảo trì"
+              parent="menu_eam_report_root"
+              action="action_eam_report_maint_cost"
+              sequence="60"/>
+
+    <menuitem id="menu_eam_report_by_site"
+              name="Theo cửa hàng"
+              parent="menu_eam_report_root"
+              action="action_eam_report_by_site"
+              sequence="70"/>
+
+    <menuitem id="menu_eam_report_by_department"
+              name="Theo phòng ban"
+              parent="menu_eam_report_root"
+              action="action_eam_report_by_department"
+              sequence="80"/>
+
+    <menuitem id="menu_eam_report_by_owner"
+              name="Theo người sử dụng"
+              parent="menu_eam_report_root"
+              action="action_eam_report_by_owner"
+              sequence="90"/>
+
+    <menuitem id="menu_eam_config"
+              name="Cấu hình"
+              parent="menu_eam_root"
+              sequence="90"
+              groups="lug_eam.group_eam_manager"/>
+
+    <menuitem id="menu_eam_config_category"
+              name="Nhóm tài sản"
+              parent="menu_eam_config"
+              action="action_eam_category"
+              sequence="10"/>
+
+    <menuitem id="menu_eam_config_brand"
+              name="Thương hiệu"
+              parent="menu_eam_config"
+              action="action_eam_brand"
+              sequence="20"/>
+
+    <menuitem id="menu_eam_config_model"
+              name="Danh mục tài sản"
+              parent="menu_eam_config"
+              action="action_eam_model"
+              sequence="30"/>
+
+    <menuitem id="menu_eam_config_warehouse"
+              name="Kho"
+              parent="menu_eam_config"
+              action="action_eam_warehouse"
+              sequence="40"/>
+
+    <menuitem id="menu_eam_config_location"
+              name="Cây vị trí"
+              parent="menu_eam_config"
+              action="action_eam_location"
+              sequence="50"/>
+</odoo>

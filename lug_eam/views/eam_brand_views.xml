@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_brand_list" model="ir.ui.view">
+        <field name="name">eam.brand.list</field>
+        <field name="model">eam.brand</field>
+        <field name="arch" type="xml">
+            <list multi_edit="1">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="country_id"/>
+                <field name="model_count"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_brand_form" model="ir.ui.view">
+        <field name="name">eam.brand.form</field>
+        <field name="model">eam.brand</field>
+        <field name="arch" type="xml">
+            <form string="Thương hiệu">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_models" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="model_count" widget="statinfo" string="Model"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="logo" widget="image" class="oe_avatar"/>
+                    <div class="oe_title">
+                        <label for="code"/>
+                        <h1><field name="code" placeholder="BRD001"/></h1>
+                        <label for="name"/>
+                        <h2><field name="name" placeholder="Daikin"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="country_id"/>
+                            <field name="partner_id"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú">
+                        <field name="note" nolabel="1" placeholder="Ghi chú thương hiệu..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_brand_search" model="ir.ui.view">
+        <field name="name">eam.brand.search</field>
+        <field name="model">eam.brand</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="country_id"/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_brand" model="ir.actions.act_window">
+        <field name="name">Thương hiệu</field>
+        <field name="res_model">eam.brand</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_eam_brand_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm thương hiệu tài sản</p>
+            <p>Ví dụ: Daikin, LG, Dell, HP, APC...</p>
+        </field>
+    </record>
+</odoo>

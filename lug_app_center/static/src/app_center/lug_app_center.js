@@ -36,6 +36,7 @@ const SIDEBAR_ICONS = {
     "crm.crm_menu_root": "fa-handshake-o",
     "point_of_sale.menu_point_root": "fa-shopping-basket",
     "lug_email_account.menu_lug_email_root": "fa-envelope",
+    "lug_phan_he.menu_phan_he_root": "fa-globe",
 };
 
 export class LugAppCenter extends Component {

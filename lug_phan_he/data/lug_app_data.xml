@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo noupdate="1">
+    <record id="lug_app_phan_he" model="lug.app">
+        <field name="name">Quản lý dịch vụ</field>
+        <field name="code">phan_he</field>
+        <field name="sequence">49</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_root</field>
+        <field name="description">Quản lý cửa hàng, hợp đồng dịch vụ, lịch thanh toán</field>
+    </record>
+</odoo>

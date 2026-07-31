@@ -1,0 +1,155 @@
+<script>
+  var vatTuMap = {};
+  var imagePayload = null;
+
+  document.addEventListener('DOMContentLoaded', function () {
+    loadVatTu();
+    document.getElementById('ma').addEventListener('change', onMaChange);
+    document.getElementById('anh').addEventListener('change', onAnhChange);
+    document.getElementById('formKiemKe').addEventListener('submit', onSubmit);
+  });
+
+  function setMsg(text, type) {
+    var el = document.getElementById('msg');
+    el.textContent = text || '';
+    el.className = 'msg' + (type ? ' ' + type : '');
+  }
+
+  function loadVatTu() {
+    setMsg('Đang tải danh sách vật tư...');
+    google.script.run
+      .withSuccessHandler(function (list) {
+        var sel = document.getElementById('ma');
+        sel.innerHTML = '<option value="">-- Chọn mã vật tư --</option>';
+        vatTuMap = {};
+        (list || []).forEach(function (item) {
+          vatTuMap[item.ma] = item;
+          var opt = document.createElement('option');
+          opt.value = item.ma;
+          opt.textContent = item.ma + ' — ' + item.ten;
+          sel.appendChild(opt);
+        });
+        setMsg(
+          list && list.length ? 'Sẵn sàng. Chọn mã để kiểm kê.' : 'Sheet Tổng chưa có mã vật tư.',
+          'ok'
+        );
+      })
+      .withFailureHandler(function (err) {
+        setMsg('Lỗi tải danh sách: ' + err.message, 'err');
+      })
+      .getVatTuList();
+  }
+
+  function onMaChange() {
+    var ma = document.getElementById('ma').value;
+    var item = vatTuMap[ma];
+    if (!item) return;
+    document.getElementById('ten').value = item.ten || '';
+    document.getElementById('sl').value = item.sl !== '' ? item.sl : 1;
+    document.getElementById('kichThuoc').value = item.kichThuoc || '';
+    document.getElementById('mauSac').value = item.mauSac || '';
+    document.getElementById('chatLieu').value = item.chatLieu || '';
+    document.getElementById('ghiChu').value = item.ghiChu || '';
+    if (item.tinhTrang) {
+      document.getElementById('tinhTrang').value = item.tinhTrang;
+    }
+  }
+
+  function onAnhChange(e) {
+    var file = e.target.files && e.target.files[0];
+    imagePayload = null;
+    var preview = document.getElementById('preview');
+    if (!file) {
+      preview.hidden = true;
+      preview.removeAttribute('src');
+      return;
+    }
+
+    resizeImage(file, 1280, 0.75, function (result) {
+      imagePayload = result;
+      preview.src = 'data:' + result.mimeType + ';base64,' + result.base64;
+      preview.hidden = false;
+    });
+  }
+
+  function resizeImage(file, maxSide, quality, cb) {
+    var reader = new FileReader();
+    reader.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var w = img.width;
+        var h = img.height;
+        if (w > maxSide || h > maxSide) {
+          if (w >= h) {
+            h = Math.round((h * maxSide) / w);
+            w = maxSide;
+          } else {
+            w = Math.round((w * maxSide) / h);
+            h = maxSide;
+          }
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        cb({
+          base64: dataUrl.split(',')[1],
+          mimeType: 'image/jpeg',
+          name: (file.name || 'anh').replace(/\.[^.]+$/, '') + '.jpg'
+        });
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function onSubmit(e) {
+    e.preventDefault();
+    var ma = document.getElementById('ma').value;
+    if (!ma) {
+      setMsg('Vui lòng chọn mã vật tư.', 'err');
+      return;
+    }
+
+    var btn = document.getElementById('btnSave');
+    btn.disabled = true;
+    setMsg('Đang lưu...');
+
+    var payload = {
+      ma: ma,
+      ten: document.getElementById('ten').value.trim(),
+      sl: document.getElementById('sl').value,
+      kichThuoc: document.getElementById('kichThuoc').value.trim(),
+      chatLieu: document.getElementById('chatLieu').value.trim(),
+      mauSac: document.getElementById('mauSac').value.trim(),
+      tinhTrang: document.getElementById('tinhTrang').value,
+      ghiChu: document.getElementById('ghiChu').value.trim(),
+      imageBase64: imagePayload ? imagePayload.base64 : null,
+      imageMimeType: imagePayload ? imagePayload.mimeType : null,
+      imageName: imagePayload ? imagePayload.name : null
+    };
+
+    google.script.run
+      .withSuccessHandler(function (res) {
+        btn.disabled = false;
+        if (res && res.ok) {
+          document.getElementById('formKiemKe').reset();
+          document.getElementById('ma').value = '';
+          document.getElementById('tinhTrang').value = 'Còn sử dụng được';
+          imagePayload = null;
+          var preview = document.getElementById('preview');
+          preview.hidden = true;
+          preview.removeAttribute('src');
+          setMsg(res.message, 'ok');
+        } else {
+          setMsg((res && res.message) || 'Lưu thất bại.', 'err');
+        }
+      })
+      .withFailureHandler(function (err) {
+        btn.disabled = false;
+        setMsg('Lỗi: ' + err.message, 'err');
+      })
+      .saveKiemKe(payload);
+  }
+</script>

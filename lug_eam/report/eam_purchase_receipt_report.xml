@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_eam_purchase_receipt" model="ir.actions.report">
+        <field name="name">PHIẾU NHẬP MUA</field>
+        <field name="model">eam.transaction</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lug_eam.report_eam_purchase_receipt</field>
+        <field name="report_file">lug_eam.report_eam_purchase_receipt</field>
+        <field name="print_report_name">'Phieu_NM_%s' % (object.name)</field>
+        <field name="binding_model_id" ref="model_eam_transaction"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_eam_purchase_receipt">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page" style="font-family: 'Times New Roman', Times, serif; font-size: 12px; color: #000;">
+                    <table style="width:100%; margin-bottom: 8px;">
+                        <tr>
+                            <td style="width:45%; vertical-align:top;">
+                                <div style="font-weight:bold; text-transform:uppercase;" t-esc="doc.company_id.name"/>
+                                <div t-if="doc.company_id.partner_id.contact_address"
+                                     t-esc="doc.company_id.partner_id.contact_address"
+                                     style="white-space:pre-line; font-size:11px;"/>
+                            </td>
+                            <td style="width:25%; vertical-align:top; font-size:11px;">
+                                <div>Nợ: <t t-esc="doc.debit_account or ''"/>
+                                    <span t-if="doc.debit_amount" style="float:right;"
+                                          t-esc="'{:,.0f}'.format(doc.debit_amount).replace(',', '.')"/>
+                                </div>
+                                <div>Có: <t t-esc="doc.credit_account or ''"/>
+                                    <span t-if="doc.credit_amount" style="float:right;"
+                                          t-esc="'{:,.0f}'.format(doc.credit_amount).replace(',', '.')"/>
+                                </div>
+                            </td>
+                            <td style="width:30%; text-align:center; vertical-align:top;">
+                                <div style="font-size:18px; font-weight:bold; letter-spacing:1px;">PHIẾU NHẬP MUA</div>
+                                <div>Ngày: <span t-field="doc.date" t-options="{'widget': 'date'}"/></div>
+                                <div>Mã CT: <t t-esc="doc.doc_type_code or 'NM'"/>
+                                    &#160;&#160; Số CT: <t t-esc="doc.name"/>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <div style="margin: 6px 0;">
+                        <div>- Họ tên người giao hàng:
+                            <span style="font-weight:bold;" t-esc="doc.deliverer_name or ''"/>
+                        </div>
+                        <div>- Nội dung:
+                            <span t-esc="doc.content or doc.reason or ''"/>
+                        </div>
+                        <div>- Nhập tại kho:
+                            <span style="font-weight:bold;"
+                                  t-esc="doc.warehouse_id.name or doc.dest_location_note or ''"/>
+                        </div>
+                    </div>
+
+                    <table style="width:100%; border-collapse:collapse; margin-top:8px;" border="1" cellpadding="4">
+                        <thead>
+                            <tr style="text-align:center; font-weight:bold; background:#f5f5f5;">
+                                <th rowspan="2" style="width:4%;">STT</th>
+                                <th rowspan="2" style="width:28%;">Mặt hàng</th>
+                                <th rowspan="2" style="width:12%;">Mã số</th>
+                                <th rowspan="2" style="width:8%;">Đvt</th>
+                                <th colspan="2">Số lượng</th>
+                                <th rowspan="2" style="width:14%;">Đơn giá</th>
+                                <th rowspan="2" style="width:14%;">Thành tiền</th>
+                            </tr>
+                            <tr style="text-align:center; font-weight:bold; background:#f5f5f5;">
+                                <th style="width:10%;">Theo chứng từ</th>
+                                <th style="width:10%;">Thực nhập</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-set="idx" t-value="0"/>
+                            <tr t-foreach="doc.line_ids" t-as="line">
+                                <t t-set="idx" t-value="idx + 1"/>
+                                <td style="text-align:center;" t-esc="idx"/>
+                                <td t-esc="line.product_name or (line.asset_id.name if line.asset_id else '')"/>
+                                <td style="text-align:center;"
+                                    t-esc="line.product_code or (line.asset_id.asset_code if line.asset_id else '')"/>
+                                <td style="text-align:center;" t-esc="line.uom_name or 'Cái'"/>
+                                <td style="text-align:right;"
+                                    t-esc="'{:,.2f}'.format(line.qty_document or 0).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
+                                <td style="text-align:right;"
+                                    t-esc="'{:,.0f}'.format(line.qty_received or 0).replace(',', '.')"/>
+                                <td style="text-align:right;"
+                                    t-esc="'{:,.2f}'.format(line.unit_cost or 0).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
+                                <td style="text-align:right;"
+                                    t-esc="'{:,.2f}'.format(line.subtotal or 0).replace(',', 'X').replace('.', ',').replace('X', '.')"/>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <table style="width:100%; margin-top:8px;">
+                        <tr>
+                            <td style="width:55%; vertical-align:top;">
+                                <div>- Tổng số tiền (Viết bằng chữ):
+                                    <span style="font-style:italic;" t-esc="doc.amount_in_words"/>
+                                </div>
+                                <div style="margin-top:4px;">- Số chứng từ gốc kèm theo:
+                                    <t t-esc="doc.attached_docs or ''"/>
+                                </div>
+                            </td>
+                            <td style="width:45%;">
+                                <table style="width:100%; border-collapse:collapse;" border="1" cellpadding="3">
+                                    <tr>
+                                        <td>Cộng SL</td>
+                                        <td style="text-align:right;"
+                                            t-esc="'{:,.0f}'.format(doc.qty_total or 0).replace(',', '.')"/>
+                                    </tr>
+                                    <tr>
+                                        <td>Cộng tiền hàng</td>
+                                        <td style="text-align:right;"
+                                            t-esc="'{:,.0f}'.format(doc.amount_goods or 0).replace(',', '.')"/>
+                                    </tr>
+                                    <tr>
+                                        <td>Thuế nhập khẩu</td>
+                                        <td style="text-align:right;"
+                                            t-esc="'{:,.0f}'.format(doc.tax_import or 0).replace(',', '.')"/>
+                                    </tr>
+                                    <tr>
+                                        <td>Thuế GTGT</td>
+                                        <td style="text-align:right;"
+                                            t-esc="'{:,.0f}'.format(doc.tax_vat or 0).replace(',', '.')"/>
+                                    </tr>
+                                    <tr style="font-weight:bold;">
+                                        <td>Tổng tiền</td>
+                                        <td style="text-align:right;"
+                                            t-esc="'{:,.0f}'.format(doc.amount_grand or 0).replace(',', '.')"/>
+                                    </tr>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+
+                    <table style="width:100%; margin-top:28px; text-align:center; font-size:11px;">
+                        <tr>
+                            <td style="width:20%;">
+                                <div style="font-weight:bold;">Người lập phiếu</div>
+                                <div style="height:48px;"></div>
+                                <div t-esc="doc.prepared_by_id.name or ''"/>
+                            </td>
+                            <td style="width:20%;">
+                                <div style="font-weight:bold;">Người nhận hàng</div>
+                                <div style="height:48px;"></div>
+                                <div t-esc="doc.receiver_id.name or ''"/>
+                            </td>
+                            <td style="width:20%;">
+                                <div style="font-weight:bold;">Thủ kho</div>
+                                <div style="height:48px;"></div>
+                                <div t-esc="doc.warehouse_keeper_id.name or ''"/>
+                            </td>
+                            <td style="width:20%;">
+                                <div style="font-weight:bold;">Người giao hàng</div>
+                                <div style="height:48px;"></div>
+                                <div t-esc="doc.deliverer_name or ''"/>
+                            </td>
+                            <td style="width:20%;">
+                                <div style="font-weight:bold;">Người kiểm soát</div>
+                                <div style="height:48px;"></div>
+                                <div t-esc="doc.controller_id.name or ''"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

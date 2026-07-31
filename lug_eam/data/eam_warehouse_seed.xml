@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="warehouse_central" model="eam.warehouse">
+        <field name="code">KHO-TT</field>
+        <field name="name">Kho trung tâm</field>
+        <field name="is_central" eval="True"/>
+        <field name="sequence">1</field>
+        <field name="address">Kho trung tâm công ty</field>
+    </record>
+
+    <record id="loc_central_root" model="eam.location">
+        <field name="name">Kho trung tâm</field>
+        <field name="code">LOC-TT</field>
+        <field name="loc_kind">warehouse</field>
+        <field name="warehouse_id" ref="warehouse_central"/>
+    </record>
+    <record id="loc_central_zone_a" model="eam.location">
+        <field name="name">Khu A</field>
+        <field name="code">LOC-TT-A</field>
+        <field name="loc_kind">zone</field>
+        <field name="parent_id" ref="loc_central_root"/>
+        <field name="warehouse_id" ref="warehouse_central"/>
+    </record>
+    <record id="loc_central_bin_a01" model="eam.location">
+        <field name="name">Ô A01</field>
+        <field name="code">LOC-TT-A01</field>
+        <field name="loc_kind">bin</field>
+        <field name="parent_id" ref="loc_central_zone_a"/>
+        <field name="warehouse_id" ref="warehouse_central"/>
+    </record>
+
+    <record id="loc_usage_hq" model="eam.location">
+        <field name="name">Trụ sở</field>
+        <field name="code">LOC-HQ</field>
+        <field name="loc_kind">site</field>
+    </record>
+    <record id="loc_usage_floor2" model="eam.location">
+        <field name="name">Tầng 2</field>
+        <field name="code">LOC-HQ-F2</field>
+        <field name="loc_kind">floor</field>
+        <field name="parent_id" ref="loc_usage_hq"/>
+    </record>
+    <record id="loc_usage_room_kt" model="eam.location">
+        <field name="name">Phòng Kỹ thuật</field>
+        <field name="code">LOC-HQ-F2-KT</field>
+        <field name="loc_kind">room</field>
+        <field name="parent_id" ref="loc_usage_floor2"/>
+    </record>
+</odoo>

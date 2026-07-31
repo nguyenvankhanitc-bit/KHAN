@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_eam.EamDashboard">
+        <div class="o_eam_dashboard h-100 overflow-auto">
+            <div class="o_eam_dash_header">
+                <div>
+                    <div class="o_eam_dash_eyebrow">Quản lý tài sản</div>
+                    <h1 class="o_eam_dash_title">Dashboard</h1>
+                    <div class="o_eam_dash_sub text-muted">
+                        <t t-esc="state.companyName"/>
+                        <t t-if="state.asOf"> · Cập nhật <t t-esc="state.asOf"/></t>
+                    </div>
+                </div>
+                <button class="btn btn-secondary" t-on-click="onRefresh" t-att-disabled="state.loading">
+                    Làm mới
+                </button>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="o_eam_dash_loading text-muted p-4">Đang tải số liệu…</div>
+            </t>
+            <t t-else="">
+                <div class="o_eam_kpi_grid">
+                    <t t-foreach="kpiCards" t-as="card" t-key="card.key">
+                        <button type="button" class="o_eam_kpi_card"
+                                t-att-data-key="card.key"
+                                t-on-click="() => this.openKpi(card.key)">
+                            <div class="o_eam_kpi_label" t-esc="card.label"/>
+                            <div class="o_eam_kpi_value" t-esc="card.value"/>
+                            <div t-if="card.hint" class="o_eam_kpi_hint" t-esc="card.hint"/>
+                        </button>
+                    </t>
+                </div>
+
+                <div class="o_eam_chart_grid">
+                    <div class="o_eam_chart_card">
+                        <div class="o_eam_chart_head">
+                            <h3>Theo trạng thái</h3>
+                        </div>
+                        <canvas t-ref="stateChart"/>
+                    </div>
+                    <div class="o_eam_chart_card">
+                        <div class="o_eam_chart_head">
+                            <h3>Chi phí bảo trì (6 tháng)</h3>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.openKpi('cost_ytd')">Xem WO</button>
+                        </div>
+                        <canvas t-ref="costChart"/>
+                    </div>
+                    <div class="o_eam_chart_card">
+                        <div class="o_eam_chart_head">
+                            <h3>Theo cửa hàng</h3>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.openKpi('by_site')">Danh sách</button>
+                        </div>
+                        <canvas t-ref="siteChart"/>
+                    </div>
+                    <div class="o_eam_chart_card">
+                        <div class="o_eam_chart_head">
+                            <h3>Theo phòng ban</h3>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.openKpi('by_department')">Danh sách</button>
+                        </div>
+                        <canvas t-ref="deptChart"/>
+                    </div>
+                    <div class="o_eam_chart_card o_eam_chart_wide">
+                        <div class="o_eam_chart_head">
+                            <h3>Theo người sử dụng</h3>
+                            <button class="btn btn-link btn-sm" t-on-click="() => this.openKpi('by_owner')">Danh sách</button>
+                        </div>
+                        <canvas t-ref="ownerChart"/>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

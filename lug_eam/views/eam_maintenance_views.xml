@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form Work Order / Maintenance Request -->
+    <record id="view_eam_maintenance_request_form" model="ir.ui.view">
+        <field name="name">maintenance.request.form.eam</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_start_work" type="object" string="Bắt đầu xử lý"
+                        class="btn-primary"
+                        invisible="archive or done or eam_asset_state != 'broken'"
+                        groups="lug_eam.group_eam_manager"/>
+                <button name="action_load_default_checklist" type="object" string="Tải checklist mẫu"
+                        invisible="archive or done or checklist_ids"
+                        groups="lug_eam.group_eam_manager"/>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <div class="oe_button_box" name="button_box">
+                    <button class="oe_stat_button" icon="fa-percent" disabled="1">
+                        <field name="checklist_progress" widget="statinfo" string="Checklist"/>
+                    </button>
+                    <button class="oe_stat_button" icon="fa-money" disabled="1">
+                        <field name="eam_total_cost" widget="statinfo" string="Chi phí"/>
+                    </button>
+                </div>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]/h1" position="before">
+                <label for="work_order_code"/>
+                <h2><field name="work_order_code" readonly="1" placeholder="WO000001"/></h2>
+            </xpath>
+            <xpath expr="//field[@name='equipment_id']" position="after">
+                <field name="asset_code" readonly="1"/>
+                <field name="eam_asset_state" widget="badge"
+                          decoration-danger="eam_asset_state in ('broken', 'disposed')"
+                          decoration-warning="eam_asset_state == 'maintenance'"
+                          decoration-success="eam_asset_state == 'in_use'"/>
+            </xpath>
+            <xpath expr="//page[1]" position="before">
+                <page string="Báo hỏng / Xử lý" name="eam_work">
+                    <group>
+                        <group string="Báo hỏng">
+                            <field name="failure_symptom" placeholder="Mô tả hiện tượng hỏng..."/>
+                        </group>
+                        <group string="Kỹ thuật xử lý">
+                            <field name="diagnosis" placeholder="Nguyên nhân..."/>
+                            <field name="work_done" placeholder="Việc đã làm..."/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Checklist" name="eam_checklist">
+                    <field name="checklist_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="result"/>
+                            <field name="note"/>
+                            <field name="done" column_invisible="1"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Vật tư" name="eam_parts">
+                    <field name="part_ids">
+                        <list editable="bottom">
+                            <field name="product_id"/>
+                            <field name="quantity"/>
+                            <field name="uom_name"/>
+                            <field name="unit_cost"/>
+                            <field name="subtotal" sum="Tổng VT"/>
+                            <field name="consumed" optional="show"/>
+                        </list>
+                    </field>
+                    <p class="text-muted">
+                        Vật tư lấy từ <b>Kho vật tư (số lượng)</b>. Khi chuyển stage sang Done sẽ tự trừ tồn.
+                    </p>
+                </page>
+                <page string="Chi phí" name="eam_cost">
+                    <group>
+                        <group>
+                            <field name="eam_labor_cost"/>
+                            <field name="eam_part_cost"/>
+                            <field name="eam_total_cost"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="parts_consumed" readonly="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_maintenance_request_list" model="ir.ui.view">
+        <field name="name">maintenance.request.list.eam</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="default_order">id desc</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="work_order_code"/>
+                <field name="asset_code" optional="show"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="eam_total_cost" optional="show" sum="Tổng CP"/>
+                <field name="checklist_progress" optional="hide" widget="progressbar"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_maintenance_request_kanban" model="ir.ui.view">
+        <field name="name">maintenance.request.kanban.eam</field>
+        <field name="model">maintenance.request</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_request_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//progressbar" position="after">
+                <field name="work_order_code"/>
+                <field name="asset_code"/>
+                <field name="eam_total_cost"/>
+            </xpath>
+            <xpath expr="//t[@t-name='card']/field[@name='name']" position="before">
+                <div class="text-muted small" t-if="record.work_order_code.raw_value">
+                    <field name="work_order_code"/>
+                    <span t-if="record.asset_code.raw_value"> · <field name="asset_code"/></span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_eam_work_order" model="ir.actions.act_window">
+        <field name="name">Work Order / Phiếu bảo trì</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có Work Order</p>
+            <p>Báo hỏng từ hồ sơ tài sản hoặc tạo phiếu bảo trì tại đây.</p>
+        </field>
+    </record>
+    <record id="action_eam_work_order_corrective" model="ir.actions.act_window">
+        <field name="name">Sửa chữa / Báo hỏng</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('maintenance_type', '=', 'corrective')]</field>
+        <field name="context">{'default_maintenance_type': 'corrective'}</field>
+    </record>
+    <record id="action_eam_work_order_preventive" model="ir.actions.act_window">
+        <field name="name">Bảo trì phòng ngừa</field>
+        <field name="res_model">maintenance.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[('maintenance_type', '=', 'preventive')]</field>
+        <field name="context">{'default_maintenance_type': 'preventive'}</field>
+    </record>
+</odoo>

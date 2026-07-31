@@ -1,0 +1,315 @@
+/* Theo dõi Internet — tree / accordion gom nhóm theo miền */
+.o_phan_he_tracking_list {
+    .o_list_renderer,
+    .o_list_table_wrapper,
+    .table-responsive {
+        overflow-x: auto !important;
+    }
+
+    .o_list_table {
+        width: 100% !important;
+        min-width: 1100px;
+        table-layout: fixed !important;
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+        font-size: 0.9rem;
+
+        > thead > tr > th {
+            background: #f3f4f6 !important;
+            color: #111827 !important;
+            font-weight: 700 !important;
+            font-size: 0.75rem !important;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            text-align: left !important;
+            vertical-align: middle !important;
+            border: 1px solid #e5e7eb !important;
+            border-bottom: 1px solid #d1d5db !important;
+            padding: 11px 12px !important;
+            white-space: nowrap !important;
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 5 !important;
+
+            .o_column_title,
+            span:not(.o_resize) {
+                color: #111827 !important;
+                font-weight: 700 !important;
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+        }
+
+        > thead > tr > th[data-name="stt"],
+        > thead > tr > th[data-name="date_start"],
+        > thead > tr > th[data-name="date_end"],
+        > thead > tr > th[data-name="bandwidth"],
+        > thead > tr > th[data-name="ops_status"],
+        > thead > tr > th[data-name="remaining_card_html"],
+        > thead > tr > th[data-name="id"] {
+            text-align: center !important;
+            .o_column_title { justify-content: center !important; }
+        }
+
+        > thead > tr > th[data-name="contract_amount"] {
+            text-align: right !important;
+            .o_column_title { justify-content: flex-end !important; }
+        }
+
+        > thead > tr > th[data-name="stt"] {
+            width: 56px !important;
+            min-width: 56px !important;
+        }
+
+        /* ===== Group header bar ===== */
+        tbody tr.o_group_header.o_phan_he_group_header {
+            > th.o_phan_he_group_name,
+            > th.o_group_name,
+            > td {
+                position: static !important;
+                left: auto !important;
+                top: auto !important;
+                writing-mode: horizontal-tb !important;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
+                max-width: none !important;
+                width: auto !important;
+                box-shadow: none !important;
+                vertical-align: middle !important;
+                border: 1px solid #e5e7eb !important;
+                padding: 0 !important;
+            }
+        }
+
+        tbody tr.o_phan_he_group_header {
+            &.is-ok > th {
+                background: #f8fafc !important;
+            }
+            &.is-warn > th {
+                background: #fff7ed !important;
+            }
+            &.is-danger > th {
+                background: #fef2f2 !important;
+            }
+            &:hover > th {
+                filter: brightness(0.985);
+            }
+        }
+
+        .o_phan_he_group_bar {
+            display: flex !important;
+            align-items: center !important;
+            gap: 10px !important;
+            flex-wrap: wrap !important;
+            padding: 12px 14px !important;
+            min-height: 46px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .o_phan_he_group_caret {
+            color: #64748b;
+            width: 14px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .o_phan_he_group_folder {
+            color: var(--mien-color, #64748b);
+            flex-shrink: 0;
+        }
+
+        .o_phan_he_group_dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--mien-color, #64748b);
+            flex-shrink: 0;
+        }
+
+        .o_phan_he_group_title {
+            font-size: 0.92rem !important;
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            letter-spacing: 0.02em;
+            white-space: nowrap !important;
+        }
+
+        .o_phan_he_group_meta {
+            color: #475569 !important;
+            font-size: 0.84rem !important;
+            font-weight: 600 !important;
+            white-space: normal !important;
+        }
+
+        /* Ẩn caret / aggregate mặc định của Odoo nếu còn sót */
+        tbody tr.o_phan_he_group_header .o_group_caret {
+            display: none !important;
+        }
+
+        /* ===== Child rows ===== */
+        tbody tr.o_data_row.o_phan_he_child_row > td {
+            border: 1px solid #eef2f7 !important;
+            border-top: none !important;
+            padding: 10px 12px !important;
+            vertical-align: middle !important;
+            background: #fff !important;
+        }
+
+        tbody tr.o_data_row.o_phan_he_child_row > td[name="stt"],
+        tbody tr.o_data_row.o_phan_he_child_row > td.o_list_record_selector {
+            padding-left: 28px !important;
+        }
+
+        tbody tr.o_data_row.o_phan_he_child_row:hover > td {
+            background: #f8fafc !important;
+        }
+
+        tbody tr.o_data_row > td[name="stt"] {
+            text-align: center !important;
+            width: 56px !important;
+            min-width: 56px !important;
+            max-width: 72px !important;
+            color: #64748b;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            overflow: visible !important;
+            text-overflow: unset !important;
+            white-space: nowrap !important;
+        }
+
+        .o_phan_he_stt {
+            display: inline-block;
+            min-width: 1.2em;
+            text-align: center;
+            color: #334155;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+
+        tbody tr.o_data_row > td[name="date_start"],
+        tbody tr.o_data_row > td[name="date_end"] {
+            text-align: center !important;
+            white-space: nowrap !important;
+            width: 100px !important;
+        }
+
+        tbody tr.o_data_row > td[name="bandwidth"] {
+            text-align: center !important;
+            white-space: nowrap !important;
+            width: 110px !important;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        tbody tr.o_data_row > td[name="contract_amount"] {
+            text-align: right !important;
+            white-space: nowrap !important;
+            font-variant-numeric: tabular-nums;
+            font-weight: 700;
+            width: 130px !important;
+        }
+
+        tbody tr.o_data_row > td[name="ops_status"] {
+            text-align: center !important;
+            width: 150px !important;
+        }
+
+        tbody tr.o_data_row > td[name="remaining_card_html"] {
+            text-align: left !important;
+            width: 140px !important;
+        }
+
+        tbody tr.o_data_row > td[name="id"] {
+            text-align: center !important;
+            width: 44px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+        }
+
+        tbody tr.o_data_row > td[name="store_card_html"] {
+            min-width: 160px !important;
+        }
+    }
+}
+
+.o_phan_he_store_card {
+    line-height: 1.25;
+    .o_phan_he_store_name {
+        font-weight: 700;
+        color: #111827;
+    }
+    .o_phan_he_store_code {
+        font-size: 0.78rem;
+        color: #6b7280;
+        margin-top: 2px;
+        word-break: break-all;
+    }
+}
+
+.o_phan_he_remaining_card {
+    font-weight: 600;
+    font-size: 0.88rem;
+    &.is-ok { color: #16a34a; }
+    &.is-warn { color: #d97706; }
+    &.is-danger { color: #dc2626; }
+}
+
+.o_phan_he_expand_btn {
+    padding: 0 !important;
+    color: #6b7280 !important;
+    font-size: 1.1rem !important;
+    line-height: 1 !important;
+    &:hover { color: #111827 !important; }
+}
+
+.o_phan_he_expand_row > td {
+    background: #fafafa !important;
+    border: 1px solid #eef2f7 !important;
+    border-top: none !important;
+    padding: 0 14px 14px 42px !important;
+}
+
+.o_phan_he_expand_body {
+    padding: 4px 8px 2px 8px;
+    color: #6b7280;
+    font-size: 0.84rem;
+    line-height: 1.55;
+}
+
+.o_phan_he_expand_line { margin-bottom: 2px; }
+.o_phan_he_expand_label {
+    color: #6b7280;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.o_phan_he_expand_sep {
+    margin: 0 6px;
+    color: #9ca3af;
+}
+
+.o_phan_he_tracking_row.is-expanded > td {
+    border-bottom-color: transparent !important;
+}
+
+/* Footer tổng cộng */
+.o_phan_he_tracking_footer > td.o_phan_he_footer_cell {
+    background: #0f172a !important;
+    color: #fff !important;
+    border: 1px solid #0f172a !important;
+    padding: 0 !important;
+}
+
+.o_phan_he_footer_bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    font-weight: 700;
+    font-size: 0.9rem;
+
+    i { color: #93c5fd; }
+}

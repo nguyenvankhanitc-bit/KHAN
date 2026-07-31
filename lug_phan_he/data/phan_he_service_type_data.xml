@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="service_type_internet" model="phan.he.service.type">
+        <field name="name">INTERNET</field>
+        <field name="code">internet</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="service_type_software" model="phan.he.service.type">
+        <field name="name">PHẦN MỀM</field>
+        <field name="code">software</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="service_type_phone" model="phan.he.service.type">
+        <field name="name">ĐIỆN THOẠI</field>
+        <field name="code">phone</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="service_type_other" model="phan.he.service.type">
+        <field name="name">KHÁC</field>
+        <field name="code">other</field>
+        <field name="sequence">90</field>
+    </record>
+
+    <record id="mien_bac" model="phan.he.mien">
+        <field name="name">Miền Bắc</field>
+        <field name="code">BAC</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="mien_nam" model="phan.he.mien">
+        <field name="name">Miền Nam</field>
+        <field name="code">NAM</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="mien_dtt" model="phan.he.mien">
+        <field name="name">Miền ĐTT</field>
+        <field name="code">DTT</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="mien_vp" model="phan.he.mien">
+        <field name="name">Văn phòng</field>
+        <field name="code">VP</field>
+        <field name="sequence">40</field>
+    </record>
+
+    <record id="area_hcm_q1q3" model="phan.he.area">
+        <field name="name">HCM Q1-Q3</field>
+        <field name="code">HCM-Q1Q3</field>
+        <field name="mien_id" ref="mien_nam"/>
+    </record>
+</odoo>

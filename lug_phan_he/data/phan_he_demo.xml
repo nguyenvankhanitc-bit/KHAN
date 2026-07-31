@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="demo_provider_fpt" model="phan.he.provider">
+        <field name="name">FPT Telecom</field>
+        <field name="transfer_content_template">TT Internet LUG KDV SGH414537</field>
+    </record>
+    <record id="demo_bank_fpt" model="phan.he.bank.account">
+        <field name="provider_id" ref="demo_provider_fpt"/>
+        <field name="account_name">CONG TY FPT TELECOM</field>
+        <field name="account_number">0000000000</field>
+        <field name="bank_name">Vietcombank</field>
+        <field name="bank_branch">TP.HCM</field>
+        <field name="is_default" eval="True"/>
+        <field name="transfer_content_template">TT Internet LUG KDV SGH414537</field>
+    </record>
+    <record id="demo_store_lug_kdv" model="phan.he.store">
+        <field name="code">LUG-KDV</field>
+        <field name="name">LUG KDV</field>
+        <field name="mien_id" ref="mien_nam"/>
+        <field name="area_id" ref="area_hcm_q1q3"/>
+        <field name="address">Chi nhánh LUG KDV</field>
+        <field name="state">active</field>
+    </record>
+    <record id="demo_service_lug_kdv_internet" model="phan.he.service">
+        <field name="code">DV-KDV-NET</field>
+        <field name="store_id" ref="demo_store_lug_kdv"/>
+        <field name="service_type_id" ref="service_type_internet"/>
+        <field name="customer_code">SGH414537</field>
+        <field name="package_name">Fiber Business</field>
+        <field name="service_content">Gói dịch vụ Internet cửa hàng LUG KDV</field>
+        <field name="date_start">2025-11-01</field>
+        <field name="date_end">2026-11-30</field>
+        <field name="contract_amount">3840000</field>
+        <field name="provider_id" ref="demo_provider_fpt"/>
+        <field name="state">active</field>
+    </record>
+    <record id="demo_payment_lug_kdv" model="phan.he.payment">
+        <field name="code">TT-KDV-001</field>
+        <field name="service_id" ref="demo_service_lug_kdv_internet"/>
+        <field name="provider_id" ref="demo_provider_fpt"/>
+        <field name="bank_account_id" ref="demo_bank_fpt"/>
+        <field name="period">01</field>
+        <field name="invoice_number">1703009</field>
+        <field name="amount">3840000</field>
+        <field name="date_due">2026-11-01</field>
+        <field name="payment_state">pending</field>
+    </record>
+    <record id="demo_invoice_lug_kdv" model="phan.he.invoice">
+        <field name="invoice_number">1703009</field>
+        <field name="payment_id" ref="demo_payment_lug_kdv"/>
+        <field name="service_id" ref="demo_service_lug_kdv_internet"/>
+        <field name="amount">3840000</field>
+        <field name="invoice_date">2025-11-01</field>
+        <field name="reconcile_state">draft</field>
+    </record>
+</odoo>

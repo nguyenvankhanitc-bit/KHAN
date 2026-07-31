@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================================
+         Form Hồ sơ tài sản 360° (dùng riêng trong app EAM)
+         ============================================================ -->
+    <record id="view_eam_asset_form_360" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.eam.360</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <form string="Hồ sơ tài sản" class="o_eam_asset_form_360">
+                <header>
+                    <button name="action_eam_receive" type="object" string="Nhập kho"
+                            class="btn-primary" invisible="eam_state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_eam_assign" type="object" string="Cấp phát"
+                            class="btn-primary" invisible="eam_state != 'in_stock'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_eam_transfer" type="object" string="Điều chuyển"
+                            invisible="eam_state not in ('in_stock', 'in_use')"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_eam_recall" type="object" string="Thu hồi"
+                            invisible="eam_state not in ('in_use', 'maintenance', 'broken')"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_eam_report_failure" type="object" string="Báo hỏng"
+                            class="btn-warning"
+                            invisible="eam_state not in ('in_use', 'in_stock', 'maintenance')"
+                            groups="lug_eam.group_eam_user"/>
+                    <button name="action_eam_create_preventive" type="object" string="BT định kỳ"
+                            invisible="eam_state != 'in_use'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_eam_dispose" type="object" string="Thanh lý"
+                            invisible="eam_state in ('draft', 'disposed')"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_generate_qr" type="object" string="Sinh / làm mới QR"
+                            class="btn-secondary" groups="lug_eam.group_eam_manager"/>
+                    <button name="action_print_label" type="object" string="In tem QR"
+                            class="btn-secondary" groups="lug_eam.group_eam_user"/>
+                    <field name="eam_state" widget="statusbar"
+                            statusbar_visible="draft,in_stock,in_use,maintenance,broken,disposed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_maintenance_requests" type="object"
+                                class="oe_stat_button" icon="fa-wrench">
+                            <field string="Bảo trì" name="maintenance_open_count" widget="statinfo"/>
+                        </button>
+                        <button name="action_open_transactions" type="object"
+                                class="oe_stat_button" icon="fa-truck">
+                            <field string="Phiếu" name="transaction_count" widget="statinfo"/>
+                        </button>
+                        <button name="action_open_history" type="object"
+                                class="oe_stat_button" icon="fa-history">
+                            <field string="Timeline" name="history_count" widget="statinfo"/>
+                        </button>
+                        <button name="action_print_label" type="object"
+                                class="oe_stat_button" icon="fa-qrcode"
+                                groups="lug_eam.group_eam_user">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Tem QR</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="eam_state_color" invisible="1"/>
+                    <field name="image_1920" widget="image" class="oe_avatar"/>
+
+                    <!-- Header 360: Tên + Mã + Trạng thái -->
+                    <div class="oe_title o_eam_profile_header">
+                        <div class="d-flex flex-wrap align-items-baseline gap-2 mb-1">
+                            <h1 class="m-0">
+                                <field name="name" placeholder="Ví dụ: Máy tính Dell"/>
+                            </h1>
+                            <span class="o_eam_asset_code text-muted">
+                                <field name="asset_code" readonly="1" class="o_eam_asset_code_field"
+                                         placeholder="TS-IT-2026-00001"/>
+                            </span>
+                        </div>
+                        <div class="o_eam_state_row mb-2">
+                            <field name="eam_state" widget="badge"
+                                      decoration-muted="eam_state == 'draft'"
+                                      decoration-info="eam_state == 'in_stock'"
+                                      decoration-success="eam_state == 'in_use'"
+                                      decoration-warning="eam_state == 'maintenance'"
+                                      decoration-danger="eam_state in ('broken', 'disposed')"/>
+                        </div>
+                    </div>
+
+                    <notebook>
+                        <!-- ========== Tab Tổng quan ========== -->
+                        <page string="Tổng quan" name="eam_overview">
+                            <group>
+                                <group string="Định danh">
+                                    <field name="asset_code" readonly="1"/>
+                                    <field name="barcode"/>
+                                    <field name="qr_code"/>
+                                    <field name="serial_no"/>
+                                    <field name="model"/>
+                                </group>
+                                <group string="Phân loại">
+                                    <field name="eam_model_id" options="{'no_create_edit': True}"/>
+                                    <field name="eam_brand_id" readonly="1"/>
+                                    <field name="category_id" options="{'no_open': True}"
+                                              context="{'default_company_id': company_id}"/>
+                                    <field name="company_id" groups="base.group_multi_company"
+                                              options="{'no_create': True}"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Sử dụng">
+                                    <field name="warehouse_id"/>
+                                    <field name="current_location_id"/>
+                                    <field name="site_location_id" readonly="1"/>
+                                    <field name="location_note" placeholder="Tự điền khi chọn vị trí"/>
+                                    <field name="department_id"/>
+                                    <field name="owner_employee_id"/>
+                                    <field name="owner_user_id"/>
+                                    <field name="assign_date"/>
+                                </group>
+                                <group string="QR Code">
+                                    <field name="qr_image" widget="image" class="oe_avatar"/>
+                                </group>
+                            </group>
+                            <group string="Ghi chú">
+                                <field name="note" nolabel="1" placeholder="Mô tả / ghi chú hồ sơ tài sản..."/>
+                            </group>
+                            <field name="equipment_properties" nolabel="1" columns="2"/>
+                        </page>
+
+                        <!-- ========== Tab Nhập mua ========== -->
+                        <page string="Nhập mua" name="eam_purchase">
+                            <group>
+                                <group string="Nhà cung cấp">
+                                    <field name="partner_id" string="Nhà cung cấp"/>
+                                    <field name="partner_ref" string="Mã NCC / Tham chiếu"/>
+                                </group>
+                                <group string="Hợp đồng">
+                                    <field name="contract_ref"/>
+                                    <field name="contract_date"/>
+                                    <field name="po_ref"/>
+                                    <field name="invoice_ref"/>
+                                    <field name="funding_source"/>
+                                </group>
+                            </group>
+                            <group>
+                                <group string="Giá trị">
+                                    <field name="purchase_date"/>
+                                    <field name="cost" groups="maintenance.group_equipment_manager"/>
+                                    <field name="effective_date" string="Ngày hiệu lực"/>
+                                    <field name="scrap_date" groups="base.group_no_one"/>
+                                </group>
+                                <group string="Bảo hành">
+                                    <field name="warranty_start"/>
+                                    <field name="warranty_date"/>
+                                    <field name="warranty_state" widget="badge"
+                                              decoration-success="warranty_state == 'valid'"
+                                              decoration-warning="warranty_state == 'expiring'"
+                                              decoration-danger="warranty_state == 'expired'"
+                                              decoration-muted="warranty_state == 'none'"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- ========== Tab Bảo trì ========== -->
+                        <page string="Bảo trì" name="eam_maintenance">
+                            <div class="mb-3">
+                                <button name="action_eam_report_failure" type="object" string="Báo hỏng"
+                                        class="btn btn-warning me-2"
+                                        invisible="eam_state not in ('in_use', 'in_stock', 'maintenance')"
+                                        groups="lug_eam.group_eam_user"/>
+                                <button name="action_eam_create_preventive" type="object" string="Tạo BT định kỳ"
+                                        class="btn btn-secondary"
+                                        invisible="eam_state != 'in_use'"
+                                        groups="lug_eam.group_eam_manager"/>
+                                <button name="action_open_maintenance_requests" type="object"
+                                        string="Xem tất cả phiếu" class="btn btn-link"/>
+                            </div>
+                            <group>
+                                <group string="Lịch &amp; chu kỳ">
+                                    <field name="maintenance_team_id"
+                                              context="{'default_company_id': company_id}"/>
+                                    <field name="technician_user_id" domain="[('share', '=', False)]"/>
+                                    <field name="maintenance_cycle_month"/>
+                                    <field name="next_maintenance_date"/>
+                                </group>
+                                <group string="Thống kê">
+                                    <label for="expected_mtbf" string="MTBF kỳ vọng"/>
+                                    <div class="o_row">
+                                        <field name="expected_mtbf"/> <span>ngày</span>
+                                    </div>
+                                    <label for="mtbf" string="MTBF thực tế"/>
+                                    <div class="o_row">
+                                        <field name="mtbf"/> <span>ngày</span>
+                                    </div>
+                                    <field name="latest_failure_date" string="Lần hỏng gần nhất"/>
+                                    <label for="mttr" string="MTTR"/>
+                                    <div class="o_row">
+                                        <field name="mttr"/> <span>ngày</span>
+                                    </div>
+                                    <field name="estimated_next_failure"/>
+                                    <field name="maintenance_open_count"/>
+                                    <field name="maintenance_count"/>
+                                </group>
+                            </group>
+                            <separator string="Work Order / Phiếu bảo trì"/>
+                            <field name="maintenance_ids" nolabel="1" mode="list"
+                                      context="{'default_equipment_id': id, 'default_company_id': company_id, 'default_maintenance_team_id': maintenance_team_id}">
+                                <list create="1" delete="0" open_form_view="1">
+                                    <field name="work_order_code"/>
+                                    <field name="name"/>
+                                    <field name="maintenance_type"/>
+                                    <field name="request_date"/>
+                                    <field name="schedule_date" optional="hide"/>
+                                    <field name="user_id" string="Kỹ thuật viên"/>
+                                    <field name="stage_id"/>
+                                    <field name="checklist_progress" widget="progressbar" optional="show"/>
+                                    <field name="eam_total_cost" optional="show" sum="CP"/>
+                                    <field name="priority" optional="hide" widget="priority"/>
+                                    <field name="close_date" optional="show"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- ========== Tab Timeline ========== -->
+                        <page string="Lịch sử / Timeline" name="eam_timeline">
+                            <field name="history_ids" nolabel="1" mode="list" readonly="1">
+                                <list create="0" delete="0" default_order="event_date desc">
+                                    <field name="event_date"/>
+                                    <field name="event_type"/>
+                                    <field name="name"/>
+                                    <field name="from_state"/>
+                                    <field name="to_state"/>
+                                    <field name="location_note"/>
+                                    <field name="employee_id" optional="show"/>
+                                    <field name="transaction_id" optional="show"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- Mô tả chi tiết (phụ) -->
+                        <page string="Tài liệu" name="eam_documents">
+                            <p class="text-muted">
+                                Đính kèm hóa đơn, biên bản, ảnh hiện trạng qua chatter (📎) bên dưới.
+                            </p>
+                            <group>
+                                <field name="image_1920" widget="image" string="Ảnh chính"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Inherit nhẹ form Maintenance chuẩn (không phá app Bảo trì) -->
+    <record id="view_eam_equipment_form" model="ir.ui.view">
+        <field name="name">maintenance.equipment.form.eam</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <field name="eam_state" widget="statusbar"
+                            statusbar_visible="draft,in_stock,in_use,maintenance,broken,disposed"/>
+                </header>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]/h1" position="before">
+                <label for="asset_code"/>
+                <h2><field name="asset_code" readonly="1"/></h2>
+            </xpath>
+            <xpath expr="//field[@name='category_id']" position="before">
+                <field name="eam_model_id" options="{'no_create_edit': True}"/>
+                <field name="eam_brand_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_equipment_list" model="ir.ui.view">
+        <field name="name">maintenance.equipment.list.eam</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="asset_code"/>
+                <field name="eam_state" widget="badge"
+                          decoration-info="eam_state == 'draft'"
+                          decoration-primary="eam_state == 'in_stock'"
+                          decoration-success="eam_state == 'in_use'"
+                          decoration-warning="eam_state == 'maintenance'"
+                          decoration-danger="eam_state in ('broken', 'disposed')"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="eam_model_id" optional="show"/>
+                <field name="eam_brand_id" optional="show"/>
+                <field name="barcode" optional="hide"/>
+                <field name="department_id" optional="show"/>
+                <field name="owner_employee_id" optional="show"/>
+                <field name="site_location_id" string="Cửa hàng / Chi nhánh" optional="show"/>
+                <field name="warehouse_id" string="Kho" optional="show"/>
+                <field name="current_location_id" optional="show"/>
+                <field name="location_note" optional="hide"/>
+                <field name="warranty_state" optional="hide" widget="badge"/>
+                <field name="next_maintenance_date" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_equipment_kanban" model="ir.ui.view">
+        <field name="name">maintenance.equipment.kanban.eam</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//progressbar" position="after">
+                <field name="asset_code"/>
+                <field name="eam_state"/>
+            </xpath>
+            <xpath expr="//t[@t-name='card']/div" position="before">
+                <div class="text-muted small" t-if="record.asset_code.raw_value">
+                    <field name="asset_code"/>
+                    <span t-if="record.eam_state.raw_value"> · <field name="eam_state"/></span>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_eam_equipment_search" model="ir.ui.view">
+        <field name="name">maintenance.equipment.search.eam</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="inherit_id" ref="maintenance.hr_equipment_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <field name="asset_code"/>
+                <field name="barcode"/>
+                <field name="qr_code"/>
+                <field name="eam_model_id"/>
+                <field name="eam_brand_id"/>
+                <field name="department_id"/>
+                <field name="owner_employee_id"/>
+                <field name="site_location_id" string="Cửa hàng"/>
+                <field name="warehouse_id" string="Kho"/>
+                <separator/>
+                <filter string="Nháp" name="state_draft" domain="[('eam_state', '=', 'draft')]"/>
+                <filter string="Trong kho" name="state_stock" domain="[('eam_state', '=', 'in_stock')]"/>
+                <filter string="Đang sử dụng" name="state_use" domain="[('eam_state', '=', 'in_use')]"/>
+                <filter string="Đang bảo trì" name="state_maint" domain="[('eam_state', '=', 'maintenance')]"/>
+                <filter string="BH sắp hết" name="warranty_expiring" domain="[('warranty_state', '=', 'expiring')]"/>
+                <group>
+                    <filter string="Cửa hàng" name="group_site" context="{'group_by': 'site_location_id'}"/>
+                    <filter string="Kho" name="group_warehouse" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Trạng thái" name="group_eam_state" context="{'group_by': 'eam_state'}"/>
+                    <filter string="Nhóm" name="group_category" context="{'group_by': 'category_id'}"/>
+                    <filter string="Model" name="group_model" context="{'group_by': 'eam_model_id'}"/>
+                    <filter string="Thương hiệu" name="group_brand" context="{'group_by': 'eam_brand_id'}"/>
+                    <filter string="Phòng ban" name="group_department" context="{'group_by': 'department_id'}"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_eam_asset" model="ir.actions.act_window">
+        <field name="name">Tài sản</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="search_view_id" ref="maintenance.hr_equipment_view_search"/>
+        <field name="context">{'search_default_group_site': 1}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'list', 'view_id': ref('maintenance.hr_equipment_view_tree')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'kanban', 'view_id': ref('maintenance.hr_equipment_view_kanban')}),
+            (0, 0, {'sequence': 3, 'view_mode': 'form', 'view_id': ref('view_eam_asset_form_360')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo tài sản thực tế</p>
+            <p>Chọn danh mục (Model) → sinh mã dạng TS-IT-2026-00001 và mở hồ sơ 360°.</p>
+        </field>
+    </record>
+
+    <record id="action_eam_asset_qr" model="ir.actions.act_window">
+        <field name="name">QR / Tem nhãn</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('qr_code', '!=', False)]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'sequence': 1, 'view_mode': 'list', 'view_id': ref('maintenance.hr_equipment_view_tree')}),
+            (0, 0, {'sequence': 2, 'view_mode': 'form', 'view_id': ref('view_eam_asset_form_360')})]"/>
+    </record>
+</odoo>

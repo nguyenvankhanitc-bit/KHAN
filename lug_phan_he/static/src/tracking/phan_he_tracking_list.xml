@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="lug_phan_he.ExpandToggleField">
+        <button type="button"
+                class="btn btn-link o_phan_he_expand_btn"
+                t-on-click="onToggle"
+                t-att-title="expanded ? 'Thu gọn' : 'Xem chi tiết'">
+            <i t-att-class="expanded ? 'fa fa-angle-down' : 'fa fa-angle-right'"/>
+        </button>
+    </t>
+
+    <t t-name="lug_phan_he.SttField">
+        <span class="o_phan_he_stt" t-esc="stt"/>
+    </t>
+
+    <t t-name="lug_phan_he.TrackingGroupRow">
+        <tr t-attf-class="{{group.count > 0 ? 'o_group_has_content' : ''}} o_group_header cursor-pointer {{getGroupHeaderClass(group)}}"
+            t-att-data-group-id="group.id"
+            t-att-style="'--mien-color:' + getGroupStats(group).color"
+            t-on-click="(ev) => this.onGroupHeaderClicked(ev, group)">
+            <th class="o_group_name o_phan_he_group_name"
+                t-att-colspan="nbCols"
+                tabindex="-1">
+                <div class="o_phan_he_group_bar">
+                    <i t-attf-class="o_phan_he_group_caret fa {{group.isFolded ? 'fa-angle-right' : 'fa-angle-down'}}"/>
+                    <i class="fa fa-folder o_phan_he_group_folder"/>
+                    <span class="o_phan_he_group_dot"/>
+                    <strong class="o_phan_he_group_title" t-esc="getGroupStats(group).name"/>
+                    <span class="o_phan_he_group_meta" t-esc="getGroupSummaryText(group)"/>
+                </div>
+            </th>
+        </tr>
+    </t>
+
+    <t t-name="lug_phan_he.TrackingRows">
+        <t t-if="!list.isGrouped">
+            <t t-foreach="list.records" t-as="record" t-key="record.id">
+                <t t-call="{{ constructor.recordRowTemplate }}"/>
+                <tr t-if="isExpanded(record)"
+                    class="o_phan_he_expand_row"
+                    t-att-data-id="record.id"
+                    t-on-click.stop="">
+                    <td t-if="hasSelectors" class="o_list_record_selector"/>
+                    <td t-att-colspan="hasSelectors ? nbCols - 1 : nbCols"
+                        class="o_phan_he_expand_cell">
+                        <div class="o_phan_he_expand_body">
+                            <div class="o_phan_he_expand_line">
+                                <span class="o_phan_he_expand_label">Địa chỉ:</span>
+                                <span t-esc="record.data.usage_address || record.data.store_address || '—'"/>
+                            </div>
+                            <div class="o_phan_he_expand_line">
+                                <span class="o_phan_he_expand_label">Mã HĐ:</span>
+                                <span t-esc="record.data.code || '—'"/>
+                                <span class="o_phan_he_expand_sep">·</span>
+                                <span class="o_phan_he_expand_label">HĐ 001:</span>
+                                <span t-esc="record.data.next_invoice_number || '—'"/>
+                                <span class="o_phan_he_expand_sep">·</span>
+                                <span class="o_phan_he_expand_label">Ngày TT tiếp theo:</span>
+                                <span t-esc="formatExpandDate(record.data.next_payment_date)"/>
+                            </div>
+                            <div t-if="record.data.payment_info_text" class="o_phan_he_expand_line">
+                                <span class="o_phan_he_expand_label">Thông tin TT:</span>
+                                <span t-esc="record.data.payment_info_text"/>
+                            </div>
+                            <div t-if="record.data.package_name" class="o_phan_he_expand_line">
+                                <span class="o_phan_he_expand_label">Loại thanh toán:</span>
+                                <span t-esc="record.data.package_name"/>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </t>
+            <tr t-if="displayRowCreates" class="d-print-none">
+                <td t-if="withHandleColumn"/>
+                <td t-att-colspan="withHandleColumn ? nbCols - 1 : nbCols"
+                    class="o_field_x2many_list_row_add"
+                    t-on-keydown="(ev) => this.onCellKeydown(ev, null)">
+                    <t t-foreach="controls" t-as="control" t-key="control_index">
+                        <a t-if="control.type === 'create' and !evalColumnInvisible(control.invisible)"
+                           href="#"
+                           role="button"
+                           t-att-class="control_index !== 0 ? 'ml16' : ''"
+                           t-att-tabindex="props.list.editedRecord ? '-1' : '0'"
+                           t-on-click.stop.prevent="() => this.add({ context: control.context })">
+                            <t t-esc="control.string"/>
+                        </a>
+                        <ViewButton
+                            t-if="control.type === 'button' and !evalColumnInvisible(control.invisible)"
+                            className="`${control.className} ${control_index !== 0 ? 'ml16' : ''}`"
+                            clickParams="control.clickParams"
+                            icon="control.icon"
+                            record="props.list"
+                            string="control.string"
+                            title="control.title"
+                            tabindex="props.list.editedRecord ? '-1' : '0'"
+                        />
+                    </t>
+                </td>
+            </tr>
+            <t t-if="!props.list.isGrouped and !props.noContentHelp">
+                <tr t-foreach="getEmptyRowIds" t-as="emptyRowId" t-key="emptyRowId">
+                    <td t-att-colspan="nbCols">&#8203;</td>
+                </tr>
+            </t>
+        </t>
+        <t t-else="">
+            <t t-foreach="list.groups" t-as="group" t-key="group.id">
+                <t t-call="{{ constructor.groupRowTemplate }}"/>
+                <t t-if="!group.isFolded">
+                    <t t-call="{{ constructor.rowsTemplate }}">
+                        <t t-set="list" t-value="group.list"/>
+                        <t t-set="groupId" t-value="group.id"/>
+                    </t>
+                </t>
+            </t>
+            <tr t-if="list === props.list" class="o_phan_he_tracking_footer">
+                <td t-att-colspan="nbCols" class="o_phan_he_footer_cell">
+                    <div class="o_phan_he_footer_bar">
+                        <i class="fa fa-bar-chart"/>
+                        <span t-esc="getFooterTotals().text"/>
+                    </div>
+                </td>
+            </tr>
+        </t>
+    </t>
+
+</templates>

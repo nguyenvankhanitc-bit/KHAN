@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_inventory_product_list" model="ir.ui.view">
+        <field name="name">eam.inventory.product.list</field>
+        <field name="model">eam.inventory.product</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="is_below_min">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="warehouse_id"/>
+                <field name="qty_on_hand" sum="Tổng SL"/>
+                <field name="uom_name"/>
+                <field name="qty_min"/>
+                <field name="standard_cost" optional="hide"/>
+                <field name="is_below_min" column_invisible="1"/>
+                <field name="category_note" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_inventory_product_form" model="ir.ui.view">
+        <field name="name">eam.inventory.product.form</field>
+        <field name="model">eam.inventory.product</field>
+        <field name="arch" type="xml">
+            <form string="Vật tư (số lượng)">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_moves" type="object" class="oe_stat_button" icon="fa-list">
+                            <div class="o_stat_info"><span class="o_stat_text">Phiếu kho</span></div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Dưới mức min" bg_color="text-bg-danger" invisible="not is_below_min"/>
+                    <field name="is_below_min" invisible="1"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="code"/><h1><field name="code" placeholder="VT-001"/></h1>
+                        <label for="name"/><h2><field name="name"/></h2>
+                    </div>
+                    <group>
+                        <group string="Kho &amp; tồn">
+                            <field name="warehouse_id"/>
+                            <field name="qty_on_hand" readonly="1"/>
+                            <field name="uom_name"/>
+                            <field name="qty_min"/>
+                        </group>
+                        <group string="Thông tin">
+                            <field name="barcode"/>
+                            <field name="category_note"/>
+                            <field name="standard_cost"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú"><field name="note" nolabel="1"/></group>
+                    <p class="text-muted">
+                        Đây là <b>Inventory theo số lượng</b> — khác với Tài sản (Asset) quản lý từng mã riêng.
+                    </p>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_inventory_product_search" model="ir.ui.view">
+        <field name="name">eam.inventory.product.search</field>
+        <field name="model">eam.inventory.product</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="warehouse_id"/>
+                <filter string="Dưới mức min" name="below_min" domain="[('is_below_min', '=', True)]"/>
+                <group>
+                    <filter string="Kho" name="g_wh" context="{'group_by': 'warehouse_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_inventory_product" model="ir.actions.act_window">
+        <field name="name">Vật tư (theo số lượng)</field>
+        <field name="res_model">eam.inventory.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm vật tư quản lý theo số lượng</p>
+            <p>Dùng cho linh kiện / CCDC đếm được. <b>Không</b> dùng cho máy móc cần mã TS riêng.</p>
+        </field>
+    </record>
+
+    <!-- Inventory moves -->
+    <record id="view_eam_inventory_move_list" model="ir.ui.view">
+        <field name="name">eam.inventory.move.list</field>
+        <field name="model">eam.inventory.move</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="move_type"/>
+                <field name="product_id"/>
+                <field name="warehouse_id"/>
+                <field name="dest_warehouse_id" optional="hide"/>
+                <field name="qty"/>
+                <field name="uom_name"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_inventory_move_form" model="ir.ui.view">
+        <field name="name">eam.inventory.move.form</field>
+        <field name="model">eam.inventory.move</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_confirm" type="object" string="Xác nhận" class="btn-primary"
+                            invisible="state != 'draft'" groups="lug_eam.group_eam_manager"/>
+                    <button name="action_cancel" type="object" string="Hủy" invisible="state != 'draft'"/>
+                    <button name="action_draft" type="object" string="Đặt lại nháp" invisible="state != 'cancel'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/><h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="move_type" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="product_id" readonly="state != 'draft'"/>
+                            <field name="qty" readonly="state != 'draft'"/>
+                            <field name="uom_name"/>
+                        </group>
+                        <group>
+                            <field name="warehouse_id" readonly="state != 'draft'"/>
+                            <field name="dest_warehouse_id" readonly="state != 'draft'"
+                                      invisible="move_type != 'transfer'" required="move_type == 'transfer'"/>
+                            <field name="partner_id" readonly="state != 'draft'" invisible="move_type != 'in'"/>
+                            <field name="employee_id" readonly="state != 'draft'"
+                                      invisible="move_type not in ('out', 'issue')"/>
+                            <field name="department_id" readonly="state != 'draft'"
+                                      invisible="move_type not in ('out', 'issue')"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="user_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú">
+                        <field name="reason" nolabel="1" readonly="state != 'draft'"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eam_inventory_move" model="ir.actions.act_window">
+        <field name="name">Phiếu kho vật tư</field>
+        <field name="res_model">eam.inventory.move</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_eam_inventory_move_in" model="ir.actions.act_window">
+        <field name="name">Nhập vật tư</field>
+        <field name="res_model">eam.inventory.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'in')]</field>
+        <field name="context">{'default_move_type': 'in'}</field>
+    </record>
+    <record id="action_eam_inventory_move_issue" model="ir.actions.act_window">
+        <field name="name">Xuất cấp phát vật tư</field>
+        <field name="res_model">eam.inventory.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', 'in', ('out', 'issue'))]</field>
+        <field name="context">{'default_move_type': 'issue'}</field>
+    </record>
+    <record id="action_eam_inventory_move_transfer" model="ir.actions.act_window">
+        <field name="name">Điều chuyển vật tư</field>
+        <field name="res_model">eam.inventory.move</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('move_type', '=', 'transfer')]</field>
+        <field name="context">{'default_move_type': 'transfer'}</field>
+    </record>
+</odoo>

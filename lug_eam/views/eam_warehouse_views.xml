@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Warehouse -->
+    <record id="view_eam_warehouse_list" model="ir.ui.view">
+        <field name="name">eam.warehouse.list</field>
+        <field name="model">eam.warehouse</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="is_central"/>
+                <field name="asset_count"/>
+                <field name="inventory_qty"/>
+                <field name="location_count"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_warehouse_form" model="ir.ui.view">
+        <field name="name">eam.warehouse.form</field>
+        <field name="model">eam.warehouse</field>
+        <field name="arch" type="xml">
+            <form string="Kho">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_assets_in_stock" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="asset_count" widget="statinfo" string="Tài sản"/>
+                        </button>
+                        <button name="action_open_inventory_products" type="object" class="oe_stat_button" icon="fa-archive">
+                            <field name="inventory_qty" widget="statinfo" string="SL vật tư"/>
+                        </button>
+                        <button name="action_open_locations" type="object" class="oe_stat_button" icon="fa-map-marker">
+                            <field name="location_count" widget="statinfo" string="Vị trí"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="code"/><h1><field name="code" placeholder="KHO-TT"/></h1>
+                        <label for="name"/><h2><field name="name" placeholder="Kho trung tâm"/></h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="is_central"/>
+                            <field name="address"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company" options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú">
+                        <field name="note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_eam_warehouse" model="ir.actions.act_window">
+        <field name="name">Danh mục kho</field>
+        <field name="res_model">eam.warehouse</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo kho trung tâm / kho chi nhánh</p>
+            <p><b>Asset</b> (mã riêng) và <b>Vật tư</b> (số lượng) cùng gắn vào kho này nhưng quản lý tách biệt.</p>
+        </field>
+    </record>
+
+    <!-- Location -->
+    <record id="view_eam_location_list" model="ir.ui.view">
+        <field name="name">eam.location.list</field>
+        <field name="model">eam.location</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="complete_name"/>
+                <field name="code"/>
+                <field name="loc_kind"/>
+                <field name="loc_group"/>
+                <field name="warehouse_id"/>
+                <field name="asset_count"/>
+                <field name="department_id" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_eam_location_form" model="ir.ui.view">
+        <field name="name">eam.location.form</field>
+        <field name="model">eam.location</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_assets" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="asset_count" widget="statinfo" string="Tài sản"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/><h1><field name="name"/></h1>
+                        <field name="complete_name" readonly="1"/>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="parent_id"/>
+                            <field name="loc_kind"/>
+                            <field name="loc_group" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="warehouse_id" invisible="loc_group != 'stock'"/>
+                            <field name="department_id" invisible="loc_group != 'usage'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <group string="Ghi chú"><field name="note" nolabel="1"/></group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_location_search" model="ir.ui.view">
+        <field name="name">eam.location.search</field>
+        <field name="model">eam.location</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="complete_name"/>
+                <field name="warehouse_id"/>
+                <filter string="Nhóm kho" name="stock" domain="[('loc_group', '=', 'stock')]"/>
+                <filter string="Nơi sử dụng" name="usage" domain="[('loc_group', '=', 'usage')]"/>
+                <group>
+                    <filter string="Kho" name="g_wh" context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Loại" name="g_kind" context="{'group_by': 'loc_kind'}"/>
+                    <filter string="Nhóm" name="g_group" context="{'group_by': 'loc_group'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_location" model="ir.actions.act_window">
+        <field name="name">Cây vị trí</field>
+        <field name="res_model">eam.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_eam_location_search"/>
+    </record>
+    <record id="action_eam_location_stock" model="ir.actions.act_window">
+        <field name="name">Vị trí kho</field>
+        <field name="res_model">eam.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('loc_group', '=', 'stock')]</field>
+        <field name="context">{'default_loc_kind': 'bin', 'search_default_stock': 1}</field>
+    </record>
+    <record id="action_eam_location_usage" model="ir.actions.act_window">
+        <field name="name">Nơi sử dụng</field>
+        <field name="res_model">eam.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('loc_group', '=', 'usage')]</field>
+        <field name="context">{'default_loc_kind': 'room', 'search_default_usage': 1}</field>
+    </record>
+
+    <!-- Asset stock report -->
+    <record id="view_eam_asset_stock_list" model="ir.ui.view">
+        <field name="name">eam.asset.stock.report.list</field>
+        <field name="model">eam.asset.stock.report</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0">
+                <field name="warehouse_id"/>
+                <field name="current_location_id"/>
+                <field name="category_id"/>
+                <field name="eam_brand_id"/>
+                <field name="eam_model_id"/>
+                <field name="qty" sum="Tổng TS"/>
+                <field name="asset_value" sum="Tổng giá trị"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_eam_asset_stock_pivot" model="ir.ui.view">
+        <field name="name">eam.asset.stock.report.pivot</field>
+        <field name="model">eam.asset.stock.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Tồn kho tài sản" sample="1">
+                <field name="warehouse_id" type="row"/>
+                <field name="category_id" type="row"/>
+                <field name="eam_model_id" type="col"/>
+                <field name="qty" type="measure"/>
+                <field name="asset_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="action_eam_asset_stock" model="ir.actions.act_window">
+        <field name="name">Tồn kho tài sản (theo mã)</field>
+        <field name="res_model">eam.asset.stock.report</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có tài sản trong kho</p>
+            <p>Mỗi tài sản = 1 mã riêng. Báo cáo này <b>đếm số lượng mã</b> đang <b>Trong kho</b>.</p>
+        </field>
+    </record>
+
+    <!-- Assets currently in stock -->
+    <record id="action_eam_assets_in_stock" model="ir.actions.act_window">
+        <field name="name">Tài sản đang trong kho</field>
+        <field name="res_model">maintenance.equipment</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="domain">[('eam_state', '=', 'in_stock')]</field>
+        <field name="context">{'search_default_state_stock': 1}</field>
+    </record>
+</odoo>

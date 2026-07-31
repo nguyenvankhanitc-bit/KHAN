@@ -1,0 +1,614 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_eam_transaction_list" model="ir.ui.view">
+        <field name="name">eam.transaction.list</field>
+        <field name="model">eam.transaction</field>
+        <field name="arch" type="xml">
+            <list class="o_eam_txn_list"
+                  create="1" delete="1" edit="1"
+                  multi_edit="1"
+                  default_order="date desc, id desc"
+                  decoration-muted="state == 'cancel'"
+                  decoration-success="state == 'done'">
+                <field name="name" string="Số phiếu"/>
+                <field name="txn_type" optional="show"/>
+                <field name="date" string="Ngày"/>
+                <field name="warehouse_id" string="Cửa hàng / Kho"/>
+                <field name="dest_warehouse_id" string="Kho đích" optional="show"/>
+                <field name="deliverer_name" optional="show"/>
+                <field name="receiver_name" optional="hide"/>
+                <field name="content" optional="show"/>
+                <field name="reason" optional="hide"/>
+                <field name="qty_total" sum="SL"/>
+                <field name="amount_grand" sum="Tổng" widget="monetary"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="state" widget="badge"
+                          decoration-info="state == 'draft'"
+                          decoration-success="state == 'done'"
+                          decoration-danger="state == 'cancel'"/>
+                <field name="doc_type_code" optional="hide"/>
+                <field name="partner_name" optional="hide"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <button name="action_open_form" type="object"
+                        string="Sửa" icon="fa-pencil"
+                        title="Chỉnh sửa phiếu"
+                        groups="lug_eam.group_eam_user"/>
+                <button name="action_delete_record" type="object"
+                        string="Xóa" icon="fa-trash"
+                        title="Xóa phiếu"
+                        confirm="Bạn chắc chắn muốn xóa phiếu này?"
+                        invisible="state == 'done'"
+                        groups="lug_eam.group_eam_manager"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form riêng PHIẾU NHẬP MUA — tránh trùng line_ids với form phiếu khác -->
+    <record id="view_eam_transaction_form_in" model="ir.ui.view">
+        <field name="name">eam.transaction.form.in</field>
+        <field name="model">eam.transaction</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form string="PHIẾU NHẬP MUA">
+                <header>
+                    <button name="action_confirm" type="object" string="Xác nhận"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_print_purchase_receipt" type="object"
+                            string="In PHIẾU NHẬP MUA"
+                            groups="lug_eam.group_eam_user"/>
+                    <button name="action_cancel" type="object" string="Hủy"
+                            invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_draft" type="object" string="Đặt lại nháp"
+                            invisible="state != 'cancel'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet class="o_eam_purchase_receipt">
+                    <field name="txn_type" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="user_id" invisible="1"/>
+                    <field name="partner_id" invisible="1"/>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_open_lines" icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="Dòng"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_open_lines" icon="fa-money">
+                            <field name="amount_grand" widget="statinfo" string="Tổng tiền"/>
+                        </button>
+                    </div>
+
+                    <div class="o_eam_nm_top row g-2 align-items-start mb-3">
+                        <div class="col-md-4">
+                            <div class="text-uppercase fw-bold small">
+                                <field name="company_id" readonly="1" options="{'no_open': True}" class="w-100"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="o_eam_nm_accounts small text-muted">
+                                <div class="d-flex gap-2 align-items-center mb-1">
+                                    <span class="text-nowrap">Nợ</span>
+                                    <field name="debit_account" placeholder="TK" readonly="state != 'draft'" class="o_eam_nm_tk"/>
+                                    <field name="debit_amount" readonly="state != 'draft'" class="o_eam_nm_amt"/>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <span class="text-nowrap">Có</span>
+                                    <field name="credit_account" placeholder="TK" readonly="state != 'draft'" class="o_eam_nm_tk"/>
+                                    <field name="credit_amount" readonly="state != 'draft'" class="o_eam_nm_amt"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            <div class="o_eam_nm_title">PHIẾU NHẬP MUA</div>
+                            <div class="o_eam_nm_meta d-inline-flex flex-wrap gap-3 justify-content-md-end">
+                                <div>
+                                    <span class="text-muted">Ngày</span>
+                                    <field name="date" readonly="state != 'draft'" class="oe_inline"/>
+                                </div>
+                                <div>
+                                    <span class="text-muted">Mã CT</span>
+                                    <field name="doc_type_code" readonly="1" class="oe_inline"/>
+                                </div>
+                                <div>
+                                    <span class="text-muted">Số CT</span>
+                                    <field name="name" readonly="1" class="oe_inline fw-bold"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="deliverer_name"
+                                      placeholder="VD: NGUYỄN VĂN KHAN"
+                                      readonly="state != 'draft'"/>
+                            <field name="content"
+                                      placeholder="VD: GIẢI TRÌNH CHI PHÍ TAI NGHE LOGITECH"
+                                      readonly="state != 'draft'"/>
+                            <field name="warehouse_id"
+                                      string="Nhập tại kho"
+                                      options="{'no_create_edit': True}"
+                                      readonly="state != 'draft'"/>
+                            <field name="dest_location_id"
+                                      string="Vị trí trong kho"
+                                      domain="[('loc_group', '=', 'stock'), ('warehouse_id', '=', warehouse_id)]"
+                                      readonly="state != 'draft'"/>
+                            <field name="eam_model_id"
+                                      string="Danh mục (Model)"
+                                      options="{'no_create_edit': True}"
+                                      readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="partner_name" string="Nhà cung cấp"
+                                      placeholder="Nhập tên nhà cung cấp..."
+                                      readonly="state != 'draft'"/>
+                            <field name="po_ref" readonly="state != 'draft'"/>
+                            <field name="invoice_ref" readonly="state != 'draft'"/>
+                            <field name="contract_ref" readonly="state != 'draft'"/>
+                            <field name="warranty_month" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Chi tiết hàng" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'"
+                                      context="{'default_uom_name': 'Cái', 'default_qty_document': 1, 'default_qty_received': 1}">
+                                <list editable="bottom" create="1" delete="1">
+                                    <field name="sequence" widget="handle" optional="hide"/>
+                                    <field name="product_name" string="Mặt hàng" required="1"
+                                              placeholder="VD: TAI NGHE LOGITECH H111"/>
+                                    <field name="product_code" string="Mã số"
+                                              placeholder="VD: TN-H111"/>
+                                    <field name="uom_name" string="Đvt"/>
+                                    <field name="qty_document" string="SL theo chứng từ" sum="Theo CT"/>
+                                    <field name="qty_received" string="SL thực nhập" sum="Thực nhập"/>
+                                    <field name="unit_cost" string="Đơn giá"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="subtotal" string="Thành tiền" sum="Thành tiền"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="o_eam_nm_footer mt-2">
+                                <group>
+                                    <field name="amount_in_words" string="Tổng số tiền (bằng chữ)" readonly="1"/>
+                                    <field name="attached_docs" string="Số chứng từ gốc kèm theo"
+                                              readonly="state != 'draft'"/>
+                                </group>
+                                <group class="o_eam_nm_totals">
+                                    <field name="qty_total" string="Cộng SL"/>
+                                    <field name="amount_goods" string="Cộng tiền hàng"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="tax_import" string="Thuế nhập khẩu"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"
+                                              readonly="state != 'draft'"/>
+                                    <field name="tax_vat" string="Thuế GTGT"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"
+                                              readonly="state != 'draft'"/>
+                                    <field name="amount_grand" string="Tổng tiền"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Chữ ký" name="signs">
+                            <div class="row text-center o_eam_nm_signs mt-3">
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người lập phiếu</div>
+                                    <field name="prepared_by_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_open': True, 'no_create': True}"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người nhận hàng</div>
+                                    <field name="receiver_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_create': True}"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Thủ kho</div>
+                                    <field name="warehouse_keeper_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_create': True}"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người giao hàng</div>
+                                    <field name="deliverer_name" nolabel="1" readonly="1"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người kiểm soát</div>
+                                    <field name="controller_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_create': True}"/>
+                                </div>
+                            </div>
+                        </page>
+                        <page string="NCC / Hợp đồng" name="partner">
+                            <group>
+                                <group>
+                                    <field name="partner_name" string="Nhà cung cấp"
+                                              placeholder="Nhập tên nhà cung cấp..."
+                                              readonly="state != 'draft'"/>
+                                    <field name="po_ref" readonly="state != 'draft'"/>
+                                    <field name="invoice_ref" readonly="state != 'draft'"/>
+                                </group>
+                                <group>
+                                    <field name="contract_ref" readonly="state != 'draft'"/>
+                                    <field name="contract_date" readonly="state != 'draft'"/>
+                                    <field name="warranty_month" readonly="state != 'draft'"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Form PHIẾU XUẤT KHO (PX) / ĐIỀU CHUYỂN (DC) -->
+    <record id="view_eam_transaction_form_out" model="ir.ui.view">
+        <field name="name">eam.transaction.form.out</field>
+        <field name="model">eam.transaction</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form string="Xuất kho / Điều chuyển">
+                <header>
+                    <button name="action_confirm" type="object" string="Xác nhận"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_print_stock_issue" type="object"
+                            string="In PHIẾU XUẤT KHO"
+                            invisible="txn_type != 'out'"
+                            groups="lug_eam.group_eam_user"/>
+                    <button name="action_cancel" type="object" string="Hủy"
+                            invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_draft" type="object" string="Đặt lại nháp"
+                            invisible="state != 'cancel'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet class="o_eam_purchase_receipt">
+                    <field name="txn_type" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="user_id" invisible="1"/>
+
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_open_lines" icon="fa-list">
+                            <field name="line_count" widget="statinfo" string="Dòng"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_open_lines" icon="fa-money">
+                            <field name="amount_grand" widget="statinfo" string="Tổng tiền"/>
+                        </button>
+                    </div>
+
+                    <div class="o_eam_nm_top row g-2 align-items-start mb-3">
+                        <div class="col-md-4">
+                            <div class="text-uppercase fw-bold small">
+                                <field name="company_id" readonly="1" options="{'no_open': True}" class="w-100"/>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="o_eam_nm_accounts small text-muted">
+                                <div class="d-flex gap-2 align-items-center mb-1">
+                                    <span class="text-nowrap">Nợ</span>
+                                    <field name="debit_account" placeholder="TK" readonly="state != 'draft'" class="o_eam_nm_tk"/>
+                                    <field name="debit_amount" readonly="state != 'draft'" class="o_eam_nm_amt"/>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center">
+                                    <span class="text-nowrap">Có</span>
+                                    <field name="credit_account" placeholder="TK" readonly="state != 'draft'" class="o_eam_nm_tk"/>
+                                    <field name="credit_amount" readonly="state != 'draft'" class="o_eam_nm_amt"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-md-end">
+                            <div class="o_eam_nm_title" invisible="txn_type != 'out'">PHIẾU XUẤT KHO</div>
+                            <div class="o_eam_nm_title" invisible="txn_type != 'transfer'">PHIẾU ĐIỀU CHUYỂN</div>
+                            <div class="o_eam_nm_meta d-inline-flex flex-wrap gap-3 justify-content-md-end">
+                                <div>
+                                    <span class="text-muted">Ngày</span>
+                                    <field name="date" readonly="state != 'draft'" class="oe_inline"/>
+                                </div>
+                                <div>
+                                    <span class="text-muted">Mã CT</span>
+                                    <field name="doc_type_code" readonly="1" class="oe_inline"/>
+                                </div>
+                                <div>
+                                    <span class="text-muted">Số CT</span>
+                                    <field name="name" readonly="1" class="oe_inline fw-bold"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="warehouse_id"
+                                      string="Xuất tại kho"
+                                      options="{'no_create_edit': True}"
+                                      readonly="state != 'draft'"/>
+                            <field name="dest_warehouse_id"
+                                      string="Nhập tại kho"
+                                      options="{'no_create_edit': True}"
+                                      readonly="state != 'draft'"/>
+                            <field name="receiver_name"
+                                      placeholder="Họ tên người nhận hàng"
+                                      readonly="state != 'draft'"/>
+                            <field name="receiver_phone"
+                                      string="Điện thoại"
+                                      placeholder="Số điện thoại"
+                                      readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="reason"
+                                      string="Lý do"
+                                      placeholder="VD: Điều chuyển TS sang kho cửa hàng"
+                                      readonly="state != 'draft'"/>
+                            <field name="owner_employee_id"
+                                      string="NV nhận (tuỳ chọn)"
+                                      readonly="state != 'draft'"/>
+                            <field name="dest_location_id"
+                                      string="Vị trí đích (tuỳ chọn)"
+                                      domain="['|', ('warehouse_id', '=', dest_warehouse_id), ('warehouse_id', '=', False)]"
+                                      readonly="state != 'draft'"/>
+                            <field name="attached_docs"
+                                      string="Số chứng từ gốc kèm theo"
+                                      readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+
+                    <div class="alert alert-info" role="alert" invisible="txn_type != 'transfer' or state != 'draft'">
+                        Khi <b>Xác nhận</b>, tài sản chuyển sang kho đích — tồn kho nguồn giảm, tồn kho đích tăng.
+                    </div>
+
+                    <notebook>
+                        <page string="Chi tiết hàng" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'"
+                                      context="{'default_uom_name': 'Cái', 'default_qty_document': 1, 'default_qty_received': 1}">
+                                <list editable="bottom" create="1" delete="1">
+                                    <field name="sequence" widget="handle" optional="hide"/>
+                                    <field name="asset_id" string="Tài sản"
+                                              options="{'no_create': True}"
+                                              domain="[('eam_state', 'in', ('in_stock', 'in_use', 'maintenance', 'broken'))]"/>
+                                    <field name="product_name" string="Mặt hàng"
+                                              placeholder="Tên mặt hàng"/>
+                                    <field name="product_code" string="Mã số"/>
+                                    <field name="uom_name" string="Đvt"/>
+                                    <field name="qty_received" string="Số lượng" sum="SL"/>
+                                    <field name="unit_cost" string="Đơn giá"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="subtotal" string="Thành tiền" sum="Thành tiền"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <field name="qty_document" column_invisible="1"/>
+                                </list>
+                            </field>
+                            <group class="o_eam_nm_footer mt-2">
+                                <group>
+                                    <field name="amount_in_words" string="Tổng số tiền (bằng chữ)" readonly="1"/>
+                                </group>
+                                <group class="o_eam_nm_totals">
+                                    <field name="qty_total" string="Tổng cộng SL"/>
+                                    <field name="amount_grand" string="Tổng cộng tiền"
+                                              widget="monetary" options="{'currency_field': 'currency_id'}"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Chữ ký" name="signs">
+                            <div class="row text-center o_eam_nm_signs mt-3">
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người lập phiếu</div>
+                                    <field name="prepared_by_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_open': True, 'no_create': True}"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người nhận hàng</div>
+                                    <field name="receiver_name" nolabel="1" readonly="1"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Thủ kho</div>
+                                    <field name="warehouse_keeper_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_create': True}"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người giao hàng</div>
+                                    <field name="deliverer_name" nolabel="1" readonly="state != 'draft'"
+                                              placeholder="Họ tên"/>
+                                </div>
+                                <div class="col">
+                                    <div class="small fw-bold mb-1">Người kiểm soát</div>
+                                    <field name="controller_id" nolabel="1" readonly="state != 'draft'"
+                                              options="{'no_create': True}"/>
+                                </div>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Form phiếu khác (điều chuyển / thu hồi / thanh lý) -->
+    <record id="view_eam_transaction_form" model="ir.ui.view">
+        <field name="name">eam.transaction.form</field>
+        <field name="model">eam.transaction</field>
+        <field name="priority">16</field>
+        <field name="arch" type="xml">
+            <form string="Phiếu tài sản">
+                <header>
+                    <button name="action_confirm" type="object" string="Xác nhận"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_cancel" type="object" string="Hủy"
+                            invisible="state != 'draft'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <button name="action_draft" type="object" string="Đặt lại nháp"
+                            invisible="state != 'cancel'"
+                            groups="lug_eam.group_eam_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="txn_type" readonly="state != 'draft'"/>
+                            <field name="doc_type_code" readonly="state != 'draft'"/>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                      options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="warehouse_id" readonly="state != 'draft'"/>
+                            <field name="src_location_id" readonly="state != 'draft'"/>
+                            <field name="dest_location_id" readonly="state != 'draft'"/>
+                            <field name="department_id" readonly="state != 'draft'"
+                                      invisible="txn_type not in ('out', 'transfer')"/>
+                            <field name="owner_employee_id" readonly="state != 'draft'"
+                                      invisible="txn_type not in ('out', 'transfer')"/>
+                        </group>
+                    </group>
+                    <group string="Thanh lý" invisible="txn_type != 'disposal'">
+                        <field name="amount_recovery" readonly="state != 'draft'"/>
+                        <field name="reason" readonly="state != 'draft'"/>
+                    </group>
+                    <field name="line_ids" readonly="state != 'draft'">
+                        <list editable="bottom">
+                            <field name="asset_id" options="{'no_create': True}" required="1"/>
+                            <field name="asset_code"/>
+                            <field name="eam_state"/>
+                            <field name="unit_cost"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_eam_transaction_search" model="ir.ui.view">
+        <field name="name">eam.transaction.search</field>
+        <field name="model">eam.transaction</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Số phiếu"/>
+                <field name="warehouse_id" string="Cửa hàng"
+                          filter_domain="['|', '|', '|',
+                              ('warehouse_id.name', 'ilike', self),
+                              ('warehouse_id.code', 'ilike', self),
+                              ('dest_warehouse_id.name', 'ilike', self),
+                              ('dest_warehouse_id.code', 'ilike', self)]"/>
+                <field name="dest_warehouse_id" string="Kho đích"/>
+                <field name="deliverer_name"/>
+                <field name="receiver_name"/>
+                <field name="content"/>
+                <field name="reason"/>
+                <field name="partner_name"/>
+
+                <filter string="Nháp" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Hoàn thành" name="done" domain="[('state', '=', 'done')]"/>
+                <separator/>
+                <filter string="Nhập mua" name="type_in" domain="[('txn_type', '=', 'in')]"/>
+                <filter string="Xuất kho" name="type_out" domain="[('txn_type', '=', 'out')]"/>
+                <filter string="Điều chuyển" name="type_transfer" domain="[('txn_type', '=', 'transfer')]"/>
+                <filter string="Thu hồi" name="type_recall" domain="[('txn_type', '=', 'recall')]"/>
+                <filter string="Thanh lý" name="type_disposal" domain="[('txn_type', '=', 'disposal')]"/>
+                <separator/>
+                <filter string="Ngày" name="filter_date" date="date"/>
+                <separator/>
+                <filter string="Có cửa hàng" name="has_warehouse"
+                        domain="[('warehouse_id', '!=', False)]"/>
+                <group>
+                    <filter string="Cửa hàng" name="groupby_warehouse"
+                            context="{'group_by': 'warehouse_id'}"/>
+                    <filter string="Ngày" name="groupby_date"
+                            context="{'group_by': 'date'}"/>
+                    <filter string="Tháng" name="groupby_month"
+                            context="{'group_by': 'date:month'}"/>
+                    <filter string="Năm" name="groupby_year"
+                            context="{'group_by': 'date:year'}"/>
+                    <filter string="Loại phiếu" name="groupby_type"
+                            context="{'group_by': 'txn_type'}"/>
+                    <filter string="Trạng thái" name="groupby_state"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_eam_txn_in" model="ir.actions.act_window">
+        <field name="name">Nhập mua</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('txn_type', '=', 'in')]</field>
+        <field name="context">{'default_txn_type': 'in', 'default_doc_type_code': 'NM'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form_in')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo phiếu nhập mua</p>
+            <p>Điền người giao → nội dung → kho → thêm dòng mặt hàng → Lưu → Xác nhận.</p>
+        </field>
+    </record>
+    <record id="action_eam_txn_out" model="ir.actions.act_window">
+        <field name="name">Xuất kho</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('txn_type', '=', 'out')]</field>
+        <field name="context">{'default_txn_type': 'out', 'default_doc_type_code': 'PX'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form_out')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo phiếu xuất kho</p>
+            <p>Xuất tại kho → Nhập tại kho → Người nhận → Lý do → chọn tài sản → Lưu → Xác nhận.</p>
+        </field>
+    </record>
+    <record id="action_eam_txn_transfer" model="ir.actions.act_window">
+        <field name="name">Điều chuyển</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('txn_type', '=', 'transfer')]</field>
+        <field name="context">{'default_txn_type': 'transfer', 'default_doc_type_code': 'DC'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form_out')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tạo phiếu điều chuyển</p>
+            <p>Xuất tại kho → Nhập tại kho → chọn tài sản → Xác nhận để trừ tồn kho nguồn.</p>
+        </field>
+    </record>
+    <record id="action_eam_txn_recall" model="ir.actions.act_window">
+        <field name="name">Thu hồi</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('txn_type', '=', 'recall')]</field>
+        <field name="context">{'default_txn_type': 'recall'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form')})]"/>
+    </record>
+    <record id="action_eam_txn_disposal" model="ir.actions.act_window">
+        <field name="name">Thanh lý</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('txn_type', '=', 'disposal')]</field>
+        <field name="context">{'default_txn_type': 'disposal'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form')})]"/>
+    </record>
+    <record id="action_eam_txn_all" model="ir.actions.act_window">
+        <field name="name">Tất cả phiếu tài sản</field>
+        <field name="res_model">eam.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{}</field>
+        <field name="search_view_id" ref="view_eam_transaction_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_eam_transaction_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_eam_transaction_form')})]"/>
+    </record>
+</odoo>

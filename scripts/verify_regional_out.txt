@@ -1,0 +1,2 @@
+TONG QUAN miens=['VP', 'Nam', 'ĐTT', 'Bắc'] regional=False
+NAM miens=['Nam'] regional=True title=Miền Nam — Tổng ngày nghỉ & Tỷ lệ nghỉ phép

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_eam_asset_label" model="ir.actions.report">
+        <field name="name">Tem QR tài sản</field>
+        <field name="model">maintenance.equipment</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">lug_eam.report_eam_asset_label</field>
+        <field name="report_file">lug_eam.report_eam_asset_label</field>
+        <field name="print_report_name">'Tem_%s' % (object.asset_code or object.name)</field>
+        <field name="binding_model_id" ref="maintenance.model_maintenance_equipment"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_eam_asset_label">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page" style="padding:12px; font-family: sans-serif;">
+                    <table style="width:100%; border:1px solid #333; border-collapse:collapse;">
+                        <tr>
+                            <td style="width:55%; padding:10px; vertical-align:top;">
+                                <div style="font-size:11px; color:#666;">Mã tài sản</div>
+                                <div style="font-size:22px; font-weight:bold;" t-esc="doc.asset_code or ''"/>
+                                <div style="margin-top:8px; font-size:14px; font-weight:600;" t-esc="doc.name or ''"/>
+                                <div style="margin-top:6px; font-size:12px;" t-if="doc.eam_model_id">
+                                    <t t-esc="doc.eam_brand_id.name or ''"/>
+                                    <t t-if="doc.eam_model_id"> / <t t-esc="doc.eam_model_id.name"/></t>
+                                </div>
+                                <div style="margin-top:6px; font-size:11px;" t-if="doc.serial_no">
+                                    Serial: <t t-esc="doc.serial_no"/>
+                                </div>
+                                <div style="margin-top:6px; font-size:11px;" t-if="doc.barcode">
+                                    Barcode: <t t-esc="doc.barcode"/>
+                                </div>
+                            </td>
+                            <td style="width:45%; padding:10px; text-align:center; vertical-align:middle;">
+                                <img t-if="doc.qr_code"
+                                     t-att-src="'/report/barcode/?barcode_type=%s&amp;value=%s&amp;width=%s&amp;height=%s' % ('QR', doc.qr_code, 160, 160)"
+                                     style="width:140px; height:140px;"
+                                     alt="QR"/>
+                                <div style="font-size:10px; margin-top:4px;" t-esc="doc.qr_code or ''"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

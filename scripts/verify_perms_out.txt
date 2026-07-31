@@ -1,0 +1,2 @@
+anh.trinh@sangtam.com miens=['VP'] hr_groups=['group_hr_leave_analytics_mien_vp']
+admin.lug@sangtam.com miens=['Nam', 'Bắc', 'ĐTT'] hr_groups=['group_hr_leave_analytics_mien_bac', 'group_hr_leave_analytics_mien_nam', 'group_hr_leave_analytics_mien_dtt']

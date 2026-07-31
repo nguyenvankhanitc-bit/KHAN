@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Nhóm gốc -->
+    <record id="cat_grp_hvac" model="maintenance.equipment.category">
+        <field name="code">GRP_HVAC</field>
+        <field name="code_token">HVAC</field>
+        <field name="name">HVAC</field>
+        <field name="require_qr" eval="True"/>
+        <field name="maintenance_cycle_month">0</field>
+    </record>
+    <record id="cat_grp_it" model="maintenance.equipment.category">
+        <field name="code">GRP_IT</field>
+        <field name="code_token">IT</field>
+        <field name="name">CNTT</field>
+        <field name="require_qr" eval="True"/>
+    </record>
+    <record id="cat_grp_elec" model="maintenance.equipment.category">
+        <field name="code">GRP_ELEC</field>
+        <field name="code_token">ELEC</field>
+        <field name="name">Điện</field>
+        <field name="require_qr" eval="True"/>
+    </record>
+    <record id="cat_grp_water" model="maintenance.equipment.category">
+        <field name="code">GRP_WATER</field>
+        <field name="code_token">WATER</field>
+        <field name="name">Cấp thoát nước</field>
+        <field name="require_qr" eval="True"/>
+    </record>
+    <record id="cat_grp_civil" model="maintenance.equipment.category">
+        <field name="code">GRP_CIVIL</field>
+        <field name="code_token">CIVIL</field>
+        <field name="name">Công trình</field>
+        <field name="require_qr" eval="True"/>
+    </record>
+    <record id="cat_grp_other" model="maintenance.equipment.category">
+        <field name="code">GRP_OTHER</field>
+        <field name="code_token">OTHER</field>
+        <field name="name">Khác</field>
+        <field name="require_qr" eval="True"/>
+    </record>
+
+    <!-- HVAC -->
+    <record id="cat_ac" model="maintenance.equipment.category">
+        <field name="code">CAT_AC</field>
+        <field name="name">Máy lạnh</field>
+        <field name="parent_id" ref="cat_grp_hvac"/>
+        <field name="require_qr" eval="True"/>
+        <field name="maintenance_cycle_month">3</field>
+    </record>
+
+    <!-- CNTT -->
+    <record id="cat_pc" model="maintenance.equipment.category">
+        <field name="code">CAT_PC</field>
+        <field name="name">Máy tính</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_laptop" model="maintenance.equipment.category">
+        <field name="code">CAT_LAPTOP</field>
+        <field name="name">Laptop</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_printer" model="maintenance.equipment.category">
+        <field name="code">CAT_PRINTER</field>
+        <field name="name">Máy in</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_photo" model="maintenance.equipment.category">
+        <field name="code">CAT_PHOTO</field>
+        <field name="name">Máy photocopy</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_tv" model="maintenance.equipment.category">
+        <field name="code">CAT_TV</field>
+        <field name="name">Tivi</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_led" model="maintenance.equipment.category">
+        <field name="code">CAT_LED</field>
+        <field name="name">Màn hình LED</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_cam" model="maintenance.equipment.category">
+        <field name="code">CAT_CAM</field>
+        <field name="name">Camera</field>
+        <field name="parent_id" ref="cat_grp_it"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+
+    <!-- Điện -->
+    <record id="cat_panel" model="maintenance.equipment.category">
+        <field name="code">CAT_PANEL</field>
+        <field name="name">Tủ điện</field>
+        <field name="parent_id" ref="cat_grp_elec"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_light" model="maintenance.equipment.category">
+        <field name="code">CAT_LIGHT</field>
+        <field name="name">Đèn</field>
+        <field name="parent_id" ref="cat_grp_elec"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_socket" model="maintenance.equipment.category">
+        <field name="code">CAT_SOCKET</field>
+        <field name="name">Công tắc / Ổ cắm</field>
+        <field name="parent_id" ref="cat_grp_elec"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_ups" model="maintenance.equipment.category">
+        <field name="code">CAT_UPS</field>
+        <field name="name">UPS</field>
+        <field name="parent_id" ref="cat_grp_elec"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_gen" model="maintenance.equipment.category">
+        <field name="code">CAT_GEN</field>
+        <field name="name">Máy phát</field>
+        <field name="parent_id" ref="cat_grp_elec"/>
+        <field name="maintenance_cycle_month">1</field>
+    </record>
+
+    <!-- Cấp thoát nước -->
+    <record id="cat_pump" model="maintenance.equipment.category">
+        <field name="code">CAT_PUMP</field>
+        <field name="name">Máy bơm</field>
+        <field name="parent_id" ref="cat_grp_water"/>
+        <field name="maintenance_cycle_month">3</field>
+    </record>
+    <record id="cat_tank" model="maintenance.equipment.category">
+        <field name="code">CAT_TANK</field>
+        <field name="name">Bồn nước</field>
+        <field name="parent_id" ref="cat_grp_water"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_pipe" model="maintenance.equipment.category">
+        <field name="code">CAT_PIPE</field>
+        <field name="name">Đường ống</field>
+        <field name="parent_id" ref="cat_grp_water"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_valve" model="maintenance.equipment.category">
+        <field name="code">CAT_VALVE</field>
+        <field name="name">Van</field>
+        <field name="parent_id" ref="cat_grp_water"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+
+    <!-- Công trình -->
+    <record id="cat_shutter" model="maintenance.equipment.category">
+        <field name="code">CAT_SHUTTER</field>
+        <field name="name">Cửa cuốn</field>
+        <field name="parent_id" ref="cat_grp_civil"/>
+        <field name="maintenance_cycle_month">6</field>
+    </record>
+    <record id="cat_glass" model="maintenance.equipment.category">
+        <field name="code">CAT_GLASS</field>
+        <field name="name">Cửa kính</field>
+        <field name="parent_id" ref="cat_grp_civil"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_sign" model="maintenance.equipment.category">
+        <field name="code">CAT_SIGN</field>
+        <field name="name">Logo bảng hiệu</field>
+        <field name="parent_id" ref="cat_grp_civil"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_shelf" model="maintenance.equipment.category">
+        <field name="code">CAT_SHELF</field>
+        <field name="name">Bục / Kệ</field>
+        <field name="parent_id" ref="cat_grp_civil"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+    <record id="cat_furn" model="maintenance.equipment.category">
+        <field name="code">CAT_FURN</field>
+        <field name="name">Nội thất</field>
+        <field name="parent_id" ref="cat_grp_civil"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+
+    <!-- Khác -->
+    <record id="cat_other" model="maintenance.equipment.category">
+        <field name="code">CAT_OTHER</field>
+        <field name="name">Khác (chi tiết)</field>
+        <field name="parent_id" ref="cat_grp_other"/>
+        <field name="maintenance_cycle_month">12</field>
+    </record>
+</odoo>

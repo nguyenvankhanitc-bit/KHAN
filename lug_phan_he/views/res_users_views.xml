@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_phan_he" model="ir.ui.view">
+        <field name="name">res.users.form.phan.he</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Phạm vi Quản lý dịch vụ" name="phan_he_scope"
+                      groups="lug_phan_he.group_phan_he_service_manager">
+                    <group>
+                        <group string="Phạm vi phụ trách">
+                            <field name="phan_he_mien_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                            <field name="phan_he_area_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                            <field name="phan_he_store_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

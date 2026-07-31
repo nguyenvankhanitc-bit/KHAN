@@ -1,16 +1,18 @@
 ﻿# KHAN
 
-Repository chứa module Odoo **Quản lý công việc hàng ngày** (`daily_work_task`).
+Repository module Odoo tùy chỉnh.
+
+## Modules
+
+| Thư mục | Mô tả |
+|---------|--------|
+| `daily_work_task` | Quản lý công việc hàng ngày |
+| `lug_app_center` | App Center / trang chủ ứng dụng |
+| `lug_phan_he` | Quản lý dịch vụ (Internet, thanh toán, Calendar, dashboard) |
+| `lug_eam` | Quản lý tài sản / EAM |
+| `appscript_kiem_ke` | App Script kiểm kê |
 
 ## Cài đặt
 
-1. Copy thư mục `daily_work_task` vào `custom_addons/` của Odoo.
-2. Cập nhật danh sách ứng dụng và cài module **Quản lý công việc hàng ngày**.
-
-## Tính năng chính
-
-- Dashboard tổng quan công việc
-- Không gian làm việc nhân viên
-- Công việc lặp lại (recurring tasks)
-- Giao việc và thông báo
-- Báo cáo hiệu suất và xuất Excel
+1. Copy từng thư mục module vào `custom_addons/` của Odoo.
+2. Cập nhật Apps và cài module tương ứng.

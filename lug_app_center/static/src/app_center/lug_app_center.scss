@@ -421,23 +421,14 @@
     }
 
     .o_eac_welcome_text {
-        h1 {
-            margin: 0 0 0.35rem;
-            font-size: clamp(1.25rem, 2vw, 1.65rem);
-            font-weight: 800;
-            color: var(--eac-purple-deep);
-        }
-
         p {
             margin: 0;
-            color: var(--eac-muted);
-            font-size: 0.95rem;
-            max-width: 36rem;
+            font-size: clamp(1.15rem, 2vw, 1.45rem);
+            font-weight: 750;
+            color: var(--eac-purple-deep);
+            max-width: 40rem;
+            line-height: 1.35;
         }
-    }
-
-    .o_eac_wave {
-        margin-left: 0.25rem;
     }
 
     .o_eac_welcome_art {

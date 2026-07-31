@@ -1,7 +1,0 @@
-mien_count=4
-VP=0.0
-Nam=3.0
-ĐTT=0.0
-Bắc=0.0
-active_mien=Nam
-employees=2

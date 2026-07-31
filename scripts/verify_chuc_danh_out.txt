@@ -1,2 +1,0 @@
-Cao Ngọc Nhi | key=nhóm trưởng | display=Nhóm trưởng | emp.job_title=nhóm trưởng | version=nhóm trưởng
-Bùi Thanh Phúc | key=cửa hàng trưởng | display=Cửa hàng trưởng | emp.job_title=cửa hàng trưởng | version=cửa hàng trưởng

@@ -1,3 +1,0 @@
-all=2 nam=2
-Cao Ngọc Nhi mien=Nam
-Bùi Thanh Phúc mien=Nam

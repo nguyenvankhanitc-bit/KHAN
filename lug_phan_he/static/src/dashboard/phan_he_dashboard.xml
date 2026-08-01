@@ -140,7 +140,8 @@
                 <t t-if="state.loading">
                     <div class="o_phan_he_dash_loading">Đang tải dữ liệu...</div>
                 </t>
-                <t t-elif="state.activeNav === 'reports'">
+                <t t-else="">
+                    <t t-if="state.activeNav === 'reports'">
                     <section class="o_phan_he_section o_phan_he_payment_report">
                         <h2 class="o_phan_he_section_title">
                             <span class="o_phan_he_section_num">BC</span>
@@ -196,8 +197,8 @@
                             </t>
                         </div>
                     </section>
-                </t>
-                <t t-else="">
+                    </t>
+                    <t t-else="">
                     <!-- 1. Thống kê chi phí theo miền -->
                     <section class="o_phan_he_section">
                         <h2 class="o_phan_he_section_title">
@@ -445,6 +446,7 @@
                             </div>
                         </div>
                     </section>
+                    </t>
                 </t>
             </div>
         </div>

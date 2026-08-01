@@ -2,8 +2,9 @@
 <odoo>
     <!-- ========== DASHBOARD ========== -->
     <record id="action_phan_he_dashboard" model="ir.actions.client">
-        <field name="name">Dashboard tổng quan</field>
+        <field name="name">Dashboard Internet</field>
         <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet'}</field>
     </record>
 
     <!-- ========== MIỀN ========== -->
@@ -879,32 +880,34 @@
     </record>
 
     <record id="action_phan_he_service_all" model="ir.actions.act_window">
-        <field name="name">Hợp đồng dịch vụ</field>
+        <field name="name">Hợp đồng Internet</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet'))]"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Chưa có hợp đồng dịch vụ</p>
+            <p class="o_view_nocontent_smiling_face">Chưa có hợp đồng Internet</p>
         </field>
     </record>
 
     <record id="action_phan_he_service_tracking" model="ir.actions.act_window">
-        <field name="name">Danh sách internet</field>
+        <field name="name">Danh sách đường truyền</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
-        <field name="domain">[]</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet'))]"/>
         <field name="limit">200</field>
         <field name="context" eval="{
             'default_service_type_id': ref('service_type_internet'),
             'default_state': 'active',
             'default_ops_status': 'active',
             'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'internet',
         }"/>
         <field name="search_view_id" ref="view_phan_he_service_search"/>
         <field name="view_ids" eval="[(5, 0, 0),
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
             (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Chưa có dòng theo dõi Internet</p>
+            <p class="o_view_nocontent_smiling_face">Chưa có đường truyền Internet</p>
             <p>Bấm New để mở form nhập liệu, hoặc nhập trực tiếp trên bảng.</p>
         </field>
     </record>
@@ -943,6 +946,7 @@
         <field name="name">Sắp hết hạn</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet'))]"/>
         <field name="context">{'search_default_filter_expire_soon': 1}</field>
     </record>
 
@@ -950,6 +954,7 @@
         <field name="name">Đã hết hạn</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet'))]"/>
         <field name="context">{'search_default_filter_expired': 1}</field>
     </record>
 
@@ -1093,9 +1098,10 @@
     </record>
 
     <record id="action_phan_he_payment" model="ir.actions.act_window">
-        <field name="name">Lịch thanh toán</field>
+        <field name="name">Lịch thanh toán Internet</field>
         <field name="res_model">phan.he.payment</field>
         <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_internet'))]"/>
     </record>
 
     <!-- Calendar: hạn thanh toán theo tháng -->
@@ -1446,5 +1452,15 @@
         <field name="name">Phân tích thanh toán</field>
         <field name="res_model">phan.he.payment</field>
         <field name="view_mode">pivot,graph,list</field>
+    </record>
+
+    <record id="action_phan_he_report_payment_status" model="ir.actions.client">
+        <field name="name">Trạng thái thanh toán</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{
+            'phan_he_service_type_code': 'internet',
+            'phan_he_app_title': 'Internet',
+            'phan_he_dash_view': 'reports',
+        }</field>
     </record>
 </odoo>

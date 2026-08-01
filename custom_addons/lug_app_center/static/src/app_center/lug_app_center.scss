@@ -558,6 +558,21 @@
             display: block;
         }
 
+        &--lg {
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            background: #fff;
+
+            img {
+                width: 118%;
+                height: 118%;
+                max-width: none;
+                object-fit: contain;
+                transform: scale(1.12);
+            }
+        }
+
         &--fa {
             font-size: 1.35rem;
 
@@ -565,6 +580,11 @@
                 line-height: 1;
             }
         }
+    }
+
+    .o_eac_app_card--phan-he .o_eac_app_icon--img {
+        width: 72px;
+        height: 72px;
     }
 
     .o_eac_app_meta {

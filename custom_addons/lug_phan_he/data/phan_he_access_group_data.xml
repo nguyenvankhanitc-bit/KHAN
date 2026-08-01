@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="phan_he_access_group_camera" model="phan.he.module.access">
+        <field name="name">Camera</field>
+        <field name="code">camera</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="phan_he_access_group_internet" model="phan.he.module.access">
+        <field name="name">Internet</field>
+        <field name="code">internet</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

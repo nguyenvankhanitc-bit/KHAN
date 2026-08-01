@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Gỡ web_icon để submenu không còn hiện như app trên App Launcher -->
+    <record id="menu_phan_he_camera_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+    <record id="menu_phan_he_attendance_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+    <record id="menu_phan_he_linkq_hrm_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+    <record id="menu_phan_he_linkq_nb_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+    <record id="menu_phan_he_server_root" model="ir.ui.menu">
+        <field name="web_icon" eval="False"/>
+    </record>
+</odoo>

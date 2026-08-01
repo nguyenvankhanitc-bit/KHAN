@@ -131,6 +131,7 @@
                                 <t t-foreach="filteredApps" t-as="app" t-key="app.key">
                                     <button type="button"
                                             class="o_eac_app_card"
+                                            t-att-class="app.xmlid === 'lug_phan_he.menu_phan_he_root' ? 'o_eac_app_card--phan-he' : ''"
                                             t-on-click="() => this.openApp(app)">
                                         <t t-if="app.iconType === 'fa' and app.faIcon">
                                             <span class="o_eac_app_icon o_eac_app_icon--fa"
@@ -140,7 +141,8 @@
                                             </span>
                                         </t>
                                         <t t-else="">
-                                            <span class="o_eac_app_icon o_eac_app_icon--img">
+                                            <span class="o_eac_app_icon o_eac_app_icon--img"
+                                                  t-att-class="app.xmlid === 'lug_phan_he.menu_phan_he_root' ? 'o_eac_app_icon--lg' : ''">
                                                 <img t-att-src="app.webIconData" t-att-alt="app.name"/>
                                             </span>
                                         </t>

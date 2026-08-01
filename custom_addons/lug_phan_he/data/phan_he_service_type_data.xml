@@ -5,15 +5,44 @@
         <field name="code">internet</field>
         <field name="sequence">10</field>
     </record>
+    <record id="service_type_camera" model="phan.he.service.type">
+        <field name="name">CAMERA</field>
+        <field name="code">camera</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="service_type_attendance" model="phan.he.service.type">
+        <field name="name">MÁY CHẤM CÔNG</field>
+        <field name="code">attendance</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="service_type_linkq_hrm" model="phan.he.service.type">
+        <field name="name">LINKQ HRM</field>
+        <field name="code">linkq_hrm</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="service_type_linkq_nb" model="phan.he.service.type">
+        <field name="name">LINKQ NB</field>
+        <field name="code">linkq_nb</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="service_type_server" model="phan.he.service.type">
+        <field name="name">MÁY CHỦ</field>
+        <field name="code">server</field>
+        <field name="sequence">60</field>
+    </record>
+
+    <!-- Giữ loại cũ để tương thích dữ liệu lịch sử -->
     <record id="service_type_software" model="phan.he.service.type">
         <field name="name">PHẦN MỀM</field>
         <field name="code">software</field>
-        <field name="sequence">20</field>
+        <field name="sequence">80</field>
+        <field name="active" eval="False"/>
     </record>
     <record id="service_type_phone" model="phan.he.service.type">
         <field name="name">ĐIỆN THOẠI</field>
         <field name="code">phone</field>
-        <field name="sequence">30</field>
+        <field name="sequence">85</field>
+        <field name="active" eval="False"/>
     </record>
     <record id="service_type_other" model="phan.he.service.type">
         <field name="name">KHÁC</field>

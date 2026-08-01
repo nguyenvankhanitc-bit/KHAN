@@ -155,10 +155,15 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <t t-foreach="state.reminders.overdue_tasks" t-as="row" t-key="'ov-' + row.id">
+                                                    <t t-foreach="state.reminders.overdue_tasks" t-as="row" t-key="'ov-' + (row.source || 'task') + '-' + row.id">
                                                         <tr class="o_dro_row_overdue">
                                                             <td t-esc="row.stt"/>
-                                                            <td class="o_dro_name" t-esc="row.name"/>
+                                                            <td class="o_dro_name">
+                                                                <t t-if="row.source === 'work_note'">
+                                                                    <span class="o_dro_src_note" title="Ghi chú công việc">📝</span>
+                                                                </t>
+                                                                <t t-esc="row.name"/>
+                                                            </td>
                                                             <td>
                                                                 <span t-att-class="'o_dro_pri ' + priorityClass(row.priority)">
                                                                     <i t-att-class="'fa ' + priorityIcon(row.priority)"/>
@@ -194,10 +199,12 @@
                                                                         t-on-click="() => this.onEdit(row)">
                                                                     <i class="fa fa-pencil"/>
                                                                 </button>
-                                                                <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
-                                                                        t-on-click="() => this.onComplete(row)">
-                                                                    <i class="fa fa-check-circle"/>
-                                                                </button>
+                                                                <t t-if="row.source !== 'work_note'">
+                                                                    <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
+                                                                            t-on-click="() => this.onComplete(row)">
+                                                                        <i class="fa fa-check-circle"/>
+                                                                    </button>
+                                                                </t>
                                                             </td>
                                                         </tr>
                                                     </t>
@@ -233,10 +240,15 @@
                                                     </tr>
                                                 </thead>
                                                 <tbody>
-                                                    <t t-foreach="state.reminders.upcoming_tasks" t-as="row" t-key="'up-' + row.id">
+                                                    <t t-foreach="state.reminders.upcoming_tasks" t-as="row" t-key="'up-' + (row.source || 'task') + '-' + row.id">
                                                         <tr>
                                                             <td t-esc="row.stt"/>
-                                                            <td class="o_dro_name" t-esc="row.name"/>
+                                                            <td class="o_dro_name">
+                                                                <t t-if="row.source === 'work_note'">
+                                                                    <span class="o_dro_src_note" title="Ghi chú công việc">📝</span>
+                                                                </t>
+                                                                <t t-esc="row.name"/>
+                                                            </td>
                                                             <td>
                                                                 <span t-att-class="'o_dro_pri ' + priorityClass(row.priority)">
                                                                     <i t-att-class="'fa ' + priorityIcon(row.priority)"/>
@@ -272,11 +284,13 @@
                                                                         t-on-click="() => this.onEdit(row)">
                                                                     <i class="fa fa-pencil"/>
                                                                 </button>
-                                                                <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
-                                                                        t-on-click="() => this.onComplete(row)"
-                                                                        t-att-disabled="row.state === 'done'">
-                                                                    <i class="fa fa-check-circle"/>
-                                                                </button>
+                                                                <t t-if="row.source !== 'work_note'">
+                                                                    <button type="button" class="o_dro_act o_dro_act_ok" title="Hoàn thành"
+                                                                            t-on-click="() => this.onComplete(row)"
+                                                                            t-att-disabled="row.state === 'done'">
+                                                                        <i class="fa fa-check-circle"/>
+                                                                    </button>
+                                                                </t>
                                                             </td>
                                                         </tr>
                                                     </t>

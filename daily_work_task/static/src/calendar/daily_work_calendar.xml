@@ -128,25 +128,6 @@
 
                     <aside class="o_dwc_sidebar">
                         <div class="o_dwc_side_card">
-                            <div class="o_dwc_side_title">Lịch nhỏ</div>
-                            <div class="o_dwc_mini_weekdays">
-                                <t t-foreach="weekdays" t-as="wd" t-key="'m'+wd">
-                                    <span t-esc="wd"/>
-                                </t>
-                            </div>
-                            <div class="o_dwc_mini_grid">
-                                <t t-foreach="miniDays" t-as="d" t-key="d.key">
-                                    <span t-if="d.empty" class="o_dwc_mini_empty"/>
-                                    <span t-else=""
-                                          t-att-class="'o_dwc_mini_day'
-                                            + (d.isToday ? ' is-today' : '')
-                                            + (d.has ? ' has-task' : '')"
-                                          t-esc="d.day"/>
-                                </t>
-                            </div>
-                        </div>
-
-                        <div class="o_dwc_side_card">
                             <div class="o_dwc_side_head">
                                 <div class="o_dwc_side_title">Việc hôm nay</div>
                                 <button type="button" class="o_dwc_side_link" t-on-click="goToday">Xem tất cả</button>

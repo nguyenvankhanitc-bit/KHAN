@@ -456,10 +456,21 @@ export class DailyWorkReportOverview extends Component {
     }
 
     stateLabel(row) {
+        if (row.source === "work_note") {
+            return row.is_active_overdue ? "Ghi chú quá hạn" : "Ghi chú";
+        }
         if (row.is_active_overdue && row.state !== "done") {
             return "Quá hạn";
         }
         return row.state_label || "";
+    }
+
+    async openWorkNote() {
+        await this.action.doAction({
+            type: "ir.actions.client",
+            tag: "daily_work_note",
+            name: _t("Ghi chú công việc"),
+        });
     }
 
     async openNav(key) {
@@ -482,6 +493,10 @@ export class DailyWorkReportOverview extends Component {
     }
 
     async onView(row) {
+        if (row.source === "work_note") {
+            await this.openWorkNote();
+            return;
+        }
         await this.action.doAction({
             type: "ir.actions.act_window",
             res_model: "daily.task",
@@ -492,6 +507,10 @@ export class DailyWorkReportOverview extends Component {
     }
 
     async onEdit(row) {
+        if (row.source === "work_note") {
+            await this.openWorkNote();
+            return;
+        }
         await this.action.doAction({
             type: "ir.actions.act_window",
             res_model: "daily.task",
@@ -503,6 +522,9 @@ export class DailyWorkReportOverview extends Component {
     }
 
     async onComplete(row) {
+        if (row.source === "work_note") {
+            return;
+        }
         try {
             await this.orm.call("daily.task", "action_set_done", [[row.id]]);
             this.notification.add(_t("Đã hoàn thành công việc."), { type: "success" });

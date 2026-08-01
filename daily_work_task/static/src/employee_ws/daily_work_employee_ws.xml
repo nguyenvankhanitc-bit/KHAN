@@ -207,7 +207,7 @@
                                         <i class="fa fa-compress"/> Thu gọn
                                     </button>
                                 </h3>
-                                <div class="o_ews_table_wrap">
+                                <div class="o_ews_table_wrap" title="Cuộn dọc: tối đa 10 việc · Cuộn ngang khi bảng rộng">
                                     <table class="o_ews_table">
                                         <thead>
                                             <tr>
@@ -219,7 +219,7 @@
                                                 <th>Thời gian (phút)</th>
                                                 <th>Tổng TG (giờ)</th>
                                                 <th>% hoàn thành CV</th>
-                                                <th>Trạng thái công việc</th>
+                                                <th class="o_ews_col_state">Trạng thái công việc</th>
                                                 <th>Ghi chú</th>
                                                 <th class="o_ews_col_action">Thao tác</th>
                                             </tr>
@@ -269,7 +269,7 @@
                                                                  t-att-style="'width:' + (task.completion_percent || 0) + '%'"/>
                                                         </div>
                                                     </td>
-                                                    <td>
+                                                    <td class="o_ews_col_state">
                                                         <select t-att-class="'form-select form-select-sm o_ews_state_select ' + stateSelectClass(task.state)"
                                                                 t-att-value="task.state"
                                                                 t-on-change="(ev) => this.onStateChange(task, ev)">
@@ -282,12 +282,31 @@
                                                     </td>
                                                     <td t-esc="task.note"/>
                                                     <td class="o_ews_col_action">
-                                                        <button type="button"
-                                                                class="btn btn-sm o_ews_btn_edit"
-                                                                t-att-title="'Chỉnh sửa: ' + (task.name || '')"
-                                                                t-on-click="() => this.onEditTask(task)">
-                                                            <i class="fa fa-pencil"/> Chỉnh sửa
-                                                        </button>
+                                                        <div t-if="task.can_edit_details !== false"
+                                                             class="o_ews_row_actions">
+                                                            <button type="button"
+                                                                    class="o_ews_act_btn edit"
+                                                                    t-att-title="'Chỉnh sửa: ' + (task.name || '')"
+                                                                    t-on-click="() => this.onEditTask(task)">
+                                                                <i class="fa fa-pencil"/>
+                                                            </button>
+                                                            <button t-if="task.can_delete"
+                                                                    type="button"
+                                                                    class="o_ews_act_btn del"
+                                                                    t-att-title="'Xóa: ' + (task.name || '')"
+                                                                    t-on-click="() => this.onDeleteTask(task)">
+                                                                <i class="fa fa-trash"/>
+                                                            </button>
+                                                        </div>
+                                                        <span t-else=""
+                                                              class="text-muted o_ews_assigned_lock"
+                                                              t-att-title="'Việc được giao bởi ' + (task.assigned_by_name || 'người khác') + ' — chỉ cập nhật trạng thái / % hoàn thành'">
+                                                            <i class="fa fa-lock"/>
+                                                            <t t-if="task.assigned_by_name">
+                                                                Được giao bởi <t t-esc="task.assigned_by_name"/>
+                                                            </t>
+                                                            <t t-else="">Được giao</t>
+                                                        </span>
                                                     </td>
                                                 </tr>
                                             </t>
@@ -885,102 +904,112 @@
                                       t-esc="(statusBoardRows.length || 0) + ' việc'"/>
                             </h3>
                             <p class="o_ews_month_toggle_hint">
-                                Phân theo trạng thái · tên công việc và hạn hoàn thành
+                                Phân theo trạng thái · mỗi bảng hiện tối đa 10 dòng (cuộn trong bảng để xem thêm)
                             </p>
                         </div>
+                        <div class="o_ews_status_boards_scroll">
                         <div class="o_ews_status_boards">
                             <div class="o_ews_status_col o_ews_status_done">
-                                <div class="o_ews_status_col_head">Công việc hoàn thành</div>
-                                <table class="o_ews_status_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tên công việc</th>
-                                            <th>Hạn hoàn thành</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="statusBoardDone" t-as="row" t-key="row.id">
-                                            <tr>
-                                                <td t-esc="row.name"/>
-                                                <td class="o_ews_status_date"
-                                                    t-esc="row.deadline_display || '—'"/>
+                                <div class="o_ews_status_col_sticky">
+                                    <div class="o_ews_status_col_head">Công việc hoàn thành</div>
+                                    <div class="o_ews_status_col_labels" aria-hidden="true">
+                                        <span>Tên công việc</span>
+                                        <span>Hạn hoàn thành</span>
+                                    </div>
+                                </div>
+                                <div class="o_ews_status_table_wrap">
+                                    <table class="o_ews_status_table">
+                                        <tbody>
+                                            <t t-foreach="statusBoardDone" t-as="row" t-key="row.id">
+                                                <tr>
+                                                    <td t-esc="row.name"/>
+                                                    <td class="o_ews_status_date"
+                                                        t-esc="row.deadline_display || '—'"/>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!statusBoardDone.length">
+                                                <td colspan="2" class="o_ews_status_empty">Chưa có việc hoàn thành</td>
                                             </tr>
-                                        </t>
-                                        <tr t-if="!statusBoardDone.length">
-                                            <td colspan="2" class="o_ews_status_empty">Chưa có việc hoàn thành</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="o_ews_status_col o_ews_status_progress">
-                                <div class="o_ews_status_col_head">Công việc đang xử lý</div>
-                                <table class="o_ews_status_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tên công việc</th>
-                                            <th>Hạn hoàn thành</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="statusBoardInProgress" t-as="row" t-key="row.id">
-                                            <tr>
-                                                <td t-esc="row.name"/>
-                                                <td class="o_ews_status_date"
-                                                    t-esc="row.deadline_display || '—'"/>
+                                <div class="o_ews_status_col_sticky">
+                                    <div class="o_ews_status_col_head">Công việc đang xử lý</div>
+                                    <div class="o_ews_status_col_labels" aria-hidden="true">
+                                        <span>Tên công việc</span>
+                                        <span>Hạn hoàn thành</span>
+                                    </div>
+                                </div>
+                                <div class="o_ews_status_table_wrap">
+                                    <table class="o_ews_status_table">
+                                        <tbody>
+                                            <t t-foreach="statusBoardInProgress" t-as="row" t-key="row.id">
+                                                <tr>
+                                                    <td t-esc="row.name"/>
+                                                    <td class="o_ews_status_date"
+                                                        t-esc="row.deadline_display || '—'"/>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!statusBoardInProgress.length">
+                                                <td colspan="2" class="o_ews_status_empty">Chưa có việc đang xử lý</td>
                                             </tr>
-                                        </t>
-                                        <tr t-if="!statusBoardInProgress.length">
-                                            <td colspan="2" class="o_ews_status_empty">Chưa có việc đang xử lý</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="o_ews_status_col o_ews_status_todo">
-                                <div class="o_ews_status_col_head">Công việc chưa bắt đầu</div>
-                                <table class="o_ews_status_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tên công việc</th>
-                                            <th>Hạn hoàn thành</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="statusBoardNotStarted" t-as="row" t-key="row.id">
-                                            <tr>
-                                                <td t-esc="row.name"/>
-                                                <td class="o_ews_status_date"
-                                                    t-esc="row.deadline_display || '—'"/>
+                                <div class="o_ews_status_col_sticky">
+                                    <div class="o_ews_status_col_head">Công việc chưa bắt đầu</div>
+                                    <div class="o_ews_status_col_labels" aria-hidden="true">
+                                        <span>Tên công việc</span>
+                                        <span>Hạn hoàn thành</span>
+                                    </div>
+                                </div>
+                                <div class="o_ews_status_table_wrap">
+                                    <table class="o_ews_status_table">
+                                        <tbody>
+                                            <t t-foreach="statusBoardNotStarted" t-as="row" t-key="row.id">
+                                                <tr>
+                                                    <td t-esc="row.name"/>
+                                                    <td class="o_ews_status_date"
+                                                        t-esc="row.deadline_display || '—'"/>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!statusBoardNotStarted.length">
+                                                <td colspan="2" class="o_ews_status_empty">Chưa có việc chờ bắt đầu</td>
                                             </tr>
-                                        </t>
-                                        <tr t-if="!statusBoardNotStarted.length">
-                                            <td colspan="2" class="o_ews_status_empty">Chưa có việc chờ bắt đầu</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                             <div class="o_ews_status_col o_ews_status_overdue">
-                                <div class="o_ews_status_col_head">Công việc quá hạn</div>
-                                <table class="o_ews_status_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tên công việc</th>
-                                            <th>Hạn hoàn thành</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="statusBoardOverdue" t-as="row" t-key="row.id">
-                                            <tr>
-                                                <td t-esc="row.name"/>
-                                                <td class="o_ews_status_date"
-                                                    t-esc="row.deadline_display || '—'"/>
+                                <div class="o_ews_status_col_sticky">
+                                    <div class="o_ews_status_col_head">Công việc quá hạn</div>
+                                    <div class="o_ews_status_col_labels" aria-hidden="true">
+                                        <span>Tên công việc</span>
+                                        <span>Hạn hoàn thành</span>
+                                    </div>
+                                </div>
+                                <div class="o_ews_status_table_wrap">
+                                    <table class="o_ews_status_table">
+                                        <tbody>
+                                            <t t-foreach="statusBoardOverdue" t-as="row" t-key="row.id">
+                                                <tr>
+                                                    <td t-esc="row.name"/>
+                                                    <td class="o_ews_status_date"
+                                                        t-esc="row.deadline_display || '—'"/>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!statusBoardOverdue.length">
+                                                <td colspan="2" class="o_ews_status_empty">Không có việc quá hạn</td>
                                             </tr>
-                                        </t>
-                                        <tr t-if="!statusBoardOverdue.length">
-                                            <td colspan="2" class="o_ews_status_empty">Không có việc quá hạn</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
+                        </div>
                         </div>
                     </t>
                 </t>

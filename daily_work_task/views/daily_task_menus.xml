@@ -73,10 +73,17 @@
               sequence="40"/>
 
     <menuitem id="menu_daily_work_notebook"
-              name="Sổ tay"
+              name="Danh bạ"
               parent="menu_daily_work_root"
               action="action_daily_work_notebook"
               sequence="35"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_note"
+              name="Ghi chú công việc"
+              parent="menu_daily_work_root"
+              action="action_daily_work_note"
+              sequence="36"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_send_mail"
@@ -155,6 +162,9 @@
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_notebook" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="menu_daily_work_note" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_send_mail" model="ir.ui.menu">

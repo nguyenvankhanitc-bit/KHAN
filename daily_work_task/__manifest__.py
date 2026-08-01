@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.37.13",
+    "version": "19.0.1.37.35",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -23,6 +23,8 @@ Tính năng:
 - Việc quá hạn + cập nhật trạng thái trực tiếp
 - Gửi mail giục quá hạn (thủ công + cron hàng ngày)
 - Danh sách nhân viên (tên + email)
+- Danh bạ khách hàng
+- Ghi chú công việc
 
 Không phụ thuộc / không sửa module gốc hay module custom khác.
     """,
@@ -44,6 +46,7 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
         "views/daily_task_work_group_views.xml",
         "views/daily_task_recurring_views.xml",
         "views/daily_work_notebook_views.xml",
+        "views/daily_work_note_views.xml",
         "views/daily_task_menus.xml",
     ],
     "assets": {
@@ -80,6 +83,9 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
             "daily_work_task/static/src/notebook/daily_work_notebook.scss",
             "daily_work_task/static/src/notebook/daily_work_notebook.xml",
             "daily_work_task/static/src/notebook/daily_work_notebook.js",
+            "daily_work_task/static/src/work_note/daily_work_note.scss",
+            "daily_work_task/static/src/work_note/daily_work_note.xml",
+            "daily_work_task/static/src/work_note/daily_work_note.js",
         ],
     },
     "post_init_hook": "post_init_hook",

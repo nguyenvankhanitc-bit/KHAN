@@ -13,7 +13,7 @@
                             <i class="fa fa-address-book o_dwn_ico pink"/>
                             <i class="fa fa-users o_dwn_ico blue"/>
                         </div>
-                        <h1>SỔ TAY</h1>
+                        <h1>DANH BẠ</h1>
                         <p>
                             Danh bạ khách hàng ·
                             <t t-esc="state.userName"/>
@@ -68,6 +68,10 @@
                                             <i class="fa fa-envelope o_dwn_th_ico orange"/>
                                             Email
                                         </th>
+                                        <th class="col-content">
+                                            <i class="fa fa-file-text-o o_dwn_th_ico indigo"/>
+                                            Nội dung
+                                        </th>
                                         <th class="col-address">
                                             <i class="fa fa-map-marker o_dwn_th_ico red"/>
                                             Địa chỉ
@@ -81,7 +85,7 @@
                                 <tbody>
                                     <t t-if="!state.rows.length">
                                         <tr>
-                                            <td colspan="8" class="o_dwn_empty">
+                                            <td colspan="9" class="o_dwn_empty">
                                                 <i class="fa fa-book"/>
                                                 Chưa có dữ liệu. Bấm «Thêm mới» để tạo liên hệ đầu tiên.
                                             </td>
@@ -115,6 +119,7 @@
                                                 </t>
                                                 <t t-else="">—</t>
                                             </td>
+                                            <td class="col-content" t-esc="row.note || '—'"/>
                                             <td class="col-address" t-esc="row.address || '—'"/>
                                             <td class="col-act">
                                                 <button type="button" class="o_dwn_act edit" title="Sửa"
@@ -166,6 +171,12 @@
                             <label>
                                 <span><i class="fa fa-envelope"/> Email</span>
                                 <input type="email" class="form-control" t-model="state.form.email"/>
+                            </label>
+                            <label class="full">
+                                <span><i class="fa fa-file-text-o"/> Nội dung</span>
+                                <textarea class="form-control" rows="3"
+                                          t-model="state.form.note"
+                                          placeholder="Nội dung / ghi chú liên hệ..."/>
                             </label>
                             <label class="full">
                                 <span><i class="fa fa-map-marker"/> Địa chỉ</span>

@@ -384,6 +384,7 @@ export class DailyWorkDashboard extends Component {
             performance: "daily_work_performance_report",
             calendar: "daily_work_calendar",
             notebook: "daily_work_notebook",
+            work_note: "daily_work_note",
             employee_ws: "daily_work_employee_ws",
             overdue: null,
             viewer: "daily_work_viewer",

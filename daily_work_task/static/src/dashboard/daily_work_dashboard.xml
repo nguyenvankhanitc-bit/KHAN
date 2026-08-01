@@ -31,7 +31,10 @@
                             <i class="fa fa-calendar"/><span>Calendar</span>
                         </button>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('notebook')">
-                            <i class="fa fa-book"/><span>Sổ tay</span>
+                            <i class="fa fa-book"/><span>Danh bạ</span>
+                        </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('work_note')">
+                            <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú</span>
                         </button>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overdue')">
                             <i class="fa fa-exclamation-triangle"/><span>Quá hạn</span>
@@ -39,18 +42,20 @@
                         </button>
                     </nav>
                     <div class="o_dwd_topbar_right">
-                        <span class="o_dwd_notif">
+                        <button type="button" class="o_dwd_notif" title="Việc quá hạn / ghi chú quá hạn"
+                                t-on-click="() => this.openNav('overview')">
                             <i class="fa fa-bell"/>
                             <t t-if="kpi.overdue">
                                 <em class="o_dwd_badge red" t-esc="kpi.overdue"/>
                             </t>
-                        </span>
-                        <span class="o_dwd_notif">
+                        </button>
+                        <button type="button" class="o_dwd_notif" title="Sắp tới hạn / ghi chú (7 ngày)"
+                                t-on-click="() => this.openNav('overview')">
                             <i class="fa fa-commenting-o"/>
                             <t t-if="kpi.upcoming">
                                 <em class="o_dwd_badge green" t-esc="kpi.upcoming"/>
                             </t>
-                        </span>
+                        </button>
                         <div class="o_dwd_userchip">
                             <i class="fa fa-user-circle"/>
                             <div>
@@ -80,7 +85,10 @@
                                 <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
                             </button>
                             <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('notebook')">
-                                <i class="fa fa-book"/><span>Sổ tay</span>
+                                <i class="fa fa-book"/><span>Danh bạ</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('work_note')">
+                                <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú công việc</span>
                             </button>
                             <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('calendar')">
                                 <i class="fa fa-calendar-check-o"/><span>Calendar To Do List</span>
@@ -169,7 +177,10 @@
                                     <i class="fa fa-calendar"/><span>Calendar To Do List</span>
                                 </button>
                                 <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('notebook')">
-                                    <i class="fa fa-book"/><span>Sổ tay</span>
+                                    <i class="fa fa-book"/><span>Danh bạ</span>
+                                </button>
+                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('work_note')">
+                                    <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú công việc</span>
                                 </button>
                                 <button type="button" class="o_dwd_mod danger" t-on-click="() => this.openNav('overdue')">
                                     <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>

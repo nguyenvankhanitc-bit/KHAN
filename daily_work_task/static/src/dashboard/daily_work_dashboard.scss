@@ -84,6 +84,12 @@
         i {
             font-size: 0.95rem;
         }
+
+        .o_dwd_emoji_icon {
+            font-size: 1rem;
+            line-height: 1;
+            font-style: normal;
+        }
     }
 
     .o_dwd_topbar_right {
@@ -100,9 +106,17 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        border: 0;
         border-radius: 50%;
         background: rgba(255, 255, 255, 0.12);
+        color: inherit;
         font-size: 1rem;
+        cursor: pointer;
+        padding: 0;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
     }
 
     .o_dwd_badge {
@@ -202,6 +216,14 @@
             width: 1.1rem;
             text-align: center;
             color: #64748b;
+        }
+
+        .o_dwd_emoji_icon {
+            width: 1.1rem;
+            text-align: center;
+            font-size: 1rem;
+            line-height: 1;
+            font-style: normal;
         }
 
         &:hover {
@@ -326,6 +348,11 @@
         i {
             font-size: 1.25rem;
             color: #7c3aed;
+        }
+        .o_dwd_emoji_icon {
+            font-size: 1.35rem;
+            line-height: 1;
+            font-style: normal;
         }
         em {
             position: absolute;

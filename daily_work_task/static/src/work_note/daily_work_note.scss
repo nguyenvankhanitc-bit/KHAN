@@ -1,0 +1,343 @@
+.o_daily_work_note.o_action {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f5f7fa;
+}
+
+.o_dwnote_shell {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 16px 18px 24px;
+    overflow: hidden;
+}
+
+.o_dwnote_header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px 16px;
+    margin-bottom: 14px;
+}
+
+.o_dwnote_back {
+    border: 0;
+    background: #fff;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    color: #4c1d95;
+    cursor: pointer;
+}
+
+.o_dwnote_title_block {
+    flex: 1 1 auto;
+    min-width: 0;
+
+        h1 {
+        margin: 0;
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #4c1d95;
+        letter-spacing: 0.02em;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .o_dwnote_title_icon {
+            font-size: 1.35rem;
+            line-height: 1;
+        }
+    }
+
+    p {
+        margin: 4px 0 0;
+        color: #64748b;
+        font-size: 0.9rem;
+    }
+}
+
+.o_dwnote_actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+
+.o_dwnote_search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 4px 8px;
+
+    .fa-search {
+        color: #94a3b8;
+    }
+
+    input {
+        border: 0;
+        outline: none;
+        min-width: 180px;
+        font-size: 0.9rem;
+    }
+}
+
+.o_dwnote_loading {
+    text-align: center;
+    padding: 48px;
+    color: #64748b;
+}
+
+.o_dwnote_table_frame {
+    flex: 1 1 auto;
+    min-height: 0;
+    background: #fff;
+    border: 1px solid #94a3b8;
+    border-radius: 6px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.o_dwnote_scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* Header + tối đa ~10 dòng → hiện thanh cuộn dọc */
+    max-height: calc(48px + 10 * 52px);
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    scrollbar-width: auto;
+    scrollbar-color: #64748b #e2e8f0;
+
+    &::-webkit-scrollbar {
+        display: block;
+        width: 12px;
+        height: 12px;
+    }
+    &::-webkit-scrollbar-track {
+        background: #e2e8f0;
+        border-radius: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: #64748b;
+        border-radius: 6px;
+        border: 2px solid #e2e8f0;
+
+        &:hover {
+            background: #475569;
+        }
+    }
+    &::-webkit-scrollbar-corner {
+        background: #e2e8f0;
+    }
+}
+
+.o_dwnote_table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+    border-spacing: 0;
+    table-layout: auto;
+    font-size: 0.9rem;
+    border: 1px solid #94a3b8;
+
+    thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f1f5f9;
+        color: #1e293b;
+        font-weight: 700;
+        padding: 12px 14px;
+        text-align: center;
+        vertical-align: middle;
+        border: 1px solid #94a3b8;
+        white-space: nowrap;
+        box-shadow: 0 1px 0 #94a3b8;
+
+        .o_dwnote_th_icon {
+            margin-right: 6px;
+            font-style: normal;
+            line-height: 1;
+        }
+
+        .fa {
+            margin-right: 6px;
+            color: #64748b;
+        }
+    }
+
+    tbody td {
+        padding: 12px 14px;
+        border: 1px solid #94a3b8;
+        vertical-align: middle;
+        background: #fff;
+        box-sizing: border-box;
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+    }
+
+    tbody tr:nth-child(even) td {
+        background: #f8fafc;
+    }
+
+    tbody tr:hover td {
+        background: #f1f5f9;
+    }
+}
+
+.o_dwnote_table .col-stt {
+    width: 1%;
+    text-align: center;
+    font-weight: 700;
+    color: #334155;
+    white-space: nowrap;
+}
+
+.o_dwnote_table .col-date {
+    width: 1%;
+    text-align: center;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: #334155;
+}
+
+.o_dwnote_table .col-content {
+    width: auto;
+    min-width: 220px;
+    text-align: left;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    color: #1e293b;
+}
+
+.o_dwnote_table .col-act {
+    width: 1%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.o_dwnote_empty {
+    text-align: center !important;
+    color: #94a3b8;
+    font-style: italic;
+    padding: 28px !important;
+}
+
+.o_dwnote_act {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: 0 3px;
+    border-radius: 8px;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+    line-height: 1;
+    font-size: 1.05rem;
+
+    &.edit {
+        color: #ea580c;
+
+        &:hover {
+            background: #fff7ed;
+        }
+    }
+
+    &.del {
+        color: #64748b;
+
+        &:hover {
+            color: #b42318;
+            background: #fef3f2;
+        }
+    }
+}
+
+.o_dwnote_modal_backdrop {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: rgba(15, 23, 42, 0.45);
+    z-index: 1000;
+}
+
+.o_dwnote_modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 520px;
+    max-width: calc(100vw - 32px);
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+    z-index: 1001;
+    overflow: hidden;
+}
+
+.o_dwnote_modal_head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    background: #5b21b6;
+    color: #fff;
+
+    h2 {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+    }
+}
+
+.o_dwnote_modal_close {
+    border: 0;
+    background: transparent;
+    color: #fff;
+    font-size: 1.1rem;
+    cursor: pointer;
+}
+
+.o_dwnote_modal_body {
+    padding: 16px;
+    display: grid;
+    gap: 12px;
+
+    label {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        font-weight: 600;
+        color: #334155;
+        font-size: 0.88rem;
+
+        &.full {
+            grid-column: 1 / -1;
+        }
+    }
+}
+
+.o_dwnote_modal_foot {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid #e2e8f0;
+}

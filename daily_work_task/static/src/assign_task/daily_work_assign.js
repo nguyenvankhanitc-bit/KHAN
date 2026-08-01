@@ -265,7 +265,7 @@ export class DailyWorkAssign extends Component {
             this.state.assigneeQuery = kept ? this._assigneeLabel(kept) : "";
             this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
             this.notification.add(
-                `Đã giao việc cho ${assigneeName}. Kiểm tra Discuss → chat «OdooBot Giao việc».`,
+                `Đã giao việc cho ${assigneeName}. Người nhận sẽ thấy thông báo trên Discuss.`,
                 { type: "success" }
             );
             if (created?.id) {

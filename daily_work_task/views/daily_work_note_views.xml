@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_daily_work_note" model="ir.actions.client">
+        <field name="name">Ghi chú công việc</field>
+        <field name="tag">daily_work_note</field>
+    </record>
+</odoo>

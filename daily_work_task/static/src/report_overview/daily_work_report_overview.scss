@@ -1091,6 +1091,12 @@
     .o_dro_name {
         font-weight: 600;
         max-width: 200px;
+
+        .o_dro_src_note {
+            margin-right: 0.35rem;
+            font-style: normal;
+            line-height: 1;
+        }
     }
 
     .o_dro_note {

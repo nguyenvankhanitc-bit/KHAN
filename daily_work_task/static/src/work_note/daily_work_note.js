@@ -6,20 +6,21 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+function todayIso() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${d.getFullYear()}-${m}-${day}`;
+}
+
 const EMPTY_FORM = {
     id: 0,
     name: "",
-    company: "",
-    contact_name: "",
-    phone: "",
-    email: "",
-    address: "",
-    note: "",
-    color: 1,
+    note_date: todayIso(),
 };
 
-export class DailyWorkNotebook extends Component {
-    static template = "daily_work_task.DailyWorkNotebook";
+export class DailyWorkNote extends Component {
+    static template = "daily_work_task.DailyWorkNote";
     static props = { ...standardActionServiceProps };
 
     setup() {
@@ -42,14 +43,14 @@ export class DailyWorkNotebook extends Component {
     async load() {
         this.state.loading = true;
         try {
-            const data = await this.orm.call("daily.work.notebook", "get_notebook_data", [], {
+            const data = await this.orm.call("daily.work.note", "get_work_note_data", [], {
                 search: this.state.search || false,
             });
             this.state.rows = data.rows || [];
             this.state.total = data.total || 0;
             this.state.userName = data.user_name || "";
         } catch (e) {
-            this.notification.add(e?.data?.message || _t("Không tải được danh bạ."), {
+            this.notification.add(e?.data?.message || _t("Không tải được ghi chú."), {
                 type: "danger",
             });
             this.state.rows = [];
@@ -69,7 +70,7 @@ export class DailyWorkNotebook extends Component {
     }
 
     openCreate() {
-        this.state.form = { ...EMPTY_FORM, color: (this.state.rows.length % 6) + 1 };
+        this.state.form = { ...EMPTY_FORM, note_date: todayIso() };
         this.state.showForm = true;
     }
 
@@ -77,29 +78,23 @@ export class DailyWorkNotebook extends Component {
         this.state.form = {
             id: row.id,
             name: row.name || "",
-            company: row.company || "",
-            contact_name: row.contact_name || "",
-            phone: row.phone || "",
-            email: row.email || "",
-            address: row.address || "",
-            note: row.note || "",
-            color: row.color || 1,
+            note_date: row.note_date || todayIso(),
         };
         this.state.showForm = true;
     }
 
     closeForm() {
         this.state.showForm = false;
-        this.state.form = { ...EMPTY_FORM };
+        this.state.form = { ...EMPTY_FORM, note_date: todayIso() };
     }
 
     async onSave() {
         this.state.saving = true;
         try {
-            await this.orm.call("daily.work.notebook", "save_notebook_row", [], {
+            await this.orm.call("daily.work.note", "save_work_note", [], {
                 vals: { ...this.state.form },
             });
-            this.notification.add(_t("Đã lưu danh bạ."), { type: "success" });
+            this.notification.add(_t("Đã lưu ghi chú."), { type: "success" });
             this.closeForm();
             await this.load();
         } catch (e) {
@@ -110,11 +105,11 @@ export class DailyWorkNotebook extends Component {
     }
 
     async onDelete(row) {
-        if (!confirm(`Xóa khách hàng «${row.name}»?`)) {
+        if (!confirm(`Xóa ghi chú này?`)) {
             return;
         }
         try {
-            await this.orm.call("daily.work.notebook", "delete_notebook_row", [[row.id]]);
+            await this.orm.call("daily.work.note", "delete_work_note", [[row.id]]);
             this.notification.add(_t("Đã xóa."), { type: "success" });
             await this.load();
         } catch (e) {
@@ -125,10 +120,6 @@ export class DailyWorkNotebook extends Component {
     async goDashboard() {
         await this.action.doAction({ type: "ir.actions.client", tag: "daily_work_dashboard" });
     }
-
-    colorClass(n) {
-        return `tone-${(Number(n) || 1) % 6 || 6}`;
-    }
 }
 
-registry.category("actions").add("daily_work_notebook", DailyWorkNotebook);
+registry.category("actions").add("daily_work_note", DailyWorkNote);

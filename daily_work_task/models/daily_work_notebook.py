@@ -5,7 +5,7 @@ from odoo.exceptions import ValidationError
 
 class DailyWorkNotebook(models.Model):
     _name = "daily.work.notebook"
-    _description = "Sổ tay khách hàng"
+    _description = "Danh bạ khách hàng"
     _order = "name asc, id asc"
 
     name = fields.Char(string="Tên khách hàng", required=True, index=True)
@@ -14,7 +14,7 @@ class DailyWorkNotebook(models.Model):
     phone = fields.Char(string="Số điện thoại")
     email = fields.Char(string="Email")
     address = fields.Char(string="Địa chỉ")
-    note = fields.Text(string="Ghi chú")
+    note = fields.Text(string="Nội dung")
     user_id = fields.Many2one(
         "res.users",
         string="Người sở hữu",
@@ -34,11 +34,12 @@ class DailyWorkNotebook(models.Model):
 
     @api.model
     def get_notebook_data(self, search=None):
-        """Danh sách sổ tay của user đang đăng nhập."""
+        """Danh sách danh bạ của user đang đăng nhập."""
         domain = [("user_id", "=", self.env.user.id)]
         q = (search or "").strip()
         if q:
             domain += [
+                "|",
                 "|",
                 "|",
                 "|",
@@ -50,6 +51,7 @@ class DailyWorkNotebook(models.Model):
                 ("phone", "ilike", q),
                 ("email", "ilike", q),
                 ("address", "ilike", q),
+                ("note", "ilike", q),
             ]
         records = self.search(domain, order="name asc, id asc")
         rows = []
@@ -76,7 +78,7 @@ class DailyWorkNotebook(models.Model):
 
     @api.model
     def save_notebook_row(self, vals):
-        """Tạo / cập nhật một dòng sổ tay (chỉ của mình)."""
+        """Tạo / cập nhật một dòng danh bạ (chỉ của mình)."""
         vals = dict(vals or {})
         rid = int(vals.pop("id", 0) or 0)
         clean = {
@@ -95,7 +97,7 @@ class DailyWorkNotebook(models.Model):
         if rid:
             rec = self.browse(rid).exists()
             if not rec or rec.user_id != self.env.user:
-                raise ValidationError("Không tìm thấy dòng sổ tay hoặc bạn không có quyền sửa.")
+                raise ValidationError("Không tìm thấy dòng danh bạ hoặc bạn không có quyền sửa.")
             rec.write(clean)
             return rec.id
         return self.create(clean).id
@@ -105,6 +107,6 @@ class DailyWorkNotebook(models.Model):
             if rec.user_id != self.env.user and not self.env.user.has_group(
                 "daily_work_task.group_daily_work_manager"
             ):
-                raise ValidationError("Bạn chỉ được xóa sổ tay của chính mình.")
+                raise ValidationError("Bạn chỉ được xóa danh bạ của chính mình.")
         self.unlink()
         return True

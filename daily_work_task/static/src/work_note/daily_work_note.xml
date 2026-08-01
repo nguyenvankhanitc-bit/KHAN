@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkNote">
+        <div class="o_daily_work_note o_action">
+            <div class="o_dwnote_shell">
+                <header class="o_dwnote_header">
+                    <button type="button" class="o_dwnote_back" t-on-click="goDashboard" title="Về Dashboard">
+                        <i class="fa fa-arrow-left"/>
+                    </button>
+                    <div class="o_dwnote_title_block">
+                        <h1><span class="o_dwnote_title_icon" aria-hidden="true">📝</span> GHI CHÚ CÔNG VIỆC</h1>
+                        <p>
+                            <t t-esc="state.userName"/>
+                            · <t t-esc="state.total"/> ghi chú
+                        </p>
+                    </div>
+                    <div class="o_dwnote_actions">
+                        <div class="o_dwnote_search">
+                            <i class="fa fa-search"/>
+                            <input type="text" placeholder="Tìm nội dung..."
+                                   t-model="state.search" t-on-keydown="onSearchKey"/>
+                            <button type="button" class="btn btn-sm btn-primary" t-on-click="onSearch">
+                                Tìm
+                            </button>
+                        </div>
+                        <button type="button" class="btn btn-success btn-sm" t-on-click="openCreate">
+                            <i class="fa fa-plus-circle"/> Thêm mới
+                        </button>
+                    </div>
+                </header>
+
+                <t t-if="state.loading">
+                    <div class="o_dwnote_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-else="">
+                    <div class="o_dwnote_table_frame">
+                        <div class="o_dwnote_scroll">
+                            <table class="o_dwnote_table">
+                                <thead>
+                                    <tr>
+                                        <th class="col-stt">STT</th>
+                                        <th class="col-date"><span class="o_dwnote_th_icon" aria-hidden="true">📅</span> Ngày</th>
+                                        <th class="col-content"><span class="o_dwnote_th_icon" aria-hidden="true">📝</span> Nội dung</th>
+                                        <th class="col-act"><span class="o_dwnote_th_icon" aria-hidden="true">⚙️</span> Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="!state.rows.length">
+                                        <tr>
+                                            <td colspan="4" class="o_dwnote_empty">
+                                                Chưa có ghi chú. Bấm «Thêm mới» để tạo.
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <t t-foreach="state.rows" t-as="row" t-key="row.id">
+                                        <tr>
+                                            <td class="col-stt" t-esc="row.stt"/>
+                                            <td class="col-date" t-esc="row.note_date_display"/>
+                                            <td class="col-content" t-esc="row.name"/>
+                                            <td class="col-act">
+                                                <button type="button" class="o_dwnote_act edit" title="Sửa"
+                                                        t-on-click="() => this.openEdit(row)">
+                                                    <i class="fa fa-pencil"/>
+                                                </button>
+                                                <button type="button" class="o_dwnote_act del" title="Xóa"
+                                                        t-on-click="() => this.onDelete(row)">
+                                                    <i class="fa fa-trash"/>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+
+                <t t-if="state.showForm">
+                    <div class="o_dwnote_modal_backdrop" t-on-click="closeForm"/>
+                    <div class="o_dwnote_modal">
+                        <div class="o_dwnote_modal_head">
+                            <h2>
+                                <t t-esc="state.form.id ? 'Sửa ghi chú' : 'Thêm ghi chú'"/>
+                            </h2>
+                            <button type="button" class="o_dwnote_modal_close" t-on-click="closeForm">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                        <div class="o_dwnote_modal_body">
+                            <label class="full">
+                                <span>Nội dung *</span>
+                                <textarea class="form-control" rows="4" t-model="state.form.name"
+                                          placeholder="Nhập nội dung ghi chú..."/>
+                            </label>
+                            <label>
+                                <span>Ngày *</span>
+                                <input type="date" class="form-control" t-model="state.form.note_date"/>
+                            </label>
+                        </div>
+                        <div class="o_dwnote_modal_foot">
+                            <button type="button" class="btn btn-light" t-on-click="closeForm">Hủy</button>
+                            <button type="button" class="btn btn-primary" t-on-click="onSave"
+                                    t-att-disabled="state.saving">
+                                <i class="fa fa-save"/> Lưu
+                            </button>
+                        </div>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

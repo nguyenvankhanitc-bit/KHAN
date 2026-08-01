@@ -702,6 +702,13 @@ export class DailyWorkEmployeeWs extends Component {
     }
 
     onEditTask(task) {
+        if (task.can_edit_details === false) {
+            this.notification.add(
+                _t("Việc được giao — chỉ cập nhật trạng thái hoặc % hoàn thành trên bảng."),
+                { type: "warning" }
+            );
+            return;
+        }
         this.state.showMyList = true;
         this.state.editingTaskId = task.id;
         this.state.form = {
@@ -731,6 +738,35 @@ export class DailyWorkEmployeeWs extends Component {
     onCancelEdit() {
         this.state.editingTaskId = false;
         this.state.form = this.emptyForm();
+    }
+
+    async onDeleteTask(task) {
+        if (!task?.id) {
+            return;
+        }
+        if (task.can_delete === false) {
+            this.notification.add(_t("Bạn không được xóa công việc này."), {
+                type: "warning",
+            });
+            return;
+        }
+        const label = task.name || "công việc này";
+        if (!window.confirm(`Xóa «${label}»? Thao tác không hoàn tác.`)) {
+            return;
+        }
+        try {
+            await this.orm.call("daily.task", "delete_from_employee", [[task.id]]);
+            if (this.state.editingTaskId === task.id) {
+                this.onCancelEdit();
+            }
+            await this.load();
+            await this.loadMonthlySummary();
+            this.notification.add(_t("Đã xóa công việc."), { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể xóa công việc."), {
+                type: "danger",
+            });
+        }
     }
 
     formHoursPreview() {

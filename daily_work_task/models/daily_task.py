@@ -230,7 +230,13 @@ class DailyTask(models.Model):
         vals = dict(vals)
         if vals.get("state") == "done" and "completion_percent" not in vals:
             vals["completion_percent"] = 100
-        return super().write(vals)
+        becoming_done = self.browse()
+        if vals.get("state") == "done":
+            becoming_done = self.filtered(lambda t: t.state != "done")
+        res = super().write(vals)
+        if becoming_done:
+            becoming_done._notify_assigner_done()
+        return res
 
     def _assigner_uid(self):
         """UID người thật sự thao tác — không lấy OdooBot khi đang sudo()."""
@@ -355,6 +361,23 @@ class DailyTask(models.Model):
             )
             return Message
 
+    def _assign_task_detail_button_markup(self, label="Xem chi tiết"):
+        """Nút Discuss dẫn tới form công việc được giao (Odoo 19 SPA)."""
+        self.ensure_one()
+        path = "/odoo/daily.task/%s" % self.id
+        return Markup(
+            '<a href="{href}" target="_self" '
+            'data-oe-model="daily.task" data-oe-id="{res_id}" '
+            'style="display:inline-block;margin-top:10px;padding:8px 18px;'
+            'background-color:#714B67;cursor:pointer;color:#ffffff;'
+            'border-radius:6px;text-decoration:none;font-weight:600;'
+            'font-size:14px;line-height:1.2;">{label}</a>'
+        ).format(
+            href=escape(path),
+            res_id=self.id,
+            label=escape(label),
+        )
+
     def _notify_assignee_assigned(self):
         """Thông báo Discuss/Inbox/Activity khi giao việc (giống OdooBot Duyệt đơn)."""
         for task in self:
@@ -369,7 +392,6 @@ class DailyTask(models.Model):
                     continue
 
                 assigner_name = assigner.name or "—"
-                assignee_name = recipient.name or "—"
                 deadline = (
                     task.deadline.strftime("%d/%m/%Y") if task.deadline else "—"
                 )
@@ -385,6 +407,7 @@ class DailyTask(models.Model):
                 dept = (
                     task.department_id.display_name if task.department_id else "—"
                 )
+                detail_btn = task._assign_task_detail_button_markup("Xem chi tiết")
 
                 body_assignee = Markup(
                     "<b>CÔNG VIỆC ĐƯỢC GIAO</b><br/>"
@@ -395,7 +418,9 @@ class DailyTask(models.Model):
                     "Ưu tiên: <b>{priority}</b><br/>"
                     "Bộ phận: <b>{dept}</b><br/>"
                     "Ghi chú: <b>{note}</b><br/><br/>"
-                    "Vào menu <b>Công việc hàng ngày → Nhân viên nhập CV</b> để xử lý."
+                    "Vào menu <b>Công việc hàng ngày → Nhân viên nhập CV</b> "
+                    "để xử lý, hoặc mở trực tiếp bên dưới.<br/>"
+                    "{detail_btn}"
                 ).format(
                     assigner=escape(str(assigner_name)),
                     name=escape(str(task.name or "")),
@@ -404,53 +429,92 @@ class DailyTask(models.Model):
                     priority=escape(str(priority)),
                     dept=escape(str(dept)),
                     note=escape(str(note)),
+                    detail_btn=detail_btn,
                 )
 
-                # Người nhận việc → Discuss + Inbox + Activity
-                if recipient.id != assigner.id:
-                    task._post_assign_bot_discuss_message(recipient, body_assignee)
-                    bot_user = task._get_assign_bot_user()
-                    task.sudo().message_post(
-                        body=body_assignee,
-                        partner_ids=recipient.partner_id.ids,
-                        message_type="notification",
-                        subtype_xmlid="mail.mt_note",
-                        author_id=bot_user.partner_id.id
-                        if bot_user and bot_user.partner_id
-                        else None,
+                # Chỉ người được giao nhận Discuss / Inbox / Activity
+                # (không gửi tin xác nhận cho người giao hay user khác)
+                task._post_assign_bot_discuss_message(recipient, body_assignee)
+                bot_user = task._get_assign_bot_user()
+                task.sudo().message_post(
+                    body=body_assignee,
+                    partner_ids=recipient.partner_id.ids,
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id=bot_user.partner_id.id
+                    if bot_user and bot_user.partner_id
+                    else None,
+                )
+                act_type = self.env.ref(
+                    "daily_work_task.mail_act_daily_task_assigned",
+                    raise_if_not_found=False,
+                )
+                if act_type:
+                    task.sudo().activity_schedule(
+                        act_type_xmlid="daily_work_task.mail_act_daily_task_assigned",
+                        user_id=recipient.id,
+                        summary="Công việc được giao: %s" % (task.name or ""),
+                        note=body_assignee,
+                        date_deadline=task.deadline
+                        or fields.Date.context_today(task),
                     )
-                    act_type = self.env.ref(
-                        "daily_work_task.mail_act_daily_task_assigned",
-                        raise_if_not_found=False,
-                    )
-                    if act_type:
-                        task.sudo().activity_schedule(
-                            act_type_xmlid="daily_work_task.mail_act_daily_task_assigned",
-                            user_id=recipient.id,
-                            summary="Công việc được giao: %s" % (task.name or ""),
-                            note=body_assignee,
-                            date_deadline=task.deadline
-                            or fields.Date.context_today(task),
-                        )
-
-                # Người giao → tin ngắn để thấy chat «OdooBot Giao việc» trên Discuss
-                if assigner and assigner.partner_id and not assigner.share:
-                    body_assigner = Markup(
-                        "<b>ĐÃ GIAO VIỆC</b><br/>"
-                        "Đã gửi thông báo cho: <b>{assignee}</b><br/>"
-                        "Công việc: <b>{name}</b><br/>"
-                        "Hạn: <b>{deadline}</b><br/>"
-                        "Người nhận sẽ thấy tin từ <b>OdooBot Giao việc</b> "
-                        "trong Discuss (giống OdooBot Duyệt đơn)."
-                    ).format(
-                        assignee=escape(str(assignee_name)),
-                        name=escape(str(task.name or "")),
-                        deadline=escape(deadline),
-                    )
-                    task._post_assign_bot_discuss_message(assigner, body_assigner)
             except Exception:
                 _logger.exception(
                     "daily_work_task: thông báo giao việc thất bại task_id=%s",
+                    task.id,
+                )
+
+    def _notify_assigner_done(self):
+        """Thông báo Discuss/Inbox cho người giao khi việc được hoàn thành."""
+        for task in self:
+            try:
+                assigner = task.assigned_by_id
+                if (
+                    not assigner
+                    or assigner.share
+                    or not assigner.partner_id
+                    or not assigner.active
+                ):
+                    continue
+                assignee = task._assignee_user()
+                assignee_name = (
+                    (assignee.name if assignee else None)
+                    or (task.assignee_id.name if task.assignee_id else None)
+                    or "—"
+                )
+                deadline = (
+                    task.deadline.strftime("%d/%m/%Y") if task.deadline else "—"
+                )
+                done_date = fields.Date.context_today(task).strftime("%d/%m/%Y")
+                detail_btn = task._assign_task_detail_button_markup("Xem chi tiết")
+                body = Markup(
+                    "<b>CÔNG VIỆC ĐÃ HOÀN THÀNH</b><br/>"
+                    "Người thực hiện: <b>{assignee}</b><br/>"
+                    "Công việc: <b>{name}</b><br/>"
+                    "Hạn: <b>{deadline}</b><br/>"
+                    "Ngày hoàn thành: <b>{done_date}</b><br/>"
+                    "{detail_btn}"
+                ).format(
+                    assignee=escape(str(assignee_name)),
+                    name=escape(str(task.name or "")),
+                    deadline=escape(deadline),
+                    done_date=escape(done_date),
+                    detail_btn=detail_btn,
+                )
+                task._post_assign_bot_discuss_message(assigner, body)
+                bot_user = task._get_assign_bot_user()
+                task.sudo().message_post(
+                    body=body,
+                    partner_ids=assigner.partner_id.ids,
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id=bot_user.partner_id.id
+                    if bot_user and bot_user.partner_id
+                    else None,
+                )
+            except Exception:
+                _logger.exception(
+                    "daily_work_task: thông báo hoàn thành thất bại task_id=%s",
                     task.id,
                 )
 
@@ -490,32 +554,81 @@ class DailyTask(models.Model):
 
     @api.model
     def cron_send_overdue_reminders(self):
-        """Cron hàng ngày: gửi mail giục quá hạn theo từng nhân viên."""
+        """Giữ tương thích — chuyển sang nhắc sáng (tới hạn / quá hạn / đang làm)."""
+        return self.cron_send_morning_reminders()
+
+    @api.model
+    def _assignee_email(self, assignee):
+        """Email nhận nhắc: bridge → HR work/private → user."""
+        if not assignee:
+            return False
+        if assignee.email and "@" in assignee.email:
+            return assignee.email
+        hr = assignee.employee_id
+        if not hr:
+            return False
+        return (
+            hr.work_email
+            or hr.private_email
+            or (hr.user_id.email if hr.user_id else False)
+            or False
+        )
+
+    @api.model
+    def cron_send_morning_reminders(self):
+        """Cron ~8h00 VN: mail nhắc việc tới hạn / quá hạn / đang làm theo từng NV."""
         self.cron_recompute_overdue()
-        overdue = self.search([("is_overdue", "=", True)])
-        if not overdue:
+        today = fields.Date.context_today(self)
+        Task = self.sudo()
+        overdue = Task.search(
+            [("is_overdue", "=", True)], order="deadline asc, id asc"
+        )
+        due_today = Task.search(
+            [
+                ("deadline", "=", today),
+                ("state", "!=", "done"),
+            ],
+            order="priority asc, id asc",
+        )
+        in_progress = Task.search(
+            [("state", "=", "in_progress")], order="deadline asc, id asc"
+        )
+        all_tasks = overdue | due_today | in_progress
+        if not all_tasks:
             return True
+
         by_assignee = {}
-        for task in overdue:
-            by_assignee.setdefault(task.assignee_id, self.env["daily.task"])
+        for task in all_tasks:
+            by_assignee.setdefault(task.assignee_id, Task.browse())
             by_assignee[task.assignee_id] |= task
+
         Mail = self.env["mail.mail"].sudo()
-        for employee, tasks in by_assignee.items():
-            if not employee.email:
+        for assignee, _bundle in by_assignee.items():
+            email = self._assignee_email(assignee)
+            if not email:
                 continue
-            body = self._build_overdue_email_body(employee, tasks)
+            a_overdue = overdue.filtered(lambda t: t.assignee_id == assignee)
+            a_due = due_today.filtered(lambda t: t.assignee_id == assignee)
+            a_progress = in_progress.filtered(lambda t: t.assignee_id == assignee)
+            if not (a_overdue or a_due or a_progress):
+                continue
+            body = self._build_morning_reminder_email_body(
+                assignee, a_overdue, a_due, a_progress
+            )
+            unique_n = len(a_overdue | a_due | a_progress)
             Mail.create(
                 {
-                    "subject": "[Nhắc việc] Bạn có %s công việc quá hạn" % len(tasks),
+                    "subject": "[Nhắc việc] Bạn có %s công việc cần chú ý hôm nay"
+                    % unique_n,
                     "body_html": body,
-                    "email_to": employee.email,
+                    "email_to": email,
                     "auto_delete": True,
                 }
             ).send()
         return True
 
     @api.model
-    def _build_overdue_email_body(self, employee, tasks):
+    def _email_task_rows_html(self, tasks):
         rows = []
         for task in tasks:
             rows.append(
@@ -526,12 +639,61 @@ class DailyTask(models.Model):
                 "<td style='padding:6px;border:1px solid #ddd;'>%s</td>"
                 "</tr>"
                 % (
-                    task.name,
-                    task.deadline.strftime("%d/%m/%Y") if task.deadline else "",
-                    dict(task._fields["priority"].selection).get(task.priority, ""),
-                    dict(task._fields["state"].selection).get(task.state, ""),
+                    escape(str(task.name or "")),
+                    escape(
+                        task.deadline.strftime("%d/%m/%Y") if task.deadline else ""
+                    ),
+                    escape(
+                        dict(task._fields["priority"].selection).get(
+                            task.priority, ""
+                        )
+                        or ""
+                    ),
+                    escape(
+                        dict(task._fields["state"].selection).get(task.state, "")
+                        or ""
+                    ),
                 )
             )
+        return "".join(rows)
+
+    @api.model
+    def _email_section_html(self, title, color, tasks):
+        if not tasks:
+            return ""
+        return (
+            "<h3 style='margin:16px 0 8px;color:%s;'>%s (%s)</h3>"
+            "<table style='border-collapse:collapse;width:100%%;'>"
+            "<thead><tr>"
+            "<th style='padding:6px;border:1px solid #ddd;background:#f5f5f5;'>Tên công việc</th>"
+            "<th style='padding:6px;border:1px solid #ddd;background:#f5f5f5;'>Hạn cuối</th>"
+            "<th style='padding:6px;border:1px solid #ddd;background:#f5f5f5;'>Ưu tiên</th>"
+            "<th style='padding:6px;border:1px solid #ddd;background:#f5f5f5;'>Trạng thái</th>"
+            "</tr></thead><tbody>%s</tbody></table>"
+        ) % (color, escape(title), len(tasks), self._email_task_rows_html(tasks))
+
+    @api.model
+    def _build_morning_reminder_email_body(
+        self, assignee, overdue, due_today, in_progress
+    ):
+        name = escape(str(assignee.name or ""))
+        sections = (
+            self._email_section_html("Công việc quá hạn", "#dc2626", overdue)
+            + self._email_section_html("Công việc tới hạn hôm nay", "#ea580c", due_today)
+            + self._email_section_html("Công việc đang làm", "#2563eb", in_progress)
+        )
+        unique_n = len(overdue | due_today | in_progress)
+        return (
+            "<p>Xin chào <b>%s</b>,</p>"
+            "<p>Bạn đang có <b>%s</b> công việc cần chú ý "
+            "(tới hạn / quá hạn / đang làm). Vui lòng cập nhật:</p>"
+            "%s"
+            "<p>Trân trọng.</p>"
+        ) % (name, unique_n, sections)
+
+    @api.model
+    def _build_overdue_email_body(self, employee, tasks):
+        rows = self._email_task_rows_html(tasks)
         return (
             "<p>Xin chào <b>%s</b>,</p>"
             "<p>Bạn đang có <b>%s</b> công việc quá hạn. Vui lòng cập nhật:</p>"
@@ -543,7 +705,7 @@ class DailyTask(models.Model):
             "<th style='padding:6px;border:1px solid #ddd;background:#f5f5f5;'>Trạng thái</th>"
             "</tr></thead><tbody>%s</tbody></table>"
             "<p>Trân trọng.</p>"
-        ) % (employee.name, len(tasks), "".join(rows))
+        ) % (escape(str(employee.name or "")), len(tasks), rows)
 
     def action_open_form(self):
         self.ensure_one()
@@ -571,6 +733,9 @@ class DailyTask(models.Model):
             else "",
             "assigned_by_id": self.assigned_by_id.id if self.assigned_by_id else False,
             "assigned_by_name": self.assigned_by_id.name if self.assigned_by_id else "",
+            # Việc do người khác giao: ẩn nút Chỉnh sửa trên Nhân viên nhập CV
+            "can_edit_details": self._can_edit_task_details(),
+            "can_delete": self._can_employee_delete_task(),
             "deadline": self.deadline.isoformat() if self.deadline else "",
             "deadline_display": self.deadline.strftime("%d/%m/%Y") if self.deadline else "",
             "department_id": self.department_id.id if self.department_id else False,
@@ -871,21 +1036,61 @@ class DailyTask(models.Model):
         allowed = self._editable_employee_ids() or []
         return bool(emp and emp.id in allowed)
 
+    def _can_edit_task_details(self):
+        """Sửa nội dung phiếu (tên/hạn/ghi chú...). Việc được người khác giao thì khóa."""
+        self.ensure_one()
+        if self._is_manager():
+            return True
+        emp = self.assignee_id.employee_id
+        if emp and emp.id in (self._editable_employee_ids() or []):
+            return True
+        my = self._my_hr_employee()
+        is_own = bool(my and emp and emp.id == my.id)
+        if not is_own:
+            return False
+        if self.assigned_by_id and self.assigned_by_id.id != self.env.uid:
+            return False
+        return True
+
     @api.model
     def _is_system_admin(self):
         """Tài khoản Administrator (Settings / base.group_system)."""
         return self.env.user.has_group("base.group_system")
 
     def _can_delete_task(self):
-        """Chỉ Administrator hệ thống được xóa công việc."""
+        """Chỉ Administrator hệ thống được xóa công việc (màn quản lý)."""
         self.ensure_one()
         return self._is_system_admin()
+
+    def _can_employee_delete_task(self):
+        """NV được xóa việc mình tự tạo; việc người khác giao thì không."""
+        self.ensure_one()
+        if self._is_system_admin():
+            return True
+        my = self._my_hr_employee()
+        emp = self.assignee_id.employee_id
+        if not (my and emp and emp.id == my.id):
+            return False
+        if self.assigned_by_id and self.assigned_by_id.id != self.env.uid:
+            return False
+        return True
 
     def delete_from_manager(self):
         self.ensure_one()
         if not self._can_delete_task():
             raise ValidationError(
                 "Chỉ tài khoản Administrator mới được xóa công việc."
+            )
+        self.sudo().unlink()
+        return True
+
+    def delete_from_employee(self):
+        """Xóa việc từ danh sách Nhân viên nhập CV."""
+        self.ensure_one()
+        if not self._can_employee_delete_task():
+            raise ValidationError(
+                "Bạn không được xóa công việc này "
+                "(việc được người khác giao chỉ người giao / quản trị được xóa)."
             )
         self.sudo().unlink()
         return True
@@ -1737,13 +1942,22 @@ class DailyTask(models.Model):
 
     @api.model
     def get_assign_tasks(self):
-        """Danh sách việc đã giao (chưa hoàn thành)."""
+        """Danh sách việc đã giao (chưa hoàn thành).
+
+        Chỉ hiện việc liên quan trực tiếp tới user hiện tại:
+        - người giao (assigned_by_id), hoặc
+        - người được giao (assignee có user_id = uid).
+        Người khác (kể cả cùng quyền giao việc) không thấy.
+        """
         if not self._is_assigner():
             return []
-        domain = [("state", "!=", "done")]
-        if not self._is_manager():
-            allowed = self._assignable_employee_ids() or []
-            domain.append(("assignee_id.employee_id", "in", allowed or [0]))
+        uid = self.env.uid
+        domain = [
+            ("state", "!=", "done"),
+            "|",
+            ("assigned_by_id", "=", uid),
+            ("assignee_id.employee_id.user_id", "=", uid),
+        ]
         tasks = self.sudo().search(domain, order="deadline asc, id desc")
         return [t._to_manager_dict() for t in tasks]
 
@@ -2509,13 +2723,42 @@ class DailyTask(models.Model):
             for r in active_rows
             if not r.get("is_active_overdue") and _in_range(r, today, upcoming_end)
         ]
+        for row in overdue_tasks + upcoming_tasks:
+            row.setdefault("source", "task")
+
+        # Ghi chú công việc: ngày ghi chú gắn với chuông Nhắc việc
+        note_user_id = False
+        if emp_id:
+            emp_rec = self.env["hr.employee"].sudo().browse(emp_id).exists()
+            if emp_rec and emp_rec.user_id:
+                note_user_id = emp_rec.user_id.id
+        if not note_user_id and personal_only:
+            note_user_id = self.env.user.id
+        note_overdue, note_upcoming = self.env[
+            "daily.work.note"
+        ].get_reminder_rows_for_user(
+            note_user_id, today=today, upcoming_days=7
+        )
+        overdue_tasks = overdue_tasks + note_overdue
+        upcoming_tasks = upcoming_tasks + note_upcoming
+
+        def _sort_deadline(r):
+            raw = r.get("deadline") or ""
+            try:
+                return fields.Date.to_date(raw) if raw else today
+            except Exception:
+                return today
+
+        overdue_tasks = sorted(overdue_tasks, key=_sort_deadline)
+        upcoming_tasks = sorted(upcoming_tasks, key=_sort_deadline)
         for idx, row in enumerate(overdue_tasks, start=1):
             row["stt"] = idx
         for idx, row in enumerate(upcoming_tasks, start=1):
             row["stt"] = idx
         reminders = {
             "overdue": len(overdue_tasks),
-            "today": len(today_tasks),
+            "today": len(today_tasks)
+            + sum(1 for r in note_upcoming if r.get("deadline") == today.isoformat()),
             "tomorrow": len(deadlines["in_1_day"]),
             "this_week": sum(
                 1 for r in active_rows if _in_range(r, today, week_end)
@@ -3583,7 +3826,9 @@ class DailyTask(models.Model):
             self.assignee_id.employee_id
             and self.assignee_id.employee_id.id in (self._editable_employee_ids() or [])
         )
-        can_edit_content = is_own or has_edit or is_manager
+        # Việc được giao bởi người khác: người nhận chỉ cập nhật tiến độ (TT / %), không sửa phiếu
+        can_edit_content = self._can_edit_task_details()
+        can_edit_progress = is_own or has_edit or is_manager
         if "name" in vals and can_edit_content:
             name = (vals.get("name") or "").strip()
             if not name:
@@ -3595,7 +3840,7 @@ class DailyTask(models.Model):
             write_vals["deadline"] = vals["deadline"]
         if "assign_date" in vals and can_edit_content:
             write_vals["assign_date"] = vals.get("assign_date") or False
-        if "state" in vals and vals.get("state") and (is_own or has_edit):
+        if "state" in vals and vals.get("state") and can_edit_progress:
             write_vals["state"] = vals["state"]
         if "note" in vals and can_edit_content:
             write_vals["note"] = vals.get("note") or ""
@@ -3615,7 +3860,7 @@ class DailyTask(models.Model):
                         "Nhóm công việc phải thuộc cùng phòng ban với công việc."
                     )
             write_vals["work_group_id"] = wg_id
-        if "duration_minutes" in vals and can_edit_content:
+        if "duration_minutes" in vals and can_edit_progress:
             try:
                 minutes = int(vals.get("duration_minutes") or 0)
             except (TypeError, ValueError) as exc:
@@ -3625,7 +3870,7 @@ class DailyTask(models.Model):
             if minutes < 0:
                 raise ValidationError("Thời gian thực hiện (phút) không được âm.")
             write_vals["duration_minutes"] = minutes
-        if "completion_percent" in vals and can_edit_content:
+        if "completion_percent" in vals and can_edit_progress:
             try:
                 pct = int(vals.get("completion_percent") or 0)
             except (TypeError, ValueError) as exc:

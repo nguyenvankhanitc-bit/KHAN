@@ -133,6 +133,13 @@ class DailyTaskDashboard(models.AbstractModel):
         upcoming_count = len(upcoming)
         assigned_count = len(tasks.filtered(lambda t: bool(t.assignee_id)))
 
+        # Ghi chú cá nhân (ngày ghi chú) → cộng vào chuông nhắc việc
+        note_ov, note_up = self.env["daily.work.note"].get_reminder_rows_for_user(
+            self.env.user.id, today=today, upcoming_days=7
+        )
+        overdue_count += len(note_ov)
+        upcoming_count += len(note_up)
+
         # Employees with active tasks / total visible employees
         emp_ids = set(
             tasks.mapped("assignee_id.employee_id").ids

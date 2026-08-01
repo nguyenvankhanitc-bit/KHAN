@@ -126,26 +126,6 @@ export class DailyWorkCalendar extends Component {
         return weeks;
     }
 
-    get miniDays() {
-        const days = [];
-        const pad = this.state.firstWeekday;
-        for (let i = 0; i < pad; i++) {
-            days.push({ empty: true, key: `m-e-${i}` });
-        }
-        for (let d = 1; d <= this.state.daysInMonth; d++) {
-            const has = Boolean((this.state.byDay[String(d)] || []).length);
-            const iso = `${this.state.year}-${String(this.state.month).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-            days.push({
-                empty: false,
-                key: `m-${d}`,
-                day: d,
-                has,
-                isToday: iso === this.state.today,
-            });
-        }
-        return days;
-    }
-
     async load() {
         this.state.loading = true;
         try {

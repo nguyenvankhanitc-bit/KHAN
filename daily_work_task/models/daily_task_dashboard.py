@@ -136,7 +136,11 @@ class DailyTaskDashboard(models.AbstractModel):
         # Ghi chú cá nhân (ngày ghi chú) → cộng vào chuông nhắc việc
         note_ov, note_up = [], []
         try:
-            if "daily.work.note" in self.env:
+            self.env.cr.execute(
+                "SELECT to_regclass('public.daily_work_note')"
+            )
+            has_table = bool(self.env.cr.fetchone()[0])
+            if has_table and "daily.work.note" in self.env:
                 note_ov, note_up = (
                     self.env["daily.work.note"]
                     .sudo()
@@ -145,6 +149,7 @@ class DailyTaskDashboard(models.AbstractModel):
                     )
                 )
         except Exception:
+            self.env.cr.rollback()
             note_ov, note_up = [], []
         overdue_count += len(note_ov)
         upcoming_count += len(note_up)

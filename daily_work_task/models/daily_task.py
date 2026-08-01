@@ -2736,7 +2736,15 @@ class DailyTask(models.Model):
             note_user_id = self.env.user.id
         note_overdue, note_upcoming = [], []
         try:
-            if note_user_id and "daily.work.note" in self.env:
+            self.env.cr.execute(
+                "SELECT to_regclass('public.daily_work_note')"
+            )
+            has_table = bool(self.env.cr.fetchone()[0])
+            if (
+                has_table
+                and note_user_id
+                and "daily.work.note" in self.env
+            ):
                 note_overdue, note_upcoming = (
                     self.env["daily.work.note"]
                     .sudo()
@@ -2745,6 +2753,7 @@ class DailyTask(models.Model):
                     )
                 )
         except Exception:
+            self.env.cr.rollback()
             note_overdue, note_upcoming = [], []
         overdue_tasks = overdue_tasks + note_overdue
         upcoming_tasks = upcoming_tasks + note_upcoming

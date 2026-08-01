@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- 1 APP trên App Center: Quản lý dịch vụ — bên trong có 6 dịch vụ -->
+    <!-- Dùng dashboard action (cùng file views) để tránh lỗi External ID khi install -->
     <menuitem id="menu_phan_he_root"
               name="Quản lý dịch vụ"
               sequence="40"
               web_icon="lug_phan_he,static/description/icon.png"
-              action="lug_phan_he.action_phan_he_hub"
-              groups="base.group_user"/>
+              action="action_phan_he_dashboard"/>
 
     <menuitem id="menu_phan_he_hub"
               name="Tổng quan"
               parent="menu_phan_he_root"
-              action="lug_phan_he.action_phan_he_hub"
-              sequence="1"
-              groups="base.group_user"/>
+              action="action_phan_he_dashboard"
+              sequence="1"/>
 
     <!-- ========== INTERNET (submenu, không phải app riêng) ========== -->
     <menuitem id="menu_phan_he_internet_root"

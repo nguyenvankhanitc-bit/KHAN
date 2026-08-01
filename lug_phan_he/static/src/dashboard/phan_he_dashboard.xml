@@ -49,15 +49,6 @@
                         </t>
                     </t>
                 </nav>
-                <div class="o_phan_he_sidebar_footer">
-                    <div class="o_phan_he_support">
-                        <span class="o_phan_he_support_avatar"><i class="fa fa-headphones"/></span>
-                        <div>
-                            <strong>Hỗ trợ</strong>
-                            <a href="tel:02873001234">028 7300 1234</a>
-                        </div>
-                    </div>
-                </div>
             </aside>
 
             <div class="o_phan_he_dashboard">
@@ -212,9 +203,6 @@
                                      t-att-style="'--accent:' + (kpi.color || '#64748b')">
                                     <div class="o_phan_he_region_label" t-esc="kpi.title"/>
                                     <div class="o_phan_he_region_amount" t-esc="formatMoneyVnd(kpi.amount)"/>
-                                    <div class="o_phan_he_region_delta"
-                                         t-att-class="deltaClass(kpi.delta)"
-                                         t-esc="deltaText(kpi.delta)"/>
                                 </div>
                             </t>
                         </div>

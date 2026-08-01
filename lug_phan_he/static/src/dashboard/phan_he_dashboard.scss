@@ -184,44 +184,6 @@
     }
 }
 
-.o_phan_he_sidebar_footer {
-    padding: 14px 12px 16px;
-    border-top: 1px solid #eef2f7;
-}
-
-.o_phan_he_support {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: #f8fafc;
-
-    strong {
-        display: block;
-        font-size: 0.82rem;
-        color: #111827;
-    }
-    a {
-        font-size: 0.78rem;
-        color: #6d28d9;
-        text-decoration: none;
-        font-weight: 600;
-    }
-}
-
-.o_phan_he_support_avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: #ede9fe;
-    color: #6d28d9;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
 /* ===== Dashboard nội dung ===== */
 .o_phan_he_shell .o_phan_he_dashboard,
 .o_action.o_phan_he_dashboard,
@@ -967,15 +929,6 @@
         color: #0f172a;
         font-variant-numeric: tabular-nums;
         text-align: center;
-    }
-
-    .o_phan_he_region_delta {
-        margin-top: 8px;
-        font-size: 0.82rem;
-        font-weight: 700;
-        text-align: center;
-        &.is-up { color: #16a34a; }
-        &.is-down { color: #dc2626; }
     }
 
     .o_phan_he_alert_cards {

@@ -136,6 +136,16 @@
         <field name="menu_xmlid">daily_work_task.menu_daily_work_root</field>
     </record>
 
+    <record id="lug_app_ctkm" model="lug.app">
+        <field name="name">CTKM</field>
+        <field name="code">ctkm</field>
+        <field name="sequence">7</field>
+        <field name="module_name">ctkm_core</field>
+        <field name="menu_xmlid">ctkm_core.ctkm_main_menu</field>
+        <field name="extra_menu_xmlids">ctkm_core.menu_ctkm_my_tasks,ctkm_core.menu_ctkm_program,ctkm_core.menu_ctkm_report</field>
+        <field name="description">Chương trình khuyến mãi và Công việc của tôi</field>
+    </record>
+
     <record id="lug_app_project" model="lug.app">
         <field name="name">Dự án</field>
         <field name="code">project</field>

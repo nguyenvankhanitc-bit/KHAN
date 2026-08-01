@@ -11,6 +11,9 @@ from .hr_employee_access import (
 RELATED_EMPLOYEE_PUBLIC_FIELDS = ("parent_id", "coach_id")
 # employee_id on public is hr.employee with the same pk; nested web_read breaks under LUG.
 PUBLIC_SELF_MANY2ONE_FIELDS = ("employee_id",)
+# x2many to employees must never be filled via SUPERUSER for reference-only rows:
+# leaking out-of-scope child ids makes the web client check_access() raise AccessError.
+REF_ONLY_SKIP_X2MANY_FIELDS = frozenset({"child_ids", "subordinate_ids"})
 
 
 class HrEmployeePublicLugAccess(models.Model):
@@ -20,6 +23,59 @@ class HrEmployeePublicLugAccess(models.Model):
         return self.env["hr.employee.access.mixin"]._hr_employee_access_reference_readable_ids(
             self.env.user
         )
+
+    def _lug_employee_x2many_field_names(self):
+        return [
+            name
+            for name, field in self._fields.items()
+            if field.type in ("one2many", "many2many")
+            and field.comodel_name in ("hr.employee", "hr.employee.public")
+        ]
+
+    def _lug_scrub_employee_x2many_rows(self, rows):
+        """Drop out-of-scope employee ids from x2many payloads (child_ids, etc.)."""
+        x2m_names = [
+            name
+            for name in self._lug_employee_x2many_field_names()
+            if any(name in row for row in rows)
+        ]
+        if not x2m_names:
+            return rows
+        related_ids = set()
+        for row in rows:
+            for name in x2m_names:
+                raw = row.get(name) or []
+                for item in raw:
+                    if isinstance(item, dict) and item.get("id"):
+                        related_ids.add(item["id"])
+                    elif isinstance(item, (list, tuple)) and item:
+                        related_ids.add(item[0])
+                    elif isinstance(item, int):
+                        related_ids.add(item)
+        if not related_ids:
+            return rows
+        visible = set(self.browse(list(related_ids))._hr_employee_filter_accessible().ids)
+
+        def _keep(item):
+            if isinstance(item, dict):
+                return item.get("id") in visible
+            if isinstance(item, (list, tuple)) and item:
+                return item[0] in visible
+            if isinstance(item, int):
+                return item in visible
+            return False
+
+        for row in rows:
+            for name in x2m_names:
+                if name in row and row[name]:
+                    row[name] = [item for item in row[name] if _keep(item)]
+        return rows
+
+    def _lug_ref_only_safe_field_names(self, field_names):
+        if not field_names:
+            return field_names
+        skip = REF_ONLY_SKIP_X2MANY_FIELDS | set(self._lug_employee_x2many_field_names())
+        return [name for name in field_names if name not in skip]
 
     def _lug_public_related_fk_map(self, fname):
         if fname not in RELATED_EMPLOYEE_PUBLIC_FIELDS or not self.ids:
@@ -125,13 +181,29 @@ class HrEmployeePublicLugAccess(models.Model):
         if normal:
             rows.extend(super(HrEmployeePublicLugAccess, normal).read(fields, load))
         if ref_only:
-            rows.extend(
-                self.env["hr.employee.public"]
-                .with_user(SUPERUSER_ID)
-                .browse(ref_only.ids)
-                .read(fields, load)
-            )
-        return rows
+            ref_fields = self._lug_ref_only_safe_field_names(fields)
+            if ref_fields:
+                rows.extend(
+                    self.env["hr.employee.public"]
+                    .with_user(SUPERUSER_ID)
+                    .browse(ref_only.ids)
+                    .read(ref_fields, load)
+                )
+            elif not fields:
+                rows.extend(
+                    self.env["hr.employee.public"]
+                    .with_user(SUPERUSER_ID)
+                    .browse(ref_only.ids)
+                    .read(
+                        self._lug_ref_only_safe_field_names(
+                            list(self._fields)
+                        ),
+                        load,
+                    )
+                )
+            else:
+                rows.extend({"id": rid} for rid in ref_only.ids)
+        return self._lug_scrub_employee_x2many_rows(rows)
 
     def fetch(self, field_names=None):
         # ORM calls fetch() directly for attribute access (org chart manager
@@ -152,9 +224,17 @@ class HrEmployeePublicLugAccess(models.Model):
         if policy_allowed:
             super(HrEmployeePublicLugAccess, policy_allowed).fetch(field_names)
         if ref_only:
-            self.env["hr.employee.public"].with_user(SUPERUSER_ID).browse(
-                ref_only.ids
-            ).fetch(field_names)
+            safe_names = self._lug_ref_only_safe_field_names(field_names)
+            if safe_names:
+                self.env["hr.employee.public"].with_user(SUPERUSER_ID).browse(
+                    ref_only.ids
+                ).fetch(safe_names)
+            # Keep x2many empty in cache so the client never sees out-of-scope kids.
+            for fname in set(field_names or []) - set(safe_names or []):
+                field = self._fields.get(fname)
+                if field and field.type in ("one2many", "many2many"):
+                    for rec in ref_only:
+                        self.env.cache.set(rec, field, ())
         return
 
     def _lug_fill_self_many2one_fields(self, result, specification):
@@ -185,9 +265,29 @@ class HrEmployeePublicLugAccess(models.Model):
         rel_fields = [name for name in RELATED_EMPLOYEE_PUBLIC_FIELDS if name in spec]
         for name in rel_fields:
             del spec[name]
+        # Reference-only rows: do not ask the ORM for employee x2many (filled via
+        # SUPERUSER elsewhere and would leak out-of-scope child ids to the client).
         allowed = self._hr_employee_filter_accessible()
-        result = super(HrEmployeePublicLugAccess, allowed).web_read(spec)
+        policy_allowed, ref_only = self._lug_split_policy_and_ref()
+        x2m_skip = set(self._lug_employee_x2many_field_names()) | REF_ONLY_SKIP_X2MANY_FIELDS
+        ref_spec = {k: v for k, v in spec.items() if k not in x2m_skip}
+        result = []
+        if policy_allowed:
+            result.extend(super(HrEmployeePublicLugAccess, policy_allowed).web_read(spec))
+        if ref_only and ref_spec:
+            result.extend(
+                self.env["hr.employee.public"]
+                .with_user(SUPERUSER_ID)
+                .browse(ref_only.ids)
+                .web_read(ref_spec)
+            )
+        elif ref_only:
+            result.extend({"id": rid} for rid in ref_only.ids)
+        # Preserve caller order.
+        by_id = {row["id"]: row for row in result if row.get("id")}
+        result = [by_id[i] for i in allowed.ids if i in by_id]
         self._lug_fill_self_many2one_fields(result, specification)
+        self._lug_scrub_employee_x2many_rows(result)
         if not rel_fields:
             return result
         ref_ids = set(self._lug_reference_readable_ids())

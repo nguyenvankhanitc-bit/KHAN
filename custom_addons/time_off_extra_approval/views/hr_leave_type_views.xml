@@ -37,7 +37,45 @@
                         department), not necessarily the Director in the management chain.
                     </p>
                 </group>
-                <group string="Special employees"
+                <group string="Nhân viên đặc biệt văn phòng"
+                       colspan="2"
+                       class="o_inner_group"
+                       invisible="leave_validation_type != 'employee_hr_responsibles'">
+                    <p class="text-muted" colspan="2">
+                        For employees listed below, approval stays sequential by org chart until the Director level.
+                        If "Sequential director approval" is disabled, all Directors are notified and can approve in
+                        parallel. If enabled, Directors approve in sequence according to the second table.
+                    </p>
+                    <field name="special_director_employee_line_ids"
+                           colspan="2"
+                           nolabel="1"
+                           context="{'default_line_kind': 'office'}">
+                        <list string="Office special employees" editable="bottom" create="true" delete="true">
+                            <field name="line_kind" column_invisible="True"/>
+                            <field name="sequence" string="No." readonly="1"/>
+                            <field name="employee_id"
+                                   string="Employee"
+                                   options="{'no_create': True, 'no_create_edit': True}"
+                                   context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
+                            <field name="org_chart_stop_position" string="Stop at Job Position"/>
+                        </list>
+                    </field>
+                    <field name="special_director_sequential_approval"/>
+                    <field name="special_director_order_line_ids"
+                           colspan="2"
+                           nolabel="1"
+                           invisible="not special_director_sequential_approval">
+                        <list string="Director order" editable="bottom" create="true" delete="true">
+                            <field name="sequence" string="No." readonly="1"/>
+                            <field name="employee_id"
+                                   string="Director"
+                                   domain="[('job_title', '=', 'giám đốc')]"
+                                   options="{'no_create': True, 'no_create_edit': True}"
+                                   context="{'list_view_ref': 'hr.view_employee_tree', 'search_view_ref': 'hr.view_employee_filter'}"/>
+                        </list>
+                    </field>
+                </group>
+                <group string="Nhân viên đặc biệt cửa hàng"
                        colspan="2"
                        class="o_inner_group"
                        invisible="leave_validation_type != 'employee_hr_responsibles'">
@@ -45,10 +83,12 @@
                         Enter the employee's ID HRM. Every employee in Approvals Employee must approve in
                         organization-chart order. Read only Notifier recipients only receive the detail message.
                     </p>
-                    <field name="special_director_employee_line_ids"
+                    <field name="special_store_employee_line_ids"
                            colspan="2"
-                           nolabel="1">
-                        <list string="Special employee list" editable="bottom" create="true" delete="true">
+                           nolabel="1"
+                           context="{'default_line_kind': 'store'}">
+                        <list string="Store special employees" editable="bottom" create="true" delete="true">
+                            <field name="line_kind" column_invisible="True"/>
                             <field name="sequence" string="No." readonly="1"/>
                             <field name="employee_hrm_id"
                                    string="Employee"

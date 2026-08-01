@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="hr_leave_history_report_view_list" model="ir.ui.view">
+        <field name="name">hr.leave.history.report.list</field>
+        <field name="model">hr.leave.history.report</field>
+        <field name="arch" type="xml">
+            <list string="Lịch sử nghỉ phép" create="0" edit="0" delete="0" import="0" export_xlsx="1">
+                <field name="ticket_create_date" string="Ngày tạo"/>
+                <field name="ticket_create_user_id" string="Người tạo" optional="show"/>
+                <field name="employee_id_hrm" string="ID HRM" optional="show"/>
+                <field name="employee_name" string="Nhân viên"/>
+                <field name="department_id" string="Phòng ban" optional="show"/>
+                <field name="employee_mien" string="Miền" optional="show"/>
+                <field name="store_code" string="Mã cửa hàng" optional="show"/>
+                <field name="store_id" string="Cửa hàng" optional="hide"/>
+                <field name="holiday_status_id" string="Loại nghỉ"/>
+                <field name="request_date_from" string="Từ ngày"/>
+                <field name="request_date_to" string="Đến ngày"/>
+                <field name="number_of_days" string="Số ngày" sum="Tổng ngày"/>
+                <field
+                    name="status_display_label"
+                    string="Trạng thái"
+                    widget="badge"
+                    decoration-muted="state in ('draft', 'cancel')"
+                    decoration-warning="state in ('confirm', 'validate1')"
+                    decoration-success="state == 'validate'"
+                    decoration-danger="state == 'refuse'"
+                />
+                <field name="current_approver_display" string="Đang chờ duyệt" optional="show"/>
+                <field name="approver_display" string="Lịch sử người duyệt" optional="show"/>
+                <field name="last_refuser_id" string="Người từ chối" optional="hide"/>
+                <field name="last_refusal_reason" string="Lý do từ chối" optional="hide"/>
+                <field name="request_reason" string="Lý do nghỉ" optional="hide"/>
+                <field name="ticket_write_date" string="Cập nhật cuối" optional="hide"/>
+                <field name="ticket_write_user_id" string="Người cập nhật" optional="hide"/>
+                <field name="state" column_invisible="1"/>
+                <field name="leave_id" column_invisible="1"/>
+                <button
+                    name="action_open_leave"
+                    type="object"
+                    string="Xem đơn"
+                    icon="fa-external-link"
+                    class="btn-link"
+                />
+            </list>
+        </field>
+    </record>
+
+    <record id="hr_leave_history_report_view_form" model="ir.ui.view">
+        <field name="name">hr.leave.history.report.form</field>
+        <field name="model">hr.leave.history.report</field>
+        <field name="arch" type="xml">
+            <form string="Lịch sử nghỉ phép" create="0" edit="0" delete="0">
+                <header>
+                    <button name="action_open_leave" type="object" string="Xem đơn gốc" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Thông tin đơn">
+                            <field name="ticket_create_date"/>
+                            <field name="ticket_create_user_id"/>
+                            <field name="ticket_write_date"/>
+                            <field name="ticket_write_user_id"/>
+                            <field name="status_display_label"/>
+                            <field name="validation_type"/>
+                        </group>
+                        <group string="Nhân viên">
+                            <field name="employee_name"/>
+                            <field name="employee_id_hrm"/>
+                            <field name="department_id"/>
+                            <field name="employee_mien"/>
+                            <field name="workforce_block"/>
+                            <field name="store_code"/>
+                            <field name="store_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <group string="Thời gian nghỉ">
+                            <field name="holiday_status_id"/>
+                            <field name="request_date_from"/>
+                            <field name="request_date_to"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="number_of_days"/>
+                            <field name="number_of_hours"/>
+                        </group>
+                        <group string="Duyệt đơn">
+                            <field name="current_approver_display"/>
+                            <field name="approver_display"/>
+                            <field name="last_refuser_id"/>
+                            <field name="last_refusal_reason"/>
+                        </group>
+                    </group>
+                    <group string="Lý do nghỉ">
+                        <field name="request_reason" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="hr_leave_history_report_view_search" model="ir.ui.view">
+        <field name="name">hr.leave.history.report.search</field>
+        <field name="model">hr.leave.history.report</field>
+        <field name="arch" type="xml">
+            <search string="Lịch sử nghỉ phép">
+                <field name="employee_name" string="Nhân viên"/>
+                <field name="employee_id_hrm" string="ID HRM"/>
+                <field name="ticket_create_user_id" string="Người tạo"/>
+                <field name="department_id" string="Phòng ban"/>
+                <field name="store_code" string="Mã cửa hàng"/>
+                <field name="holiday_status_id" string="Loại nghỉ"/>
+                <field name="employee_mien" string="Miền"/>
+                <filter string="Tháng này" name="created_this_month" domain="[('ticket_create_date', '&gt;=', context_today().replace(day=1).strftime('%Y-%m-%d'))]"/>
+                <filter string="Nháp" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Chờ duyệt" name="to_approve" domain="[('state', 'in', ('confirm', 'validate1'))]"/>
+                <filter string="Đã duyệt" name="validated" domain="[('state', '=', 'validate')]"/>
+                <filter string="Bị từ chối" name="refused" domain="[('state', '=', 'refuse')]"/>
+                <filter string="Đã hủy" name="cancelled" domain="[('state', '=', 'cancel')]"/>
+                <separator/>
+                <filter string="Miền Bắc" name="mien_bac" domain="[('employee_mien', '=', 'Bắc')]"/>
+                <filter string="Miền Nam" name="mien_nam" domain="[('employee_mien', '=', 'Nam')]"/>
+                <filter string="Miền ĐTT" name="mien_dtt" domain="[('employee_mien', '=', 'ĐTT')]"/>
+                <filter string="VP" name="mien_vp" domain="[('employee_mien', '=', 'VP')]"/>
+                <separator/>
+                <filter string="Văn phòng" name="block_office" domain="[('workforce_block', '=', 'office')]"/>
+                <filter string="Cửa hàng" name="block_store" domain="[('workforce_block', '=', 'store')]"/>
+                <group>
+                    <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Ngày tạo" name="group_create_date" context="{'group_by': 'ticket_create_date:month'}"/>
+                    <filter string="Nhân viên" name="group_employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Loại nghỉ" name="group_type" context="{'group_by': 'holiday_status_id'}"/>
+                    <filter string="Phòng ban" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Miền" name="group_mien" context="{'group_by': 'employee_mien'}"/>
+                    <filter string="Cửa hàng" name="group_store" context="{'group_by': 'store_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_hr_leave_history_report" model="ir.actions.act_window">
+        <field name="name">Lịch sử nghỉ phép</field>
+        <field name="res_model">hr.leave.history.report</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="hr_leave_history_report_view_list"/>
+        <field name="search_view_id" ref="hr_leave_history_report_view_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Chưa có đơn nghỉ phép nào trong lịch sử.
+            </p>
+            <p>
+                Danh sách này lấy trực tiếp từ các đơn nghỉ phép đã tạo, bao gồm đơn chờ duyệt, đã duyệt, bị từ chối và đã hủy.
+            </p>
+        </field>
+    </record>
+</odoo>

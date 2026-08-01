@@ -475,7 +475,8 @@ class HrLeaveResponsibleApproval(models.Model):
         "holiday_status_id.employee_responsible_approval_mode",
         "holiday_status_id.special_director_sequential_approval",
         "holiday_status_id.special_director_order_line_ids",
-        "holiday_status_id.special_director_employee_line_ids.approval_employee_ids",
+        "holiday_status_id.special_director_employee_line_ids",
+        "holiday_status_id.special_store_employee_line_ids.approval_employee_ids",
         "holiday_status_id.multi_approval_step_ids",
         "responsible_approval_line_ids",
         "responsible_approval_line_ids.state",
@@ -504,9 +505,9 @@ class HrLeaveResponsibleApproval(models.Model):
         "employee_id",
         "split_group_id",
         "holiday_status_id",
-        "holiday_status_id.special_director_employee_line_ids.employee_id",
-        "holiday_status_id.special_director_employee_line_ids.readonly_notifier_employee_ids",
-        "holiday_status_id.special_director_employee_line_ids.readonly_notifier_employee_ids.user_id",
+        "holiday_status_id.special_store_employee_line_ids.employee_id",
+        "holiday_status_id.special_store_employee_line_ids.readonly_notifier_employee_ids",
+        "holiday_status_id.special_store_employee_line_ids.readonly_notifier_employee_ids.user_id",
     )
     def _compute_special_readonly_notifier_user_ids(self):
         for leave in self:
@@ -758,7 +759,7 @@ class HrLeaveResponsibleApproval(models.Model):
                     if leave.split_group_id
                     else leave.sudo()
                 )
-                .mapped("holiday_status_id.special_director_employee_line_ids")
+                .mapped("holiday_status_id.special_store_employee_line_ids")
                 .filtered(lambda line: line.employee_id == leave.employee_id)
                 .ids,
                 [(user.id, user.login) for user in approvers],
@@ -940,10 +941,13 @@ class HrLeaveResponsibleApproval(models.Model):
         dept = self._get_leave_employee_department_for_approval()
         if not dept:
             return self.env["res.users"]
-        mgr = dept.manager_id.sudo()
-        if not mgr or not mgr.user_id or mgr.user_id.share:
+        # Resolve under sudo from the department record so visibility rules on
+        # hr.employee do not block reading the configured department manager.
+        mgr = dept.sudo().manager_id
+        user = mgr.sudo().user_id
+        if not mgr or not user or user.share:
             return self.env["res.users"]
-        return mgr.user_id
+        return user
 
     def _get_leave_employee_department_for_approval(self):
         """Department the request belongs to (same source as computed ``department_id`` on leave)."""
@@ -1080,7 +1084,9 @@ class HrLeaveResponsibleApproval(models.Model):
         "holiday_status_id.employee_responsible_source",
         "holiday_status_id.special_director_employee_line_ids",
         "holiday_status_id.special_director_employee_line_ids.employee_id",
-        "holiday_status_id.special_director_employee_line_ids.approval_employee_ids",
+        "holiday_status_id.special_store_employee_line_ids",
+        "holiday_status_id.special_store_employee_line_ids.employee_id",
+        "holiday_status_id.special_store_employee_line_ids.approval_employee_ids",
         "holiday_status_id.special_director_sequential_approval",
         "holiday_status_id.special_director_order_line_ids",
         "employee_id",
@@ -1105,7 +1111,7 @@ class HrLeaveResponsibleApproval(models.Model):
             ):
                 raise UserError(
                     _(
-                        "Loại nghỉ được cấu hình nhân viên đặc biệt (chặn Giám đốc) nhưng không có người duyệt nào "
+                        "Loại nghỉ được cấu hình nhân viên đặc biệt văn phòng (chặn Giám đốc) nhưng không có người duyệt nào "
                         "mang chức danh Giám đốc (user nội bộ) trong chuỗi duyệt. Kiểm tra sơ đồ tổ chức hoặc bảng "
                         "thứ tự Giám đốc trên loại nghỉ."
                     )
@@ -1177,9 +1183,13 @@ class HrLeaveResponsibleApproval(models.Model):
         title = (emp.job_title or "").strip().lower()
         mien = (emp.mien or "").strip()
 
-        special_line = self._get_special_employee_line()
-        if special_line:
-            return not special_line.readonly_notifier_employee_ids
+        # Office special employees always notify the observer (legacy director flow).
+        if self._get_special_office_employee_line():
+            return True
+        # Store special employees: skip observer when an explicit read-only notifier is configured.
+        store_line = self._get_special_store_employee_line()
+        if store_line:
+            return not store_line.readonly_notifier_employee_ids
         # ASM/RSM → Admin chain (all Miền)
         if title in _OBSERVER_JOB_TITLES:
             return True
@@ -1189,7 +1199,11 @@ class HrLeaveResponsibleApproval(models.Model):
         return False
 
     def _get_special_employee_line(self):
-        """Return the special employee line for this leave's employee, or empty recordset."""
+        """Compatibility alias: office special employee line (director flow)."""
+        return self._get_special_office_employee_line()
+
+    def _get_special_office_employee_line(self):
+        """Return the office special employee line for this leave's employee, or empty."""
         self.ensure_one()
         lt = self.holiday_status_id
         if not lt or not self.employee_id:
@@ -1198,14 +1212,24 @@ class HrLeaveResponsibleApproval(models.Model):
             lambda l: l.employee_id == self.employee_id
         )[:1]
 
+    def _get_special_store_employee_line(self):
+        """Return the store special employee line for this leave's employee, or empty."""
+        self.ensure_one()
+        lt = self.holiday_status_id
+        if not lt or not self.employee_id:
+            return self.env["hr.leave.type.special.employee.line"]
+        return lt.special_store_employee_line_ids.filtered(
+            lambda l: l.employee_id == self.employee_id
+        )[:1]
+
     def _get_special_configured_approval_users(self):
-        """Internal users configured for this employee across the whole split request."""
+        """Internal users configured on store special employee rows for this request."""
         self.ensure_one()
         leaves = self.sudo()
         if self.split_group_id:
             leaves = self.sudo()._get_split_group_leaves_all()
         lines = (
-            leaves.mapped("holiday_status_id.special_director_employee_line_ids")
+            leaves.mapped("holiday_status_id.special_store_employee_line_ids")
             .filtered(lambda line: line.employee_id == self.employee_id)
             .sudo()
         )
@@ -1237,13 +1261,13 @@ class HrLeaveResponsibleApproval(models.Model):
         return self.env["res.users"].browse(ordered_ids + remaining.ids)
 
     def _get_special_readonly_notifier_users(self):
-        """Internal users who receive the special employee's view-only DM."""
+        """Internal users who receive the store special employee's view-only DM."""
         self.ensure_one()
         leaves = self
         if self.split_group_id and self._split_group_is_multi_segment():
             leaves = self._get_split_group_leaves_all()
         employees = (
-            leaves.mapped("holiday_status_id.special_director_employee_line_ids")
+            leaves.mapped("holiday_status_id.special_store_employee_line_ids")
             .filtered(lambda line: line.employee_id == self.employee_id)
             .sudo()
             .mapped("readonly_notifier_employee_ids")
@@ -1256,10 +1280,9 @@ class HrLeaveResponsibleApproval(models.Model):
         return self.env["res.users"].browse(list(dict.fromkeys(users.ids)))
 
     def _is_multi_director_special_employee(self):
-        """Legacy special flow, retained until explicit approvers are configured."""
+        """Office special employees: org-chart until Director, then all directors approve."""
         self.ensure_one()
-        line = self._get_special_employee_line()
-        return bool(line and not line.approval_employee_ids)
+        return bool(self._get_special_office_employee_line())
 
     def _is_special_parallel_directors_leave(self):
         """Special employee flow: directors act in parallel (same step, simultaneous notify)."""

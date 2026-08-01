@@ -41,6 +41,11 @@ class HrEmployeePublic(models.Model):
     )
 
     def _hr_employee_read_is_restricted(self):
+        # Mirror hr.employee: sudo() must bypass scope filters so trusted code
+        # (org-chart manager walk, related parent_id, etc.) can resolve FKs
+        # outside the interactive user's visibility without MissingError.
+        if self.env.su:
+            return False
         if (
             self.env.context.get("_allow_read_hr_employee")
             is _ALLOW_READ_HR_EMPLOYEE
@@ -137,7 +142,11 @@ class HrEmployeePublic(models.Model):
             )
         # Core hr.employee._search (no ACL) delegates here; skip mixin to avoid
         # double-filter and employee_id.* sub-search recursion.
-        if not self.env.context.get("hr_employee_search_bridge"):
+        if (
+            not self.env.su
+            and not bypass_access
+            and not self.env.context.get("hr_employee_search_bridge")
+        ):
             mixin = self.env["hr.employee.access.mixin"]
             extra = mixin._hr_employee_access_extra_domain(model_name=self._name)
             domain = list(
@@ -158,7 +167,10 @@ class HrEmployeePublic(models.Model):
 
     @api.model
     def search_fetch(self, domain, field_names=None, offset=0, limit=None, order=None):
-        if not self.env.context.get("hr_employee_search_bridge"):
+        if (
+            not self.env.su
+            and not self.env.context.get("hr_employee_search_bridge")
+        ):
             domain = list(
                 self.env["hr.employee.access.mixin"]._hr_employee_apply_access_domain(
                     domain, model_name=self._name

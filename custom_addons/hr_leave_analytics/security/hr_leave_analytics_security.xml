@@ -6,6 +6,12 @@
         <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 
+    <record id="hr_leave_history_report_rule_company" model="ir.rule">
+        <field name="name">HR Leave History Report: multi-company</field>
+        <field name="model_id" ref="model_hr_leave_history_report"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+    </record>
+
     <record id="hr_leave_analytics_store_summary_rule_company" model="ir.rule">
         <field name="name">HR Leave Store Summary: multi-company</field>
         <field name="model_id" ref="model_hr_leave_analytics_store_summary"/>
@@ -48,6 +54,13 @@
     <record id="hr_leave_analytics_report_rule_mien" model="ir.rule">
         <field name="name">HR Leave Analytics Report: theo miền được phép</field>
         <field name="model_id" ref="model_hr_leave_analytics_report"/>
+        <field name="domain_force">[(1, '=', 1)] if user.hr_leave_analytics_allowed_miens is None else ['|', ('employee_mien', 'in', user.hr_leave_analytics_allowed_miens or ['']), ('employee_mien', '=', False)]</field>
+        <field name="groups" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
+    </record>
+
+    <record id="hr_leave_history_report_rule_mien" model="ir.rule">
+        <field name="name">HR Leave History Report: theo miền được phép</field>
+        <field name="model_id" ref="model_hr_leave_history_report"/>
         <field name="domain_force">[(1, '=', 1)] if user.hr_leave_analytics_allowed_miens is None else ['|', ('employee_mien', 'in', user.hr_leave_analytics_allowed_miens or ['']), ('employee_mien', '=', False)]</field>
         <field name="groups" eval="[(4, ref('hr_holidays.group_hr_holidays_user'))]"/>
     </record>

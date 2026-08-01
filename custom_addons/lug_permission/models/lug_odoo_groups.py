@@ -15,6 +15,12 @@ LUG_APP_ODOO_GROUPS = {
         "delete": ["daily_work_task.group_daily_work_manager"],
         "admin": ["daily_work_task.group_daily_work_manager"],
     },
+    "ctkm": {
+        "view": ["ctkm_core.group_ctkm_user"],
+        "create": ["ctkm_core.group_ctkm_user"],
+        "edit": ["ctkm_core.group_ctkm_user"],
+        "admin": ["ctkm_core.group_ctkm_manager"],
+    },
     "project": {
         "view": ["project.group_project_user"],
         "edit": ["project.group_project_user"],

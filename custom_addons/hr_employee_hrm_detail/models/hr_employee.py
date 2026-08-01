@@ -65,6 +65,19 @@ class HrEmployee(models.Model):
                 bypass_access=True,
                 **kwargs,
             )
+        # sudo() must not re-apply the interactive user's visibility domain:
+        # approval/org-chart code resolves department managers and chain
+        # superiors via sudo(), and Model.fetch() uses _search internally.
+        if self.env.su:
+            return super()._search(
+                domain,
+                offset=offset,
+                limit=limit,
+                order=order,
+                active_test=active_test,
+                bypass_access=True,
+                **kwargs,
+            )
         if self.browse().has_access("read") or bypass_access:
             mixin = self.env["hr.employee.access.mixin"]
             extra = mixin._hr_employee_access_extra_domain(model_name=self._name)
@@ -120,6 +133,10 @@ class HrEmployee(models.Model):
             self.env.context.get("_allow_read_hr_employee")
             is _ALLOW_READ_HR_EMPLOYEE
         ):
+            return super().search_fetch(
+                domain, field_names, offset, limit, order
+            )
+        if self.env.su:
             return super().search_fetch(
                 domain, field_names, offset, limit, order
             )

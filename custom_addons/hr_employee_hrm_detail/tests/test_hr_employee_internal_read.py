@@ -42,3 +42,32 @@ class TestHrEmployeeInternalRead(TransactionCase):
             self.assertFalse(internal_employee._hr_employee_read_is_restricted())
             internal_employee.invalidate_recordset(["name"])
             self.assertEqual(internal_employee.name, self.employee.name)
+
+    def test_public_sudo_can_walk_out_of_scope_parent_chain(self):
+        """Org chart uses sudo() to walk managers; must not MissingError on parent_id."""
+        company = self.user.company_id
+        manager = self.env["hr.employee"].create(
+            {"name": "Out-of-scope Manager", "company_id": company.id}
+        )
+        peer = self.env["hr.employee"].create(
+            {
+                "name": "Visible Peer",
+                "company_id": company.id,
+                "parent_id": manager.id,
+                "user_id": self.user.id,
+            }
+        )
+        self.user.visibility_policy = "self"
+        self.env.flush_all()
+
+        Public = self.env["hr.employee.public"].with_user(self.user)
+        self.assertTrue(Public._hr_employee_read_is_restricted())
+        self.assertFalse(Public.sudo()._hr_employee_read_is_restricted())
+        self.assertNotIn(manager.id, Public.search([]).ids)
+        self.assertIn(peer.id, Public.search([]).ids)
+
+        # Same path as /hr/get_org_chart: sudo walk via parent_id.
+        current = Public.browse(peer.id).sudo()
+        parent = current.parent_id
+        self.assertEqual(parent.id, manager.id)
+        self.assertEqual(parent.name, manager.name)

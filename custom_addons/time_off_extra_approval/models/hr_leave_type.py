@@ -79,19 +79,32 @@ class HolidaysType(models.Model):
     special_director_employee_line_ids = fields.One2many(
         comodel_name="hr.leave.type.special.employee.line",
         inverse_name="leave_type_id",
-        string="Special employees",
-        help="Configure special approval and read-only notification recipients by employee ID HRM.",
+        string="Nhân viên đặc biệt văn phòng",
+        domain=[("line_kind", "=", "office")],
+        context={"default_line_kind": "office"},
+        help="For listed office employees, approval remains sequential by org flow until Director level; "
+        "then all internal users with Director title must approve (parallel or sequential).",
+    )
+    special_store_employee_line_ids = fields.One2many(
+        comodel_name="hr.leave.type.special.employee.line",
+        inverse_name="leave_type_id",
+        string="Nhân viên đặc biệt cửa hàng",
+        domain=[("line_kind", "=", "store")],
+        context={"default_line_kind": "store"},
+        help="Configure store special approval and read-only notification recipients by employee ID HRM.",
     )
     special_director_sequential_approval = fields.Boolean(
         string="Sequential director approval",
         default=False,
-        help="For special employees: when enabled, Director approval order follows the table below. When disabled, all Directors can approve in parallel.",
+        help="For office special employees: when enabled, Director approval order follows the table below. "
+        "When disabled, all Directors can approve in parallel.",
     )
     special_director_order_line_ids = fields.One2many(
         comodel_name="hr.leave.type.special.director.order.line",
         inverse_name="leave_type_id",
         string="Director approval order",
-        help="Director list (Director title). Used only when sequential director approval is enabled.",
+        help="Director list (Director title). Used only for office special employees when sequential "
+        "director approval is enabled.",
     )
     handover_escalation_after_hours = fields.Float(
         string="Handover: escalate after (hours)",

@@ -94,6 +94,14 @@
         sequence="7"
         groups="hr_holidays.group_hr_holidays_user"/>
 
+    <menuitem
+        id="menu_hr_leave_history_report"
+        name="Lịch sử nghỉ phép"
+        parent="menu_hr_leave_analytics_root"
+        action="action_hr_leave_history_report"
+        sequence="8"
+        groups="hr_holidays.group_hr_holidays_user"/>
+
     <record id="hr_holidays.menu_hr_holidays_report" model="ir.ui.menu">
         <field name="action" ref="action_hr_leave_analytics_entry"/>
     </record>

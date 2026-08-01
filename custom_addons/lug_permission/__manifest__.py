@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "LUG Permission Center",
-    "version": "19.0.1.0.32",
+    "version": "19.0.1.0.33",
     "category": "Administration",
     "summary": "Centralized application permission management for Odoo",
     "description": """

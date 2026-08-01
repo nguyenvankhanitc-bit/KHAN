@@ -4,7 +4,7 @@
 
     "name": "HR Leave Analytics",
 
-    "version": "19.0.1.6.9",
+    "version": "19.0.1.7.0",
 
     "post_init_hook": "post_init_hook",
 
@@ -48,6 +48,8 @@
 
         "views/hr_leave_analytics_report_views.xml",
 
+        "views/hr_leave_history_report_views.xml",
+
         "views/hr_leave_analytics_summary_views.xml",
 
         "views/hr_leave_analytics_menus.xml",
@@ -77,4 +79,3 @@
     "application": False,
 
 }
-

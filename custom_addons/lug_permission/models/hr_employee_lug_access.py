@@ -65,9 +65,19 @@ class HrEmployeeLugAccess(models.Model):
         if policy_allowed:
             super(HrEmployeeLugAccess, policy_allowed).fetch(field_names)
         if ref_only:
-            self.env["hr.employee"].with_user(SUPERUSER_ID).browse(
-                ref_only.ids
-            ).fetch(field_names)
+            Public = self._lug_public_delegate()
+            safe_names = Public._lug_ref_only_safe_field_names(field_names)
+            # Only fetch fields that exist on hr.employee.
+            safe_names = [n for n in (safe_names or []) if n in self._fields]
+            if safe_names:
+                self.env["hr.employee"].with_user(SUPERUSER_ID).browse(
+                    ref_only.ids
+                ).fetch(safe_names)
+            for fname in set(field_names or []) - set(safe_names or []):
+                field = self._fields.get(fname)
+                if field and field.type in ("one2many", "many2many"):
+                    for rec in ref_only:
+                        self.env.cache.set(rec, field, ())
         return
 
     @api.model
@@ -99,11 +109,19 @@ class HrEmployeeLugAccess(models.Model):
                 for row in self._lug_public_delegate().browse(allowed.ids).web_read(pub_spec):
                     rows_by_id[row["id"]] = row
             if extra_spec:
-                for row in super(HrEmployeeLugAccess, allowed).web_read(extra_spec):
-                    rows_by_id.setdefault(row["id"], {}).update(row)
+                policy_allowed = self.browse(
+                    self._lug_public_delegate()._lug_split_policy_and_ref()[0].ids
+                )
+                policy_target = policy_allowed.browse(
+                    [i for i in target_ids if i in policy_allowed.ids]
+                )
+                if policy_target:
+                    for row in super(HrEmployeeLugAccess, policy_target).web_read(extra_spec):
+                        rows_by_id.setdefault(row["id"], {}).update(row)
             if not rows_by_id:
                 return [{"id": rec_id} for rec_id in target_ids]
-            return [rows_by_id[rec_id] for rec_id in target_ids if rec_id in rows_by_id]
+            rows = [rows_by_id[rec_id] for rec_id in target_ids if rec_id in rows_by_id]
+            return self._lug_public_delegate()._lug_scrub_employee_x2many_rows(rows)
         return super().web_read(specification)
 
     @api.model

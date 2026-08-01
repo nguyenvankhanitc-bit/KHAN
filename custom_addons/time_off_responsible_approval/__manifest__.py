@@ -1,6 +1,6 @@
 {
     "name": "Time Off Responsible Approval",
-    "version": "19.0.1.0.37",
+    "version": "19.0.1.0.38",
     "category": "Human Resources",
     "summary": "Sequential HR-responsible and multi-step time off approval",
     "depends": [

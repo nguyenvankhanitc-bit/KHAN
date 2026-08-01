@@ -5,13 +5,13 @@
               name="Quản lý dịch vụ"
               sequence="40"
               web_icon="lug_phan_he,static/description/icon.png"
-              action="action_phan_he_hub"
+              action="lug_phan_he.action_phan_he_hub"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_hub"
               name="Tổng quan"
               parent="menu_phan_he_root"
-              action="action_phan_he_hub"
+              action="lug_phan_he.action_phan_he_hub"
               sequence="1"
               groups="base.group_user"/>
 

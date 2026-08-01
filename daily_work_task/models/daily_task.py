@@ -2736,7 +2736,7 @@ class DailyTask(models.Model):
             note_user_id = self.env.user.id
         note_overdue, note_upcoming = self.env[
             "daily.work.note"
-        ].get_reminder_rows_for_user(
+        ].sudo().get_reminder_rows_for_user(
             note_user_id, today=today, upcoming_days=7
         )
         overdue_tasks = overdue_tasks + note_overdue

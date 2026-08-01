@@ -27,11 +27,12 @@ class DailyWorkNote(models.Model):
     @api.model
     def get_work_note_data(self, search=None):
         """Danh sách ghi chú của user đang đăng nhập."""
+        Note = self.sudo()
         domain = [("user_id", "=", self.env.user.id)]
         q = (search or "").strip()
         if q:
             domain.append(("name", "ilike", q))
-        records = self.search(domain, order="note_date desc, id desc")
+        records = Note.search(domain, order="note_date desc, id desc")
         rows = []
         for idx, rec in enumerate(records, start=1):
             rows.append(
@@ -65,23 +66,24 @@ class DailyWorkNote(models.Model):
             "note_date": note_date,
             "user_id": self.env.user.id,
         }
+        Note = self.sudo()
         if rid:
-            rec = self.browse(rid).exists()
-            if not rec or rec.user_id != self.env.user:
+            rec = Note.browse(rid).exists()
+            if not rec or rec.user_id.id != self.env.user.id:
                 raise ValidationError(
                     "Không tìm thấy ghi chú hoặc bạn không có quyền sửa."
                 )
             rec.write(clean)
             return rec.id
-        return self.create(clean).id
+        return Note.create(clean).id
 
     def delete_work_note(self):
-        for rec in self:
+        for rec in self.sudo():
             if rec.user_id != self.env.user and not self.env.user.has_group(
                 "daily_work_task.group_daily_work_manager"
             ):
                 raise ValidationError("Bạn chỉ được xóa ghi chú của chính mình.")
-        self.unlink()
+        self.sudo().unlink()
         return True
 
     @api.model
@@ -100,7 +102,7 @@ class DailyWorkNote(models.Model):
         days = int(upcoming_days or 7)
         upcoming_end = today + timedelta(days=days)
         overdue_start = today - timedelta(days=days)
-        notes = self.search(
+        notes = self.sudo().search(
             [
                 ("user_id", "=", int(user_id)),
                 ("note_date", ">=", overdue_start),

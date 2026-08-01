@@ -22,7 +22,7 @@ access_daily_task_perf_report_user,daily.task.performance.report user,model_dail
 access_daily_task_perf_report_manager,daily.task.performance.report manager,model_daily_task_performance_report,group_daily_work_manager,1,0,0,0
 access_daily_work_notebook_user,daily.work.notebook user,model_daily_work_notebook,group_daily_work_user,1,1,1,1
 access_daily_work_notebook_manager,daily.work.notebook manager,model_daily_work_notebook,group_daily_work_manager,1,1,1,1
-access_daily_work_note_base_user,daily.work.note base user,model_daily_work_note,base.group_user,1,1,1,1
+access_daily_work_note_all,daily.work.note all users,model_daily_work_note,,1,1,1,1
 access_daily_work_note_user,daily.work.note user,model_daily_work_note,group_daily_work_user,1,1,1,1
 access_daily_work_note_manager,daily.work.note manager,model_daily_work_note,group_daily_work_manager,1,1,1,1
 access_daily_task_recurring_user,daily.task.recurring user,model_daily_task_recurring,group_daily_work_user,1,1,1,1

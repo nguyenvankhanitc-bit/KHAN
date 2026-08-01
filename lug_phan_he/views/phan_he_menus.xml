@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- 1 APP — tối giản để install trên Docker lab (không web_icon / web_icon_data) -->
+    <!-- 1 APP — mở Hub (6 dịch vụ) giống local -->
     <menuitem id="menu_phan_he_root"
               name="Quản lý dịch vụ"
               sequence="40"
-              action="action_phan_he_dashboard"/>
+              action="action_phan_he_hub"/>
 
     <menuitem id="menu_phan_he_hub"
               name="Tổng quan"
               parent="menu_phan_he_root"
-              action="action_phan_he_dashboard"
+              action="action_phan_he_hub"
               sequence="1"/>
 
     <!-- ========== INTERNET (submenu, không phải app riêng) ========== -->

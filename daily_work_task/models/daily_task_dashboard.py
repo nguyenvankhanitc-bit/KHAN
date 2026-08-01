@@ -134,9 +134,18 @@ class DailyTaskDashboard(models.AbstractModel):
         assigned_count = len(tasks.filtered(lambda t: bool(t.assignee_id)))
 
         # Ghi chú cá nhân (ngày ghi chú) → cộng vào chuông nhắc việc
-        note_ov, note_up = self.env["daily.work.note"].sudo().get_reminder_rows_for_user(
-            self.env.user.id, today=today, upcoming_days=7
-        )
+        note_ov, note_up = [], []
+        try:
+            if "daily.work.note" in self.env:
+                note_ov, note_up = (
+                    self.env["daily.work.note"]
+                    .sudo()
+                    .get_reminder_rows_for_user(
+                        self.env.user.id, today=today, upcoming_days=7
+                    )
+                )
+        except Exception:
+            note_ov, note_up = [], []
         overdue_count += len(note_ov)
         upcoming_count += len(note_up)
 

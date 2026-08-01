@@ -2734,11 +2734,18 @@ class DailyTask(models.Model):
                 note_user_id = emp_rec.user_id.id
         if not note_user_id and personal_only:
             note_user_id = self.env.user.id
-        note_overdue, note_upcoming = self.env[
-            "daily.work.note"
-        ].sudo().get_reminder_rows_for_user(
-            note_user_id, today=today, upcoming_days=7
-        )
+        note_overdue, note_upcoming = [], []
+        try:
+            if note_user_id and "daily.work.note" in self.env:
+                note_overdue, note_upcoming = (
+                    self.env["daily.work.note"]
+                    .sudo()
+                    .get_reminder_rows_for_user(
+                        note_user_id, today=today, upcoming_days=7
+                    )
+                )
+        except Exception:
+            note_overdue, note_upcoming = [], []
         overdue_tasks = overdue_tasks + note_overdue
         upcoming_tasks = upcoming_tasks + note_upcoming
 

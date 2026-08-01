@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- 1 APP trên App Center: Quản lý dịch vụ — bên trong có 6 dịch vụ -->
-    <!-- Dùng dashboard action (cùng file views) để tránh lỗi External ID khi install -->
-    <menuitem id="menu_phan_he_root"
-              name="Quản lý dịch vụ"
-              sequence="40"
-              web_icon="lug_phan_he,static/description/icon.png"
-              action="action_phan_he_dashboard"/>
+    <!-- Không dùng web_icon= (lỗi ParseError trên Odoo Docker lab); dùng web_icon_data -->
+    <record id="menu_phan_he_root" model="ir.ui.menu">
+        <field name="name">Quản lý dịch vụ</field>
+        <field name="sequence">40</field>
+        <field name="action" eval="'ir.actions.client,%d' % ref('action_phan_he_dashboard')"/>
+        <field name="web_icon_data" type="base64" file="lug_phan_he/static/description/icon.png"/>
+    </record>
 
     <menuitem id="menu_phan_he_hub"
               name="Tổng quan"

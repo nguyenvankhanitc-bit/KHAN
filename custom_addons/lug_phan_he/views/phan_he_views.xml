@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- ========== DASHBOARD ========== -->
+    <!-- ========== HUB + DASHBOARD ========== -->
+    <record id="action_phan_he_hub" model="ir.actions.client">
+        <field name="name">Quản lý dịch vụ</field>
+        <field name="tag">phan_he_hub</field>
+    </record>
+
     <record id="action_phan_he_dashboard" model="ir.actions.client">
         <field name="name">Dashboard Internet</field>
         <field name="tag">phan_he_dashboard</field>

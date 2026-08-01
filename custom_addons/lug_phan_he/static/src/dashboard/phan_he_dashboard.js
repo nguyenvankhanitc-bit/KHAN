@@ -385,17 +385,6 @@ export class PhanHeDashboard extends Component {
         return `${Number(v || 0).toFixed(1)}%`;
     }
 
-    deltaClass(v) {
-        return Number(v) >= 0 ? "is-up" : "is-down";
-    }
-
-    deltaText(v) {
-        const n = Number(v || 0);
-        const arrow = n >= 0 ? "▲" : "▼";
-        const sign = n > 0 ? "+" : "";
-        return `${arrow} ${sign}${n.toFixed(1)}% vs tháng trước`;
-    }
-
     padCount(n) {
         return String(Number(n || 0)).padStart(2, "0");
     }

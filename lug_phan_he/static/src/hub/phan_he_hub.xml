@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeHub">
+        <div class="o_phan_he_hub" t-att-class="{'is-collapsed': state.sidebarCollapsed}">
+            <aside class="o_phan_he_hub_sidebar">
+                <div class="o_phan_he_hub_side_brand">
+                    <button type="button" class="o_phan_he_hub_burger" t-on-click="toggleSidebar" title="Thu gọn">
+                        <i class="fa fa-bars"/>
+                    </button>
+                    <button type="button"
+                            class="o_phan_he_hub_back"
+                            t-on-click="goToAppCenter"
+                            title="Về giao diện chính">
+                        <i class="fa fa-arrow-left"/>
+                    </button>
+                    <span class="o_phan_he_hub_side_title">Quản lý dịch vụ</span>
+                </div>
+
+                <nav class="o_phan_he_hub_nav">
+                    <button type="button"
+                            class="o_phan_he_hub_nav_item"
+                            t-att-class="{'is-active': state.activeNav === 'home'}"
+                            t-on-click="setHome">
+                        <i class="fa fa-home"/>
+                        <span>Trang chủ</span>
+                    </button>
+
+                    <div class="o_phan_he_hub_nav_group">QUẢN LÝ DỊCH VỤ</div>
+                    <t t-foreach="state.apps" t-as="app" t-key="'nav_' + app.code">
+                        <button type="button"
+                                class="o_phan_he_hub_nav_item"
+                                t-att-class="{'is-active': state.activeNav === app.code}"
+                                t-on-click="() => this.openService(app)">
+                            <img class="o_phan_he_hub_nav_img" t-att-src="app.icon" alt=""/>
+                            <span t-esc="app.name"/>
+                        </button>
+                    </t>
+
+                    <div class="o_phan_he_hub_nav_group">CẤU HÌNH &amp; HỆ THỐNG</div>
+                    <t t-foreach="configItems" t-as="item" t-key="'cfg_' + item.code">
+                        <button type="button"
+                                class="o_phan_he_hub_nav_item"
+                                t-att-class="{'is-active': state.activeNav === item.code}"
+                                t-on-click="() => this.openConfig(item)">
+                            <i t-att-class="'fa ' + item.fa"/>
+                            <span t-esc="item.name"/>
+                        </button>
+                    </t>
+                </nav>
+            </aside>
+
+            <div class="o_phan_he_hub_main">
+                <div class="o_phan_he_hub_top_search">
+                    <i class="fa fa-search"/>
+                    <input type="search"
+                           placeholder="Tìm kiếm dịch vụ..."
+                           t-att-value="state.query"
+                           t-on-input="onSearch"/>
+                </div>
+
+                <div class="o_phan_he_hub_grid">
+                    <t t-foreach="filteredApps" t-as="app" t-key="app.code">
+                        <button type="button"
+                                class="o_phan_he_hub_card"
+                                t-on-click="() => this.openService(app)">
+                            <span class="o_phan_he_hub_icon">
+                                <img t-att-src="app.icon" t-att-alt="app.name"/>
+                            </span>
+                            <span class="o_phan_he_hub_name" t-esc="app.name"/>
+                        </button>
+                    </t>
+                </div>
+
+                <t t-if="!filteredApps.length">
+                    <div class="o_phan_he_hub_empty">Không tìm thấy dịch vụ phù hợp.</div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

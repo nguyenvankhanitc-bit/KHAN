@@ -8,7 +8,7 @@ from odoo import api, fields, models
 class PhanHeService(models.Model):
     _name = "phan.he.service"
     _description = "Hợp đồng dịch vụ"
-    _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.currency.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.currency.mixin", "phan.he.access.mixin"]
     _order = "date_end desc, code, id desc"
     _rec_names_search = ["code", "customer_code", "name"]
 
@@ -35,8 +35,17 @@ class PhanHeService(models.Model):
     )
     service_type_name = fields.Char(related="service_type_id.name", store=True)
     category = fields.Selection(
-        selection=[("internet", "INTERNET"), ("software", "SOFTWARE"),
-                    ("phone", "PHONE"), ("other", "OTHER")],
+        selection=[
+            ("internet", "INTERNET"),
+            ("camera", "CAMERA"),
+            ("attendance", "MÁY CHẤM CÔNG"),
+            ("linkq_hrm", "LINKQ HRM"),
+            ("linkq_nb", "LINKQ NB"),
+            ("server", "MÁY CHỦ"),
+            ("software", "SOFTWARE"),
+            ("phone", "PHONE"),
+            ("other", "OTHER"),
+        ],
         compute="_compute_category", store=True, readonly=True,
     )
     package_name = fields.Char(string="Loại thanh toán")
@@ -221,6 +230,22 @@ class PhanHeService(models.Model):
     def _default_service_type_id(self):
         return self.env.ref("lug_phan_he.service_type_internet", raise_if_not_found=False)
 
+    def _phan_he_service_code(self):
+        self.ensure_one()
+        return (self.service_type_id.code or self.category or "").lower() or False
+
+    @api.model
+    def _phan_he_service_code_from_vals(self, vals):
+        stype_id = vals.get("service_type_id")
+        if stype_id:
+            stype = self.env["phan.he.service.type"].browse(stype_id)
+            return (stype.code or "").lower() or False
+        ctx_code = (self.env.context.get("phan_he_service_type_code") or "").lower()
+        if ctx_code:
+            return ctx_code
+        default = self._default_service_type_id()
+        return (default.code or "").lower() if default else False
+
     @api.depends("service_type_id", "store_id")
     def _compute_name(self):
         for rec in self:
@@ -230,7 +255,17 @@ class PhanHeService(models.Model):
 
     @api.depends("service_type_id", "service_type_id.code")
     def _compute_category(self):
-        valid = {"internet", "software", "phone", "other"}
+        valid = {
+            "internet",
+            "camera",
+            "attendance",
+            "linkq_hrm",
+            "linkq_nb",
+            "server",
+            "software",
+            "phone",
+            "other",
+        }
         for rec in self:
             code = (rec.service_type_id.code or "").lower()
             rec.category = code if code in valid else "other"
@@ -577,11 +612,19 @@ class PhanHeService(models.Model):
                 }
             row = by_mien[key]
             row["count"] += 1
-            row["amount"] += svc.contract_amount or 0.0
             totals["count"] += 1
-            totals["amount"] += svc.contract_amount or 0.0
 
+            # Chi phí tháng chỉ cộng HĐ còn ≤ 30 ngày (hoặc đã quá hạn)
             is_closed = svc.state in ("cancel", "liquidated")
+            include_cost = bool(
+                svc.date_end
+                and not is_closed
+                and svc.remaining_days <= 30
+            )
+            if include_cost:
+                row["amount"] += svc.contract_amount or 0.0
+                totals["amount"] += svc.contract_amount or 0.0
+
             if svc.date_end and not is_closed:
                 if svc.date_end < today:
                     row["overdue"] += 1

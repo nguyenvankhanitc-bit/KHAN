@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Dashboard & danh sách riêng cho từng app (ngoài Internet) -->
+    <record id="action_phan_he_dashboard_camera" model="ir.actions.client">
+        <field name="name">Dashboard Camera</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'camera', 'phan_he_app_title': 'Camera'}</field>
+    </record>
+
+    <record id="action_phan_he_dashboard_attendance" model="ir.actions.client">
+        <field name="name">Dashboard Máy chấm công</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'attendance', 'phan_he_app_title': 'Máy chấm công'}</field>
+    </record>
+
+    <record id="action_phan_he_dashboard_linkq_hrm" model="ir.actions.client">
+        <field name="name">Dashboard LinkQ HRM</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'linkq_hrm', 'phan_he_app_title': 'LinkQ HRM'}</field>
+    </record>
+
+    <record id="action_phan_he_dashboard_linkq_nb" model="ir.actions.client">
+        <field name="name">Dashboard LinkQ NB</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'linkq_nb', 'phan_he_app_title': 'LinkQ NB'}</field>
+    </record>
+
+    <record id="action_phan_he_dashboard_server" model="ir.actions.client">
+        <field name="name">Dashboard Máy chủ</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'server', 'phan_he_app_title': 'Máy chủ'}</field>
+    </record>
+
+    <!-- Camera -->
+    <record id="action_phan_he_service_tracking_camera" model="ir.actions.act_window">
+        <field name="name">Danh sách điểm Camera</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_camera'))]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_camera'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'camera',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có điểm Camera</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry_camera" model="ir.actions.act_window">
+        <field name="name">Nhập liệu Camera</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_camera'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <!-- Máy chấm công -->
+    <record id="action_phan_he_service_tracking_attendance" model="ir.actions.act_window">
+        <field name="name">Danh sách máy chấm công</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_attendance'))]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_attendance'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'attendance',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có máy chấm công</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry_attendance" model="ir.actions.act_window">
+        <field name="name">Nhập liệu máy chấm công</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_attendance'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <!-- LinkQ HRM -->
+    <record id="action_phan_he_service_tracking_linkq_hrm" model="ir.actions.act_window">
+        <field name="name">License / phí bảo trì LinkQ HRM</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_linkq_hrm'))]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_linkq_hrm'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'linkq_hrm',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có license LinkQ HRM</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry_linkq_hrm" model="ir.actions.act_window">
+        <field name="name">Nhập liệu LinkQ HRM</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_linkq_hrm'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <!-- LinkQ NB -->
+    <record id="action_phan_he_service_tracking_linkq_nb" model="ir.actions.act_window">
+        <field name="name">License / phí bảo trì LinkQ NB</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_linkq_nb'))]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_linkq_nb'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'linkq_nb',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có license LinkQ NB</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry_linkq_nb" model="ir.actions.act_window">
+        <field name="name">Nhập liệu LinkQ NB</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_linkq_nb'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <!-- Máy chủ -->
+    <record id="action_phan_he_service_tracking_server" model="ir.actions.act_window">
+        <field name="name">Danh sách Server &amp; cước VPS</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server'))]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_server'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'search_default_group_mien': 1,
+            'phan_he_service_type_code': 'server',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có Server / VPS</p>
+        </field>
+    </record>
+
+    <record id="action_phan_he_service_entry_server" model="ir.actions.act_window">
+        <field name="name">Nhập liệu Máy chủ</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_server'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'form_view_initial_mode': 'edit',
+        }"/>
+        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <!-- Thanh toán theo app -->
+    <record id="action_phan_he_payment_camera" model="ir.actions.act_window">
+        <field name="name">Thanh toán / bảo trì Camera</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_camera'))]"/>
+    </record>
+
+    <record id="action_phan_he_payment_attendance" model="ir.actions.act_window">
+        <field name="name">Thanh toán Máy chấm công</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_attendance'))]"/>
+    </record>
+
+    <record id="action_phan_he_payment_linkq_hrm" model="ir.actions.act_window">
+        <field name="name">Thanh toán LinkQ HRM</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_linkq_hrm'))]"/>
+    </record>
+
+    <record id="action_phan_he_payment_linkq_nb" model="ir.actions.act_window">
+        <field name="name">Thanh toán LinkQ NB</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_linkq_nb'))]"/>
+    </record>
+
+    <record id="action_phan_he_payment_server" model="ir.actions.act_window">
+        <field name="name">Thanh toán Máy chủ</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_server'))]"/>
+    </record>
+</odoo>

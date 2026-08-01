@@ -7,7 +7,7 @@
                     <span class="o_phan_he_brand_icon">
                         <i class="fa fa-th-large"/>
                     </span>
-                    <span class="o_phan_he_brand_text">Quản lý dịch vụ</span>
+                    <span class="o_phan_he_brand_text" t-esc="appTitle"/>
                 </div>
                 <nav class="o_phan_he_sidebar_nav">
                     <t t-foreach="navItems" t-as="item" t-key="item.id">
@@ -41,7 +41,7 @@
                         <t t-else="">
                             <button type="button"
                                     class="o_phan_he_nav_item"
-                                    t-att-class="item.id === 'overview' ? 'is-active' : ''"
+                                    t-att-class="item.id === state.activeNav ? 'is-active' : ''"
                                     t-on-click="() => this.onNav(item)">
                                 <i t-att-class="'fa ' + item.icon"/>
                                 <span t-esc="item.label"/>
@@ -63,9 +63,12 @@
             <div class="o_phan_he_dashboard">
                 <div class="o_phan_he_dash_top">
                     <div>
-                        <h1>Dashboard tổng quan</h1>
+                        <h1>
+                            <t t-if="state.activeNav === 'reports'">Báo cáo thanh toán</t>
+                            <t t-else="">Dashboard <t t-esc="appTitle"/></t>
+                        </h1>
                         <p>
-                            Quản lý dịch vụ · Cập nhật
+                            <t t-esc="appTitle"/> · Cập nhật
                             <t t-esc="state.data.updated_at || '—'"/>
                         </p>
                     </div>
@@ -136,6 +139,63 @@
 
                 <t t-if="state.loading">
                     <div class="o_phan_he_dash_loading">Đang tải dữ liệu...</div>
+                </t>
+                <t t-elif="state.activeNav === 'reports'">
+                    <section class="o_phan_he_section o_phan_he_payment_report">
+                        <h2 class="o_phan_he_section_title">
+                            <span class="o_phan_he_section_num">BC</span>
+                            Báo cáo theo trạng thái thanh toán
+                        </h2>
+                        <p class="o_phan_he_panel_hint">
+                            4 danh sách tách khung theo trạng thái · click dòng để mở phiếu thanh toán
+                        </p>
+                        <div class="o_phan_he_pay_report_grid">
+                            <t t-foreach="state.paymentReport.tables or []" t-as="table" t-key="table.key">
+                                <div class="o_phan_he_pay_report_col"
+                                     t-att-class="'is-' + (table.tone || table.key)">
+                                    <div class="o_phan_he_pay_report_head">
+                                        <div>
+                                            <strong t-esc="table.title"/>
+                                            <small>
+                                                <t t-esc="table.count"/> phiếu ·
+                                                <t t-esc="formatMoneyVnd(table.total)"/>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="o_phan_he_pay_report_body">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Cửa hàng</th>
+                                                    <th class="num">Số tiền</th>
+                                                    <th>Hạn TT</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-if="!(table.rows || []).length">
+                                                    <tr>
+                                                        <td colspan="3" class="o_phan_he_empty">Không có dữ liệu</td>
+                                                    </tr>
+                                                </t>
+                                                <t t-foreach="table.rows or []" t-as="row" t-key="row.id">
+                                                    <tr class="is-clickable" t-on-click="() => this.openPayment(row)">
+                                                        <td>
+                                                            <div class="o_phan_he_pay_store" t-esc="row.store || '—'"/>
+                                                            <small t-esc="row.code"/>
+                                                        </td>
+                                                        <td class="num" t-esc="formatNumber(row.amount)"/>
+                                                        <td>
+                                                            <t t-esc="formatIsoDate(table.key === 'paid' ? row.date_paid : row.date_due)"/>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </section>
                 </t>
                 <t t-else="">
                     <!-- 1. Thống kê chi phí theo miền -->
@@ -312,11 +372,33 @@
 
                     <!-- 4. Bảng tổng hợp -->
                     <section class="o_phan_he_section">
-                        <h2 class="o_phan_he_section_title">
-                            <span class="o_phan_he_section_num">4</span>
-                            Bảng tổng hợp chi phí chi tiết từ tháng 1 đến tháng 12
-                            <small>(Đơn vị: VNĐ · Năm <t t-esc="state.data.year || ''"/>)</small>
-                        </h2>
+                        <div class="o_phan_he_section_head_row">
+                            <h2 class="o_phan_he_section_title">
+                                <span class="o_phan_he_section_num">4</span>
+                                Bảng tổng hợp chi phí chi tiết từ tháng 1 đến tháng 12
+                                <small>(Đơn vị: VNĐ)</small>
+                            </h2>
+                            <div class="o_phan_he_year_tools">
+                                <label class="o_phan_he_year_filter">
+                                    Năm
+                                    <select t-att-value="state.filters.year" t-on-change="onYearChange">
+                                        <t t-foreach="yearOptions" t-as="y" t-key="y">
+                                            <option t-att-value="y"
+                                                    t-att-selected="y === state.filters.year"
+                                                    t-esc="y"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <button type="button"
+                                        class="btn btn-primary o_phan_he_btn_export_excel"
+                                        t-on-click="onExportExcel"
+                                        t-att-disabled="state.exporting">
+                                    <i class="fa fa-file-excel-o"/>
+                                    <t t-if="state.exporting">Đang xuất...</t>
+                                    <t t-else="">Xuất Excel</t>
+                                </button>
+                            </div>
+                        </div>
                         <div class="o_phan_he_panel o_phan_he_year_panel">
                             <div class="table-responsive">
                                 <table class="o_phan_he_year_table">

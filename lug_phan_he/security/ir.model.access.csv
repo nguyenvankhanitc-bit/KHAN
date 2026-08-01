@@ -26,3 +26,9 @@ access_phan_he_document_admin,phan.he.document.admin,model_phan_he_document,grou
 access_phan_he_dashboard_user,phan.he.dashboard.user,model_phan_he_dashboard,base.group_user,1,0,0,0
 access_phan_he_viewer_service,phan.he.service.viewer,model_phan_he_service,group_phan_he_viewer,1,0,0,0
 access_phan_he_staff_service,phan.he.service.staff,model_phan_he_service,group_phan_he_staff,1,1,1,0
+access_phan_he_module_access_manager,phan.he.module.access.manager,model_phan_he_module_access,group_phan_he_service_manager,1,1,1,1
+access_phan_he_module_access_admin,phan.he.module.access.admin,model_phan_he_module_access,group_phan_he_admin,1,1,1,1
+access_phan_he_module_access_line_manager,phan.he.module.access.line.manager,model_phan_he_module_access_line,group_phan_he_service_manager,1,1,1,1
+access_phan_he_module_access_line_admin,phan.he.module.access.line.admin,model_phan_he_module_access_line,group_phan_he_admin,1,1,1,1
+access_phan_he_module_access_user_read,phan.he.module.access.user,model_phan_he_module_access,base.group_user,1,0,0,0
+access_phan_he_module_access_line_user_read,phan.he.module.access.line.user,model_phan_he_module_access_line,base.group_user,1,0,0,0

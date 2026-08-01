@@ -1,71 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Root mở Dashboard -->
+    <!-- 1 APP trên App Center: Quản lý dịch vụ — bên trong có 6 dịch vụ -->
     <menuitem id="menu_phan_he_root"
               name="Quản lý dịch vụ"
-              sequence="49"
+              sequence="40"
               web_icon="lug_phan_he,static/description/icon.png"
-              action="action_phan_he_dashboard"
+              action="action_phan_he_hub"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_hub"
+              name="Tổng quan"
+              parent="menu_phan_he_root"
+              action="action_phan_he_hub"
+              sequence="1"
+              groups="base.group_user"/>
+
+    <!-- ========== INTERNET (submenu, không phải app riêng) ========== -->
+    <menuitem id="menu_phan_he_internet_root"
+              name="Dịch vụ Internet"
+              parent="menu_phan_he_root"
+              sequence="10"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_dashboard"
               name="Dashboard"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               action="action_phan_he_dashboard"
               sequence="1"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_calendar"
               name="Calendar"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               action="action_phan_he_calendar"
               sequence="2"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_tracking_top"
-              name="Danh sách internet"
-              parent="menu_phan_he_root"
+              name="Danh sách đường truyền"
+              parent="menu_phan_he_internet_root"
               action="action_phan_he_service_tracking"
               sequence="3"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_entry"
               name="Nhập liệu"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               action="action_phan_he_service_entry"
               sequence="4"
               groups="base.group_user"/>
 
-    <!-- Vận hành -->
-    <menuitem id="menu_phan_he_ops_root"
-              name="Vận hành"
-              parent="menu_phan_he_root"
-              sequence="10"
-              groups="base.group_user"/>
-
-    <menuitem id="menu_phan_he_store"
-              name="Cửa hàng"
-              parent="menu_phan_he_ops_root"
-              action="action_phan_he_store"
-              sequence="10"/>
-
-    <menuitem id="menu_phan_he_area"
-              name="Khu vực"
-              parent="menu_phan_he_ops_root"
-              action="action_phan_he_area"
-              sequence="20"/>
-
-    <menuitem id="menu_phan_he_mien"
-              name="Miền"
-              parent="menu_phan_he_ops_root"
-              action="action_phan_he_mien"
-              sequence="30"
-              groups="lug_phan_he.group_phan_he_service_manager"/>
-
-    <!-- Hợp đồng & Dịch vụ -->
     <menuitem id="menu_phan_he_service_root"
               name="Hợp đồng &amp; Dịch vụ"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               sequence="20"
               groups="base.group_user"/>
 
@@ -99,17 +86,9 @@
               action="action_phan_he_service_expired"
               sequence="40"/>
 
-    <menuitem id="menu_phan_he_service_type"
-              name="Loại dịch vụ"
-              parent="menu_phan_he_service_root"
-              action="action_phan_he_service_type"
-              sequence="90"
-              groups="lug_phan_he.group_phan_he_service_manager"/>
-
-    <!-- Thanh toán -->
     <menuitem id="menu_phan_he_payment_root"
               name="Thanh toán"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               sequence="30"
               groups="base.group_user"/>
 
@@ -143,29 +122,9 @@
               action="action_phan_he_payment_paid"
               sequence="40"/>
 
-    <!-- Nhà cung cấp -->
-    <menuitem id="menu_phan_he_provider_root"
-              name="Nhà cung cấp"
-              parent="menu_phan_he_root"
-              sequence="40"
-              groups="base.group_user"/>
-
-    <menuitem id="menu_phan_he_provider"
-              name="Nhà cung cấp"
-              parent="menu_phan_he_provider_root"
-              action="action_phan_he_provider"
-              sequence="10"/>
-
-    <menuitem id="menu_phan_he_bank_account"
-              name="Tài khoản ngân hàng"
-              parent="menu_phan_he_provider_root"
-              action="action_phan_he_bank_account"
-              sequence="20"/>
-
-    <!-- Chứng từ -->
     <menuitem id="menu_phan_he_doc_root"
               name="Chứng từ"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               sequence="50"
               groups="base.group_user"/>
 
@@ -181,12 +140,17 @@
               action="action_phan_he_document_contract"
               sequence="20"/>
 
-    <!-- Báo cáo -->
     <menuitem id="menu_phan_he_report_root"
               name="Báo cáo"
-              parent="menu_phan_he_root"
+              parent="menu_phan_he_internet_root"
               sequence="60"
               groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_report_payment_status"
+              name="Trạng thái thanh toán"
+              parent="menu_phan_he_report_root"
+              action="action_phan_he_report_payment_status"
+              sequence="5"/>
 
     <menuitem id="menu_phan_he_report_cost_type"
               name="Chi phí dịch vụ"
@@ -211,4 +175,230 @@
               parent="menu_phan_he_report_root"
               action="action_phan_he_report_payment"
               sequence="40"/>
+
+    <!-- ========== CAMERA ========== -->
+    <menuitem id="menu_phan_he_camera_root"
+              name="Dịch vụ Camera"
+              parent="menu_phan_he_root"
+              sequence="20"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_camera_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_camera_root"
+              action="action_phan_he_dashboard_camera"
+              sequence="1"/>
+
+    <menuitem id="menu_phan_he_camera_list"
+              name="Danh sách điểm Camera"
+              parent="menu_phan_he_camera_root"
+              action="action_phan_he_service_tracking_camera"
+              sequence="2"/>
+
+    <menuitem id="menu_phan_he_camera_entry"
+              name="Nhập liệu"
+              parent="menu_phan_he_camera_root"
+              action="action_phan_he_service_entry_camera"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_camera_payment"
+              name="Chi phí bảo trì"
+              parent="menu_phan_he_camera_root"
+              action="action_phan_he_payment_camera"
+              sequence="4"/>
+
+    <!-- ========== MÁY CHẤM CÔNG ========== -->
+    <menuitem id="menu_phan_he_attendance_root"
+              name="Máy chấm công"
+              parent="menu_phan_he_root"
+              sequence="30"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_attendance_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_attendance_root"
+              action="action_phan_he_dashboard_attendance"
+              sequence="1"/>
+
+    <menuitem id="menu_phan_he_attendance_list"
+              name="Danh sách máy"
+              parent="menu_phan_he_attendance_root"
+              action="action_phan_he_service_tracking_attendance"
+              sequence="2"/>
+
+    <menuitem id="menu_phan_he_attendance_entry"
+              name="Nhập liệu"
+              parent="menu_phan_he_attendance_root"
+              action="action_phan_he_service_entry_attendance"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_attendance_payment"
+              name="Thanh toán"
+              parent="menu_phan_he_attendance_root"
+              action="action_phan_he_payment_attendance"
+              sequence="4"/>
+
+    <!-- ========== LINKQ HRM ========== -->
+    <menuitem id="menu_phan_he_linkq_hrm_root"
+              name="LinkQ HRM"
+              parent="menu_phan_he_root"
+              sequence="40"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_linkq_hrm_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_linkq_hrm_root"
+              action="action_phan_he_dashboard_linkq_hrm"
+              sequence="1"/>
+
+    <menuitem id="menu_phan_he_linkq_hrm_list"
+              name="License / phí bảo trì"
+              parent="menu_phan_he_linkq_hrm_root"
+              action="action_phan_he_service_tracking_linkq_hrm"
+              sequence="2"/>
+
+    <menuitem id="menu_phan_he_linkq_hrm_entry"
+              name="Nhập liệu"
+              parent="menu_phan_he_linkq_hrm_root"
+              action="action_phan_he_service_entry_linkq_hrm"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_linkq_hrm_payment"
+              name="Thanh toán"
+              parent="menu_phan_he_linkq_hrm_root"
+              action="action_phan_he_payment_linkq_hrm"
+              sequence="4"/>
+
+    <!-- ========== LINKQ NB ========== -->
+    <menuitem id="menu_phan_he_linkq_nb_root"
+              name="LinkQ ERP"
+              parent="menu_phan_he_root"
+              sequence="50"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_linkq_nb_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_phan_he_dashboard_linkq_nb"
+              sequence="1"/>
+
+    <menuitem id="menu_phan_he_linkq_nb_list"
+              name="License / phí bảo trì"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_phan_he_service_tracking_linkq_nb"
+              sequence="2"/>
+
+    <menuitem id="menu_phan_he_linkq_nb_entry"
+              name="Nhập liệu"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_phan_he_service_entry_linkq_nb"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_linkq_nb_payment"
+              name="Thanh toán"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_phan_he_payment_linkq_nb"
+              sequence="4"/>
+
+    <!-- ========== MÁY CHỦ ========== -->
+    <menuitem id="menu_phan_he_server_root"
+              name="Máy chủ &amp; Cloud"
+              parent="menu_phan_he_root"
+              sequence="60"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_server_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_dashboard_server"
+              sequence="1"/>
+
+    <menuitem id="menu_phan_he_server_list"
+              name="Danh sách Server &amp; VPS"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_service_tracking_server"
+              sequence="2"/>
+
+    <menuitem id="menu_phan_he_server_entry"
+              name="Nhập liệu"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_service_entry_server"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_server_payment"
+              name="Thanh toán"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_payment_server"
+              sequence="4"/>
+
+    <!-- ========== CẤU HÌNH CHUNG ========== -->
+    <menuitem id="menu_phan_he_config_root"
+              name="Cấu hình &amp; Hệ thống"
+              parent="menu_phan_he_root"
+              sequence="90"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_ops_root"
+              name="Vận hành"
+              parent="menu_phan_he_config_root"
+              sequence="10"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_store"
+              name="Cửa hàng"
+              parent="menu_phan_he_ops_root"
+              action="action_phan_he_store"
+              sequence="10"/>
+
+    <menuitem id="menu_phan_he_area"
+              name="Khu vực / Chi nhánh"
+              parent="menu_phan_he_ops_root"
+              action="action_phan_he_area"
+              sequence="20"/>
+
+    <menuitem id="menu_phan_he_mien"
+              name="Miền"
+              parent="menu_phan_he_ops_root"
+              action="action_phan_he_mien"
+              sequence="30"
+              groups="lug_phan_he.group_phan_he_service_manager"/>
+
+    <menuitem id="menu_phan_he_provider_root"
+              name="Nhà cung cấp"
+              parent="menu_phan_he_config_root"
+              sequence="20"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_provider"
+              name="Nhà cung cấp"
+              parent="menu_phan_he_provider_root"
+              action="action_phan_he_provider"
+              sequence="10"/>
+
+    <menuitem id="menu_phan_he_bank_account"
+              name="Tài khoản ngân hàng"
+              parent="menu_phan_he_provider_root"
+              action="action_phan_he_bank_account"
+              sequence="20"/>
+
+    <menuitem id="menu_phan_he_config_general"
+              name="Cấu hình chung"
+              parent="menu_phan_he_config_root"
+              action="action_phan_he_mien"
+              sequence="30"
+              groups="lug_phan_he.group_phan_he_service_manager"/>
+
+    <menuitem id="menu_phan_he_access"
+              name="Phân quyền"
+              parent="menu_phan_he_config_root"
+              action="action_phan_he_module_access"
+              sequence="40"
+              groups="lug_phan_he.group_phan_he_service_manager"/>
+
+    <menuitem id="menu_phan_he_service_type"
+              name="Loại dịch vụ"
+              parent="menu_phan_he_config_root"
+              action="action_phan_he_service_type"
+              sequence="90"
+              groups="lug_phan_he.group_phan_he_service_manager"/>
 </odoo>

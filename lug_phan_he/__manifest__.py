@@ -1,18 +1,16 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.48.0",
+    "version": "19.0.2.64.0",
     "category": "Operations",
-    "summary": "Quản lý dịch vụ enterprise: miền/khu vực, hợp đồng, thanh toán, chứng từ, dashboard, phân quyền",
+    "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ HRM, LinkQ NB, Máy chủ",
     "description": """
 Quản lý dịch vụ
 ===============
-* Dashboard 8 KPI + cảnh báo
-* Vận hành: Miền / Khu vực / Cửa hàng
-* Hợp đồng & loại dịch vụ (Internet, Phần mềm, Điện thoại, Khác)
-* Thanh toán + File thanh toán tháng + Hóa đơn + Đối soát
-* Nhà cung cấp / Tài khoản ngân hàng
-* Phân quyền theo tổ chức + cron cảnh báo
+* 1 app trên App Center: Quản lý dịch vụ
+* Bên trong gồm 6 phân hệ: Internet, Camera, Máy chấm công, LinkQ HRM, LinkQ NB, Máy chủ
+* Hub chọn dịch vụ + dashboard / hợp đồng / thanh toán theo từng phân hệ
+* Phân quyền theo nhóm (giống Nhóm quyền LUG): Users + Xem/Thêm/Sửa/Xóa…
     """,
     "author": "Custom",
     "license": "LGPL-3",
@@ -32,11 +30,21 @@ Quản lý dịch vụ
         "data/phan_he_lang_date.xml",
         "views/phan_he_views.xml",
         "views/phan_he_payment_file_views.xml",
+        "views/phan_he_app_actions.xml",
+        "views/phan_he_hub_action.xml",
+        "views/phan_he_access_views.xml",
+        "views/phan_he_access_action.xml",
+        "data/phan_he_access_group_data.xml",
         "views/phan_he_menus.xml",
+        "data/phan_he_clear_submenu_icons.xml",
         "views/res_users_views.xml",
     ],
     "assets": {
         "web.assets_backend": [
+            "lug_phan_he/static/src/hub/phan_he_hub.scss",
+            "lug_phan_he/static/src/hub/phan_he_hub.js",
+            "lug_phan_he/static/src/hub/phan_he_hub.xml",
+            "lug_phan_he/static/src/access/phan_he_access_matrix.js",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.scss",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.js",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.xml",

@@ -1,11 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<odoo noupdate="1">
+<odoo>
     <record id="lug_app_phan_he" model="lug.app">
         <field name="name">Quản lý dịch vụ</field>
         <field name="code">phan_he</field>
-        <field name="sequence">49</field>
+        <field name="sequence">40</field>
         <field name="module_name">lug_phan_he</field>
         <field name="menu_xmlid">lug_phan_he.menu_phan_he_root</field>
-        <field name="description">Quản lý cửa hàng, hợp đồng dịch vụ, lịch thanh toán</field>
+        <field name="description">Cổng quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ, Máy chủ</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- Không còn hiện như app riêng trên App Center -->
+    <record id="lug_app_phan_he_camera" model="lug.app">
+        <field name="name">Camera</field>
+        <field name="code">phan_he_camera</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_camera_root</field>
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="lug_app_phan_he_attendance" model="lug.app">
+        <field name="name">Máy chấm công</field>
+        <field name="code">phan_he_attendance</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_attendance_root</field>
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="lug_app_phan_he_linkq_hrm" model="lug.app">
+        <field name="name">LinkQ HRM</field>
+        <field name="code">phan_he_linkq_hrm</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_linkq_hrm_root</field>
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="lug_app_phan_he_linkq_nb" model="lug.app">
+        <field name="name">LinkQ NB</field>
+        <field name="code">phan_he_linkq_nb</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_linkq_nb_root</field>
+        <field name="active" eval="False"/>
+    </record>
+
+    <record id="lug_app_phan_he_server" model="lug.app">
+        <field name="name">Máy chủ</field>
+        <field name="code">phan_he_server</field>
+        <field name="module_name">lug_phan_he</field>
+        <field name="menu_xmlid">lug_phan_he.menu_phan_he_server_root</field>
+        <field name="active" eval="False"/>
     </record>
 </odoo>

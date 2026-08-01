@@ -48,23 +48,15 @@ export class PhanHeDashboard extends Component {
         this.action = useService("action");
         this.notification = useService("notification");
         const year = new Date().getFullYear();
-        this.navItems = [
-            { id: "overview", label: "Tổng quan", icon: "fa-th-large", action: false },
-            { id: "calendar", label: "Calendar", icon: "fa-calendar", action: "lug_phan_he.action_phan_he_calendar" },
-            { id: "contracts", label: "Hợp đồng", icon: "fa-file-text-o", action: "lug_phan_he.action_phan_he_service_tracking" },
-            { id: "payments", label: "Thanh toán", icon: "fa-credit-card", action: "lug_phan_he.action_phan_he_payment" },
-            { id: "providers", label: "Nhà cung cấp", icon: "fa-users", action: "lug_phan_he.action_phan_he_provider" },
-            { id: "services", label: "Dịch vụ", icon: "fa-cogs", action: "lug_phan_he.action_phan_he_service_type" },
-            { id: "invoices", label: "Hóa đơn", icon: "fa-list-alt", action: "lug_phan_he.action_phan_he_invoice" },
-            { id: "reports", label: "Báo cáo", icon: "fa-bar-chart", action: "lug_phan_he.action_phan_he_report_cost_type" },
-            { id: "alerts", label: "Cảnh báo", icon: "fa-bell", action: false },
-            { id: "config", label: "Cấu hình", icon: "fa-cog", action: "lug_phan_he.action_phan_he_mien" },
-        ];
         this.state = useState({
             loading: true,
+            exporting: false,
             alertsOpen: true,
+            activeNav: "overview",
             data: {},
+            paymentReport: { tables: [] },
             filters: {
+                year: year,
                 date_from: yearStartDisplay(year),
                 date_to: yearEndDisplay(year),
                 mien_id: "",
@@ -72,7 +64,91 @@ export class PhanHeDashboard extends Component {
                 employee_id: "",
             },
         });
-        onWillStart(() => this.load());
+        onWillStart(async () => {
+            if (this.actionContext.phan_he_dash_view === "reports") {
+                this.state.activeNav = "reports";
+            }
+            await this.load();
+        });
+    }
+
+    get yearOptions() {
+        const current = new Date().getFullYear();
+        const years = [];
+        for (let y = current - 3; y <= current + 1; y++) {
+            years.push(y);
+        }
+        const selected = Number(this.state.filters.year || current);
+        if (selected && !years.includes(selected)) {
+            years.push(selected);
+            years.sort((a, b) => a - b);
+        }
+        return years;
+    }
+
+    get actionContext() {
+        return this.props.action?.context || {};
+    }
+
+    get serviceTypeCode() {
+        return this.actionContext.phan_he_service_type_code || "internet";
+    }
+
+    get appTitle() {
+        return this.actionContext.phan_he_app_title
+            || this.state.data.app_title
+            || "Quản lý dịch vụ";
+    }
+
+    get navItems() {
+        const code = this.serviceTypeCode;
+        const trackingByType = {
+            internet: "lug_phan_he.action_phan_he_service_tracking",
+            camera: "lug_phan_he.action_phan_he_service_tracking_camera",
+            attendance: "lug_phan_he.action_phan_he_service_tracking_attendance",
+            linkq_hrm: "lug_phan_he.action_phan_he_service_tracking_linkq_hrm",
+            linkq_nb: "lug_phan_he.action_phan_he_service_tracking_linkq_nb",
+            server: "lug_phan_he.action_phan_he_service_tracking_server",
+        };
+        const paymentByType = {
+            internet: "lug_phan_he.action_phan_he_payment",
+            camera: "lug_phan_he.action_phan_he_payment_camera",
+            attendance: "lug_phan_he.action_phan_he_payment_attendance",
+            linkq_hrm: "lug_phan_he.action_phan_he_payment_linkq_hrm",
+            linkq_nb: "lug_phan_he.action_phan_he_payment_linkq_nb",
+            server: "lug_phan_he.action_phan_he_payment_server",
+        };
+        const items = [
+            { id: "overview", label: "Tổng quan", icon: "fa-th-large", action: false },
+            {
+                id: "contracts",
+                label: "Danh sách",
+                icon: "fa-file-text-o",
+                action: trackingByType[code] || trackingByType.internet,
+            },
+            {
+                id: "payments",
+                label: "Thanh toán",
+                icon: "fa-credit-card",
+                action: paymentByType[code] || paymentByType.internet,
+            },
+            { id: "alerts", label: "Cảnh báo", icon: "fa-bell", action: false },
+        ];
+        if (code === "internet") {
+            items.splice(1, 0, {
+                id: "calendar",
+                label: "Calendar",
+                icon: "fa-calendar",
+                action: "lug_phan_he.action_phan_he_calendar",
+            });
+            items.push(
+                { id: "providers", label: "Nhà cung cấp", icon: "fa-users", action: "lug_phan_he.action_phan_he_provider" },
+                { id: "invoices", label: "Hóa đơn", icon: "fa-list-alt", action: "lug_phan_he.action_phan_he_invoice" },
+                { id: "reports", label: "Báo cáo", icon: "fa-bar-chart", action: false },
+                { id: "config", label: "Cấu hình", icon: "fa-cog", action: "lug_phan_he.action_phan_he_mien" },
+            );
+        }
+        return items;
     }
 
     get alertCount() {
@@ -80,7 +156,16 @@ export class PhanHeDashboard extends Component {
     }
 
     onNav(item) {
-        if (!item || item.id === "overview") {
+        if (!item) {
+            return;
+        }
+        if (item.id === "overview") {
+            this.state.activeNav = "overview";
+            return;
+        }
+        if (item.id === "reports") {
+            this.state.activeNav = "reports";
+            this.loadPaymentReport();
             return;
         }
         if (item.id === "alerts") {
@@ -100,6 +185,10 @@ export class PhanHeDashboard extends Component {
     }
 
     async load() {
+        const year = Number(this.state.filters.year || new Date().getFullYear());
+        this.state.filters.year = year;
+        this.state.filters.date_from = yearStartDisplay(year);
+        this.state.filters.date_to = yearEndDisplay(year);
         const dateFrom = displayToIso(this.state.filters.date_from);
         const dateTo = displayToIso(this.state.filters.date_to);
         if (!dateFrom || !dateTo) {
@@ -117,24 +206,156 @@ export class PhanHeDashboard extends Component {
                 mien_id: f.mien_id || false,
                 area_id: f.area_id || false,
                 employee_id: f.employee_id || false,
+                service_type_code: this.serviceTypeCode,
+                app_title: this.actionContext.phan_he_app_title || false,
             }]);
+            if (this.state.data.year) {
+                this.state.filters.year = Number(this.state.data.year);
+            }
             if (this.state.data.date_from) {
                 this.state.filters.date_from = isoToDisplay(this.state.data.date_from);
             }
             if (this.state.data.date_to) {
                 this.state.filters.date_to = isoToDisplay(this.state.data.date_to);
             }
+            if (this.state.activeNav === "reports") {
+                await this.loadPaymentReport({ silent: true });
+            }
         } finally {
             this.state.loading = false;
         }
     }
 
+    _filterPayload() {
+        const f = this.state.filters;
+        return {
+            date_from: displayToIso(f.date_from),
+            date_to: displayToIso(f.date_to),
+            mien_id: f.mien_id || false,
+            area_id: f.area_id || false,
+            employee_id: f.employee_id || false,
+            service_type_code: this.serviceTypeCode,
+        };
+    }
+
+    async loadPaymentReport({ silent = false } = {}) {
+        const payload = this._filterPayload();
+        if (!payload.date_from || !payload.date_to) {
+            this.notification.add("Ngày phải theo định dạng dd/mm/yyyy (ví dụ 01/01/2026).", {
+                type: "warning",
+            });
+            return;
+        }
+        if (!silent) {
+            this.state.loading = true;
+        }
+        try {
+            this.state.paymentReport = await this.orm.call(
+                "phan.he.dashboard",
+                "get_payment_status_report",
+                [payload]
+            );
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được báo cáo thanh toán.",
+                { type: "danger" }
+            );
+        } finally {
+            if (!silent) {
+                this.state.loading = false;
+            }
+        }
+    }
+
+    openPayment(row) {
+        if (!row?.id) {
+            return;
+        }
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "phan.he.payment",
+            res_id: row.id,
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
+    formatIsoDate(value) {
+        return isoToDisplay(value) || "—";
+    }
+
+    async onYearChange(ev) {
+        const year = Number(ev.target.value || new Date().getFullYear());
+        this.state.filters.year = year;
+        await this.load();
+    }
+
+    _downloadBase64Excel(b64, filename) {
+        const binary = atob(b64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+        }
+        const blob = new Blob([bytes], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename || "Bang_tong_hop_chi_phi.xlsx";
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    async onExportExcel() {
+        if (this.state.exporting) {
+            return;
+        }
+        this.state.exporting = true;
+        try {
+            const year = Number(this.state.filters.year || new Date().getFullYear());
+            const result = await this.orm.call(
+                "phan.he.dashboard",
+                "export_monthly_cost_excel",
+                [{
+                    date_from: `${year}-01-01`,
+                    date_to: `${year}-12-31`,
+                    mien_id: this.state.filters.mien_id || false,
+                    area_id: this.state.filters.area_id || false,
+                    employee_id: this.state.filters.employee_id || false,
+                    service_type_code: this.serviceTypeCode,
+                    app_title: this.actionContext.phan_he_app_title || false,
+                }]
+            );
+            if (!result?.file_base64) {
+                throw new Error("Không nhận được file Excel.");
+            }
+            this._downloadBase64Excel(result.file_base64, result.filename);
+            this.notification.add("Đã xuất file Excel.", { type: "success" });
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không xuất được Excel.",
+                { type: "danger" }
+            );
+        } finally {
+            this.state.exporting = false;
+        }
+    }
+
     async onFilter() {
+        // Đồng bộ năm từ date_from nếu user đổi khoảng ngày ở thanh lọc trên
+        const iso = displayToIso(this.state.filters.date_from);
+        if (iso) {
+            this.state.filters.year = Number(iso.slice(0, 4));
+        }
         await this.load();
     }
 
     async onRefresh() {
         const year = new Date().getFullYear();
+        this.state.filters.year = year;
         this.state.filters.date_from = yearStartDisplay(year);
         this.state.filters.date_to = yearEndDisplay(year);
         this.state.filters.mien_id = "";

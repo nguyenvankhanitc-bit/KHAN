@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeAccessMatrix">
+        <div class="o_phan_he_access o_action">
+            <header class="o_phan_he_access_header">
+                <div>
+                    <p class="o_phan_he_access_eyebrow">Cấu hình hệ thống</p>
+                    <h1>Phân quyền truy cập theo phân hệ dịch vụ</h1>
+                    <p>Mỗi dịch vụ thả xuống để chỉ định user và cấp Xem / Thêm / Sửa / Xóa.</p>
+                </div>
+                <div class="o_phan_he_access_tools">
+                    <button type="button" class="btn btn-secondary" t-on-click="openList">
+                        Danh sách bảng quyền
+                    </button>
+                </div>
+            </header>
+
+            <t t-if="state.error">
+                <div class="o_phan_he_access_loading" t-esc="state.error"/>
+            </t>
+            <t t-elif="state.loading">
+                <div class="o_phan_he_access_loading">Đang tải...</div>
+            </t>
+            <t t-else="">
+                <div class="o_phan_he_access_table_wrap">
+                    <div class="o_phan_he_access_list">
+                        <t t-foreach="state.services" t-as="service" t-key="service.service_code">
+                            <div class="o_phan_he_access_item"
+                                 t-att-class="this.isOpen(service) ? 'is-open' : ''">
+                                <button type="button"
+                                        class="o_phan_he_access_item_head o_phan_he_access_item_head_service"
+                                        t-on-click="() => this.toggleDropdown(service)">
+                                    <div class="o_phan_he_access_service_cell">
+                                        <img t-att-src="service.icon_url" t-att-alt="service.service_name"/>
+                                        <span t-esc="service.service_name"/>
+                                        <i class="fa fa-chevron-down o_phan_he_access_chevron"/>
+                                    </div>
+                                    <div class="o_phan_he_access_summary"
+                                         t-esc="this.serviceSummary(service)"/>
+                                </button>
+
+                                <t t-if="this.isOpen(service)">
+                                    <div class="o_phan_he_access_item_body">
+                                        <div class="o_phan_he_access_assign">
+                                            <select t-att-value="state.pickUser[service.service_code] || ''"
+                                                    t-on-change="(ev) => this.onPickUser(service, ev)">
+                                                <option value="">— Chọn user —</option>
+                                                <t t-foreach="this.availableUsers(service)" t-as="u" t-key="u.id">
+                                                    <option t-att-value="u.id" t-esc="u.name"/>
+                                                </t>
+                                            </select>
+                                            <button type="button"
+                                                    class="btn btn-primary"
+                                                    t-on-click="() => this.addUser(service)">
+                                                Thêm user
+                                            </button>
+                                        </div>
+
+                                        <div class="o_phan_he_access_user_table">
+                                            <div class="o_phan_he_access_user_row is-head">
+                                                <div>User được chỉ định</div>
+                                                <div>Xem</div>
+                                                <div>Thêm</div>
+                                                <div>Sửa</div>
+                                                <div>Xóa</div>
+                                                <div/>
+                                            </div>
+                                            <t t-if="!service.users.length">
+                                                <div class="o_phan_he_access_empty">
+                                                    Chưa có user được chỉ định cho dịch vụ này.
+                                                </div>
+                                            </t>
+                                            <t t-else="">
+                                                <t t-foreach="service.users" t-as="row" t-key="row.line_id">
+                                                    <div class="o_phan_he_access_user_row">
+                                                        <div class="o_phan_he_access_user_cell">
+                                                            <span class="o_phan_he_access_avatar"
+                                                                  t-esc="this.userInitial(row.user_name)"/>
+                                                            <strong t-esc="row.user_name"/>
+                                                        </div>
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="o_phan_he_access_check"
+                                                                    t-att-class="row.perm_view ? 'is-on' : ''"
+                                                                    t-on-click="() => this.toggle(service, row, 'perm_view')">
+                                                                <t t-if="row.perm_view">✓</t>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="o_phan_he_access_check"
+                                                                    t-att-class="row.perm_create ? 'is-on' : ''"
+                                                                    t-on-click="() => this.toggle(service, row, 'perm_create')">
+                                                                <t t-if="row.perm_create">✓</t>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="o_phan_he_access_check"
+                                                                    t-att-class="row.perm_edit ? 'is-on' : ''"
+                                                                    t-on-click="() => this.toggle(service, row, 'perm_edit')">
+                                                                <t t-if="row.perm_edit">✓</t>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="o_phan_he_access_check"
+                                                                    t-att-class="row.perm_delete ? 'is-on' : ''"
+                                                                    t-on-click="() => this.toggle(service, row, 'perm_delete')">
+                                                                <t t-if="row.perm_delete">✓</t>
+                                                            </button>
+                                                        </div>
+                                                        <div>
+                                                            <button type="button"
+                                                                    class="btn btn-link btn-sm text-danger"
+                                                                    t-on-click="() => this.removeUser(service, row)">
+                                                                Gỡ
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </t>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

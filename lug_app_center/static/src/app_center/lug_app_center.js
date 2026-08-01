@@ -36,7 +36,7 @@ const SIDEBAR_ICONS = {
     "crm.crm_menu_root": "fa-handshake-o",
     "point_of_sale.menu_point_root": "fa-shopping-basket",
     "lug_email_account.menu_lug_email_root": "fa-envelope",
-    "lug_phan_he.menu_phan_he_root": "fa-globe",
+    "lug_phan_he.menu_phan_he_root": "fa-th-large",
 };
 
 export class LugAppCenter extends Component {
@@ -100,11 +100,47 @@ export class LugAppCenter extends Component {
 
     /**
      * Resolve app icon for the grid.
-     * Odoo falls back to default_icon_app.png when ir.ui.menu.web_icon_data
-     * is missing, even if webIcon is still "module,static/.../icon.png".
-     * On some servers attachments are empty → purple box icons; resolve path.
+     * Prefer known static icons (bypass stale webIconData session cache).
      */
     _resolveAppIcon(app) {
+        const STATIC_APP_ICONS = {
+            "lug_phan_he.menu_phan_he_root":
+                "/lug_phan_he/static/description/icon.png?v=phanhe63",
+        };
+        if (app.xmlid && STATIC_APP_ICONS[app.xmlid]) {
+            return { type: "img", src: STATIC_APP_ICONS[app.xmlid] };
+        }
+
+        const webIcon = app.webIcon;
+        if (typeof webIcon === "string" && webIcon.includes(",")) {
+            const parts = webIcon.split(",").map((p) => p.trim());
+            if (parts.length === 2) {
+                const [moduleName, iconPath] = parts;
+                if (moduleName && iconPath && !moduleName.startsWith("fa") && !iconPath.startsWith("#")) {
+                    return {
+                        type: "img",
+                        src: `/${moduleName}/${iconPath}`,
+                    };
+                }
+            }
+            if (parts.length >= 3) {
+                return {
+                    type: "fa",
+                    iconClass: parts[0] || "fa fa-th-large",
+                    color: parts[1] || "#FFFFFF",
+                    backgroundColor: parts[2] || "#714B67",
+                };
+            }
+        }
+        if (webIcon && typeof webIcon === "object") {
+            return {
+                type: "fa",
+                iconClass: webIcon.iconClass || "fa fa-th-large",
+                color: webIcon.color || "#FFFFFF",
+                backgroundColor: webIcon.backgroundColor || "#714B67",
+            };
+        }
+
         const rawData = app.webIconData || "";
         const hasRealImage =
             rawData &&
@@ -120,36 +156,6 @@ export class LugAppCenter extends Component {
                 type: "img",
                 src: `data:${mime};base64,${String(rawData).replace(/\s/g, "")}`,
             };
-        }
-
-        const webIcon = app.webIcon;
-        if (webIcon && typeof webIcon === "object") {
-            return {
-                type: "fa",
-                iconClass: webIcon.iconClass || "fa fa-th-large",
-                color: webIcon.color || "#FFFFFF",
-                backgroundColor: webIcon.backgroundColor || "#714B67",
-            };
-        }
-
-        if (typeof webIcon === "string" && webIcon.includes(",")) {
-            const parts = webIcon.split(",").map((p) => p.trim());
-            if (parts.length === 2) {
-                const [moduleName, iconPath] = parts;
-                // Image path: "mail,static/description/icon.png"
-                if (moduleName && iconPath && !moduleName.startsWith("fa")) {
-                    return { type: "img", src: `/${moduleName}/${iconPath}` };
-                }
-            }
-            if (parts.length >= 3) {
-                // Font Awesome: "fa fa-users,#fff,#714B67"
-                return {
-                    type: "fa",
-                    iconClass: parts[0] || "fa fa-th-large",
-                    color: parts[1] || "#FFFFFF",
-                    backgroundColor: parts[2] || "#714B67",
-                };
-            }
         }
 
         return { type: "img", src: DEFAULT_APP_ICON };

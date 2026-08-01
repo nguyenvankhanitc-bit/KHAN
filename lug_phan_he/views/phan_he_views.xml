@@ -547,18 +547,6 @@
         </field>
     </record>
 
-    <record id="view_phan_he_service_tracking_form" model="ir.ui.view">
-        <field name="name">phan.he.service.tracking.form</field>
-        <field name="model">phan.he.service</field>
-        <field name="mode">primary</field>
-        <field name="inherit_id" ref="view_phan_he_service_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//form" position="attributes">
-                <attribute name="string">Nhập liệu hợp đồng / Internet</attribute>
-            </xpath>
-        </field>
-    </record>
-
     <!-- FORM NHẬP LIỆU đúng cột Excel -->
     <record id="view_phan_he_service_entry_form" model="ir.ui.view">
         <field name="name">phan.he.service.entry.form</field>
@@ -837,6 +825,19 @@
                 </sheet>
                 <chatter/>
             </form>
+        </field>
+    </record>
+
+    <!-- Phải đặt SAU view_phan_he_service_form (inherit) -->
+    <record id="view_phan_he_service_tracking_form" model="ir.ui.view">
+        <field name="name">phan.he.service.tracking.form</field>
+        <field name="model">phan.he.service</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="view_phan_he_service_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="string">Nhập liệu hợp đồng / Internet</attribute>
+            </xpath>
         </field>
     </record>
 

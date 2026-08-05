@@ -22,16 +22,22 @@ export class DailyWorkAssign extends Component {
         this.orm = useService("orm");
         this.notification = useService("notification");
         this.assigneeBoxRef = useRef("assigneeBox");
+        this.layoutBoxRef = useRef("layoutBox");
         this._onDocPointerDown = this._onDocPointerDown.bind(this);
+        this._onSplitterMove = this._onSplitterMove.bind(this);
+        this._onSplitterUp = this._onSplitterUp.bind(this);
+        this._splitterDragging = false;
         this.state = useState({
             loading: true,
             saving: false,
             employees: [],
             departments: [],
+            workGroups: [],
             priorities: [],
             states: [],
             tasks: [],
             filterAssignee: 0,
+            leftWidth: this._loadLeftWidth(),
             form: this.emptyForm(),
             assigneeQuery: "",
             assigneeOpen: false,
@@ -45,7 +51,88 @@ export class DailyWorkAssign extends Component {
         });
         onWillUnmount(() => {
             document.removeEventListener("pointerdown", this._onDocPointerDown);
+            this._stopSplitterDrag();
         });
+    }
+
+    _loadLeftWidth() {
+        try {
+            const raw = window.localStorage.getItem("daily_work_assign_left_width");
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 240 && n <= 720) {
+                return Math.round(n);
+            }
+        } catch {
+            // ignore
+        }
+        return 340;
+    }
+
+    _saveLeftWidth(width) {
+        try {
+            window.localStorage.setItem("daily_work_assign_left_width", String(width));
+        } catch {
+            // ignore
+        }
+    }
+
+    _clampLeftWidth(width) {
+        const layout = this.layoutBoxRef.el;
+        const maxByLayout = layout
+            ? Math.max(280, Math.floor(layout.getBoundingClientRect().width - 320))
+            : 720;
+        const min = 240;
+        const max = Math.min(720, maxByLayout);
+        return Math.max(min, Math.min(max, Math.round(width)));
+    }
+
+    onSplitterPointerDown(ev) {
+        if (ev.button !== undefined && ev.button !== 0) {
+            return;
+        }
+        // Nút mũi tên dùng click riêng — không bắt đầu kéo
+        if (ev.target.closest(".o_dwa_splitter_btn")) {
+            return;
+        }
+        ev.preventDefault();
+        this._splitterDragging = true;
+        document.body.classList.add("o_dwa_resizing");
+        document.addEventListener("pointermove", this._onSplitterMove);
+        document.addEventListener("pointerup", this._onSplitterUp);
+        document.addEventListener("pointercancel", this._onSplitterUp);
+    }
+
+    _onSplitterMove(ev) {
+        if (!this._splitterDragging) {
+            return;
+        }
+        const layout = this.layoutBoxRef.el;
+        if (!layout) {
+            return;
+        }
+        const left = layout.getBoundingClientRect().left;
+        this.state.leftWidth = this._clampLeftWidth(ev.clientX - left);
+    }
+
+    _onSplitterUp() {
+        if (!this._splitterDragging) {
+            return;
+        }
+        this._stopSplitterDrag();
+        this._saveLeftWidth(this.state.leftWidth);
+    }
+
+    _stopSplitterDrag() {
+        this._splitterDragging = false;
+        document.body.classList.remove("o_dwa_resizing");
+        document.removeEventListener("pointermove", this._onSplitterMove);
+        document.removeEventListener("pointerup", this._onSplitterUp);
+        document.removeEventListener("pointercancel", this._onSplitterUp);
+    }
+
+    nudgeSplitter(delta) {
+        this.state.leftWidth = this._clampLeftWidth(this.state.leftWidth + delta);
+        this._saveLeftWidth(this.state.leftWidth);
     }
 
     emptyForm() {
@@ -54,18 +141,87 @@ export class DailyWorkAssign extends Component {
             deadline: "",
             department_id: 0,
             assignee_id: 0,
+            work_group_id: "",
             priority: "medium",
             state: "not_started",
             note: "",
         };
     }
 
+    get filteredWorkGroups() {
+        const deptId = Number(this.state.form.department_id) || 0;
+        if (!deptId) {
+            return [];
+        }
+        return this.state.workGroups.filter(
+            (g) => Number(g.department_id) === deptId
+        );
+    }
+
     get filteredTasks() {
         const aid = Number(this.state.filterAssignee) || 0;
+        const tasks = [...(this.state.tasks || [])].sort((a, b) => {
+            const da = a.deadline || "9999-99-99";
+            const db = b.deadline || "9999-99-99";
+            if (da !== db) {
+                return da < db ? -1 : 1;
+            }
+            return (a.id || 0) - (b.id || 0);
+        });
         if (!aid) {
-            return this.state.tasks;
+            return tasks;
         }
-        return this.state.tasks.filter((t) => t.hr_employee_id === aid);
+        return tasks.filter((t) => Number(t.hr_employee_id) === aid);
+    }
+
+    /** Nhóm việc theo nhân sự — mỗi nhóm là trình đơn thả xuống, việc sắp theo hạn tăng dần. */
+    get taskGroups() {
+        const map = new Map();
+        for (const task of this.filteredTasks) {
+            const key = Number(task.hr_employee_id) || 0;
+            if (!map.has(key)) {
+                map.set(key, {
+                    key,
+                    assignee_name: task.assignee_name || "Chưa gán",
+                    department_label: task.department_label || "",
+                    tasks: [],
+                });
+            }
+            map.get(key).tasks.push(task);
+        }
+        const groups = [...map.values()];
+        groups.sort((a, b) =>
+            String(a.assignee_name || "").localeCompare(String(b.assignee_name || ""), "vi")
+        );
+        for (const g of groups) {
+            g.tasks.sort((a, b) => {
+                const da = a.deadline || "9999-99-99";
+                const db = b.deadline || "9999-99-99";
+                if (da !== db) {
+                    return da < db ? -1 : 1;
+                }
+                return (a.id || 0) - (b.id || 0);
+            });
+        }
+        return groups;
+    }
+
+    /** Dropdown lọc: chỉ nhân viên đang có việc chưa hoàn thành. */
+    get assigneeFilterOptions() {
+        const seen = new Map();
+        for (const t of this.state.tasks || []) {
+            const id = Number(t.hr_employee_id) || 0;
+            if (!id || seen.has(id)) {
+                continue;
+            }
+            seen.set(id, {
+                id,
+                name: t.assignee_name || `NV #${id}`,
+            });
+        }
+        return [...seen.values()].sort((a, b) =>
+            String(a.name).localeCompare(String(b.name), "vi")
+        );
     }
 
     get selectedAssignee() {
@@ -109,11 +265,26 @@ export class DailyWorkAssign extends Component {
             const data = await this.orm.call("daily.task", "get_assign_bootstrap", []);
             this.state.employees = data.employees || [];
             this.state.departments = data.departments || [];
+            this.state.workGroups = data.work_groups || [];
             this.state.priorities = data.priorities || [];
             this.state.states = data.states || [];
             this.state.tasks = data.tasks || [];
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    _syncWorkGroupWithDepartment() {
+        const deptId = Number(this.state.form.department_id) || 0;
+        const wgId = Number(this.state.form.work_group_id) || 0;
+        if (!wgId) {
+            return;
+        }
+        const match = this.state.workGroups.find(
+            (g) => Number(g.id) === wgId && Number(g.department_id) === deptId
+        );
+        if (!match) {
+            this.state.form.work_group_id = "";
         }
     }
 
@@ -191,11 +362,13 @@ export class DailyWorkAssign extends Component {
         this.state.assigneeHighlight = -1;
         // Auto Bộ phận theo hồ sơ nhân viên
         this.state.form.department_id = emp.department_id ? Number(emp.department_id) : 0;
+        this._syncWorkGroupWithDepartment();
     }
 
     clearAssignee() {
         this.state.form.assignee_id = 0;
         this.state.form.department_id = 0;
+        this.state.form.work_group_id = "";
         this.state.assigneeQuery = "";
         this.state.assigneeOpen = false;
         this.state.assigneeHighlight = -1;
@@ -244,6 +417,7 @@ export class DailyWorkAssign extends Component {
                     deadline: f.deadline,
                     department_id: Number(f.department_id) || false,
                     assignee_id: Number(f.assignee_id),
+                    work_group_id: Number(f.work_group_id) || false,
                     priority: f.priority,
                     state: f.state || "not_started",
                     note: f.note,
@@ -254,10 +428,12 @@ export class DailyWorkAssign extends Component {
                 "nhân viên";
             const keptAssigneeId = f.assignee_id;
             const keptDept = f.department_id;
+            const keptWorkGroup = f.work_group_id;
             this.state.form = {
                 ...this.emptyForm(),
                 department_id: keptDept,
                 assignee_id: keptAssigneeId,
+                work_group_id: keptWorkGroup,
                 priority: "medium",
                 state: "not_started",
             };

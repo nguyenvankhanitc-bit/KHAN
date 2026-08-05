@@ -3,27 +3,22 @@
     <t t-name="daily_work_task.DailyWorkAssign">
         <div class="o_daily_work_assign o_action">
             <div class="o_content o_dwa_scroll">
-                <div class="o_dwa_header">
-                    <h2>
-                        <i class="fa fa-share-square-o"/> Giao việc cho nhân viên
-                    </h2>
-                    <p class="o_dwa_subtitle">
-                        Nhập thông tin bên trái — công việc sẽ xuất hiện trong
-                        <strong>Nhân viên nhập CV</strong> của người được giao.
-                    </p>
-                </div>
-
                 <t t-if="state.loading">
                     <div class="text-center p-5">
                         <i class="fa fa-spinner fa-spin fa-2x"/>
                     </div>
                 </t>
                 <t t-else="">
-                    <div class="o_dwa_layout">
+                    <div class="o_dwa_layout" t-ref="layoutBox"
+                         t-att-style="'--o-dwa-left-width:' + state.leftWidth + 'px'">
                         <aside class="o_dwa_form_panel">
                             <h3 class="o_dwa_form_title">
                                 <i class="fa fa-pencil-square-o"/> Phiếu giao việc
                             </h3>
+                            <p class="o_dwa_panel_hint">
+                                Điền phiếu bên trái — việc sẽ vào
+                                <strong>Nhân viên nhập CV</strong> của người được giao.
+                            </p>
                             <form t-on-submit="onSubmit">
                                 <div class="o_dwa_field">
                                     <label>Tên công việc <span class="text-danger">*</span></label>
@@ -102,6 +97,27 @@
                                     <small class="text-muted">Tự động theo hồ sơ nhân viên được chọn.</small>
                                 </div>
                                 <div class="o_dwa_field">
+                                    <label>Hạng mục</label>
+                                    <select class="form-select" t-model="state.form.work_group_id"
+                                            t-att-disabled="!filteredWorkGroups.length">
+                                        <option value="">-- Chọn hạng mục --</option>
+                                        <t t-foreach="filteredWorkGroups" t-as="g" t-key="g.id">
+                                            <option t-att-value="g.id" t-esc="g.name"/>
+                                        </t>
+                                    </select>
+                                    <small class="text-muted">
+                                        <t t-if="!selectedAssignee">
+                                            Chọn nhân viên trước để tải hạng mục theo bộ phận.
+                                        </t>
+                                        <t t-elif="!filteredWorkGroups.length">
+                                            Bộ phận này chưa có hạng mục — thêm tại Dashboard / Hạng mục.
+                                        </t>
+                                        <t t-else="">
+                                            Lọc theo bộ phận của nhân viên được giao.
+                                        </t>
+                                    </small>
+                                </div>
+                                <div class="o_dwa_field">
                                     <label>Mức độ ưu tiên</label>
                                     <select class="form-select" t-model="state.form.priority">
                                         <t t-foreach="state.priorities" t-as="p" t-key="p.value">
@@ -132,16 +148,43 @@
                             </form>
                         </aside>
 
+                        <div class="o_dwa_splitter"
+                             title="Kéo trái/phải để đổi kích thước"
+                             t-on-pointerdown="onSplitterPointerDown">
+                            <button type="button" class="o_dwa_splitter_btn"
+                                    title="Thu hẹp phiếu"
+                                    t-on-click.stop="() => this.nudgeSplitter(-40)">
+                                <i class="fa fa-caret-left"/>
+                            </button>
+                            <span class="o_dwa_splitter_grip">
+                                <i class="fa fa-ellipsis-v"/>
+                            </span>
+                            <button type="button" class="o_dwa_splitter_btn"
+                                    title="Mở rộng phiếu"
+                                    t-on-click.stop="() => this.nudgeSplitter(40)">
+                                <i class="fa fa-caret-right"/>
+                            </button>
+                        </div>
+
                         <section class="o_dwa_table_panel">
+                            <div class="o_dwa_right_head">
+                                <h2 class="o_dwa_right_title">
+                                    <i class="fa fa-share-square-o"/> Giao việc cho nhân viên
+                                </h2>
+                                <p class="o_dwa_panel_hint">
+                                    Danh sách việc đã giao — nhóm theo nhân sự, hạn từ sớm đến muộn.
+                                </p>
+                            </div>
                             <div class="o_dwa_table_head">
                                 <h3 class="o_dwa_table_title">
                                     <i class="fa fa-list"/> Việc đã giao (chưa hoàn thành)
                                 </h3>
                                 <div class="o_dwa_table_actions">
                                     <select class="form-select form-select-sm o_dwa_filter"
-                                            t-model="state.filterAssignee">
+                                            t-model="state.filterAssignee"
+                                            title="Lọc theo nhân sự">
                                         <option value="0">Tất cả nhân viên</option>
-                                        <t t-foreach="state.employees" t-as="emp" t-key="emp.id">
+                                        <t t-foreach="assigneeFilterOptions" t-as="emp" t-key="emp.id">
                                             <option t-att-value="emp.id" t-esc="emp.name"/>
                                         </t>
                                     </select>
@@ -152,45 +195,59 @@
                                 </div>
                             </div>
                             <div class="o_dwa_table_wrap">
-                                <table class="o_dwa_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Tên công việc</th>
-                                            <th>Hạn</th>
-                                            <th>Người được giao</th>
-                                            <th>Bộ phận</th>
-                                            <th>Ưu tiên</th>
-                                            <th>Trạng thái</th>
-                                            <th>Ghi chú</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-if="!filteredTasks.length">
-                                            <tr>
-                                                <td colspan="7" class="text-center text-muted py-4">
-                                                    Chưa có việc đang giao. Hãy tạo phiếu bên trái.
-                                                </td>
-                                            </tr>
-                                        </t>
-                                        <t t-foreach="filteredTasks" t-as="task" t-key="task.id">
-                                            <tr>
-                                                <td t-esc="task.name"/>
-                                                <td t-esc="task.deadline_display"/>
-                                                <td t-esc="task.assignee_name"/>
-                                                <td t-esc="task.department_label"/>
-                                                <td>
-                                                    <span t-att-class="'o_dwa_badge ' + priorityClass(task.priority)"
-                                                          t-esc="task.priority_label"/>
-                                                </td>
-                                                <td>
-                                                    <span t-att-class="'o_dwa_state_badge ' + stateBadgeClass(task.state)"
-                                                          t-esc="task.state_label"/>
-                                                </td>
-                                                <td t-esc="task.note"/>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
+                                <t t-if="!taskGroups.length">
+                                    <div class="text-center text-muted py-4">
+                                        Chưa có việc đang giao. Hãy tạo phiếu bên trái.
+                                    </div>
+                                </t>
+                                <div class="o_dwa_groups" t-else="">
+                                    <t t-foreach="taskGroups" t-as="group" t-key="group.key">
+                                        <details class="o_dwa_group" open="open">
+                                            <summary class="o_dwa_group_summary">
+                                                <span class="o_dwa_group_title">
+                                                    <i class="fa fa-user"/>
+                                                    <strong t-esc="group.assignee_name"/>
+                                                    <t t-if="group.department_label">
+                                                        <span class="o_dwa_group_dept" t-esc="group.department_label"/>
+                                                    </t>
+                                                </span>
+                                                <span class="o_dwa_group_count">
+                                                    <t t-esc="group.tasks.length"/> việc
+                                                </span>
+                                            </summary>
+                                            <table class="o_dwa_table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Tên công việc</th>
+                                                        <th>Hạng mục</th>
+                                                        <th>Hạn</th>
+                                                        <th>Ưu tiên</th>
+                                                        <th>Trạng thái</th>
+                                                        <th>Ghi chú</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <t t-foreach="group.tasks" t-as="task" t-key="task.id">
+                                                        <tr>
+                                                            <td t-esc="task.name"/>
+                                                            <td t-esc="task.work_group_label || '—'"/>
+                                                            <td t-esc="task.deadline_display"/>
+                                                            <td>
+                                                                <span t-att-class="'o_dwa_badge ' + priorityClass(task.priority)"
+                                                                      t-esc="task.priority_label"/>
+                                                            </td>
+                                                            <td>
+                                                                <span t-att-class="'o_dwa_state_badge ' + stateBadgeClass(task.state)"
+                                                                      t-esc="task.state_label"/>
+                                                            </td>
+                                                            <td t-esc="task.note"/>
+                                                        </tr>
+                                                    </t>
+                                                </tbody>
+                                            </table>
+                                        </details>
+                                    </t>
+                                </div>
                             </div>
                         </section>
                     </div>

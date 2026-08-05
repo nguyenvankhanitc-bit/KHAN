@@ -28,14 +28,14 @@ def _next_vn_8am_as_utc_naive():
 
 def migrate(cr, version):
     nextcall = _next_vn_8am_as_utc_naive()
+    # Odoo 19: ir_cron không còn cột code (nằm trên ir_act_server liên kết)
     cr.execute(
         """
         UPDATE ir_cron
            SET active = TRUE,
                nextcall = %s,
                interval_number = 1,
-               interval_type = 'days',
-               code = 'model.cron_send_morning_reminders()'
+               interval_type = 'days'
          WHERE id IN (
                SELECT res_id
                  FROM ir_model_data
@@ -45,6 +45,20 @@ def migrate(cr, version):
          )
         """,
         (nextcall,),
+    )
+    # Cập nhật code trên server action gắn với cron (nếu có)
+    cr.execute(
+        """
+        UPDATE ir_act_server AS s
+           SET code = 'model.cron_send_morning_reminders()'
+          FROM ir_cron AS c
+          JOIN ir_model_data AS d
+            ON d.res_id = c.id
+           AND d.module = 'daily_work_task'
+           AND d.name = 'ir_cron_daily_work_overdue_mail'
+           AND d.model = 'ir.cron'
+         WHERE s.id = c.ir_actions_server_id
+        """
     )
     _logger.info(
         "daily_work_task: cron nhắc việc sáng nextcall=%s (08:00 giờ VN)",

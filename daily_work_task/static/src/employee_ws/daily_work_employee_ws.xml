@@ -212,15 +212,15 @@
                                         <thead>
                                             <tr>
                                                 <th class="o_ews_col_stt">STT</th>
-                                                <th>Tên công việc</th>
-                                                <th>Ngày giao việc</th>
-                                                <th>Hạn hoàn thành</th>
-                                                <th>Mức ưu tiên</th>
-                                                <th>Thời gian (phút)</th>
-                                                <th>Tổng TG (giờ)</th>
-                                                <th>% hoàn thành CV</th>
+                                                <th class="o_ews_col_name">Tên công việc</th>
+                                                <th class="o_ews_col_date">Ngày giao việc</th>
+                                                <th class="o_ews_col_date">Hạn hoàn thành</th>
+                                                <th class="o_ews_col_priority">Mức ưu tiên</th>
+                                                <th class="o_ews_col_minutes">Thời gian (phút)</th>
+                                                <th class="o_ews_col_hours">Tổng TG (giờ)</th>
+                                                <th class="o_ews_col_pct">% hoàn thành CV</th>
                                                 <th class="o_ews_col_state">Trạng thái công việc</th>
-                                                <th>Ghi chú</th>
+                                                <th class="o_ews_col_note">Ghi chú</th>
                                                 <th class="o_ews_col_action">Thao tác</th>
                                             </tr>
                                         </thead>
@@ -235,27 +235,27 @@
                                             <t t-foreach="state.tasks" t-as="task" t-key="task.id">
                                                 <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id}">
                                                     <td class="o_ews_col_stt" t-esc="task.stt"/>
-                                                    <td>
+                                                    <td class="o_ews_col_name">
                                                         <t t-esc="task.name"/>
                                                         <span t-if="task.is_from_recurring" class="o_ews_recurring_tag" title="Sinh từ mẫu lặp">
                                                             <i class="fa fa-refresh"/> Lặp
                                                         </span>
                                                     </td>
-                                                    <td t-esc="task.assign_date_display || '—'"/>
-                                                    <td t-esc="task.deadline_display"/>
-                                                    <td>
+                                                    <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
+                                                    <td class="o_ews_col_date" t-esc="task.deadline_display"/>
+                                                    <td class="o_ews_col_priority">
                                                         <span t-att-class="'o_ews_badge ' + priorityClass(task.priority)"
                                                               t-esc="task.priority_label"/>
                                                     </td>
-                                                    <td>
+                                                    <td class="o_ews_col_minutes">
                                                         <input type="number" class="form-control form-control-sm o_ews_minutes_input"
                                                                min="0" step="1"
                                                                t-att-value="task.duration_minutes || 0"
                                                                t-on-change="(ev) => this.onDurationChange(task, ev)"/>
                                                     </td>
-                                                    <td class="o_ews_hours_cell"
+                                                    <td class="o_ews_col_hours o_ews_hours_cell"
                                                         t-esc="task.duration_hours_display || formatHours(task.duration_minutes)"/>
-                                                    <td class="o_ews_pct_cell">
+                                                    <td class="o_ews_col_pct o_ews_pct_cell">
                                                         <div class="o_ews_pct_wrap">
                                                             <input type="number"
                                                                    class="form-control form-control-sm o_ews_pct_input"
@@ -280,7 +280,7 @@
                                                             </t>
                                                         </select>
                                                     </td>
-                                                    <td t-esc="task.note"/>
+                                                    <td class="o_ews_col_note" t-esc="task.note"/>
                                                     <td class="o_ews_col_action">
                                                         <div t-if="task.can_edit_details !== false"
                                                              class="o_ews_row_actions">

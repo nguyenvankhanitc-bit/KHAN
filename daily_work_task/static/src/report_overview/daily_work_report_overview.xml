@@ -19,6 +19,16 @@
                         <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('calendar')">
                             <i class="fa fa-calendar"/><span>Lịch làm việc</span>
                         </button>
+                        <button type="button" t-att-class="'o_dro_nav_item' + (state.nav === 'kanban' ? ' active' : '')"
+                                t-on-click="() => this.openNav('kanban')">
+                            <i class="fa fa-th-large"/><span>Kanban</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('notebook')">
+                            <i class="fa fa-address-book"/><span>Danh bạ</span>
+                        </button>
+                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('work_note')">
+                            <i class="fa fa-sticky-note"/><span>Ghi chú</span>
+                        </button>
                         <button type="button" t-att-class="'o_dro_nav_item o_dro_nav_reminders' + (state.nav === 'reminders' ? ' active' : '')"
                                 t-on-click="() => this.openNav('reminders')">
                             <span class="o_dro_nav_bell_wrap">
@@ -297,6 +307,89 @@
                                                 </tbody>
                                             </table>
                                         </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <t t-elif="state.nav === 'kanban'">
+                                <div class="o_dro_kanban_page">
+                                    <div class="o_dro_kanban_head">
+                                        <div>
+                                            <h2><i class="fa fa-th-large"/> Kanban công việc</h2>
+                                            <p class="o_dro_muted mb-0">
+                                                Xem theo trạng thái — bấm nút trên thẻ để chuyển cột.
+                                            </p>
+                                        </div>
+                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                t-on-click="onOpenFullKanban">
+                                            <i class="fa fa-external-link"/> Mở Kanban đầy đủ
+                                        </button>
+                                    </div>
+                                    <div class="o_dro_kanban_board">
+                                        <t t-foreach="kanbanColumns" t-as="col" t-key="col.key">
+                                            <section t-att-class="'o_dro_kanban_col o_dro_kanban_' + col.className">
+                                                <header class="o_dro_kanban_col_head">
+                                                    <strong t-esc="col.label"/>
+                                                    <span class="o_dro_kanban_count" t-esc="col.tasks.length"/>
+                                                </header>
+                                                <div class="o_dro_kanban_col_body">
+                                                    <t t-if="!col.tasks.length">
+                                                        <div class="o_dro_kanban_empty">Không có việc</div>
+                                                    </t>
+                                                    <t t-foreach="col.tasks" t-as="row" t-key="'kb-' + row.id">
+                                                        <article t-att-class="'o_dro_kanban_card' + (row.is_overdue ? ' overdue' : '')">
+                                                            <div class="o_dro_kanban_card_top">
+                                                                <strong class="o_dro_kanban_title" t-esc="row.name"/>
+                                                                <span t-att-class="'o_dro_pri ' + priorityClass(row.priority)"
+                                                                      t-esc="row.priority_label"/>
+                                                            </div>
+                                                            <div class="o_dro_kanban_meta">
+                                                                <div t-if="row.work_group_label">
+                                                                    <i class="fa fa-folder-o"/> <t t-esc="row.work_group_label"/>
+                                                                </div>
+                                                                <div t-att-class="row.is_overdue ? 'text-danger fw-bold' : ''">
+                                                                    <i class="fa fa-calendar"/> Hạn: <t t-esc="row.deadline_display || '—'"/>
+                                                                    <t t-if="row.is_overdue"> · Quá hạn</t>
+                                                                </div>
+                                                                <div t-if="row.duration_hours_display">
+                                                                    <i class="fa fa-clock-o"/> <t t-esc="row.duration_hours_display"/> giờ
+                                                                </div>
+                                                            </div>
+                                                            <div class="o_dro_kanban_pct" t-if="row.completion_percent">
+                                                                <div class="o_dro_pct_bar">
+                                                                    <div t-att-class="'o_dro_pct_fill ' + progressBarClass(row.completion_percent)"
+                                                                         t-att-style="'width:' + (row.completion_percent || 0) + '%'"/>
+                                                                </div>
+                                                                <span t-esc="(row.completion_percent || 0) + '%'"/>
+                                                            </div>
+                                                            <div class="o_dro_kanban_actions">
+                                                                <button type="button" class="btn btn-sm btn-light"
+                                                                        t-on-click="() => this.onView(row)" title="Xem">
+                                                                    <i class="fa fa-eye"/>
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-secondary"
+                                                                        t-if="row.state !== 'not_started'"
+                                                                        t-on-click="() => this.onKanbanSetState(row, 'not_started')"
+                                                                        title="Chưa bắt đầu">
+                                                                    Chưa bắt đầu
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-primary"
+                                                                        t-if="row.state !== 'in_progress'"
+                                                                        t-on-click="() => this.onKanbanSetState(row, 'in_progress')"
+                                                                        title="Đang xử lý">
+                                                                    Đang xử lý
+                                                                </button>
+                                                                <button type="button" class="btn btn-sm btn-success"
+                                                                        t-if="row.state !== 'done'"
+                                                                        t-on-click="() => this.onKanbanSetState(row, 'done')"
+                                                                        title="Hoàn thành">
+                                                                    Hoàn thành
+                                                                </button>
+                                                            </div>
+                                                        </article>
+                                                    </t>
+                                                </div>
+                                            </section>
+                                        </t>
                                     </div>
                                 </div>
                             </t>

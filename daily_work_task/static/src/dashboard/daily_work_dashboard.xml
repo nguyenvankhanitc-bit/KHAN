@@ -93,6 +93,9 @@
                             <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('calendar')">
                                 <i class="fa fa-calendar-check-o"/><span>Calendar To Do List</span>
                             </button>
+                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('kanban')">
+                                <i class="fa fa-th-large"/><span>Kanban công việc</span>
+                            </button>
                         </div>
                         <div class="o_dwd_side_section">
                             <div class="o_dwd_side_label">BÁO CÁO</div>

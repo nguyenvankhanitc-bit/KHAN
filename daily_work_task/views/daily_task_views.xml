@@ -81,33 +81,77 @@
         </field>
     </record>
 
-    <!-- Kanban by state -->
+    <!-- Kanban theo trạng thái -->
     <record id="view_daily_task_kanban" model="ir.ui.view">
         <field name="name">daily.task.kanban</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" class="o_kanban_small_column" quick_create="false">
+            <kanban default_group_by="state"
+                    class="o_kanban_small_column o_daily_task_kanban"
+                    records_draggable="1"
+                    quick_create="false"
+                    sample="1"
+                    highlight_color="color">
                 <field name="name"/>
+                <field name="assign_date"/>
                 <field name="deadline"/>
                 <field name="assignee_id"/>
+                <field name="department_id"/>
+                <field name="work_group_id"/>
                 <field name="priority"/>
                 <field name="state"/>
                 <field name="color"/>
                 <field name="is_overdue"/>
+                <field name="completion_percent"/>
+                <field name="duration_minutes"/>
+                <field name="duration_hours"/>
+                <field name="note"/>
+                <field name="assigned_by_id"/>
+                <field name="activity_ids"/>
+                <progressbar field="priority"
+                             colors='{"high": "danger", "medium": "warning", "low": "muted"}'/>
                 <templates>
                     <t t-name="card">
-                        <div class="oe_kanban_global_click">
-                            <strong><field name="name"/></strong>
-                            <div class="text-muted">
-                                <field name="deadline"/> — <field name="assignee_id"/>
-                            </div>
-                            <div>
+                        <main t-att-class="record.is_overdue.raw_value ? 'o_daily_kanban_overdue' : ''">
+                            <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
+                                <field name="name" class="fw-bold fs-6"/>
                                 <field name="priority" widget="badge"
                                          decoration-danger="priority == 'high'"
                                          decoration-warning="priority == 'medium'"
                                          decoration-muted="priority == 'low'"/>
                             </div>
-                        </div>
+                            <div class="text-muted small d-flex flex-column gap-1">
+                                <div t-if="record.assignee_id.raw_value">
+                                    <i class="fa fa-user me-1" title="Người phụ trách"/>
+                                    <field name="assignee_id"/>
+                                </div>
+                                <div t-if="record.work_group_id.raw_value">
+                                    <i class="fa fa-folder-o me-1" title="Hạng mục"/>
+                                    <field name="work_group_id"/>
+                                </div>
+                                <div t-if="record.department_id.raw_value">
+                                    <i class="fa fa-building-o me-1" title="Bộ phận"/>
+                                    <field name="department_id"/>
+                                </div>
+                                <div t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
+                                    <i class="fa fa-calendar me-1" title="Hạn hoàn thành"/>
+                                    <field name="deadline"/>
+                                    <span t-if="record.is_overdue.raw_value" class="ms-1 badge text-bg-danger">Quá hạn</span>
+                                </div>
+                            </div>
+                            <div class="mt-2" t-if="record.completion_percent.raw_value">
+                                <field name="completion_percent" widget="progressbar"/>
+                            </div>
+                            <footer class="pt-2 mt-2 border-top d-flex align-items-center justify-content-between gap-2">
+                                <div class="small text-muted text-truncate">
+                                    <t t-if="record.duration_minutes.raw_value">
+                                        <i class="fa fa-clock-o me-1"/>
+                                        <field name="duration_hours"/> giờ
+                                    </t>
+                                </div>
+                                <field name="activity_ids" widget="kanban_activity"/>
+                            </footer>
+                        </main>
                     </t>
                 </templates>
             </kanban>
@@ -161,11 +205,23 @@
     <record id="action_daily_task" model="ir.actions.act_window">
         <field name="name">Quản lý dữ liệu công việc</field>
         <field name="res_model">daily.task</field>
-        <field name="view_mode">list,kanban,form,calendar</field>
+        <field name="view_mode">kanban,list,form,calendar</field>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Thêm công việc mới</p>
-            <p>Nhập tên, hạn, bộ phận, người phụ trách, ưu tiên và trạng thái.</p>
+            <p>Kéo thả thẻ giữa các cột trạng thái: Chưa bắt đầu → Đang xử lý → Đã hoàn thành.</p>
+        </field>
+    </record>
+
+    <record id="action_daily_task_kanban" model="ir.actions.act_window">
+        <field name="name">Kanban công việc</field>
+        <field name="res_model">daily.task</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="view_daily_task_kanban"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có công việc</p>
+            <p>Xem và kéo thả công việc theo trạng thái trên bảng Kanban.</p>
         </field>
     </record>
 

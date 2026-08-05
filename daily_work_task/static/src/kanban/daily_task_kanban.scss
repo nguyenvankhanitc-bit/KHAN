@@ -1,0 +1,11 @@
+/* Kanban công việc hàng ngày */
+.o_daily_task_kanban {
+    .o_daily_kanban_overdue {
+        border-left: 3px solid #ef4444;
+        padding-left: 8px;
+    }
+
+    .o_kanban_record {
+        border-radius: 10px;
+    }
+}

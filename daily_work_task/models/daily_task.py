@@ -1927,11 +1927,25 @@ class DailyTask(models.Model):
             {"value": k, "label": v}
             for k, v in self._fields["state"].selection
         ]
+        work_groups = self.env["daily.task.work.group"].sudo().search_read(
+            [("active", "=", True)],
+            ["id", "name", "department_id"],
+            order="sequence, name, id",
+        )
+        work_groups = [
+            {
+                "id": g["id"],
+                "name": g["name"] or "",
+                "department_id": g["department_id"][0] if g.get("department_id") else False,
+            }
+            for g in work_groups
+        ]
         return {
             "is_manager": is_manager,
             "my_employee_id": my_emp.id if my_emp else False,
             "employees": employees,
             "departments": departments,
+            "work_groups": work_groups,
             "priorities": priorities,
             "states": states,
             "tasks": self.get_assign_tasks(),
@@ -1996,6 +2010,17 @@ class DailyTask(models.Model):
             row = self.env.cr.fetchone()
             if row and row[0]:
                 department_id = row[0]
+        work_group_id = int(vals.get("work_group_id") or 0) or False
+        if work_group_id:
+            group = self.env["daily.task.work.group"].sudo().browse(work_group_id)
+            if not group.exists() or not group.active:
+                raise ValidationError("Hạng mục công việc không hợp lệ.")
+            if department_id and group.department_id.id != department_id:
+                raise ValidationError(
+                    "Hạng mục phải thuộc cùng bộ phận với nhân viên được giao."
+                )
+            if not department_id and group.department_id:
+                department_id = group.department_id.id
         assigner_uid = self.env.uid
         task = (
             self.with_context(daily_task_assigner_uid=assigner_uid)
@@ -2009,6 +2034,7 @@ class DailyTask(models.Model):
                     "deadline": vals.get("deadline"),
                     "department_id": department_id,
                     "assignee_id": bridge.id,
+                    "work_group_id": work_group_id,
                     "priority": vals.get("priority") or "medium",
                     "state": vals.get("state") or "not_started",
                     "note": vals.get("note") or "",

@@ -19,6 +19,13 @@
               sequence="10"
               groups="daily_work_task.group_daily_work_manager"/>
 
+    <menuitem id="menu_daily_work_kanban"
+              name="Kanban công việc"
+              parent="menu_daily_work_root"
+              action="action_daily_task_kanban"
+              sequence="11"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_assign"
               name="Giao việc"
               parent="menu_daily_work_root"
@@ -156,6 +163,9 @@
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_calendar" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+    <record id="menu_daily_work_kanban" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_overdue" model="ir.ui.menu">

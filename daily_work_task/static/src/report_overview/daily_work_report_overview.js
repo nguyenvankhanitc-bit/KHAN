@@ -475,12 +475,14 @@ export class DailyWorkReportOverview extends Component {
 
     async openNav(key) {
         this.state.nav = key;
-        if (key === "overview" || key === "reminders") {
+        if (key === "overview" || key === "reminders" || key === "kanban") {
             return;
         }
         const map = {
             tasks: "daily_work_employee_ws",
             calendar: "daily_work_calendar",
+            notebook: "daily_work_notebook",
+            work_note: "daily_work_note",
             report: "daily_work_summary_report",
             manager: "daily_work_task_manager",
         };
@@ -490,6 +492,38 @@ export class DailyWorkReportOverview extends Component {
         } else {
             this.notification.add(_t("Mục này sẽ bổ sung sau."), { type: "info" });
         }
+    }
+
+    get kanbanColumns() {
+        const rows = (this.state.rows || []).filter((r) => r.source !== "work_note");
+        const cols = [
+            { key: "not_started", label: "Chưa bắt đầu", className: "todo" },
+            { key: "in_progress", label: "Đang xử lý", className: "progress" },
+            { key: "done", label: "Đã hoàn thành", className: "done" },
+        ];
+        return cols.map((c) => ({
+            ...c,
+            tasks: rows.filter((r) => r.state === c.key),
+        }));
+    }
+
+    async onKanbanSetState(row, newState) {
+        if (!row?.id || row.source === "work_note") {
+            return;
+        }
+        try {
+            await this.orm.write("daily.task", [row.id], { state: newState });
+            await this.load();
+            this.notification.add(_t("Đã cập nhật trạng thái."), { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không cập nhật được trạng thái."), {
+                type: "danger",
+            });
+        }
+    }
+
+    async onOpenFullKanban() {
+        await this.action.doAction("daily_work_task.action_daily_task_kanban");
     }
 
     async onView(row) {

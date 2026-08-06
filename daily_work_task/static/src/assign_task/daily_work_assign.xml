@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkAssign">
-        <div class="o_daily_work_assign o_action">
+        <div t-att-class="'o_daily_work_assign o_action' + (state.viewMode === 'detail' ? ' o_dwa_mode_detail' : '')">
             <div class="o_content o_dwa_scroll">
                 <t t-if="state.loading">
                     <div class="text-center p-5">
@@ -9,6 +9,217 @@
                     </div>
                 </t>
                 <t t-else="">
+                    <t t-if="state.viewMode === 'detail'">
+                        <div class="o_dwa_detail_shell" t-ref="detailShell"
+                             t-att-style="'--o-dwa-detail-left-width:' + state.detailLeftWidth + 'px'">
+                            <aside class="o_dwa_detail_left">
+                                <button type="button" class="btn o_dwa_detail_new"
+                                        t-on-click="closeTaskDetail">
+                                    <i class="fa fa-arrow-left"/> Quay lại phiếu giao
+                                </button>
+                                <div class="o_dwa_detail_filters">
+                                    <div class="o_dwa_detail_filters_title">BỘ LỌC</div>
+                                    <input type="search" class="form-control form-control-sm"
+                                           placeholder="Tìm công việc..."
+                                           t-model="state.detail.filterQuery"/>
+                                    <select class="form-select form-select-sm"
+                                            t-model="state.detail.filterState">
+                                        <option value="">Tất cả trạng thái</option>
+                                        <t t-foreach="state.states" t-as="s" t-key="s.value">
+                                            <option t-att-value="s.value" t-esc="s.label"/>
+                                        </t>
+                                    </select>
+                                    <select class="form-select form-select-sm"
+                                            t-model.number="state.detail.filterAssignee">
+                                        <option value="0">Tất cả nhân viên</option>
+                                        <t t-foreach="assigneeFilterOptions" t-as="emp" t-key="emp.id">
+                                            <option t-att-value="emp.id" t-esc="emp.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dwa_detail_list_title">DANH SÁCH CÔNG VIỆC</div>
+                                <div class="o_dwa_detail_task_list">
+                                    <t t-foreach="detailSidebarTasks" t-as="t" t-key="t.id">
+                                        <button type="button"
+                                                t-att-class="'o_dwa_detail_task_card' + (t.id === state.detail.taskId ? ' active' : '')"
+                                                t-on-click="() => this.selectDetailTask(t)">
+                                            <div class="o_dwa_detail_card_top">
+                                                <strong t-esc="t.name"/>
+                                                <span t-att-class="'o_dwa_badge ' + priorityClass(t.priority)"
+                                                      t-esc="t.priority_label"/>
+                                            </div>
+                                            <div class="o_dwa_detail_card_meta">
+                                                <span t-esc="t.assignee_name"/>
+                                                <span t-esc="t.deadline_display"/>
+                                            </div>
+                                            <span t-att-class="'o_dwa_state_badge ' + stateBadgeClass(t.state)"
+                                                  t-esc="t.state_label"/>
+                                        </button>
+                                    </t>
+                                    <div t-if="!detailSidebarTasks.length" class="o_dwa_detail_empty">
+                                        Không có việc phù hợp.
+                                    </div>
+                                </div>
+                            </aside>
+
+                            <div class="o_dwa_detail_splitter"
+                                 title="Kéo trái/phải để đổi chiều rộng danh sách"
+                                 t-on-pointerdown="onDetailSplitterPointerDown">
+                                <button type="button" class="o_dwa_detail_splitter_btn"
+                                        title="Thu hẹp"
+                                        t-on-click.stop="() => this.nudgeDetailSplitter(-24)">
+                                    <i class="fa fa-caret-left"/>
+                                </button>
+                                <span class="o_dwa_detail_splitter_grip">
+                                    <i class="fa fa-ellipsis-v"/>
+                                </span>
+                                <button type="button" class="o_dwa_detail_splitter_btn"
+                                        title="Mở rộng"
+                                        t-on-click.stop="() => this.nudgeDetailSplitter(24)">
+                                    <i class="fa fa-caret-right"/>
+                                </button>
+                            </div>
+
+                            <main class="o_dwa_detail_center">
+                                <t t-if="state.detail.loading">
+                                    <div class="text-center p-5">
+                                        <i class="fa fa-spinner fa-spin fa-2x"/>
+                                    </div>
+                                </t>
+                                <t t-elif="state.detail.data">
+                                    <header class="o_dwa_detail_head">
+                                        <div>
+                                            <h1>
+                                                <t t-esc="state.detail.data.name"/>
+                                                <span t-att-class="'o_dwa_badge ' + priorityClass(state.detail.data.priority)"
+                                                      t-esc="state.detail.data.priority_label"/>
+                                            </h1>
+                                        </div>
+                                        <div class="o_dwa_detail_head_actions">
+                                            <select class="form-select form-select-sm"
+                                                    t-att-value="state.detail.data.state"
+                                                    t-on-change="onDetailStateChange">
+                                                <t t-foreach="state.states" t-as="s" t-key="'ds-' + s.value">
+                                                    <option t-att-value="s.value" t-esc="s.label"/>
+                                                </t>
+                                            </select>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm"
+                                                    t-on-click="closeTaskDetail">
+                                                Đóng
+                                            </button>
+                                        </div>
+                                    </header>
+
+                                    <div class="o_dwa_detail_grid">
+                                        <div><label>Người giao</label><strong t-esc="state.detail.data.assigned_by_name || '—'"/></div>
+                                        <div><label>Người nhận</label><strong t-esc="state.detail.data.assignee_name || '—'"/></div>
+                                        <div><label>Deadline</label><strong t-esc="state.detail.data.deadline_display || '—'"/></div>
+                                        <div><label>Hạng mục</label><strong t-esc="state.detail.data.work_group_label || '—'"/></div>
+                                        <div>
+                                            <label>Trạng thái</label>
+                                            <span t-att-class="'o_dwa_state_badge ' + stateBadgeClass(state.detail.data.state)"
+                                                  t-esc="state.detail.data.state_label"/>
+                                        </div>
+                                        <div><label>Ngày giao việc</label><strong t-esc="state.detail.data.assign_datetime_display || state.detail.data.assign_date_display || '—'"/></div>
+                                        <div><label>Ưu tiên</label>
+                                            <span t-att-class="'o_dwa_badge ' + priorityClass(state.detail.data.priority)"
+                                                  t-esc="state.detail.data.priority_label"/>
+                                        </div>
+                                        <div><label>Bộ phận</label><strong t-esc="state.detail.data.department_label || '—'"/></div>
+                                    </div>
+
+                                    <section class="o_dwa_detail_section">
+                                        <h3>Mô tả công việc</h3>
+                                        <p class="o_dwa_detail_desc"
+                                           t-esc="state.detail.data.description_text || 'Chưa có mô tả.'"/>
+                                    </section>
+
+                                    <section class="o_dwa_detail_section">
+                                        <h3>Checklist</h3>
+                                        <ul class="o_dwa_checklist">
+                                            <t t-foreach="state.detail.data.checklist || []" t-as="item" t-key="item.id">
+                                                <li>
+                                                    <label>
+                                                        <input type="checkbox" t-att-checked="item.done"
+                                                               t-on-change="() => this.onToggleChecklist(item)"/>
+                                                        <span t-att-class="item.done ? 'done' : ''" t-esc="item.name"/>
+                                                    </label>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                        <form class="o_dwa_checklist_add" t-on-submit="onAddChecklist">
+                                            <input type="text" class="form-control form-control-sm"
+                                                   placeholder="Thêm hạng mục checklist..."
+                                                   t-model="state.detail.checklistDraft"/>
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">Thêm</button>
+                                        </form>
+                                    </section>
+                                </t>
+                            </main>
+
+                            <aside class="o_dwa_detail_right">
+                                <div class="o_dwa_detail_tabs">
+                                    <button type="button"
+                                            t-att-class="state.detail.tab === 'chat' ? 'active' : ''"
+                                            t-on-click="() => this.setDetailTab('chat')">Trao đổi</button>
+                                    <button type="button"
+                                            t-att-class="state.detail.tab === 'history' ? 'active' : ''"
+                                            t-on-click="() => this.setDetailTab('history')">Nhật ký</button>
+                                </div>
+                                <t t-if="state.detail.tab === 'chat'">
+                                    <div class="o_dwa_detail_chat_pane">
+                                        <div class="o_dwa_detail_chat_body" t-ref="detailChatBody">
+                                            <t t-if="!(state.detail.data and state.detail.data.messages and state.detail.data.messages.length)">
+                                                <div class="o_dwa_detail_empty">Chưa có tin nhắn.</div>
+                                            </t>
+                                            <t t-else="">
+                                                <t t-foreach="state.detail.data.messages" t-as="msg" t-key="msg.id">
+                                                    <div t-att-class="'o_dwa_chat_msg' + (msg.is_mine ? ' mine' : '')">
+                                                        <img class="o_dwa_chat_avatar" t-att-src="msg.author_avatar" alt=""/>
+                                                        <div class="o_dwa_chat_bubble">
+                                                            <div class="o_dwa_chat_meta">
+                                                                <strong t-esc="msg.author_name"/>
+                                                                <span t-esc="msg.date_display"/>
+                                                            </div>
+                                                            <div class="o_dwa_chat_text" t-esc="msg.body_text"/>
+                                                        </div>
+                                                    </div>
+                                                </t>
+                                            </t>
+                                        </div>
+                                        <footer class="o_dwa_detail_chat_foot">
+                                            <textarea class="form-control o_dwa_detail_chat_input"
+                                                      rows="2"
+                                                      placeholder="Nhập tin nhắn... (Enter để gửi)"
+                                                      t-model="state.detail.chatDraft"
+                                                      t-on-keydown="onDetailChatKeydown"/>
+                                            <button type="button" class="btn btn-primary o_dwa_detail_chat_send"
+                                                    t-on-click="sendDetailDiscussion"
+                                                    t-att-disabled="state.detail.saving || !(state.detail.chatDraft || '').trim()">
+                                                <i class="fa fa-paper-plane"/>
+                                            </button>
+                                        </footer>
+                                    </div>
+                                </t>
+                                <t t-else="">
+                                    <div class="o_dwa_detail_history">
+                                        <t t-foreach="(state.detail.data and state.detail.data.history) || []" t-as="h" t-key="h.id">
+                                            <div class="o_dwa_history_item">
+                                                <div class="o_dwa_history_meta">
+                                                    <strong t-esc="h.author_name"/>
+                                                    <span t-esc="h.date_display"/>
+                                                </div>
+                                                <div t-esc="h.body_text"/>
+                                            </div>
+                                        </t>
+                                        <div t-if="!(state.detail.data and state.detail.data.history and state.detail.data.history.length)"
+                                             class="o_dwa_detail_empty">Chưa có nhật ký.</div>
+                                    </div>
+                                </t>
+                            </aside>
+                        </div>
+                    </t>
+                    <t t-else="">
                     <div class="o_dwa_layout" t-ref="layoutBox"
                          t-att-style="'--o-dwa-left-width:' + state.leftWidth + 'px'">
                         <aside class="o_dwa_form_panel">
@@ -223,13 +434,17 @@
                                                         <th>Hạn</th>
                                                         <th>Ưu tiên</th>
                                                         <th>Trạng thái</th>
-                                                        <th>Ghi chú</th>
+                                                        <th class="o_dwa_th_discuss">Thảo luận</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <t t-foreach="group.tasks" t-as="task" t-key="task.id">
                                                         <tr>
-                                                            <td t-esc="task.name"/>
+                                                            <td>
+                                                                <button type="button" class="o_dwa_task_link"
+                                                                        t-on-click="() => this.openTaskDetail(task)"
+                                                                        t-esc="task.name"/>
+                                                            </td>
                                                             <td t-esc="task.work_group_label || '—'"/>
                                                             <td t-esc="task.deadline_display"/>
                                                             <td>
@@ -240,7 +455,18 @@
                                                                 <span t-att-class="'o_dwa_state_badge ' + stateBadgeClass(task.state)"
                                                                       t-esc="task.state_label"/>
                                                             </td>
-                                                            <td t-esc="task.note"/>
+                                                            <td class="o_dwa_td_discuss">
+                                                                <button type="button"
+                                                                        t-att-class="'o_dwa_discuss_btn' + (task.discussion_unread ? ' has-unread' : '')"
+                                                                        t-att-title="'Thảo luận: ' + (task.name || '')"
+                                                                        t-on-click="() => this.openDiscussion(task)">
+                                                                    <i class="fa fa-comments"/>
+                                                                    <t t-if="discussionBadge(task)">
+                                                                        <span class="o_dwa_discuss_badge"
+                                                                              t-esc="discussionBadge(task)"/>
+                                                                    </t>
+                                                                </button>
+                                                            </td>
                                                         </tr>
                                                     </t>
                                                 </tbody>
@@ -251,8 +477,69 @@
                             </div>
                         </section>
                     </div>
+                    </t>
                 </t>
             </div>
+
+            <!-- Popup thảo luận theo việc -->
+            <t t-if="state.chat.open">
+                <div class="o_dwa_chat_panel">
+                    <header class="o_dwa_chat_head">
+                        <div class="o_dwa_chat_head_text">
+                            <strong>
+                                <i class="fa fa-comments"/> Thảo luận:
+                                <t t-esc="state.chat.taskName"/>
+                            </strong>
+                            <span class="o_dwa_chat_sub" t-if="state.chat.assigneeName">
+                                Người nhận: <t t-esc="state.chat.assigneeName"/>
+                            </span>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-light o_dwa_chat_close"
+                                title="Đóng" t-on-click="closeDiscussion">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </header>
+                    <div class="o_dwa_chat_body" t-ref="chatBody">
+                        <t t-if="state.chat.loading">
+                            <div class="o_dwa_chat_empty">
+                                <i class="fa fa-spinner fa-spin"/> Đang tải...
+                            </div>
+                        </t>
+                        <t t-elif="!state.chat.messages.length">
+                            <div class="o_dwa_chat_empty">
+                                Chưa có tin nhắn. Hãy bắt đầu thảo luận về việc này.
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="state.chat.messages" t-as="msg" t-key="msg.id">
+                                <div t-att-class="'o_dwa_chat_msg' + (msg.is_mine ? ' mine' : '')">
+                                    <img class="o_dwa_chat_avatar" t-att-src="msg.author_avatar" alt=""/>
+                                    <div class="o_dwa_chat_bubble">
+                                        <div class="o_dwa_chat_meta">
+                                            <strong t-esc="msg.author_name"/>
+                                            <span t-esc="msg.date_display"/>
+                                        </div>
+                                        <div class="o_dwa_chat_text" t-esc="msg.body_text"/>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+                    <footer class="o_dwa_chat_foot">
+                        <textarea class="form-control o_dwa_chat_input"
+                                  rows="2"
+                                  placeholder="Nhập tin nhắn... (Enter để gửi)"
+                                  t-model="state.chat.draft"
+                                  t-on-keydown="onChatKeydown"
+                                  t-att-disabled="state.chat.sending ? 'disabled' : undefined"/>
+                        <button type="button" class="btn btn-primary o_dwa_chat_send"
+                                t-att-disabled="state.chat.sending || !(state.chat.draft || '').trim()"
+                                t-on-click="sendDiscussion">
+                            <i t-att-class="state.chat.sending ? 'fa fa-spinner fa-spin' : 'fa fa-paper-plane'"/>
+                        </button>
+                    </footer>
+                </div>
+            </t>
         </div>
     </t>
 </templates>

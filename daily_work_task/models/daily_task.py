@@ -128,6 +128,22 @@ class DailyTask(models.Model):
         copy=False,
         help="Công việc được sinh tự động từ mẫu lặp (cron ~5h00 giờ VN).",
     )
+    checklist_ids = fields.One2many(
+        "daily.task.checklist.item",
+        "task_id",
+        string="Checklist",
+    )
+    description = fields.Html(
+        string="Mô tả công việc",
+        help="Mô tả chi tiết yêu cầu giao việc.",
+    )
+    assignee_user_id = fields.Many2one(
+        "res.users",
+        string="User người nhận",
+        related="assignee_id.employee_id.user_id",
+        store=False,
+        readonly=True,
+    )
 
     _recurring_assign_date_uniq = models.Constraint(
         "unique(recurring_id, assign_date)",
@@ -775,6 +791,8 @@ class DailyTask(models.Model):
             "progress": int(self.completion_percent or 0)
             if self.state != "done"
             else max(int(self.completion_percent or 0), 100),
+            "discussion_count": 0,
+            "discussion_unread": 0,
         }
 
     @api.model
@@ -1154,7 +1172,9 @@ class DailyTask(models.Model):
                 "department": emp.department_id.display_name if emp.department_id else "",
                 "department_id": dept_id or False,
             },
-            "tasks": [t._to_manager_dict() for t in tasks],
+            "tasks": self._enrich_assign_discussion(
+                [t._to_manager_dict() for t in tasks]
+            ),
             "states": states,
             "priorities": priorities,
             "work_groups": work_groups,
@@ -1973,7 +1993,396 @@ class DailyTask(models.Model):
             ("assignee_id.employee_id.user_id", "=", uid),
         ]
         tasks = self.sudo().search(domain, order="deadline asc, id desc")
-        return [t._to_manager_dict() for t in tasks]
+        rows = [t._to_manager_dict() for t in tasks]
+        return self._enrich_assign_discussion(rows)
+
+    @api.model
+    def _enrich_assign_discussion(self, rows):
+        """Gắn số tin thảo luận + chưa đọc vào danh sách giao việc."""
+        ids = [int(r["id"]) for r in rows if r.get("id")]
+        if not ids:
+            return rows
+        counts = {i: 0 for i in ids}
+        unread = {i: 0 for i in ids}
+        self.env.cr.execute(
+            """
+            SELECT res_id, COUNT(*)
+              FROM mail_message
+             WHERE model = 'daily.task'
+               AND res_id = ANY(%s)
+               AND message_type = 'comment'
+               AND COALESCE(body, '') NOT IN ('', '<p></p>', '<p><br></p>', '<p><br/></p>')
+          GROUP BY res_id
+            """,
+            (ids,),
+        )
+        for res_id, cnt in self.env.cr.fetchall():
+            counts[int(res_id)] = int(cnt or 0)
+        partner = self.env.user.partner_id
+        if partner:
+            self.env.cr.execute(
+                """
+                SELECT mm.res_id, COUNT(*)
+                  FROM mail_notification mn
+                  JOIN mail_message mm ON mm.id = mn.mail_message_id
+                 WHERE mm.model = 'daily.task'
+                   AND mm.res_id = ANY(%s)
+                   AND mn.res_partner_id = %s
+                   AND COALESCE(mn.is_read, false) = false
+                   AND mn.notification_type IN ('inbox', 'email')
+              GROUP BY mm.res_id
+                """,
+                (ids, partner.id),
+            )
+            for res_id, cnt in self.env.cr.fetchall():
+                unread[int(res_id)] = int(cnt or 0)
+        for row in rows:
+            tid = int(row["id"])
+            row["discussion_count"] = counts.get(tid, 0)
+            row["discussion_unread"] = unread.get(tid, 0)
+        return rows
+
+    def _user_can_discuss(self):
+        """Người giao hoặc người được giao được thảo luận trên việc."""
+        self.ensure_one()
+        uid = self.env.uid
+        if self.assigned_by_id and self.assigned_by_id.id == uid:
+            return True
+        emp_user = self.assignee_id.employee_id.user_id if self.assignee_id else False
+        if emp_user and emp_user.id == uid:
+            return True
+        if self._is_manager():
+            return True
+        return False
+
+    def _discussion_partner_ids(self):
+        """Partner người giao + người nhận (để notify / follow)."""
+        self.ensure_one()
+        partners = self.env["res.partner"]
+        if self.assigned_by_id and self.assigned_by_id.partner_id:
+            partners |= self.assigned_by_id.partner_id
+        # assignee: bridge → hr.employee → res.users (sudo để chắc có user_id)
+        emp = self.assignee_id.sudo().employee_id if self.assignee_id else False
+        emp_user = emp.user_id if emp else False
+        if not emp_user and emp:
+            self.env.cr.execute(
+                """
+                SELECT u.partner_id
+                  FROM hr_employee e
+                  JOIN res_users u ON u.id = e.user_id
+                 WHERE e.id = %s
+                """,
+                (emp.id,),
+            )
+            row = self.env.cr.fetchone()
+            if row and row[0]:
+                partners |= self.env["res.partner"].browse(row[0])
+        elif emp_user and emp_user.partner_id:
+            partners |= emp_user.partner_id
+        return partners
+
+    def _force_inbox_notifications(self, message, partners):
+        """Đảm bảo đối phương nhận tin trong Inbox (không chỉ email).
+
+        Không tự gửi bus `mail.message/inbox` — payload phải có store_data
+        đúng chuẩn Odoo; gửi thiếu sẽ làm client crash (message.thread).
+        """
+        if not message or not partners:
+            return
+        Notification = self.env["mail.notification"].sudo()
+        for partner in partners:
+            notif = Notification.search(
+                [
+                    ("mail_message_id", "=", message.id),
+                    ("res_partner_id", "=", partner.id),
+                ],
+                limit=1,
+            )
+            vals = {
+                "notification_type": "inbox",
+                "is_read": False,
+            }
+            if notif:
+                notif.write(vals)
+            else:
+                Notification.create(
+                    {
+                        "mail_message_id": message.id,
+                        "res_partner_id": partner.id,
+                        **vals,
+                    }
+                )
+
+    @api.model
+    def get_task_discussion(self, task_id):
+        """Lấy thread thảo luận của một việc (cho popup Giao việc)."""
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists():
+            raise ValidationError("Không tìm thấy công việc.")
+        if not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền xem thảo luận việc này.")
+        Message = self.env["mail.message"].sudo()
+        messages = Message.search(
+            [
+                ("model", "=", "daily.task"),
+                ("res_id", "=", task.id),
+                ("message_type", "=", "comment"),
+            ],
+            order="date asc, id asc",
+        )
+        # Đánh dấu đã đọc cho user hiện tại
+        partner = self.env.user.partner_id
+        if partner:
+            notifs = (
+                self.env["mail.notification"]
+                .sudo()
+                .search(
+                    [
+                        ("mail_message_id", "in", messages.ids),
+                        ("res_partner_id", "=", partner.id),
+                        ("is_read", "=", False),
+                    ]
+                )
+            )
+            if notifs:
+                notifs.write({"is_read": True})
+        rows = []
+        for msg in messages:
+            body = (msg.body or "").strip()
+            if not body or body in ("<p></p>", "<p><br></p>", "<p><br/></p>"):
+                continue
+            author = msg.author_id
+            rows.append(
+                {
+                    "id": msg.id,
+                    "body": body,
+                    "body_text": Markup(body).striptags() if body else "",
+                    "date": fields.Datetime.to_string(msg.date) if msg.date else "",
+                    "date_display": msg.date.strftime("%d/%m/%Y %H:%M")
+                    if msg.date
+                    else "",
+                    "author_id": author.id if author else False,
+                    "author_name": author.name if author else "Hệ thống",
+                    "author_avatar": (
+                        "/web/image/res.partner/%s/avatar_128" % author.id
+                        if author
+                        else "/web/static/img/user_menu_avatar.png"
+                    ),
+                    "is_mine": bool(author and author.id == self.env.user.partner_id.id),
+                }
+            )
+        return {
+            "task_id": task.id,
+            "task_name": task.name or "",
+            "assignee_name": task.assignee_id.name if task.assignee_id else "",
+            "messages": rows,
+            "discussion_count": len(rows),
+            "discussion_unread": 0,
+        }
+
+    @api.model
+    def post_task_discussion(self, task_id, body):
+        """Gửi tin thảo luận trên việc (mail.thread)."""
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists():
+            raise ValidationError("Không tìm thấy công việc.")
+        if not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền thảo luận việc này.")
+        text = (body or "").strip()
+        if not text:
+            raise ValidationError("Vui lòng nhập nội dung thảo luận.")
+        # Plain text → HTML paragraphs
+        safe = escape(text).replace("\n", "<br/>")
+        html_body = Markup("<p>%s</p>" % safe)
+        partners = task._discussion_partner_ids()
+        # Theo dõi để nhận thông báo
+        if partners:
+            task.message_subscribe(partner_ids=partners.ids)
+        notify_partners = partners - self.env.user.partner_id
+        msg = task.with_user(self.env.user).sudo().message_post(
+            body=html_body,
+            message_type="comment",
+            subtype_xmlid="mail.mt_comment",
+            partner_ids=notify_partners.ids,
+            author_id=self.env.user.partner_id.id,
+        )
+        task._force_inbox_notifications(msg, notify_partners)
+        return self.get_task_discussion(task.id)
+
+    @api.model
+    def get_task_detail(self, task_id):
+        """Chi tiết công việc — layout 3 cột (danh sách | thông tin | trao đổi)."""
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists():
+            raise ValidationError("Không tìm thấy công việc.")
+        if not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền xem công việc này.")
+        data = task._to_manager_dict()
+        desc_html = task.description or ""
+        if not desc_html and task.note:
+            desc_html = Markup("<p>%s</p>" % escape(task.note).replace("\n", "<br/>"))
+        data["description_html"] = str(desc_html or "")
+        data["description_text"] = (
+            Markup(desc_html).striptags() if desc_html else (task.note or "")
+        )
+        data["assign_datetime_display"] = (
+            task.assign_date.strftime("%d/%m/%Y")
+            if task.assign_date
+            else ""
+        )
+        data["checklist"] = [
+            {
+                "id": item.id,
+                "name": item.name or "",
+                "done": bool(item.done),
+                "sequence": int(item.sequence or 10),
+            }
+            for item in task.checklist_ids.sorted(lambda i: (i.sequence, i.id))
+        ]
+        Attachment = self.env["ir.attachment"].sudo()
+        atts = Attachment.search(
+            [("res_model", "=", "daily.task"), ("res_id", "=", task.id)],
+            order="id desc",
+        )
+        data["attachments"] = [
+            {
+                "id": att.id,
+                "name": att.name or "",
+                "mimetype": att.mimetype or "",
+                "url": "/web/content/%s?download=true" % att.id,
+                "is_image": bool(
+                    (att.mimetype or "").startswith("image/")
+                ),
+                "preview_url": "/web/image/%s" % att.id
+                if (att.mimetype or "").startswith("image/")
+                else False,
+            }
+            for att in atts
+        ]
+        # Nhật ký thay đổi (không gồm chat comment)
+        Message = self.env["mail.message"].sudo()
+        logs = Message.search(
+            [
+                ("model", "=", "daily.task"),
+                ("res_id", "=", task.id),
+                ("message_type", "!=", "comment"),
+            ],
+            order="date desc, id desc",
+            limit=40,
+        )
+        history = []
+        for msg in logs:
+            body = (msg.body or "").strip()
+            text = Markup(body).striptags() if body else ""
+            tracking = getattr(msg, "tracking_value_ids", False)
+            if tracking:
+                changes = []
+                for tv in tracking:
+                    field_label = ""
+                    try:
+                        field_label = (
+                            tv.field_id.field_description
+                            or tv.field_id.name
+                            or ""
+                        )
+                    except Exception:
+                        field_label = getattr(tv, "field_desc", "") or "Trường"
+                    old_v = (
+                        getattr(tv, "old_value_char", None)
+                        or getattr(tv, "old_value_text", None)
+                        or ""
+                    )
+                    new_v = (
+                        getattr(tv, "new_value_char", None)
+                        or getattr(tv, "new_value_text", None)
+                        or ""
+                    )
+                    changes.append("%s: %s → %s" % (field_label, old_v, new_v))
+                if changes:
+                    text = "; ".join(changes)
+            if not text:
+                continue
+            author = msg.author_id
+            history.append(
+                {
+                    "id": msg.id,
+                    "body_text": text,
+                    "date_display": msg.date.strftime("%d/%m/%Y %H:%M")
+                    if msg.date
+                    else "",
+                    "author_name": author.name if author else "Hệ thống",
+                }
+            )
+        data["history"] = history
+        discuss = self.get_task_discussion(task.id)
+        data["messages"] = discuss.get("messages") or []
+        data["discussion_count"] = discuss.get("discussion_count") or 0
+        return data
+
+    @api.model
+    def add_task_checklist_item(self, task_id, name):
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists() or not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền sửa checklist.")
+        label = (name or "").strip()
+        if not label:
+            raise ValidationError("Nhập nội dung checklist.")
+        seq = (max(task.checklist_ids.mapped("sequence") or [0]) + 10)
+        self.env["daily.task.checklist.item"].sudo().create(
+            {
+                "task_id": task.id,
+                "name": label,
+                "sequence": seq,
+            }
+        )
+        return self.get_task_detail(task.id)
+
+    @api.model
+    def set_task_checklist_done(self, item_id, done):
+        item = self.env["daily.task.checklist.item"].sudo().browse(int(item_id or 0))
+        if not item.exists() or not item.task_id._user_can_discuss():
+            raise AccessError("Bạn không có quyền sửa checklist.")
+        item.write({"done": bool(done)})
+        return self.get_task_detail(item.task_id.id)
+
+    @api.model
+    def upload_task_attachment(self, task_id, name, datas, mimetype=False):
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists() or not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền đính kèm.")
+        fname = (name or "file").strip()
+        if not datas:
+            raise ValidationError("Không có dữ liệu file.")
+        self.env["ir.attachment"].sudo().create(
+            {
+                "name": fname,
+                "datas": datas,
+                "res_model": "daily.task",
+                "res_id": task.id,
+                "mimetype": mimetype or False,
+                "type": "binary",
+            }
+        )
+        return self.get_task_detail(task.id)
+
+    @api.model
+    def update_task_detail_fields(self, task_id, vals):
+        """Cập nhật mô tả / trạng thái từ màn chi tiết."""
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists() or not task._user_can_discuss():
+            raise AccessError("Bạn không có quyền sửa công việc này.")
+        write_vals = {}
+        if "description" in (vals or {}):
+            write_vals["description"] = vals.get("description") or False
+        if "note" in (vals or {}):
+            write_vals["note"] = vals.get("note") or ""
+        if "state" in (vals or {}) and vals.get("state") in dict(
+            self._fields["state"].selection
+        ):
+            write_vals["state"] = vals["state"]
+        if write_vals:
+            task.write(write_vals)
+        return self.get_task_detail(task.id)
 
     @api.model
     def create_from_assign(self, vals):
@@ -2038,10 +2447,23 @@ class DailyTask(models.Model):
                     "priority": vals.get("priority") or "medium",
                     "state": vals.get("state") or "not_started",
                     "note": vals.get("note") or "",
+                    "description": (
+                        Markup(
+                            "<p>%s</p>"
+                            % escape((vals.get("note") or "").strip()).replace(
+                                "\n", "<br/>"
+                            )
+                        )
+                        if (vals.get("note") or "").strip()
+                        else False
+                    ),
                 }
             )
         )
         task._notify_assignee_assigned()
+        partners = task._discussion_partner_ids()
+        if partners:
+            task.message_subscribe(partner_ids=partners.ids)
         return task._to_manager_dict()
 
     @api.model

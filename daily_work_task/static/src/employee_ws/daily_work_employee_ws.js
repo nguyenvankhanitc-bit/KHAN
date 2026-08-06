@@ -24,6 +24,7 @@ export class DailyWorkEmployeeWs extends Component {
         this.orm = useService("orm");
         this.notification = useService("notification");
         this.layoutRef = useRef("layout");
+        this.chatBodyRef = useRef("chatBody");
         this._onPointerMove = this._onPointerMove.bind(this);
         this._onPointerUp = this._onPointerUp.bind(this);
         const ym = currentYearMonth();
@@ -62,6 +63,16 @@ export class DailyWorkEmployeeWs extends Component {
             completionPercentAvg: 0,
             showMyList: true,
             activeTab: "tasks",
+            chat: {
+                open: false,
+                loading: false,
+                sending: false,
+                taskId: 0,
+                taskName: "",
+                assigneeName: "",
+                messages: [],
+                draft: "",
+            },
             recurringItems: [],
             recurringForm: this.emptyRecurringForm(),
             editingRecurringId: false,
@@ -1149,6 +1160,98 @@ export class DailyWorkEmployeeWs extends Component {
                 low: "o_ews_badge_low",
             }[priority] || "o_ews_badge_medium"
         );
+    }
+
+    discussionBadge(task) {
+        return Number(task.discussion_unread || 0) || Number(task.discussion_count || 0) || 0;
+    }
+
+    async openDiscussion(task) {
+        if (!task?.id) {
+            return;
+        }
+        this.state.chat.open = true;
+        this.state.chat.loading = true;
+        this.state.chat.taskId = task.id;
+        this.state.chat.taskName = task.name || "";
+        this.state.chat.assigneeName = task.assigned_by_name
+            ? `Người giao: ${task.assigned_by_name}`
+            : "";
+        this.state.chat.draft = "";
+        this.state.chat.messages = [];
+        try {
+            const data = await this.orm.call("daily.task", "get_task_discussion", [
+                task.id,
+            ]);
+            this.state.chat.taskName = data.task_name || task.name || "";
+            this.state.chat.messages = data.messages || [];
+            const row = this.state.tasks.find((t) => t.id === task.id);
+            if (row) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không mở được thảo luận."),
+                { type: "danger" }
+            );
+            this.state.chat.open = false;
+        } finally {
+            this.state.chat.loading = false;
+        }
+    }
+
+    closeDiscussion() {
+        this.state.chat.open = false;
+        this.state.chat.draft = "";
+        this.state.chat.messages = [];
+        this.state.chat.taskId = 0;
+    }
+
+    _scrollChatToEnd() {
+        requestAnimationFrame(() => {
+            const el = this.chatBodyRef.el;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        });
+    }
+
+    onChatKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.sendDiscussion();
+        }
+    }
+
+    async sendDiscussion() {
+        const text = (this.state.chat.draft || "").trim();
+        if (!text || !this.state.chat.taskId || this.state.chat.sending) {
+            return;
+        }
+        this.state.chat.sending = true;
+        try {
+            const data = await this.orm.call("daily.task", "post_task_discussion", [
+                this.state.chat.taskId,
+                text,
+            ]);
+            this.state.chat.draft = "";
+            this.state.chat.messages = data.messages || [];
+            const row = this.state.tasks.find((t) => t.id === this.state.chat.taskId);
+            if (row) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không gửi được tin nhắn."),
+                { type: "danger" }
+            );
+        } finally {
+            this.state.chat.sending = false;
+        }
     }
 
     monthRowClass(row) {

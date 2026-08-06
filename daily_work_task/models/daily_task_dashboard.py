@@ -93,6 +93,8 @@ class DailyTaskDashboard(models.AbstractModel):
             "default_date_from": date_from,
             "default_date_to": date_to,
             "is_manager": Task._is_manager(),
+            "can_assign": Task._is_assigner(),
+            "can_view_others": Task._is_viewer(),
             "can_see_performance": self.env[
                 "daily.task.performance.access"
             ].user_can_view(),

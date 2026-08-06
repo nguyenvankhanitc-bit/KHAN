@@ -8,4 +8,16 @@
     .o_kanban_record {
         border-radius: 10px;
     }
+
+    .o_daily_kanban_title {
+        line-height: 1.3;
+        word-break: break-word;
+    }
+
+    .o_daily_kanban_assignee {
+        .o_field_many2one_avatar_user,
+        .o_avatar {
+            flex: 0 0 auto;
+        }
+    }
 }

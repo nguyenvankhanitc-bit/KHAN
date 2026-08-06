@@ -42,7 +42,37 @@ export class DailyWorkAssign extends Component {
             assigneeQuery: "",
             assigneeOpen: false,
             assigneeHighlight: -1,
+            chat: {
+                open: false,
+                loading: false,
+                sending: false,
+                taskId: 0,
+                taskName: "",
+                assigneeName: "",
+                messages: [],
+                draft: "",
+            },
+            viewMode: "list",
+            detailLeftWidth: this._loadDetailLeftWidth(),
+            detail: {
+                loading: false,
+                saving: false,
+                taskId: 0,
+                data: null,
+                tab: "chat",
+                chatDraft: "",
+                checklistDraft: "",
+                filterQuery: "",
+                filterState: "",
+                filterAssignee: 0,
+            },
         });
+        this.chatBodyRef = useRef("chatBody");
+        this.detailChatBodyRef = useRef("detailChatBody");
+        this.detailShellRef = useRef("detailShell");
+        this._detailSplitterDragging = false;
+        this._onDetailSplitterMove = this._onDetailSplitterMove.bind(this);
+        this._onDetailSplitterUp = this._onDetailSplitterUp.bind(this);
         onWillStart(async () => {
             await this.loadAll();
         });
@@ -52,7 +82,90 @@ export class DailyWorkAssign extends Component {
         onWillUnmount(() => {
             document.removeEventListener("pointerdown", this._onDocPointerDown);
             this._stopSplitterDrag();
+            this._stopDetailSplitterDrag();
         });
+    }
+
+    _loadDetailLeftWidth() {
+        try {
+            const raw = window.localStorage.getItem("daily_work_assign_detail_left_width");
+            const n = Number(raw);
+            if (Number.isFinite(n) && n >= 200 && n <= 480) {
+                return Math.round(n);
+            }
+        } catch {
+            // ignore
+        }
+        return 280;
+    }
+
+    _saveDetailLeftWidth(width) {
+        try {
+            window.localStorage.setItem(
+                "daily_work_assign_detail_left_width",
+                String(width)
+            );
+        } catch {
+            // ignore
+        }
+    }
+
+    _clampDetailLeftWidth(width) {
+        const shell = this.detailShellRef.el;
+        const maxByShell = shell
+            ? Math.max(220, Math.floor(shell.getBoundingClientRect().width - 520))
+            : 480;
+        return Math.max(200, Math.min(Math.min(480, maxByShell), Math.round(width)));
+    }
+
+    onDetailSplitterPointerDown(ev) {
+        if (ev.button !== undefined && ev.button !== 0) {
+            return;
+        }
+        if (ev.target.closest(".o_dwa_detail_splitter_btn")) {
+            return;
+        }
+        ev.preventDefault();
+        this._detailSplitterDragging = true;
+        document.body.classList.add("o_dwa_resizing");
+        document.addEventListener("pointermove", this._onDetailSplitterMove);
+        document.addEventListener("pointerup", this._onDetailSplitterUp);
+        document.addEventListener("pointercancel", this._onDetailSplitterUp);
+    }
+
+    _onDetailSplitterMove(ev) {
+        if (!this._detailSplitterDragging) {
+            return;
+        }
+        const shell = this.detailShellRef.el;
+        if (!shell) {
+            return;
+        }
+        const left = shell.getBoundingClientRect().left;
+        this.state.detailLeftWidth = this._clampDetailLeftWidth(ev.clientX - left);
+    }
+
+    _onDetailSplitterUp() {
+        if (!this._detailSplitterDragging) {
+            return;
+        }
+        this._stopDetailSplitterDrag();
+        this._saveDetailLeftWidth(this.state.detailLeftWidth);
+    }
+
+    _stopDetailSplitterDrag() {
+        this._detailSplitterDragging = false;
+        document.body.classList.remove("o_dwa_resizing");
+        document.removeEventListener("pointermove", this._onDetailSplitterMove);
+        document.removeEventListener("pointerup", this._onDetailSplitterUp);
+        document.removeEventListener("pointercancel", this._onDetailSplitterUp);
+    }
+
+    nudgeDetailSplitter(delta) {
+        this.state.detailLeftWidth = this._clampDetailLeftWidth(
+            this.state.detailLeftWidth + delta
+        );
+        this._saveDetailLeftWidth(this.state.detailLeftWidth);
     }
 
     _loadLeftWidth() {
@@ -458,6 +571,279 @@ export class DailyWorkAssign extends Component {
 
     async onRefresh() {
         this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
+    }
+
+    async openDiscussion(task) {
+        if (!task?.id) {
+            return;
+        }
+        this.state.chat.open = true;
+        this.state.chat.loading = true;
+        this.state.chat.taskId = task.id;
+        this.state.chat.taskName = task.name || "";
+        this.state.chat.assigneeName = task.assignee_name || "";
+        this.state.chat.draft = "";
+        this.state.chat.messages = [];
+        try {
+            const data = await this.orm.call("daily.task", "get_task_discussion", [
+                task.id,
+            ]);
+            this.state.chat.taskName = data.task_name || task.name || "";
+            this.state.chat.assigneeName = data.assignee_name || task.assignee_name || "";
+            this.state.chat.messages = data.messages || [];
+            // Cập nhật badge trên dòng
+            const row = this.state.tasks.find((t) => t.id === task.id);
+            if (row) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không mở được thảo luận."),
+                { type: "danger" }
+            );
+            this.state.chat.open = false;
+        } finally {
+            this.state.chat.loading = false;
+        }
+    }
+
+    closeDiscussion() {
+        this.state.chat.open = false;
+        this.state.chat.draft = "";
+        this.state.chat.messages = [];
+        this.state.chat.taskId = 0;
+    }
+
+    _scrollChatToEnd() {
+        requestAnimationFrame(() => {
+            const el = this.chatBodyRef.el;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        });
+    }
+
+    onChatKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.sendDiscussion();
+        }
+    }
+
+    async sendDiscussion() {
+        const text = (this.state.chat.draft || "").trim();
+        if (!text || !this.state.chat.taskId || this.state.chat.sending) {
+            return;
+        }
+        this.state.chat.sending = true;
+        try {
+            const data = await this.orm.call("daily.task", "post_task_discussion", [
+                this.state.chat.taskId,
+                text,
+            ]);
+            this.state.chat.draft = "";
+            this.state.chat.messages = data.messages || [];
+            const row = this.state.tasks.find((t) => t.id === this.state.chat.taskId);
+            if (row) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không gửi được tin nhắn."),
+                { type: "danger" }
+            );
+        } finally {
+            this.state.chat.sending = false;
+        }
+    }
+
+    discussionBadge(task) {
+        return Number(task.discussion_unread || 0) || Number(task.discussion_count || 0) || 0;
+    }
+
+    get detailSidebarTasks() {
+        const q = normalizeText(this.state.detail.filterQuery);
+        const st = this.state.detail.filterState;
+        const aid = Number(this.state.detail.filterAssignee) || 0;
+        return (this.state.tasks || []).filter((t) => {
+            if (st && t.state !== st) {
+                return false;
+            }
+            if (aid) {
+                const emp = this.state.employees.find((e) => Number(e.id) === aid);
+                const bridgeId = emp?.bridge_id ? Number(emp.bridge_id) : 0;
+                const matchHr = Number(t.hr_employee_id) === aid;
+                const matchBridge = bridgeId && Number(t.assignee_id) === bridgeId;
+                if (!matchHr && !matchBridge) {
+                    return false;
+                }
+            }
+            if (!q) {
+                return true;
+            }
+            return (
+                normalizeText(t.name).includes(q) ||
+                normalizeText(t.assignee_name).includes(q) ||
+                normalizeText(t.work_group_label).includes(q)
+            );
+        });
+    }
+
+    async openTaskDetail(task) {
+        if (!task?.id) {
+            return;
+        }
+        this.state.viewMode = "detail";
+        this.state.detail.taskId = task.id;
+        this.state.detail.tab = "chat";
+        this.state.detail.chatDraft = "";
+        this.state.detail.checklistDraft = "";
+        this.state.chat.open = false;
+        await this.loadTaskDetail(task.id);
+    }
+
+    async loadTaskDetail(taskId) {
+        this.state.detail.loading = true;
+        try {
+            const data = await this.orm.call("daily.task", "get_task_detail", [taskId]);
+            this.state.detail.data = data;
+            this.state.detail.taskId = data.id;
+            this._scrollDetailChatToEnd();
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không mở được chi tiết công việc."),
+                { type: "danger" }
+            );
+            this.state.viewMode = "list";
+        } finally {
+            this.state.detail.loading = false;
+        }
+    }
+
+    closeTaskDetail() {
+        this.state.viewMode = "list";
+        this.state.detail.data = null;
+        this.state.detail.taskId = 0;
+        this.onRefresh();
+    }
+
+    async selectDetailTask(task) {
+        if (!task?.id || task.id === this.state.detail.taskId) {
+            return;
+        }
+        this.state.detail.taskId = task.id;
+        this.state.detail.chatDraft = "";
+        await this.loadTaskDetail(task.id);
+    }
+
+    setDetailTab(tab) {
+        this.state.detail.tab = tab;
+        if (tab === "chat") {
+            this._scrollDetailChatToEnd();
+        }
+    }
+
+    _scrollDetailChatToEnd() {
+        requestAnimationFrame(() => {
+            const el = this.detailChatBodyRef.el;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        });
+    }
+
+    onDetailChatKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.sendDetailDiscussion();
+        }
+    }
+
+    async sendDetailDiscussion() {
+        const text = (this.state.detail.chatDraft || "").trim();
+        const taskId = this.state.detail.taskId;
+        if (!text || !taskId || this.state.detail.saving) {
+            return;
+        }
+        this.state.detail.saving = true;
+        try {
+            await this.orm.call("daily.task", "post_task_discussion", [taskId, text]);
+            this.state.detail.chatDraft = "";
+            await this.loadTaskDetail(taskId);
+            const row = this.state.tasks.find((t) => t.id === taskId);
+            if (row && this.state.detail.data) {
+                row.discussion_count = this.state.detail.data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+        } catch (e) {
+            this.notification.add(
+                e?.data?.message || _t("Không gửi được tin nhắn."),
+                { type: "danger" }
+            );
+        } finally {
+            this.state.detail.saving = false;
+        }
+    }
+
+    async onToggleChecklist(item) {
+        try {
+            const data = await this.orm.call("daily.task", "set_task_checklist_done", [
+                item.id,
+                !item.done,
+            ]);
+            this.state.detail.data = data;
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không cập nhật checklist."), {
+                type: "danger",
+            });
+        }
+    }
+
+    async onAddChecklist(ev) {
+        ev?.preventDefault?.();
+        const name = (this.state.detail.checklistDraft || "").trim();
+        if (!name || !this.state.detail.taskId) {
+            return;
+        }
+        try {
+            const data = await this.orm.call("daily.task", "add_task_checklist_item", [
+                this.state.detail.taskId,
+                name,
+            ]);
+            this.state.detail.checklistDraft = "";
+            this.state.detail.data = data;
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thêm checklist."), {
+                type: "danger",
+            });
+        }
+    }
+
+    async onDetailStateChange(ev) {
+        const state = ev.target.value;
+        if (!this.state.detail.taskId) {
+            return;
+        }
+        try {
+            const data = await this.orm.call("daily.task", "update_task_detail_fields", [
+                this.state.detail.taskId,
+                { state },
+            ]);
+            this.state.detail.data = data;
+            const row = this.state.tasks.find((t) => t.id === this.state.detail.taskId);
+            if (row) {
+                row.state = data.state;
+                row.state_label = data.state_label;
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không cập nhật trạng thái."), {
+                type: "danger",
+            });
+        }
     }
 
     priorityClass(priority) {

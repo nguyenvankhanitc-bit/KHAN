@@ -221,6 +221,7 @@
                                                 <th class="o_ews_col_pct">% hoàn thành CV</th>
                                                 <th class="o_ews_col_state">Trạng thái công việc</th>
                                                 <th class="o_ews_col_note">Ghi chú</th>
+                                                <th class="o_ews_col_discuss">Thảo luận</th>
                                                 <th class="o_ews_col_action">Thao tác</th>
                                             </tr>
                                         </thead>
@@ -281,6 +282,18 @@
                                                         </select>
                                                     </td>
                                                     <td class="o_ews_col_note" t-esc="task.note"/>
+                                                    <td class="o_ews_col_discuss">
+                                                        <button type="button"
+                                                                t-att-class="'o_ews_discuss_btn' + (task.discussion_unread ? ' has-unread' : '')"
+                                                                t-att-title="'Thảo luận: ' + (task.name || '')"
+                                                                t-on-click="() => this.openDiscussion(task)">
+                                                            <i class="fa fa-comments"/>
+                                                            <t t-if="discussionBadge(task)">
+                                                                <span class="o_ews_discuss_badge"
+                                                                      t-esc="discussionBadge(task)"/>
+                                                            </t>
+                                                        </button>
+                                                    </td>
                                                     <td class="o_ews_col_action">
                                                         <div t-if="task.can_edit_details !== false"
                                                              class="o_ews_row_actions">
@@ -303,9 +316,14 @@
                                                               t-att-title="'Việc được giao bởi ' + (task.assigned_by_name || 'người khác') + ' — chỉ cập nhật trạng thái / % hoàn thành'">
                                                             <i class="fa fa-lock"/>
                                                             <t t-if="task.assigned_by_name">
-                                                                Được giao bởi <t t-esc="task.assigned_by_name"/>
+                                                                <span class="o_ews_assigned_lock_text">
+                                                                    <span class="o_ews_assigned_lock_label">Được giao bởi</span>
+                                                                    <span class="o_ews_assigned_lock_name" t-esc="task.assigned_by_name"/>
+                                                                </span>
                                                             </t>
-                                                            <t t-else="">Được giao</t>
+                                                            <t t-else="">
+                                                                <span class="o_ews_assigned_lock_text">Được giao</span>
+                                                            </t>
                                                         </span>
                                                     </td>
                                                 </tr>
@@ -1014,6 +1032,64 @@
                     </t>
                 </t>
             </div>
+
+            <t t-if="state.chat.open">
+                <div class="o_ews_chat_panel">
+                    <header class="o_ews_chat_head">
+                        <div class="o_ews_chat_head_text">
+                            <strong>
+                                <i class="fa fa-comments"/> Thảo luận:
+                                <t t-esc="state.chat.taskName"/>
+                            </strong>
+                            <span class="o_ews_chat_sub" t-if="state.chat.assigneeName"
+                                  t-esc="state.chat.assigneeName"/>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-light o_ews_chat_close"
+                                title="Đóng" t-on-click="closeDiscussion">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </header>
+                    <div class="o_ews_chat_body" t-ref="chatBody">
+                        <t t-if="state.chat.loading">
+                            <div class="o_ews_chat_empty">
+                                <i class="fa fa-spinner fa-spin"/> Đang tải...
+                            </div>
+                        </t>
+                        <t t-elif="!state.chat.messages.length">
+                            <div class="o_ews_chat_empty">
+                                Chưa có tin nhắn. Hãy bắt đầu thảo luận về việc này.
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <t t-foreach="state.chat.messages" t-as="msg" t-key="msg.id">
+                                <div t-att-class="'o_ews_chat_msg' + (msg.is_mine ? ' mine' : '')">
+                                    <img class="o_ews_chat_avatar" t-att-src="msg.author_avatar" alt=""/>
+                                    <div class="o_ews_chat_bubble">
+                                        <div class="o_ews_chat_meta">
+                                            <strong t-esc="msg.author_name"/>
+                                            <span t-esc="msg.date_display"/>
+                                        </div>
+                                        <div class="o_ews_chat_text" t-esc="msg.body_text"/>
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
+                    </div>
+                    <footer class="o_ews_chat_foot">
+                        <textarea class="form-control o_ews_chat_input"
+                                  rows="2"
+                                  placeholder="Nhập tin nhắn... (Enter để gửi)"
+                                  t-model="state.chat.draft"
+                                  t-on-keydown="onChatKeydown"
+                                  t-att-disabled="state.chat.sending ? 'disabled' : undefined"/>
+                        <button type="button" class="btn btn-primary o_ews_chat_send"
+                                t-att-disabled="state.chat.sending || !(state.chat.draft || '').trim()"
+                                t-on-click="sendDiscussion">
+                            <i t-att-class="state.chat.sending ? 'fa fa-spinner fa-spin' : 'fa fa-paper-plane'"/>
+                        </button>
+                    </footer>
+                </div>
+            </t>
         </div>
     </t>
 </templates>

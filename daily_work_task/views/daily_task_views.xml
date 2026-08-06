@@ -32,7 +32,7 @@
         </field>
     </record>
 
-    <!-- Form -->
+    <!-- Form chuẩn Odoo: sheet giữa + Chatter phải -->
     <record id="view_daily_task_form" model="ir.ui.view">
         <field name="name">daily.task.form</field>
         <field name="model">daily.task</field>
@@ -49,39 +49,60 @@
                            statusbar_visible="not_started,in_progress,done"/>
                 </header>
                 <sheet>
+                    <div class="oe_button_box" name="button_box"/>
+                    <widget name="web_ribbon" title="Quá hạn" bg_color="text-bg-danger"
+                            invisible="not is_overdue"/>
                     <div class="oe_title">
+                        <label for="name" string="Tên công việc"/>
                         <h1>
-                            <field name="name" placeholder="Tên công việc"/>
+                            <field name="name" placeholder="Nhập tên công việc..."/>
                         </h1>
                     </div>
                     <group>
-                        <group>
+                        <group string="Thông tin giao việc">
+                            <field name="assigned_by_id" widget="many2one_avatar_user"/>
+                            <field name="assignee_id"/>
+                            <field name="assignee_user_id" widget="many2one_avatar_user"
+                                   string="User nhận việc"/>
+                            <field name="employee_hr_id" invisible="1"/>
                             <field name="assign_date"/>
-                            <field name="assigned_by_id"/>
                             <field name="deadline"/>
+                        </group>
+                        <group string="Phân loại &amp; tiến độ">
                             <field name="department_id"/>
                             <field name="work_group_id"/>
-                            <field name="assignee_id"/>
-                            <field name="employee_hr_id" invisible="1"/>
-                        </group>
-                        <group>
                             <field name="priority"/>
                             <field name="duration_minutes"/>
                             <field name="duration_hours" readonly="1"/>
-                            <field name="completion_percent"/>
+                            <field name="completion_percent" widget="progressbar"/>
                             <field name="is_overdue" readonly="1"/>
                         </group>
                     </group>
-                    <group string="Ghi chú bổ sung">
-                        <field name="note" nolabel="1" placeholder="Nhập mô tả chi tiết"/>
-                    </group>
+                    <notebook>
+                        <page string="Mô tả" name="page_description">
+                            <field name="description" nolabel="1"
+                                   placeholder="Mô tả yêu cầu / nội dung công việc..."/>
+                            <separator string="Ghi chú ngắn"/>
+                            <field name="note" nolabel="1" placeholder="Ghi chú bổ sung"/>
+                        </page>
+                        <page string="Checklist" name="page_checklist">
+                            <field name="checklist_ids" nolabel="1">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="done" widget="boolean"/>
+                                    <field name="name"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
+                <!-- Chatter: gửi tin, ghi chú nội bộ, đính kèm ảnh/tài liệu -->
                 <chatter/>
             </form>
         </field>
     </record>
 
-    <!-- Kanban theo trạng thái -->
+    <!-- Kanban mặc định: nhóm theo trạng thái -->
     <record id="view_daily_task_kanban" model="ir.ui.view">
         <field name="name">daily.task.kanban</field>
         <field name="model">daily.task</field>
@@ -93,61 +114,43 @@
                     sample="1"
                     highlight_color="color">
                 <field name="name"/>
-                <field name="assign_date"/>
                 <field name="deadline"/>
                 <field name="assignee_id"/>
-                <field name="department_id"/>
+                <field name="assignee_user_id"/>
                 <field name="work_group_id"/>
                 <field name="priority"/>
                 <field name="state"/>
                 <field name="color"/>
                 <field name="is_overdue"/>
-                <field name="completion_percent"/>
-                <field name="duration_minutes"/>
-                <field name="duration_hours"/>
-                <field name="note"/>
-                <field name="assigned_by_id"/>
                 <field name="activity_ids"/>
                 <progressbar field="priority"
                              colors='{"high": "danger", "medium": "warning", "low": "muted"}'/>
                 <templates>
                     <t t-name="card">
                         <main t-att-class="record.is_overdue.raw_value ? 'o_daily_kanban_overdue' : ''">
-                            <div class="d-flex align-items-start justify-content-between gap-2 mb-1">
-                                <field name="name" class="fw-bold fs-6"/>
+                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
+                                <field name="name" class="fw-bold fs-6 o_daily_kanban_title"/>
                                 <field name="priority" widget="badge"
                                          decoration-danger="priority == 'high'"
                                          decoration-warning="priority == 'medium'"
                                          decoration-muted="priority == 'low'"/>
                             </div>
-                            <div class="text-muted small d-flex flex-column gap-1">
-                                <div t-if="record.assignee_id.raw_value">
-                                    <i class="fa fa-user me-1" title="Người phụ trách"/>
-                                    <field name="assignee_id"/>
+                            <div class="text-muted small d-flex flex-column gap-1 mb-2">
+                                <div t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
+                                    <i class="fa fa-calendar me-1" title="Hạn hoàn thành"/>
+                                    <field name="deadline"/>
+                                    <span t-if="record.is_overdue.raw_value"
+                                          class="ms-1 badge text-bg-danger">Quá hạn</span>
                                 </div>
                                 <div t-if="record.work_group_id.raw_value">
                                     <i class="fa fa-folder-o me-1" title="Hạng mục"/>
                                     <field name="work_group_id"/>
                                 </div>
-                                <div t-if="record.department_id.raw_value">
-                                    <i class="fa fa-building-o me-1" title="Bộ phận"/>
-                                    <field name="department_id"/>
-                                </div>
-                                <div t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
-                                    <i class="fa fa-calendar me-1" title="Hạn hoàn thành"/>
-                                    <field name="deadline"/>
-                                    <span t-if="record.is_overdue.raw_value" class="ms-1 badge text-bg-danger">Quá hạn</span>
-                                </div>
                             </div>
-                            <div class="mt-2" t-if="record.completion_percent.raw_value">
-                                <field name="completion_percent" widget="progressbar"/>
-                            </div>
-                            <footer class="pt-2 mt-2 border-top d-flex align-items-center justify-content-between gap-2">
-                                <div class="small text-muted text-truncate">
-                                    <t t-if="record.duration_minutes.raw_value">
-                                        <i class="fa fa-clock-o me-1"/>
-                                        <field name="duration_hours"/> giờ
-                                    </t>
+                            <footer class="pt-2 mt-1 border-top d-flex align-items-center justify-content-between gap-2">
+                                <div class="d-flex align-items-center gap-2 min-w-0 o_daily_kanban_assignee">
+                                    <field name="assignee_user_id" widget="many2one_avatar_user"/>
+                                    <field name="assignee_id" class="text-truncate small"/>
                                 </div>
                                 <field name="activity_ids" widget="kanban_activity"/>
                             </footer>
@@ -201,11 +204,13 @@
         </field>
     </record>
 
-    <!-- Actions -->
+    <!-- Actions: Kanban ưu tiên (Odoo 19 dùng list thay cho tree) -->
     <record id="action_daily_task" model="ir.actions.act_window">
         <field name="name">Quản lý dữ liệu công việc</field>
         <field name="res_model">daily.task</field>
         <field name="view_mode">kanban,list,form,calendar</field>
+        <field name="view_id" ref="view_daily_task_kanban"/>
+        <field name="search_view_id" ref="view_daily_task_search"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Thêm công việc mới</p>
@@ -218,12 +223,15 @@
         <field name="res_model">daily.task</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="view_daily_task_kanban"/>
+        <field name="search_view_id" ref="view_daily_task_search"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Chưa có công việc</p>
-            <p>Xem và kéo thả công việc theo trạng thái trên bảng Kanban.</p>
+            <p>Xem và kéo thả công việc theo trạng thái trên bảng Kanban. Mở form để thảo luận (Chatter).</p>
         </field>
     </record>
+
+    <!-- Giao việc dùng OWL client action_daily_work_assign (xem daily_task_dashboard_views.xml) -->
 
     <record id="action_daily_task_employee_workspace" model="ir.actions.act_window">
         <field name="name">Nhân viên nhập CV</field>

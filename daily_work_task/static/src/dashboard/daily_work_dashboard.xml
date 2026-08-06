@@ -15,15 +15,19 @@
                         <button type="button" class="o_dwd_topnav_item active" t-on-click="() => this.openNav('dashboard')">
                             <i class="fa fa-th-large"/><span>Dashboard</span>
                         </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
-                            <i class="fa fa-share-square-o"/><span>Giao việc</span>
-                        </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
-                            <i class="fa fa-users"/><span>Xem CV NV</span>
-                        </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
-                            <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
-                        </button>
+                        <t t-if="state.canAssign">
+                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
+                                <i class="fa fa-share-square-o"/><span>Giao việc</span>
+                            </button>
+                        </t>
+                        <t t-if="state.canViewOthers">
+                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
+                                <i class="fa fa-users"/><span>Xem CV NV</span>
+                            </button>
+                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
+                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                            </button>
+                        </t>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overview')">
                             <i class="fa fa-user"/><span>Công việc của tôi</span>
                         </button>
@@ -74,12 +78,16 @@
                             <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('overview')">
                                 <i class="fa fa-user"/><span>Công việc của tôi</span>
                             </button>
-                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('assign')">
-                                <i class="fa fa-share"/><span>Giao việc</span>
-                            </button>
-                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('viewer')">
-                                <i class="fa fa-eye"/><span>Xem công việc NV</span>
-                            </button>
+                            <t t-if="state.canAssign">
+                                <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('assign')">
+                                    <i class="fa fa-share"/><span>Giao việc</span>
+                                </button>
+                            </t>
+                            <t t-if="state.canViewOthers">
+                                <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('viewer')">
+                                    <i class="fa fa-eye"/><span>Xem công việc NV</span>
+                                </button>
+                            </t>
                             <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('overdue')">
                                 <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>
                                 <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
@@ -102,9 +110,11 @@
                             <button type="button" class="o_dwd_side_item active" t-on-click="() => this.openNav('dashboard')">
                                 <i class="fa fa-dashboard"/><span>Tổng quan</span>
                             </button>
-                            <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('report')">
-                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
-                            </button>
+                            <t t-if="state.canViewOthers">
+                                <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('report')">
+                                    <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                                </button>
+                            </t>
                             <t t-if="state.canSeePerformance">
                                 <button type="button" class="o_dwd_side_item" t-on-click="() => this.openNav('performance')">
                                     <i class="fa fa-line-chart"/><span>Báo cáo hiệu suất</span>
@@ -164,15 +174,19 @@
 
                             <!-- Các mục đã chuyển từ menu Odoo vào đây -->
                             <div class="o_dwd_module_links">
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('assign')">
-                                    <i class="fa fa-share-square-o"/><span>Giao việc</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('viewer')">
-                                    <i class="fa fa-users"/><span>Xem công việc NV</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('report')">
-                                    <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
-                                </button>
+                                <t t-if="state.canAssign">
+                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('assign')">
+                                        <i class="fa fa-share-square-o"/><span>Giao việc</span>
+                                    </button>
+                                </t>
+                                <t t-if="state.canViewOthers">
+                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('viewer')">
+                                        <i class="fa fa-users"/><span>Xem công việc NV</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('report')">
+                                        <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                                    </button>
+                                </t>
                                 <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('overview')">
                                     <i class="fa fa-user"/><span>Công việc của tôi</span>
                                 </button>

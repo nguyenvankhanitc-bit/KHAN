@@ -134,33 +134,74 @@ class DailyTaskAccess(models.Model):
         if extra_users:
             users |= extra_users
         self._ensure_security_groups()
+        # Quét thêm user còn nhóm sót (vd. từng có quyền rồi bị xóa dòng)
+        self.repair_stale_security_groups()
         users._sync_daily_work_employees()
         self.env.registry.clear_cache()
 
     def _ensure_security_groups(self):
-        """Tự gán nhóm Người xem / Người giao việc theo tick quyền."""
-        Group = self.env["res.groups"].sudo()
-        g_viewer = Group.search(
-            [("id", "=", self.env.ref("daily_work_task.group_daily_work_viewer").id)],
-            limit=1,
-        )
-        g_assigner = Group.search(
-            [("id", "=", self.env.ref("daily_work_task.group_daily_work_assigner").id)],
-            limit=1,
-        )
-        for rec in self:
-            user = rec.user_id
-            if not user:
+        """Đồng bộ nhóm Người xem / Người giao việc theo tick quyền (thêm + gỡ)."""
+        self._sync_daily_work_security_groups(self.mapped("user_id"))
+
+    @api.model
+    def _sync_daily_work_security_groups(self, users):
+        """Gán/gỡ nhóm theo bảng daily.task.access. Không đụng user Quản lý."""
+        if not users:
+            return
+        Access = self.env["daily.task.access"].sudo()
+        g_viewer = self.env.ref("daily_work_task.group_daily_work_viewer")
+        g_assigner = self.env.ref("daily_work_task.group_daily_work_assigner")
+        g_manager = self.env.ref("daily_work_task.group_daily_work_manager")
+
+        for user in users:
+            if not user or not user.exists():
                 continue
-            to_add = []
-            if (rec.perm_view or rec.perm_edit or rec.perm_delete) and g_viewer:
-                if g_viewer not in user.group_ids:
-                    to_add.append(g_viewer.id)
-            if rec.perm_assign and g_assigner:
-                if g_assigner not in user.group_ids:
-                    to_add.append(g_assigner.id)
-            if to_add:
-                user.sudo().write({"group_ids": [(4, gid) for gid in to_add]})
+            # Quản lý: giữ quyền qua implied, không tự gỡ
+            if g_manager in user.group_ids or user.has_group(
+                "daily_work_task.group_daily_work_manager"
+            ):
+                continue
+
+            lines = Access.search([("active", "=", True), ("user_id", "=", user.id)])
+            need_assign = any(line.perm_assign for line in lines)
+            need_viewer = any(
+                line.perm_view or line.perm_edit or line.perm_delete or line.perm_assign
+                for line in lines
+            )
+
+            explicit = set(user.group_ids.ids)
+            commands = []
+
+            if need_assign:
+                if g_assigner.id not in explicit:
+                    commands.append((4, g_assigner.id))
+            elif g_assigner.id in explicit:
+                commands.append((3, g_assigner.id))
+
+            # Viewer: cần khi còn quyền xem/sửa/xóa. Assigner đã implied viewer.
+            if need_viewer:
+                if not need_assign and g_viewer.id not in explicit:
+                    commands.append((4, g_viewer.id))
+            elif g_viewer.id in explicit:
+                commands.append((3, g_viewer.id))
+
+            if commands:
+                user.sudo().write({"group_ids": commands})
+
+    @api.model
+    def repair_stale_security_groups(self):
+        """Gỡ nhóm giao/xem còn sót khi user không còn dòng phân quyền."""
+        g_viewer = self.env.ref("daily_work_task.group_daily_work_viewer")
+        g_assigner = self.env.ref("daily_work_task.group_daily_work_assigner")
+        users = self.env["res.users"].sudo().search(
+            [
+                "|",
+                ("group_ids", "in", g_assigner.id),
+                ("group_ids", "in", g_viewer.id),
+            ]
+        )
+        self._sync_daily_work_security_groups(users)
+        return True
 
 
 class ResUsers(models.Model):

@@ -48,6 +48,8 @@ export class DailyWorkDashboard extends Component {
             departmentId: 0,
             stateFilter: "",
             isManager: false,
+            canAssign: false,
+            canViewOthers: false,
             canSeePerformance: false,
             userName: "",
             companyName: "",
@@ -62,6 +64,8 @@ export class DailyWorkDashboard extends Component {
             this.state.dateFrom = opts.default_date_from || "";
             this.state.dateTo = opts.default_date_to || "";
             this.state.isManager = Boolean(opts.is_manager);
+            this.state.canAssign = Boolean(opts.can_assign);
+            this.state.canViewOthers = Boolean(opts.can_view_others);
             this.state.canSeePerformance = Boolean(opts.can_see_performance);
             this.state.userName = opts.user_name || "";
             this.state.companyName = opts.company_name || "";
@@ -375,6 +379,16 @@ export class DailyWorkDashboard extends Component {
     }
 
     async openNav(key) {
+        if (key === "assign" && !this.state.canAssign) {
+            this.notification.add(_t("Bạn không có quyền Giao việc."), { type: "warning" });
+            return;
+        }
+        if ((key === "viewer" || key === "report") && !this.state.canViewOthers) {
+            this.notification.add(_t("Bạn không có quyền xem công việc nhân viên khác."), {
+                type: "warning",
+            });
+            return;
+        }
         const map = {
             dashboard: "daily_work_dashboard",
             tasks: "daily_work_task_manager",

@@ -39,6 +39,7 @@ export class DailyWorkAssign extends Component {
             filterAssignee: 0,
             leftWidth: this._loadLeftWidth(),
             form: this.emptyForm(),
+            editingTaskId: false,
             assigneeQuery: "",
             assigneeOpen: false,
             assigneeHighlight: -1,
@@ -535,6 +536,77 @@ export class DailyWorkAssign extends Component {
         return "";
     }
 
+    onEditTask(task) {
+        if (!task?.id) {
+            return;
+        }
+        if (task.can_edit === false) {
+            this.notification.add(_t("Bạn không được sửa công việc này."), {
+                type: "warning",
+            });
+            return;
+        }
+        const hrId = Number(task.hr_employee_id) || 0;
+        const emp = this.state.employees.find((e) => Number(e.id) === hrId);
+        this.state.editingTaskId = task.id;
+        this.state.form = {
+            name: task.name || "",
+            deadline: task.deadline || "",
+            department_id: Number(task.department_id) || (emp ? Number(emp.department_id) || 0 : 0),
+            assignee_id: hrId,
+            work_group_id: task.work_group_id ? String(task.work_group_id) : "",
+            priority: task.priority || "medium",
+            state: task.state || "not_started",
+            note: task.note || "",
+        };
+        this.state.assigneeQuery = emp
+            ? this._assigneeLabel(emp)
+            : task.assignee_name || "";
+        this.state.assigneeOpen = false;
+        const panel = this.layoutBoxRef.el?.querySelector(".o_dwa_form_panel");
+        if (panel) {
+            panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+        this.notification.add(_t("Đang chỉnh sửa — sửa bên trái rồi bấm Lưu thay đổi."), {
+            type: "info",
+        });
+    }
+
+    onCancelEdit() {
+        this.state.editingTaskId = false;
+        this.state.form = this.emptyForm();
+        this.state.assigneeQuery = "";
+        this.state.assigneeOpen = false;
+    }
+
+    async onDeleteTask(task) {
+        if (!task?.id) {
+            return;
+        }
+        if (task.can_delete === false) {
+            this.notification.add(_t("Bạn không được xóa công việc này."), {
+                type: "warning",
+            });
+            return;
+        }
+        const label = task.name || "công việc này";
+        if (!window.confirm(`Xóa «${label}»? Thao tác không hoàn tác.`)) {
+            return;
+        }
+        try {
+            await this.orm.call("daily.task", "delete_from_assign", [task.id]);
+            if (this.state.editingTaskId === task.id) {
+                this.onCancelEdit();
+            }
+            this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
+            this.notification.add(_t("Đã xóa công việc."), { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể xóa công việc."), {
+                type: "danger",
+            });
+        }
+    }
+
     async onSubmit(ev) {
         ev.preventDefault();
         const f = this.state.form;
@@ -552,48 +624,61 @@ export class DailyWorkAssign extends Component {
             });
             return;
         }
+        const payload = {
+            name: f.name.trim(),
+            deadline: f.deadline,
+            department_id: Number(f.department_id) || false,
+            assignee_id: Number(f.assignee_id),
+            work_group_id: Number(f.work_group_id) || false,
+            priority: f.priority,
+            state: f.state || "not_started",
+            note: f.note,
+        };
+        const editingId = this.state.editingTaskId;
         this.state.saving = true;
         try {
-            const created = await this.orm.call("daily.task", "create_from_assign", [
-                {
-                    name: f.name.trim(),
-                    deadline: f.deadline,
-                    department_id: Number(f.department_id) || false,
-                    assignee_id: Number(f.assignee_id),
-                    work_group_id: Number(f.work_group_id) || false,
-                    priority: f.priority,
-                    state: f.state || "not_started",
-                    note: f.note,
-                },
-            ]);
-            const assigneeName =
-                (this.state.employees.find((e) => e.id === Number(f.assignee_id)) || {}).name ||
-                "nhân viên";
-            const keptAssigneeId = f.assignee_id;
-            const keptDept = f.department_id;
-            const keptWorkGroup = f.work_group_id;
-            this.state.form = {
-                ...this.emptyForm(),
-                department_id: keptDept,
-                assignee_id: keptAssigneeId,
-                work_group_id: keptWorkGroup,
-                priority: "medium",
-                state: "not_started",
-            };
-            const kept = this.state.employees.find((e) => e.id === Number(keptAssigneeId));
-            this.state.assigneeQuery = kept ? this._assigneeLabel(kept) : "";
-            this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
-            this.notification.add(
-                `Đã giao việc cho ${assigneeName}. Người nhận sẽ thấy thông báo trên Discuss.`,
-                { type: "success" }
-            );
-            if (created?.id) {
-                this.state.filterAssignee = Number(keptAssigneeId);
+            if (editingId) {
+                await this.orm.call("daily.task", "update_from_assign", [editingId, payload]);
+                this.state.editingTaskId = false;
+                this.state.form = this.emptyForm();
+                this.state.assigneeQuery = "";
+                this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
+                this.notification.add(_t("Đã cập nhật công việc."), { type: "success" });
+            } else {
+                const created = await this.orm.call("daily.task", "create_from_assign", [
+                    payload,
+                ]);
+                const assigneeName =
+                    (this.state.employees.find((e) => e.id === Number(f.assignee_id)) || {})
+                        .name || "nhân viên";
+                const keptAssigneeId = f.assignee_id;
+                const keptDept = f.department_id;
+                const keptWorkGroup = f.work_group_id;
+                this.state.form = {
+                    ...this.emptyForm(),
+                    department_id: keptDept,
+                    assignee_id: keptAssigneeId,
+                    work_group_id: keptWorkGroup,
+                    priority: "medium",
+                    state: "not_started",
+                };
+                const kept = this.state.employees.find((e) => e.id === Number(keptAssigneeId));
+                this.state.assigneeQuery = kept ? this._assigneeLabel(kept) : "";
+                this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
+                this.notification.add(
+                    `Đã giao việc cho ${assigneeName}. Người nhận sẽ thấy thông báo trên Discuss.`,
+                    { type: "success" }
+                );
+                if (created?.id) {
+                    this.state.filterAssignee = Number(keptAssigneeId);
+                }
             }
         } catch (e) {
-            this.notification.add(e?.data?.message || _t("Không thể giao việc."), {
-                type: "danger",
-            });
+            this.notification.add(
+                e?.data?.message ||
+                    (editingId ? _t("Không thể cập nhật công việc.") : _t("Không thể giao việc.")),
+                { type: "danger" }
+            );
         } finally {
             this.state.saving = false;
         }

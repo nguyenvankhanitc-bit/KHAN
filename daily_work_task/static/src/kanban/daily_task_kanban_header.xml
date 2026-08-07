@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="web.KanbanHeader" t-inherit="web.KanbanHeader" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_kanban_header')]" position="inside">
+            <div t-if="isDailyTaskKanban and !group.isFolded" class="o_daily_kanban_col_subhead">
+                <span>Tên công việc</span>
+                <span>Hạn hoàn thành</span>
+            </div>
+        </xpath>
+    </t>
+</templates>

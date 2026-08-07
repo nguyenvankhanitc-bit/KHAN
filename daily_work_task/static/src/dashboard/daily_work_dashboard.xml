@@ -16,8 +16,8 @@
                         <strong class="o_dwd_brand">CÔNG VIỆC</strong>
                     </div>
                     <nav class="o_dwd_topnav">
-                        <button type="button" class="o_dwd_topnav_item active" t-on-click="() => this.openNav('dashboard')">
-                            <i class="fa fa-th-large"/><span>Dashboard</span>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('employee_ws')">
+                            <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
                         </button>
                         <t t-if="state.canAssign">
                             <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
@@ -26,23 +26,22 @@
                         </t>
                         <t t-if="state.canViewOthers">
                             <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
-                                <i class="fa fa-users"/><span>Xem CV NV</span>
+                                <i class="fa fa-eye"/><span>Xem CV NV</span>
                             </button>
                             <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
-                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                                <i class="fa fa-bar-chart"/><span>BC tổng</span>
                             </button>
                         </t>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overview')">
-                            <i class="fa fa-user"/><span>Công việc của tôi</span>
+                            <i class="fa fa-user-circle"/><span>BC cá nhân</span>
                         </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('calendar')">
-                            <i class="fa fa-calendar"/><span>Calendar</span>
-                        </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('notebook')">
-                            <i class="fa fa-book"/><span>Danh bạ</span>
-                        </button>
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('work_note')">
-                            <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú</span>
+                        <t t-if="state.canSeePerformance">
+                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('performance')">
+                                <i class="fa fa-line-chart"/><span>Hiệu suất</span>
+                            </button>
+                        </t>
+                        <button type="button" class="o_dwd_topnav_item active" t-on-click="() => this.openNav('kpi')">
+                            <i class="fa fa-trophy"/><span>BC KPI</span>
                         </button>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overdue')">
                             <i class="fa fa-exclamation-triangle"/><span>Quá hạn</span>
@@ -76,12 +75,13 @@
 
                 <div class="o_dwd_body">
                     <!-- Sidebar -->
-                    <aside t-att-class="'o_dwd_sidebar' + (state.sidebarCollapsed ? ' collapsed' : '')">
+                    <aside t-att-class="sidebarClass"
+                           t-att-style="sidebarStyle">
                         <div class="o_dwd_side_section">
-                            <div class="o_dwd_side_label">QUẢN LÝ CÔNG VIỆC</div>
-                            <button type="button" class="o_dwd_side_item" title="Công việc của tôi"
-                                    t-on-click="() => this.openNav('overview')">
-                                <i class="fa fa-user"/><span>Công việc của tôi</span>
+                            <div class="o_dwd_side_label">📌 CÔNG VIỆC</div>
+                            <button type="button" class="o_dwd_side_item" title="Nhập công việc"
+                                    t-on-click="() => this.openNav('employee_ws')">
+                                <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
                             </button>
                             <t t-if="state.canAssign">
                                 <button type="button" class="o_dwd_side_item" title="Giao việc"
@@ -95,46 +95,57 @@
                                     <i class="fa fa-eye"/><span>Xem công việc NV</span>
                                 </button>
                             </t>
-                            <button type="button" class="o_dwd_side_item" title="Việc quá hạn"
-                                    t-on-click="() => this.openNav('overdue')">
-                                <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>
-                                <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
-                            </button>
-                            <button type="button" class="o_dwd_side_item" title="Danh bạ"
-                                    t-on-click="() => this.openNav('notebook')">
-                                <i class="fa fa-book"/><span>Danh bạ</span>
-                            </button>
-                            <button type="button" class="o_dwd_side_item" title="Ghi chú công việc"
-                                    t-on-click="() => this.openNav('work_note')">
-                                <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú công việc</span>
-                            </button>
-                            <button type="button" class="o_dwd_side_item" title="Calendar To Do List"
-                                    t-on-click="() => this.openNav('calendar')">
-                                <i class="fa fa-calendar-check-o"/><span>Calendar To Do List</span>
-                            </button>
                             <button type="button" class="o_dwd_side_item" title="Kanban công việc"
                                     t-on-click="() => this.openNav('kanban')">
                                 <i class="fa fa-th-large"/><span>Kanban công việc</span>
                             </button>
+                            <button type="button" class="o_dwd_side_item" title="Lịch"
+                                    t-on-click="() => this.openNav('calendar')">
+                                <i class="fa fa-calendar-check-o"/><span>Lịch</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" title="Công việc quá hạn"
+                                    t-on-click="() => this.openNav('overdue')">
+                                <i class="fa fa-exclamation-triangle"/><span>Công việc quá hạn</span>
+                                <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" title="Nhắc việc"
+                                    t-on-click="() => this.openNav('reminders')">
+                                <i class="fa fa-bell-o"/><span>Nhắc việc</span>
+                            </button>
                         </div>
                         <div class="o_dwd_side_section">
-                            <div class="o_dwd_side_label">BÁO CÁO</div>
-                            <button type="button" class="o_dwd_side_item active" title="Tổng quan"
-                                    t-on-click="() => this.openNav('dashboard')">
-                                <i class="fa fa-dashboard"/><span>Tổng quan</span>
-                            </button>
+                            <div class="o_dwd_side_label">📊 BÁO CÁO</div>
                             <t t-if="state.canViewOthers">
                                 <button type="button" class="o_dwd_side_item" title="Báo cáo tổng"
                                         t-on-click="() => this.openNav('report')">
                                     <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
                                 </button>
                             </t>
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo cá nhân"
+                                    t-on-click="() => this.openNav('overview')">
+                                <i class="fa fa-user-circle"/><span>Báo cáo cá nhân</span>
+                            </button>
                             <t t-if="state.canSeePerformance">
                                 <button type="button" class="o_dwd_side_item" title="Báo cáo hiệu suất"
                                         t-on-click="() => this.openNav('performance')">
                                     <i class="fa fa-line-chart"/><span>Báo cáo hiệu suất</span>
                                 </button>
                             </t>
+                            <button type="button" class="o_dwd_side_item active" title="Báo cáo KPI"
+                                    t-on-click="() => this.openNav('kpi')">
+                                <i class="fa fa-trophy"/><span>Báo cáo KPI</span>
+                            </button>
+                        </div>
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">📚 TIỆN ÍCH</div>
+                            <button type="button" class="o_dwd_side_item" title="Danh bạ"
+                                    t-on-click="() => this.openNav('notebook')">
+                                <i class="fa fa-book"/><span>Danh bạ</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" title="Ghi chú công việc"
+                                    t-on-click="() => this.openNav('work_note')">
+                                <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú</span>
+                            </button>
                         </div>
                         <t t-if="state.isManager">
                         <div class="o_dwd_side_section">
@@ -181,6 +192,13 @@
                         </div>
                         </t>
                     </aside>
+                    <div t-if="!state.sidebarCollapsed"
+                         t-att-class="'o_dwd_sidebar_resizer' + (state.sidebarResizing ? ' active' : '')"
+                         title="Kéo để đổi độ rộng thanh bên (double-click để mặc định)"
+                         t-on-pointerdown="onSidebarResizeStart"
+                         t-on-dblclick="resetSidebarWidth">
+                        <span class="o_dwd_sidebar_resizer_grip" aria-hidden="true"/>
+                    </div>
 
                     <!-- Main -->
                     <main class="o_dwd_main">
@@ -188,46 +206,6 @@
                             <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                         </t>
                         <t t-else="">
-                            <div class="o_dwd_pagehead">
-                                <div>
-                                    <h1>DASHBOARD TỔNG QUAN</h1>
-                                    <p t-esc="greeting"/>
-                                </div>
-                            </div>
-
-                            <!-- Các mục đã chuyển từ menu Odoo vào đây -->
-                            <div class="o_dwd_module_links">
-                                <t t-if="state.canAssign">
-                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('assign')">
-                                        <i class="fa fa-share-square-o"/><span>Giao việc</span>
-                                    </button>
-                                </t>
-                                <t t-if="state.canViewOthers">
-                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('viewer')">
-                                        <i class="fa fa-users"/><span>Xem công việc NV</span>
-                                    </button>
-                                    <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('report')">
-                                        <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
-                                    </button>
-                                </t>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('overview')">
-                                    <i class="fa fa-user"/><span>Công việc của tôi</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('calendar')">
-                                    <i class="fa fa-calendar"/><span>Calendar To Do List</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('notebook')">
-                                    <i class="fa fa-book"/><span>Danh bạ</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod" t-on-click="() => this.openNav('work_note')">
-                                    <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú công việc</span>
-                                </button>
-                                <button type="button" class="o_dwd_mod danger" t-on-click="() => this.openNav('overdue')">
-                                    <i class="fa fa-exclamation-triangle"/><span>Việc quá hạn</span>
-                                    <t t-if="kpi.overdue"><em t-esc="kpi.overdue"/></t>
-                                </button>
-                            </div>
-
                             <div class="o_dwd_filters">
                                 <div class="o_dwd_filter_group">
                                     <label>Từ ngày</label>
@@ -413,7 +391,7 @@
 
                             <!-- Bảng xếp hạng KPI — NV trong phòng ban mình, 3 tháng gần nhất -->
                             <t t-if="!state.isManager">
-                                <div class="o_dwd_card o_dwd_kpi_rank_card">
+                                <div class="o_dwd_card o_dwd_kpi_rank_card" id="o_dwd_kpi_rank">
                                     <div class="o_dwd_kpi_rank_head">
                                         <h3>BẢNG XẾP HẠNG KPI</h3>
                                         <span class="o_dwd_kpi_rank_period">

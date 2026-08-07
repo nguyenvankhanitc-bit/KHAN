@@ -438,6 +438,25 @@
         }
     }
 
+    .o_ews_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: flex-end;
+        margin-bottom: 12px;
+    }
+
+    .o_ews_quick_create {
+        flex-shrink: 0;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .o_ews_toolbar .o_ews_filters {
+        flex: 1;
+        margin-bottom: 0;
+    }
+
     .o_ews_filters {
         display: flex;
         flex-wrap: wrap;

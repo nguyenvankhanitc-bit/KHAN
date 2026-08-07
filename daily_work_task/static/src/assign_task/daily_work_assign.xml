@@ -224,7 +224,12 @@
                          t-att-style="'--o-dwa-left-width:' + state.leftWidth + 'px'">
                         <aside class="o_dwa_form_panel">
                             <h3 class="o_dwa_form_title">
-                                <i class="fa fa-pencil-square-o"/> Phiếu giao việc
+                                <t t-if="state.editingTaskId">
+                                    <i class="fa fa-pencil"/> Chỉnh sửa phiếu giao việc
+                                </t>
+                                <t t-else="">
+                                    <i class="fa fa-pencil-square-o"/> Phiếu giao việc
+                                </t>
                             </h3>
                             <p class="o_dwa_panel_hint">
                                 Điền phiếu bên trái — việc sẽ vào
@@ -351,12 +356,27 @@
                                               placeholder="Mô tả yêu cầu giao việc..."
                                               t-model="state.form.note"/>
                                 </div>
-                                <button type="submit" class="btn o_dwa_submit"
-                                        t-att-disabled="state.saving">
-                                    <i class="fa fa-paper-plane"/>
-                                    <t t-if="state.saving"> Đang giao...</t>
-                                    <t t-else=""> Giao việc ngay</t>
-                                </button>
+                                <div class="o_dwa_form_actions">
+                                    <button type="submit" class="btn o_dwa_submit"
+                                            t-att-disabled="state.saving">
+                                        <t t-if="state.editingTaskId">
+                                            <i class="fa fa-save"/>
+                                            <t t-if="state.saving"> Đang lưu...</t>
+                                            <t t-else=""> Lưu thay đổi</t>
+                                        </t>
+                                        <t t-else="">
+                                            <i class="fa fa-paper-plane"/>
+                                            <t t-if="state.saving"> Đang giao...</t>
+                                            <t t-else=""> Giao việc ngay</t>
+                                        </t>
+                                    </button>
+                                    <button t-if="state.editingTaskId" type="button"
+                                            class="btn btn-outline-secondary o_dwa_cancel_edit"
+                                            t-att-disabled="state.saving"
+                                            t-on-click="onCancelEdit">
+                                        Hủy
+                                    </button>
+                                </div>
                             </form>
                         </aside>
 
@@ -436,11 +456,12 @@
                                                         <th>Ưu tiên</th>
                                                         <th>Trạng thái</th>
                                                         <th class="o_dwa_th_discuss">Thảo luận</th>
+                                                        <th class="o_dwa_th_action">Thao tác</th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
                                                     <t t-foreach="group.tasks" t-as="task" t-key="task.id">
-                                                        <tr>
+                                                        <tr t-att-class="state.editingTaskId === task.id ? 'o_dwa_row_editing' : ''">
                                                             <td>
                                                                 <button type="button" class="o_dwa_task_link"
                                                                         t-on-click="() => this.openTaskDetail(task)"
@@ -467,6 +488,24 @@
                                                                               t-esc="discussionBadge(task)"/>
                                                                     </t>
                                                                 </button>
+                                                            </td>
+                                                            <td class="o_dwa_td_action">
+                                                                <div class="o_dwa_row_actions">
+                                                                    <button t-if="task.can_edit !== false"
+                                                                            type="button"
+                                                                            class="o_dwa_act_btn edit"
+                                                                            t-att-title="'Chỉnh sửa: ' + (task.name || '')"
+                                                                            t-on-click="() => this.onEditTask(task)">
+                                                                        <i class="fa fa-pencil"/>
+                                                                    </button>
+                                                                    <button t-if="task.can_delete"
+                                                                            type="button"
+                                                                            class="o_dwa_act_btn del"
+                                                                            t-att-title="'Xóa: ' + (task.name || '')"
+                                                                            t-on-click="() => this.onDeleteTask(task)">
+                                                                        <i class="fa fa-trash"/>
+                                                                    </button>
+                                                                </div>
                                                             </td>
                                                         </tr>
                                                     </t>

@@ -1,103 +1,149 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!--
+        App root: click icon → opens first leaf action (Công việc của tôi / employee_ws).
+        IA theo thiết kế: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH (+ Cấu hình ẩn cho manager).
+    -->
     <menuitem id="menu_daily_work_root"
               name="Công việc hàng ngày"
               sequence="36"
               web_icon="daily_work_task,static/description/icon.png"
               groups="daily_work_task.group_daily_work_user"/>
 
-    <menuitem id="menu_daily_work_dashboard"
-              name="Dashboard Tổng Quan"
+    <!-- ========== 📌 CÔNG VIỆC ========== -->
+    <menuitem id="menu_daily_work_cat_tasks"
+              name="CÔNG VIỆC"
               parent="menu_daily_work_root"
-              action="action_daily_work_dashboard"
-              sequence="5"/>
-
-    <menuitem id="menu_daily_work_tasks"
-              name="Quản lý dữ liệu công việc"
-              parent="menu_daily_work_root"
-              action="action_daily_work_task_manager"
               sequence="10"
-              groups="daily_work_task.group_daily_work_manager"/>
+              groups="daily_work_task.group_daily_work_user"/>
 
-    <menuitem id="menu_daily_work_kanban"
-              name="Kanban công việc"
-              parent="menu_daily_work_root"
-              action="action_daily_task_kanban"
-              sequence="11"
+    <!-- Landing mặc định -->
+    <menuitem id="menu_daily_work_employee_ws"
+              name="Nhập công việc"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_employee_ws"
+              sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_assign"
               name="Giao việc"
-              parent="menu_daily_work_root"
+              parent="menu_daily_work_cat_tasks"
               action="action_daily_work_assign"
-              sequence="15"
+              sequence="2"
               groups="daily_work_task.group_daily_work_assigner"/>
-
-    <menuitem id="menu_daily_work_employee_ws"
-              name="Nhân viên nhập CV"
-              parent="menu_daily_work_root"
-              action="action_daily_work_employee_ws"
-              sequence="20"/>
 
     <menuitem id="menu_daily_work_viewer"
               name="Xem công việc NV"
-              parent="menu_daily_work_root"
+              parent="menu_daily_work_cat_tasks"
               action="action_daily_work_viewer"
-              sequence="25"
+              sequence="3"
               groups="daily_work_task.group_daily_work_viewer"/>
 
-    <menuitem id="menu_daily_work_summary_report"
-              name="Báo cáo tổng"
-              parent="menu_daily_work_root"
-              action="action_daily_work_summary_report"
-              sequence="28"
-              groups="daily_work_task.group_daily_work_viewer"/>
-
-    <menuitem id="menu_daily_work_performance_report"
-              name="Báo cáo hiệu suất"
-              parent="menu_daily_work_root"
-              action="action_daily_work_performance_report"
-              sequence="29"
-              groups="daily_work_task.group_daily_work_user"/>
-
-    <menuitem id="menu_daily_work_report_overview"
-              name="Báo cáo công việc cá nhân"
-              parent="menu_daily_work_root"
-              action="action_daily_work_report_overview"
-              sequence="29"
+    <menuitem id="menu_daily_work_kanban"
+              name="Kanban công việc"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_task_kanban"
+              sequence="4"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_calendar"
-              name="Calendar To Do List"
-              parent="menu_daily_work_root"
+              name="Lịch"
+              parent="menu_daily_work_cat_tasks"
               action="action_daily_work_calendar"
-              sequence="30"/>
+              sequence="5"
+              groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_overdue"
-              name="Việc quá hạn"
-              parent="menu_daily_work_root"
+              name="Công việc quá hạn"
+              parent="menu_daily_work_cat_tasks"
               action="action_daily_task_overdue"
-              sequence="40"/>
+              sequence="6"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_reminders"
+              name="Nhắc việc"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_report_overview"
+              sequence="7"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <!-- ========== 📊 BÁO CÁO ========== -->
+    <menuitem id="menu_daily_work_cat_reports"
+              name="BÁO CÁO"
+              parent="menu_daily_work_root"
+              sequence="20"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_summary_report"
+              name="Báo cáo tổng"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_summary_report"
+              sequence="1"
+              groups="daily_work_task.group_daily_work_viewer"/>
+
+    <menuitem id="menu_daily_work_report_overview"
+              name="Báo cáo cá nhân"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_report_overview"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_performance_report"
+              name="Báo cáo hiệu suất"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_performance_report"
+              sequence="3"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_kpi"
+              name="Báo cáo KPI"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_dashboard"
+              sequence="4"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <!-- Dashboard biểu đồ tổng quan: giữ XML id, ẩn khỏi navbar (mở qua Báo cáo KPI) -->
+    <menuitem id="menu_daily_work_dashboard"
+              name="Tổng quan"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_dashboard"
+              sequence="90"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <!-- ========== 📚 TIỆN ÍCH ========== -->
+    <menuitem id="menu_daily_work_cat_utils"
+              name="TIỆN ÍCH"
+              parent="menu_daily_work_root"
+              sequence="30"
+              groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_notebook"
               name="Danh bạ"
-              parent="menu_daily_work_root"
+              parent="menu_daily_work_cat_utils"
               action="action_daily_work_notebook"
-              sequence="35"
+              sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_note"
               name="Ghi chú công việc"
-              parent="menu_daily_work_root"
+              parent="menu_daily_work_cat_utils"
               action="action_daily_work_note"
-              sequence="36"
+              sequence="2"
               groups="daily_work_task.group_daily_work_user"/>
+
+    <!-- ========== Quản trị (ẩn khỏi navbar — mở từ Dashboard nếu cần) ========== -->
+    <menuitem id="menu_daily_work_tasks"
+              name="Quản lý dữ liệu công việc"
+              parent="menu_daily_work_root"
+              action="action_daily_work_task_manager"
+              sequence="80"
+              groups="daily_work_task.group_daily_work_manager"/>
 
     <menuitem id="menu_daily_work_send_mail"
               name="Gửi mail giục quá hạn"
               parent="menu_daily_work_root"
               action="action_daily_task_send_overdue"
-              sequence="50"
+              sequence="82"
               groups="daily_work_task.group_daily_work_manager"/>
 
     <menuitem id="menu_daily_work_config"
@@ -112,7 +158,19 @@
               action="action_daily_task_employee"
               sequence="10"/>
 
-    <!-- Đưa Phân quyền vào folder Cấu hình (navbar sẽ ẩn cùng folder) -->
+    <menuitem id="menu_daily_work_work_group"
+              name="Hạng mục"
+              parent="menu_daily_work_config"
+              action="action_daily_task_work_group"
+              sequence="15"/>
+
+    <menuitem id="menu_daily_work_recurring"
+              name="Công việc lặp lại"
+              parent="menu_daily_work_config"
+              action="action_daily_task_recurring"
+              sequence="18"
+              groups="daily_work_task.group_daily_work_manager"/>
+
     <menuitem id="menu_daily_work_access"
               name="Phân quyền xem / giao / sửa / xóa"
               parent="menu_daily_work_config"
@@ -127,60 +185,65 @@
               sequence="25"
               groups="daily_work_task.group_daily_work_manager"/>
 
-    <menuitem id="menu_daily_work_work_group"
-              name="Hạng mục"
-              parent="menu_daily_work_config"
-              action="action_daily_task_work_group"
-              sequence="15"/>
-
-    <menuitem id="menu_daily_work_recurring"
-              name="Công việc lặp lại"
-              parent="menu_daily_work_config"
-              action="action_daily_task_recurring"
-              sequence="18"
-              groups="daily_work_task.group_daily_work_manager"/>
-
-    <!-- Ẩn khỏi navbar Odoo: các mục này mở từ trong Dashboard Tổng Quan -->
-    <record id="menu_daily_work_tasks" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <!-- Active flags: hiện 3 nhóm chính; ẩn mục quản trị nội bộ -->
+    <record id="menu_daily_work_cat_tasks" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_assign" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <record id="menu_daily_work_cat_reports" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_cat_utils" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_employee_ws" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_viewer" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <record id="menu_daily_work_assign" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_summary_report" model="ir.ui.menu">
+    <record id="menu_daily_work_kanban" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_calendar" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_overdue" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_dashboard" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_performance_report" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_report_overview" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <record id="menu_daily_work_kpi" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_calendar" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <record id="menu_daily_work_viewer" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
-    <record id="menu_daily_work_kanban" model="ir.ui.menu">
-        <field name="active" eval="False"/>
-    </record>
-    <record id="menu_daily_work_overdue" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+    <record id="menu_daily_work_summary_report" model="ir.ui.menu">
+        <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_notebook" model="ir.ui.menu">
-        <field name="active" eval="False"/>
+        <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_note" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_report_overview" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_reminders" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+
+    <record id="menu_daily_work_tasks" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
     <record id="menu_daily_work_send_mail" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>
-    <!-- Cấu hình + Phân quyền: chỉ mở từ Dashboard (sidebar Cấu hình hệ thống) -->
     <record id="menu_daily_work_config" model="ir.ui.menu">
         <field name="active" eval="False"/>
     </record>

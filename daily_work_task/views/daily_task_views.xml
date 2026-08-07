@@ -107,7 +107,7 @@
         <field name="name">daily.task.kanban</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state"
+            <kanban default_group_by="kanban_column"
                     class="o_kanban_small_column o_daily_task_kanban"
                     records_draggable="1"
                     quick_create="false"
@@ -115,42 +115,70 @@
                     highlight_color="color">
                 <field name="name"/>
                 <field name="deadline"/>
+                <field name="days_to_deadline"/>
                 <field name="assignee_id"/>
                 <field name="assignee_user_id"/>
                 <field name="work_group_id"/>
                 <field name="priority"/>
                 <field name="state"/>
+                <field name="kanban_column"/>
+                <field name="completion_percent"/>
                 <field name="color"/>
                 <field name="is_overdue"/>
                 <field name="activity_ids"/>
-                <progressbar field="priority"
-                             colors='{"high": "danger", "medium": "warning", "low": "muted"}'/>
                 <templates>
                     <t t-name="card">
-                        <main t-att-class="record.is_overdue.raw_value ? 'o_daily_kanban_overdue' : ''">
-                            <div class="d-flex align-items-start justify-content-between gap-2 mb-2">
-                                <field name="name" class="fw-bold fs-6 o_daily_kanban_title"/>
+                        <main t-att-class="'o_daily_kcard o_daily_kcard_' + (record.kanban_column.raw_value or 'not_started')">
+                            <div class="o_daily_kcard_top">
+                                <div class="o_daily_kcard_title_wrap">
+                                    <i t-if="record.kanban_column.raw_value == 'done'"
+                                       class="fa fa-check-circle o_daily_kcard_done_ico"/>
+                                    <field name="name" class="o_daily_kcard_title"/>
+                                </div>
                                 <field name="priority" widget="badge"
                                          decoration-danger="priority == 'high'"
                                          decoration-warning="priority == 'medium'"
-                                         decoration-muted="priority == 'low'"/>
+                                         decoration-info="priority == 'low'"/>
                             </div>
-                            <div class="text-muted small d-flex flex-column gap-1 mb-2">
-                                <div t-att-class="record.is_overdue.raw_value ? 'text-danger fw-bold' : ''">
-                                    <i class="fa fa-calendar me-1" title="Hạn hoàn thành"/>
+
+                            <div class="o_daily_kcard_meta">
+                                <div class="o_daily_kcard_line">
+                                    <i class="fa fa-calendar o_daily_kcard_ico_cal"/>
                                     <field name="deadline"/>
-                                    <span t-if="record.is_overdue.raw_value"
-                                          class="ms-1 badge text-bg-danger">Quá hạn</span>
                                 </div>
-                                <div t-if="record.work_group_id.raw_value">
-                                    <i class="fa fa-folder-o me-1" title="Hạng mục"/>
+                                <div t-if="record.work_group_id.raw_value" class="o_daily_kcard_line">
+                                    <i class="fa fa-folder o_daily_kcard_ico_folder"/>
                                     <field name="work_group_id"/>
                                 </div>
                             </div>
-                            <footer class="pt-2 mt-1 border-top d-flex align-items-center justify-content-between gap-2">
-                                <div class="d-flex align-items-center gap-2 min-w-0 o_daily_kanban_assignee">
+
+                            <div t-if="record.kanban_column.raw_value == 'in_progress'"
+                                 class="o_daily_kcard_progress">
+                                <div class="o_daily_kcard_progress_label">
+                                    <t t-esc="record.completion_percent.value or 0"/>%
+                                </div>
+                                <div class="o_daily_kcard_progress_track">
+                                    <div class="o_daily_kcard_progress_bar"
+                                         t-attf-style="width: #{record.completion_percent.raw_value or 0}%"/>
+                                </div>
+                            </div>
+
+                            <div t-if="record.kanban_column.raw_value == 'upcoming'"
+                                 class="o_daily_kcard_countdown">
+                                <t t-if="record.days_to_deadline.raw_value == 0">Còn hôm nay</t>
+                                <t t-elif="record.days_to_deadline.raw_value == 1">Còn 1 ngày</t>
+                                <t t-else="">Còn <t t-esc="record.days_to_deadline.value"/> ngày</t>
+                            </div>
+
+                            <div t-if="record.kanban_column.raw_value == 'overdue'"
+                                 class="o_daily_kcard_overdue_tag">
+                                Quá hạn
+                            </div>
+
+                            <footer class="o_daily_kcard_foot">
+                                <div class="o_daily_kcard_assignee">
                                     <field name="assignee_user_id" widget="many2one_avatar_user"/>
-                                    <field name="assignee_id" class="text-truncate small"/>
+                                    <field name="assignee_id"/>
                                 </div>
                                 <field name="activity_ids" widget="kanban_activity"/>
                             </footer>
@@ -194,6 +222,7 @@
                 <filter string="Quá hạn" name="filter_overdue" domain="[('is_overdue', '=', True)]"/>
                 <filter string="Ưu tiên cao" name="filter_high" domain="[('priority', '=', 'high')]"/>
                 <group>
+                    <filter string="Cột Kanban" name="group_kanban_column" context="{'group_by': 'kanban_column'}"/>
                     <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Người phụ trách" name="group_assignee" context="{'group_by': 'assignee_id'}"/>
                     <filter string="Bộ phận" name="group_department" context="{'group_by': 'department_id'}"/>
@@ -227,7 +256,7 @@
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Chưa có công việc</p>
-            <p>Xem và kéo thả công việc theo trạng thái trên bảng Kanban. Mở form để thảo luận (Chatter).</p>
+            <p>Xem và kéo thả theo cột: Quá hạn · Chưa bắt đầu · Đang xử lý · Đã hoàn thành.</p>
         </field>
     </record>
 
@@ -250,9 +279,11 @@
     </record>
 
     <record id="action_daily_task_overdue" model="ir.actions.act_window">
-        <field name="name">Việc quá hạn</field>
+        <field name="name">Công việc quá hạn</field>
         <field name="res_model">daily.task</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="view_daily_task_kanban"/>
+        <field name="search_view_id" ref="view_daily_task_search"/>
         <field name="domain">[('is_overdue', '=', True)]</field>
         <field name="context">{'search_default_filter_overdue': 1}</field>
     </record>

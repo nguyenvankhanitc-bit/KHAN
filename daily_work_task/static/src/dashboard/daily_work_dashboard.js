@@ -3,9 +3,37 @@
 import { loadBundle } from "@web/core/assets";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+
+const SIDEBAR_WIDTH_KEY = "daily_work_sidebar_width";
+const SIDEBAR_COLLAPSED_KEY = "daily_work_sidebar_collapsed";
+const SIDEBAR_WIDTH_DEFAULT = 250;
+const SIDEBAR_WIDTH_MIN = 180;
+const SIDEBAR_WIDTH_MAX = 420;
+const SIDEBAR_WIDTH_COLLAPSED = 68;
+
+function readStoredSidebarWidth() {
+    try {
+        const raw = window.localStorage.getItem(SIDEBAR_WIDTH_KEY);
+        const n = Number(raw);
+        if (Number.isFinite(n)) {
+            return Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, Math.round(n)));
+        }
+    } catch (_e) {
+        /* ignore */
+    }
+    return SIDEBAR_WIDTH_DEFAULT;
+}
+
+function readStoredSidebarCollapsed() {
+    try {
+        return window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1";
+    } catch (_e) {
+        return false;
+    }
+}
 
 export class DailyWorkDashboard extends Component {
     static template = "daily_work_task.DailyWorkDashboard";
@@ -20,6 +48,7 @@ export class DailyWorkDashboard extends Component {
         this.weeklyChartRef = useRef("weeklyChart");
         this.deptChartRef = useRef("deptChart");
         this.charts = [];
+        this._sidebarResize = null;
         this.state = useState({
             loading: true,
             data: {
@@ -53,13 +82,9 @@ export class DailyWorkDashboard extends Component {
             canSeePerformance: false,
             userName: "",
             companyName: "",
-            sidebarCollapsed: (() => {
-                try {
-                    return window.localStorage.getItem("daily_work_sidebar_collapsed") === "1";
-                } catch (_e) {
-                    return false;
-                }
-            })(),
+            sidebarCollapsed: readStoredSidebarCollapsed(),
+            sidebarWidth: readStoredSidebarWidth(),
+            sidebarResizing: false,
             configOpen: true,
         });
         onWillStart(async () => {
@@ -86,6 +111,7 @@ export class DailyWorkDashboard extends Component {
             },
             () => [this.state.loading, this.state.data]
         );
+        onWillUnmount(() => this._stopSidebarResize());
     }
 
     get filtersPayload() {
@@ -98,11 +124,29 @@ export class DailyWorkDashboard extends Component {
         };
     }
 
+    get sidebarClass() {
+        let cls = "o_dwd_sidebar";
+        if (this.state.sidebarCollapsed) {
+            cls += " collapsed";
+        }
+        if (this.state.sidebarResizing) {
+            cls += " is-resizing";
+        }
+        return cls;
+    }
+
+    get sidebarStyle() {
+        const width = this.state.sidebarCollapsed
+            ? SIDEBAR_WIDTH_COLLAPSED
+            : this.state.sidebarWidth;
+        return `width: ${width}px;`;
+    }
+
     toggleSidebar() {
         this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
         try {
             window.localStorage.setItem(
-                "daily_work_sidebar_collapsed",
+                SIDEBAR_COLLAPSED_KEY,
                 this.state.sidebarCollapsed ? "1" : "0"
             );
         } catch (_e) {
@@ -110,13 +154,65 @@ export class DailyWorkDashboard extends Component {
         }
     }
 
-    get kpi() {
-        return this.state.data?.kpi || {};
+    persistSidebarWidth(width) {
+        const next = Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, Math.round(width)));
+        this.state.sidebarWidth = next;
+        try {
+            window.localStorage.setItem(SIDEBAR_WIDTH_KEY, String(next));
+        } catch (_e) {
+            /* ignore */
+        }
+        return next;
     }
 
-    get greeting() {
-        const name = this.state.userName || "Administrator";
-        return `Xin chào, ${name}`;
+    resetSidebarWidth() {
+        if (this.state.sidebarCollapsed) {
+            return;
+        }
+        this.persistSidebarWidth(SIDEBAR_WIDTH_DEFAULT);
+    }
+
+    onSidebarResizeStart(ev) {
+        if (this.state.sidebarCollapsed || ev.button !== 0) {
+            return;
+        }
+        ev.preventDefault();
+        this._stopSidebarResize();
+        const startX = ev.clientX;
+        const startWidth = this.state.sidebarWidth;
+        this.state.sidebarResizing = true;
+        document.body.classList.add("o_dwd_sidebar_resizing");
+
+        const onMove = (e) => {
+            const next = startWidth + (e.clientX - startX);
+            this.state.sidebarWidth = Math.min(
+                SIDEBAR_WIDTH_MAX,
+                Math.max(SIDEBAR_WIDTH_MIN, Math.round(next))
+            );
+        };
+        const onUp = () => {
+            this.persistSidebarWidth(this.state.sidebarWidth);
+            this._stopSidebarResize();
+        };
+        this._sidebarResize = { onMove, onUp };
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onUp);
+    }
+
+    _stopSidebarResize() {
+        if (this._sidebarResize) {
+            window.removeEventListener("pointermove", this._sidebarResize.onMove);
+            window.removeEventListener("pointerup", this._sidebarResize.onUp);
+            window.removeEventListener("pointercancel", this._sidebarResize.onUp);
+            this._sidebarResize = null;
+        }
+        this.state.sidebarResizing = false;
+        document.body.classList.remove("o_dwd_sidebar_resizing");
+    }
+
+    get kpi() {
+        return this.state.data?.kpi || {};
     }
 
     get deptLegend() {
@@ -396,6 +492,15 @@ export class DailyWorkDashboard extends Component {
         });
     }
 
+    _scrollToKpi() {
+        requestAnimationFrame(() => {
+            const el = document.getElementById("o_dwd_kpi_rank");
+            if (el) {
+                el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+        });
+    }
+
     async openNav(key) {
         if (key === "assign" && !this.state.canAssign) {
             this.notification.add(_t("Bạn không có quyền Giao việc."), { type: "warning" });
@@ -413,6 +518,7 @@ export class DailyWorkDashboard extends Component {
             assign: "daily_work_assign",
             report: "daily_work_summary_report",
             overview: "daily_work_report_overview",
+            reminders: "daily_work_report_overview",
             performance: "daily_work_performance_report",
             calendar: "daily_work_calendar",
             notebook: "daily_work_notebook",
@@ -420,12 +526,18 @@ export class DailyWorkDashboard extends Component {
             employee_ws: "daily_work_employee_ws",
             overdue: null,
             kanban: null,
+            kpi: null,
             viewer: "daily_work_viewer",
             send_mail: null,
             config: null,
         };
         if (key === "dashboard") {
             await this.loadDashboard();
+            return;
+        }
+        if (key === "kpi") {
+            await this.loadDashboard();
+            this._scrollToKpi();
             return;
         }
         if (key === "kanban") {

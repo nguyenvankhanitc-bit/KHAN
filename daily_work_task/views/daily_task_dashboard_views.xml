@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="action_daily_work_dashboard" model="ir.actions.client">
-        <field name="name">Dashboard Tổng Quan</field>
+        <field name="name">Báo cáo KPI</field>
         <field name="tag">daily_work_dashboard</field>
     </record>
     <record id="action_daily_work_task_manager" model="ir.actions.client">
@@ -9,7 +9,7 @@
         <field name="tag">daily_work_task_manager</field>
     </record>
     <record id="action_daily_work_employee_ws" model="ir.actions.client">
-        <field name="name">Nhân viên nhập CV</field>
+        <field name="name">Nhập công việc</field>
         <field name="tag">daily_work_employee_ws</field>
     </record>
     <record id="action_daily_work_assign" model="ir.actions.client">

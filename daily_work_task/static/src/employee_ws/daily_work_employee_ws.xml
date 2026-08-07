@@ -5,7 +5,7 @@
             <div class="o_content o_ews_scroll">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
-                        <h2 class="o_ews_page_title">KHÔNG GIAN LÀM VIỆC NHÂN VIÊN</h2>
+                        <h2 class="o_ews_page_title">NHẬP CÔNG VIỆC</h2>
                         <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
                             <button type="button"
                                     t-att-class="'o_ews_tab' + (isActiveTab('tasks') ? ' active' : '')"

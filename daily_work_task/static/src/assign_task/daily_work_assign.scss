@@ -246,9 +246,15 @@
         text-align: center;
     }
 
+    .o_dwa_form_actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
     .o_dwa_submit {
         width: 100%;
-        margin-top: 6px;
         background: #ea580c;
         border-color: #ea580c;
         color: #fff;
@@ -260,6 +266,11 @@
             border-color: #c2410c;
             color: #fff;
         }
+    }
+
+    .o_dwa_cancel_edit {
+        width: 100%;
+        font-weight: 600;
     }
 
     .o_dwa_table_panel {
@@ -852,6 +863,64 @@
     .o_dwa_td_discuss {
         text-align: center !important;
         width: 88px;
+    }
+
+    .o_dwa_th_action,
+    .o_dwa_td_action {
+        text-align: center !important;
+        width: 84px;
+        white-space: nowrap;
+    }
+
+    .o_dwa_row_editing td {
+        background: #fff7ed !important;
+    }
+
+    .o_dwa_row_actions {
+        display: inline-flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .o_dwa_act_btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        flex: 0 0 30px;
+        border-radius: 6px;
+        background: #fff;
+        cursor: pointer;
+        line-height: 1;
+        transition: background 0.15s ease, box-shadow 0.15s ease;
+
+        i {
+            font-size: 13px;
+        }
+
+        &.edit {
+            border: 1.5px solid #c2410c;
+            color: #c2410c;
+
+            &:hover {
+                background: #fff7ed;
+                box-shadow: 0 1px 4px rgba(194, 65, 12, 0.25);
+            }
+        }
+
+        &.del {
+            border: 1.5px solid #b42318;
+            color: #b42318;
+
+            &:hover {
+                background: #fef3f2;
+                box-shadow: 0 1px 4px rgba(180, 35, 24, 0.25);
+            }
+        }
     }
 
     .o_dwa_discuss_btn {

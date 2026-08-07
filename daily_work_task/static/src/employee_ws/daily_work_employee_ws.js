@@ -751,6 +751,24 @@ export class DailyWorkEmployeeWs extends Component {
         this.state.form = this.emptyForm();
     }
 
+    onQuickCreate() {
+        this.state.activeTab = "tasks";
+        this.state.editingTaskId = false;
+        this.state.form = this.emptyForm();
+        this.state.showMyList = true;
+        requestAnimationFrame(() => {
+            const input = this.el?.querySelector?.(".o_ews_task_form input[type='text']");
+            if (input) {
+                input.focus();
+                input.scrollIntoView({ behavior: "smooth", block: "center" });
+            } else {
+                const form = document.querySelector(".o_ews_form_panel");
+                form?.scrollIntoView({ behavior: "smooth", block: "start" });
+                document.querySelector(".o_ews_task_form input[type='text']")?.focus();
+            }
+        });
+    }
+
     async onDeleteTask(task) {
         if (!task?.id) {
             return;

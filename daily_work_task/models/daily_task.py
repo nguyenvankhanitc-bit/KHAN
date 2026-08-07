@@ -114,6 +114,25 @@ class DailyTask(models.Model):
         store=True,
         index=True,
     )
+    kanban_column = fields.Selection(
+        [
+            ("not_started", "Chưa bắt đầu"),
+            ("in_progress", "Đang xử lý"),
+            ("upcoming", "Sắp đến hạn"),
+            ("overdue", "Quá hạn"),
+            ("done", "Hoàn thành"),
+        ],
+        string="Cột Kanban",
+        compute="_compute_kanban_column",
+        inverse="_inverse_kanban_column",
+        store=True,
+        index=True,
+        help="Cột Kanban: Chưa bắt đầu / Đang xử lý / Sắp đến hạn / Quá hạn / Hoàn thành.",
+    )
+    days_to_deadline = fields.Integer(
+        string="Số ngày đến hạn",
+        compute="_compute_days_to_deadline",
+    )
     color = fields.Integer(
         string="Màu lịch",
         compute="_compute_color",
@@ -190,6 +209,50 @@ class DailyTask(models.Model):
                 rec.deadline and rec.state != "done" and rec.deadline < today
             )
 
+    @api.depends("state", "is_overdue", "deadline")
+    def _compute_kanban_column(self):
+        today = fields.Date.context_today(self)
+        upcoming_days = 7
+        for rec in self:
+            if rec.state == "done":
+                rec.kanban_column = "done"
+            elif rec.is_overdue:
+                rec.kanban_column = "overdue"
+            elif rec.deadline:
+                delta = (rec.deadline - today).days
+                if 0 <= delta <= upcoming_days:
+                    rec.kanban_column = "upcoming"
+                elif rec.state == "in_progress":
+                    rec.kanban_column = "in_progress"
+                else:
+                    rec.kanban_column = "not_started"
+            elif rec.state == "in_progress":
+                rec.kanban_column = "in_progress"
+            else:
+                rec.kanban_column = "not_started"
+
+    def _inverse_kanban_column(self):
+        """Kéo thẻ: map cột → trạng thái (upcoming/overdue giữ state hiện tại nếu chưa done)."""
+        for rec in self:
+            col = rec.kanban_column
+            if col == "done":
+                rec.state = "done"
+            elif col == "in_progress":
+                rec.state = "in_progress"
+            elif col == "not_started":
+                rec.state = "not_started"
+            elif col in ("upcoming", "overdue") and rec.state == "done":
+                rec.state = "in_progress"
+
+    @api.depends("deadline")
+    def _compute_days_to_deadline(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            if not rec.deadline:
+                rec.days_to_deadline = 0
+            else:
+                rec.days_to_deadline = (rec.deadline - today).days
+
     def _is_overdue_today(self):
         """Quá hạn đang mở: đã qua hạn và chưa hoàn thành (cho KPI / nhắc mail)."""
         self.ensure_one()
@@ -261,6 +324,29 @@ class DailyTask(models.Model):
             or (False if self.env.su else self.env.uid)
             or self.env.uid
         )
+
+    @api.model
+    def default_get(self, fields_list):
+        """Mặc định: người phụ trách = user hiện tại, ngày giao = hôm nay."""
+        res = super().default_get(fields_list)
+        today = fields.Date.context_today(self)
+        if "assign_date" in fields_list and not res.get("assign_date"):
+            res["assign_date"] = today
+        if "assigned_by_id" in fields_list and not res.get("assigned_by_id"):
+            res["assigned_by_id"] = self.env.uid
+        if "assignee_id" in fields_list and not res.get("assignee_id"):
+            emp = self._my_hr_employee()
+            if emp:
+                bridge = (
+                    self.env["daily.task.employee"]
+                    .sudo()
+                    .get_or_create_from_hr(emp.id)
+                )
+                if bridge:
+                    res["assignee_id"] = bridge.id
+        if "deadline" in fields_list and not res.get("deadline"):
+            res["deadline"] = today
+        return res
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -545,7 +631,7 @@ class DailyTask(models.Model):
             done._compute_is_overdue()
             done._compute_color()
         # Đảm bảo ghi xuống DB (field store)
-        (tasks | done).flush_recordset(["is_overdue", "color"])
+        (tasks | done).flush_recordset(["is_overdue", "color", "kanban_column"])
         return True
 
     @api.model
@@ -558,7 +644,7 @@ class DailyTask(models.Model):
         if todo:
             todo._compute_is_overdue()
             todo._compute_color()
-            todo.flush_recordset(["is_overdue", "color"])
+            todo.flush_recordset(["is_overdue", "color", "kanban_column"])
         return tasks
 
     @api.model
@@ -1985,7 +2071,15 @@ class DailyTask(models.Model):
             ("assignee_id.employee_id.user_id", "=", uid),
         ]
         tasks = self.sudo().search(domain, order="deadline asc, id desc")
-        rows = [t._to_manager_dict() for t in tasks]
+        rows = []
+        uid = self.env.uid
+        is_admin = self._is_system_admin()
+        for t in tasks:
+            row = t._to_manager_dict()
+            is_assigner = bool(t.assigned_by_id and t.assigned_by_id.id == uid)
+            row["can_edit"] = bool(is_assigner or t._can_edit_task_details())
+            row["can_delete"] = bool(is_admin or is_assigner)
+            rows.append(row)
         return self._enrich_assign_discussion(rows)
 
     @api.model
@@ -2470,6 +2564,108 @@ class DailyTask(models.Model):
         if partners:
             task.message_subscribe(partner_ids=partners.ids)
         return task._to_manager_dict()
+
+    @api.model
+    def update_from_assign(self, task_id, vals):
+        """Người giao cập nhật phiếu đã giao."""
+        if not self._is_assigner():
+            raise ValidationError("Bạn không có quyền sửa phiếu giao việc.")
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists():
+            raise ValidationError("Không tìm thấy công việc.")
+        uid = self.env.uid
+        is_assigner = bool(task.assigned_by_id and task.assigned_by_id.id == uid)
+        if not (is_assigner or task._can_edit_task_details()):
+            raise AccessError("Bạn không được sửa công việc này.")
+        name = (vals.get("name") or "").strip()
+        if not name:
+            raise ValidationError("Vui lòng nhập tên công việc.")
+        if not vals.get("deadline"):
+            raise ValidationError("Vui lòng chọn hạn hoàn thành.")
+        hr_id = int(vals.get("assignee_id") or 0)
+        if not hr_id:
+            raise ValidationError("Vui lòng chọn người được giao.")
+        allowed = self._assignable_employee_ids()
+        if allowed is not None and hr_id not in allowed:
+            raise ValidationError(
+                "Bạn không được phân quyền giao việc cho nhân viên này."
+            )
+        bridge = (
+            self.env["daily.task.employee"].sudo().get_or_create_from_hr(hr_id)
+        )
+        department_id = int(vals.get("department_id") or 0) or False
+        if not department_id:
+            self.env.cr.execute(
+                """
+                SELECT v.department_id
+                  FROM hr_employee e
+             LEFT JOIN hr_version v ON v.id = e.current_version_id
+                 WHERE e.id = %s
+                """,
+                (hr_id,),
+            )
+            row = self.env.cr.fetchone()
+            if row and row[0]:
+                department_id = row[0]
+        work_group_id = int(vals.get("work_group_id") or 0) or False
+        if work_group_id:
+            group = self.env["daily.task.work.group"].sudo().browse(work_group_id)
+            if not group.exists() or not group.active:
+                raise ValidationError("Hạng mục công việc không hợp lệ.")
+            if department_id and group.department_id.id != department_id:
+                raise ValidationError(
+                    "Hạng mục phải thuộc cùng bộ phận với nhân viên được giao."
+                )
+            if not department_id and group.department_id:
+                department_id = group.department_id.id
+            if group.user_ids:
+                self.env.cr.execute(
+                    "SELECT user_id FROM hr_employee WHERE id = %s",
+                    (hr_id,),
+                )
+                row = self.env.cr.fetchone()
+                assignee_uid = int(row[0]) if row and row[0] else False
+                if not assignee_uid or assignee_uid not in group.user_ids.ids:
+                    raise ValidationError(
+                        "Nhân viên được giao không nằm trong User áp dụng của hạng mục «%s»."
+                        % (group.name or "")
+                    )
+        priority = vals.get("priority") or task.priority or "medium"
+        state = vals.get("state") or task.state or "not_started"
+        if priority not in dict(self._fields["priority"].selection):
+            priority = "medium"
+        if state not in dict(self._fields["state"].selection):
+            state = "not_started"
+        task.write(
+            {
+                "name": name,
+                "deadline": vals.get("deadline"),
+                "department_id": department_id,
+                "assignee_id": bridge.id,
+                "work_group_id": work_group_id,
+                "priority": priority,
+                "state": state,
+                "note": vals.get("note") or "",
+            }
+        )
+        return task._to_manager_dict()
+
+    @api.model
+    def delete_from_assign(self, task_id):
+        """Người giao xóa việc mình đã giao (hoặc Administrator)."""
+        if not self._is_assigner():
+            raise ValidationError("Bạn không có quyền xóa phiếu giao việc.")
+        task = self.sudo().browse(int(task_id or 0))
+        if not task.exists():
+            raise ValidationError("Không tìm thấy công việc.")
+        uid = self.env.uid
+        is_assigner = bool(task.assigned_by_id and task.assigned_by_id.id == uid)
+        if not (self._is_system_admin() or is_assigner):
+            raise AccessError(
+                "Chỉ người đã giao việc hoặc Administrator mới được xóa."
+            )
+        task.unlink()
+        return True
 
     @api.model
     def get_viewer_bootstrap(self):

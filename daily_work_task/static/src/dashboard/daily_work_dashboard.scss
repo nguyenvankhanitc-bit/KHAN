@@ -182,14 +182,19 @@
         width: 250px;
         flex-shrink: 0;
         background: #fff;
-        border-right: 1px solid var(--dwd-border);
         overflow: auto;
         padding: 0.75rem 0.55rem;
         transition: width 0.2s ease;
 
+        &.is-resizing {
+            transition: none;
+            user-select: none;
+        }
+
         &.collapsed {
             width: 68px;
             padding: 0.75rem 0.35rem;
+            border-right: 1px solid var(--dwd-border);
 
             .o_dwd_side_label {
                 display: none;
@@ -219,16 +224,62 @@
         }
     }
 
+    .o_dwd_sidebar_resizer {
+        position: relative;
+        width: 8px;
+        flex-shrink: 0;
+        cursor: col-resize;
+        background: #f1f5f9;
+        border-left: 1px solid var(--dwd-border);
+        border-right: 1px solid var(--dwd-border);
+        touch-action: none;
+        z-index: 2;
+
+        .o_dwd_sidebar_resizer_grip {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 3px;
+            height: 36px;
+            margin: -18px 0 0 -1.5px;
+            border-radius: 999px;
+            background: #cbd5e1;
+            box-shadow:
+                -3px 0 0 #e2e8f0,
+                3px 0 0 #e2e8f0;
+            pointer-events: none;
+            transition: background 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        &:hover,
+        &.active {
+            background: #e8eefc;
+
+            .o_dwd_sidebar_resizer_grip {
+                background: #714b67;
+                box-shadow:
+                    -3px 0 0 rgba(113, 75, 103, 0.28),
+                    3px 0 0 rgba(113, 75, 103, 0.28);
+            }
+        }
+    }
+
     .o_dwd_side_section {
         margin-bottom: 0.85rem;
     }
 
     .o_dwd_side_label {
-        font-size: 0.68rem;
+        font-size: 0.78rem;
         font-weight: 800;
-        color: #94a3b8;
-        letter-spacing: 0.06em;
-        padding: 0.35rem 0.65rem;
+        color: #1e293b;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 0.45rem 0.7rem;
+        margin: 0.15rem 0 0.4rem;
+        border: 2px solid #334155;
+        border-radius: 8px;
+        background: #f8fafc;
+        line-height: 1.25;
     }
 
     .o_dwd_side_item {
@@ -246,17 +297,43 @@
         cursor: pointer;
 
         i {
-            width: 1.1rem;
+            width: 1.25rem;
             text-align: center;
-            color: #64748b;
+            font-size: 1.05rem;
         }
 
+        /* Màu icon theo chức năng */
+        .fa-pencil-square-o { color: #2563eb; }
+        .fa-share,
+        .fa-share-square-o { color: #7c3aed; }
+        .fa-eye { color: #0891b2; }
+        .fa-th-large { color: #db2777; }
+        .fa-calendar-check-o,
+        .fa-calendar { color: #059669; }
+        .fa-exclamation-triangle { color: #dc2626; }
+        .fa-bell-o,
+        .fa-bell { color: #ea580c; }
+        .fa-bar-chart { color: #4f46e5; }
+        .fa-user-circle { color: #0284c7; }
+        .fa-line-chart { color: #16a34a; }
+        .fa-trophy { color: #ca8a04; }
+        .fa-dashboard { color: #9333ea; }
+        .fa-book { color: #0d9488; }
+        .fa-envelope { color: #c026d3; }
+        .fa-sliders { color: #64748b; }
+        .fa-sitemap { color: #6366f1; }
+        .fa-refresh { color: #0ea5e9; }
+        .fa-address-book-o { color: #14b8a6; }
+        .fa-lock { color: #b45309; }
+        .fa-shield { color: #4338ca; }
+
         .o_dwd_emoji_icon {
-            width: 1.1rem;
+            width: 1.25rem;
             text-align: center;
-            font-size: 1rem;
+            font-size: 1.05rem;
             line-height: 1;
             font-style: normal;
+            filter: saturate(1.25);
         }
 
         &:hover {
@@ -267,10 +344,6 @@
             background: #ede9fe;
             color: #5b21b6;
             font-weight: 700;
-
-            i {
-                color: #7c3aed;
-            }
         }
 
         &.o_dwd_side_toggle {
@@ -286,10 +359,6 @@
             &.open {
                 background: #f5f3ff;
                 color: #5b21b6;
-
-                > .fa-sliders {
-                    color: #7c3aed;
-                }
             }
         }
 
@@ -1470,8 +1539,21 @@
         .o_dwd_sidebar {
             display: none;
         }
+        .o_dwd_sidebar_resizer {
+            display: none;
+        }
         .o_dwd_status_boards {
             grid-template-columns: 1fr;
         }
+    }
+}
+
+body.o_dwd_sidebar_resizing {
+    cursor: col-resize !important;
+    user-select: none !important;
+
+    * {
+        cursor: col-resize !important;
+        user-select: none !important;
     }
 }

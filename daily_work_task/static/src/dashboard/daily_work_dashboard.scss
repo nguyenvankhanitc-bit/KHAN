@@ -47,6 +47,11 @@
         height: 34px;
         border-radius: 8px;
         cursor: pointer;
+        flex-shrink: 0;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.22);
+        }
     }
 
     .o_dwd_brand {
@@ -180,9 +185,37 @@
         border-right: 1px solid var(--dwd-border);
         overflow: auto;
         padding: 0.75rem 0.55rem;
+        transition: width 0.2s ease;
 
         &.collapsed {
-            display: none;
+            width: 68px;
+            padding: 0.75rem 0.35rem;
+
+            .o_dwd_side_label {
+                display: none;
+            }
+
+            .o_dwd_side_item {
+                justify-content: center;
+                padding: 0.65rem 0.35rem;
+                gap: 0;
+
+                span,
+                .o_dwd_side_count,
+                .o_dwd_side_chev {
+                    display: none;
+                }
+
+                i,
+                .o_dwd_emoji_icon {
+                    margin: 0;
+                    width: auto;
+                }
+            }
+
+            .o_dwd_side_sub {
+                display: none;
+            }
         }
     }
 

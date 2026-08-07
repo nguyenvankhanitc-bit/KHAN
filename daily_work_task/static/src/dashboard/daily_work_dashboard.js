@@ -53,7 +53,13 @@ export class DailyWorkDashboard extends Component {
             canSeePerformance: false,
             userName: "",
             companyName: "",
-            sidebarCollapsed: false,
+            sidebarCollapsed: (() => {
+                try {
+                    return window.localStorage.getItem("daily_work_sidebar_collapsed") === "1";
+                } catch (_e) {
+                    return false;
+                }
+            })(),
             configOpen: true,
         });
         onWillStart(async () => {
@@ -90,6 +96,18 @@ export class DailyWorkDashboard extends Component {
             department_id: this.state.departmentId || false,
             state: this.state.stateFilter || false,
         };
+    }
+
+    toggleSidebar() {
+        this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
+        try {
+            window.localStorage.setItem(
+                "daily_work_sidebar_collapsed",
+                this.state.sidebarCollapsed ? "1" : "0"
+            );
+        } catch (_e) {
+            /* ignore */
+        }
     }
 
     get kpi() {

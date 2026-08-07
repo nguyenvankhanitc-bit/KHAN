@@ -321,10 +321,11 @@
                                             Chọn nhân viên trước để tải hạng mục theo bộ phận.
                                         </t>
                                         <t t-elif="!filteredWorkGroups.length">
-                                            Bộ phận này chưa có hạng mục — thêm tại Dashboard / Hạng mục.
+                                            Không có hạng mục bạn được phép dùng cho bộ phận này
+                                            (kiểm tra Cấu hình → Hạng mục → User áp dụng).
                                         </t>
                                         <t t-else="">
-                                            Lọc theo bộ phận của nhân viên được giao.
+                                            Chỉ hiện hạng mục bạn nằm trong User áp dụng (theo bộ phận NV).
                                         </t>
                                     </small>
                                 </div>

@@ -1947,19 +1947,11 @@ class DailyTask(models.Model):
             {"value": k, "label": v}
             for k, v in self._fields["state"].selection
         ]
-        work_groups = self.env["daily.task.work.group"].sudo().search_read(
-            [("active", "=", True)],
-            ["id", "name", "department_id"],
-            order="sequence, name, id",
+        work_groups = self.env["daily.task.work.group"].get_groups_for_user(
+            department_id=False,
+            user_id=self.env.uid,
+            allow_all_for_manager=is_manager,
         )
-        work_groups = [
-            {
-                "id": g["id"],
-                "name": g["name"] or "",
-                "department_id": g["department_id"][0] if g.get("department_id") else False,
-            }
-            for g in work_groups
-        ]
         return {
             "is_manager": is_manager,
             "my_employee_id": my_emp.id if my_emp else False,
@@ -2430,6 +2422,16 @@ class DailyTask(models.Model):
                 )
             if not department_id and group.department_id:
                 department_id = group.department_id.id
+            # Chỉ dùng hạng mục trong danh sách User áp dụng (trừ Quản lý)
+            if (
+                not self._is_manager()
+                and group.user_ids
+                and self.env.uid not in group.user_ids.ids
+            ):
+                raise ValidationError(
+                    "Bạn không nằm trong danh sách User áp dụng của hạng mục «%s»."
+                    % (group.name or "")
+                )
         assigner_uid = self.env.uid
         task = (
             self.with_context(daily_task_assigner_uid=assigner_uid)

@@ -266,9 +266,24 @@ export class DailyWorkAssign extends Component {
         if (!deptId) {
             return [];
         }
-        return this.state.workGroups.filter(
-            (g) => Number(g.department_id) === deptId
-        );
+        return this.state.workGroups
+            .filter((g) => Number(g.department_id) === deptId)
+            .slice()
+            .sort((a, b) => {
+                const sa = Number(a.sequence);
+                const sb = Number(b.sequence);
+                const seqA = Number.isFinite(sa) ? sa : 0;
+                const seqB = Number.isFinite(sb) ? sb : 0;
+                if (seqA !== seqB) {
+                    return seqA - seqB;
+                }
+                const na = String(a.name || "");
+                const nb = String(b.name || "");
+                if (na !== nb) {
+                    return na.localeCompare(nb, "vi");
+                }
+                return (Number(a.id) || 0) - (Number(b.id) || 0);
+            });
     }
 
     get filteredTasks() {

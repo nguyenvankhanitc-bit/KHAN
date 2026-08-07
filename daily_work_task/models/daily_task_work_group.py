@@ -70,23 +70,31 @@ class DailyTaskWorkGroup(models.Model):
             return
 
     @api.model
-    def get_groups_for_user(self, department_id=None, user_id=None):
-        """Nhóm công việc user được phép dùng (theo phòng ban + User áp dụng)."""
+    def get_groups_for_user(self, department_id=None, user_id=None, allow_all_for_manager=False):
+        """Nhóm công việc user được phép dùng (theo phòng ban + User áp dụng).
+
+        - Có gắn User áp dụng → chỉ các user trong list thấy hạng mục đó.
+        - Để trống User áp dụng → mọi user thuộc phòng ban đều dùng được.
+        - Quản lý (allow_all_for_manager=True) thấy tất cả hạng mục active.
+        """
         uid = int(user_id or self.env.uid)
         dept_id = int(department_id or 0)
         domain = [("active", "=", True)]
         if dept_id:
             domain.append(("department_id", "=", dept_id))
         groups = self.sudo().search(domain, order="sequence, name, id")
+        is_manager = False
+        if allow_all_for_manager:
+            is_manager = self.env["daily.task"]._is_manager()
         result = []
         for g in groups:
-            # Có gắn user → chỉ user trong list; để trống → cả phòng ban
-            if g.user_ids and uid not in g.user_ids.ids:
+            if not is_manager and g.user_ids and uid not in g.user_ids.ids:
                 continue
             result.append(
                 {
                     "id": g.id,
                     "name": g.name or "",
+                    "sequence": int(g.sequence or 0),
                     "department_id": g.department_id.id if g.department_id else False,
                     "department": g.department_id.display_name if g.department_id else "",
                 }

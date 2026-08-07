@@ -1868,6 +1868,7 @@ class DailyTask(models.Model):
             SELECT e.id,
                    e.name,
                    e.work_email,
+                   e.user_id,
                    v.department_id,
                    COALESCE(d.name->>'en_US', d.name::text) AS department_name
               FROM hr_employee e
@@ -1880,12 +1881,13 @@ class DailyTask(models.Model):
             (tuple(ids),),
         )
         rows = []
-        for eid, name, email, dept_id, dept_name in self.env.cr.fetchall():
+        for eid, name, email, user_id, dept_id, dept_name in self.env.cr.fetchall():
             rows.append(
                 {
                     "id": eid,
                     "name": name or "",
                     "email": email or "",
+                    "user_id": int(user_id) if user_id else False,
                     "department_id": dept_id or False,
                     "department": dept_name or "",
                 }
@@ -1927,6 +1929,7 @@ class DailyTask(models.Model):
                     "department_id": h["department_id"],
                     "department": h["department"],
                     "email": h["email"],
+                    "user_id": h.get("user_id") or False,
                 }
             )
         self.env.cr.execute(
@@ -1947,11 +1950,8 @@ class DailyTask(models.Model):
             {"value": k, "label": v}
             for k, v in self._fields["state"].selection
         ]
-        work_groups = self.env["daily.task.work.group"].get_groups_for_user(
-            department_id=False,
-            user_id=self.env.uid,
-            allow_all_for_manager=is_manager,
-        )
+        # Toàn bộ hạng mục + user_ids: frontend lọc theo NV được giao
+        work_groups = self.env["daily.task.work.group"].get_groups_for_assign()
         return {
             "is_manager": is_manager,
             "my_employee_id": my_emp.id if my_emp else False,
@@ -2422,16 +2422,19 @@ class DailyTask(models.Model):
                 )
             if not department_id and group.department_id:
                 department_id = group.department_id.id
-            # Chỉ dùng hạng mục trong danh sách User áp dụng (trừ Quản lý)
-            if (
-                not self._is_manager()
-                and group.user_ids
-                and self.env.uid not in group.user_ids.ids
-            ):
-                raise ValidationError(
-                    "Bạn không nằm trong danh sách User áp dụng của hạng mục «%s»."
-                    % (group.name or "")
+            # Hạng mục phải trong User áp dụng của người được giao (để trống = cả phòng ban)
+            if group.user_ids:
+                self.env.cr.execute(
+                    "SELECT user_id FROM hr_employee WHERE id = %s",
+                    (hr_id,),
                 )
+                row = self.env.cr.fetchone()
+                assignee_uid = int(row[0]) if row and row[0] else False
+                if not assignee_uid or assignee_uid not in group.user_ids.ids:
+                    raise ValidationError(
+                        "Nhân viên được giao không nằm trong User áp dụng của hạng mục «%s»."
+                        % (group.name or "")
+                    )
         assigner_uid = self.env.uid
         task = (
             self.with_context(daily_task_assigner_uid=assigner_uid)

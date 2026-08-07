@@ -318,14 +318,14 @@
                                     </select>
                                     <small class="text-muted">
                                         <t t-if="!selectedAssignee">
-                                            Chọn nhân viên trước để tải hạng mục theo bộ phận.
+                                            Chọn nhân viên trước — hạng mục theo User áp dụng của người nhận.
                                         </t>
                                         <t t-elif="!filteredWorkGroups.length">
-                                            Không có hạng mục bạn được phép dùng cho bộ phận này
-                                            (kiểm tra Cấu hình → Hạng mục → User áp dụng).
+                                            Nhân viên này chưa được gắn hạng mục nào
+                                            (Cấu hình → Hạng mục → User áp dụng).
                                         </t>
                                         <t t-else="">
-                                            Chỉ hiện hạng mục bạn nằm trong User áp dụng (theo bộ phận NV).
+                                            Chỉ hiện hạng mục người được giao nằm trong User áp dụng.
                                         </t>
                                     </small>
                                 </div>

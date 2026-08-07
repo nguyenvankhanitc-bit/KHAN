@@ -266,8 +266,25 @@ export class DailyWorkAssign extends Component {
         if (!deptId) {
             return [];
         }
+        const assignee = this.selectedAssignee;
+        const assigneeUid = assignee ? Number(assignee.user_id) || 0 : 0;
         return this.state.workGroups
-            .filter((g) => Number(g.department_id) === deptId)
+            .filter((g) => {
+                if (Number(g.department_id) !== deptId) {
+                    return false;
+                }
+                // Chưa chọn NV → chưa hiện hạng mục (cần biết User áp dụng của người nhận)
+                if (!assignee) {
+                    return false;
+                }
+                const allowed = Array.isArray(g.user_ids) ? g.user_ids : [];
+                // Để trống User áp dụng = cả phòng ban
+                if (!allowed.length) {
+                    return true;
+                }
+                // Chỉ hạng mục mà người được giao nằm trong User áp dụng
+                return assigneeUid && allowed.map(Number).includes(assigneeUid);
+            })
             .slice()
             .sort((a, b) => {
                 const sa = Number(a.sequence);
@@ -408,10 +425,8 @@ export class DailyWorkAssign extends Component {
         if (!wgId) {
             return;
         }
-        const match = this.state.workGroups.find(
-            (g) => Number(g.id) === wgId && Number(g.department_id) === deptId
-        );
-        if (!match) {
+        const match = this.filteredWorkGroups.find((g) => Number(g.id) === wgId);
+        if (!match || Number(match.department_id) !== deptId) {
             this.state.form.work_group_id = "";
         }
     }

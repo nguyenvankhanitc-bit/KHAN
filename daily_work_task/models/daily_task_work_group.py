@@ -70,6 +70,27 @@ class DailyTaskWorkGroup(models.Model):
             return
 
     @api.model
+    def get_groups_for_assign(self):
+        """Danh sách hạng mục cho màn Giao việc (kèm user_ids để lọc theo NV được giao)."""
+        groups = self.sudo().search(
+            [("active", "=", True)],
+            order="sequence, name, id",
+        )
+        result = []
+        for g in groups:
+            result.append(
+                {
+                    "id": g.id,
+                    "name": g.name or "",
+                    "sequence": int(g.sequence or 0),
+                    "department_id": g.department_id.id if g.department_id else False,
+                    "department": g.department_id.display_name if g.department_id else "",
+                    "user_ids": g.user_ids.ids,
+                }
+            )
+        return result
+
+    @api.model
     def get_groups_for_user(self, department_id=None, user_id=None, allow_all_for_manager=False):
         """Nhóm công việc user được phép dùng (theo phòng ban + User áp dụng).
 

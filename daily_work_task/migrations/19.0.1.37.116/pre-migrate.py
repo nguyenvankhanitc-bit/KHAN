@@ -44,13 +44,9 @@ def migrate(cr, version):
     for name, typedef in cols:
         _add_column(cr, "daily_task", name, typedef)
 
-    # Index nhẹ cho recurring (bỏ qua nếu đã có / lỗi)
-    try:
-        cr.execute(
-            """
-            CREATE INDEX IF NOT EXISTS daily_task_recurring_id_index
-                ON daily_task (recurring_id)
-            """
-        )
-    except Exception:
-        cr.rollback()
+    cr.execute(
+        """
+        CREATE INDEX IF NOT EXISTS daily_task_recurring_id_index
+            ON daily_task (recurring_id)
+        """
+    )

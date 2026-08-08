@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        App root: mở Nhập công việc (leaf mặc định).
-        IA theo thiết kế: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH (+ Cấu hình ẩn cho manager).
+        App root: không gắn action/web_icon trong XML (lab hay ParseError khi đọc icon).
+        Icon gán ở post-migrate; click app → leaf đầu (Nhập công việc).
+        IA: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH (+ Cấu hình ẩn cho manager).
     -->
     <menuitem id="menu_daily_work_root"
               name="Công việc hàng ngày"
               sequence="36"
-              action="action_daily_work_employee_ws"
-              web_icon="daily_work_task,static/description/icon.png"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📌 CÔNG VIỆC ========== -->

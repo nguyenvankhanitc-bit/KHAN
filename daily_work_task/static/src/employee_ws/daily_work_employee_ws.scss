@@ -592,8 +592,8 @@
     .o_ews_status_table_wrap {
         flex: 1 1 auto;
         min-height: 0;
-        /* Tối đa 10 dòng dữ liệu — cuộn trong khung */
-        max-height: calc(10 * 42px);
+        /* Khoảng ~10 dòng; hàng cao hơn khi tên dài xuống dòng */
+        max-height: 420px;
         height: auto;
         min-height: 0;
         overflow-x: auto;
@@ -633,31 +633,38 @@
         border-collapse: collapse;
         border-spacing: 0;
         table-layout: fixed;
-        font-size: 0.88rem;
+        font-size: 0.92rem;
+        color: #1f2937;
 
         td {
-            padding: 9px 10px;
+            padding: 8px 10px;
             border: 1px solid #d1d5db;
             vertical-align: top;
             word-break: break-word;
-            height: 42px;
-            max-height: 42px;
+            overflow-wrap: anywhere;
+            height: auto;
+            min-height: 40px;
+            max-height: none;
             box-sizing: border-box;
+            line-height: 1.4;
         }
 
         td:first-child {
             width: 62%;
             text-align: left;
-            /* Giữ ~1 dòng nhìn trong khung 10 hàng; dài thì vẫn cuộn được */
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            /* Hiện đủ tên công việc — không cắt ... */
+            overflow: visible;
+            text-overflow: clip;
+            white-space: normal;
+            font-weight: 550;
         }
 
         td:last-child {
             width: 38%;
             text-align: right;
             white-space: nowrap;
+            vertical-align: middle;
+            color: #4b5563;
         }
 
         tr:hover td {

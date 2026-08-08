@@ -49,10 +49,16 @@ export class LugAppCenter extends Component {
         this.menu = useService("menu");
         this.action = useService("action");
         this.notification = useService("notification");
+        let sidebarCollapsed = false;
+        try {
+            sidebarCollapsed = window.localStorage.getItem("lug_app_center_sidebar_collapsed") === "1";
+        } catch (_e) {
+            sidebarCollapsed = false;
+        }
         this.state = useState({
             loading: true,
             query: "",
-            sidebarCollapsed: false,
+            sidebarCollapsed,
             activeNav: "home",
             companyName: "",
             companySlogan: "",
@@ -200,6 +206,14 @@ export class LugAppCenter extends Component {
 
     toggleSidebar() {
         this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
+        try {
+            window.localStorage.setItem(
+                "lug_app_center_sidebar_collapsed",
+                this.state.sidebarCollapsed ? "1" : "0"
+            );
+        } catch (_e) {
+            /* ignore */
+        }
     }
 
     setHome() {

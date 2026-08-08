@@ -17,6 +17,7 @@ class DailyTaskDashboard(models.AbstractModel):
     def get_filter_options(self):
         Task = self.env["daily.task"]
         today = fields.Date.context_today(self)
+
         year, month = today.year, today.month
         last = monthrange(year, month)[1]
         date_from = "%04d-%02d-01" % (year, month)
@@ -174,12 +175,15 @@ class DailyTaskDashboard(models.AbstractModel):
         # Growth vs previous period (same length before date_from)
         growth = self._period_growth(filters, total)
 
+        today_count = Task.count_today_tasks()
+
         kpi = {
             "total": total,
             "done": done,
             "in_progress": in_progress,
             "not_started": not_started,
             "overdue": overdue_count,
+            "today": today_count,
             "done_pct": pct(done),
             "in_progress_pct": pct(in_progress),
             "not_started_pct": pct(not_started),

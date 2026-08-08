@@ -19,6 +19,10 @@
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('employee_ws')">
                             <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
                         </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('today')">
+                            <i class="fa fa-sun-o"/><span>Hôm nay</span>
+                            <t t-if="kpi.today"><em class="o_dwd_nav_badge" t-esc="kpi.today"/></t>
+                        </button>
                         <t t-if="state.canAssign">
                             <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
                                 <i class="fa fa-share-square-o"/><span>Giao việc</span>
@@ -82,6 +86,11 @@
                             <button type="button" class="o_dwd_side_item" title="Nhập công việc"
                                     t-on-click="() => this.openNav('employee_ws')">
                                 <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" title="Công việc hôm nay"
+                                    t-on-click="() => this.openNav('today')">
+                                <i class="fa fa-sun-o"/><span>Công việc hôm nay</span>
+                                <t t-if="kpi.today"><em class="o_dwd_side_count" t-esc="kpi.today"/></t>
                             </button>
                             <t t-if="state.canAssign">
                                 <button type="button" class="o_dwd_side_item" title="Giao việc"

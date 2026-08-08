@@ -25,46 +25,53 @@
               sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <menuitem id="menu_daily_work_today"
+              name="Công việc hôm nay"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_today"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_assign"
               name="Giao việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_assign"
-              sequence="2"
+              sequence="3"
               groups="daily_work_task.group_daily_work_assigner"/>
 
     <menuitem id="menu_daily_work_viewer"
               name="Xem công việc NV"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_viewer"
-              sequence="3"
+              sequence="4"
               groups="daily_work_task.group_daily_work_viewer"/>
 
     <menuitem id="menu_daily_work_kanban"
               name="Kanban công việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_task_kanban"
-              sequence="4"
+              sequence="5"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_calendar"
               name="Lịch"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_calendar"
-              sequence="5"
+              sequence="6"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_overdue"
               name="Công việc quá hạn"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_task_overdue"
-              sequence="6"
+              sequence="7"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_reminders"
               name="Nhắc việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_report_overview"
-              sequence="7"
+              sequence="8"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📊 BÁO CÁO ========== -->
@@ -199,6 +206,9 @@
         <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_assign" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_today" model="ir.ui.menu">
         <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_kanban" model="ir.ui.menu">

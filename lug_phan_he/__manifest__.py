@@ -18,7 +18,6 @@ Quản lý dịch vụ
         "base",
         "mail",
         "hr",
-        "lug_permission",
     ],
     "data": [
         "security/phan_he_security.xml",

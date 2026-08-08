@@ -34,6 +34,13 @@
                                 <i class="fa fa-th-large o_ews_tab_icon o_ews_tab_icon_board"/>
                                 <span>Danh sách công việc</span>
                             </button>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button"
+                                    t-att-class="'o_ews_tab' + (isActiveTab('calendar') ? ' active' : '')"
+                                    t-on-click="() => this.setActiveTab('calendar')">
+                                <i class="fa fa-calendar o_ews_tab_icon o_ews_tab_icon_calendar"/>
+                                <span>Lịch công việc</span>
+                            </button>
                         </nav>
                     </div>
                     <div class="o_ews_header_kpis" aria-label="Thống kê trạng thái công việc">
@@ -82,13 +89,21 @@
                         <div class="o_ews_filters">
                             <div class="o_ews_filter_item">
                                 <label>Từ ngày</label>
-                                <input type="date" class="form-control form-control-sm"
-                                       t-model="state.dateFrom"/>
+                                <input type="text" class="form-control form-control-sm"
+                                       placeholder="dd/mm/yy"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       t-model="state.dateFrom"
+                                       t-on-blur="(ev) => this.onDateBlur(ev, 'dateFrom')"/>
                             </div>
                             <div class="o_ews_filter_item">
                                 <label>Đến ngày</label>
-                                <input type="date" class="form-control form-control-sm"
-                                       t-model="state.dateTo"/>
+                                <input type="text" class="form-control form-control-sm"
+                                       placeholder="dd/mm/yy"
+                                       inputmode="numeric"
+                                       autocomplete="off"
+                                       t-model="state.dateTo"
+                                       t-on-blur="(ev) => this.onDateBlur(ev, 'dateTo')"/>
                             </div>
                             <button type="button" class="btn btn-success btn-sm" t-on-click="onFilter">
                                 <i class="fa fa-search"/> Xem việc của tôi
@@ -124,13 +139,49 @@
                                         </div>
                                         <div class="o_ews_field">
                                             <label>Ngày giao <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control"
-                                                   t-model="state.form.assign_date" required="required"/>
+                                            <div class="o_ews_datepicker">
+                                                <input type="text" class="form-control o_ews_datepicker_text"
+                                                       placeholder="dd/mm/yyyy"
+                                                       inputmode="numeric"
+                                                       autocomplete="off"
+                                                       required="required"
+                                                       t-att-value="state.formDateText.assign_date"
+                                                       t-on-input="(ev) => this.onFormDateTextInput('assign_date', ev)"
+                                                       t-on-blur="() => this.onFormDateTextBlur('assign_date')"/>
+                                                <button type="button"
+                                                        class="o_ews_datepicker_btn"
+                                                        title="Chọn ngày trên lịch"
+                                                        t-on-click="(ev) => this.openFormDatePicker('assign_date', ev)">
+                                                    <i class="fa fa-calendar"/>
+                                                </button>
+                                                <input type="date" class="o_ews_datepicker_native"
+                                                       tabindex="-1"
+                                                       t-att-value="state.form.assign_date"
+                                                       t-on-change="(ev) => this.onFormDateNativeChange('assign_date', ev)"/>
+                                            </div>
                                         </div>
                                         <div class="o_ews_field">
                                             <label>Hạn hoàn thành <span class="text-danger">*</span></label>
-                                            <input type="date" class="form-control"
-                                                   t-model="state.form.deadline" required="required"/>
+                                            <div class="o_ews_datepicker">
+                                                <input type="text" class="form-control o_ews_datepicker_text"
+                                                       placeholder="dd/mm/yyyy"
+                                                       inputmode="numeric"
+                                                       autocomplete="off"
+                                                       required="required"
+                                                       t-att-value="state.formDateText.deadline"
+                                                       t-on-input="(ev) => this.onFormDateTextInput('deadline', ev)"
+                                                       t-on-blur="() => this.onFormDateTextBlur('deadline')"/>
+                                                <button type="button"
+                                                        class="o_ews_datepicker_btn"
+                                                        title="Chọn hạn hoàn thành trên lịch"
+                                                        t-on-click="(ev) => this.openFormDatePicker('deadline', ev)">
+                                                    <i class="fa fa-calendar"/>
+                                                </button>
+                                                <input type="date" class="o_ews_datepicker_native"
+                                                       tabindex="-1"
+                                                       t-att-value="state.form.deadline"
+                                                       t-on-change="(ev) => this.onFormDateNativeChange('deadline', ev)"/>
+                                            </div>
                                         </div>
 
                                         <div class="o_ews_field">
@@ -243,7 +294,8 @@
                                                         </span>
                                                     </td>
                                                     <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
-                                                    <td class="o_ews_col_date" t-esc="task.deadline_display"/>
+                                                    <td t-att-class="'o_ews_col_date' + (isDeadlineToday(task) ? ' o_ews_deadline_today' : '')"
+                                                        t-esc="task.deadline_display"/>
                                                     <td class="o_ews_col_priority">
                                                         <span t-att-class="'o_ews_badge ' + priorityClass(task.priority)"
                                                               t-esc="task.priority_label"/>
@@ -281,7 +333,17 @@
                                                             </t>
                                                         </select>
                                                     </td>
-                                                    <td class="o_ews_col_note" t-esc="task.note"/>
+                                                    <td class="o_ews_col_note">
+                                                        <textarea t-if="task.can_edit_details !== false"
+                                                                  class="form-control form-control-sm o_ews_note_input"
+                                                                  rows="2"
+                                                                  placeholder="Nhập ghi chú..."
+                                                                  t-att-value="task.note || ''"
+                                                                  t-on-change="(ev) => this.onNoteChange(task, ev)"/>
+                                                        <span t-else=""
+                                                              class="o_ews_note_readonly"
+                                                              t-esc="task.note || '—'"/>
+                                                    </td>
                                                     <td class="o_ews_col_discuss">
                                                         <button type="button"
                                                                 t-att-class="'o_ews_discuss_btn' + (task.discussion_unread ? ' has-unread' : '')"
@@ -922,11 +984,40 @@
                                       t-esc="(statusBoardRows.length || 0) + ' việc'"/>
                             </h3>
                             <p class="o_ews_month_toggle_hint">
-                                Phân theo trạng thái · mỗi bảng hiện tối đa 10 dòng (cuộn trong bảng để xem thêm)
+                                Phân theo trạng thái · cột Hôm nay = việc có hạn đúng ngày hôm nay · cuộn để xem thêm
                             </p>
                         </div>
                         <div class="o_ews_status_boards_scroll">
                         <div class="o_ews_status_boards">
+                            <div class="o_ews_status_col o_ews_status_today">
+                                <div class="o_ews_status_col_sticky">
+                                    <div class="o_ews_status_col_head">
+                                        Công việc ngày hôm nay
+                                        <span class="o_ews_status_col_count"
+                                              t-esc="'(' + statusBoardToday.length + ')'"/>
+                                    </div>
+                                    <div class="o_ews_status_col_labels" aria-hidden="true">
+                                        <span>Tên công việc</span>
+                                        <span>Hạn hoàn thành</span>
+                                    </div>
+                                </div>
+                                <div class="o_ews_status_table_wrap">
+                                    <table class="o_ews_status_table">
+                                        <tbody>
+                                            <t t-foreach="statusBoardToday" t-as="row" t-key="'today-' + row.id">
+                                                <tr>
+                                                    <td t-esc="row.name"/>
+                                                    <td class="o_ews_status_date"
+                                                        t-esc="row.deadline_display || '—'"/>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!statusBoardToday.length">
+                                                <td colspan="2" class="o_ews_status_empty">Không có việc hạn đúng ngày hôm nay</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                             <div class="o_ews_status_col o_ews_status_done">
                                 <div class="o_ews_status_col_sticky">
                                     <div class="o_ews_status_col_head">Công việc hoàn thành</div>
@@ -1029,6 +1120,91 @@
                             </div>
                         </div>
                         </div>
+                    </t>
+
+                    <!-- TAB 5: monthly calendar -->
+                    <t t-if="isActiveTab('calendar')">
+                        <div class="o_ews_tab_section_head o_ews_calendar_section_head">
+                            <div class="o_ews_calendar_title_row">
+                                <h3>
+                                    <i class="fa fa-calendar"/> Lịch công việc
+                                    <span class="o_ews_month_count_badge"
+                                          t-esc="(state.calendarTasks.length || 0) + ' việc'"/>
+                                </h3>
+                                <div class="o_ews_calendar_nav">
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            title="Tháng trước"
+                                            t-on-click="() => this.shiftCalendarMonth(-1)">
+                                        <i class="fa fa-chevron-left"/>
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm"
+                                            title="Tháng sau"
+                                            t-on-click="() => this.shiftCalendarMonth(1)">
+                                        <i class="fa fa-chevron-right"/>
+                                    </button>
+                                </div>
+                            </div>
+                            <p class="o_ews_month_toggle_hint">
+                                Lưới tháng (Thứ 2 → Chủ nhật) — toàn bộ ngày trong tháng
+                                <t t-if="calendarRangeLabel"> · <t t-esc="calendarRangeLabel"/></t>
+                                · Việc hiện trong các ngày từ Ngày giao đến Hạn hoàn thành
+                            </p>
+                        </div>
+
+                        <t t-if="state.calendarLoading">
+                            <div class="text-center p-4">
+                                <i class="fa fa-spinner fa-spin fa-2x"/>
+                            </div>
+                        </t>
+                        <t t-elif="state.calendarMessage">
+                            <div class="alert alert-warning m-2" t-esc="state.calendarMessage"/>
+                        </t>
+                        <t t-else="">
+                            <div class="o_ews_week_cal o_ews_month_cal">
+                                <div class="o_ews_week_cal_head" aria-hidden="true">
+                                    <div class="o_ews_week_cal_dow">Thứ 2</div>
+                                    <div class="o_ews_week_cal_dow">Thứ 3</div>
+                                    <div class="o_ews_week_cal_dow">Thứ 4</div>
+                                    <div class="o_ews_week_cal_dow">Thứ 5</div>
+                                    <div class="o_ews_week_cal_dow">Thứ 6</div>
+                                    <div class="o_ews_week_cal_dow">Thứ 7</div>
+                                    <div class="o_ews_week_cal_dow">CN</div>
+                                </div>
+                                <t t-foreach="calendarWeeks" t-as="week" t-key="week.key">
+                                    <div class="o_ews_week_cal_row">
+                                        <t t-foreach="week.days" t-as="day" t-key="day.iso">
+                                            <div t-att-class="'o_ews_week_cal_cell'
+                                                    + (day.isToday ? ' is-today' : '')
+                                                    + (day.inMonth ? '' : ' is-outside')">
+                                                <div class="o_ews_week_cal_date"
+                                                     t-att-title="day.label"
+                                                     t-esc="day.inMonth ? day.label : day.dayNum"/>
+                                                <div class="o_ews_week_cal_tasks" t-if="day.inMonth">
+                                                    <t t-foreach="day.tasks" t-as="task" t-key="task.id">
+                                                        <button type="button"
+                                                                t-att-class="'o_ews_week_card o_ews_week_card_' + calendarStatusMeta(task).key"
+                                                                t-att-title="task.name"
+                                                                t-on-click="() => this.onCalendarTaskClick(task)">
+                                                            <i t-att-class="'fa ' + calendarStatusMeta(task).icon + ' o_ews_week_card_icon'"/>
+                                                            <span class="o_ews_week_card_body">
+                                                                <span class="o_ews_week_card_name" t-esc="task.name"/>
+                                                                <span class="o_ews_week_card_code">
+                                                                    Mã: <t t-esc="taskCode(task)"/>
+                                                                </span>
+                                                            </span>
+                                                        </button>
+                                                    </t>
+                                                    <div t-if="!day.tasks.length" class="o_ews_week_cal_empty">—</div>
+                                                </div>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </t>
+                                <div t-if="!calendarWeeks.length" class="text-muted text-center py-4">
+                                    Chưa có dữ liệu lịch tháng.
+                                </div>
+                            </div>
+                        </t>
                     </t>
                 </t>
             </div>

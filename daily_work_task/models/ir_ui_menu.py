@@ -43,3 +43,4 @@ class IrUiMenu(models.Model):
             if menu:
                 res.append(menu.id)
         return res
+

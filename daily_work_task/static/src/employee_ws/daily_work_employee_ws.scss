@@ -110,8 +110,8 @@
         }
 
         &.o_ews_header_kpi_progress {
-            .o_ews_header_kpi_icon { color: #2563eb; }
-            .o_ews_header_kpi_value { color: #1d4ed8; }
+            .o_ews_header_kpi_icon { color: #ea580c; }
+            .o_ews_header_kpi_value { color: #c2410c; }
         }
 
         &.o_ews_header_kpi_todo {
@@ -205,6 +205,269 @@
         color: #7c3aed;
     }
 
+    .o_ews_tab_icon_calendar {
+        color: #0ea5e9;
+    }
+
+    .o_ews_calendar_section_head {
+        .o_ews_calendar_title_row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+
+            h3 {
+                margin: 0;
+            }
+        }
+
+        .o_ews_calendar_nav {
+            display: inline-flex;
+            gap: 6px;
+        }
+    }
+
+    .o_ews_calendar_filters {
+        display: none; /* đã bỏ thanh lọc ngày trên Lịch */
+    }
+
+    .o_ews_week_cal {
+        margin: 0 12px 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        background: #fff;
+        overflow: auto;
+        max-height: calc(100vh - 220px);
+    }
+
+    .o_ews_week_cal_head,
+    .o_ews_week_cal_row {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(140px, 1fr));
+        min-width: 980px;
+    }
+
+    .o_ews_week_cal_head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .o_ews_week_cal_dow {
+        padding: 8px 10px;
+        text-align: center;
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+        border-right: 1px solid #e2e8f0;
+
+        &:last-child {
+            border-right: 0;
+        }
+    }
+
+    .o_ews_week_cal_row {
+        border-bottom: 1px solid #e2e8f0;
+
+        &:last-child {
+            border-bottom: 0;
+        }
+    }
+
+    .o_ews_week_cal_cell {
+        min-height: 150px;
+        padding: 8px;
+        border-right: 1px solid #e2e8f0;
+        background: #fff;
+        vertical-align: top;
+
+        &:last-child {
+            border-right: 0;
+        }
+
+        &.is-today {
+            background: #f0f9ff;
+        }
+
+        &.is-outside {
+            background: #f8fafc;
+            min-height: 72px;
+
+            .o_ews_week_cal_date {
+                background: transparent;
+                color: #cbd5e1;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .o_ews_month_cal {
+        .o_ews_week_cal_cell:not(.is-outside) {
+            min-height: 118px;
+        }
+
+        .o_ews_week_cal_date {
+            font-size: 0.75rem;
+        }
+
+        .o_ews_week_card_name {
+            -webkit-line-clamp: 1;
+        }
+    }
+
+    .o_ews_week_cal_date {
+        margin-bottom: 8px;
+        padding: 4px 6px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #0f172a;
+        font-size: 0.82rem;
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .o_ews_week_cal_cell.is-today .o_ews_week_cal_date {
+        background: #0ea5e9;
+        color: #fff;
+    }
+
+    .o_ews_week_cal_tasks {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .o_ews_week_cal_empty {
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        text-align: center;
+        padding: 10px 0;
+    }
+
+    .o_ews_week_card {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        width: 100%;
+        margin: 0;
+        padding: 7px 8px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+        transition: box-shadow 0.15s ease, filter 0.15s ease;
+
+        &:hover {
+            filter: brightness(0.97);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.1);
+        }
+    }
+
+    .o_ews_week_card_icon {
+        flex: 0 0 auto;
+        margin-top: 2px;
+        font-size: 0.95rem;
+    }
+
+    .o_ews_week_card_body {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .o_ews_week_card_name {
+        color: #0f172a;
+        font-size: 0.8rem;
+        font-weight: 600;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .o_ews_week_card_code {
+        color: #64748b;
+        font-size: 0.72rem;
+        line-height: 1.2;
+    }
+
+    /* Tô nền theo trạng thái — cùng bảng màu KPI header */
+    .o_ews_week_card_done {
+        background: #dcfce7;
+        border-color: #86efac;
+
+        .o_ews_week_card_icon {
+            color: #16a34a;
+        }
+
+        .o_ews_week_card_name {
+            color: #166534;
+        }
+
+        .o_ews_week_card_code {
+            color: #15803d;
+        }
+    }
+
+    .o_ews_week_card_progress {
+        background: #ffedd5;
+        border-color: #fdba74;
+
+        .o_ews_week_card_icon {
+            color: #ea580c;
+        }
+
+        .o_ews_week_card_name {
+            color: #9a3412;
+        }
+
+        .o_ews_week_card_code {
+            color: #c2410c;
+        }
+    }
+
+    .o_ews_week_card_todo {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+
+        .o_ews_week_card_icon {
+            color: #64748b;
+        }
+
+        .o_ews_week_card_name {
+            color: #334155;
+        }
+
+        .o_ews_week_card_code {
+            color: #64748b;
+        }
+    }
+
+    .o_ews_week_card_overdue {
+        background: #fef9c3;
+        border-color: #fde047;
+
+        .o_ews_week_card_icon {
+            color: #ca8a04;
+        }
+
+        .o_ews_week_card_name {
+            color: #854d0e;
+        }
+
+        .o_ews_week_card_code {
+            color: #a16207;
+        }
+    }
+
     .o_ews_status_boards_scroll {
         overflow-x: auto;
         overflow-y: visible;
@@ -240,10 +503,10 @@
 
     .o_ews_status_boards {
         display: grid;
-        grid-template-columns: repeat(4, minmax(220px, 1fr));
+        grid-template-columns: repeat(5, minmax(200px, 1fr));
         gap: 12px;
         align-items: start;
-        min-width: 960px;
+        min-width: 1100px;
     }
 
     .o_ews_status_col {
@@ -275,6 +538,16 @@
         color: #fff;
         letter-spacing: 0.01em;
         border-bottom: 1px solid #9ca3af;
+    }
+
+    .o_ews_status_col_count {
+        font-weight: 600;
+        opacity: 0.95;
+        margin-left: 4px;
+    }
+
+    .o_ews_status_today .o_ews_status_col_head {
+        background: #0ea5e9;
     }
 
     .o_ews_status_done .o_ews_status_col_head {
@@ -406,13 +679,13 @@
 
     @media (max-width: 1200px) {
         .o_ews_status_boards {
-            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            grid-template-columns: repeat(5, minmax(200px, 1fr));
         }
     }
 
     @media (max-width: 720px) {
         .o_ews_status_boards {
-            grid-template-columns: repeat(4, minmax(220px, 1fr));
+            grid-template-columns: repeat(5, minmax(200px, 1fr));
         }
     }
 
@@ -554,6 +827,75 @@
             font-weight: 600;
             margin-bottom: 4px;
             color: #374151;
+        }
+    }
+
+    /* Hiển thị dd/mm/yyyy + nút lịch lớn (dễ bấm) */
+    .o_ews_datepicker {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+        width: 100%;
+
+        .o_ews_datepicker_text {
+            flex: 1 1 auto;
+            min-width: 0;
+            padding-right: 0.5rem;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+            background: #fff;
+        }
+
+        .o_ews_datepicker_btn {
+            flex: 0 0 44px;
+            width: 44px;
+            min-width: 44px;
+            min-height: 38px;
+            margin: 0;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid #ced4da;
+            border-left: 0;
+            border-radius: 0 0.375rem 0.375rem 0;
+            background: #f0f9ff;
+            color: #0284c7;
+            cursor: pointer;
+            line-height: 1;
+            z-index: 2;
+
+            .fa {
+                font-size: 1.05rem;
+                pointer-events: none;
+            }
+
+            &:hover,
+            &:focus {
+                background: #e0f2fe;
+                color: #0369a1;
+                outline: none;
+                box-shadow: inset 0 0 0 1px #7dd3fc;
+            }
+
+            &:active {
+                background: #bae6fd;
+            }
+        }
+
+        /* input date ẩn — chỉ dùng để mở picker / nhận giá trị */
+        .o_ews_datepicker_native {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
         }
     }
 
@@ -818,6 +1160,21 @@
             padding-right: 8px;
         }
 
+        .o_ews_note_input {
+            width: 100%;
+            min-height: 52px;
+            resize: vertical;
+            font-size: 0.8rem;
+            line-height: 1.35;
+            padding: 6px 8px;
+        }
+
+        .o_ews_note_readonly {
+            display: block;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+
         thead th.o_ews_col_note {
             text-align: center;
         }
@@ -860,6 +1217,14 @@
             vertical-align: middle;
             padding-left: 4px;
             padding-right: 4px;
+        }
+
+        td.o_ews_deadline_today {
+            background: #ffedd5 !important;
+            color: #9a3412 !important;
+            font-weight: 700;
+            border-radius: 4px;
+            box-shadow: inset 0 0 0 1px #fdba74;
         }
 
         thead th.o_ews_col_date {
@@ -1161,9 +1526,9 @@
         border-color: #86efac !important;
     }
     .o_ews_state_progress {
-        background: #fef08a !important;
-        color: #854d0e !important;
-        border-color: #facc15 !important;
+        background: #ffedd5 !important;
+        color: #9a3412 !important;
+        border-color: #fdba74 !important;
     }
     .o_ews_state_todo {
         background: #f1f5f9 !important;
@@ -1183,8 +1548,8 @@
         color: #166534;
     }
     .o_ews_state_badge_progress {
-        background: #fef08a;
-        color: #854d0e;
+        background: #ffedd5;
+        color: #9a3412;
     }
     .o_ews_state_badge_todo {
         background: #f1f5f9;

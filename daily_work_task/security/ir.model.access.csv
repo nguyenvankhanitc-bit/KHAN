@@ -18,6 +18,7 @@ access_daily_task_report_access_user,daily.task.report.access user,model_daily_t
 access_daily_task_report_access_manager,daily.task.report.access manager,model_daily_task_report_access,group_daily_work_manager,1,1,1,1
 access_daily_task_perf_access_user,daily.task.performance.access user,model_daily_task_performance_access,group_daily_work_user,1,0,0,0
 access_daily_task_perf_access_manager,daily.task.performance.access manager,model_daily_task_performance_access,group_daily_work_manager,1,1,1,1
+
 access_daily_task_perf_report_user,daily.task.performance.report user,model_daily_task_performance_report,group_daily_work_user,1,0,0,0
 access_daily_task_perf_report_manager,daily.task.performance.report manager,model_daily_task_performance_report,group_daily_work_manager,1,0,0,0
 access_daily_work_notebook_user,daily.work.notebook user,model_daily_work_notebook,group_daily_work_user,1,1,1,1

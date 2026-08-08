@@ -13,6 +13,7 @@
     --eac-radius: 14px;
     --eac-topbar-h: 64px;
     --eac-sidebar-w: 248px;
+    --eac-sidebar-w-collapsed: 72px;
 
     display: flex;
     flex-direction: column;
@@ -292,7 +293,33 @@
     }
 
     &.is-collapsed .o_eac_sidebar {
-        width: 0;
+        width: var(--eac-sidebar-w-collapsed);
+
+        .o_eac_nav {
+            padding: 0.85rem 0.45rem;
+            align-items: center;
+        }
+
+        .o_eac_nav_item {
+            justify-content: center;
+            padding: 0.7rem 0.4rem;
+            gap: 0;
+
+            span,
+            .o_eac_nav_badge,
+            .o_eac_nav_new {
+                display: none;
+            }
+
+            i {
+                width: auto;
+                font-size: 1.05rem;
+            }
+        }
+
+        .o_eac_sidebar_foot {
+            display: none;
+        }
     }
 
     .o_eac_nav {
@@ -631,7 +658,9 @@
 
         &.is-collapsed .o_eac_sidebar {
             width: 0;
+            padding: 0;
             box-shadow: none;
+            pointer-events: none;
         }
 
         .o_eac_app_grid {

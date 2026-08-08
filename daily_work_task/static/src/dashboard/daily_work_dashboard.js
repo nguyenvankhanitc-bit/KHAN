@@ -525,6 +525,7 @@ export class DailyWorkDashboard extends Component {
             work_note: "daily_work_note",
             employee_ws: "daily_work_employee_ws",
             overdue: null,
+            today: null,
             kanban: null,
             kpi: null,
             viewer: "daily_work_viewer",
@@ -542,6 +543,10 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "kanban") {
             await this.action.doAction("daily_work_task.action_daily_task_kanban");
+            return;
+        }
+        if (key === "today") {
+            await this.action.doAction("daily_work_task.action_daily_work_today");
             return;
         }
         if (key === "overdue") {

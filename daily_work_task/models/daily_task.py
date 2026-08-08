@@ -272,6 +272,75 @@ class DailyTask(models.Model):
         """Số ngày trễ hiển thị cột Quá hạn — giữ cả khi đã hoàn thành."""
         return self._days_past_deadline()
 
+    def _is_today_work(self, today=None):
+        """
+        Việc «đúng ngày hôm nay»: hạn hoàn thành = hôm nay, chưa hoàn thành.
+        """
+        self.ensure_one()
+        today = today or fields.Date.context_today(self)
+        if self.state == "done":
+            return False
+        return bool(self.deadline and self.deadline == today)
+
+    @api.model
+    def _today_tasks_for_user(self):
+        """Việc hôm nay của NV đang đăng nhập (cùng scope Nhập công việc)."""
+        today = fields.Date.context_today(self)
+        emp = self._my_hr_employee()
+        if not emp:
+            return self.browse()
+        tasks = self.search(
+            [
+                ("assignee_id.employee_id", "=", emp.id),
+                ("deadline", "=", today),
+                ("state", "!=", "done"),
+            ],
+            order="deadline asc, id desc",
+        )
+        self._refresh_overdue_flags(tasks)
+        return tasks
+
+    @api.model
+    def count_today_tasks(self):
+        """Số việc hạn đúng hôm nay (của user đang login)."""
+        return len(self._today_tasks_for_user())
+
+    @api.model
+    def get_today_task_list(self):
+        """Danh sách Công việc ngày hôm nay — tên + hạn (dd/mm/yyyy)."""
+        today = fields.Date.context_today(self)
+        tasks = self._today_tasks_for_user()
+        rows = []
+        for t in tasks:
+            rows.append(
+                {
+                    "id": t.id,
+                    "name": t.name or "",
+                    "deadline": t.deadline.isoformat() if t.deadline else "",
+                    "deadline_display": t.deadline.strftime("%d/%m/%Y")
+                    if t.deadline
+                    else "—",
+                    "state": t.state,
+                }
+            )
+        return {
+            "today": today.isoformat(),
+            "today_label": today.strftime("%d/%m/%Y"),
+            "count": len(rows),
+            "rows": rows,
+        }
+
+    @api.model
+    def action_open_today_tasks(self):
+        """Mở Nhập công việc → tab Danh sách công việc."""
+        return {
+            "type": "ir.actions.client",
+            "tag": "daily_work_today",
+            "name": "Công việc hôm nay",
+            "target": "current",
+            "context": {"daily_work_focus_board": True},
+        }
+
     @api.depends("state", "is_overdue")
     def _compute_color(self):
         # Index khớp palette Odoo calendar (o_calendar_color_N):
@@ -1267,6 +1336,109 @@ class DailyTask(models.Model):
             "total_duration_minutes": total_minutes,
             "total_duration_hours": round(total_minutes / 60.0, 2) if total_minutes else 0.0,
             "completion_percent_avg": avg_pct,
+            "message": False,
+        }
+
+    @api.model
+    def get_employee_calendar(self, filters=None):
+        """Lịch tháng: việc của NV có khoảng [assign_date, deadline] giao với tháng."""
+        from calendar import monthrange
+        from datetime import timedelta
+
+        filters = filters or {}
+        emp = self._my_hr_employee()
+        today = fields.Date.context_today(self)
+        raw_from = filters.get("date_from") or False
+        raw_to = filters.get("date_to") or False
+
+        def _parse(d):
+            try:
+                return fields.Date.to_date(d) if d else False
+            except Exception:
+                return False
+
+        d_from = _parse(raw_from)
+        d_to = _parse(raw_to)
+        if not d_from and not d_to:
+            # Mặc định: cả tháng hiện tại
+            y, m = today.year, today.month
+            last = monthrange(y, m)[1]
+            range_from = today.replace(day=1)
+            range_to = today.replace(day=last)
+        else:
+            if d_from and not d_to:
+                d_to = d_from
+            if d_to and not d_from:
+                d_from = d_to
+            if d_to < d_from:
+                d_from, d_to = d_to, d_from
+            # Mở rộng đủ tháng chứa khoảng chọn (toàn bộ ngày trong tháng)
+            y1, m1 = d_from.year, d_from.month
+            y2, m2 = d_to.year, d_to.month
+            range_from = d_from.replace(day=1)
+            last2 = monthrange(y2, m2)[1]
+            range_to = d_to.replace(day=last2)
+
+        # Pad lưới Mon–Sun để vẽ đủ ô lịch tháng
+        grid_from = range_from - timedelta(days=range_from.weekday())
+        grid_to = range_to + timedelta(days=(6 - range_to.weekday()))
+        month_label = "Tháng %02d/%s" % (range_from.month, range_from.year)
+        if (range_from.year, range_from.month) != (range_to.year, range_to.month):
+            month_label = "Tháng %02d/%s → %02d/%s" % (
+                range_from.month,
+                range_from.year,
+                range_to.month,
+                range_to.year,
+            )
+
+        empty = {
+            "employee": False,
+            "tasks": [],
+            "range_from": range_from.isoformat(),
+            "range_to": range_to.isoformat(),
+            "grid_from": grid_from.isoformat(),
+            "grid_to": grid_to.isoformat(),
+            "month_label": month_label,
+            "message": False,
+        }
+        if not emp:
+            empty["message"] = "Tài khoản chưa gắn hồ sơ nhân viên (hr.employee)."
+            return empty
+
+        domain = [
+            ("assignee_id.employee_id", "=", emp.id),
+            "|",
+            ("deadline", "=", False),
+            ("deadline", ">=", grid_from),
+            "|",
+            ("assign_date", "=", False),
+            ("assign_date", "<=", grid_to),
+        ]
+        tasks = self.sudo().search(domain, order="deadline asc, id desc")
+        self._refresh_overdue_flags(tasks)
+        rows = []
+        for t in tasks:
+            start = t.assign_date or t.deadline
+            end = t.deadline or t.assign_date
+            if not start or not end:
+                continue
+            if end < grid_from or start > grid_to:
+                continue
+            row = t._to_manager_dict()
+            row["code"] = "CV%03d" % (t.id % 1000)
+            rows.append(row)
+        return {
+            "employee": {
+                "id": emp.id,
+                "name": emp.name or "",
+                "department": emp.department_id.display_name if emp.department_id else "",
+            },
+            "tasks": self._enrich_assign_discussion(rows),
+            "range_from": range_from.isoformat(),
+            "range_to": range_to.isoformat(),
+            "grid_from": grid_from.isoformat(),
+            "grid_to": grid_to.isoformat(),
+            "month_label": month_label,
             "message": False,
         }
 

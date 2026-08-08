@@ -3,8 +3,12 @@
     <t t-name="lug_app_center.LugAppCenter">
         <div class="o_lug_app_center" t-att-class="{'is-collapsed': state.sidebarCollapsed}">
             <header class="o_eac_topbar">
-                <button type="button" class="o_eac_burger" t-on-click="toggleSidebar" title="Menu">
-                    <i class="fa fa-bars"/>
+                <button type="button"
+                        class="o_eac_burger"
+                        t-on-click="toggleSidebar"
+                        t-att-title="state.sidebarCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'"
+                        t-att-aria-expanded="(!state.sidebarCollapsed).toString()">
+                    <i t-att-class="state.sidebarCollapsed ? 'fa fa-indent' : 'fa fa-bars'"/>
                 </button>
                 <div class="o_eac_brand_inline">
                     <img class="o_eac_logo_img"
@@ -85,6 +89,7 @@
                         <button type="button"
                                 class="o_eac_nav_item"
                                 t-att-class="{'active': state.activeNav === 'home'}"
+                                t-att-title="'Trang chủ'"
                                 t-on-click="setHome">
                             <i class="fa fa-home"/>
                             <span>Trang chủ</span>
@@ -93,6 +98,7 @@
                             <button type="button"
                                     class="o_eac_nav_item"
                                     t-att-class="{'active': state.activeNav === nav.key}"
+                                    t-att-title="nav.sidebar_label"
                                     t-on-click="() => this.onNavClick(nav)">
                                 <i t-att-class="'fa ' + nav.icon"/>
                                 <span t-esc="nav.sidebar_label"/>

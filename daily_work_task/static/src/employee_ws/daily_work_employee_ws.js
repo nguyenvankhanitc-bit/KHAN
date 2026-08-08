@@ -16,6 +16,71 @@ function currentYearMonth() {
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
 }
 
+/** ISO yyyy-mm-dd → dd/mm/yy */
+function isoToDmy(iso) {
+    if (!iso) {
+        return "";
+    }
+    const m = String(iso).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) {
+        return String(iso).trim();
+    }
+    return `${m[3]}/${m[2]}/${m[1].slice(-2)}`;
+}
+
+/** ISO yyyy-mm-dd → dd/mm/yyyy (hiển thị form) */
+function isoToDmyFull(iso) {
+    if (!iso) {
+        return "";
+    }
+    const m = String(iso).trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) {
+        return String(iso).trim();
+    }
+    return `${m[3]}/${m[2]}/${m[1]}`;
+}
+
+/** Chuẩn hóa mọi kiểu nhập về ISO yyyy-mm-dd */
+function toIsoDate(text) {
+    const s = String(text || "").trim();
+    if (!s) {
+        return "";
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        return s;
+    }
+    return dmyToIso(s) || "";
+}
+
+/** dd/mm/yy | dd/mm/yyyy | yyyy-mm-dd → ISO, hoặc null nếu sai */
+function dmyToIso(text) {
+    const s = String(text || "").trim();
+    if (!s) {
+        return "";
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        return s;
+    }
+    const m = s.match(/^(\d{1,2})[/.\-](\d{1,2})[/.\-](\d{2}|\d{4})$/);
+    if (!m) {
+        return null;
+    }
+    const d = parseInt(m[1], 10);
+    const mo = parseInt(m[2], 10);
+    let y = parseInt(m[3], 10);
+    if (String(m[3]).length === 2) {
+        y += y <= 69 ? 2000 : 1900;
+    }
+    if (mo < 1 || mo > 12 || d < 1 || d > 31) {
+        return null;
+    }
+    const dt = new Date(y, mo - 1, d);
+    if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== d) {
+        return null;
+    }
+    return `${y}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+}
+
 export class DailyWorkEmployeeWs extends Component {
     static template = "daily_work_task.DailyWorkEmployeeWs";
     static props = { ...standardActionServiceProps };
@@ -27,7 +92,14 @@ export class DailyWorkEmployeeWs extends Component {
         this.chatBodyRef = useRef("chatBody");
         this._onPointerMove = this._onPointerMove.bind(this);
         this._onPointerUp = this._onPointerUp.bind(this);
+        const focusBoard = Boolean(
+            this.props.action?.context?.daily_work_focus_board
+            || this.props.action?.context?.daily_work_focus_today
+            || this.props.action?.tag === "daily_work_today"
+        );
+        this._focusBoardOnOpen = focusBoard;
         const ym = currentYearMonth();
+        const initialForm = this.emptyForm();
         this.state = useState({
             loading: true,
             saving: false,
@@ -39,7 +111,11 @@ export class DailyWorkEmployeeWs extends Component {
             message: false,
             dateFrom: "",
             dateTo: "",
-            form: this.emptyForm(),
+            form: initialForm,
+            formDateText: {
+                assign_date: isoToDmyFull(initialForm.assign_date),
+                deadline: isoToDmyFull(initialForm.deadline),
+            },
             editingTaskId: false,
             sidebarWidth: this._loadSidebarWidth(),
             resizing: false,
@@ -62,7 +138,15 @@ export class DailyWorkEmployeeWs extends Component {
             totalDurationHours: 0,
             completionPercentAvg: 0,
             showMyList: true,
-            activeTab: "tasks",
+            activeTab: focusBoard ? "board" : "tasks",
+            calendarLoading: false,
+            calendarTasks: [],
+            calendarGridFrom: "",
+            calendarGridTo: "",
+            calendarRangeFrom: "",
+            calendarRangeTo: "",
+            calendarMonthLabel: "",
+            calendarMessage: false,
             chat: {
                 open: false,
                 loading: false,
@@ -132,6 +216,18 @@ export class DailyWorkEmployeeWs extends Component {
         onMounted(() => {
             window.addEventListener("pointermove", this._onPointerMove);
             window.addEventListener("pointerup", this._onPointerUp);
+            if (this._focusBoardOnOpen) {
+                this.state.activeTab = "board";
+                requestAnimationFrame(() => {
+                    const el = this.el?.querySelector?.(".o_ews_status_today")
+                        || document.querySelector(".o_ews_status_today");
+                    el?.scrollIntoView?.({
+                        behavior: "smooth",
+                        block: "nearest",
+                        inline: "start",
+                    });
+                });
+            }
         });
         onWillUnmount(() => {
             window.removeEventListener("pointermove", this._onPointerMove);
@@ -156,10 +252,213 @@ export class DailyWorkEmployeeWs extends Component {
         if (tab === "month") {
             this.state.monthSectionOpen = true;
         }
+        if (tab === "calendar") {
+            this.loadCalendar();
+        }
     }
 
     isActiveTab(tab) {
         return this.state.activeTab === tab;
+    }
+
+    _parseIsoDate(iso) {
+        if (!iso) {
+            return null;
+        }
+        const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (!m) {
+            return null;
+        }
+        return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    }
+
+    _formatIsoDate(date) {
+        if (!date || Number.isNaN(date.getTime())) {
+            return "";
+        }
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, "0");
+        const d = String(date.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    }
+
+    _formatDisplayDate(iso) {
+        const d = this._parseIsoDate(iso);
+        if (!d) {
+            return "";
+        }
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    calendarStatusMeta(task) {
+        if (this._isBoardOverdue(task)) {
+            return { key: "overdue", icon: "fa-exclamation-triangle", label: "Quá hạn" };
+        }
+        if (task?.state === "done") {
+            return { key: "done", icon: "fa-check-circle", label: "Hoàn thành" };
+        }
+        if (task?.state === "in_progress") {
+            return { key: "progress", icon: "fa-refresh", label: "Đang xử lý" };
+        }
+        return { key: "todo", icon: "fa-circle", label: "Chưa bắt đầu" };
+    }
+
+    taskCode(task) {
+        if (task?.code) {
+            return task.code;
+        }
+        const id = Number(task?.id) || 0;
+        return `CV${String(id % 1000).padStart(3, "0")}`;
+    }
+
+    /** Các tuần (mỗi tuần 7 ngày T2→CN) phủ cả tháng. */
+    get calendarWeeks() {
+        const gridFrom = this._parseIsoDate(this.state.calendarGridFrom);
+        const gridTo = this._parseIsoDate(this.state.calendarGridTo);
+        const rangeFrom = this._parseIsoDate(this.state.calendarRangeFrom) || gridFrom;
+        const rangeTo = this._parseIsoDate(this.state.calendarRangeTo) || gridTo;
+        if (!gridFrom || !gridTo) {
+            return [];
+        }
+        const rangeFromIso = this._formatIsoDate(rangeFrom);
+        const rangeToIso = this._formatIsoDate(rangeTo);
+        const tasks = this.state.calendarTasks || [];
+        const weeks = [];
+        const cursor = new Date(gridFrom.getFullYear(), gridFrom.getMonth(), gridFrom.getDate());
+        const end = new Date(gridTo.getFullYear(), gridTo.getMonth(), gridTo.getDate());
+        while (cursor <= end) {
+            const days = [];
+            for (let i = 0; i < 7; i++) {
+                const iso = this._formatIsoDate(cursor);
+                const inMonth = iso >= rangeFromIso && iso <= rangeToIso;
+                const dayTasks = inMonth
+                    ? tasks.filter((t) => {
+                          const startIso = t.assign_date || t.deadline;
+                          const endIso = t.deadline || t.assign_date;
+                          if (!startIso || !endIso) {
+                              return false;
+                          }
+                          return startIso <= iso && iso <= endIso;
+                      })
+                    : [];
+                days.push({
+                    iso,
+                    label: this._formatDisplayDate(iso),
+                    dayNum: String(cursor.getDate()).padStart(2, "0"),
+                    inMonth,
+                    isToday: iso === this._formatIsoDate(new Date()),
+                    tasks: dayTasks,
+                });
+                cursor.setDate(cursor.getDate() + 1);
+            }
+            weeks.push({ key: days[0]?.iso || weeks.length, days });
+        }
+        return weeks;
+    }
+
+    get calendarRangeLabel() {
+        if (this.state.calendarMonthLabel) {
+            return this.state.calendarMonthLabel;
+        }
+        const a = this._formatDisplayDate(this.state.calendarRangeFrom || this.state.calendarGridFrom);
+        const b = this._formatDisplayDate(this.state.calendarRangeTo || this.state.calendarGridTo);
+        if (!a || !b) {
+            return "";
+        }
+        return `${a} → ${b}`;
+    }
+
+    async loadCalendar() {
+        this.state.calendarLoading = true;
+        try {
+            let dateFrom = false;
+            let dateTo = false;
+            if (this.state.dateFrom) {
+                dateFrom = dmyToIso(this.state.dateFrom);
+                if (!dateFrom) {
+                    this.notification.add(_t("Từ ngày không hợp lệ. Nhập theo dạng dd/mm/yy."), {
+                        type: "warning",
+                    });
+                    return;
+                }
+                this.state.dateFrom = isoToDmy(dateFrom);
+            }
+            if (this.state.dateTo) {
+                dateTo = dmyToIso(this.state.dateTo);
+                if (!dateTo) {
+                    this.notification.add(_t("Đến ngày không hợp lệ. Nhập theo dạng dd/mm/yy."), {
+                        type: "warning",
+                    });
+                    return;
+                }
+                this.state.dateTo = isoToDmy(dateTo);
+            }
+            const data = await this.orm.call("daily.task", "get_employee_calendar", [], {
+                filters: {
+                    date_from: dateFrom || false,
+                    date_to: dateTo || false,
+                },
+            });
+            this.state.calendarTasks = data.tasks || [];
+            this.state.calendarGridFrom = data.grid_from || "";
+            this.state.calendarGridTo = data.grid_to || "";
+            this.state.calendarRangeFrom = data.range_from || "";
+            this.state.calendarRangeTo = data.range_to || "";
+            this.state.calendarMonthLabel = data.month_label || "";
+            this.state.calendarMessage = data.message || false;
+            // Đồng bộ filter theo đúng tháng đang xem
+            if (data.range_from) {
+                this.state.dateFrom = isoToDmy(data.range_from);
+            }
+            if (data.range_to) {
+                this.state.dateTo = isoToDmy(data.range_to);
+            }
+            if (data.employee && !this.state.employee) {
+                this.state.employee = data.employee;
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không tải được lịch công việc."), {
+                type: "danger",
+            });
+        } finally {
+            this.state.calendarLoading = false;
+        }
+    }
+
+    async onCalendarFilter() {
+        await this.loadCalendar();
+    }
+
+    shiftCalendarMonth(deltaMonths) {
+        const base =
+            this._parseIsoDate(this.state.calendarRangeFrom) ||
+            this._parseIsoDate(this.state.calendarGridFrom) ||
+            new Date();
+        const anchor = new Date(base.getFullYear(), base.getMonth() + deltaMonths, 1);
+        const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
+        this.state.dateFrom = isoToDmy(this._formatIsoDate(anchor));
+        this.state.dateTo = isoToDmy(this._formatIsoDate(last));
+        this.loadCalendar();
+    }
+
+    /** @deprecated alias — giữ tương thích nếu còn chỗ gọi cũ */
+    shiftCalendarWeek(deltaWeeks) {
+        this.shiftCalendarMonth(deltaWeeks);
+    }
+
+    onCalendarTaskClick(task) {
+        if (!task?.id) {
+            return;
+        }
+        if (task.can_edit_details !== false) {
+            this.setActiveTab("tasks");
+            this.onEditTask(task);
+            return;
+        }
+        this.openDiscussion(task);
     }
 
     /** Nguồn dữ liệu bảng trạng thái: ưu tiên dữ liệu tháng (có cả việc hoàn thành). */
@@ -190,11 +489,45 @@ export class DailyWorkEmployeeWs extends Component {
         return this.statusBoardRows.filter((t) => this._isBoardOverdue(t));
     }
 
+    /**
+     * Việc hôm nay: hạn hoàn thành đúng ngày hôm nay, chưa hoàn thành.
+     */
+    get statusBoardToday() {
+        const today = this._formatIsoDate(new Date());
+        return this.statusBoardRows.filter((t) => {
+            if (!t || t.state === "done") {
+                return false;
+            }
+            return Boolean(t.deadline && t.deadline === today);
+        });
+    }
+
+    _isBoardToday(task, todayIso = null) {
+        if (!task) {
+            return false;
+        }
+        const today = todayIso || this._formatIsoDate(new Date());
+        const start = task.assign_date || task.deadline;
+        const end = task.deadline || task.assign_date;
+        if (!start || !end) {
+            return false;
+        }
+        return start <= today && today <= end;
+    }
+
     _isBoardOverdue(task) {
         if (!task || task.state === "done") {
             return false;
         }
         return Boolean(task.is_active_overdue || task.is_overdue);
+    }
+
+    /** Hạn hoàn thành trùng ngày hôm nay → tô cam ô. */
+    isDeadlineToday(task) {
+        if (!task?.deadline) {
+            return false;
+        }
+        return task.deadline === this._formatIsoDate(new Date());
     }
 
     get monthTitle() {
@@ -355,10 +688,11 @@ export class DailyWorkEmployeeWs extends Component {
         const yyyy = today.getFullYear();
         const mm = String(today.getMonth() + 1).padStart(2, "0");
         const dd = String(today.getDate()).padStart(2, "0");
+        const iso = `${yyyy}-${mm}-${dd}`;
         return {
             name: "",
-            deadline: "",
-            assign_date: `${yyyy}-${mm}-${dd}`,
+            deadline: iso,
+            assign_date: iso,
             priority: "medium",
             state: "not_started",
             note: "",
@@ -366,6 +700,88 @@ export class DailyWorkEmployeeWs extends Component {
             duration_minutes: "",
             completion_percent: 0,
         };
+    }
+
+    _syncFormDateText(form = this.state.form) {
+        this.state.formDateText = {
+            assign_date: isoToDmyFull(form?.assign_date || ""),
+            deadline: isoToDmyFull(form?.deadline || ""),
+        };
+    }
+
+    _setForm(form) {
+        this.state.form = form;
+        this._syncFormDateText(form);
+    }
+
+    openFormDatePicker(field, ev) {
+        ev?.preventDefault?.();
+        ev?.stopPropagation?.();
+        const wrap = ev?.currentTarget?.closest?.(".o_ews_datepicker");
+        const native = wrap?.querySelector?.(".o_ews_datepicker_native");
+        if (!native) {
+            return;
+        }
+        // Đồng bộ value trước khi mở lịch
+        if (this.state.form[field]) {
+            native.value = this.state.form[field];
+        }
+        const open = () => {
+            try {
+                if (typeof native.showPicker === "function") {
+                    native.showPicker();
+                    return;
+                }
+            } catch (_e) {
+                // fall through
+            }
+            native.focus({ preventScroll: true });
+            native.click();
+        };
+        // Một số trình duyệt cần focus trước showPicker
+        native.focus({ preventScroll: true });
+        open();
+    }
+
+    onFormDateTextInput(field, ev) {
+        this.state.formDateText[field] = ev.target.value;
+    }
+
+    onFormDateTextBlur(field) {
+        const iso = toIsoDate(this.state.formDateText[field]);
+        if (!iso) {
+            if (!String(this.state.formDateText[field] || "").trim()) {
+                this.state.form[field] = "";
+                this.state.formDateText[field] = "";
+            }
+            return;
+        }
+        this.state.form[field] = iso;
+        this.state.formDateText[field] = isoToDmyFull(iso);
+    }
+
+    onFormDateNativeChange(field, ev) {
+        const iso = ev.target.value || "";
+        this.state.form[field] = iso;
+        this.state.formDateText[field] = isoToDmyFull(iso);
+    }
+
+    /** Chuẩn hóa ô lọc (text dd/mm/yy) khi blur. */
+    onDateBlur(ev, target) {
+        if (target === "assign_date" || target === "deadline") {
+            return;
+        }
+        const raw = ev?.target?.value;
+        const iso = dmyToIso(raw);
+        if (!iso) {
+            return;
+        }
+        const display = isoToDmy(iso);
+        if (target === "dateFrom") {
+            this.state.dateFrom = display;
+        } else if (target === "dateTo") {
+            this.state.dateTo = display;
+        }
     }
 
     emptyRecurringForm() {
@@ -722,7 +1138,7 @@ export class DailyWorkEmployeeWs extends Component {
         }
         this.state.showMyList = true;
         this.state.editingTaskId = task.id;
-        this.state.form = {
+        this._setForm({
             name: task.name || "",
             deadline: task.deadline || "",
             assign_date: task.assign_date || "",
@@ -735,7 +1151,7 @@ export class DailyWorkEmployeeWs extends Component {
                     ? String(task.duration_minutes)
                     : "",
             completion_percent: Number(task.completion_percent) || 0,
-        };
+        });
         // Cuộn form chỉnh sửa vào tầm nhìn
         const panel = this.layoutRef.el?.querySelector(".o_ews_form_panel");
         if (panel) {
@@ -748,13 +1164,13 @@ export class DailyWorkEmployeeWs extends Component {
 
     onCancelEdit() {
         this.state.editingTaskId = false;
-        this.state.form = this.emptyForm();
+        this._setForm(this.emptyForm());
     }
 
     onQuickCreate() {
         this.state.activeTab = "tasks";
         this.state.editingTaskId = false;
-        this.state.form = this.emptyForm();
+        this._setForm(this.emptyForm());
         this.state.showMyList = true;
         requestAnimationFrame(() => {
             const input = this.el?.querySelector?.(".o_ews_task_form input[type='text']");
@@ -819,10 +1235,34 @@ export class DailyWorkEmployeeWs extends Component {
     async load() {
         this.state.loading = true;
         try {
+            let dateFrom = false;
+            let dateTo = false;
+            if (this.state.dateFrom) {
+                dateFrom = dmyToIso(this.state.dateFrom);
+                if (!dateFrom) {
+                    this.notification.add(_t("Từ ngày không hợp lệ. Nhập theo dạng dd/mm/yy."), {
+                        type: "warning",
+                    });
+                    this.state.loading = false;
+                    return;
+                }
+                this.state.dateFrom = isoToDmy(dateFrom);
+            }
+            if (this.state.dateTo) {
+                dateTo = dmyToIso(this.state.dateTo);
+                if (!dateTo) {
+                    this.notification.add(_t("Đến ngày không hợp lệ. Nhập theo dạng dd/mm/yy."), {
+                        type: "warning",
+                    });
+                    this.state.loading = false;
+                    return;
+                }
+                this.state.dateTo = isoToDmy(dateTo);
+            }
             const data = await this.orm.call("daily.task", "get_employee_workspace", [], {
                 filters: {
-                    date_from: this.state.dateFrom || false,
-                    date_to: this.state.dateTo || false,
+                    date_from: dateFrom || false,
+                    date_to: dateTo || false,
                 },
             });
             this.state.employee = data.employee || false;
@@ -930,10 +1370,27 @@ export class DailyWorkEmployeeWs extends Component {
             this.notification.add(_t("Vui lòng nhập tên công việc."), { type: "warning" });
             return;
         }
-        if (!f.deadline) {
-            this.notification.add(_t("Vui lòng chọn hạn hoàn thành."), { type: "warning" });
+        // Ưu tiên text đang hiện (dd/mm/yyyy), fallback ISO trong form
+        const assignIso =
+            toIsoDate(this.state.formDateText.assign_date) || toIsoDate(f.assign_date);
+        const deadlineIso =
+            toIsoDate(this.state.formDateText.deadline) || toIsoDate(f.deadline);
+        if (!assignIso) {
+            this.notification.add(_t("Vui lòng chọn ngày giao (dd/mm/yyyy)."), {
+                type: "warning",
+            });
             return;
         }
+        if (!deadlineIso) {
+            this.notification.add(_t("Vui lòng chọn hạn hoàn thành (dd/mm/yyyy)."), {
+                type: "warning",
+            });
+            return;
+        }
+        f.assign_date = assignIso;
+        f.deadline = deadlineIso;
+        this.state.formDateText.assign_date = isoToDmyFull(assignIso);
+        this.state.formDateText.deadline = isoToDmyFull(deadlineIso);
         let durationMinutes = 0;
         if (f.duration_minutes !== "" && f.duration_minutes !== null && f.duration_minutes !== undefined) {
             durationMinutes = parseInt(f.duration_minutes, 10);
@@ -948,8 +1405,8 @@ export class DailyWorkEmployeeWs extends Component {
         try {
             const payload = {
                 name: f.name.trim(),
-                deadline: f.deadline,
-                assign_date: f.assign_date || false,
+                deadline: deadlineIso,
+                assign_date: assignIso || false,
                 priority: f.priority,
                 state: f.state,
                 note: f.note,
@@ -975,13 +1432,13 @@ export class DailyWorkEmployeeWs extends Component {
                     payload,
                 ]);
                 this.state.editingTaskId = false;
-                this.state.form = this.emptyForm();
+                this._setForm(this.emptyForm());
                 await this.load();
                 await this.loadMonthlySummary();
                 this.notification.add(_t("Đã cập nhật công việc."), { type: "success" });
             } else {
                 await this.orm.call("daily.task", "create_from_employee", [payload]);
-                this.state.form = this.emptyForm();
+                this._setForm(this.emptyForm());
                 await this.load();
                 await this.loadMonthlySummary();
                 this.notification.add(_t("Đã thêm công việc của bạn."), { type: "success" });
@@ -1026,6 +1483,35 @@ export class DailyWorkEmployeeWs extends Component {
             await this.loadMonthlySummary();
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không thể cập nhật thời gian."), {
+                type: "danger",
+            });
+            await this.load();
+        }
+    }
+
+    async onNoteChange(task, ev) {
+        if (task?.can_edit_details === false) {
+            this.notification.add(_t("Việc được giao — không sửa được ghi chú trên bảng."), {
+                type: "warning",
+            });
+            await this.load();
+            return;
+        }
+        const note = String(ev.target.value || "");
+        try {
+            const updated = await this.orm.call("daily.task", "update_from_manager", [
+                [task.id],
+                { note },
+            ]);
+            const idx = this.state.tasks.findIndex((t) => t.id === task.id);
+            if (idx >= 0) {
+                this.state.tasks[idx] = {
+                    ...updated,
+                    stt: this.state.tasks[idx].stt || idx + 1,
+                };
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể cập nhật ghi chú."), {
                 type: "danger",
             });
             await this.load();
@@ -1285,3 +1771,4 @@ export class DailyWorkEmployeeWs extends Component {
 }
 
 registry.category("actions").add("daily_work_employee_ws", DailyWorkEmployeeWs);
+registry.category("actions").add("daily_work_today", DailyWorkEmployeeWs);

@@ -114,7 +114,46 @@
                     <t t-else="">
                         <section class="o_eac_welcome">
                             <div class="o_eac_welcome_text">
-                                <p t-esc="state.welcome"/>
+                                <h2 class="o_eac_greet_title">
+                                    <t t-esc="state.greeting.headline || state.welcome"/>
+                                </h2>
+                                <p class="o_eac_greet_date"
+                                   t-esc="state.greeting.today_label_full || state.greeting.today_label"/>
+                                <t t-if="state.greeting.has_task_module">
+                                    <p class="o_eac_greet_primary">
+                                        <t t-if="state.greeting.show_overdue">
+                                            🔴 Bạn có
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.overdue_count"/>
+                                            việc đã quá hạn.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count === 0">
+                                            🎉 Tuyệt vời! Bạn đã hoàn thành toàn bộ công việc hôm nay.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count === 1">
+                                            📋 Bạn còn
+                                            <em class="o_eac_greet_count">1</em>
+                                            việc cần hoàn thành hôm nay.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count &lt;= 5">
+                                            📋 Bạn còn
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.today_count"/>
+                                            việc cần xử lý hôm nay.
+                                        </t>
+                                        <t t-else="">
+                                            📋 Hôm nay bạn có
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.today_count"/>
+                                            việc cần xử lý.
+                                        </t>
+                                    </p>
+                                    <p t-if="state.greeting.tip_line"
+                                       class="o_eac_greet_tip"
+                                       t-esc="state.greeting.tip_line"/>
+                                </t>
+                                <t t-else="">
+                                    <p class="o_eac_greet_tip">
+                                        Chúc bạn một ngày mới vui vẻ, hiệu quả và hoàn thành tốt công việc! 🌟
+                                    </p>
+                                </t>
                             </div>
                             <div class="o_eac_welcome_art" aria-hidden="true">
                                 <div class="o_eac_building">

@@ -73,6 +73,17 @@ export class LugAppCenter extends Component {
             userInitial: "U",
             avatarUrl: false,
             welcome: "",
+            greeting: {
+                headline: "",
+                today_label: "",
+                today_label_full: "",
+                today_count: 0,
+                overdue_count: 0,
+                has_task_module: false,
+                primary_line: "",
+                tip_line: "",
+                show_overdue: false,
+            },
             apps: [],
         });
         onWillStart(async () => {
@@ -80,27 +91,52 @@ export class LugAppCenter extends Component {
         });
     }
 
+    _applyPortalData(data) {
+        this.state.companyName = data.company_name || "";
+        this.state.companySlogan = data.company_slogan || "";
+        this.state.companyWebsite = data.company_website || "";
+        this.state.companyAddress = data.company_address || "";
+        this.state.companyLogoUrl =
+            data.company_logo_url || "/lug_app_center/static/src/img/sataco_logo.png";
+        this.state.userName = data.user_name || "";
+        this.state.userLogin = data.user_login || "";
+        this.state.userEmail = data.user_email || "";
+        this.state.userPhone = data.user_phone || "";
+        this.state.userRole = data.user_role || "";
+        this.state.userInitial = data.user_initial || "U";
+        this.state.avatarUrl = data.avatar_url || false;
+        this.state.welcome = data.welcome || "";
+        const g = data.greeting || {};
+        this.state.greeting = {
+            headline: g.headline || data.welcome || "",
+            today_label: g.today_label || "",
+            today_label_full: g.today_label_full || g.today_label || "",
+            today_count: Number(g.today_count) || 0,
+            overdue_count: Number(g.overdue_count) || 0,
+            has_task_module: Boolean(g.has_task_module),
+            primary_line: g.primary_line || "",
+            tip_line: g.tip_line || "",
+            show_overdue: Boolean(g.show_overdue),
+        };
+    }
+
     async loadPortal() {
         this.state.loading = true;
         try {
             const data = await this.orm.call("lug.app.center", "get_portal_data", []);
-            this.state.companyName = data.company_name || "";
-            this.state.companySlogan = data.company_slogan || "";
-            this.state.companyWebsite = data.company_website || "";
-            this.state.companyAddress = data.company_address || "";
-            this.state.companyLogoUrl =
-                data.company_logo_url || "/lug_app_center/static/src/img/sataco_logo.png";
-            this.state.userName = data.user_name || "";
-            this.state.userLogin = data.user_login || "";
-            this.state.userEmail = data.user_email || "";
-            this.state.userPhone = data.user_phone || "";
-            this.state.userRole = data.user_role || "";
-            this.state.userInitial = data.user_initial || "U";
-            this.state.avatarUrl = data.avatar_url || false;
-            this.state.welcome = data.welcome || "";
+            this._applyPortalData(data);
             this.state.apps = this._collectInstalledApps();
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    async refreshGreeting() {
+        try {
+            const data = await this.orm.call("lug.app.center", "get_portal_data", []);
+            this._applyPortalData(data);
+        } catch (_e) {
+            /* ignore — giữ greeting cũ */
         }
     }
 
@@ -218,6 +254,7 @@ export class LugAppCenter extends Component {
 
     setHome() {
         this.state.activeNav = "home";
+        this.refreshGreeting();
     }
 
     async onNavClick(app) {

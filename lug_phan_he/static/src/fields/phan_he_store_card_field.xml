@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.StoreCardField">
+        <div class="o_phan_he_store_card">
+            <div class="o_phan_he_store_name" t-esc="storeName"/>
+            <div t-if="lineCode" class="o_phan_he_store_code" t-esc="lineCode"/>
+        </div>
+    </t>
+</templates>

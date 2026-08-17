@@ -1,6 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
+    <t t-name="lug_phan_he.TrackingListView" t-inherit="web.ListView" t-inherit-mode="primary">
+        <xpath expr="//t[@t-set-slot='control-panel-create-button']" position="replace">
+            <t t-set-slot="control-panel-create-button">
+                <button type="button"
+                        class="btn o_phan_he_list_back"
+                        t-on-click="onBackToDashboard"
+                        title="Quay lại Dashboard">
+                    <i class="fa fa-arrow-left"/>
+                    <span>Quay lại</span>
+                </button>
+            </t>
+        </xpath>
+    </t>
+
     <t t-name="lug_phan_he.ExpandToggleField">
         <button type="button"
                 class="btn btn-link o_phan_he_expand_btn"

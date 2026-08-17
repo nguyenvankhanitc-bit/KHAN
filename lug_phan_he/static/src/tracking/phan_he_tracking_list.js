@@ -3,10 +3,20 @@
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { useState, useSubEnv, Component, onWillStart, onWillUpdateProps } from "@odoo/owl";
+import { ListController } from "@web/views/list/list_controller";
 import { listView } from "@web/views/list/list_view";
 import { ListRenderer } from "@web/views/list/list_renderer";
 import { formatDate } from "@web/core/l10n/dates";
 import { standardFieldProps } from "@web/views/fields/standard_field_props";
+
+const DASHBOARD_BY_SERVICE = {
+    internet: "lug_phan_he.action_phan_he_dashboard",
+    camera: "lug_phan_he.action_phan_he_dashboard_camera",
+    attendance: "lug_phan_he.action_phan_he_dashboard_attendance",
+    linkq_hrm: "lug_phan_he.action_phan_he_dashboard_linkq_hrm",
+    linkq_nb: "lug_phan_he.action_phan_he_dashboard_linkq_nb",
+    server: "lug_phan_he.action_phan_he_dashboard_server",
+};
 
 function formatMoneyVn(amount) {
     return `${new Intl.NumberFormat("vi-VN").format(Math.round(Number(amount || 0)))} VNĐ`;
@@ -37,7 +47,12 @@ export class PhanHeSttField extends Component {
     static props = { ...standardFieldProps };
 
     get stt() {
-        return this.env.phanHeTracking?.getStt(this.props.record) || "—";
+        const live = this.env.phanHeTracking?.getStt?.(this.props.record);
+        if (live != null && live !== "") {
+            return live;
+        }
+        const stored = this.props.record?.data?.stt;
+        return stored || "—";
     }
 }
 
@@ -72,50 +87,52 @@ export class PhanHeTrackingListRenderer extends ListRenderer {
         });
     }
 
+    _isSameRecord(a, b) {
+        if (!a || !b) {
+            return false;
+        }
+        if (a.resId && b.resId) {
+            return a.resId === b.resId;
+        }
+        return a.id === b.id;
+    }
+
     /**
-     * STT tăng dần trong từng miền (nhóm).
-     * Ví dụ Miền Bắc: 1..n, Miền Nam: 1..m
+     * STT theo thứ tự hiển thị:
+     * - Có group miền: 1..n trong từng nhóm
+     * - Không group: 1..n theo trang (cộng offset phân trang)
      */
     getStt(record) {
         const root = this.props.list;
+        const indexIn = (records, offset = 0) => {
+            const idx = (records || []).findIndex((r) => this._isSameRecord(r, record));
+            return idx >= 0 ? offset + idx + 1 : null;
+        };
+
         if (root.isGrouped) {
             for (const group of root.groups || []) {
-                const records = group.list?.records || [];
-                const idx = records.findIndex((r) => r.id === record.id || r.resId === record.resId);
-                if (idx >= 0) {
-                    return idx + 1;
-                }
-                // nested groups (hiếm)
                 if (group.list?.isGrouped) {
                     for (const sub of group.list.groups || []) {
-                        const subRecords = sub.list?.records || [];
-                        const subIdx = subRecords.findIndex(
-                            (r) => r.id === record.id || r.resId === record.resId
-                        );
-                        if (subIdx >= 0) {
-                            return subIdx + 1;
+                        const n = indexIn(sub.list?.records);
+                        if (n != null) {
+                            return n;
                         }
+                    }
+                } else {
+                    const n = indexIn(group.list?.records);
+                    if (n != null) {
+                        return n;
                     }
                 }
             }
-            return "—";
+            return record.data?.stt || "—";
         }
-        // Không group: đánh số theo từng miền trong danh sách phẳng
-        const all = root.records || [];
-        const mienId = Array.isArray(record.data.mien_id)
-            ? record.data.mien_id[0]
-            : record.data.mien_id;
-        let n = 0;
-        for (const r of all) {
-            const mid = Array.isArray(r.data.mien_id) ? r.data.mien_id[0] : r.data.mien_id;
-            if (mid === mienId) {
-                n += 1;
-                if (r.id === record.id || r.resId === record.resId) {
-                    return n;
-                }
-            }
+
+        const n = indexIn(root.records, root.offset || 0);
+        if (n != null) {
+            return n;
         }
-        return "—";
+        return record.data?.stt || "—";
     }
 
     async loadMienStats(domain) {
@@ -142,6 +159,17 @@ export class PhanHeTrackingListRenderer extends ListRenderer {
         }
         if (this.isExpanded(record)) {
             classNames += " is-expanded";
+        }
+        const hasEnd = !!record.data?.date_end;
+        if (hasEnd) {
+            const days = Number(record.data.remaining_days);
+            if (!Number.isNaN(days)) {
+                if (days <= 0) {
+                    classNames += " o_phan_he_row_danger";
+                } else if (days <= 30) {
+                    classNames += " o_phan_he_row_warn";
+                }
+            }
         }
         return classNames;
     }
@@ -225,8 +253,27 @@ export class PhanHeTrackingListRenderer extends ListRenderer {
     }
 }
 
+export class PhanHeTrackingListController extends ListController {
+    static template = "lug_phan_he.TrackingListView";
+
+    onBackToDashboard() {
+        const crumbs = this.env.config?.breadcrumbs || [];
+        if (crumbs.length > 1) {
+            const prev = crumbs[crumbs.length - 2];
+            if (typeof prev?.onSelected === "function") {
+                prev.onSelected();
+                return;
+            }
+        }
+        const code = this.props.context?.phan_he_service_type_code || "internet";
+        const actionXmlId = DASHBOARD_BY_SERVICE[code] || DASHBOARD_BY_SERVICE.internet;
+        this.actionService.doAction(actionXmlId, { clearBreadcrumbs: false });
+    }
+}
+
 export const phanHeTrackingListView = {
     ...listView,
+    Controller: PhanHeTrackingListController,
     Renderer: PhanHeTrackingListRenderer,
 };
 

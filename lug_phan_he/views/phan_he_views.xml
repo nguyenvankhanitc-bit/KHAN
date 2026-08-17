@@ -511,26 +511,30 @@
             <list string="Danh sách internet"
                   js_class="phan_he_tracking_list"
                   class="o_phan_he_tracking_list"
+                  create="0"
                   multi_edit="1"
                   default_order="mien_id, stt asc, id asc"
-                  decoration-danger="alert_level in ('danger', 'expired') or remaining_days &lt; 0"
-                  decoration-warning="alert_level == 'warn'">
-                <field name="stt" string="STT" widget="phan_he_stt" width="56px" readonly="1"/>
+                  decoration-danger="date_end and remaining_days &lt;= 0"
+                  decoration-warning="date_end and remaining_days &gt; 0 and remaining_days &lt;= 30">
+                <field name="stt" string="STT" widget="phan_he_stt" readonly="1"/>
                 <field name="store_card_html" string="TÊN / CỬA HÀNG" widget="html" readonly="1"/>
+                <field name="customer_code" string="Mã KH" optional="hide"/>
                 <field name="date_start" string="NGÀY BẮT ĐẦU" widget="date"
                        options="{'numeric': True}"/>
                 <field name="date_end" string="NGÀY KẾT THÚC" widget="date"
                        options="{'numeric': True}"/>
-                <field name="bandwidth" string="BĂNG THÔNG"/>
-                <field name="contract_amount" string="CƯỚC THÁNG" sum="Tổng" widget="monetary"/>
+                <field name="bandwidth" string="BĂNG THÔNG" readonly="1"/>
+                <field name="contract_amount" string="CƯỚC THÁNG (VNĐ)" sum="Tổng" widget="monetary"/>
+                <field name="next_payment_amount" string="SỐ TIỀN THANH TOÁN" sum="Tổng" widget="monetary"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="ops_status" string="TRẠNG THÁI" widget="phan_he_ops_status"/>
                 <field name="remaining_card_html" string="THỜI GIAN CÒN LẠI" widget="html" readonly="1"/>
-                <field name="id" string=" " widget="phan_he_expand_toggle" width="40px" readonly="1"/>
+                <field name="id" string="THAO TÁC" widget="phan_he_expand_toggle" readonly="1"/>
                 <!-- dữ liệu ẩn / dùng cho nhóm & expand -->
                 <field name="mien_id" column_invisible="1"/>
                 <field name="store_id" column_invisible="1"/>
-                <field name="customer_code" column_invisible="1"/>
+                <field name="name" column_invisible="1"/>
+                <field name="code" column_invisible="1"/>
                 <field name="package_name" column_invisible="1"/>
                 <field name="state" column_invisible="1"/>
                 <field name="remaining_alert" column_invisible="1"/>
@@ -542,9 +546,7 @@
                 <field name="provider_id" column_invisible="1"/>
                 <field name="payment_info_text" column_invisible="1"/>
                 <field name="next_invoice_number" column_invisible="1"/>
-                <field name="next_payment_amount" column_invisible="1"/>
                 <field name="next_payment_date" column_invisible="1"/>
-                <field name="code" column_invisible="1"/>
                 <field name="next_payment_id" column_invisible="1"/>
                 <field name="payment_info_manual" column_invisible="1"/>
                 <field name="service_content" column_invisible="1"/>
@@ -896,7 +898,7 @@
     </record>
 
     <record id="action_phan_he_service_tracking" model="ir.actions.act_window">
-        <field name="name">Danh sách đường truyền</field>
+        <field name="name">Danh sách Internet</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
         <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet'))]"/>
@@ -919,7 +921,7 @@
     </record>
 
     <record id="action_phan_he_service_entry" model="ir.actions.act_window">
-        <field name="name">Nhập liệu Internet</field>
+        <field name="name">Khai báo thông tin cửa hàng</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">form</field>
         <field name="target">current</field>
@@ -930,6 +932,60 @@
             'form_view_initial_mode': 'edit',
         }"/>
         <field name="view_id" ref="view_phan_he_service_entry_form"/>
+    </record>
+
+    <record id="action_phan_he_service_internet_active" model="ir.actions.act_window">
+        <field name="name">Internet đang sử dụng</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet')), ('ops_status', '=', 'active')]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_internet'),
+            'default_state': 'active',
+            'default_ops_status': 'active',
+            'phan_he_service_type_code': 'internet',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+    </record>
+
+    <record id="action_phan_he_service_internet_suspend" model="ir.actions.act_window">
+        <field name="name">Internet tạm ngưng</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet')), ('ops_status', '=', 'suspend')]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_internet'),
+            'default_state': 'suspend',
+            'default_ops_status': 'suspend',
+            'phan_he_service_type_code': 'internet',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+    </record>
+
+    <record id="action_phan_he_service_internet_liquidated" model="ir.actions.act_window">
+        <field name="name">Internet chờ thanh lý</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet')), ('ops_status', '=', 'liquidated')]"/>
+        <field name="limit">200</field>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_internet'),
+            'default_state': 'liquidated',
+            'default_ops_status': 'liquidated',
+            'phan_he_service_type_code': 'internet',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
     </record>
 
     <record id="action_phan_he_service_active" model="ir.actions.act_window">

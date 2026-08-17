@@ -6,13 +6,14 @@ from odoo import api, fields, models
 
 
 MIEN_COLORS = {
-    "BAC": "#ef4444",
-    "TRUNG": "#22c55e",
-    "NAM": "#3b82f6",
-    "DTT": "#a855f7",
-    "VP": "#64748b",
+    "BAC": "#2563eb",
+    "TRUNG": "#f97316",
+    "NAM": "#14b8a6",
+    "DTT": "#f97316",
+    "VP": "#94a3b8",
 }
-MIEN_FALLBACK_COLORS = ["#ef4444", "#22c55e", "#3b82f6", "#a855f7", "#f59e0b", "#0d9488"]
+MIEN_FALLBACK_COLORS = ["#2563eb", "#14b8a6", "#f97316", "#94a3b8", "#7c3aed", "#0d9488"]
+TOTAL_SERIES_COLOR = "#7c3aed"
 
 
 class PhanHeDashboard(models.AbstractModel):
@@ -232,22 +233,37 @@ class PhanHeDashboard(models.AbstractModel):
             trend_months.append(f"T{month:02d}")
 
         max_trend = max(
-            (v for vals in series.values() for v in vals),
-            default=1,
+            [month_total for month_total in (
+                sum(series[m["id"]][i] for m in mien_meta) for i in range(12)
+            )] + [v for vals in series.values() for v in vals] + [1]
         ) or 1
 
+        # Series "Tổng chi phí" đứng đầu — multi-line chart
+        total_values = [
+            sum(series[m["id"]][i] for m in mien_meta) for i in range(12)
+        ]
         trend_series = [
+            {
+                "id": "total",
+                "name": "Tổng chi phí",
+                "short": "Tổng",
+                "color": TOTAL_SERIES_COLOR,
+                "values": total_values,
+                "is_total": True,
+            }
+        ] + [
             {
                 "id": m["id"],
                 "name": m["name"],
                 "short": m["short"],
                 "color": m["color"],
                 "values": series[m["id"]],
+                "is_total": False,
             }
             for m in mien_meta
         ]
 
-        # Donut: cơ cấu tháng hiện tại
+        # Donut / bar: cơ cấu tháng hiện tại
         cur_total = sum(cur_map.values()) or 1.0
         cost_structure = [
             {
@@ -273,6 +289,20 @@ class PhanHeDashboard(models.AbstractModel):
                 }
                 for m in mien_meta
             ]
+
+        # Top 5 chi nhánh / khu vực chi phí cao (tháng hiện tại)
+        active_cur = services_in_month(services, cur_month_start, cur_month_end)
+        branch_map = {}
+        for svc in active_cur:
+            area = svc.area_id
+            key = area.id if area else (svc.store_id.id or 0)
+            name = (area.name if area else (svc.store_id.name or "Khác"))
+            row = branch_map.setdefault(key, {"id": key, "name": name, "amount": 0.0})
+            row["amount"] += svc.contract_amount or 0.0
+        top_branches = sorted(branch_map.values(), key=lambda r: r["amount"], reverse=True)[:5]
+        top_max = max((r["amount"] for r in top_branches), default=1) or 1
+        for r in top_branches:
+            r["pct"] = round((r["amount"] / top_max) * 100, 1)
 
         # Filter options
         miens_opts = [{"id": m["id"], "name": m["name"]} for m in mien_meta]
@@ -317,6 +347,7 @@ class PhanHeDashboard(models.AbstractModel):
             "trend_series": trend_series,
             "max_trend": max_trend,
             "cost_structure": cost_structure,
+            "top_branches": top_branches,
             "monthly_table": totals_row,
             "year_totals": [
                 {"mien_id": m["id"], "amount": year_totals[m["id"]], "color": m["color"]}

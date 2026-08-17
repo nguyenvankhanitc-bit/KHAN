@@ -1,83 +1,224 @@
-/* Theo dõi Internet — tree / accordion gom nhóm theo miền */
+/* Theo dõi Internet — sticky header + cột auto theo nội dung */
+
+/* Nút Back trên control panel (sau Mới, trước breadcrumb) */
+.o_control_panel .o_phan_he_list_back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 38px;
+    padding: 0 14px;
+    border: 1px solid #ddd6fe;
+    border-radius: 10px;
+    background: #f5f3ff;
+    color: #5b35d5;
+    font-weight: 700;
+    font-size: 0.875rem;
+    line-height: 1;
+    box-shadow: 0 1px 2px rgba(91, 53, 213, 0.08);
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+
+    i {
+        font-size: 0.95rem;
+    }
+
+    &:hover {
+        background: #5b35d5;
+        border-color: #5b35d5;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(91, 53, 213, 0.25);
+    }
+
+    &:active {
+        transform: translateY(1px);
+    }
+}
+
 .o_phan_he_tracking_list {
-    .o_list_renderer,
+    --phan-he-thead-h: 46px;
+
+    /* Vùng cuộn: header sticky bám trong khung này */
+    .o_list_renderer {
+        display: flex !important;
+        flex-direction: column !important;
+        max-height: calc(100vh - 200px) !important;
+        min-height: 320px;
+        overflow: hidden !important;
+    }
+
+    .o_list_renderer .o_list_table_wrapper,
+    .o_list_renderer .table-responsive,
     .o_list_table_wrapper,
     .table-responsive {
-        overflow-x: auto !important;
+        flex: 1 1 auto !important;
+        overflow: auto !important;
+        max-height: 100% !important;
+        position: relative !important;
     }
 
     .o_list_table {
-        width: 100% !important;
-        min-width: 1100px;
-        table-layout: fixed !important;
+        width: max-content !important;
+        min-width: 100% !important;
+        table-layout: auto !important;
         border-collapse: separate !important;
         border-spacing: 0;
         border: 1px solid #e5e7eb !important;
         color: #111827 !important;
         font-size: 0.9rem;
 
+        /* ===== CỐ ĐỊNH TIÊU ĐỀ ===== */
+        > thead {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 30 !important;
+        }
+
         > thead > tr > th {
-            background: #f3f4f6 !important;
-            color: #111827 !important;
-            font-weight: 700 !important;
-            font-size: 0.75rem !important;
+            background: #5b35d5 !important;
+            color: #ffffff !important;
+            font-weight: 800 !important;
+            font-size: 0.72rem !important;
             text-transform: uppercase;
             letter-spacing: 0.02em;
             text-align: left !important;
             vertical-align: middle !important;
-            border: 1px solid #e5e7eb !important;
-            border-bottom: 1px solid #d1d5db !important;
-            padding: 11px 12px !important;
+            border: 1px solid #4c1d95 !important;
+            border-bottom: 1px solid #3b0764 !important;
+            padding: 12px 14px !important;
             white-space: nowrap !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
             position: sticky !important;
             top: 0 !important;
-            z-index: 5 !important;
+            z-index: 31 !important;
+            box-shadow: none;
 
             .o_column_title,
             span:not(.o_resize) {
-                color: #111827 !important;
-                font-weight: 700 !important;
+                color: #ffffff !important;
+                font-weight: 800 !important;
                 justify-content: flex-start !important;
                 text-align: left !important;
+                white-space: nowrap !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                max-width: none !important;
             }
+
+            .o_resize {
+                display: none !important;
+            }
+        }
+
+        /* Khoảng cách cột auto — min-width đủ để không cắt tiêu đề */
+        > thead > tr > th.o_list_record_selector,
+        > tbody > tr > td.o_list_record_selector {
+            width: 42px !important;
+            min-width: 42px !important;
+            max-width: 42px !important;
+            text-align: center !important;
+        }
+
+        > thead > tr > th[data-name="stt"],
+        > tbody > tr > td[name="stt"] {
+            width: 56px !important;
+            min-width: 56px !important;
+            text-align: center !important;
+        }
+
+        > thead > tr > th[data-name="store_id"],
+        > thead > tr > th[data-name="store_card_html"],
+        > tbody > tr > td[name="store_id"],
+        > tbody > tr > td[name="store_card_html"] {
+            min-width: 168px !important;
+        }
+
+        > thead > tr > th[data-name="date_start"],
+        > thead > tr > th[data-name="date_end"],
+        > tbody > tr > td[name="date_start"],
+        > tbody > tr > td[name="date_end"] {
+            min-width: 118px !important;
+            white-space: nowrap !important;
+            text-align: center !important;
+        }
+
+        /* Băng thông: chỉ rộng bằng chữ tiêu đề, không phình khi trống */
+        > thead > tr > th[data-name="bandwidth"],
+        > thead > tr > th[data-name="bandwidth_display"],
+        > tbody > tr > td[name="bandwidth"],
+        > tbody > tr > td[name="bandwidth_display"] {
+            width: auto !important;
+            min-width: 110px !important;
+            max-width: none !important;
+            white-space: nowrap !important;
+            text-align: center !important;
+            padding-left: 12px !important;
+            padding-right: 12px !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+        }
+
+        > thead > tr > th[data-name="contract_amount"],
+        > tbody > tr > td[name="contract_amount"],
+        > thead > tr > th[data-name="next_payment_amount"],
+        > tbody > tr > td[name="next_payment_amount"] {
+            min-width: 140px !important;
+            white-space: nowrap !important;
+            text-align: right !important;
+        }
+
+        > thead > tr > th[data-name="ops_status"],
+        > tbody > tr > td[name="ops_status"] {
+            min-width: 150px !important;
+            white-space: nowrap !important;
+            text-align: center !important;
+        }
+
+        > thead > tr > th[data-name="remaining_card_html"],
+        > tbody > tr > td[name="remaining_card_html"] {
+            min-width: 140px !important;
+            white-space: nowrap !important;
+            text-align: center !important;
+        }
+
+        > thead > tr > th[data-name="id"],
+        > tbody > tr > td[name="id"] {
+            min-width: 72px !important;
+            width: 72px !important;
+            text-align: center !important;
         }
 
         > thead > tr > th[data-name="stt"],
         > thead > tr > th[data-name="date_start"],
         > thead > tr > th[data-name="date_end"],
         > thead > tr > th[data-name="bandwidth"],
+        > thead > tr > th[data-name="bandwidth_display"],
         > thead > tr > th[data-name="ops_status"],
         > thead > tr > th[data-name="remaining_card_html"],
         > thead > tr > th[data-name="id"] {
-            text-align: center !important;
             .o_column_title { justify-content: center !important; }
         }
 
-        > thead > tr > th[data-name="contract_amount"] {
-            text-align: right !important;
+        > thead > tr > th[data-name="contract_amount"],
+        > thead > tr > th[data-name="next_payment_amount"] {
             .o_column_title { justify-content: flex-end !important; }
         }
 
-        > thead > tr > th[data-name="stt"] {
-            width: 56px !important;
-            min-width: 56px !important;
-        }
-
-        /* ===== Group header bar ===== */
+        /* ===== Group header bar — sticky dưới tiêu đề cột ===== */
         tbody tr.o_group_header.o_phan_he_group_header {
             > th.o_phan_he_group_name,
             > th.o_group_name,
             > td {
-                position: static !important;
+                position: sticky !important;
+                top: var(--phan-he-thead-h) !important;
                 left: auto !important;
-                top: auto !important;
+                z-index: 20 !important;
                 writing-mode: horizontal-tb !important;
                 white-space: normal !important;
                 overflow: visible !important;
                 text-overflow: unset !important;
                 max-width: none !important;
                 width: auto !important;
-                box-shadow: none !important;
+                box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08) !important;
                 vertical-align: middle !important;
                 border: 1px solid #e5e7eb !important;
                 padding: 0 !important;
@@ -151,9 +292,9 @@
         }
 
         /* ===== Child rows ===== */
-        tbody tr.o_data_row.o_phan_he_child_row > td {
-            border: 1px solid #eef2f7 !important;
-            border-top: none !important;
+        tbody tr.o_data_row.o_phan_he_child_row > td,
+        tbody tr.o_data_row > td {
+            border: 1px solid #d1d5db !important;
             padding: 10px 12px !important;
             vertical-align: middle !important;
             background: #fff !important;
@@ -164,15 +305,30 @@
             padding-left: 28px !important;
         }
 
-        tbody tr.o_data_row.o_phan_he_child_row:hover > td {
+        tbody tr.o_data_row:hover > td {
             background: #f8fafc !important;
+        }
+
+        /* Vàng nhạt: còn ≤ 30 ngày */
+        tbody tr.o_data_row.o_phan_he_row_warn > td,
+        tbody tr.o_data_row.o_phan_he_row_warn.o_phan_he_child_row > td {
+            background: #fffbeb !important;
+        }
+        tbody tr.o_data_row.o_phan_he_row_warn:hover > td {
+            background: #fef3c7 !important;
+        }
+
+        /* Đỏ nhạt: hôm nay / trễ x ngày */
+        tbody tr.o_data_row.o_phan_he_row_danger > td,
+        tbody tr.o_data_row.o_phan_he_row_danger.o_phan_he_child_row > td {
+            background: #fef2f2 !important;
+        }
+        tbody tr.o_data_row.o_phan_he_row_danger:hover > td {
+            background: #fee2e2 !important;
         }
 
         tbody tr.o_data_row > td[name="stt"] {
             text-align: center !important;
-            width: 56px !important;
-            min-width: 56px !important;
-            max-width: 72px !important;
             color: #64748b;
             font-variant-numeric: tabular-nums;
             font-weight: 700;
@@ -191,68 +347,123 @@
         }
 
         tbody tr.o_data_row > td[name="date_start"],
-        tbody tr.o_data_row > td[name="date_end"] {
+        tbody tr.o_data_row > td[name="date_end"],
+        tbody tr.o_data_row > td[name="remaining_card_html"] {
             text-align: center !important;
             white-space: nowrap !important;
-            width: 100px !important;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
+
+            .o_field_widget,
+            .o_readonly_modifier,
+            span,
+            div {
+                display: inline-flex !important;
+                justify-content: center !important;
+                align-items: center !important;
+                width: 100% !important;
+                text-align: center !important;
+            }
         }
 
-        tbody tr.o_data_row > td[name="bandwidth"] {
+        tbody tr.o_data_row > td[name="bandwidth"],
+        tbody tr.o_data_row > td[name="bandwidth_display"] {
             text-align: center !important;
             white-space: nowrap !important;
-            width: 110px !important;
-            font-weight: 600;
-            color: #334155;
+            font-weight: 700;
+            color: #1f2937;
+            font-variant-numeric: tabular-nums;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            min-width: 110px !important;
         }
 
-        tbody tr.o_data_row > td[name="contract_amount"] {
+        tbody tr.o_data_row > td[name="contract_amount"],
+        tbody tr.o_data_row > td[name="next_payment_amount"] {
             text-align: right !important;
             white-space: nowrap !important;
             font-variant-numeric: tabular-nums;
             font-weight: 700;
-            width: 130px !important;
+            padding-right: 16px !important;
         }
 
         tbody tr.o_data_row > td[name="ops_status"] {
             text-align: center !important;
-            width: 150px !important;
-        }
-
-        tbody tr.o_data_row > td[name="remaining_card_html"] {
-            text-align: left !important;
-            width: 140px !important;
+            white-space: nowrap !important;
         }
 
         tbody tr.o_data_row > td[name="id"] {
             text-align: center !important;
-            width: 44px !important;
-            min-width: 44px !important;
-            max-width: 44px !important;
         }
 
+        > thead > tr > th[data-name="store_id"],
+        > thead > tr > th[data-name="store_card_html"] {
+            .o_column_title {
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: flex-start !important;
+                gap: 2px !important;
+                line-height: 1.2 !important;
+
+                &::after {
+                    content: "Mã đường truyền";
+                    font-size: 0.62rem !important;
+                    font-weight: 500 !important;
+                    letter-spacing: 0;
+                    text-transform: none !important;
+                    opacity: 0.88;
+                    color: rgba(255, 255, 255, 0.9) !important;
+                }
+            }
+        }
+
+        tbody tr.o_data_row > td[name="store_id"],
         tbody tr.o_data_row > td[name="store_card_html"] {
-            min-width: 160px !important;
+            vertical-align: middle !important;
+        }
+
+        tbody tr.o_data_row.o_phan_he_child_row > td[name="store_id"],
+        tbody tr.o_data_row.o_phan_he_child_row > td[name="store_card_html"] {
+            padding-left: 12px !important;
         }
     }
 }
 
 .o_phan_he_store_card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
     line-height: 1.25;
+    min-width: 0;
+
     .o_phan_he_store_name {
         font-weight: 700;
+        font-size: 0.92rem;
         color: #111827;
+        white-space: nowrap;
     }
+
     .o_phan_he_store_code {
-        font-size: 0.78rem;
-        color: #6b7280;
-        margin-top: 2px;
-        word-break: break-all;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #9ca3af;
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+
+        &.is-empty {
+            opacity: 0.45;
+        }
     }
 }
 
 .o_phan_he_remaining_card {
+    display: inline-flex;
+    justify-content: center;
+    width: 100%;
     font-weight: 600;
     font-size: 0.88rem;
+    text-align: center;
     &.is-ok { color: #16a34a; }
     &.is-warn { color: #d97706; }
     &.is-danger { color: #dc2626; }

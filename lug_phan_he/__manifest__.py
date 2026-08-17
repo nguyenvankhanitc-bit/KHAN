@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.75.0",
+    "version": "19.0.2.103.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ HRM, LinkQ NB, Máy chủ",
     "description": """
@@ -49,6 +49,10 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.xml",
             "lug_phan_he/static/src/fields/ops_status_field.js",
             "lug_phan_he/static/src/fields/ops_status_field.xml",
+            "lug_phan_he/static/src/fields/bandwidth_field.js",
+            "lug_phan_he/static/src/fields/bandwidth_field.xml",
+            "lug_phan_he/static/src/fields/phan_he_store_card_field.js",
+            "lug_phan_he/static/src/fields/phan_he_store_card_field.xml",
             "lug_phan_he/static/src/tracking/phan_he_tracking.scss",
             "lug_phan_he/static/src/tracking/phan_he_tracking_list.js",
             "lug_phan_he/static/src/tracking/phan_he_tracking_list.xml",

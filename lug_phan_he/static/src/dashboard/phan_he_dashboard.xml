@@ -3,50 +3,47 @@
     <t t-name="lug_phan_he.PhanHeDashboard">
         <div class="o_phan_he_shell o_action">
             <aside class="o_phan_he_sidebar">
-                <div class="o_phan_he_sidebar_brand">
-                    <span class="o_phan_he_brand_icon">
-                        <i class="fa fa-th-large"/>
-                    </span>
-                    <span class="o_phan_he_brand_text" t-esc="appTitle"/>
+                <div class="o_phan_he_sidebar_brand" t-on-click="() => this.onOverview()" role="button" title="Tổng quan">
+                    <span class="o_phan_he_brand_text">DỊCH VỤ INTERNET</span>
                 </div>
                 <nav class="o_phan_he_sidebar_nav">
-                    <t t-foreach="navItems" t-as="item" t-key="item.id">
-                        <t t-if="item.id === 'alerts'">
-                            <div class="o_phan_he_nav_group" t-att-class="state.alertsOpen ? 'is-open' : ''">
-                                <button type="button"
-                                        class="o_phan_he_nav_item"
-                                        t-att-class="state.alertsOpen ? 'is-active' : ''"
-                                        t-on-click="() => this.onNav(item)">
-                                    <i t-att-class="'fa ' + item.icon"/>
-                                    <span t-esc="item.label"/>
-                                    <t t-if="alertCount > 0">
-                                        <span class="o_phan_he_nav_badge" t-esc="alertCount"/>
-                                    </t>
-                                    <i class="fa fa-angle-down o_phan_he_nav_caret"/>
-                                </button>
-                                <t t-if="state.alertsOpen">
-                                    <button type="button" class="o_phan_he_nav_sub is-warn"
-                                            t-on-click="() => this.openAction('lug_phan_he.action_phan_he_service_expire_soon')">
-                                        <span>Sắp hết hạn</span>
-                                        <b t-esc="state.data.expire_soon || 0"/>
-                                    </button>
-                                    <button type="button" class="o_phan_he_nav_sub is-danger"
-                                            t-on-click="() => this.openAction('lug_phan_he.action_phan_he_service_expired')">
-                                        <span>Quá hạn HĐ</span>
-                                        <b t-esc="state.data.overdue_contract || 0"/>
+                    <button type="button"
+                            class="o_phan_he_nav_item"
+                            t-att-class="state.activeNav === 'overview' ? 'is-active' : ''"
+                            t-on-click="() => this.onOverview()">
+                        <i class="fa fa-home"/>
+                        <span>Tổng quan</span>
+                    </button>
+
+                    <t t-foreach="navSections" t-as="section" t-key="section.id">
+                        <div class="o_phan_he_nav_group"
+                             t-att-class="isGroupOpen(section.id) ? 'is-open' : ''">
+                            <button type="button"
+                                    class="o_phan_he_nav_section"
+                                    t-on-click="() => this.toggleGroup(section.id)">
+                                <i t-att-class="'fa ' + section.icon"/>
+                                <span t-esc="section.label"/>
+                                <t t-if="section.id === 'alerts' and alertCount > 0">
+                                    <span class="o_phan_he_nav_badge" t-esc="alertCount"/>
+                                </t>
+                                <i class="fa fa-angle-down o_phan_he_nav_caret"/>
+                            </button>
+                            <t t-if="isGroupOpen(section.id)">
+                                <t t-foreach="section.children" t-as="child" t-key="child.id">
+                                    <button type="button"
+                                            class="o_phan_he_nav_sub"
+                                            t-att-class="navChildClass(child)"
+                                            t-on-click="() => this.onNavChild(child)">
+                                        <i t-att-class="'fa ' + (child.icon || 'fa-circle-o')"
+                                           t-att-style="child.iconColor ? ('color:' + child.iconColor) : null"/>
+                                        <span t-esc="child.label"/>
+                                        <t t-if="child.badgeKey">
+                                            <b t-esc="state.data[child.badgeKey] || 0"/>
+                                        </t>
                                     </button>
                                 </t>
-                            </div>
-                        </t>
-                        <t t-else="">
-                            <button type="button"
-                                    class="o_phan_he_nav_item"
-                                    t-att-class="item.id === state.activeNav ? 'is-active' : ''"
-                                    t-on-click="() => this.onNav(item)">
-                                <i t-att-class="'fa ' + item.icon"/>
-                                <span t-esc="item.label"/>
-                            </button>
-                        </t>
+                            </t>
+                        </div>
                     </t>
                 </nav>
             </aside>
@@ -55,7 +52,11 @@
                 <div class="o_phan_he_dash_top">
                     <div>
                         <h1>
-                            <t t-if="state.activeNav === 'reports'">Báo cáo thanh toán</t>
+                            <t t-if="state.activeNav === 'reports'">
+                                <t t-if="state.reportPeriod === 'month'">Báo cáo chi phí tháng</t>
+                                <t t-elif="state.reportPeriod === 'quarter'">Báo cáo chi phí quý</t>
+                                <t t-else="">Báo cáo chi phí năm</t>
+                            </t>
                             <t t-else="">Dashboard <t t-esc="appTitle"/></t>
                         </h1>
                         <p>
@@ -69,62 +70,6 @@
                             <strong t-esc="state.data.user_name || 'Administrator'"/>
                             <small t-esc="state.data.role_label || ''"/>
                         </div>
-                    </div>
-                </div>
-
-                <!-- Bộ lọc -->
-                <div class="o_phan_he_filters o_phan_he_filters_bar">
-                    <div class="o_phan_he_filters_title">
-                        <i class="fa fa-sliders"/> Bộ lọc tìm kiếm
-                    </div>
-                    <div class="o_phan_he_filter_item">
-                        <label>Từ ngày</label>
-                        <input type="text" class="form-control o_phan_he_date"
-                               placeholder="dd/mm/yyyy" maxlength="10"
-                               t-model="state.filters.date_from"/>
-                    </div>
-                    <div class="o_phan_he_filter_item">
-                        <label>Đến ngày</label>
-                        <input type="text" class="form-control o_phan_he_date"
-                               placeholder="dd/mm/yyyy" maxlength="10"
-                               t-model="state.filters.date_to"/>
-                    </div>
-                    <div class="o_phan_he_filter_item">
-                        <label>Miền</label>
-                        <select class="form-select" t-model="state.filters.mien_id" t-on-change="onMienChange">
-                            <option value="">Tất cả</option>
-                            <t t-foreach="state.data.miens or []" t-as="m" t-key="m.id">
-                                <option t-att-value="m.id" t-esc="m.name"/>
-                            </t>
-                        </select>
-                    </div>
-                    <div class="o_phan_he_filter_item">
-                        <label>Chi nhánh</label>
-                        <select class="form-select" t-model="state.filters.area_id">
-                            <option value="">Tất cả</option>
-                            <t t-foreach="filteredAreas()" t-as="a" t-key="a.id">
-                                <option t-att-value="a.id" t-esc="a.name"/>
-                            </t>
-                        </select>
-                    </div>
-                    <div class="o_phan_he_filter_item">
-                        <label>NV phụ trách</label>
-                        <select class="form-select" t-model="state.filters.employee_id">
-                            <option value="">Tất cả</option>
-                            <t t-foreach="state.data.employees or []" t-as="e" t-key="e.id">
-                                <option t-att-value="e.id" t-esc="e.name"/>
-                            </t>
-                        </select>
-                    </div>
-                    <div class="o_phan_he_filter_actions">
-                        <button type="button" class="btn btn-primary o_phan_he_btn_filter"
-                                t-on-click="onFilter" t-att-disabled="state.loading">
-                            <i class="fa fa-search"/> Lọc
-                        </button>
-                        <button type="button" class="btn btn-light o_phan_he_btn_reset"
-                                t-on-click="onRefresh" t-att-disabled="state.loading">
-                            <i class="fa fa-refresh"/> Làm mới
-                        </button>
                     </div>
                 </div>
 
@@ -247,27 +192,30 @@
                             <span class="o_phan_he_section_num">3</span>
                             Trực quan hóa dữ liệu
                         </h2>
-                        <div class="o_phan_he_charts2">
-                            <div class="o_phan_he_panel o_phan_he_chart_trend">
-                                <div class="o_phan_he_chart_head">
-                                    <h3>
-                                        <i class="fa fa-area-chart"/>
-                                        Xu hướng chi phí 12 tháng
-                                        <small>(Stacked Area)</small>
-                                    </h3>
-                                    <span class="o_phan_he_chart_unit">Đơn vị: Triệu VNĐ</span>
-                                </div>
-                                <div class="o_phan_he_trend_legend">
-                                    <t t-foreach="state.data.trend_series or []" t-as="s" t-key="s.id">
-                                        <div class="o_phan_he_trend_legend_item">
-                                            <span class="o_phan_he_dot" t-att-style="'background:' + s.color"/>
-                                            <span t-esc="s.name"/>
-                                        </div>
-                                    </t>
-                                </div>
-                                <t t-set="chart" t-value="stackedTrendChart()"/>
-                                <svg class="o_phan_he_stacked_chart"
+
+                        <div class="o_phan_he_panel o_phan_he_chart_trend o_phan_he_chart_trend_wide">
+                            <div class="o_phan_he_chart_head">
+                                <h3>
+                                    <i class="fa fa-line-chart"/>
+                                    Xu hướng chi phí Internet — 12 tháng
+                                </h3>
+                                <span class="o_phan_he_chart_unit">Đơn vị: Triệu VNĐ</span>
+                            </div>
+                            <div class="o_phan_he_trend_legend">
+                                <t t-foreach="state.data.trend_series or []" t-as="s" t-key="s.id">
+                                    <div class="o_phan_he_trend_legend_item">
+                                        <span class="o_phan_he_dot" t-att-style="'background:' + s.color"/>
+                                        <span t-esc="s.name"/>
+                                    </div>
+                                </t>
+                            </div>
+                            <t t-set="chart" t-value="multiLineTrendChart()"/>
+                            <div class="o_phan_he_trend_svg_wrap"
+                                 t-on-mouseleave="onTrendLeave">
+                                <svg class="o_phan_he_multiline_chart"
                                      t-att-viewBox="'0 0 ' + chart.W + ' ' + chart.H"
+                                     width="100%"
+                                     height="280"
                                      preserveAspectRatio="xMidYMid meet">
                                     <t t-foreach="chart.grid" t-as="g" t-key="g_index">
                                         <line t-att-x1="chart.padL"
@@ -275,84 +223,130 @@
                                               t-att-y1="g.y"
                                               t-att-y2="g.y"
                                               class="o_phan_he_grid_line"/>
-                                        <text t-att-x="chart.padL - 6"
+                                        <text t-att-x="chart.padL - 8"
                                               t-att-y="g.y + 3"
                                               class="o_phan_he_axis_y"
                                               text-anchor="end"
                                               t-esc="g.label"/>
                                     </t>
-                                    <t t-foreach="chart.layers" t-as="layer" t-key="layer.id">
-                                        <path t-att-d="layer.area"
-                                              t-att-fill="layer.color"
-                                              fill-opacity="0.22"/>
+
+                                    <t t-if="chart.tooltip">
+                                        <line t-att-x1="chart.tooltip.x"
+                                              t-att-x2="chart.tooltip.x"
+                                              t-att-y1="chart.padT"
+                                              t-att-y2="chart.baselineY"
+                                              class="o_phan_he_hover_guide"/>
                                     </t>
-                                    <t t-foreach="chart.layers" t-as="layer" t-key="'line-' + layer.id">
+
+                                    <t t-foreach="chart.lines" t-as="line" t-key="'ln-' + line.id">
                                         <polyline fill="none"
-                                                  t-att-stroke="layer.color"
-                                                  stroke-width="2.4"
+                                                  t-att-stroke="line.color"
+                                                  t-att-stroke-width="line.isTotal ? 3 : 2.2"
                                                   stroke-linejoin="round"
                                                   stroke-linecap="round"
-                                                  t-att-points="layer.linePoints"/>
-                                        <t t-foreach="layer.dots" t-as="dot" t-key="dot_index">
+                                                  t-att-points="line.linePoints"/>
+                                        <t t-foreach="line.dots" t-as="dot" t-key="dot_index">
                                             <circle t-att-cx="dot.x"
                                                     t-att-cy="dot.y"
-                                                    r="3.2"
-                                                    t-att-fill="layer.color"
+                                                    r="3.5"
+                                                    t-att-fill="line.color"
                                                     stroke="#fff"
-                                                    stroke-width="1.5"/>
+                                                    stroke-width="1.6"/>
                                         </t>
                                     </t>
+
                                     <t t-foreach="chart.xLabels" t-as="xl" t-key="xl_index">
                                         <text t-att-x="xl.x"
-                                              t-att-y="chart.H - 8"
+                                              t-att-y="chart.H - 10"
                                               class="o_phan_he_axis_x"
                                               text-anchor="middle"
                                               t-esc="xl.text"/>
                                     </t>
+
+                                    <t t-foreach="chart.hitZones" t-as="hz" t-key="'hz-' + hz.index">
+                                        <rect t-att-x="hz.x"
+                                              t-att-y="chart.padT"
+                                              t-att-width="hz.width"
+                                              t-att-height="chart.ch"
+                                              fill="transparent"
+                                              class="o_phan_he_trend_hit"
+                                              t-on-mouseenter="() => this.onTrendHover(hz.index)"/>
+                                    </t>
                                 </svg>
+
+                                <div t-if="chart.tooltip" class="o_phan_he_trend_tooltip"
+                                     t-att-style="'left:' + ((chart.tooltip.x / chart.W) * 100) + '%'">
+                                    <strong t-esc="chart.tooltip.label"/>
+                                    <t t-foreach="chart.tooltip.items" t-as="it" t-key="'tip-' + it.id">
+                                        <div class="o_phan_he_trend_tip_row">
+                                            <span class="o_phan_he_dot" t-att-style="'background:' + it.color"/>
+                                            <span t-esc="it.name"/>
+                                            <b t-esc="formatMoneyVnd(it.value)"/>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="o_phan_he_charts_bottom">
+                            <div class="o_phan_he_panel o_phan_he_chart_bars">
+                                <div class="o_phan_he_chart_head">
+                                    <h3>
+                                        <i class="fa fa-bar-chart"/>
+                                        Cơ cấu chi phí theo miền
+                                        <t t-if="state.data.current_month">
+                                            (Tháng <t t-esc="monthLabelPad()"/>)
+                                        </t>
+                                    </h3>
+                                </div>
+                                <div class="o_phan_he_hbar_list">
+                                    <t t-foreach="costStructureRows()" t-as="row" t-key="row.id">
+                                        <div class="o_phan_he_hbar_row">
+                                            <div class="o_phan_he_hbar_label">
+                                                <span class="o_phan_he_dot" t-att-style="'background:' + row.color"/>
+                                                <span t-esc="row.name"/>
+                                            </div>
+                                            <div class="o_phan_he_hbar_track">
+                                                <div class="o_phan_he_hbar_fill"
+                                                     t-att-style="'width:' + row.pct + '%;background:' + row.color"/>
+                                            </div>
+                                            <div class="o_phan_he_hbar_vals">
+                                                <b t-esc="formatMoneyVnd(row.amount)"/>
+                                                <span t-esc="row.pct + '%'"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <div t-if="!(costStructureRows() || []).length" class="o_phan_he_empty">
+                                        Không có dữ liệu
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="o_phan_he_panel o_phan_he_chart_donut">
-                                <h3>
-                                    <i class="fa fa-pie-chart"/>
-                                    Cơ cấu chi phí theo miền
-                                    <t t-if="state.data.current_month">
-                                        (Tháng <t t-esc="monthLabelPad()"/>)
-                                    </t>
-                                </h3>
-                                <p class="o_phan_he_panel_hint">
-                                    Tỷ trọng % chi phí phân bổ hiện tại
-                                </p>
-                                <div class="o_phan_he_donut_wrap">
-                                    <div class="o_phan_he_donut_svg_wrap">
-                                        <svg class="o_phan_he_donut_svg" viewBox="0 0 180 180" aria-hidden="true">
-                                            <circle cx="90" cy="90" r="72" fill="none" stroke="#f1f5f9" stroke-width="28"/>
-                                            <t t-foreach="donutSlices()" t-as="slice" t-key="slice.id">
-                                                <path t-att-d="slice.d"
-                                                      t-att-fill="slice.color"
-                                                      stroke="#fff"
-                                                      stroke-width="2"/>
-                                            </t>
-                                        </svg>
-                                        <div class="o_phan_he_donut_center">
-                                            <strong>Tháng</strong>
-                                            <span t-esc="monthLabelPad()"/>
-                                        </div>
-                                    </div>
-                                    <div class="o_phan_he_donut_legend">
-                                        <div class="o_phan_he_donut_total">
-                                            <i class="fa fa-bar-chart"/>
-                                            Tổng chi phí:
-                                            <b t-esc="formatMoneyVnd(costStructureTotal())"/>
-                                        </div>
-                                        <t t-foreach="costStructureRows()" t-as="row" t-key="row.id">
-                                            <div class="o_phan_he_donut_row">
-                                                <span class="o_phan_he_dot" t-att-style="'background:' + row.color"/>
-                                                <span class="o_phan_he_donut_name" t-esc="row.name"/>
-                                                <span class="o_phan_he_donut_amt" t-esc="formatTrieu(row.amount)"/>
-                                                <b class="o_phan_he_donut_pct" t-esc="row.pct + '%'"/>
+                            <div class="o_phan_he_panel o_phan_he_chart_top">
+                                <div class="o_phan_he_chart_head">
+                                    <h3>
+                                        <i class="fa fa-trophy"/>
+                                        Top 5 chi nhánh chi phí cao
+                                    </h3>
+                                </div>
+                                <div class="o_phan_he_hbar_list">
+                                    <t t-foreach="topBranchRows()" t-as="row" t-key="row.id">
+                                        <div class="o_phan_he_hbar_row is-purple">
+                                            <div class="o_phan_he_hbar_label">
+                                                <span class="o_phan_he_rank" t-esc="row_index + 1"/>
+                                                <span t-esc="row.name"/>
                                             </div>
-                                        </t>
+                                            <div class="o_phan_he_hbar_track">
+                                                <div class="o_phan_he_hbar_fill is-grad"
+                                                     t-att-style="'width:' + row.pct + '%'"/>
+                                            </div>
+                                            <div class="o_phan_he_hbar_vals">
+                                                <b t-esc="formatMoneyVnd(row.amount)"/>
+                                            </div>
+                                        </div>
+                                    </t>
+                                    <div t-if="!(topBranchRows() || []).length" class="o_phan_he_empty">
+                                        Không có dữ liệu
                                     </div>
                                 </div>
                             </div>

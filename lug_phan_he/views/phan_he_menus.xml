@@ -34,17 +34,38 @@
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_tracking_top"
-              name="Danh sách đường truyền"
+              name="Danh sách Internet"
               parent="menu_phan_he_internet_root"
               action="action_phan_he_service_tracking"
               sequence="3"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_entry"
-              name="Nhập liệu"
+              name="Khai báo cửa hàng"
               parent="menu_phan_he_internet_root"
               action="action_phan_he_service_entry"
               sequence="4"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_internet_active"
+              name="Internet đang sử dụng"
+              parent="menu_phan_he_internet_root"
+              action="action_phan_he_service_internet_active"
+              sequence="5"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_internet_suspend"
+              name="Internet tạm ngưng"
+              parent="menu_phan_he_internet_root"
+              action="action_phan_he_service_internet_suspend"
+              sequence="6"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_phan_he_internet_liquidated"
+              name="Internet chờ thanh lý"
+              parent="menu_phan_he_internet_root"
+              action="action_phan_he_service_internet_liquidated"
+              sequence="7"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_service_root"

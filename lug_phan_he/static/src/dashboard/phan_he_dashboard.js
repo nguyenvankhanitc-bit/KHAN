@@ -5,6 +5,107 @@ import { useService } from "@web/core/utils/hooks";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 
+const INTERNET_NAV_SECTIONS = [
+    {
+        id: "declare",
+        label: "Khai báo & nhập liệu",
+        icon: "fa-download",
+        children: [
+            {
+                id: "store_declare",
+                label: "Khai báo cửa hàng",
+                icon: "fa-building",
+                iconColor: "#2563eb",
+                action: "lug_phan_he.action_phan_he_service_entry",
+            },
+        ],
+    },
+    {
+        id: "manage",
+        label: "Quản lý Internet",
+        icon: "fa-sitemap",
+        children: [
+            {
+                id: "list_all",
+                label: "Danh sách Internet",
+                icon: "fa-list-ul",
+                iconColor: "#7c3aed",
+                action: "lug_phan_he.action_phan_he_service_tracking",
+            },
+            {
+                id: "list_active",
+                label: "Internet đang sử dụng",
+                icon: "fa-check-circle",
+                iconColor: "#16a34a",
+                action: "lug_phan_he.action_phan_he_service_internet_active",
+            },
+            {
+                id: "list_suspend",
+                label: "Internet tạm ngưng",
+                icon: "fa-pause-circle",
+                iconColor: "#d97706",
+                action: "lug_phan_he.action_phan_he_service_internet_suspend",
+            },
+            {
+                id: "list_liquidated",
+                label: "Internet chờ thanh lý",
+                icon: "fa-times-circle",
+                iconColor: "#dc2626",
+                action: "lug_phan_he.action_phan_he_service_internet_liquidated",
+            },
+        ],
+    },
+    {
+        id: "payment",
+        label: "Chi phí & thanh toán",
+        icon: "fa-money",
+        children: [
+            {
+                id: "payment_schedule",
+                label: "Lịch thanh toán",
+                icon: "fa-calendar",
+                iconColor: "#0891b2",
+                action: "lug_phan_he.action_phan_he_payment",
+            },
+        ],
+    },
+    {
+        id: "alerts",
+        label: "Cảnh báo",
+        icon: "fa-bell",
+        children: [
+            {
+                id: "expire_soon",
+                label: "Sắp hết hạn",
+                icon: "fa-exclamation-triangle",
+                iconColor: "#ca8a04",
+                tone: "warn",
+                badgeKey: "expire_soon",
+                action: "lug_phan_he.action_phan_he_service_expire_soon",
+            },
+            {
+                id: "expired",
+                label: "Quá hạn",
+                icon: "fa-times-circle",
+                iconColor: "#e11d48",
+                tone: "danger",
+                badgeKey: "overdue_contract",
+                action: "lug_phan_he.action_phan_he_service_expired",
+            },
+        ],
+    },
+    {
+        id: "reports",
+        label: "Báo cáo",
+        icon: "fa-bar-chart",
+        children: [
+            { id: "report_month", label: "Chi phí tháng", icon: "fa-calendar-o", iconColor: "#4f46e5", reportPeriod: "month" },
+            { id: "report_quarter", label: "Chi phí quý", icon: "fa-calendar", iconColor: "#db2777", reportPeriod: "quarter" },
+            { id: "report_year", label: "Chi phí năm", icon: "fa-calendar-check-o", iconColor: "#059669", reportPeriod: "year" },
+        ],
+    },
+];
+
 function formatNumber(n) {
     return new Intl.NumberFormat("vi-VN").format(Math.round(Number(n || 0)));
 }
@@ -51,8 +152,16 @@ export class PhanHeDashboard extends Component {
         this.state = useState({
             loading: true,
             exporting: false,
-            alertsOpen: true,
+            openGroups: {
+                declare: true,
+                manage: true,
+                payment: true,
+                alerts: true,
+                reports: true,
+            },
             activeNav: "overview",
+            reportPeriod: "year",
+            trendHover: null,
             data: {},
             paymentReport: { tables: [] },
             filters: {
@@ -95,15 +204,23 @@ export class PhanHeDashboard extends Component {
     }
 
     get appTitle() {
+        if (this.serviceTypeCode === "internet") {
+            return this.actionContext.phan_he_app_title
+                || this.state.data.app_title
+                || "Dịch vụ Internet";
+        }
         return this.actionContext.phan_he_app_title
             || this.state.data.app_title
             || "Quản lý dịch vụ";
     }
 
-    get navItems() {
+    get navSections() {
         const code = this.serviceTypeCode;
+        if (code === "internet") {
+            return INTERNET_NAV_SECTIONS;
+        }
+
         const trackingByType = {
-            internet: "lug_phan_he.action_phan_he_service_tracking",
             camera: "lug_phan_he.action_phan_he_service_tracking_camera",
             attendance: "lug_phan_he.action_phan_he_service_tracking_attendance",
             linkq_hrm: "lug_phan_he.action_phan_he_service_tracking_linkq_hrm",
@@ -111,48 +228,126 @@ export class PhanHeDashboard extends Component {
             server: "lug_phan_he.action_phan_he_service_tracking_server",
         };
         const paymentByType = {
-            internet: "lug_phan_he.action_phan_he_payment",
             camera: "lug_phan_he.action_phan_he_payment_camera",
             attendance: "lug_phan_he.action_phan_he_payment_attendance",
             linkq_hrm: "lug_phan_he.action_phan_he_payment_linkq_hrm",
             linkq_nb: "lug_phan_he.action_phan_he_payment_linkq_nb",
             server: "lug_phan_he.action_phan_he_payment_server",
         };
-        const items = [
-            { id: "overview", label: "Tổng quan", icon: "fa-th-large", action: false },
+        return [
             {
-                id: "contracts",
-                label: "Danh sách",
-                icon: "fa-file-text-o",
-                action: trackingByType[code] || trackingByType.internet,
+                id: "manage",
+                label: "Quản lý",
+                icon: "fa-list-alt",
+                children: [
+                    {
+                        id: "list_all",
+                        label: "Danh sách",
+                        action: trackingByType[code] || trackingByType.camera,
+                    },
+                    {
+                        id: "payment_schedule",
+                        label: "Thanh toán",
+                        action: paymentByType[code] || paymentByType.camera,
+                    },
+                ],
             },
             {
-                id: "payments",
-                label: "Thanh toán",
-                icon: "fa-credit-card",
-                action: paymentByType[code] || paymentByType.internet,
+                id: "alerts",
+                label: "Cảnh báo",
+                icon: "fa-bell",
+                children: [
+                    {
+                        id: "expire_soon",
+                        label: "Sắp hết hạn",
+                        badgeKey: "expire_soon",
+                        tone: "warn",
+                        action: "lug_phan_he.action_phan_he_service_expire_soon",
+                    },
+                    {
+                        id: "expired",
+                        label: "Quá hạn",
+                        badgeKey: "overdue_contract",
+                        tone: "danger",
+                        action: "lug_phan_he.action_phan_he_service_expired",
+                    },
+                ],
             },
-            { id: "alerts", label: "Cảnh báo", icon: "fa-bell", action: false },
         ];
-        if (code === "internet") {
-            items.splice(1, 0, {
-                id: "calendar",
-                label: "Calendar",
-                icon: "fa-calendar",
-                action: "lug_phan_he.action_phan_he_calendar",
-            });
-            items.push(
-                { id: "providers", label: "Nhà cung cấp", icon: "fa-users", action: "lug_phan_he.action_phan_he_provider" },
-                { id: "invoices", label: "Hóa đơn", icon: "fa-list-alt", action: "lug_phan_he.action_phan_he_invoice" },
-                { id: "reports", label: "Báo cáo", icon: "fa-bar-chart", action: false },
-                { id: "config", label: "Cấu hình", icon: "fa-cog", action: "lug_phan_he.action_phan_he_mien" },
-            );
-        }
-        return items;
     }
 
     get alertCount() {
         return Number(this.state.data.alert_count || 0);
+    }
+
+    isGroupOpen(groupId) {
+        return Boolean(this.state.openGroups[groupId]);
+    }
+
+    navChildClass(child) {
+        const classes = [];
+        const isActive =
+            this.state.activeNav === child.id ||
+            (child.reportPeriod &&
+                this.state.activeNav === "reports" &&
+                this.state.reportPeriod === child.reportPeriod);
+        if (isActive) {
+            classes.push("is-active");
+        }
+        if (child.tone === "warn") {
+            classes.push("is-warn");
+        }
+        if (child.tone === "danger") {
+            classes.push("is-danger");
+        }
+        return classes.join(" ");
+    }
+
+    toggleGroup(groupId) {
+        this.state.openGroups[groupId] = !this.state.openGroups[groupId];
+    }
+
+    onOverview() {
+        this.state.activeNav = "overview";
+    }
+
+    onNavChild(child) {
+        if (!child) {
+            return;
+        }
+        this.state.activeNav = child.id;
+        if (child.reportPeriod) {
+            this.openReportPeriod(child.reportPeriod);
+            return;
+        }
+        if (child.action) {
+            this.openAction(child.action);
+        }
+    }
+
+    openReportPeriod(period) {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = now.getMonth(); // 0-11
+        let from;
+        let to;
+        if (period === "month") {
+            from = new Date(year, month, 1);
+            to = new Date(year, month + 1, 0);
+        } else if (period === "quarter") {
+            const qStart = Math.floor(month / 3) * 3;
+            from = new Date(year, qStart, 1);
+            to = new Date(year, qStart + 3, 0);
+        } else {
+            from = new Date(year, 0, 1);
+            to = new Date(year, 11, 31);
+        }
+        this.state.reportPeriod = period;
+        this.state.filters.year = year;
+        this.state.filters.date_from = `${pad2(from.getDate())}/${pad2(from.getMonth() + 1)}/${from.getFullYear()}`;
+        this.state.filters.date_to = `${pad2(to.getDate())}/${pad2(to.getMonth() + 1)}/${to.getFullYear()}`;
+        this.state.activeNav = "reports";
+        this.loadPaymentReport();
     }
 
     onNav(item) {
@@ -169,7 +364,7 @@ export class PhanHeDashboard extends Component {
             return;
         }
         if (item.id === "alerts") {
-            this.state.alertsOpen = !this.state.alertsOpen;
+            this.toggleGroup("alerts");
             return;
         }
         if (!item.action) {
@@ -496,37 +691,27 @@ export class PhanHeDashboard extends Component {
     }
 
     /**
-     * Stacked area chart: lớp chồng theo miền, trục Y = Triệu VNĐ.
+     * Multi-line chart (không stack): Tổng + từng miền, trục Y = Triệu VNĐ.
+     * Hover theo tháng → tooltip.
      */
-    stackedTrendChart() {
-        // Nhỏ → lớn: lớp dưới cùng là miền nhỏ, trên cùng là miền lớn (giống stacked area)
-        const series = [...(this.state.data.trend_series || [])].sort((a, b) => {
-            const sa = (a.values || []).reduce((s, v) => s + Number(v || 0), 0);
-            const sb = (b.values || []).reduce((s, v) => s + Number(v || 0), 0);
-            return sa - sb;
-        });
+    multiLineTrendChart() {
+        const series = this.state.data.trend_series || [];
+        const months = this.state.data.trend_months || [];
         const n = 12;
-        const W = 560;
-        const H = 230;
-        const padL = 44;
-        const padR = 14;
-        const padT = 14;
-        const padB = 30;
+        const W = 720;
+        const H = 280;
+        const padL = 48;
+        const padR = 18;
+        const padT = 18;
+        const padB = 36;
         const cw = W - padL - padR;
         const ch = H - padT - padB;
 
-        const totals = Array.from({ length: n }, () => 0);
-        for (const s of series) {
-            (s.values || []).forEach((v, i) => {
-                if (i < n) {
-                    totals[i] += Number(v || 0);
-                }
-            });
-        }
-        const maxRaw = Math.max(...totals, 1);
+        const allVals = series.flatMap((s) => (s.values || []).map((v) => Number(v || 0)));
+        const maxRaw = Math.max(...allVals, 1);
         const maxTrieu = maxRaw / 1e6;
-        const step = maxTrieu <= 100 ? 25 : maxTrieu <= 200 ? 50 : 100;
-        const niceMax = Math.max(step, Math.ceil(maxTrieu / step) * step);
+        const step = maxTrieu <= 10 ? 2 : maxTrieu <= 30 ? 5 : maxTrieu <= 100 ? 25 : 50;
+        const niceMax = Math.max(step, Math.ceil(maxTrieu / step) * step) || step;
         const yMax = niceMax * 1e6;
 
         const grid = [];
@@ -534,48 +719,51 @@ export class PhanHeDashboard extends Component {
         for (let t = 0; t <= ticks; t++) {
             const val = step * t;
             const y = padT + ch - (val / niceMax) * ch;
-            grid.push({ y, label: String(val) });
+            grid.push({ y, label: `${val}M` });
         }
 
-        const layers = [];
-        const cum = Array.from({ length: n }, () => 0);
-        for (const s of series) {
-            const tops = [];
-            const bots = [];
+        const xAt = (i) => padL + (i / Math.max(n - 1, 1)) * cw;
+        const yAt = (v) => padT + ch - (Number(v || 0) / yMax) * ch;
+
+        const lines = series.map((s) => {
+            const points = [];
             for (let i = 0; i < n; i++) {
                 const v = Number((s.values || [])[i] || 0);
-                const bottom = cum[i];
-                const top = bottom + v;
-                const x = padL + (i / Math.max(n - 1, 1)) * cw;
-                const yTop = padT + ch - (top / yMax) * ch;
-                const yBot = padT + ch - (bottom / yMax) * ch;
-                tops.push({ x, y: yTop });
-                bots.push({ x, y: yBot });
-                cum[i] = top;
+                points.push({ x: xAt(i), y: yAt(v), value: v, monthIndex: i });
             }
-            let area = `M ${tops[0].x} ${tops[0].y}`;
-            for (const p of tops) {
-                area += ` L ${p.x} ${p.y}`;
-            }
-            for (let i = bots.length - 1; i >= 0; i--) {
-                area += ` L ${bots[i].x} ${bots[i].y}`;
-            }
-            area += " Z";
-            layers.push({
+            return {
                 id: s.id,
                 name: s.name,
                 short: s.short,
                 color: s.color,
-                area,
-                linePoints: tops.map((p) => `${p.x},${p.y}`).join(" "),
-                dots: tops,
-            });
-        }
+                isTotal: !!s.is_total,
+                linePoints: points.map((p) => `${p.x},${p.y}`).join(" "),
+                dots: points,
+            };
+        });
 
         const xLabels = Array.from({ length: n }, (_, i) => ({
-            x: padL + (i / Math.max(n - 1, 1)) * cw,
-            text: `Th ${i + 1}`,
+            x: xAt(i),
+            text: months[i] || `T${i + 1}`,
         }));
+
+        const hover = this.state.trendHover;
+        let tooltip = null;
+        if (hover != null && hover >= 0 && hover < n) {
+            const x = xAt(hover);
+            tooltip = {
+                monthIndex: hover,
+                label: months[hover] || `T${hover + 1}`,
+                x,
+                items: lines.map((line) => ({
+                    id: line.id,
+                    name: line.name,
+                    color: line.color,
+                    value: line.dots[hover]?.value || 0,
+                    y: line.dots[hover]?.y,
+                })),
+            };
+        }
 
         return {
             W,
@@ -586,10 +774,37 @@ export class PhanHeDashboard extends Component {
             cw,
             ch,
             grid,
-            layers,
+            lines,
             xLabels,
+            tooltip,
             baselineY: padT + ch,
+            hitZones: Array.from({ length: n }, (_, i) => {
+                const x = xAt(i);
+                const half = cw / Math.max(n - 1, 1) / 2;
+                return {
+                    index: i,
+                    x: Math.max(padL, x - half),
+                    width: Math.min(padL + cw, x + half) - Math.max(padL, x - half),
+                };
+            }),
         };
+    }
+
+    onTrendHover(index) {
+        this.state.trendHover = index;
+    }
+
+    onTrendLeave() {
+        this.state.trendHover = null;
+    }
+
+    /** @deprecated giữ tên cũ để tránh vỡ nếu template cũ còn cache */
+    stackedTrendChart() {
+        return this.multiLineTrendChart();
+    }
+
+    topBranchRows() {
+        return this.state.data.top_branches || [];
     }
 
     filteredAreas() {

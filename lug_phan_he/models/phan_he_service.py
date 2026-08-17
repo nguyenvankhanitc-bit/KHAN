@@ -55,6 +55,10 @@ class PhanHeService(models.Model):
         tracking=True,
         help="VD: 100Mbps, 200Mbps, Fiber 1Gbps",
     )
+    bandwidth_display = fields.Char(
+        string="Băng thông",
+        compute="_compute_bandwidth_display",
+    )
     usage_address = fields.Text(string="Địa chỉ")
     technical_info = fields.Text(string="Thông tin kỹ thuật")
     stt = fields.Integer(string="STT", copy=False, index=True)
@@ -99,7 +103,7 @@ class PhanHeService(models.Model):
             ("draft", "Nháp"),
             ("waiting", "Chờ duyệt"),
             ("active", "Đang hoạt động"),
-            ("suspend", "Tạm dừng"),
+            ("suspend", "Tạm ngưng"),
             ("liquidated", "Thanh lý"),
             ("expired", "Đã hết hạn"),
             ("cancel", "Đã hủy"),
@@ -113,7 +117,7 @@ class PhanHeService(models.Model):
     ops_status = fields.Selection(
         selection=[
             ("active", "Đang hoạt động"),
-            ("suspend", "Tạm dừng"),
+            ("suspend", "Tạm ngưng"),
             ("liquidated", "Thanh lý"),
         ],
         string="Trạng thái",
@@ -194,7 +198,7 @@ class PhanHeService(models.Model):
     )
 
     @api.depends(
-        "store_id", "store_id.name", "customer_code",
+        "store_id", "store_id.name", "customer_code", "code",
         "date_end", "remaining_days", "alert_level", "remaining_time",
     )
     def _compute_tracking_cards(self):
@@ -202,11 +206,16 @@ class PhanHeService(models.Model):
 
         for rec in self:
             store_name = escape(rec.store_id.name or "—")
-            code = escape(rec.customer_code or "")
+            code = escape((rec.customer_code or rec.code or "").strip())
+            code_html = (
+                f'<div class="o_phan_he_store_code">{code}</div>'
+                if code else
+                '<div class="o_phan_he_store_code is-empty">—</div>'
+            )
             rec.store_card_html = Markup(
                 f'<div class="o_phan_he_store_card">'
                 f'<div class="o_phan_he_store_name">{store_name}</div>'
-                f'<div class="o_phan_he_store_code">{code}</div>'
+                f"{code_html}"
                 f"</div>"
             )
             label = escape(rec.remaining_time or "—")
@@ -368,6 +377,8 @@ class PhanHeService(models.Model):
             if not vals.get("stt"):
                 vals["stt"] = next_stt
                 next_stt += 1
+            if "bandwidth" in vals:
+                vals["bandwidth"] = self._normalize_bandwidth(vals.get("bandwidth"))
             if vals.get("ops_status") and not vals.get("state"):
                 vals["state"] = vals["ops_status"]
             elif vals.get("state") and not vals.get("ops_status"):
@@ -379,11 +390,24 @@ class PhanHeService(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if "bandwidth" in vals:
+            vals["bandwidth"] = self._normalize_bandwidth(vals.get("bandwidth"))
         if "ops_status" in vals and "state" not in vals:
             vals["state"] = vals["ops_status"]
         elif "state" in vals and "ops_status" not in vals:
             vals["ops_status"] = self._map_state_to_ops(vals["state"])
         return super().write(vals)
+
+    @api.model
+    def _normalize_bandwidth(self, value):
+        import re
+
+        text = (value or "").strip()
+        if not text:
+            return text or False
+        if re.search(r"mbps|gbps|kbps|bps", text, flags=re.I):
+            return re.sub(r"\s*mbps\b", " Mbps", text, flags=re.I).strip()
+        return f"{text} Mbps"
 
     @api.model
     def _next_stt(self):
@@ -401,6 +425,19 @@ class PhanHeService(models.Model):
             if rec.stt != stt_val:
                 rec.stt = stt_val
         return total
+
+    @api.depends("bandwidth")
+    def _compute_bandwidth_display(self):
+        import re
+
+        for rec in self:
+            value = (rec.bandwidth or "").strip()
+            if not value:
+                rec.bandwidth_display = False
+            elif re.search(r"mbps|gbps|kbps|bps", value, flags=re.I):
+                rec.bandwidth_display = re.sub(r"\s*mbps\b", " Mbps", value, flags=re.I).strip()
+            else:
+                rec.bandwidth_display = f"{value} Mbps"
 
     @api.depends("date_start", "date_end")
     def _compute_duration(self):
@@ -438,7 +475,7 @@ class PhanHeService(models.Model):
             elif days == 0:
                 rec.remaining_time = "Hết hạn hôm nay"
             else:
-                rec.remaining_time = f"Quá hạn {abs(days)} ngày"
+                rec.remaining_time = f"Trễ {abs(days)} ngày"
 
             if days < 0:
                 rec.alert_level = "expired"

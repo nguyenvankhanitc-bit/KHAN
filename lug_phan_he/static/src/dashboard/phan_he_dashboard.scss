@@ -14,9 +14,9 @@
 }
 
 .o_phan_he_sidebar {
-    width: 232px;
-    min-width: 232px;
-    max-width: 232px;
+    width: 268px;
+    min-width: 268px;
+    max-width: 268px;
     background: #ffffff;
     border-right: 1px solid #e5e7eb;
     display: flex;
@@ -29,11 +29,54 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    background: #6d28d9;
-    color: #fff;
-    padding: 16px 18px;
-    font-weight: 700;
-    font-size: 0.95rem;
+    background: #ffffff;
+    color: #5b35d5;
+    padding: 18px 16px 10px;
+    font-weight: 800;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 0;
+}
+
+.o_phan_he_nav_section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: #5b35d5;
+    text-align: left;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+
+    > span:first-of-type,
+    > span:not(.o_phan_he_nav_badge) {
+        flex: 1;
+    }
+
+    i:first-child {
+        width: 18px;
+        text-align: center;
+        color: #5b35d5;
+    }
+
+    &:hover {
+        background: #f5f3ff;
+        color: #5b21b6;
+    }
+}
+
+.o_phan_he_nav_sub.is-active {
+    background: #efe9ff !important;
+    color: #5b35d5 !important;
 }
 
 .o_phan_he_brand_icon {
@@ -141,10 +184,11 @@
 .o_phan_he_nav_sub {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    width: calc(100% - 10px);
-    margin-left: 10px;
+    justify-content: flex-start;
+    gap: 10px;
+    /* Thụt ~1 chữ so với nhóm cha để phân biệt danh mục con */
+    width: calc(100% - 1.15em);
+    margin-left: 1.15em;
     border: 0;
     background: #f8fafc;
     color: #4b5563;
@@ -155,7 +199,20 @@
     font-weight: 600;
     cursor: pointer;
 
+    > i:first-child {
+        flex: 0 0 16px;
+        width: 16px;
+        text-align: center;
+        font-size: 0.9rem;
+    }
+
+    > span {
+        flex: 1;
+        min-width: 0;
+    }
+
     b {
+        margin-left: auto;
         min-width: 22px;
         height: 22px;
         padding: 0 6px;
@@ -599,18 +656,23 @@
     }
 
     .o_phan_he_hbar_track {
-        height: 8px;
-        background: #e5e7eb;
-        border-radius: 999px;
-        overflow: hidden;
+        height: 10px !important;
+        background: #e5e7eb !important;
+        border-radius: 999px !important;
+        overflow: hidden !important;
     }
 
     .o_phan_he_hbar_fill {
-        height: 100%;
-        border-radius: 999px;
-        background: linear-gradient(90deg, #a78bfa, #6d28d9);
-        &.teal { background: linear-gradient(90deg, #5eead4, #0d9488); }
-        &.indigo { background: linear-gradient(90deg, #a5b4fc, #4f46e5); }
+        height: 100% !important;
+        border-radius: 999px !important;
+        min-width: 2px;
+    }
+
+    .o_phan_he_multiline_chart {
+        width: 100% !important;
+        height: 280px !important;
+        min-height: 280px !important;
+        display: block !important;
     }
 
     .o_phan_he_table {
@@ -1011,6 +1073,152 @@
         @media (max-width: 1100px) {
             grid-template-columns: 1fr;
         }
+    }
+
+    .o_phan_he_chart_trend_wide {
+        margin-bottom: 14px;
+    }
+
+    .o_phan_he_charts_bottom {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+
+        @media (max-width: 1100px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_phan_he_trend_svg_wrap {
+        position: relative;
+        width: 100%;
+    }
+
+    .o_phan_he_multiline_chart {
+        width: 100%;
+        height: auto;
+        min-height: 260px;
+        display: block;
+    }
+
+    .o_phan_he_hover_guide {
+        stroke: #94a3b8;
+        stroke-width: 1.5;
+        stroke-dasharray: 4 4;
+        pointer-events: none;
+    }
+
+    .o_phan_he_trend_hit {
+        cursor: crosshair;
+    }
+
+    .o_phan_he_trend_tooltip {
+        position: absolute;
+        top: 10px;
+        transform: translateX(-50%);
+        min-width: 210px;
+        max-width: 280px;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #0f172a;
+        color: #fff;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.28);
+        z-index: 5;
+        pointer-events: none;
+        font-size: 0.78rem;
+
+        strong {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.82rem;
+            color: #e2e8f0;
+        }
+    }
+
+    .o_phan_he_trend_tip_row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+
+        span:nth-child(2) {
+            flex: 1;
+            color: #cbd5e1;
+        }
+
+        b {
+            font-variant-numeric: tabular-nums;
+            color: #fff;
+            white-space: nowrap;
+        }
+    }
+
+    .o_phan_he_hbar_list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        padding: 4px 2px 6px;
+    }
+
+    .o_phan_he_hbar_row {
+        display: grid;
+        grid-template-columns: minmax(120px, 0.95fr) 1.35fr auto;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .o_phan_he_hbar_label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.86rem;
+        min-width: 0;
+
+        > span:last-child {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .o_phan_he_rank {
+        width: 22px;
+        height: 22px;
+        border-radius: 6px;
+        background: #ede9fe;
+        color: #5b35d5;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.72rem;
+        font-weight: 800;
+        flex: 0 0 auto;
+    }
+
+    .o_phan_he_hbar_vals {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 2px;
+        min-width: 108px;
+        font-size: 0.8rem;
+
+        b {
+            color: #0f172a;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+
+        span {
+            color: #64748b;
+            font-weight: 700;
+        }
+    }
+
+    .o_phan_he_hbar_fill.is-grad {
+        background: linear-gradient(90deg, #a78bfa, #5b35d5) !important;
     }
 
     .o_phan_he_panel {

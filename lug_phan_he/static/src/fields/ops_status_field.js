@@ -11,7 +11,7 @@ const OPS_META = {
         className: "is-active",
     },
     suspend: {
-        label: "Tạm dừng",
+        label: "Tạm ngưng",
         icon: "fa-pause-circle",
         className: "is-suspend",
     },

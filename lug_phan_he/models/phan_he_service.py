@@ -158,6 +158,7 @@ class PhanHeService(models.Model):
     next_payment_id = fields.Many2one(
         "phan.he.payment",
         compute="_compute_next_payment",
+        store=True,
         string="Kỳ TT gần nhất",
     )
     next_invoice_number = fields.Char(
@@ -286,6 +287,14 @@ class PhanHeService(models.Model):
             rec.invoice_count = len(rec.invoice_ids)
             rec.document_count = len(rec.document_ids)
 
+    def _get_next_payment_record(self):
+        """Kỳ TT gần nhất: chưa thanh toán theo date_due, fallback kỳ đầu."""
+        self.ensure_one()
+        unpaid = self.payment_ids.filtered(
+            lambda p: p.payment_state not in ("paid", "cancel")
+        ).sorted(key=lambda p: p.date_due or fields.Date.today())
+        return unpaid[:1] or self.payment_ids[:1]
+
     @api.depends(
         "payment_ids",
         "payment_ids.date_due",
@@ -295,21 +304,19 @@ class PhanHeService(models.Model):
     )
     def _compute_next_payment(self):
         for rec in self:
-            unpaid = rec.payment_ids.filtered(
-                lambda p: p.payment_state not in ("paid", "cancel")
-            ).sorted(key=lambda p: p.date_due or fields.Date.today())
-            rec.next_payment_id = unpaid[:1] or rec.payment_ids[:1]
+            rec.next_payment_id = rec._get_next_payment_record()
 
     @api.depends(
-        "next_payment_id",
-        "next_payment_id.invoice_number",
-        "next_payment_id.amount",
-        "next_payment_id.date_due",
+        "payment_ids",
+        "payment_ids.invoice_number",
+        "payment_ids.amount",
+        "payment_ids.date_due",
+        "payment_ids.payment_state",
         "contract_amount",
     )
     def _compute_next_payment_fields(self):
         for rec in self:
-            pay = rec.next_payment_id
+            pay = rec._get_next_payment_record()
             rec.next_invoice_number = pay.invoice_number if pay else False
             rec.next_payment_amount = pay.amount if pay else rec.contract_amount
             rec.next_payment_date = pay.date_due if pay else False
@@ -318,7 +325,8 @@ class PhanHeService(models.Model):
         """Cho phép nhập liệu trên bảng tổng → ghi vào kỳ thanh toán (tạo mới nếu chưa có)."""
         Payment = self.env["phan.he.payment"]
         for rec in self:
-            pay = rec.next_payment_id
+            # Dùng payment_ids trực tiếp — tránh trigger ORM qua next_payment_id non-SQL path
+            pay = rec._get_next_payment_record()
             vals = {
                 "invoice_number": rec.next_invoice_number or False,
                 "amount": rec.next_payment_amount or rec.contract_amount or 0.0,
@@ -338,17 +346,25 @@ class PhanHeService(models.Model):
     @api.depends(
         "payment_info_manual",
         "provider_id",
-        "next_payment_id",
-        "next_payment_id.bank_account_id",
-        "next_payment_id.payment_content",
         "provider_id.bank_account_ids",
+        "provider_id.bank_account_ids.is_default",
+        "provider_id.bank_account_ids.account_name",
+        "provider_id.bank_account_ids.account_number",
+        "provider_id.bank_account_ids.bank_name",
+        "provider_id.bank_account_ids.bank_branch",
+        "payment_ids",
+        "payment_ids.bank_account_id",
+        "payment_ids.payment_content",
+        "payment_ids.payment_state",
+        "payment_ids.date_due",
     )
     def _compute_payment_info_text(self):
         for rec in self:
             if rec.payment_info_manual:
                 rec.payment_info_text = rec.payment_info_manual
                 continue
-            bank = rec.next_payment_id.bank_account_id if rec.next_payment_id else False
+            pay = rec._get_next_payment_record()
+            bank = pay.bank_account_id if pay else False
             if not bank and rec.provider_id:
                 bank = rec.provider_id.bank_account_ids.filtered("is_default")[:1] \
                     or rec.provider_id.bank_account_ids[:1]
@@ -359,8 +375,8 @@ class PhanHeService(models.Model):
                     f"- NGÂN HÀNG: {bank.bank_name or ''}"
                     + (f" - {bank.bank_branch}" if bank.bank_branch else "")
                 ).strip()
-            elif rec.next_payment_id and rec.next_payment_id.payment_content:
-                rec.payment_info_text = rec.next_payment_id.payment_content
+            elif pay and pay.payment_content:
+                rec.payment_info_text = pay.payment_content
             elif rec.provider_id:
                 rec.payment_info_text = rec.provider_id.name
             else:

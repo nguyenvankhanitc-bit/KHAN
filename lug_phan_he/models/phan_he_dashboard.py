@@ -71,7 +71,7 @@ class PhanHeDashboard(models.AbstractModel):
             })
 
         # --- Chi phí tháng theo miền ---
-        # Chỉ cộng cước tháng HĐ còn hiệu lực trong tháng VÀ thời gian còn lại ≤ 30 ngày
+        # Cộng cước tháng của mọi HĐ còn hiệu lực trong tháng (không hủy)
         def services_in_month(recs, m_start, m_end):
             return recs.filtered(
                 lambda s: s.state not in ("cancel",)
@@ -80,15 +80,10 @@ class PhanHeDashboard(models.AbstractModel):
             )
 
         def cost_by_mien(recs, m_start, m_end):
-            """Tổng cước tháng: HĐ hiệu lực trong tháng và còn ≤ 30 ngày (tính tới cuối tháng / hôm nay)."""
+            """Tổng cước tháng: mọi HĐ hiệu lực trong tháng (không hủy)."""
             active = services_in_month(recs, m_start, m_end)
-            as_of = m_end if m_end <= today else today
             result = {m["id"]: 0.0 for m in mien_meta}
             for svc in active:
-                if not svc.date_end:
-                    continue
-                if (svc.date_end - as_of).days > 30:
-                    continue
                 mid = svc.mien_id.id
                 if mid in result:
                     result[mid] += svc.contract_amount or 0.0

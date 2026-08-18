@@ -651,14 +651,9 @@ class PhanHeService(models.Model):
             row["count"] += 1
             totals["count"] += 1
 
-            # Chi phí tháng chỉ cộng HĐ còn ≤ 30 ngày (hoặc đã quá hạn)
+            # Chi phí tháng: cộng mọi HĐ chưa hủy / chưa thanh lý
             is_closed = svc.state in ("cancel", "liquidated")
-            include_cost = bool(
-                svc.date_end
-                and not is_closed
-                and svc.remaining_days <= 30
-            )
-            if include_cost:
+            if not is_closed:
                 row["amount"] += svc.contract_amount or 0.0
                 totals["amount"] += svc.contract_amount or 0.0
 

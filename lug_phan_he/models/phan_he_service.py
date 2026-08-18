@@ -322,25 +322,53 @@ class PhanHeService(models.Model):
             rec.next_payment_date = pay.date_due if pay else False
 
     def _inverse_next_payment_fields(self):
-        """Cho phép nhập liệu trên bảng tổng → ghi vào kỳ thanh toán (tạo mới nếu chưa có)."""
+        """Cho phép nhập liệu trên bảng tổng → ghi vào kỳ thanh toán (tạo mới nếu chưa có).
+
+        Cập nhật payment bằng SQL để tránh ORM modified() search theo
+        next_payment_id (lỗi khi field chưa store / registry cũ).
+        """
         Payment = self.env["phan.he.payment"]
         for rec in self:
-            # Dùng payment_ids trực tiếp — tránh trigger ORM qua next_payment_id non-SQL path
             pay = rec._get_next_payment_record()
-            vals = {
-                "invoice_number": rec.next_invoice_number or False,
-                "amount": rec.next_payment_amount or rec.contract_amount or 0.0,
-                "date_due": rec.next_payment_date or False,
-            }
+            invoice_number = rec.next_invoice_number or False
+            amount = rec.next_payment_amount or rec.contract_amount or 0.0
+            date_due = rec.next_payment_date or False
             if pay:
-                pay.write(vals)
-            elif rec.next_invoice_number or rec.next_payment_date or rec.next_payment_amount:
+                self.env.cr.execute(
+                    """
+                    UPDATE phan_he_payment
+                       SET invoice_number = %s,
+                           amount = %s,
+                           date_due = %s,
+                           write_date = (now() at time zone 'UTC'),
+                           write_uid = %s
+                     WHERE id = %s
+                    """,
+                    (
+                        invoice_number,
+                        amount,
+                        date_due,
+                        self.env.uid,
+                        pay.id,
+                    ),
+                )
+                pay.invalidate_recordset(["invoice_number", "amount", "date_due", "write_date", "write_uid"])
+                rec.invalidate_recordset([
+                    "next_payment_id",
+                    "next_invoice_number",
+                    "next_payment_amount",
+                    "next_payment_date",
+                    "payment_info_text",
+                ])
+            elif invoice_number or date_due or rec.next_payment_amount:
                 Payment.create({
                     "service_id": rec.id,
                     "provider_id": rec.provider_id.id or False,
                     "period": "HĐ 001",
                     "payment_state": "pending",
-                    **vals,
+                    "invoice_number": invoice_number,
+                    "amount": amount,
+                    "date_due": date_due,
                 })
 
     @api.depends(

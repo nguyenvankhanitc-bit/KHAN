@@ -345,9 +345,9 @@ class PhanHeService(models.Model):
                      WHERE id = %s
                     """,
                     (
-                        invoice_number,
+                        invoice_number or None,
                         amount,
-                        date_due,
+                        date_due or None,
                         self.env.uid,
                         pay.id,
                     ),

@@ -97,11 +97,29 @@
                         <t t-foreach="filteredApps" t-as="nav" t-key="'side_' + nav.key">
                             <button type="button"
                                     class="o_eac_nav_item"
-                                    t-att-class="{'active': state.activeNav === nav.key}"
+                                    t-att-class="{
+                                        'active': state.activeNav === nav.key,
+                                        'o_eac_nav_item_discuss': nav.xmlid === 'mail.menu_root_discuss',
+                                    }"
                                     t-att-title="nav.sidebar_label"
                                     t-on-click="() => this.onNavClick(nav)">
                                 <i t-att-class="'fa ' + nav.icon"/>
                                 <span t-esc="nav.sidebar_label"/>
+                                <t t-if="nav.xmlid === 'daily_work_task.menu_daily_work_root'">
+                                    <em t-if="dailyWorkOverdueBadge"
+                                        class="o_eac_nav_badge o_eac_nav_badge_overdue"
+                                        t-att-title="'Quá hạn: ' + dailyWorkOverdueBadge"
+                                        t-esc="dailyWorkOverdueBadge"/>
+                                    <em t-if="dailyWorkTodayBadge"
+                                        class="o_eac_nav_badge o_eac_nav_badge_today"
+                                        t-att-title="'Hôm nay: ' + dailyWorkTodayBadge"
+                                        t-esc="dailyWorkTodayBadge"/>
+                                </t>
+                                <t t-else="">
+                                    <em t-if="navBadge(nav)"
+                                        class="o_eac_nav_badge"
+                                        t-esc="navBadge(nav)"/>
+                                </t>
                             </button>
                         </t>
                     </nav>

@@ -488,9 +488,15 @@ class DailyTaskDashboard(models.AbstractModel):
 
     @api.model
     def _employee_kpi_rank(self, tasks, limit=20):
-        """Xếp hạng KPI theo nhân viên (hiệu suất) trong tập task đã lọc."""
+        """Báo cáo CV theo nhân viên (hiệu suất + tổng giờ) trong tập task đã lọc."""
         by_emp = defaultdict(
-            lambda: {"total": 0, "done": 0, "overdue": 0, "name": ""}
+            lambda: {
+                "total": 0,
+                "done": 0,
+                "overdue": 0,
+                "duration_minutes": 0,
+                "name": "",
+            }
         )
         for t in tasks:
             emp = t.assignee_id
@@ -498,6 +504,7 @@ class DailyTaskDashboard(models.AbstractModel):
                 continue
             by_emp[emp.id]["name"] = emp.name or ""
             by_emp[emp.id]["total"] += 1
+            by_emp[emp.id]["duration_minutes"] += int(t.duration_minutes or 0)
             if t.state == "done":
                 by_emp[emp.id]["done"] += 1
             if t.is_overdue:
@@ -507,6 +514,7 @@ class DailyTaskDashboard(models.AbstractModel):
             if not data["total"]:
                 continue
             eff = round(100.0 * data["done"] / float(data["total"]), 1)
+            minutes = data["duration_minutes"] or 0
             rows.append(
                 {
                     "id": eid,
@@ -514,6 +522,7 @@ class DailyTaskDashboard(models.AbstractModel):
                     "done": data["done"],
                     "total": data["total"],
                     "overdue": data["overdue"],
+                    "duration_hours": round(minutes / 60.0, 2) if minutes else 0.0,
                     "efficiency": eff,
                 }
             )

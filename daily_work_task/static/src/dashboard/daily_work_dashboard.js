@@ -86,6 +86,7 @@ export class DailyWorkDashboard extends Component {
             sidebarWidth: readStoredSidebarWidth(),
             sidebarResizing: false,
             configOpen: true,
+            reminderTotal: 0,
         });
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -215,6 +216,14 @@ export class DailyWorkDashboard extends Component {
         return this.state.data?.kpi || {};
     }
 
+    /** Badge sidebar Nhắc việc = quá hạn + sắp tới hạn (đồng bộ trang Nhắc việc). */
+    get reminderCount() {
+        if (this.state.reminderTotal) {
+            return this.state.reminderTotal;
+        }
+        return (Number(this.kpi.overdue) || 0) + (Number(this.kpi.upcoming) || 0);
+    }
+
     get deptLegend() {
         return this.state.data?.department_chart?.legend || [];
     }
@@ -250,15 +259,32 @@ export class DailyWorkDashboard extends Component {
         ];
     }
 
-    /** Xếp hạng KPI phòng ban — 3 tháng gần nhất (user nhân viên). */
+    /** Màu thanh hiệu suất — phân biệt từng dòng. */
+    static EFF_BAR_COLORS = [
+        "#22c55e",
+        "#3b82f6",
+        "#f59e0b",
+        "#ef4444",
+        "#a855f7",
+        "#06b6d4",
+        "#ec4899",
+        "#84cc16",
+        "#f97316",
+        "#6366f1",
+    ];
+
+    /** Báo cáo CV theo phòng ban — 3 tháng gần nhất (user nhân viên). */
     get kpiRankRows() {
+        const colors = this.constructor.EFF_BAR_COLORS;
         const rows = this.state.data?.kpi_rank || [];
         return rows.map((r, i) => ({
             id: r.id ?? i,
             name: r.name || "Khác",
             total: Number(r.total) || 0,
             overdue: Number(r.overdue) || 0,
+            duration_hours: Number(r.duration_hours) || 0,
             efficiency: Number(r.efficiency) || 0,
+            barColor: colors[i % colors.length],
             rank: i + 1,
         }));
     }
@@ -282,6 +308,14 @@ export class DailyWorkDashboard extends Component {
                 [],
                 { filters: this.filtersPayload }
             );
+            try {
+                const rem = await this.orm.call("daily.task", "get_reminder_systray", []);
+                this.state.reminderTotal = Number(rem?.total) || 0;
+            } catch (_e) {
+                this.state.reminderTotal =
+                    (Number(this.state.data?.kpi?.overdue) || 0) +
+                    (Number(this.state.data?.kpi?.upcoming) || 0);
+            }
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không tải được dashboard."), {
                 type: "danger",
@@ -547,6 +581,10 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "today") {
             await this.action.doAction("daily_work_task.action_daily_work_today");
+            return;
+        }
+        if (key === "reminders") {
+            await this.action.doAction("daily_work_task.action_daily_work_reminders");
             return;
         }
         if (key === "overdue") {

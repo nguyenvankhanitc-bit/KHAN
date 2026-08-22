@@ -1234,6 +1234,15 @@
             box-shadow: inset 0 0 0 1px #fdba74;
         }
 
+        /* Việc quá hạn: chỉ tô đỏ nhạt cột tên công việc */
+        tbody td.o_ews_col_name.o_ews_name_overdue {
+            background: #fee2e2 !important;
+            color: #991b1b;
+            font-weight: 600;
+            border-radius: 4px;
+            box-shadow: inset 0 0 0 1px #fca5a5;
+        }
+
         thead th.o_ews_col_date {
             white-space: normal;
             line-height: 1.2;

@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        App root: không gắn action/web_icon trong XML (lab hay ParseError khi đọc icon).
-        Icon gán ở post-migrate; click app → leaf đầu (Nhập công việc).
-        IA: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH (+ Cấu hình ẩn cho manager).
+        App root: mở Báo cáo KPI (dashboard) mặc định — giống workspace.
+        Icon gán ở post-migrate; IA: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH.
     -->
     <menuitem id="menu_daily_work_root"
               name="Công việc hàng ngày"
               sequence="36"
+              action="action_daily_work_dashboard"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📌 CÔNG VIỆC ========== -->
@@ -70,7 +70,7 @@
     <menuitem id="menu_daily_work_reminders"
               name="Nhắc việc"
               parent="menu_daily_work_cat_tasks"
-              action="action_daily_work_report_overview"
+              action="action_daily_work_reminders"
               sequence="8"
               groups="daily_work_task.group_daily_work_user"/>
 

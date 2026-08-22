@@ -120,6 +120,9 @@
                             <button type="button" class="o_dwd_side_item" title="Nhắc việc"
                                     t-on-click="() => this.openNav('reminders')">
                                 <i class="fa fa-bell-o"/><span>Nhắc việc</span>
+                                <t t-if="reminderCount">
+                                    <em class="o_dwd_side_count" t-esc="reminderCount"/>
+                                </t>
                             </button>
                         </div>
                         <div class="o_dwd_side_section">
@@ -398,11 +401,11 @@
                                 </div>
                             </div>
 
-                            <!-- Bảng xếp hạng KPI — NV trong phòng ban mình, 3 tháng gần nhất -->
+                            <!-- Báo cáo công việc theo phòng ban — NV trong phòng ban mình, 3 tháng gần nhất -->
                             <t t-if="!state.isManager">
                                 <div class="o_dwd_card o_dwd_kpi_rank_card" id="o_dwd_kpi_rank">
                                     <div class="o_dwd_kpi_rank_head">
-                                        <h3>BẢNG XẾP HẠNG KPI</h3>
+                                        <h3>BÁO CÁO CÔNG VIỆC THEO PHÒNG BAN</h3>
                                         <span class="o_dwd_kpi_rank_period">
                                             <t t-if="state.data.kpi_rank_dept">
                                                 <t t-esc="state.data.kpi_rank_dept"/> · 
@@ -418,6 +421,7 @@
                                                 <th class="col-dept">Nhân viên</th>
                                                 <th class="col-num">Tổng CV</th>
                                                 <th class="col-num">Quá hạn</th>
+                                                <th class="col-num">Tổng giờ</th>
                                                 <th class="col-eff">Hiệu suất</th>
                                             </tr>
                                         </thead>
@@ -431,10 +435,11 @@
                                                     <td class="col-dept" t-esc="row.name"/>
                                                     <td class="col-num" t-esc="row.total"/>
                                                     <td class="col-num" t-esc="row.overdue"/>
+                                                    <td class="col-num" t-esc="row.duration_hours"/>
                                                     <td class="col-eff">
                                                         <div class="o_dwd_eff_cell">
                                                             <div class="o_dwd_eff_bar">
-                                                                <i t-att-style="'width:' + row.efficiency + '%'"/>
+                                                                <i t-att-style="'width:' + row.efficiency + '%;background:' + row.barColor"/>
                                                             </div>
                                                             <strong t-esc="row.efficiency + '%'"/>
                                                         </div>
@@ -443,58 +448,13 @@
                                             </t>
                                             <t t-if="!kpiRankRows.length">
                                                 <tr>
-                                                    <td colspan="5" class="text-muted text-center py-3">
+                                                    <td colspan="6" class="text-muted text-center py-3">
                                                         Chưa có dữ liệu nhân viên trong phòng ban (3 tháng gần nhất).
                                                     </td>
                                                 </tr>
                                             </t>
                                         </tbody>
                                     </table>
-                                    </div>
-                                </div>
-                            </t>
-
-                            <!-- Cảnh báo — dưới cùng -->
-                            <!-- Nhân viên / user thường: 3 cột ngang theo mẫu -->
-                            <t t-if="!state.isManager">
-                                <div class="o_dwd_mid o_dwd_mid_alerts_only">
-                                    <div class="o_dwd_card o_dwd_alerts_card">
-                                        <h3><i class="fa fa-bell"/> CẢNH BÁO</h3>
-                                        <div class="o_dwd_alerts o_dwd_alerts_cols">
-                                            <t t-foreach="personalAlertCards" t-as="a" t-key="a_index">
-                                                <button type="button"
-                                                        t-att-class="'o_dwd_alert_tile ' + alertClass(a.type)"
-                                                        t-on-click="() => this.onAlertClick(a.action)">
-                                                    <span class="o_dwd_alert_ico">
-                                                        <i t-att-class="'fa ' + a.icon"/>
-                                                    </span>
-                                                    <div class="o_dwd_alert_body">
-                                                        <strong t-esc="a.title"/>
-                                                        <span t-esc="a.subtitle"/>
-                                                    </div>
-                                                    <i class="fa fa-chevron-right o_dwd_alert_chev"/>
-                                                </button>
-                                            </t>
-                                        </div>
-                                    </div>
-                                </div>
-                            </t>
-                            <!-- Manager / Administrator: danh sách dọc hiện tại -->
-                            <t t-else="">
-                                <div class="o_dwd_mid o_dwd_mid_alerts_only">
-                                    <div class="o_dwd_card">
-                                        <h3><i class="fa fa-bell"/> CẢNH BÁO</h3>
-                                        <div class="o_dwd_alerts">
-                                            <t t-foreach="state.data.alerts or []" t-as="a" t-key="a_index">
-                                                <div t-att-class="'o_dwd_alert ' + alertClass(a.type)">
-                                                    <i t-att-class="'fa ' + a.icon"/>
-                                                    <div>
-                                                        <strong t-esc="a.title"/>
-                                                        <span t-esc="a.subtitle"/>
-                                                    </div>
-                                                </div>
-                                            </t>
-                                        </div>
                                     </div>
                                 </div>
                             </t>

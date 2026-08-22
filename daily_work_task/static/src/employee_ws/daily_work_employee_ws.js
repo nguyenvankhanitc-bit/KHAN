@@ -522,6 +522,11 @@ export class DailyWorkEmployeeWs extends Component {
         return Boolean(task.is_active_overdue || task.is_overdue);
     }
 
+    /** Dòng bảng — tô đỏ nhạt khi quá hạn (chưa hoàn thành). */
+    isTaskOverdue(task) {
+        return this._isBoardOverdue(task);
+    }
+
     /** Hạn hoàn thành trùng ngày hôm nay → tô cam ô. */
     isDeadlineToday(task) {
         if (!task?.deadline) {
@@ -1490,8 +1495,8 @@ export class DailyWorkEmployeeWs extends Component {
     }
 
     async onNoteChange(task, ev) {
-        if (task?.can_edit_details === false) {
-            this.notification.add(_t("Việc được giao — không sửa được ghi chú trên bảng."), {
+        if (task?.can_edit_note === false) {
+            this.notification.add(_t("Bạn không có quyền sửa ghi chú công việc này."), {
                 type: "warning",
             });
             await this.load();

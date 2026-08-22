@@ -906,6 +906,8 @@ class DailyTask(models.Model):
             "assigned_by_name": self.assigned_by_id.name if self.assigned_by_id else "",
             # Việc do người khác giao: ẩn nút Chỉnh sửa trên Nhân viên nhập CV
             "can_edit_details": self._can_edit_task_details(),
+            # Người nhận vẫn được sửa ghi chú trên bảng
+            "can_edit_note": self._can_edit_task(),
             "can_delete": self._can_employee_delete_task(),
             "deadline": self.deadline.isoformat() if self.deadline else "",
             "deadline_display": self.deadline.strftime("%d/%m/%Y") if self.deadline else "",
@@ -3178,6 +3180,27 @@ class DailyTask(models.Model):
         }
 
     @api.model
+    def get_reminder_systray(self):
+        """Số việc quá hạn + sắp tới hạn (7 ngày) — chuông header."""
+        today = fields.Date.context_today(self)
+        try:
+            data = self.get_report_overview(
+                year=today.year,
+                month=today.month,
+                filters={},
+            )
+        except Exception:
+            return {"overdue": 0, "upcoming": 0, "total": 0}
+        rem = data.get("reminders") or {}
+        overdue = int(rem.get("overdue") or 0)
+        upcoming = int(rem.get("upcoming") or 0)
+        return {
+            "overdue": overdue,
+            "upcoming": upcoming,
+            "total": overdue + upcoming,
+        }
+
+    @api.model
     def get_report_overview(self, year=None, month=None, filters=None):
         """
         Báo cáo công việc cá nhân (mẫu dashboard): KPI + biểu đồ + hôm nay /
@@ -4679,7 +4702,8 @@ class DailyTask(models.Model):
             write_vals["assign_date"] = vals.get("assign_date") or False
         if "state" in vals and vals.get("state") and can_edit_progress:
             write_vals["state"] = vals["state"]
-        if "note" in vals and can_edit_content:
+        # Người nhận được phép cập nhật ghi chú (kể cả việc được giao)
+        if "note" in vals and (can_edit_content or can_edit_progress):
             write_vals["note"] = vals.get("note") or ""
         if "priority" in vals and vals.get("priority") and can_edit_content:
             write_vals["priority"] = vals["priority"]

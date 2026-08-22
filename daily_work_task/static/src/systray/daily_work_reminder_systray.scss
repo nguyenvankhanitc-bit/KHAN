@@ -1,0 +1,40 @@
+/* Chuông Nhắc việc trên header Odoo */
+.o_dwr_systray_bell {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 46px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.92);
+    cursor: pointer;
+
+    .fa-bell {
+        font-size: 1.15rem;
+    }
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+    }
+}
+
+.o_dwr_systray_badge {
+    position: absolute;
+    top: 8px;
+    right: 2px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #16a34a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 16px;
+    text-align: center;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}

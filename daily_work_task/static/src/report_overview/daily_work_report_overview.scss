@@ -28,13 +28,20 @@
         min-height: 0;
     }
 
-    /* ---- Sidebar ---- */
+    .o_dro_shell_noside {
+        .o_dro_main {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+
+    /* ---- Sidebar (đã bỏ trên UI; giữ CSS phòng khi bật lại) ---- */
     .o_dro_sidebar {
+        display: none;
         width: 250px;
         flex-shrink: 0;
         background: var(--dro-sidebar);
         border-right: 1px solid var(--dro-border);
-        display: flex;
         flex-direction: column;
         padding: 1rem 0.85rem;
     }

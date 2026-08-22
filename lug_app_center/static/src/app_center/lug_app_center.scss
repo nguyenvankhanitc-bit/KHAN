@@ -306,9 +306,19 @@
             gap: 0;
 
             span,
-            .o_eac_nav_badge,
             .o_eac_nav_new {
                 display: none;
+            }
+
+            .o_eac_nav_badge {
+                position: absolute;
+                top: 0.28rem;
+                right: 0.28rem;
+                display: inline-flex;
+                min-width: 1.05rem;
+                height: 1.05rem;
+                padding: 0 0.28rem;
+                font-size: 0.62rem;
             }
 
             i {
@@ -375,17 +385,40 @@
     .o_eac_nav_badge,
     .o_eac_nav_new {
         font-style: normal;
-        font-size: 0.68rem;
+        font-size: 0.72rem;
         font-weight: 700;
         border-radius: 999px;
-        padding: 0.1rem 0.4rem;
-        background: var(--eac-purple-2);
+        margin-left: auto;
+        flex-shrink: 0;
+        min-width: 1.35rem;
+        height: 1.35rem;
+        padding: 0 0.38rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        background: #ef4444;
         color: #fff;
+        box-shadow: 0 1px 3px rgba(185, 28, 28, 0.35);
+    }
+
+    .o_eac_nav_badge + .o_eac_nav_badge {
+        margin-left: 0.28rem;
+    }
+
+    .o_eac_nav_badge_overdue {
+        background: #ef4444;
+    }
+
+    .o_eac_nav_badge_today {
+        background: #f97316;
+        box-shadow: 0 1px 3px rgba(194, 65, 12, 0.35);
     }
 
     .o_eac_nav_new {
         background: #c084fc;
         color: #3b0764;
+        box-shadow: none;
     }
 
     .o_eac_sidebar_foot {

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.ReminderSystray">
+        <button type="button"
+                class="o_nav_entry o_dwr_systray_bell"
+                t-att-title="titleText"
+                t-on-click="onClick"
+                aria-label="Nhắc việc">
+            <i class="fa fa-bell"/>
+            <t t-if="state.total">
+                <span class="o_dwr_systray_badge" t-esc="state.total"/>
+            </t>
+        </button>
+    </t>
+</templates>

@@ -24,6 +24,9 @@ export class DailyWorkReportOverview extends Component {
         this.charts = [];
         const now = new Date();
         const year = now.getFullYear();
+        const focusReminders = Boolean(
+            this.props.action?.context?.daily_work_focus_reminders
+        );
         this.state = useState({
             loading: true,
             message: false,
@@ -38,7 +41,7 @@ export class DailyWorkReportOverview extends Component {
             search: "",
             page: 1,
             collapsed: {},
-            nav: "overview",
+            nav: focusReminders ? "reminders" : "overview",
             userName: "",
             profile: {},
             kpi: {},
@@ -190,13 +193,22 @@ export class DailyWorkReportOverview extends Component {
         return `${overdue + upcoming} việc cần chú ý · ${overdue} quá hạn · ${upcoming} sắp tới hạn`;
     }
 
-    /** Số việc sắp tới hạn (7 ngày) — badge chuông sidebar. */
-    get reminderUpcomingCount() {
-        const fromList = (this.state.reminders.upcoming_tasks || []).length;
-        if (fromList) {
-            return fromList;
+    /** Số việc trên chuông sidebar: quá hạn + sắp tới hạn. */
+    get reminderBellCount() {
+        const overdue = (this.state.reminders.overdue_tasks || []).length;
+        const upcoming = (this.state.reminders.upcoming_tasks || []).length;
+        if (overdue || upcoming) {
+            return overdue + upcoming;
         }
-        return Number(this.state.reminders.upcoming) || 0;
+        return (
+            (Number(this.state.reminders.overdue) || 0) +
+            (Number(this.state.reminders.upcoming) || 0)
+        );
+    }
+
+    /** @deprecated dùng reminderBellCount */
+    get reminderUpcomingCount() {
+        return this.reminderBellCount;
     }
 
     get stateLegend() {

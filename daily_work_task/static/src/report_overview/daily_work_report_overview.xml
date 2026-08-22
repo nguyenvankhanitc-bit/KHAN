@@ -2,52 +2,7 @@
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkReportOverview">
         <div class="o_daily_work_report_overview o_action">
-            <div class="o_dro_shell">
-                <!-- Sidebar -->
-                <aside class="o_dro_sidebar">
-                    <div class="o_dro_brand">
-                        <img t-att-src="satacoLogoUrl" alt="SATACO" class="o_dro_brand_logo"/>
-                    </div>
-                    <nav class="o_dro_nav">
-                        <button type="button" t-att-class="'o_dro_nav_item' + (state.nav === 'overview' ? ' active' : '')"
-                                t-on-click="() => this.openNav('overview')">
-                            <i class="fa fa-th-large"/><span>Tổng quan</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('tasks')">
-                            <i class="fa fa-list-ul"/><span>Công việc của tôi</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('calendar')">
-                            <i class="fa fa-calendar"/><span>Lịch làm việc</span>
-                        </button>
-                        <button type="button" t-att-class="'o_dro_nav_item' + (state.nav === 'kanban' ? ' active' : '')"
-                                t-on-click="() => this.openNav('kanban')">
-                            <i class="fa fa-th-large"/><span>Kanban</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('notebook')">
-                            <i class="fa fa-address-book"/><span>Danh bạ</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('work_note')">
-                            <i class="fa fa-sticky-note"/><span>Ghi chú</span>
-                        </button>
-                        <button type="button" t-att-class="'o_dro_nav_item o_dro_nav_reminders' + (state.nav === 'reminders' ? ' active' : '')"
-                                t-on-click="() => this.openNav('reminders')">
-                            <span class="o_dro_nav_bell_wrap">
-                                <i class="fa fa-bell o_dro_nav_bell_red"/>
-                                <t t-if="reminderUpcomingCount">
-                                    <span class="o_dro_nav_bell_badge" t-esc="reminderUpcomingCount"/>
-                                </t>
-                            </span>
-                            <span>Nhắc việc</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('report')">
-                            <i class="fa fa-bar-chart"/><span>Báo cáo thời gian</span>
-                        </button>
-                        <button type="button" class="o_dro_nav_item" t-on-click="() => this.openNav('eval')">
-                            <i class="fa fa-star"/><span>Đánh giá</span>
-                        </button>
-                    </nav>
-                </aside>
-
+            <div class="o_dro_shell o_dro_shell_noside">
                 <div class="o_dro_main">
                     <div class="o_dro_scroll">
                         <t t-if="state.loading">

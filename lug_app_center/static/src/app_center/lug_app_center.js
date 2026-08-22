@@ -49,6 +49,7 @@ export class LugAppCenter extends Component {
         this.menu = useService("menu");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.mailStore = useService("mail.store");
         let sidebarCollapsed = false;
         try {
             sidebarCollapsed = window.localStorage.getItem("lug_app_center_sidebar_collapsed") === "1";
@@ -126,8 +127,18 @@ export class LugAppCenter extends Component {
             const data = await this.orm.call("lug.app.center", "get_portal_data", []);
             this._applyPortalData(data);
             this.state.apps = this._collectInstalledApps();
+            await this._ensureDiscussChannels();
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    /** Nạp kênh/chat Discuss để đếm đúng tin chưa đọc (gồm mọi bot). */
+    async _ensureDiscussChannels() {
+        try {
+            await this.mailStore?.channels?.fetch?.();
+        } catch (_e) {
+            /* ignore — badge dùng dữ liệu đã có */
         }
     }
 
@@ -135,6 +146,7 @@ export class LugAppCenter extends Component {
         try {
             const data = await this.orm.call("lug.app.center", "get_portal_data", []);
             this._applyPortalData(data);
+            await this._ensureDiscussChannels();
         } catch (_e) {
             /* ignore — giữ greeting cũ */
         }
@@ -234,6 +246,63 @@ export class LugAppCenter extends Component {
             return this.state.apps;
         }
         return this.state.apps.filter((app) => (app.name || "").toLowerCase().includes(q));
+    }
+
+    /** Badge đỏ: Thảo luận = tổng tin chưa đọc mọi kênh/bot. */
+    navBadge(nav) {
+        if (!nav) {
+            return 0;
+        }
+        if (nav.xmlid === "mail.menu_root_discuss") {
+            return this.discussUnreadTotal;
+        }
+        return 0;
+    }
+
+    get dailyWorkOverdueBadge() {
+        if (!this.state.greeting?.has_task_module) {
+            return 0;
+        }
+        return Number(this.state.greeting.overdue_count) || 0;
+    }
+
+    get dailyWorkTodayBadge() {
+        if (!this.state.greeting?.has_task_module) {
+            return 0;
+        }
+        return Number(this.state.greeting.today_count) || 0;
+    }
+
+    /**
+     * Tổng số tin nhắn chưa xem trên mọi kênh / chat (kể cả bot),
+     * không chỉ đếm số cuộc hội thoại như globalCounter.
+     */
+    get discussUnreadTotal() {
+        const store = this.mailStore;
+        if (!store) {
+            return 0;
+        }
+        const records = store.Thread?.records;
+        if (!records) {
+            return Number(store.globalCounter) || 0;
+        }
+        let total = 0;
+        for (const thread of Object.values(records)) {
+            if (!thread || thread.model !== "discuss.channel") {
+                continue;
+            }
+            if (thread.self_member_id?.mute_until_dt) {
+                continue;
+            }
+            const unread =
+                Number(thread.self_member_id?.message_unread_counter_ui) ||
+                Number(thread.self_member_id?.message_unread_counter) ||
+                0;
+            if (unread > 0) {
+                total += unread;
+            }
+        }
+        return total;
     }
 
     onSearch(ev) {

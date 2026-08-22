@@ -32,4 +32,9 @@
         <field name="name">Báo cáo công việc cá nhân</field>
         <field name="tag">daily_work_report_overview</field>
     </record>
+    <record id="action_daily_work_reminders" model="ir.actions.client">
+        <field name="name">Nhắc việc</field>
+        <field name="tag">daily_work_report_overview</field>
+        <field name="context">{'daily_work_focus_reminders': True}</field>
+    </record>
 </odoo>

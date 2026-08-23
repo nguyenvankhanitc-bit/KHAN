@@ -1,0 +1,260 @@
+/* task-board-v6 */
+.o_lug_task_board {
+    background: #fff;
+    color: #111;
+    padding: 0.15rem 0 0.4rem;
+}
+
+.o_lug_tb_title {
+    margin: 0 0 0.65rem;
+    color: #5b21b6;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.o_lug_tb_wrap {
+    overflow: auto;
+    background: #fff;
+}
+
+.o_lug_tb_grid {
+    width: 100%;
+    min-width: 920px;
+    border-collapse: collapse;
+    background: #fff;
+    border: 1px solid #cbd5e1;
+}
+
+.o_lug_tb_grid th,
+.o_lug_tb_grid td {
+    border: 1px solid #e2e8f0;
+    padding: 0.55rem 0.55rem;
+    vertical-align: middle;
+    background: #fff;
+}
+
+.o_lug_tb_grid thead th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #0f172a;
+    white-space: nowrap;
+    background: #f8fafc;
+}
+
+.o_lug_tb_grid .is-stt {
+    width: 3.6rem;
+    text-align: center;
+}
+
+.o_lug_tb_phase td {
+    background: #f1f5f9;
+}
+
+.o_lug_tb_toggle {
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.1rem 0;
+    cursor: pointer;
+}
+
+.o_lug_tb_row .is-task {
+    padding-left: 1.6rem;
+}
+
+.o_lug_tb_empty .is-task {
+    padding-left: 1.6rem;
+}
+
+.o_lug_tb_add_inline {
+    border: 0;
+    background: transparent;
+    color: #6d28d9;
+    font-weight: 700;
+    font-size: 0.82rem;
+    cursor: pointer;
+    padding: 0.1rem 0;
+}
+
+.o_lug_tb_add_inline:hover {
+    color: #5b21b6;
+    text-decoration: underline;
+}
+
+.o_lug_tb_row .is-stt {
+    color: #475569;
+    font-weight: 700;
+    text-align: center;
+}
+
+.o_lug_tb_input {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    color: #111;
+    outline: none;
+    padding: 0;
+    box-shadow: none;
+    font-size: 0.86rem;
+}
+
+.o_lug_tb_input::placeholder,
+.o_lug_tb_input.is-empty,
+.o_lug_tb_select.is-empty {
+    color: #9ca3af;
+}
+
+.o_lug_tb_select {
+    appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%239ca3af'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 0.15rem center;
+    padding-right: 0.95rem;
+    cursor: pointer;
+}
+
+.o_lug_tb_row .is-time.is-ok {
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.o_lug_tb_row .is-time.is-late {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.o_lug_tb_status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    border: 0;
+    background: transparent;
+    font-weight: 700;
+    font-size: 0.8rem;
+    color: #334155;
+    appearance: none;
+    padding: 0;
+    cursor: pointer;
+}
+
+.o_lug_tb_status::before {
+    content: "";
+    width: 0.62rem;
+    height: 0.62rem;
+    border-radius: 99px;
+    border: 1.5px solid #94a3b8;
+    background: #fff;
+    flex-shrink: 0;
+}
+
+.o_lug_tb_status.is-todo::before {
+    background: #fff;
+    border-color: #94a3b8;
+}
+
+.o_lug_tb_status.is-progress::before {
+    background: #eab308;
+    border-color: #ca8a04;
+}
+
+.o_lug_tb_status.is-review::before {
+    background: #f97316;
+    border-color: #ea580c;
+}
+
+.o_lug_tb_status.is-done::before {
+    background: #22c55e;
+    border-color: #16a34a;
+}
+
+.o_lug_tb_status.is-cancel::before {
+    background: #94a3b8;
+    border-color: #64748b;
+}
+
+.o_lug_tb_status i {
+    display: none;
+}
+
+.o_lug_tb_actions {
+    display: flex;
+    gap: 1.5rem;
+    padding: 0.75rem 0.2rem 0.35rem;
+}
+
+.o_lug_tb_add {
+    border: 0;
+    background: transparent;
+    color: #0f172a;
+    font-weight: 700;
+    padding: 0;
+    cursor: pointer;
+}
+
+.o_lug_tb_add:hover {
+    color: #6d28d9;
+}
+
+.o_lug_tb_savebar {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.85rem 0 0.2rem;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 0.35rem;
+}
+
+.o_lug_tb_btn {
+    min-width: 7.5rem;
+    border-radius: 8px;
+    padding: 0.45rem 1rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.o_lug_tb_btn.is-cancel {
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #334155;
+}
+
+.o_lug_tb_btn.is-save {
+    border: 1px solid #6d28d9;
+    background: #6d28d9;
+    color: #fff;
+}
+
+.o_form_view.o_lug_intake_form .o_lug_tasks_phase,
+.o_form_view .o_lug_tasks_phase {
+    background: #fff !important;
+    border: none !important;
+    padding: 0.2rem 0 0 !important;
+}
+
+.o_lug_stage_board h3,
+.o_lug_tasks_block.o_lug_stage_board h3 {
+    margin: 0 0 0.35rem;
+    color: #6d28d9;
+    font-size: 0.95rem;
+    font-weight: 800;
+}
+
+.o_lug_stage_form .o_list_table,
+.o_lug_stage_board .o_list_table {
+    border: 1px solid #e2e8f0;
+}
+
+.o_lug_stage_form .o_list_table thead th,
+.o_lug_stage_board .o_list_table thead th {
+    background: #f8fafc;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    font-size: 0.72rem;
+}

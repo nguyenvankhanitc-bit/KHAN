@@ -1,0 +1,279 @@
+.o_lug_stage_cards {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.o_lug_sc_title {
+    margin: 0 0 0.85rem;
+    padding: 0 0 0.7rem;
+    border-bottom: 2px solid #ede9fe;
+    color: #6d28d9;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.o_lug_sc_card {
+    background: #fff;
+    border: 1px solid #e9d5ff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.o_lug_sc_head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    color: #fff;
+    cursor: pointer;
+    user-select: none;
+}
+
+.o_lug_sc_chevron {
+    display: inline-flex;
+    width: 1.1rem;
+    flex: 0 0 auto;
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.o_lug_sc_card.is-collapsed {
+    box-shadow: none;
+}
+
+.o_lug_sc_head_title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+}
+
+.o_lug_sc_head_title strong {
+    font-size: 0.86rem;
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+}
+
+.o_lug_sc_name_input {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 12rem;
+    max-width: none;
+    border: 0;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    border-radius: 8px;
+    padding: 0.28rem 0.7rem;
+    font-weight: 800;
+    font-size: 0.86rem;
+    outline: none;
+}
+
+.o_lug_sc_name_input::placeholder {
+    color: rgba(255, 255, 255, 0.72);
+    font-weight: 700;
+}
+
+.o_lug_sc_name_input:focus {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.o_lug_sc_name_text {
+    font-weight: 800;
+}
+
+.o_lug_sc_add {
+    border: 0;
+    background: rgba(255, 255, 255, 0.18);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.8rem;
+    border-radius: 999px;
+    padding: 0.28rem 0.75rem;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.o_lug_sc_add:hover {
+    background: rgba(255, 255, 255, 0.28);
+}
+
+.o_lug_sc_body {
+    padding: 0;
+}
+
+.o_lug_sc_table_wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.o_lug_sc_table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+}
+
+.o_lug_sc_table th,
+.o_lug_sc_table td {
+    padding: 0.55rem 0.62rem;
+    font-size: 0.82rem;
+    vertical-align: middle;
+}
+
+.o_lug_sc_table thead th {
+    text-align: center;
+    background: #f8fafc;
+    color: #1e293b;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.o_lug_sc_table tbody td {
+    word-break: break-word;
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.o_lug_sc_table .is-stt {
+    text-align: center;
+    color: #64748b;
+    font-weight: 700;
+}
+
+.o_lug_sc_table .is-name {
+    font-weight: 700;
+    color: #0f172a;
+    text-align: left;
+}
+
+.o_lug_sc_table .is-note {
+    color: #64748b;
+    text-align: left;
+}
+
+.o_lug_sc_table .is-cost {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.o_lug_sc_table .is-act {
+    width: 2.2rem;
+    text-align: center;
+}
+
+.o_lug_sc_row {
+    cursor: pointer;
+}
+
+.o_lug_sc_row:hover td {
+    background: #faf5ff;
+}
+
+.o_lug_sc_badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.12rem 0.62rem;
+    font-size: 0.74rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.o_lug_sc_badge.is-draft {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.o_lug_sc_badge.is-in_progress {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.o_lug_sc_badge.is-done {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.o_lug_sc_time.is-ok {
+    color: #0f766e;
+    font-weight: 700;
+}
+
+.o_lug_sc_time.is-late {
+    color: #dc2626;
+    font-weight: 700;
+}
+
+.o_lug_sc_time.is-done {
+    color: #16a34a;
+    font-weight: 700;
+}
+
+.o_lug_sc_empty td {
+    text-align: center;
+    color: #94a3b8;
+    padding: 0.9rem;
+}
+
+.o_lug_sc_empty_btn {
+    border: 0;
+    background: transparent;
+    color: #7c3aed;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.o_lug_sc_del {
+    width: 22px;
+    height: 22px;
+    border: 0;
+    border-radius: 6px;
+    background: #fee2e2;
+    color: #dc2626;
+    font-size: 1rem;
+    line-height: 22px;
+    cursor: pointer;
+}
+
+.o_lug_sc_total {
+    font-weight: 800;
+    color: #6d28d9;
+}
+
+.o_lug_sc_table tfoot td {
+    border-bottom: 0;
+    background: #faf5ff;
+}
+
+.o_lug_sc_footer {
+    padding: 0.15rem 0.1rem 0.35rem;
+}
+
+.o_lug_sc_add_stage {
+    border: 0;
+    background: transparent;
+    color: #6d28d9;
+    font-weight: 800;
+    cursor: pointer;
+    padding: 0;
+}
+
+.o_form_view.o_lug_intake_form .o_lug_tasks_block.o_lug_stage_cards_wrap,
+.o_form_view .o_lug_stage_cards_wrap {
+    background: #fff !important;
+    border: 2px solid #ddd6fe !important;
+    border-radius: 14px !important;
+    padding: 1rem 1.1rem 0.85rem !important;
+    margin: 1rem 0 1.25rem !important;
+    box-shadow: 0 2px 10px rgba(109, 40, 217, 0.07) !important;
+    box-sizing: border-box;
+}

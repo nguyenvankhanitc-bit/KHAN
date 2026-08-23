@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_project.LugTaskPhaseField">
+        <div class="o_lug_task_board" t-ref="root">
+            <h3 class="o_lug_tb_title">1. Cấu trúc giai đoạn &amp; công việc</h3>
+            <div class="o_lug_tb_wrap">
+                <table class="o_lug_tb_grid">
+                    <thead>
+                        <tr>
+                            <th class="is-stt">STT</th>
+                            <th class="is-name">TÊN GIAI ĐOẠN / CÔNG VIỆC</th>
+                            <th>PHỤ TRÁCH</th>
+                            <th>GIÁM SÁT</th>
+                            <th>DEADLINE</th>
+                            <th>TIME LEFT</th>
+                            <th>TRẠNG THÁI</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="groups" t-as="group" t-key="group.key">
+                            <tr class="o_lug_tb_phase">
+                                <td class="is-stt"/>
+                                <td class="is-name" colspan="5">
+                                    <button type="button" class="o_lug_tb_toggle"
+                                            t-on-click="() => this.toggle(group.key)">
+                                        <span t-esc="group.collapsed ? '▸' : '▼'"/>
+                                        <strong t-esc="group.title"/>
+                                    </button>
+                                </td>
+                                <td class="is-add">
+                                    <button t-if="canEdit" type="button" class="o_lug_tb_add_inline"
+                                            t-on-click="() => this.onAddTaskIn(group)">
+                                        ＋ công việc
+                                    </button>
+                                </td>
+                            </tr>
+                            <t t-if="!group.collapsed">
+                                <t t-foreach="group.tasks" t-as="row" t-key="row.key">
+                                    <tr class="o_lug_tb_row">
+                                        <td class="is-stt" t-esc="row.stt"/>
+                                        <td class="is-name is-task">
+                                            <t t-if="canEdit">
+                                                <input type="text" class="o_lug_tb_input"
+                                                       placeholder="Nhập tên công việc"
+                                                       t-att-data-task-id="row.record.id"
+                                                       t-att-value="row.name"
+                                                       t-on-change="(ev) => this.onNameChange(row.record, ev)"/>
+                                            </t>
+                                            <span t-else="" t-esc="row.name || '—'"/>
+                                        </td>
+                                        <td>
+                                            <t t-if="canEdit">
+                                                <select class="o_lug_tb_input o_lug_tb_select"
+                                                        t-att-class="row.picId ? '' : 'is-empty'"
+                                                        t-att-value="row.picId || ''"
+                                                        t-on-change="(ev) => this.onUserChange(row.record, 'lug_pic_id', ev)">
+                                                    <option value="">Chọn nhân sự</option>
+                                                    <t t-foreach="state.users" t-as="user" t-key="'pic-' + row.key + '-' + user.id">
+                                                        <option t-att-value="user.id" t-att-selected="row.picId === user.id" t-esc="user.name"/>
+                                                    </t>
+                                                </select>
+                                            </t>
+                                            <span t-else="" t-esc="row.picName || '—'"/>
+                                        </td>
+                                        <td>
+                                            <t t-if="canEdit">
+                                                <select class="o_lug_tb_input o_lug_tb_select"
+                                                        t-att-class="row.supervisorId ? '' : 'is-empty'"
+                                                        t-att-value="row.supervisorId || ''"
+                                                        t-on-change="(ev) => this.onUserChange(row.record, 'lug_supervisor_id', ev)">
+                                                    <option value="">Chọn giám sát</option>
+                                                    <t t-foreach="state.users" t-as="user" t-key="'sup-' + row.key + '-' + user.id">
+                                                        <option t-att-value="user.id" t-att-selected="row.supervisorId === user.id" t-esc="user.name"/>
+                                                    </t>
+                                                </select>
+                                            </t>
+                                            <span t-else="" t-esc="row.supervisorName || '—'"/>
+                                        </td>
+                                        <td>
+                                            <t t-if="canEdit">
+                                                <input type="date" class="o_lug_tb_input"
+                                                       t-att-class="row.deadlineIso ? '' : 'is-empty'"
+                                                       t-att-value="row.deadlineIso"
+                                                       t-on-change="(ev) => this.onDeadlineChange(row.record, ev)"/>
+                                            </t>
+                                            <span t-else="" t-esc="row.deadlineLabel || '—'"/>
+                                        </td>
+                                        <td class="is-time" t-att-class="'is-' + row.timeleft.state" t-esc="row.timeleft.label"/>
+                                        <td>
+                                            <t t-if="canEdit">
+                                                <select t-att-class="'o_lug_tb_status is-' + row.status"
+                                                        t-att-value="row.status"
+                                                        t-on-change="(ev) => this.onStatusChange(row.record, ev)">
+                                                    <option value="todo">Chưa làm</option>
+                                                    <option value="progress">Đang làm</option>
+                                                    <option value="review">Chờ duyệt</option>
+                                                    <option value="done">Hoàn thành</option>
+                                                    <option value="cancel">Hủy</option>
+                                                </select>
+                                            </t>
+                                            <span t-else="" t-att-class="'o_lug_tb_status is-' + row.status">
+                                                <i/><t t-esc="row.statusLabel"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </t>
+                                <tr t-if="!group.tasks.length" class="o_lug_tb_empty">
+                                    <td class="is-stt"/>
+                                    <td class="is-name is-task" colspan="6">
+                                        <button t-if="canEdit" type="button" class="o_lug_tb_add_inline"
+                                                t-on-click="() => this.onAddTaskIn(group)">
+                                            ＋ Thêm công việc
+                                        </button>
+                                        <span t-else="" class="text-muted">Chưa có công việc</span>
+                                    </td>
+                                </tr>
+                            </t>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+            <div t-if="canEdit" class="o_lug_tb_actions">
+                <button type="button" class="o_lug_tb_add" t-on-click="onAddTask">＋ Thêm công việc</button>
+                <button type="button" class="o_lug_tb_add" t-on-click="onAddPhase">＋ Thêm giai đoạn</button>
+            </div>
+            <div t-if="canEdit" class="o_lug_tb_savebar">
+                <button type="button" class="o_lug_tb_btn is-cancel" t-on-click="onCancel">Hủy</button>
+                <button type="button" class="o_lug_tb_btn is-save" t-on-click="onSave">💾 Lưu công việc</button>
+            </div>
+        </div>
+    </t>
+</templates>

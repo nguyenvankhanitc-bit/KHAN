@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_lug_project_stage_list" model="ir.ui.view">
+        <field name="name">lug.project.stage.list</field>
+        <field name="model">lug.project.stage</field>
+        <field name="arch" type="xml">
+            <list string="Giai đoạn" class="o_lug_task_detail o_lug_stage_list">
+                <field name="sequence" widget="handle"/>
+                <field name="code" string="STT"/>
+                <field name="name" string="TÊN GIAI ĐOẠN"/>
+                <field name="user_id" string="PHỤ TRÁCH" widget="many2one_avatar_user"/>
+                <field name="supervisor_id" string="GIÁM SÁT" widget="many2one_avatar_user"/>
+                <field name="date_start" string="BẮT ĐẦU"/>
+                <field name="date_end" string="KẾT THÚC"/>
+                <field name="task_count" string="SỐ VIỆC"/>
+                <field name="total_cost" string="TỔNG CHI PHÍ" sum="Tổng chi phí"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lug_stage_task_form" model="ir.ui.view">
+        <field name="name">project.task.form.lug.stage</field>
+        <field name="model">project.task</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="Chi tiết công việc" class="o_lug_stage_task_form">
+                <sheet>
+                    <field name="project_id" invisible="1"/>
+                    <field name="lug_stage_id" invisible="1"/>
+                    <field name="user_ids" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name" string="Tên công việc"/>
+                        <h1>
+                            <field name="name" placeholder="Ví dụ: Khảo sát hiện trạng mặt bằng..."/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Phân công &amp; Tiến độ">
+                            <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                            <field name="lug_supervisor_id" widget="many2one_avatar_user"/>
+                            <field name="date_deadline"/>
+                            <field name="lug_timeleft" widget="lug_timeleft" readonly="1"/>
+                            <field name="lug_status" widget="radio" options="{'horizontal': true}"/>
+                            <field name="lug_progress"/>
+                            <field name="lug_done_date"/>
+                            <field name="lug_result"/>
+                        </group>
+                        <group string="Kinh phí &amp; Ghi chú">
+                            <field name="lug_cost"/>
+                            <field name="lug_note" placeholder="Nội dung ghi chú chi tiết..."/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lug_project_stage_form" model="ir.ui.view">
+        <field name="name">lug.project.stage.form</field>
+        <field name="model">lug.project.stage</field>
+        <field name="arch" type="xml">
+            <form string="Thông tin giai đoạn" class="o_lug_stage_form">
+                <sheet>
+                    <field name="project_id" invisible="1"/>
+                    <field name="template_id" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name" string="Tên giai đoạn"/>
+                        <h2>
+                            <field name="name" placeholder="Ví dụ: Giai đoạn 1: Chuẩn bị &amp; Khảo sát"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code" string="STT"/>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="supervisor_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                            <field name="task_count" readonly="1"/>
+                            <field name="total_cost" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Danh sách công việc chi tiết" name="tasks">
+                            <field name="task_ids" nolabel="1" class="o_lug_task_detail"
+                                   context="{
+                                       'default_project_id': project_id,
+                                       'default_lug_stage_id': id,
+                                       'default_display_in_project': True,
+                                       'default_name': 'Công việc mới',
+                                       'form_view_ref': 'lug_project.view_lug_stage_task_form',
+                                   }">
+                                <list editable="bottom" delete="1" open_form_view="True"
+                                      decoration-success="lug_status == 'done'"
+                                      decoration-info="lug_status == 'progress'"
+                                      decoration-muted="lug_status == 'cancel'">
+                                    <control>
+                                        <create name="add_task_control" string="+ Thêm công việc"/>
+                                    </control>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="lug_line_stt" string="STT" readonly="1"/>
+                                    <field name="name" string="TÊN CÔNG VIỆC"/>
+                                    <field name="lug_pic_id" string="PHỤ TRÁCH" widget="many2one_avatar_user"/>
+                                    <field name="lug_supervisor_id" string="GIÁM SÁT" widget="many2one_avatar_user"/>
+                                    <field name="date_deadline" string="DEADLINE"/>
+                                    <field name="lug_timeleft" string="TIME LEFT" widget="lug_timeleft"/>
+                                    <field name="lug_status" string="TRẠNG THÁI" widget="lug_status_pill"/>
+                                    <field name="lug_note" string="GHI CHÚ" optional="show"/>
+                                    <field name="lug_cost" string="CHI PHÍ" sum="Tổng chi phí"/>
+                                    <field name="project_id" column_invisible="1"/>
+                                    <field name="user_ids" column_invisible="1"/>
+                                    <field name="lug_progress" column_invisible="1"/>
+                                </list>
+                                <form string="Chi tiết công việc">
+                                    <sheet>
+                                        <field name="project_id" invisible="1"/>
+                                        <field name="lug_stage_id" invisible="1"/>
+                                        <field name="user_ids" invisible="1"/>
+                                        <group>
+                                            <group>
+                                                <field name="name"/>
+                                                <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                                                <field name="lug_supervisor_id" widget="many2one_avatar_user"/>
+                                                <field name="date_deadline"/>
+                                                <field name="lug_timeleft" widget="lug_timeleft" readonly="1"/>
+                                            </group>
+                                            <group>
+                                                <field name="lug_status"/>
+                                                <field name="lug_progress"/>
+                                                <field name="lug_result"/>
+                                                <field name="lug_cost"/>
+                                                <field name="lug_note"/>
+                                            </group>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Mô tả giai đoạn" name="desc">
+                            <field name="description" placeholder="Ghi chú thêm về mục tiêu giai đoạn này..." nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

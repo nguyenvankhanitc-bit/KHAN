@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lug_project_type_user,lug.project.type.user,model_lug_project_type,project.group_project_user,1,0,0,0
+access_lug_project_type_manager,lug.project.type.manager,model_lug_project_type,project.group_project_manager,1,1,1,1
+access_lug_project_phase_user,lug.project.phase.user,model_lug_project_phase,project.group_project_user,1,0,0,0
+access_lug_project_phase_manager,lug.project.phase.manager,model_lug_project_phase,project.group_project_manager,1,1,1,1
+access_lug_project_deliverable_user,lug.project.deliverable.user,model_lug_project_deliverable,project.group_project_user,1,1,1,1
+access_lug_project_deliverable_manager,lug.project.deliverable.manager,model_lug_project_deliverable,project.group_project_manager,1,1,1,1
+access_lug_project_criterion_user,lug.project.criterion.user,model_lug_project_criterion,project.group_project_user,1,1,1,1
+access_lug_project_criterion_manager,lug.project.criterion.manager,model_lug_project_criterion,project.group_project_manager,1,1,1,1
+access_lug_project_stage_user,lug.project.stage.user,model_lug_project_stage,project.group_project_user,1,1,1,1
+access_lug_project_stage_manager,lug.project.stage.manager,model_lug_project_stage,project.group_project_manager,1,1,1,1

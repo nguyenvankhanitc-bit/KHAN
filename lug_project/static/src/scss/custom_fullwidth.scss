@@ -1,0 +1,174 @@
+/* Full-width intake form + stage table layout */
+
+.o_form_view.o_lug_intake_form .o_form_sheet_bg .o_form_sheet,
+.modal .o_form_view.o_lug_intake_form .o_form_sheet_bg .o_form_sheet,
+.o_lug_project_shell .o_form_view.o_lug_intake_form .o_form_sheet_bg .o_form_sheet {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+}
+
+.o_form_view.o_lug_intake_form .o_lug_stage_cards_wrap .o_field_widget,
+.o_form_view.o_lug_intake_form .o_lug_stage_cards_wrap .o_field_x2many,
+.o_form_view .o_lug_stage_cards_wrap .o_field_widget {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+.o_lug_stage_cards.stage_custom_container,
+.stage_custom_container {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 1.5rem;
+}
+
+.o_form_view.o_lug_intake_form .o_lug_tasks_block.o_lug_stage_cards_wrap,
+.o_form_view .o_lug_stage_cards_wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+    background: #fff !important;
+    border: 2px solid #ddd6fe !important;
+    border-radius: 14px !important;
+    padding: 1rem 1.1rem 0.85rem !important;
+    margin: 1rem 0 1.25rem !important;
+    box-shadow: 0 2px 10px rgba(109, 40, 217, 0.07) !important;
+}
+
+.o_lug_sc_card.stage_custom_container {
+    width: 100% !important;
+}
+
+.stage_header_bar {
+    width: 100% !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    border-radius: 8px 8px 0 0;
+
+    .stage_title_center {
+        flex: 1 1 auto;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 0.5rem;
+        min-width: 0;
+        width: 100%;
+        text-align: left;
+        font-weight: 800 !important;
+        font-size: 0.94rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #fff !important;
+
+        strong {
+            white-space: nowrap;
+            flex: 0 0 auto;
+        }
+    }
+
+    .o_lug_sc_name_input,
+    .o_lug_sc_name_text {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: none;
+        min-width: 12rem;
+    }
+
+    .o_lug_sc_add {
+        flex: 0 0 auto;
+    }
+}
+
+.custom_full_table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+
+    thead th {
+        text-align: center !important;
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+        padding: 0.62rem 0.5rem !important;
+        background-color: #f8fafc !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+        white-space: nowrap !important;
+        vertical-align: middle !important;
+    }
+
+    tbody td,
+    tfoot td {
+        border: 1px solid #e2e8f0 !important;
+        padding: 0.55rem 0.62rem !important;
+        vertical-align: middle !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+        overflow-wrap: anywhere;
+    }
+
+    tbody td:nth-child(1),
+    tbody td:nth-child(5),
+    tbody td:nth-child(6),
+    tbody td:nth-child(7),
+    tfoot td.is-cost {
+        text-align: center !important;
+    }
+
+    tbody td.is-cost,
+    tfoot td.is-cost {
+        text-align: right !important;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+
+    tbody td.is-name {
+        text-align: left !important;
+        font-weight: 700;
+    }
+
+    tbody td.is-note {
+        text-align: left !important;
+        max-width: none !important;
+    }
+
+    thead th.is-stt {
+        width: 4%;
+    }
+
+    thead th.is-name {
+        width: 36%;
+    }
+
+    thead th.is-user,
+    thead th.is-supervisor {
+        width: 10%;
+    }
+
+    thead th.is-deadline {
+        width: 8%;
+    }
+
+    thead th.is-state {
+        width: 8%;
+    }
+
+    thead th.is-timeleft {
+        width: 7%;
+    }
+
+    thead th.is-note {
+        width: 14%;
+    }
+
+    thead th.is-cost {
+        width: 7%;
+    }
+
+    thead th.is-act {
+        width: 3%;
+    }
+}

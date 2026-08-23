@@ -1,0 +1,346 @@
+/* lps-ui: edge-ruler-v4 */
+.o_dialog .o_lug_project_intake {
+    min-width: 720px;
+}
+
+.o_lug_project_intake .o_notebook {
+    margin-top: 0.5rem;
+}
+
+.o_lps_rail,
+.o_lps_sidebar {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+.o_lps_ruler {
+    position: absolute !important;
+    top: 0 !important;
+    right: -7px !important;
+    bottom: 0 !important;
+    width: 14px !important;
+    min-width: 14px !important;
+    cursor: col-resize !important;
+    z-index: 80 !important;
+    background: transparent !important;
+    display: block !important;
+}
+
+.o_lps_ruler .o_lps_edge_bar {
+    position: absolute !important;
+    top: 10px !important;
+    bottom: 10px !important;
+    left: 50% !important;
+    width: 4px !important;
+    margin-left: -2px !important;
+    border-radius: 99px !important;
+    background: #1e293b !important;
+    display: block !important;
+    box-shadow: -4px 0 0 #cbd5e1, 4px 0 0 #cbd5e1 !important;
+}
+
+.o_lps_ruler .o_lps_edge_btn {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 22px !important;
+    height: 22px !important;
+    margin: 16px 0 0 -11px !important;
+    border-radius: 50% !important;
+    background: #4c1d95 !important;
+    color: #fff !important;
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    line-height: 22px !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    display: block !important;
+    box-shadow: 0 2px 8px rgba(76, 29, 149, 0.45) !important;
+}
+
+/* gantt-cal-v6: timeline full row; status + heatmap share last row */
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_card--gantt {
+    width: 100% !important;
+    max-width: 100% !important;
+    grid-column: 1 / -1 !important;
+}
+
+.o_lps_widget_grid--bottom {
+    display: grid !important;
+    grid-template-columns: 1fr 1.4fr !important;
+    gap: 0.85rem !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_scroll {
+    height: 560px !important;
+    min-height: 560px !important;
+    max-height: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_board {
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 100% !important;
+    grid-template-columns: 220px minmax(0, 1fr) !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_body,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track_body {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-start !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track {
+    flex: 0 0 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+    max-height: 32px !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-project {
+    font-weight: 800 !important;
+    border-width: 1.5px !important;
+    border-style: solid !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-task,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track.is-task,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-milestone,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track.is-milestone {
+    flex: 0 0 28px !important;
+    height: 28px !important;
+    min-height: 28px !important;
+    max-height: 28px !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-task {
+    margin-left: 18px !important;
+    background: #fff !important;
+    border: 1px solid #cbd5e1 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_task_name {
+    font-size: 0.8rem !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_proj_name {
+    font-size: 0.8rem !important;
+    font-weight: 800 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_days em {
+    border-right: 1px solid #94a3b8 !important;
+    background: #fff !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_days em.is-we {
+    background: #e2e8f0 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_days em.is-sun {
+    background: #fecaca !important;
+    color: #991b1b !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_days em.is-today {
+    background: #fef9c3 !important;
+    color: #854d0e !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols {
+    position: absolute !important;
+    inset: 0 !important;
+    display: flex !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i {
+    border-right: 1px solid #94a3b8 !important;
+    min-width: 28px !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i.is-we {
+    background: #e2e8f0 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i.is-sun {
+    background: #fecaca !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i.is-today {
+    background: #fef9c3 !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_today {
+    display: none !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track {
+    border-bottom: 1px solid #94a3b8 !important;
+}
+
+.o_lps_view_host .o_list_view .o_list_table,
+.o_list_view.o_lug_project_list .o_list_table {
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    border: 1px solid #64748b !important;
+
+    thead {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 8 !important;
+    }
+
+    thead th {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 8 !important;
+        font-weight: 800 !important;
+        color: #0f172a !important;
+        background: #e2e8f0 !important;
+        border: 1px solid #64748b !important;
+        white-space: normal !important;
+        text-align: center !important;
+        overflow: visible !important;
+        box-shadow: inset 0 0 0 1px #64748b !important;
+    }
+
+    tbody td,
+    tbody th,
+    .o_data_row > td {
+        border: 1px solid #94a3b8 !important;
+        border-bottom-width: 1px !important;
+        background-clip: padding-box !important;
+        box-shadow: inset 0 0 0 1px #94a3b8 !important;
+        outline: 1px solid #94a3b8 !important;
+        outline-offset: -1px !important;
+        vertical-align: middle !important;
+        color: #111827 !important;
+    }
+
+    tbody tr:nth-child(even) td {
+        background: #f8fafc !important;
+    }
+
+    thead th .text-truncate {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        text-align: center !important;
+    }
+
+    th[data-name="lug_stt"],
+    td[name="lug_stt"] {
+        text-align: center !important;
+    }
+
+    td[name="lug_content"] {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        word-break: break-word !important;
+        max-width: 240px;
+    }
+}
+
+            .o_lug_tl {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    white-space: nowrap;
+    font-weight: 500;
+
+    .fa {
+        font-size: 0.85rem;
+    }
+
+    &.is-ok {
+        color: #16a34a;
+        font-weight: 700;
+
+        .fa {
+            color: #22c55e;
+        }
+    }
+
+    &.is-late {
+        color: #dc2626;
+        font-weight: 700;
+
+        .fa {
+            color: #ef4444;
+        }
+    }
+
+    &.is-done {
+        color: #15803d;
+
+        .fa {
+            color: #16a34a;
+        }
+    }
+}
+
+.o_lug_pdf_btn {
+    color: #7c3aed !important;
+    font-size: 1.15rem !important;
+    line-height: 1 !important;
+}
+
+.o_lug_btn_edit {
+    color: #2563eb !important;
+    font-size: 1.1rem !important;
+}
+
+.o_lug_btn_del {
+    color: #dc2626 !important;
+    font-size: 1.1rem !important;
+}
+
+.o_form_view.o_lug_intake_form,
+.o_lug_intake_form {
+    background: #f7f4fc;
+
+    .o_form_sheet_bg,
+    .o_form_sheet {
+        background: #f7f4fc !important;
+        max-width: none;
+        margin: 0;
+        box-shadow: none !important;
+        border: none !important;
+    }
+
+    .o_form_sheet {
+        padding: 0.4rem 1.1rem 1.6rem !important;
+    }
+
+    .o_control_panel {
+        display: none !important;
+    }
+
+    .o_input,
+    .o_field_widget input,
+    .o_field_widget .o_select_menu,
+    .o_field_many2one,
+    .o_datepicker {
+        border-radius: 6px;
+    }
+}
+
+.o_lug_task_detail .o_list_table thead th {
+    text-align: center;
+    white-space: normal;
+    background: #f8fafc;
+    font-weight: 700;
+}
+
+.o_lug_task_detail .o_list_table td[name="lug_phase"],
+.o_lug_task_detail .o_list_table td[name="name"] {
+    text-align: left !important;
+}

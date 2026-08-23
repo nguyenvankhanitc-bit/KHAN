@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="type_internal" model="lug.project.type">
+        <field name="name">Nội bộ</field>
+        <field name="code">NB</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="type_customer" model="lug.project.type">
+        <field name="name">Triển khai khách hàng</field>
+        <field name="code">KH</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="type_maintenance" model="lug.project.type">
+        <field name="name">Bảo trì</field>
+        <field name="code">BT</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="type_rd" model="lug.project.type">
+        <field name="name">R&amp;D</field>
+        <field name="code">RD</field>
+        <field name="sequence">40</field>
+    </record>
+</odoo>

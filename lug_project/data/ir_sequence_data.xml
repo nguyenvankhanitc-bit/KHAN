@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_lug_project" model="ir.sequence">
+        <field name="name">Mã dự án (legacy)</field>
+        <field name="code">lug.project</field>
+        <field name="prefix">DA%(year)s-%(day)s%(month)s%(year)s-</field>
+        <field name="padding">2</field>
+        <field name="use_date_range">True</field>
+        <field name="company_id" eval="False"/>
+        <field name="active" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_stage_task_list" model="ir.ui.view">
+        <field name="name">project.stage.task.list</field>
+        <field name="model">project.stage.task</field>
+        <field name="arch" type="xml">
+            <list string="Công việc chi tiết" default_order="sequence, id"
+                  decoration-muted="state == 'draft'"
+                  decoration-info="state == 'in_progress'"
+                  decoration-success="state == 'done'">
+                <field name="sequence" widget="handle"/>
+                <field name="stt" string="STT" optional="show"/>
+                <field name="name" string="Tên công việc giai đoạn"/>
+                <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
+                <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                <field name="deadline" string="Deadline"/>
+                <field name="state" string="Trạng thái" widget="badge"
+                       decoration-muted="state == 'draft'"
+                       decoration-info="state == 'in_progress'"
+                       decoration-success="state == 'done'"/>
+                <field name="timeleft" string="Timeleft"/>
+                <field name="notes" string="Ghi chú" optional="show"/>
+                <field name="cost" string="Chi phí" sum="Tổng chi phí"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_project_stage_task_popup_form" model="ir.ui.view">
+        <field name="name">project.stage.task.popup.form</field>
+        <field name="model">project.stage.task</field>
+        <field name="priority">16</field>
+        <field name="arch" type="xml">
+            <form string="Thêm công việc" class="o_lug_task_popup">
+                <sheet>
+                    <field name="stage_id" invisible="1"/>
+                    <field name="project_id" invisible="1"/>
+                    <field name="sequence" invisible="1"/>
+                    <group>
+                        <group>
+                            <field name="name" string="Tên công việc giai đoạn"
+                                   placeholder="Ví dụ: Khảo sát hiện trạng mặt bằng..."/>
+                            <field name="user_ids" widget="many2many_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="supervisor_ids" widget="many2many_avatar_user"
+                                   options="{'no_create': True}"/>
+                            <field name="deadline"/>
+                        </group>
+                        <group>
+                            <field name="state" widget="radio" options="{'horizontal': true}"/>
+                            <field name="timeleft" readonly="1"/>
+                            <field name="cost"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes" placeholder="Ghi chú công việc..." nolabel="0"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu &amp; Đóng" special="save" class="btn-primary"/>
+                    <button string="Hủy" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_project_stage_line_list" model="ir.ui.view">
+        <field name="name">project.stage.line.list</field>
+        <field name="model">project.stage.line</field>
+        <field name="arch" type="xml">
+            <list string="Giai đoạn">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="task_count"/>
+                <field name="total_cost" sum="Tổng chi phí"/>
+                <button name="action_add_task_popup" type="object"
+                        string="➕ Thêm công việc" class="btn btn-link"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_project_stage_line_form" model="ir.ui.view">
+        <field name="name">project.stage.line.form</field>
+        <field name="model">project.stage.line</field>
+        <field name="arch" type="xml">
+            <form string="Giai đoạn">
+                <sheet>
+                    <field name="project_id" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name" string="Tên giai đoạn"/>
+                        <h2>
+                            <field name="name" placeholder="Ví dụ: Chuẩn bị &amp; Khảo sát"/>
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="task_count"/>
+                        </group>
+                        <group>
+                            <field name="total_cost"/>
+                        </group>
+                    </group>
+                    <separator string="Công việc chi tiết"/>
+                    <div class="mb-2">
+                        <button name="action_add_task_popup" type="object"
+                                string="➕ Thêm công việc" class="btn-primary"/>
+                    </div>
+                    <field name="task_ids" nolabel="1">
+                        <list editable="bottom" open_form_view="True"
+                              decoration-muted="state == 'draft'"
+                              decoration-info="state == 'in_progress'"
+                              decoration-success="state == 'done'">
+                            <field name="sequence" widget="handle"/>
+                            <field name="stt" string="STT"/>
+                            <field name="name" string="Tên công việc giai đoạn"/>
+                            <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
+                            <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                            <field name="deadline" string="Deadline"/>
+                            <field name="state" string="Trạng thái" widget="badge"
+                                   decoration-muted="state == 'draft'"
+                                   decoration-info="state == 'in_progress'"
+                                   decoration-success="state == 'done'"/>
+                            <field name="timeleft" string="Timeleft"/>
+                            <field name="notes" string="Ghi chú"/>
+                            <field name="cost" string="Chi phí" sum="Tổng chi phí"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

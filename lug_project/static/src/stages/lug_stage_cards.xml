@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_project.LugStageCardsField">
+        <div class="o_lug_stage_cards stage_custom_container">
+            <h3 class="o_lug_sc_title">Công việc phân bổ theo giai đoạn</h3>
+            <t t-foreach="cards" t-as="card" t-key="card.key">
+                <div t-att-class="'o_lug_sc_card stage_custom_container' + (card.collapsed ? ' is-collapsed' : '')">
+                    <div class="o_lug_sc_head stage_header_bar" t-attf-style="background: {{card.color}}"
+                         t-on-click="(ev) => this.toggle(card, ev)">
+                        <span class="o_lug_sc_chevron" t-esc="card.collapsed ? '▸' : '▾'"/>
+                        <div class="o_lug_sc_head_title stage_title_center">
+                            <strong>GIAI ĐOẠN <t t-esc="card.number"/>:</strong>
+                            <t t-if="canEdit">
+                                <input type="text" class="o_lug_sc_name_input"
+                                       placeholder="Nhập nội dung"
+                                       t-att-value="card.name"
+                                       t-on-click.stop=""
+                                       t-on-change="(ev) => this.onNameChange(card, ev)"/>
+                            </t>
+                            <span t-else="" class="o_lug_sc_name_text" t-esc="card.name || '—'"/>
+                        </div>
+                        <button t-if="canEdit" type="button" class="o_lug_sc_add"
+                                t-on-click.stop="() => this.onAddTask(card)">
+                            ➕ Thêm công việc
+                        </button>
+                    </div>
+                    <div t-if="!card.collapsed" class="o_lug_sc_body">
+                        <div class="o_lug_sc_table_wrap">
+                            <table class="o_lug_sc_table custom_full_table">
+                                <thead>
+                                    <tr>
+                                        <th class="is-stt">STT</th>
+                                        <th class="is-name">Tên công việc giai đoạn</th>
+                                        <th class="is-user">Người phụ trách</th>
+                                        <th class="is-supervisor">Người giám sát</th>
+                                        <th class="is-deadline">Deadline</th>
+                                        <th class="is-state">Trạng thái</th>
+                                        <th class="is-timeleft">Timeleft</th>
+                                        <th class="is-note">Ghi chú</th>
+                                        <th class="is-cost">Chi phí</th>
+                                        <th t-if="canEdit" class="is-act"/>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="card.tasks" t-as="task" t-key="task.id">
+                                        <tr class="o_lug_sc_row" t-on-click="() => this.onOpenTask(task.id)">
+                                            <td class="is-stt" t-esc="task.stt || '—'"/>
+                                            <td class="is-name" t-esc="task.name"/>
+                                            <td class="is-user" t-esc="task.userName"/>
+                                            <td class="is-supervisor" t-esc="task.supervisorName"/>
+                                            <td class="is-deadline" t-esc="task.deadlineLabel"/>
+                                            <td class="is-state">
+                                                <span t-att-class="'o_lug_sc_badge is-' + task.state"
+                                                      t-esc="task.stateLabel"/>
+                                            </td>
+                                            <td class="is-timeleft" t-att-class="'o_lug_sc_time ' + task.timeleftClass"
+                                                t-esc="task.timeleftLabel"/>
+                                            <td class="is-note" t-esc="task.notes || '—'"/>
+                                            <td class="is-cost" t-esc="task.costLabel"/>
+                                            <td t-if="canEdit" class="is-act">
+                                                <button type="button" class="o_lug_sc_del"
+                                                        title="Xóa"
+                                                        t-on-click.stop="() => this.onDeleteTask(task.id)">×</button>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                    <tr t-if="!card.tasks.length" class="o_lug_sc_empty">
+                                        <td t-att-colspan="canEdit ? 10 : 9">Chưa có công việc</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td t-att-colspan="8"/>
+                                        <td class="is-cost o_lug_sc_total">
+                                            Tổng: <t t-esc="card.totalCost"/>
+                                        </td>
+                                        <td t-if="canEdit"/>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </t>
+            <div t-if="canEdit" class="o_lug_sc_footer">
+                <button type="button" class="o_lug_sc_add_stage" t-on-click="onAddStage">
+                    ➕ Thêm giai đoạn
+                </button>
+            </div>
+        </div>
+    </t>
+</templates>

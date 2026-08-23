@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="phase_1" model="lug.project.phase">
+        <field name="code">1</field>
+        <field name="name">CHUẨN BỊ &amp; KHẢO SÁT</field>
+        <field name="sequence">10</field>
+        <field name="color">#6d28d9</field>
+    </record>
+    <record id="phase_2" model="lug.project.phase">
+        <field name="code">2</field>
+        <field name="name">TRIỂN KHAI &amp; BÁN HÀNG</field>
+        <field name="sequence">20</field>
+        <field name="color">#b45309</field>
+    </record>
+    <record id="phase_3" model="lug.project.phase">
+        <field name="code">3</field>
+        <field name="name">LẮP ĐẶT &amp; HOÀN THIỆN</field>
+        <field name="sequence">30</field>
+        <field name="color">#0f766e</field>
+    </record>
+    <record id="phase_4" model="lug.project.phase">
+        <field name="code">4</field>
+        <field name="name">NGHIỆM THU &amp; BÀN GIAO</field>
+        <field name="sequence">40</field>
+        <field name="color">#1d4ed8</field>
+    </record>
+    <record id="phase_5" model="lug.project.phase">
+        <field name="code">5</field>
+        <field name="name">BẢO HÀNH &amp; HỖ TRỢ</field>
+        <field name="sequence">50</field>
+        <field name="color">#15803d</field>
+    </record>
+    <record id="phase_6" model="lug.project.phase">
+        <field name="code">6</field>
+        <field name="name">ĐÓNG DỰ ÁN</field>
+        <field name="sequence">60</field>
+        <field name="color">#64748b</field>
+    </record>
+</odoo>

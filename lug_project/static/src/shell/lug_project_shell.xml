@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_project.LugProjectShell">
+        <div t-att-class="shellClass"
+             data-lps-ui="topbar-plist-v1">
+            <div class="o_lps_shell">
+                <header class="o_lps_topbar">
+                    <div class="o_lps_topbar_brand">
+                        <i class="fa fa-th"/>
+                        <span>DỰ ÁN SÁNG TÂM</span>
+                    </div>
+                    <nav class="o_lps_topbar_nav">
+                        <t t-foreach="topNavItems" t-as="nav" t-key="nav.code">
+                            <button type="button"
+                                    t-att-class="'o_lps_topbar_link' + (isTopNavActive(nav.code) ? ' is-active' : '')"
+                                    t-on-click="() => this.setActive(nav.code === 'list' ? 'list' : nav.code)"
+                                    t-esc="nav.label"/>
+                        </t>
+                    </nav>
+                    <div class="o_lps_topbar_user">
+                        <span class="o_lps_topbar_avatar" t-esc="state.userInitial"/>
+                        <span class="o_lps_topbar_company" t-esc="state.companyName"/>
+                    </div>
+                </header>
+                <div class="o_lps_body" style="display:flex;flex-direction:row;flex:1;min-height:0;height:100%;align-items:stretch;">
+                    <aside t-att-class="railClass" t-att-style="railStyle">
+                        <button type="button" class="o_lps_rail_brand" title="Trang chủ" t-on-click="goHome">
+                            <img t-att-src="state.companyLogoUrl" alt="SATACO"/>
+                            <span>
+                                <strong>SATACO</strong>
+                                <small>GIẢI PHÁP TÀI CHÍNH TOÀN DIỆN</small>
+                            </span>
+                        </button>
+                        <nav class="o_lps_rail_nav">
+                            <button type="button" class="o_lps_rail_item" title="Trang chủ" t-on-click="goHome">
+                                <i class="fa fa-home"/>
+                                <span>Trang chủ</span>
+                            </button>
+                            <t t-foreach="state.apps" t-as="app" t-key="app.xmlid">
+                                <button type="button"
+                                        class="o_lps_rail_item"
+                                        t-att-title="app.name"
+                                        t-on-click="() => this.openApp(app)">
+                                    <i t-att-class="'fa ' + app.icon"/>
+                                    <span t-esc="app.name"/>
+                                </button>
+                            </t>
+                            <button type="button" class="o_lps_rail_item active" title="Dự án">
+                                <i class="fa fa-folder-open"/>
+                                <span>Dự án</span>
+                            </button>
+                        </nav>
+                        <div t-att-class="railResizerClass"
+                             style="position:absolute;top:0;right:-7px;bottom:0;width:14px;z-index:80;cursor:col-resize;"
+                             t-on-pointerdown="onRailResizeStart"
+                             t-on-dblclick="resetRailWidth"
+                             title="Kéo để đổi độ rộng cột SATACO">
+                            <b class="o_lps_edge_bar"
+                               style="position:absolute;top:10px;bottom:10px;left:50%;width:4px;margin-left:-2px;border-radius:99px;background:#1e293b;display:block;"/>
+                            <span class="o_lps_edge_btn"
+                                  role="button"
+                                  style="position:absolute;top:50%;left:50%;width:22px;height:22px;margin:16px 0 0 -11px;border-radius:50%;background:#4c1d95;color:#fff;font-size:16px;font-weight:800;line-height:22px;text-align:center;cursor:pointer;display:block;"
+                                  t-on-click.stop="toggleRail"
+                                  t-on-pointerdown="stopPointer"
+                                  t-att-title="state.railCollapsed ? 'Mở cột SATACO' : 'Thu gọn cột SATACO'"
+                                  t-esc="state.railCollapsed ? '›' : '‹'"/>
+                        </div>
+                    </aside>
+
+                    <aside t-att-class="sidebarClass" t-att-style="sidebarStyle">
+                        <div class="o_lps_side_scroll">
+                            <t t-foreach="navSections" t-as="section" t-key="section.key">
+                                <div class="o_lps_side_section">
+                                    <div class="o_lps_side_label">
+                                        <span t-if="section.emoji" t-esc="section.emoji"/>
+                                        <span t-esc="section.label"/>
+                                    </div>
+                                    <t t-foreach="section.items" t-as="item" t-key="item.code">
+                                        <button type="button"
+                                                t-att-class="'o_lps_side_item' + (item.cta ? ' is-cta' : '') + (state.active === item.code ? (item.code === 'kpi' ? ' active is-kpi' : ' active') : '')"
+                                                t-att-title="item.label"
+                                                t-on-click="() => this.setActive(item.code)">
+                                            <span t-att-class="'o_lps_ico ico-' + item.code">
+                                                <i t-att-class="'fa ' + item.icon"/>
+                                            </span>
+                                            <span class="o_lps_side_text" t-esc="item.label"/>
+                                            <t t-if="itemBadge(item)">
+                                                <em t-att-class="'o_lps_side_count' + (item.badgeKey === 'overdue' ? ' red' : '')"
+                                                    t-esc="itemBadge(item)"/>
+                                            </t>
+                                        </button>
+                                    </t>
+                                </div>
+                            </t>
+                        </div>
+                        <div t-att-class="sidebarResizerClass"
+                             style="position:absolute;top:0;right:-7px;bottom:0;width:14px;z-index:80;cursor:col-resize;"
+                             t-on-pointerdown="onSidebarResizeStart"
+                             t-on-dblclick="resetSidebarWidth"
+                             title="Kéo để đổi độ rộng menu">
+                            <b class="o_lps_edge_bar"
+                               style="position:absolute;top:10px;bottom:10px;left:50%;width:4px;margin-left:-2px;border-radius:99px;background:#1e293b;display:block;"/>
+                            <span class="o_lps_edge_btn"
+                                  role="button"
+                                  style="position:absolute;top:50%;left:50%;width:22px;height:22px;margin:16px 0 0 -11px;border-radius:50%;background:#4c1d95;color:#fff;font-size:16px;font-weight:800;line-height:22px;text-align:center;cursor:pointer;display:block;"
+                                  t-on-click.stop="toggleSidebar"
+                                  t-on-pointerdown="stopPointer"
+                                  t-att-title="state.sidebarCollapsed ? 'Mở menu dự án' : 'Thu gọn menu dự án'"
+                                  t-esc="state.sidebarCollapsed ? '›' : '‹'"/>
+                        </div>
+                    </aside>
+
+                    <main class="o_lps_content">
+                        <t t-if="isHome">
+                            <section class="o_lps_dash" data-lps-dash="gantt-cal-v6">
+                                <article class="o_lps_card o_lps_card--gantt">
+                                    <header class="o_lps_card_head">
+                                        <div>
+                                            <h3>1. Timeline / Gantt</h3>
+                                            <p>Theo dõi thời gian và tiến độ từng dự án</p>
+                                        </div>
+                                        <t t-call="lug_project.LugProjectFilter"/>
+                                    </header>
+                                    <t t-if="!state.dashboard.gantt.length">
+                                        <p class="o_lps_empty">Chưa có dự án để vẽ Gantt.</p>
+                                    </t>
+                                    <div t-else="" class="o_lps_gantt_wrap">
+                                        <t t-call="lug_project.LugGanttBoard"/>
+                                    </div>
+                                </article>
+
+                                <div class="o_lps_widget_grid">
+                                    <article class="o_lps_card">
+                                        <header class="o_lps_card_head">
+                                            <div>
+                                                <h3>3. Số lượng dự án theo thời gian</h3>
+                                                <p>Biết khối lượng dự án theo thời gian</p>
+                                            </div>
+                                            <span class="o_lps_card_more">⋮</span>
+                                        </header>
+                                        <div class="o_lps_chart_wrap">
+                                            <canvas t-ref="monthChart"/>
+                                        </div>
+                                    </article>
+
+                                    <article class="o_lps_card">
+                                        <header class="o_lps_card_head">
+                                            <div>
+                                                <h3>4. Tiến độ dự án</h3>
+                                                <p>So sánh % hoàn thành giữa các dự án</p>
+                                            </div>
+                                            <span class="o_lps_card_more">⋮</span>
+                                        </header>
+                                        <t t-if="!state.dashboard.progress.length">
+                                            <p class="o_lps_empty">Chưa có dự án.</p>
+                                        </t>
+                                        <ul t-else="" class="o_lps_progress">
+                                            <t t-foreach="state.dashboard.progress" t-as="row" t-key="row.id">
+                                                <li t-on-click="() => this.openProject(row.id)">
+                                                    <div class="o_lps_progress_meta">
+                                                        <span t-esc="row.name"/>
+                                                        <em t-esc="row.pct + '%'"/>
+                                                    </div>
+                                                    <div class="o_lps_progress_track">
+                                                        <i t-att-class="row.tone" t-att-style="'width:' + row.pct + '%'"/>
+                                                    </div>
+                                                </li>
+                                            </t>
+                                        </ul>
+                                        <div class="o_lps_progress_axis">
+                                            <span>0%</span><span>50%</span><span>100%</span>
+                                        </div>
+                                    </article>
+                                </div>
+
+                                <div class="o_lps_widget_grid o_lps_widget_grid--bottom">
+                                    <article class="o_lps_card o_lps_card--pie">
+                                        <header class="o_lps_card_head">
+                                            <div>
+                                                <h3>2. Trạng thái dự án</h3>
+                                                <p>Hoàn thành / Đang thực hiện / Chưa bắt đầu / Quá hạn</p>
+                                            </div>
+                                            <span class="o_lps_card_more">⋮</span>
+                                        </header>
+                                        <t t-if="!statusPie.length">
+                                            <p class="o_lps_empty">Chưa có dữ liệu.</p>
+                                        </t>
+                                        <div t-else="" class="o_lps_pie_box">
+                                            <div class="o_lps_chart_wrap o_lps_chart_wrap--pie">
+                                                <canvas t-ref="pieChart"/>
+                                            </div>
+                                            <ul class="o_lps_legend">
+                                                <t t-foreach="statusPie" t-as="slice" t-key="slice.key">
+                                                    <li>
+                                                        <i t-att-style="'background:' + slice.color"/>
+                                                        <span t-esc="slice.label"/>
+                                                        <em t-esc="slice.count"/>
+                                                    </li>
+                                                </t>
+                                            </ul>
+                                        </div>
+                                    </article>
+
+                                    <article class="o_lps_card o_lps_card--heat">
+                                        <header class="o_lps_card_head">
+                                            <div>
+                                                <h3>5. Phân bổ công việc theo nhân sự</h3>
+                                                <p>Biết nhân sự nào đang nhiều/ít việc, quá tải</p>
+                                            </div>
+                                            <span class="o_lps_card_more">⋮</span>
+                                        </header>
+                                        <t t-if="!state.dashboard.heatmap.rows.length">
+                                            <p class="o_lps_empty">Chưa có dữ liệu phân công.</p>
+                                        </t>
+                                        <div t-else="" class="o_lps_heat">
+                                            <div class="o_lps_heat_head">
+                                                <span>Nhân sự</span>
+                                                <t t-foreach="state.dashboard.heatmap.months" t-as="month" t-key="month">
+                                                    <em t-esc="month"/>
+                                                </t>
+                                            </div>
+                                            <t t-foreach="state.dashboard.heatmap.rows" t-as="row" t-key="row.id">
+                                                <div class="o_lps_heat_row">
+                                                    <span t-esc="row.name"/>
+                                                    <t t-foreach="row.values" t-as="cell" t-key="cell_index">
+                                                        <i t-att-class="heatClass(cell)" t-att-title="cell + '%'"/>
+                                                    </t>
+                                                </div>
+                                            </t>
+                                        </div>
+                                    </article>
+                                </div>
+                            </section>
+                        </t>
+                        <t t-elif="isGantt">
+                            <section class="o_lps_dash" data-lps-dash="gantt-cal-v6">
+                                <article class="o_lps_card">
+                                    <header class="o_lps_card_head">
+                                        <div>
+                                            <h3>Gantt Chart</h3>
+                                            <p>Tiến độ các dự án theo thời gian</p>
+                                        </div>
+                                        <t t-call="lug_project.LugProjectFilter"/>
+                                    </header>
+                                    <t t-if="!state.dashboard.gantt.length">
+                                        <p class="o_lps_empty">Chưa có dự án để vẽ Gantt.</p>
+                                    </t>
+                                    <div t-else="" class="o_lps_gantt_wrap is-lg">
+                                        <t t-call="lug_project.LugGanttBoard"/>
+                                    </div>
+                                </article>
+                            </section>
+                        </t>
+                        <t t-elif="state.viewError">
+                            <div class="o_lps_view_error">
+                                <p>Không tải được màn hình này.</p>
+                                <pre t-esc="state.viewError"/>
+                                <button type="button" class="btn btn-primary" t-on-click="() => this.setActive('list')">
+                                    Về danh sách
+                                </button>
+                            </div>
+                        </t>
+                        <div t-elif="isProjectList" class="o_lps_view_host o_lps_view_host--plist">
+                            <LugProjectList onNew.bind="() => this.setActive('intake')" onGantt.bind="(id) => this.viewGanttForProject(id)"/>
+                        </div>
+                        <div t-else="" class="o_lps_view_host">
+                            <View t-props="viewProps" t-key="state.active"/>
+                        </div>
+                    </main>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_project.LugProjectFilter">
+        <div class="o_lps_filter" t-on-pointerdown.stop="">
+            <button type="button" class="o_lps_filter_btn" t-on-click.stop="toggleProjectFilter">
+                <i class="o_lps_filter_dot"/>
+                <span>Dự án: <t t-esc="filterProjectLabel"/></span>
+                <em class="fa fa-angle-down"/>
+            </button>
+            <div t-if="state.filterOpen" class="o_lps_filter_menu">
+                <input type="text"
+                       class="o_lps_filter_search"
+                       placeholder="Tìm dự án..."
+                       t-att-value="state.filterQuery"
+                       t-on-input="onFilterSearch"/>
+                <button type="button"
+                        t-att-class="'o_lps_filter_opt' + (!state.filterProjectId ? ' is-on' : '')"
+                        t-on-click="() => this.selectProjectFilter(0)">
+                    <span>Tất cả dự án</span>
+                    <i t-if="!state.filterProjectId" class="fa fa-check"/>
+                </button>
+                <t t-foreach="visibleFilterProjects" t-as="proj" t-key="proj.id">
+                    <button type="button"
+                            t-att-class="'o_lps_filter_opt' + (state.filterProjectId === proj.id ? ' is-on' : '')"
+                            t-on-click="() => this.selectProjectFilter(proj.id)">
+                        <span t-esc="proj.name"/>
+                        <i t-if="state.filterProjectId === proj.id" class="fa fa-check"/>
+                    </button>
+                </t>
+                <p t-if="!visibleFilterProjects.length" class="o_lps_filter_empty">Không tìm thấy dự án.</p>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_project.LugGanttBoard">
+        <div class="o_lps_gantt o_lps_gantt--cal" data-lps-gantt="compact-v5">
+            <div class="o_lps_gantt_scroll">
+                <div class="o_lps_gantt_board">
+                    <div class="o_lps_gantt_names">
+                        <div class="o_lps_gantt_names_head">Dự án</div>
+                        <div class="o_lps_gantt_name_body">
+                            <t t-foreach="ganttVisibleRows" t-as="row" t-key="row.id">
+                                <div t-att-class="'o_lps_gantt_name_row is-' + row.kind"
+                                     t-att-style="ganttNameRowStyle(row)"
+                                     t-on-click="() => this.onGanttRowClick(row)">
+                                    <t t-if="row.kind === 'project' and row.has_children">
+                                        <button type="button"
+                                                class="o_lps_gantt_tog"
+                                                t-on-click.stop="() => this.toggleGanttGroup(row.project_id)"
+                                                t-esc="isGanttCollapsed(row.project_id) ? '+' : '−'"/>
+                                    </t>
+                                    <t t-elif="row.kind === 'project'">
+                                        <span class="o_lps_gantt_tog is-empty"/>
+                                    </t>
+                                    <i t-if="row.kind === 'task'" class="o_lps_gantt_swatch" t-att-style="'background:' + (row.color or '#3b82f6')"/>
+                                    <span t-att-class="row.kind === 'task' ? 'o_lps_gantt_task_name' : 'o_lps_gantt_proj_name'"
+                                          t-esc="row.name"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                    <div class="o_lps_gantt_cal" t-att-style="ganttCalStyle">
+                        <div class="o_lps_gantt_months">
+                            <t t-foreach="ganttCal.months" t-as="month" t-key="month_index">
+                                <div t-att-style="ganttMonthStyle(month)" t-esc="month.label"/>
+                            </t>
+                        </div>
+                        <div class="o_lps_gantt_plot">
+                            <div class="o_lps_gantt_days">
+                                <t t-foreach="ganttCal.days" t-as="day" t-key="day_index">
+                                    <em t-att-class="ganttDayClass(day)" t-att-style="ganttDayStyle(day)" t-esc="day.n"/>
+                                </t>
+                            </div>
+                            <div class="o_lps_gantt_track_body">
+                                <t t-foreach="ganttVisibleRows" t-as="row" t-key="'track-' + row.id">
+                                    <div t-att-class="'o_lps_gantt_track is-' + row.kind"
+                                         t-att-style="ganttTrackStyle(row)"
+                                         t-on-click="() => this.onGanttRowClick(row)">
+                                        <div class="o_lps_gantt_cols">
+                                            <t t-foreach="ganttCal.days" t-as="col" t-key="col_index">
+                                                <i t-att-class="ganttDayClass(col)" t-att-style="ganttDayStyle(col)"/>
+                                            </t>
+                                        </div>
+                                        <t t-if="row.kind === 'project'">
+                                            <span class="o_lps_gantt_bar is-project" t-att-style="ganttBarStyle(row)"/>
+                                        </t>
+                                        <t t-elif="row.kind === 'task'">
+                                            <span class="o_lps_gantt_bar is-task" t-att-style="ganttBarStyle(row)"/>
+                                            <span t-if="row.label" class="o_lps_gantt_bar_label" t-att-style="ganttLabelStyle(row)" t-esc="row.label"/>
+                                        </t>
+                                        <t t-foreach="row.ms" t-as="ms" t-key="ms_index">
+                                            <i class="o_lps_gantt_ms" t-att-style="ganttMsStyle(ms)"/>
+                                        </t>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="o_lps_gantt_legend">
+                <i class="lg-bar"/> Mẫu dự án
+                <i class="lg-ms"/> Milestone
+            </div>
+        </div>
+    </t>
+</templates>

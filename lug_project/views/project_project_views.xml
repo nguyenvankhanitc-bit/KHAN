@@ -1,0 +1,447 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Popup Tạo / Nhập dự án -->
+    <record id="project_project_view_form_simplified_lug" model="ir.ui.view">
+        <field name="name">project.project.view.form.simplified.lug</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.project_project_view_form_simplified"/>
+        <field name="priority">50</field>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="class" add="o_lug_project_intake" separator=" "/>
+                <attribute name="string">Nhập dự án</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <group>
+                    <group>
+                        <field name="lug_code" placeholder="Tự cấp khi lưu"/>
+                        <field name="lug_type_id" placeholder="Chọn loại dự án"/>
+                        <field name="partner_id" string="Khách hàng" widget="res_partner_many2one"/>
+                    </group>
+                    <group>
+                        <field name="lug_priority"/>
+                        <field name="date_start" string="Ngày bắt đầu"/>
+                        <field name="date" string="Ngày kết thúc"/>
+                        <field name="lug_deadline"/>
+                    </group>
+                </group>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="placeholder">vd: GO BÀ RỊA</attribute>
+            </xpath>
+            <xpath expr="//label[@for='name']" position="attributes">
+                <attribute name="string">Tên dự án</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//div[hasclass('o_settings_container')]" position="before">
+                <notebook>
+                    <page string="A. Thông tin cơ bản" name="lug_basic">
+                        <group>
+                            <field name="description" placeholder="Mô tả dự án..." nolabel="1" colspan="2"/>
+                        </group>
+                        <separator string="Mục tiêu"/>
+                        <field name="lug_objective" placeholder="Mục tiêu / KPI..." nolabel="1"/>
+                    </page>
+                    <page string="C. Quản lý" name="lug_management">
+                        <group>
+                            <group>
+                                <field name="user_id" string="Project Manager" widget="many2one_avatar_user" domain="[('share', '=', False)]"/>
+                                <field name="lug_department_id"/>
+                            </group>
+                            <group>
+                                <field name="company_id" string="Đơn vị" options="{'no_create': True}"/>
+                                <field name="lug_approver_id" widget="many2one_avatar_user"/>
+                            </group>
+                        </group>
+                    </page>
+                    <page string="D. Kế hoạch" name="lug_plan">
+                        <separator string="Nhiệm vụ / công việc chi tiết"/>
+                        <p class="text-muted mb-2">Nhập từng việc nhỏ. Bấm "Thêm một dòng".</p>
+                        <field name="task_ids" nolabel="1"
+                               context="{'default_display_in_project': True}">
+                            <list editable="bottom" delete="1" open_form_view="True"
+                                  class="o_lug_task_detail"
+                                  decoration-success="lug_status == 'done'"
+                                  decoration-info="lug_status == 'progress'"
+                                  decoration-muted="lug_status == 'cancel'">
+                                <field name="sequence" widget="handle"/>
+                                <field name="lug_line_stt" string="STT" readonly="1"/>
+                                <field name="lug_phase" string="Giai đoạn" widget="lug_phase_badge"/>
+                                <field name="name" string="Công việc"/>
+                                <field name="lug_pic_id" widget="many2one_avatar_user" string="Người phụ trách"/>
+                                <field name="lug_supervisor_id" widget="many2one_avatar_user" string="Người giám sát"/>
+                                <field name="date_deadline" string="Deadline"/>
+                                <field name="lug_done_date" string="Ngày hoàn thành"/>
+                                <field name="lug_result" string="Kết quả"/>
+                                <field name="lug_status" string="Trạng thái" widget="lug_status_pill"/>
+                                <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft" optional="show"/>
+                                <field name="lug_note" string="Ghi chú"/>
+                                <field name="user_ids" column_invisible="1"/>
+                                <field name="lug_progress" column_invisible="1"/>
+                            </list>
+                        </field>
+                        <separator string="Deliverables"/>
+                        <field name="lug_deliverable_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="name"/>
+                                <field name="deadline"/>
+                                <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                                <field name="state"/>
+                            </list>
+                        </field>
+                        <separator string="Mốc quan trọng"/>
+                        <field name="allow_milestones" invisible="1"/>
+                        <field name="milestone_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="name"/>
+                                <field name="deadline"/>
+                                <field name="is_reached" optional="show"/>
+                            </list>
+                        </field>
+                        <separator string="Tiêu chí hoàn thành"/>
+                        <field name="lug_criterion_ids" nolabel="1">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="name"/>
+                                <field name="is_required"/>
+                                <field name="is_done"/>
+                            </list>
+                        </field>
+                    </page>
+                    <page string="E. Tài liệu" name="lug_docs">
+                        <field name="lug_attachment_ids" widget="many2many_binary" nolabel="1"/>
+                    </page>
+                </notebook>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Form nhập dự án (theo mẫu danh sách) -->
+    <record id="view_project_intake_form" model="ir.ui.view">
+        <field name="name">project.project.form.intake.lug</field>
+        <field name="model">project.project</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <form string="Nhập dự án" class="o_lug_intake_form">
+                <header>
+                    <field name="lug_workflow_state" widget="statusbar"
+                           options="{'clickable': '1'}"
+                           statusbar_visible="todo,progress,done,closed"/>
+                </header>
+                <sheet>
+                    <field name="user_id" invisible="1"/>
+                    <field name="allow_milestones" invisible="1"/>
+                    <div class="o_lug_summary">
+                        <div class="o_lug_card">
+                            <h3>THÔNG TIN CHUNG</h3>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Mã dự án</span>
+                                <field name="lug_code" readonly="1" nolabel="1" placeholder="DA2026-23082026-01"/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Tên dự án</span>
+                                <field name="lug_content" nolabel="1"
+                                       placeholder="vd: Cải tạo siêu thị Aeon Tân Phú"/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Đối tác</span>
+                                <field name="partner_id" nolabel="1" placeholder="Chọn đối tác..."
+                                       widget="res_partner_many2one"/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Cửa hàng</span>
+                                <field name="name" string="Cửa hàng" nolabel="1" required="0" placeholder="Tên cửa hàng / cửa hàng"/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Loại dự án</span>
+                                <field name="lug_type_id" nolabel="1" placeholder="Chọn loại..."/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Trưởng dự án</span>
+                                <field name="lug_pic_id" widget="many2one_avatar_user" nolabel="1" placeholder="Chọn người..."/>
+                            </div>
+                            <div class="o_lug_kv o_lug_kv_file">
+                                <span class="o_lug_k">File đính kèm</span>
+                                <field name="lug_attachment_ids" widget="many2many_binary" nolabel="1"
+                                       options="{'accepted_file_extensions': '.pdf,.doc,.docx,.xls,.xlsx'}"/>
+                            </div>
+                        </div>
+                        <div class="o_lug_summary_side">
+                            <div class="o_lug_card">
+                                <h3>THỜI GIAN</h3>
+                                <div class="o_lug_kv">
+                                    <span class="o_lug_k">Ngày bắt đầu</span>
+                                    <field name="date_start" nolabel="1" placeholder="DD/MM/YYYY"/>
+                                </div>
+                                <div class="o_lug_kv">
+                                    <span class="o_lug_k">Deadline</span>
+                                    <field name="lug_deadline" nolabel="1" placeholder="DD/MM/YYYY"/>
+                                </div>
+                                <div class="o_lug_kv">
+                                    <span class="o_lug_k">Ngày kết thúc</span>
+                                    <field name="date" nolabel="1" placeholder="DD/MM/YYYY"/>
+                                </div>
+                                <div class="o_lug_kv">
+                                    <span class="o_lug_k">Timeleft</span>
+                                    <field name="lug_timeleft" widget="lug_timeleft" nolabel="1"/>
+                                </div>
+                            </div>
+                            <div class="o_lug_form_actions">
+                                <button string="Lưu" special="save" class="oe_highlight o_lug_btn_save"/>
+                                <button string="Hủy bỏ" special="cancel" class="o_lug_btn_cancel"/>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_lug_tasks_block o_lug_stage_cards_wrap">
+                        <field name="stage_line_ids" nolabel="1" widget="lug_stage_cards">
+                            <list>
+                                <field name="sequence"/>
+                                <field name="name"/>
+                                <field name="task_count"/>
+                                <field name="total_cost"/>
+                                <button name="action_add_task_popup" type="object"
+                                        string="➕ Thêm công việc" class="btn btn-link"/>
+                            </list>
+                            <form>
+                                <group>
+                                    <field name="name"/>
+                                    <field name="sequence"/>
+                                </group>
+                                <field name="task_ids">
+                                    <list editable="bottom" open_form_view="True">
+                                        <field name="sequence" widget="handle"/>
+                                        <field name="stt" string="STT"/>
+                                        <field name="name" string="Tên công việc giai đoạn"/>
+                                        <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
+                                        <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                                        <field name="deadline" string="Deadline"/>
+                                        <field name="state" string="Trạng thái" widget="badge"
+                                               decoration-muted="state == 'draft'"
+                                               decoration-info="state == 'in_progress'"
+                                               decoration-success="state == 'done'"/>
+                                        <field name="timeleft" string="Timeleft"/>
+                                        <field name="notes" string="Ghi chú"/>
+                                        <field name="cost" string="Chi phí" sum="Tổng chi phí"/>
+                                    </list>
+                                </field>
+                            </form>
+                        </field>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="project.open_create_project" model="ir.actions.act_window">
+        <field name="name">Nhập dự án</field>
+    </record>
+
+    <!-- Form dự án đầy đủ -->
+    <record id="edit_project_lug" model="ir.ui.view">
+        <field name="name">project.project.form.lug</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group/group/field[@name='label_tasks']" position="before">
+                <field name="lug_code" placeholder="Mã dự án"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Tên cửa hàng</attribute>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="before">
+                <field name="lug_type_id"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="string">Khách hàng</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                <field name="lug_department_id"/>
+                <field name="lug_approver_id" widget="many2one_avatar_user"/>
+                <field name="lug_priority"/>
+                <field name="lug_deadline"/>
+                <field name="lug_supply_date"/>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']/following-sibling::field[@name='company_id']" position="attributes">
+                <attribute name="string">Đơn vị</attribute>
+                <attribute name="groups"/>
+            </xpath>
+            <xpath expr="//page[@name='description']" position="before">
+                <page string="Giai đoạn &amp; Công việc" name="lug_tasks" autofocus="autofocus">
+                    <div class="o_lug_stage_cards_wrap">
+                        <field name="stage_line_ids" nolabel="1" widget="lug_stage_cards">
+                            <list>
+                                <field name="sequence"/>
+                                <field name="name"/>
+                                <field name="task_count"/>
+                                <field name="total_cost"/>
+                                <button name="action_add_task_popup" type="object"
+                                        string="➕ Thêm công việc" class="btn btn-link"/>
+                            </list>
+                        </field>
+                    </div>
+                </page>
+            </xpath>
+            <xpath expr="//page[@name='description']" position="after">
+                <page string="Mục tiêu" name="lug_objective">
+                    <field name="lug_objective" placeholder="Mục tiêu / KPI của dự án..."/>
+                </page>
+                <page string="Kế hoạch" name="lug_plan">
+                    <separator string="Deliverables"/>
+                    <field name="lug_deliverable_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="deadline"/>
+                            <field name="user_id" widget="many2one_avatar_user" optional="show"/>
+                            <field name="state"/>
+                        </list>
+                    </field>
+                    <separator string="Mốc quan trọng"/>
+                    <field name="milestone_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="deadline"/>
+                            <field name="is_reached"/>
+                        </list>
+                    </field>
+                    <separator string="Tiêu chí hoàn thành"/>
+                    <field name="lug_criterion_ids" nolabel="1">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="name"/>
+                            <field name="is_required"/>
+                            <field name="is_done"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Tài liệu" name="lug_docs">
+                    <field name="lug_attachment_ids" widget="many2many_binary" nolabel="1"/>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- List -->
+    <record id="view_project_lug" model="ir.ui.view">
+        <field name="name">project.project.list.lug</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="delete">1</attribute>
+                <attribute name="class" add="o_lug_project_list" separator=" "/>
+                <attribute name="default_order">lug_stt, id</attribute>
+            </xpath>
+            <xpath expr="//field[@name='is_favorite']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="lug_stt" string="STT" width="48px"/>
+                <field name="lug_code" string="Mã Dự án"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Tên cửa hàng</attribute>
+                <attribute name="class"/>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="lug_type_id" string="Loại dự án"/>
+            </xpath>
+            <xpath expr="//field[@name='partner_id']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='company_id'][@optional='show']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_start']" position="attributes">
+                <attribute name="string">Ngày bắt đầu</attribute>
+                <attribute name="widget"/>
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date']" position="attributes">
+                <attribute name="string">Ngày kết thúc</attribute>
+                <attribute name="column_invisible">0</attribute>
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date']" position="after">
+                <field name="lug_deadline" string="Deadline"/>
+            </xpath>
+            <xpath expr="//field[@name='milestone_progress']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='next_milestone_id']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="attributes">
+                <attribute name="string">Trưởng dự án</attribute>
+                <attribute name="optional">show</attribute>
+            </xpath>
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="lug_pic_id" string="Người phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}"/>
+                <field name="lug_workflow_state" string="Trạng thái" widget="badge" optional="show"/>
+                <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft"/>
+                <field name="lug_worker_ids" string="Người làm" widget="lug_workers" column_invisible="1" readonly="1" options="{'no_create': True}"/>
+                <field name="lug_content" column_invisible="1" optional="hide"/>
+                <field name="lug_supply_date" column_invisible="1" optional="hide"/>
+                <field name="lug_pdf_id" column_invisible="1" optional="hide" widget="lug_file_drop"/>
+                <field name="date_start" column_invisible="1" optional="hide"/>
+                <field name="date" column_invisible="1" optional="hide"/>
+                <button name="lug_action_open_form" type="object" icon="fa-pencil"
+                        title="Sửa" class="btn btn-link p-0 o_lug_btn_edit" column_invisible="1"/>
+                <button name="lug_action_delete" type="object" icon="fa-trash-o"
+                        title="Xóa" confirm="Bạn có chắc muốn xóa dự án này?"
+                        class="btn btn-link p-0 text-danger o_lug_btn_del" column_invisible="1"/>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='last_update_status']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//field[@name='stage_id']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_view_tasks']" position="attributes">
+                <attribute name="column_invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Search -->
+    <record id="view_project_project_filter_lug" model="ir.ui.view">
+        <field name="name">project.project.select.lug</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_project_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="lug_code"/>
+                <field name="lug_type_id"/>
+                <field name="lug_department_id"/>
+                <field name="lug_approver_id"/>
+            </xpath>
+            <xpath expr="//filter[@name='inactive']" position="after">
+                <separator/>
+                <filter string="Ưu tiên cao" name="lug_priority_high" domain="[('lug_priority', '=', 'high')]"/>
+                <filter string="Quá hạn deadline" name="lug_overdue" domain="[('lug_deadline', '&lt;', 'today'), ('active', '=', True)]"/>
+            </xpath>
+            <xpath expr="//filter[@name='tags']" position="after">
+                <filter string="Loại dự án" name="group_lug_type" context="{'group_by': 'lug_type_id'}"/>
+                <filter string="Phòng ban" name="group_lug_department" context="{'group_by': 'lug_department_id'}"/>
+                <filter string="Ưu tiên" name="group_lug_priority" context="{'group_by': 'lug_priority'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

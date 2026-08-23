@@ -10,6 +10,7 @@ Repository module Odoo tùy chỉnh.
 | `lug_app_center` | App Center / trang chủ ứng dụng |
 | `lug_phan_he` | Quản lý dịch vụ (Internet, thanh toán, Calendar, dashboard) |
 | `lug_eam` | Quản lý tài sản / EAM |
+| `lug_project` | Quản lý dự án Sáng Tâm (danh sách, giai đoạn, shell UI) |
 | `appscript_kiem_ke` | App Script kiểm kê |
 
 ## Cài đặt

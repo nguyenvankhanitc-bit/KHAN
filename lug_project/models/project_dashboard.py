@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
 from odoo import api, fields, models
+from odoo.exceptions import UserError
 from odoo.tools import html2plaintext
 
 
@@ -38,11 +39,15 @@ class ProjectProjectDashboard(models.Model):
     _inherit = "project.project"
 
     @api.model
-    def get_lug_shell_data(self, project_id=False):
+    def get_lug_shell_data(self, project_id=False, period="month", type_id=False):
         """Header + dashboard for the custom Project shell."""
         header = self._get_lug_shell_header()
         try:
-            dashboard = self._get_lug_dashboard(project_id=project_id)
+            dashboard = self._get_lug_dashboard(
+                project_id=project_id,
+                period=period,
+                type_id=type_id,
+            )
         except Exception:
             self.env.cr.rollback()
             dashboard = self._empty_lug_dashboard()
@@ -106,6 +111,7 @@ class ProjectProjectDashboard(models.Model):
             "activities": [],
             "overdue_count": 0,
             "project_count": 0,
+            "archived_count": 0,
             "featured_title": "Báo cáo KPI dự án",
             "status": [],
             "gantt": [],
@@ -118,17 +124,54 @@ class ProjectProjectDashboard(models.Model):
             "heatmap": {"months": [], "rows": []},
             "filter_projects": [],
             "filter_project_id": False,
+            "staff_load": [],
+            "cost_top": [],
+            "perf": [],
+            "project_types": [],
+            "period": "month",
+            "type_id": False,
         }
 
     @api.model
-    def _get_lug_dashboard(self, project_id=False):
+    def _get_lug_dashboard(self, project_id=False, period="month", type_id=False):
         today = fields.Date.context_today(self)
         Project = self.with_context(active_test=True)
         try:
             project_id = int(project_id) if project_id else False
         except (TypeError, ValueError):
             project_id = False
-        all_projects = Project.search(_PROJECT_DOMAIN)
+        try:
+            type_id = int(type_id) if type_id else False
+        except (TypeError, ValueError):
+            type_id = False
+        period = (period or "month").strip()
+        if period not in ("month", "quarter", "year"):
+            period = "month"
+        domain = list(_PROJECT_DOMAIN)
+        if type_id:
+            domain.append(("lug_type_id", "=", type_id))
+        date_from, date_to = self._lug_list_date_bounds(period)
+        if date_from and date_to:
+            start_dt = datetime.combine(date_from, datetime.min.time())
+            end_exclusive = datetime.combine(date_to + timedelta(days=1), datetime.min.time())
+            domain += [
+                "|",
+                "|",
+                "|",
+                "&",
+                ("create_date", ">=", start_dt),
+                ("create_date", "<", end_exclusive),
+                "&",
+                ("date_start", ">=", date_from),
+                ("date_start", "<=", date_to),
+                "&",
+                ("lug_deadline", ">=", date_from),
+                ("lug_deadline", "<=", date_to),
+                "&",
+                ("date", ">=", date_from),
+                ("date", "<=", date_to),
+            ]
+        all_projects = Project.search(domain)
         filter_projects = [{"id": rec.id, "name": rec.name} for rec in all_projects[:80]]
         if project_id:
             projects = all_projects.filtered(lambda rec: rec.id == project_id)
@@ -137,14 +180,14 @@ class ProjectProjectDashboard(models.Model):
                 project_id = False
         else:
             projects = all_projects
-        chart_domain = list(_PROJECT_DOMAIN)
+        chart_domain = list(domain)
         if project_id:
             chart_domain.append(("id", "=", project_id))
         prev_end = today.replace(day=1) - timedelta(days=1)
         prev_start = prev_end.replace(day=1)
 
         def _is_done(project):
-            return project.last_update_status in _DONE_STATUSES
+            return project.lug_workflow_state in ("done", "closed") or project.last_update_status in _DONE_STATUSES
 
         def _deadline(project):
             return project.lug_deadline or project.date
@@ -154,7 +197,9 @@ class ProjectProjectDashboard(models.Model):
         overdue_recs = projects.filtered(
             lambda p: (not _is_done(p)) and _deadline(p) and _deadline(p) < today
         )
-        ongoing_recs = projects - done_recs
+        ongoing_recs = projects.filtered(
+            lambda p: not _is_done(p) and (p.lug_workflow_state or "") != "cancel"
+        )
         done = len(done_recs)
         overdue = len(overdue_recs)
         ongoing = len(ongoing_recs)
@@ -214,6 +259,10 @@ class ProjectProjectDashboard(models.Model):
             month_done = Project.search_count(
                 chart_domain
                 + [
+                    "&",
+                    "&",
+                    "|",
+                    ("lug_workflow_state", "in", ("done", "closed")),
                     ("last_update_status", "=", "done"),
                     ("write_date", ">=", start_dt),
                     ("write_date", "<", end_dt),
@@ -230,11 +279,74 @@ class ProjectProjectDashboard(models.Model):
             months.append(
                 {
                     "label": "T%s" % start.month,
+                    "created": created_count,
                     "done": month_done,
                     "ongoing": max(created_count - month_done, 0),
                     "overdue": month_overdue,
                 }
             )
+
+        staff_map = defaultdict(int)
+        staff_names = {}
+        for project in projects:
+            users = project.lug_assignee_ids or project.user_id
+            for user in users:
+                if not user:
+                    continue
+                staff_map[user.id] += 1
+                staff_names[user.id] = user.name or "Người dùng"
+        staff_load = [
+            {"id": uid, "name": staff_names[uid], "value": count}
+            for uid, count in sorted(staff_map.items(), key=lambda item: -item[1])[:8]
+        ]
+
+        cost_rows = []
+        for project in projects:
+            stage_cost = sum(project.stage_line_ids.mapped("total_cost"))
+            task_cost = sum(project.task_ids.mapped("lug_cost"))
+            total_cost = stage_cost or task_cost
+            if total_cost <= 0:
+                continue
+            cost_rows.append(
+                {
+                    "id": project.id,
+                    "name": (project.name or project.lug_code or "Dự án")[:28],
+                    "value": round(total_cost / 1000000.0, 1),
+                }
+            )
+        cost_top = sorted(cost_rows, key=lambda row: -row["value"])[:6]
+
+        risk_recs = projects.filtered(
+            lambda p: (not _is_done(p))
+            and _deadline(p)
+            and today <= _deadline(p) <= (today + timedelta(days=7))
+        )
+        late_n = overdue
+        risk_n = len(risk_recs)
+        on_time_n = max(total - late_n - risk_n, 0)
+        if total:
+            perf = [
+                {
+                    "key": "on_time",
+                    "label": "Đúng hạn (%s%%)" % int(round(100.0 * on_time_n / total)),
+                    "count": on_time_n,
+                    "color": "#10b981",
+                },
+                {
+                    "key": "late",
+                    "label": "Chậm tiến độ (%s%%)" % int(round(100.0 * late_n / total)),
+                    "count": late_n,
+                    "color": "#ef4444",
+                },
+                {
+                    "key": "risk",
+                    "label": "Có nguy cơ (%s%%)" % int(round(100.0 * risk_n / total)),
+                    "count": risk_n,
+                    "color": "#f59e0b",
+                },
+            ]
+        else:
+            perf = []
 
         personnel = []
         if "project.task" in self.env:
@@ -316,43 +428,65 @@ class ProjectProjectDashboard(models.Model):
             "kpis": [
                 {
                     "key": "total",
-                    "label": "Tổng dự án",
+                    "label": "① TỔNG DỰ ÁN",
                     "value": total,
                     "icon": "fa-folder-open",
-                    "tone": "purple",
+                    "tone": "blue",
                     "delta": _pct(total, prev_total),
+                    "hint": ("↑ +%s%% so với tháng trước" % abs(_pct(total, prev_total)))
+                    if _pct(total, prev_total) > 0
+                    else (
+                        ("↓ %s%% so với tháng trước" % abs(_pct(total, prev_total)))
+                        if _pct(total, prev_total) < 0
+                        else "Ổn định so với tháng trước"
+                    ),
                 },
                 {
                     "key": "ongoing",
-                    "label": "Đang triển khai",
+                    "label": "② ĐANG LÀM",
                     "value": ongoing,
-                    "icon": "fa-clipboard",
-                    "tone": "blue",
+                    "icon": "fa-spinner",
+                    "tone": "amber",
                     "delta": _pct(ongoing, prev_ongoing),
+                    "hint": ("Chiếm %s%% tổng số" % int(round(100.0 * ongoing / total))) if total else "—",
                 },
                 {
                     "key": "done",
-                    "label": "Đã hoàn thành",
+                    "label": "③ HOÀN THÀNH",
                     "value": done,
                     "icon": "fa-check-circle",
                     "tone": "green",
                     "delta": _pct(done, prev_done),
+                    "hint": ("Đạt %s%% tiến độ KPI" % int(round(100.0 * done / total))) if total else "—",
                 },
                 {
                     "key": "overdue",
-                    "label": "Dự án quá hạn",
+                    "label": "④ TRỄ HẠN",
                     "value": overdue,
                     "icon": "fa-exclamation-triangle",
                     "tone": "red",
                     "delta": _pct(overdue, prev_overdue),
+                    "hint": "Cần can thiệp gấp" if overdue else "Không có dự án trễ",
                 },
             ],
             "months": months,
             "upcoming": upcoming,
             "personnel": personnel,
+            "staff_load": staff_load,
+            "cost_top": cost_top,
+            "perf": perf,
+            "project_types": [
+                {"id": rec.id, "name": rec.name}
+                for rec in self.env["lug.project.type"].search([], order="sequence, name")
+            ],
+            "period": period,
+            "type_id": type_id or False,
             "activities": activities,
             "overdue_count": overdue,
             "project_count": total,
+            "archived_count": self.with_context(active_test=False).search_count(
+                list(_PROJECT_DOMAIN) + [("active", "=", False)]
+            ),
             "featured_title": self._lug_featured_title(projects),
             "status": self._lug_status_breakdown(projects),
             "gantt": gantt_rows,
@@ -813,10 +947,24 @@ class ProjectProjectDashboard(models.Model):
         return {"months": month_labels, "rows": rows}
 
     _LUG_WF_LABELS = {
-        "todo": "Chưa bắt đầu",
-        "progress": "Đang thực hiện",
+        "todo": "Đang làm",
+        "progress": "Đang làm",
+        "pause": "Tạm dừng",
         "done": "Hoàn thành",
-        "closed": "Đóng",
+        "cancel": "Hủy",
+        "closed": "Hủy",
+    }
+    _LUG_WF_FILTERS = (
+        ("progress", "Đang làm"),
+        ("pause", "Tạm dừng"),
+        ("done", "Hoàn thành"),
+        ("cancel", "Hủy"),
+    )
+    _LUG_STATUS_KEYS = {
+        "progress": ("todo", "progress"),
+        "pause": ("pause",),
+        "done": ("done",),
+        "cancel": ("cancel", "closed"),
     }
     _LUG_TASK_STATE_LABELS = {
         "draft": "Chưa bắt đầu",
@@ -883,8 +1031,193 @@ class ProjectProjectDashboard(models.Model):
     def _lug_type_chip(self, type_rec):
         if not type_rec:
             return {"label": "—", "tone": "none"}
-        tone = self._LUG_TYPE_TONES[type_rec.id % len(self._LUG_TYPE_TONES)]
-        return {"label": type_rec.name, "tone": tone}
+        name = type_rec.name or "—"
+        key = name.lower()
+        if "sự kiện" in key or "su kien" in key:
+            tone = "purple"
+        elif "bảo trì" in key or "bao tri" in key:
+            tone = "teal"
+        elif "setup" in key or "triển khai" in key or "trien khai" in key:
+            tone = "blue"
+        elif "r&d" in key or "nội bộ" in key or "noi bo" in key:
+            tone = "amber"
+        else:
+            tone = self._LUG_TYPE_TONES[type_rec.id % len(self._LUG_TYPE_TONES)]
+        return {"label": name, "tone": tone}
+
+    @api.model
+    def _lug_deadline_badge(self, project, today=None):
+        today = today or fields.Date.context_today(self)
+        wf = project.lug_workflow_state or "todo"
+        deadline = project.lug_deadline or project.date
+        payload = {
+            "date": self._lug_fmt_date(deadline),
+            "state": "none",
+            "label": False,
+            "late": False,
+        }
+        if not deadline or wf in ("done", "cancel", "closed"):
+            if not deadline:
+                payload["label"] = "Chưa đặt hạn"
+            return payload
+        delta = (deadline - today).days
+        if delta < 0:
+            payload.update({
+                "state": "late",
+                "label": "Quá hạn: Trễ %s ngày" % abs(delta),
+                "late": True,
+            })
+        elif delta == 0:
+            payload.update({
+                "state": "soon",
+                "label": "Đến hạn hôm nay",
+            })
+        elif delta <= 5:
+            payload.update({
+                "state": "soon",
+                "label": "Còn %s ngày (Đúng hạn)" % delta,
+            })
+        else:
+            payload.update({
+                "state": "ok",
+                "label": "Còn %s ngày (Đúng hạn)" % delta,
+            })
+        return payload
+
+    @api.model
+    def _lug_phase_tracker(self, project):
+        lines = project.stage_line_ids.sorted(lambda rec: (rec.sequence or 0, rec.id or 0))[:4]
+        steps = []
+        states = []
+        for index in range(4):
+            line = lines[index] if index < len(lines) else False
+            name = ((line.name or "").strip() if line else "") or ("Giai đoạn %s" % (index + 1))
+            tasks = line.task_ids if line else self.env["project.stage.task"]
+            if tasks and all(task.state == "done" for task in tasks):
+                raw = "done"
+            elif tasks and any(task.state in ("in_progress", "done") for task in tasks):
+                raw = "active"
+            else:
+                raw = "todo"
+            states.append(raw)
+            steps.append({"index": index + 1, "name": name, "state": raw})
+        current = 0
+        for index, raw in enumerate(states):
+            if raw != "done":
+                current = index
+                break
+        else:
+            current = 3
+        painted = []
+        all_done = all(raw == "done" for raw in states)
+        for index, step in enumerate(steps):
+            if all_done:
+                state = "done"
+            elif index < current:
+                state = "done"
+            elif index == current:
+                state = "active" if states[current] != "done" else "done"
+            else:
+                state = "todo"
+            painted.append({**step, "state": state})
+        active = painted[current]
+        short = (active.get("name") or "").split("&")[0].strip()
+        if len(short) > 22:
+            short = short[:20] + "…"
+        return {
+            "steps": painted,
+            "current": current + 1,
+            "label": "GĐ %s/4: %s" % (current + 1, short or ("Giai đoạn %s" % (current + 1))),
+        }
+
+    @api.model
+    def _lug_parse_date(self, value):
+        if not value:
+            return False
+        try:
+            return fields.Date.to_date(value)
+        except Exception:
+            return False
+
+    @api.model
+    def _lug_list_date_bounds(self, preset, date_from=None, date_to=None):
+        today = fields.Date.context_today(self)
+        preset = (preset or "").strip()
+        if preset == "today":
+            return today, today
+        if preset == "week":
+            start = today - timedelta(days=today.weekday())
+            return start, start + timedelta(days=6)
+        if preset == "month":
+            start = today.replace(day=1)
+            return start, start + relativedelta(months=1) - timedelta(days=1)
+        if preset == "quarter":
+            month = ((today.month - 1) // 3) * 3 + 1
+            start = today.replace(month=month, day=1)
+            return start, start + relativedelta(months=3) - timedelta(days=1)
+        if preset == "year":
+            return today.replace(month=1, day=1), today.replace(month=12, day=31)
+        if preset == "custom":
+            return self._lug_parse_date(date_from), self._lug_parse_date(date_to)
+        return False, False
+
+    @api.model
+    def _lug_list_domain(
+        self,
+        search="",
+        priority=None,
+        type_id=None,
+        status=None,
+        manager_id=None,
+        date_preset=None,
+        date_field="deadline",
+        date_from=None,
+        date_to=None,
+        ids=None,
+        archived=False,
+    ):
+        domain = list(_PROJECT_DOMAIN)
+        if archived:
+            domain.append(("active", "=", False))
+        if ids:
+            domain.append(("id", "in", [int(item) for item in ids if item]))
+        search = (search or "").strip()
+        if search:
+            domain += [
+                "|",
+                "|",
+                "|",
+                ("name", "ilike", search),
+                ("lug_code", "ilike", search),
+                ("lug_content", "ilike", search),
+                ("user_id", "ilike", search),
+            ]
+        if priority == "urgent":
+            domain.append(("lug_priority", "=", "high"))
+        elif priority == "normal":
+            domain.append(("lug_priority", "!=", "high"))
+        try:
+            type_id = int(type_id) if type_id else False
+        except (TypeError, ValueError):
+            type_id = False
+        if type_id:
+            domain.append(("lug_type_id", "=", type_id))
+        status_keys = self._LUG_STATUS_KEYS.get(status)
+        if status_keys:
+            domain.append(("lug_workflow_state", "in", list(status_keys)))
+        try:
+            manager_id = int(manager_id) if manager_id else False
+        except (TypeError, ValueError):
+            manager_id = False
+        if manager_id:
+            domain.append(("user_id", "=", manager_id))
+        start, end = self._lug_list_date_bounds(date_preset, date_from, date_to)
+        field_name = "date_start" if date_field == "start" else "lug_deadline"
+        if start:
+            domain.append((field_name, ">=", start))
+        if end:
+            domain.append((field_name, "<=", end))
+        return domain
 
     @api.model
     def _lug_project_timeleft_meta(self, project, today=None):
@@ -948,47 +1281,96 @@ class ProjectProjectDashboard(models.Model):
     def _lug_serialize_project_row(self, project, today=None):
         today = today or fields.Date.context_today(self)
         wf = project.lug_workflow_state or "todo"
-        deadline_raw = project.lug_deadline or project.date
-        is_late = bool(
-            deadline_raw
-            and deadline_raw < today
-            and wf not in ("done", "closed")
-            and project.last_update_status != "done"
-        )
         manager = self._lug_user_chip(project.user_id)
         assignees = self._lug_assignee_chips(project)
+        progress_pct = max(0, min(100, int(project.lug_progress_pct or 0)))
+        if wf in ("done", "closed", "cancel") or progress_pct >= 80:
+            progress_tone = "high"
+        elif progress_pct >= 50:
+            progress_tone = "mid"
+        elif progress_pct > 0:
+            progress_tone = "low"
+        else:
+            progress_tone = "none"
+        status_key = "cancel" if wf in ("cancel", "closed") else ("progress" if wf in ("todo", "progress") else wf)
+        deadline = self._lug_deadline_badge(project, today=today)
+        trash_days = self._lug_trash_days()
+        trash_left = False
+        if not project.active:
+            archived_on = project.lug_archived_date
+            if not archived_on and project.write_date:
+                archived_on = project.write_date.date()
+            if archived_on:
+                trash_left = (archived_on + timedelta(days=trash_days) - today).days
         return {
             "id": project.id,
             "stt": project.lug_stt or 0,
             "code": project.lug_code or "—",
             "name": project.name or "—",
             "type": self._lug_type_chip(project.lug_type_id),
-            "deadline": self._lug_fmt_date(deadline_raw),
-            "deadline_late": is_late,
+            "date_start": self._lug_fmt_date(project.date_start),
+            "deadline": deadline.get("date"),
+            "deadline_late": deadline.get("late"),
+            "deadline_state": deadline.get("state"),
+            "deadline_badge": deadline.get("label"),
+            "urgent": project.lug_priority == "high",
             "manager": manager,
             "assignees": assignees,
-            "status": wf,
+            "phase": self._lug_phase_tracker(project),
+            "status": status_key,
             "status_label": self._LUG_WF_LABELS.get(wf, wf),
+            "progress_pct": progress_pct,
+            "progress_tone": progress_tone,
             "timeleft": self._lug_project_timeleft_meta(project, today=today),
+            "trash_days": trash_days,
+            "trash_left": trash_left,
         }
 
     @api.model
-    def get_lug_project_list_data(self, search="", offset=0, limit=50):
-        """Paginated project rows for the custom dark list UI."""
+    def get_lug_project_list_meta(self):
+        types = self.env["lug.project.type"].search([], order="sequence, name")
+        managers = self.search(_PROJECT_DOMAIN).mapped("user_id").filtered(lambda user: user)
+        return {
+            "types": [{"id": rec.id, "name": rec.name} for rec in types],
+            "managers": [
+                {"id": user.id, "name": user.name}
+                for user in managers.sorted(lambda user: (user.name or "").lower())
+            ],
+            "statuses": [{"key": key, "label": label} for key, label in self._LUG_WF_FILTERS],
+        }
+
+    @api.model
+    def get_lug_project_list_data(
+        self,
+        search="",
+        offset=0,
+        limit=50,
+        priority=None,
+        type_id=None,
+        status=None,
+        manager_id=None,
+        date_preset=None,
+        date_field="deadline",
+        date_from=None,
+        date_to=None,
+        archived=False,
+    ):
+        """Paginated project rows for the custom list UI."""
         today = fields.Date.context_today(self)
-        domain = list(_PROJECT_DOMAIN)
-        search = (search or "").strip()
-        if search:
-            domain += [
-                "|",
-                "|",
-                "|",
-                ("name", "ilike", search),
-                ("lug_code", "ilike", search),
-                ("lug_content", "ilike", search),
-                ("lug_type_id.name", "ilike", search),
-            ]
-        Project = self.with_context(active_test=True)
+        archived = bool(archived)
+        domain = self._lug_list_domain(
+            search=search,
+            priority=priority,
+            type_id=type_id,
+            status=status,
+            manager_id=manager_id,
+            date_preset=date_preset,
+            date_field=date_field,
+            date_from=date_from,
+            date_to=date_to,
+            archived=archived,
+        )
+        Project = self.with_context(active_test=not archived)
         total = Project.search_count(domain)
         try:
             offset = max(0, int(offset or 0))
@@ -996,17 +1378,164 @@ class ProjectProjectDashboard(models.Model):
         except (TypeError, ValueError):
             offset, limit = 0, 50
         projects = Project.search(domain, order="lug_stt, id", offset=offset, limit=limit)
+        rows = []
+        for index, rec in enumerate(projects):
+            row = self._lug_serialize_project_row(rec, today=today)
+            row["stt"] = offset + index + 1
+            rows.append(row)
         return {
             "total": total,
             "offset": offset,
             "limit": limit,
-            "rows": [self._lug_serialize_project_row(rec, today=today) for rec in projects],
+            "rows": rows,
+        }
+
+    @api.model
+    def export_lug_project_list_xlsx(self, **params):
+        import base64
+        import io
+
+        try:
+            import xlsxwriter
+        except ImportError as exc:
+            raise UserError("Thiếu thư viện xlsxwriter. Cài đặt: pip install xlsxwriter") from exc
+
+        domain = self._lug_list_domain(
+            search=params.get("search") or "",
+            priority=params.get("priority"),
+            type_id=params.get("type_id"),
+            status=params.get("status"),
+            manager_id=params.get("manager_id"),
+            date_preset=params.get("date_preset"),
+            date_field=params.get("date_field") or "deadline",
+            date_from=params.get("date_from"),
+            date_to=params.get("date_to"),
+            ids=params.get("ids"),
+            archived=bool(params.get("archived")),
+        )
+        archived = bool(params.get("archived"))
+        projects = self.with_context(active_test=not archived).search(domain, order="lug_stt, id", limit=5000)
+        today = fields.Date.context_today(self)
+        buffer = io.BytesIO()
+        workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
+        sheet = workbook.add_worksheet("Danh sach du an")
+        header_fmt = workbook.add_format({
+            "bold": True,
+            "bg_color": "#475569",
+            "font_color": "#FFFFFF",
+            "border": 1,
+            "align": "center",
+            "valign": "vcenter",
+        })
+        cell_fmt = workbook.add_format({"border": 1, "valign": "vcenter"})
+        headers = [
+            "STT", "Mã dự án", "Cửa hàng / Dự án", "Loại", "Bắt đầu", "Deadline",
+            "Cảnh báo hạn", "Độ ưu tiên", "Trưởng DA", "Phụ trách", "Giai đoạn",
+            "Trạng thái", "Tiến độ (%)",
+        ]
+        widths = [6, 16, 28, 16, 14, 14, 16, 12, 22, 28, 28, 14, 12]
+        for col, title in enumerate(headers):
+            sheet.write(0, col, title, header_fmt)
+            sheet.set_column(col, col, widths[col])
+        for index, project in enumerate(projects, 1):
+            row = self._lug_serialize_project_row(project, today=today)
+            assignees = ", ".join(user.get("name") or "" for user in (row["assignees"].get("users") or []))
+            extra = row["assignees"].get("extra") or 0
+            if extra:
+                assignees = ("%s +%s" % (assignees, extra)).strip(" ,")
+            values = [
+                index,
+                row["code"],
+                row["name"],
+                (row["type"] or {}).get("label") or "",
+                row["date_start"] or "",
+                row["deadline"] or "",
+                row.get("deadline_badge") or "",
+                "Gấp" if row.get("urgent") else "Không gấp",
+                (row["manager"] or {}).get("name") or "",
+                assignees,
+                (row.get("phase") or {}).get("label") or "",
+                row.get("status_label") or "",
+                row.get("progress_pct") or 0,
+            ]
+            for col, value in enumerate(values):
+                sheet.write(index, col, value, cell_fmt)
+        workbook.close()
+        return {
+            "filename": "danh_sach_du_an.xlsx",
+            "file_base64": base64.b64encode(buffer.getvalue()).decode(),
+        }
+
+    @api.model
+    def export_lug_overview_xlsx(self, period="month", type_id=False):
+        """Xuất báo cáo tổng quan dashboard."""
+        import base64
+        import io
+
+        try:
+            import xlsxwriter
+        except ImportError as exc:
+            raise UserError("Thiếu thư viện xlsxwriter. Cài đặt: pip install xlsxwriter") from exc
+
+        data = self._get_lug_dashboard(period=period, type_id=type_id)
+        buffer = io.BytesIO()
+        workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
+        header_fmt = workbook.add_format({
+            "bold": True,
+            "bg_color": "#5b21b6",
+            "font_color": "#FFFFFF",
+            "border": 1,
+        })
+        cell_fmt = workbook.add_format({"border": 1})
+
+        kpi_sheet = workbook.add_worksheet("KPI")
+        kpi_sheet.write_row(0, 0, ["Chỉ số", "Giá trị", "Ghi chú"], header_fmt)
+        for index, kpi in enumerate(data.get("kpis") or [], 1):
+            kpi_sheet.write_row(
+                index,
+                0,
+                [kpi.get("label") or "", kpi.get("value") or 0, kpi.get("hint") or ""],
+                cell_fmt,
+            )
+        kpi_sheet.set_column(0, 0, 28)
+        kpi_sheet.set_column(1, 1, 12)
+        kpi_sheet.set_column(2, 2, 36)
+
+        staff_sheet = workbook.add_worksheet("Nhan su")
+        staff_sheet.write_row(0, 0, ["Nhân sự", "Số dự án"], header_fmt)
+        for index, row in enumerate(data.get("staff_load") or [], 1):
+            staff_sheet.write_row(index, 0, [row.get("name") or "", row.get("value") or 0], cell_fmt)
+        staff_sheet.set_column(0, 0, 28)
+        staff_sheet.set_column(1, 1, 12)
+
+        cost_sheet = workbook.add_worksheet("Chi phi")
+        cost_sheet.write_row(0, 0, ["Dự án", "Chi phí (Triệu VNĐ)"], header_fmt)
+        for index, row in enumerate(data.get("cost_top") or [], 1):
+            cost_sheet.write_row(index, 0, [row.get("name") or "", row.get("value") or 0], cell_fmt)
+        cost_sheet.set_column(0, 0, 32)
+        cost_sheet.set_column(1, 1, 18)
+
+        trend_sheet = workbook.add_worksheet("Xu huong")
+        trend_sheet.write_row(0, 0, ["Tháng", "Mới tạo", "Hoàn thành"], header_fmt)
+        for index, row in enumerate(data.get("months") or [], 1):
+            trend_sheet.write_row(
+                index,
+                0,
+                [row.get("label") or "", row.get("created") or 0, row.get("done") or 0],
+                cell_fmt,
+            )
+
+        workbook.close()
+        period_label = {"month": "thang", "quarter": "quy", "year": "nam"}.get(period or "month", "thang")
+        return {
+            "filename": "bao_cao_tong_quan_%s.xlsx" % period_label,
+            "file_base64": base64.b64encode(buffer.getvalue()).decode(),
         }
 
     @api.model
     def get_lug_project_list_detail(self, project_id):
         """Expanded row payload: project info + staged tasks."""
-        project = self.browse(int(project_id)).exists()
+        project = self.with_context(active_test=False).browse(int(project_id)).exists()
         if not project or project.is_template:
             return False
         today = fields.Date.context_today(self)
@@ -1075,7 +1604,7 @@ class ProjectProjectDashboard(models.Model):
             "date_end": self._lug_fmt_date(project.date),
             "supply_date": self._lug_fmt_date(project.lug_supply_date),
             "timeleft": tl,
-            "workflow_state": wf,
+            "workflow_state": "cancel" if wf in ("cancel", "closed") else ("progress" if wf in ("todo", "progress") else wf),
             "progress_pct": project.lug_progress_pct or 0,
             "progress_done": done_count,
             "progress_total": total_count,

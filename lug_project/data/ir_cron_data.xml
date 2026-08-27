@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="config_lug_project_trash_days" model="ir.config_parameter">
+        <field name="key">lug_project.trash_days</field>
+        <field name="value">30</field>
+    </record>
+    <record id="ir_cron_lug_purge_trash" model="ir.cron">
+        <field name="name">Thùng rác dự án: xóa sau 30 ngày</field>
+        <field name="model_id" ref="project.model_project_project"/>
+        <field name="state">code</field>
+        <field name="code">model._lug_purge_trashed_projects()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

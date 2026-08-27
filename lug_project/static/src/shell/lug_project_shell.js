@@ -1,5 +1,5 @@
-/** @odoo-module **/
-/* lps-ui: gantt-compact-v5 */
+﻿/** @odoo-module **/
+/* lps-ui: gantt-compact-v5 trash-label-thung-rac-v2 */
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -72,6 +72,7 @@ const NAV_SECTIONS = [
         emoji: "",
         items: [
             { code: "cfg_phase", label: "Giai đoạn", icon: "fa-sitemap" },
+            { code: "archived", label: "Thùng rác", icon: "fa-trash", badgeKey: "archived" },
             { code: "types", label: "Loại dự án", icon: "fa-tags" },
             { code: "cfg_status", label: "Trạng thái", icon: "fa-flag-o" },
             { code: "cfg_priority", label: "Mức độ ưu tiên", icon: "fa-signal" },
@@ -99,6 +100,9 @@ const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items);
 function topNavActive(code, active) {
     if (code === "list") {
         return ["list", "intake", "track", "gantt", "overdue", "milestones", "templates"].includes(active);
+    }
+    if (code === "cfg_phase") {
+        return ["cfg_phase", "archived", "types", "cfg_status", "cfg_priority", "cfg_access"].includes(active);
     }
     if (code === "assign") {
         return ["assign", "people"].includes(active);
@@ -173,6 +177,7 @@ function emptyDashboard() {
         activities: [],
         overdue_count: 0,
         project_count: 0,
+        archived_count: 0,
         featured_title: "Báo cáo KPI dự án",
         status: [],
         status_pie: [],
@@ -185,6 +190,12 @@ function emptyDashboard() {
         heatmap: { months: [], rows: [] },
         filter_projects: [],
         filter_project_id: false,
+        staff_load: [],
+        cost_top: [],
+        perf: [],
+        project_types: [],
+        period: "month",
+        type_id: false,
     };
 }
 
@@ -203,10 +214,15 @@ export class LugProjectShell extends Component {
         this.navItems = NAV_ITEMS;
         this.topNavItems = TOP_NAV;
         this._sidebarResize = null;
-        this.pieChart = null;
-        this.monthChart = null;
-        this.pieRef = useRef("pieChart");
-        this.monthRef = useRef("monthChart");
+        this.staffChart = null;
+        this.trendChart = null;
+        this.costChart = null;
+        this.perfChart = null;
+        this.staffRef = useRef("staffChart");
+        this.trendRef = useRef("trendChart");
+        this.costRef = useRef("costChart");
+        this.perfRef = useRef("perfChart");
+        this.overviewScrollRef = useRef("overviewScroll");
         this.state = useState({
             active: "kpi",
             query: "",
@@ -236,28 +252,59 @@ export class LugProjectShell extends Component {
             filterProjectId: 0,
             filterOpen: false,
             filterQuery: "",
+            overviewPeriod: "month",
+            overviewTypeId: 0,
+            overviewExporting: false,
         });
         useSubEnv({ config: getDefaultConfig() });
         onMounted(() => {
             document.body.classList.add("o_lug_shell_active");
+            this._injectOverviewScrollCss();
+            this._lockOverviewScrollPane();
         });
         onWillUnmount(() => {
             document.body.classList.remove("o_lug_shell_active");
         });
         onWillStart(async () => {
-            await loadBundle("web.chartjs_lib");
-            await this.loadShellData();
+            try {
+                await this.loadShellData();
+            } catch (error) {
+                console.error(error);
+                this.state.dashboard = emptyDashboard();
+                this.state.loading = false;
+            }
         });
         onError((error) => {
             console.error(error);
             this.state.viewError = error?.message || String(error);
+            try {
+                document.body.classList.remove("o_lug_shell_active");
+            } catch (_e) {
+                // ignore
+            }
         });
         useEffect(
             () => {
-                this.renderCharts();
-                return () => this.destroyCharts();
+                this._lockOverviewScrollPane();
+                const timer = setTimeout(() => {
+                    this.renderCharts().catch((error) => console.error(error));
+                }, 80);
+                return () => {
+                    clearTimeout(timer);
+                    this.destroyCharts();
+                };
             },
-            () => [this.state.active, this.state.dashboard, this.state.loading]
+            () => [
+                this.state.active,
+                this.state.loading,
+                this.state.overviewPeriod,
+                this.state.overviewTypeId,
+                (this.state.dashboard.kpis || []).length,
+                (this.state.dashboard.staff_load || []).length,
+                (this.state.dashboard.months || []).length,
+                (this.state.dashboard.cost_top || []).length,
+                (this.state.dashboard.perf || []).length,
+            ]
         );
         useEffect(
             () => {
@@ -303,8 +350,41 @@ export class LugProjectShell extends Component {
         return this.state.active === "kpi";
     }
 
+    get overviewTypes() {
+        return this.state.dashboard.project_types || [];
+    }
+
+    get overviewKpis() {
+        return (this.state.dashboard.kpis || []).map((kpi) => {
+            const tone = kpi.tone || "blue";
+            const alert = kpi.key === "overdue" && Number(kpi.value) > 0;
+            return {
+                ...kpi,
+                hint: kpi.hint || "",
+                cardClass: `o_lps_ov_kpi tone-${tone}${alert ? " is-alert" : ""}`,
+                iconClass: `fa ${kpi.icon || "fa-folder-open"}`,
+            };
+        });
+    }
+
+    get overviewStaff() {
+        return this.state.dashboard.staff_load || [];
+    }
+
+    get overviewMonths() {
+        return this.state.dashboard.months || [];
+    }
+
+    get overviewCosts() {
+        return this.state.dashboard.cost_top || [];
+    }
+
+    get overviewPerf() {
+        return this.state.dashboard.perf || [];
+    }
+
     get isProjectList() {
-        return this.state.active === "list";
+        return this.state.active === "list" || this.state.active === "archived";
     }
 
     get isGantt() {
@@ -457,6 +537,10 @@ export class LugProjectShell extends Component {
         return Number(this.state.dashboard.project_count) || 0;
     }
 
+    get archivedCount() {
+        return Number(this.state.dashboard.archived_count) || 0;
+    }
+
     get filteredUpcoming() {
         const q = (this.state.query || "").trim().toLowerCase();
         const rows = this.state.dashboard.upcoming || [];
@@ -557,6 +641,9 @@ export class LugProjectShell extends Component {
                     ["has_template_ancestor", "=", false],
                     ["project_id.is_template", "=", false],
                 ],
+                context: {
+                    group_by: ["project_id"],
+                },
             },
             perf: {
                 resModel: "report.project.task.user",
@@ -565,7 +652,10 @@ export class LugProjectShell extends Component {
                     ["has_template_ancestor", "=", false],
                     ["project_id.is_template", "=", false],
                 ],
-                groupBy: ["user_id"],
+                groupBy: ["user_ids"],
+                context: {
+                    group_by: ["user_ids"],
+                },
             },
             milestones: {
                 resModel: "project.milestone",
@@ -592,6 +682,8 @@ export class LugProjectShell extends Component {
         try {
             const data = await this.orm.call("project.project", "get_lug_shell_data", [], {
                 project_id: this.state.filterProjectId || false,
+                period: this.state.overviewPeriod || "month",
+                type_id: this.state.overviewTypeId || false,
             });
             this.state.companyName = data.company_name || this.state.companyName;
             this.state.companyAddress = data.company_address || "";
@@ -608,6 +700,12 @@ export class LugProjectShell extends Component {
                 primary_line: g.primary_line || "Theo dõi tiến độ và hạn các dự án.",
             };
             this.state.dashboard = { ...emptyDashboard(), ...(data.dashboard || {}) };
+            if (data.dashboard?.period) {
+                this.state.overviewPeriod = data.dashboard.period;
+            }
+            if (data.dashboard?.type_id !== undefined) {
+                this.state.overviewTypeId = data.dashboard.type_id || 0;
+            }
             this.state.apps = this._collectRailApps();
         } catch (error) {
             console.error(error);
@@ -647,6 +745,9 @@ export class LugProjectShell extends Component {
         }
         if (item.badgeKey === "list") {
             return this.projectCount;
+        }
+        if (item.badgeKey === "archived") {
+            return this.archivedCount;
         }
         return 0;
     }
@@ -794,101 +895,301 @@ export class LugProjectShell extends Component {
         this.openProject(row.project_id || row.res_id);
     }
 
-    renderCharts() {
+    async onOverviewPeriodChange(ev) {
+        this.state.overviewPeriod = ev.target.value || "month";
+        await this.loadShellData();
+    }
+
+    async onOverviewTypeChange(ev) {
+        this.state.overviewTypeId = Number(ev.target.value) || 0;
+        await this.loadShellData();
+    }
+
+    _downloadBase64Excel(b64, filename) {
+        const link = document.createElement("a");
+        link.href = `data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,${b64}`;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+    }
+
+    async exportOverview() {
+        this.state.overviewExporting = true;
+        try {
+            const result = await this.orm.call("project.project", "export_lug_overview_xlsx", [], {
+                period: this.state.overviewPeriod || "month",
+                type_id: this.state.overviewTypeId || false,
+            });
+            if (!result?.file_base64) {
+                this.notification.add("Không có dữ liệu để xuất.", { type: "warning" });
+                return;
+            }
+            this._downloadBase64Excel(result.file_base64, result.filename || "bao_cao_tong_quan.xlsx");
+        } catch (error) {
+            console.error(error);
+            this.notification.add("Xuất báo cáo thất bại.", { type: "danger" });
+        } finally {
+            this.state.overviewExporting = false;
+        }
+    }
+
+    _injectOverviewScrollCss() {
+        const id = "lug-overview-scroll-css";
+        let style = document.getElementById(id);
+        if (!style) {
+            style = document.createElement("style");
+            style.id = id;
+            document.head.appendChild(style);
+        }
+        style.textContent = `
+.o_lug_project_shell .o_lps_content { position: relative !important; overflow: hidden !important; min-height: 0 !important; }
+.o_lug_project_shell .o_lps_scroll {
+  position: absolute !important;
+  top: 0 !important; right: 0 !important; bottom: 0 !important; left: 0 !important;
+  overflow-y: scroll !important;
+  overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  padding-right: 4px !important;
+  scrollbar-gutter: stable both-edges;
+  scrollbar-width: auto !important;
+  scrollbar-color: #4c1d95 #c4b5fd !important;
+}
+.o_lug_project_shell .o_lps_scroll::-webkit-scrollbar { width: 18px !important; background: #c4b5fd !important; }
+.o_lug_project_shell .o_lps_scroll::-webkit-scrollbar-track {
+  background: #c4b5fd !important;
+  border-left: 1px solid #7c3aed !important;
+}
+.o_lug_project_shell .o_lps_scroll::-webkit-scrollbar-thumb {
+  background: #4c1d95 !important;
+  border-radius: 9px !important;
+  border: 3px solid #c4b5fd !important;
+  min-height: 48px !important;
+}
+.o_lug_project_shell .o_lps_scroll::-webkit-scrollbar-thumb:hover { background: #2e1065 !important; }
+.o_lug_project_shell .o_lps_overview { padding-bottom: 72px !important; box-sizing: border-box !important; }
+.o_lug_project_shell .o_lps_scroll_spacer { height: 48px; width: 100%; }
+.o_lug_project_shell .o_lps_scroll_controls {
+  position: absolute !important;
+  right: 22px !important;
+  bottom: 18px !important;
+  z-index: 40 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+.o_lug_project_shell .o_lps_scroll_btn {
+  width: 36px !important;
+  height: 36px !important;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: #4c1d95 !important;
+  color: #fff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 36px !important;
+  text-align: center !important;
+  box-shadow: 0 8px 18px rgba(76, 29, 149, 0.35) !important;
+  cursor: pointer !important;
+}
+.o_lug_project_shell .o_lps_scroll_btn:hover { background: #2e1065 !important; }
+`;
+    }
+
+    _lockOverviewScrollPane() {
+        if (this.state.active !== "kpi") {
+            return;
+        }
+        const el = this.overviewScrollRef?.el || this.el?.querySelector?.(".o_lps_scroll");
+        if (!el) {
+            return;
+        }
+        el.style.setProperty("position", "absolute", "important");
+        el.style.setProperty("top", "0", "important");
+        el.style.setProperty("right", "0", "important");
+        el.style.setProperty("bottom", "0", "important");
+        el.style.setProperty("left", "0", "important");
+        el.style.setProperty("overflow-y", "scroll", "important");
+        el.style.setProperty("overflow-x", "hidden", "important");
+
+        const overview = el.querySelector(".o_lps_overview");
+        if (overview) {
+            const need = Math.max(overview.scrollHeight, el.clientHeight + 220);
+            overview.style.setProperty("min-height", `${need}px`, "important");
+            overview.style.setProperty("padding-bottom", "72px", "important");
+        }
+    }
+
+    scrollOverviewUp() {
+        const el = this.overviewScrollRef?.el;
+        if (!el) {
+            return;
+        }
+        el.scrollTop = Math.max(0, el.scrollTop - 280);
+    }
+
+    scrollOverviewDown() {
+        const el = this.overviewScrollRef?.el;
+        if (!el) {
+            return;
+        }
+        el.scrollTop = Math.min(el.scrollHeight - el.clientHeight, el.scrollTop + 280);
+    }
+
+    _makeChart(canvas, config) {
+        if (!canvas || typeof Chart === "undefined") {
+            return null;
+        }
+        try {
+            const existing = typeof Chart.getChart === "function" ? Chart.getChart(canvas) : null;
+            if (existing) {
+                existing.destroy();
+            }
+            return new Chart(canvas, config);
+        } catch (error) {
+            console.error("Lug chart create failed", error);
+            return null;
+        }
+    }
+
+    async renderCharts() {
         this.destroyCharts();
         if (this.state.loading || this.state.active !== "kpi") {
             return;
         }
-        const status = this.statusPie;
-        if (this.pieRef.el && status.length && typeof Chart !== "undefined") {
-            this.pieChart = new Chart(this.pieRef.el, {
-                type: "doughnut",
+        try {
+            if (typeof Chart === "undefined") {
+                await loadBundle("web.chartjs_lib");
+            }
+        } catch (error) {
+            console.error("Không tải được Chart.js", error);
+            return;
+        }
+        if (typeof Chart === "undefined") {
+            return;
+        }
+        const staff = this.overviewStaff;
+        if (this.staffRef.el && staff.length) {
+            this.staffChart = this._makeChart(this.staffRef.el, {
+                type: "bar",
                 data: {
-                    labels: status.map((row) => row.label),
+                    labels: staff.map((row) => row.name),
                     datasets: [
                         {
-                            data: status.map((row) => row.count),
-                            backgroundColor: status.map((row) => row.color),
-                            borderWidth: 0,
+                            label: "Số lượng dự án",
+                            data: staff.map((row) => row.value),
+                            backgroundColor: "#7c3aed",
+                            borderRadius: 8,
                         },
                     ],
                 },
                 options: {
+                    indexAxis: "y",
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: "58%",
+                    animation: false,
                     plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { precision: 0 } },
+                        y: { grid: { display: false } },
+                    },
                 },
             });
         }
-        const months = this.state.dashboard.months || [];
-        if (this.monthRef.el && months.length && typeof Chart !== "undefined") {
-            this.monthChart = new Chart(this.monthRef.el, {
-                type: "bar",
+        const months = this.overviewMonths;
+        if (this.trendRef.el && months.length) {
+            this.trendChart = this._makeChart(this.trendRef.el, {
+                type: "line",
                 data: {
                     labels: months.map((m) => m.label),
                     datasets: [
                         {
-                            type: "bar",
-                            label: "Dự án mới",
-                            data: months.map((m) => m.ongoing),
-                            backgroundColor: "#5b21b6",
-                            borderRadius: 4,
-                            yAxisID: "y",
-                        },
-                        {
-                            type: "bar",
-                            label: "Hoàn thành",
-                            data: months.map((m) => m.done),
-                            backgroundColor: "#16a34a",
-                            borderRadius: 4,
-                            yAxisID: "y",
-                        },
-                        {
-                            type: "line",
-                            label: "Xu hướng",
-                            data: months.map((m) => (m.done || 0) + (m.ongoing || 0)),
+                            label: "Mới tạo",
+                            data: months.map((m) => m.created || m.ongoing || 0),
                             borderColor: "#3b82f6",
-                            backgroundColor: "transparent",
-                            tension: 0.35,
-                            borderWidth: 2,
-                            pointRadius: 4,
-                            yAxisID: "y1",
+                            backgroundColor: "rgba(59, 130, 246, 0.12)",
+                            fill: true,
+                            tension: 0.4,
+                        },
+                        {
+                            label: "Hoàn thành",
+                            data: months.map((m) => m.done || 0),
+                            borderColor: "#10b981",
+                            tension: 0.4,
                         },
                     ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: "bottom",
-                            labels: { boxWidth: 10, font: { size: 11 } },
+                    animation: false,
+                    plugins: { legend: { position: "bottom" } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } },
+                },
+            });
+        }
+        const costs = this.overviewCosts;
+        if (this.costRef.el && costs.length) {
+            this.costChart = this._makeChart(this.costRef.el, {
+                type: "bar",
+                data: {
+                    labels: costs.map((row) => row.name),
+                    datasets: [
+                        {
+                            label: "Chi phí (Triệu VNĐ)",
+                            data: costs.map((row) => row.value),
+                            backgroundColor: "#10b981",
+                            borderRadius: 8,
                         },
-                    },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: { beginAtZero: true, ticks: { precision: 0 }, position: "left" },
-                        y1: {
-                            beginAtZero: true,
-                            position: "right",
-                            grid: { drawOnChartArea: false },
-                            ticks: { precision: 0 },
-                        },
                         x: { grid: { display: false } },
+                        y: { beginAtZero: true },
                     },
+                },
+            });
+        }
+        const perf = this.overviewPerf;
+        if (this.perfRef.el && perf.length) {
+            this.perfChart = this._makeChart(this.perfRef.el, {
+                type: "doughnut",
+                data: {
+                    labels: perf.map((row) => row.label),
+                    datasets: [
+                        {
+                            data: perf.map((row) => row.count),
+                            backgroundColor: perf.map((row) => row.color),
+                            borderWidth: 2,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: false,
+                    cutout: "70%",
+                    plugins: { legend: { position: "bottom" } },
                 },
             });
         }
     }
 
     destroyCharts() {
-        if (this.pieChart) {
-            this.pieChart.destroy();
-            this.pieChart = null;
-        }
-        if (this.monthChart) {
-            this.monthChart.destroy();
-            this.monthChart = null;
+        for (const key of ["staffChart", "trendChart", "costChart", "perfChart"]) {
+            if (this[key]) {
+                try {
+                    this[key].destroy();
+                } catch (_e) {
+                    // canvas may already be detached by OWL
+                }
+                this[key] = null;
+            }
         }
     }
 

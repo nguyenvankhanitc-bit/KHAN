@@ -347,11 +347,11 @@
                 <field name="lug_code" string="Mã Dự án"/>
             </xpath>
             <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Tên cửa hàng</attribute>
+                <attribute name="string">Cửa hàng / Dự án</attribute>
                 <attribute name="class"/>
             </xpath>
             <xpath expr="//field[@name='name']" position="after">
-                <field name="lug_type_id" string="Loại dự án"/>
+                <field name="lug_type_id" string="Loại"/>
             </xpath>
             <xpath expr="//field[@name='partner_id']" position="attributes">
                 <attribute name="column_invisible">1</attribute>
@@ -362,14 +362,14 @@
                 <attribute name="optional">hide</attribute>
             </xpath>
             <xpath expr="//field[@name='date_start']" position="attributes">
-                <attribute name="string">Ngày bắt đầu</attribute>
+                <attribute name="string">Bắt đầu</attribute>
                 <attribute name="widget"/>
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//field[@name='date']" position="attributes">
                 <attribute name="string">Ngày kết thúc</attribute>
-                <attribute name="column_invisible">0</attribute>
-                <attribute name="optional">show</attribute>
+                <attribute name="column_invisible">1</attribute>
+                <attribute name="optional">hide</attribute>
             </xpath>
             <xpath expr="//field[@name='date']" position="after">
                 <field name="lug_deadline" string="Deadline"/>
@@ -383,19 +383,18 @@
                 <attribute name="optional">hide</attribute>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="attributes">
-                <attribute name="string">Trưởng dự án</attribute>
+                <attribute name="string">Trưởng DA</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="lug_pic_id" string="Người phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}"/>
+                <field name="lug_pic_id" string="Phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}"/>
                 <field name="lug_workflow_state" string="Trạng thái" widget="badge" optional="show"/>
-                <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft"/>
+                <field name="lug_progress_pct" string="Tiến độ" widget="progressbar"/>
+                <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft" column_invisible="1" optional="hide"/>
                 <field name="lug_worker_ids" string="Người làm" widget="lug_workers" column_invisible="1" readonly="1" options="{'no_create': True}"/>
                 <field name="lug_content" column_invisible="1" optional="hide"/>
                 <field name="lug_supply_date" column_invisible="1" optional="hide"/>
                 <field name="lug_pdf_id" column_invisible="1" optional="hide" widget="lug_file_drop"/>
-                <field name="date_start" column_invisible="1" optional="hide"/>
-                <field name="date" column_invisible="1" optional="hide"/>
                 <button name="lug_action_open_form" type="object" icon="fa-pencil"
                         title="Sửa" class="btn btn-link p-0 o_lug_btn_edit" column_invisible="1"/>
                 <button name="lug_action_delete" type="object" icon="fa-trash-o"

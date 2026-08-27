@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nhập dự án (custom Project)",
-    "version": "19.0.1.35.0",
+    "version": "19.0.1.40.1",
     "category": "Services/Project",
     "summary": "Bổ sung form nhập dự án trên app Project chuẩn Odoo",
     "description": """
@@ -24,6 +24,7 @@ Inherit app Project native — không tạo model dự án mới.
         "data/ir_sequence_data.xml",
         "data/project_type_data.xml",
         "data/project_phase_data.xml",
+        "data/ir_cron_data.xml",
         "views/project_type_views.xml",
         "views/project_phase_views.xml",
         "views/project_stage_views.xml",

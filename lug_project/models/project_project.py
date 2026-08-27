@@ -1,4 +1,6 @@
-# -*- coding: utf-8 -*-
+﻿# -*- coding: utf-8 -*-
+
+from datetime import timedelta
 
 from odoo import api, fields, models
 from odoo.exceptions import UserError, ValidationError
@@ -28,11 +30,11 @@ class ProjectProject(models.Model):
     lug_deadline = fields.Date(string="Deadline", tracking=True, index=True)
     lug_priority = fields.Selection(
         [
-            ("high", "Cao"),
-            ("medium", "Trung bình"),
-            ("low", "Thấp"),
+            ("high", "Gấp"),
+            ("medium", "Không gấp"),
+            ("low", "Không gấp"),
         ],
-        string="Mức độ ưu tiên",
+        string="Độ ưu tiên",
         default="medium",
         tracking=True,
         index=True,
@@ -116,13 +118,15 @@ class ProjectProject(models.Model):
     )
     lug_workflow_state = fields.Selection(
         [
-            ("todo", "Chưa bắt đầu"),
-            ("progress", "Đang thực hiện"),
+            ("todo", "Đang làm"),
+            ("progress", "Đang làm"),
+            ("pause", "Tạm dừng"),
             ("done", "Hoàn thành"),
-            ("closed", "Đóng"),
+            ("cancel", "Hủy"),
+            ("closed", "Hủy"),
         ],
         string="Trạng thái dự án",
-        default="todo",
+        default="progress",
         tracking=True,
         copy=False,
         index=True,
@@ -130,6 +134,11 @@ class ProjectProject(models.Model):
     lug_progress_pct = fields.Integer(
         string="Tiến độ tổng thể",
         compute="_compute_lug_progress_pct",
+    )
+    lug_archived_date = fields.Date(
+        string="Ngày vào Thùng rác",
+        copy=False,
+        index=True,
     )
     _lug_code_uniq = models.Constraint(
         "unique(lug_code)",
@@ -405,6 +414,10 @@ class ProjectProject(models.Model):
                 vals["name"] = self._lug_name_from_vals(vals, self)
             else:
                 vals["name"] = self._lug_name_from_vals(vals) if (vals.get("lug_content") or "").strip() else "Dự án mới"
+        if vals.get("active") is False and "lug_archived_date" not in vals:
+            vals = dict(vals, lug_archived_date=fields.Date.context_today(self))
+        if vals.get("active") is True:
+            vals = dict(vals, lug_archived_date=False)
         return super().write(vals)
 
     def lug_action_open_form(self):
@@ -418,12 +431,75 @@ class ProjectProject(models.Model):
             "view_mode": "form",
             "views": [(view.id, "form")],
             "target": "new",
-            "context": {"form_view_ref": "lug_project.view_project_intake_form"},
+            "context": {
+                "form_view_ref": "lug_project.view_project_intake_form",
+                "active_test": False,
+            },
         }
 
     def lug_action_delete(self):
-        self.unlink()
+        """Đưa dự án vào thùng rác (ẩn khỏi danh sách, có thể khôi phục)."""
+        self.write({"active": False})
         return True
+
+    def lug_action_restore(self):
+        self.write({"active": True})
+        return True
+
+    @api.model
+    def _lug_trash_days(self):
+        raw = self.env["ir.config_parameter"].sudo().get_param("lug_project.trash_days", "30")
+        try:
+            return max(1, int(raw))
+        except (TypeError, ValueError):
+            return 30
+
+    def _lug_unlink_with_timesheets(self):
+        AnalyticLine = self.env["account.analytic.line"].sudo()
+        for project in self:
+            task_ids = project.with_context(active_test=False).task_ids.ids
+            domain = [("project_id", "=", project.id)]
+            if task_ids:
+                domain = ["|", ("task_id", "in", task_ids)] + domain
+            timesheets = AnalyticLine.search(domain)
+            if timesheets:
+                timesheets.unlink()
+        self.unlink()
+
+    @api.model
+    def _lug_purge_trashed_projects(self):
+        """Xóa vĩnh viễn dự án nằm trong Thùng rác quá số ngày cấu hình (mặc định 30)."""
+        days = self._lug_trash_days()
+        today = fields.Date.context_today(self)
+        cutoff = today - timedelta(days=days)
+        Trash = self.with_context(active_test=False).sudo()
+        stale = Trash.search(
+            [
+                ("active", "=", False),
+                ("is_template", "=", False),
+                ("lug_archived_date", "!=", False),
+                ("lug_archived_date", "<=", cutoff),
+            ]
+        )
+        missing_date = Trash.search(
+            [
+                ("active", "=", False),
+                ("is_template", "=", False),
+                ("lug_archived_date", "=", False),
+            ]
+        )
+        for rec in missing_date:
+            rec.lug_archived_date = rec.write_date.date() if rec.write_date else today
+        extra = missing_date.filtered(
+            lambda rec: rec.lug_archived_date and rec.lug_archived_date <= cutoff
+        )
+        (stale | extra)._lug_unlink_with_timesheets()
+        return True
+
+    def lug_toggle_priority(self):
+        self.ensure_one()
+        self.lug_priority = "medium" if self.lug_priority == "high" else "high"
+        return self.lug_priority == "high"
 
     def lug_action_open_pdf(self):
         self.ensure_one()

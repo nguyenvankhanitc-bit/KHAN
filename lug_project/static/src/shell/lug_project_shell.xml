@@ -110,129 +110,98 @@
                         </div>
                     </aside>
 
-                    <main class="o_lps_content">
+                    <main class="o_lps_content" style="position:relative;overflow:hidden;flex:1;min-height:0;min-width:0;">
                         <t t-if="isHome">
-                            <section class="o_lps_dash" data-lps-dash="gantt-cal-v6">
-                                <article class="o_lps_card o_lps_card--gantt">
-                                    <header class="o_lps_card_head">
-                                        <div>
-                                            <h3>1. Timeline / Gantt</h3>
-                                            <p>Theo dõi thời gian và tiến độ từng dự án</p>
-                                        </div>
-                                        <t t-call="lug_project.LugProjectFilter"/>
-                                    </header>
-                                    <t t-if="!state.dashboard.gantt.length">
-                                        <p class="o_lps_empty">Chưa có dự án để vẽ Gantt.</p>
-                                    </t>
-                                    <div t-else="" class="o_lps_gantt_wrap">
-                                        <t t-call="lug_project.LugGanttBoard"/>
+                            <div class="o_lps_scroll_controls" aria-label="Cuộn tổng quan">
+                                <button type="button" class="o_lps_scroll_btn" title="Cuộn lên" t-on-click="scrollOverviewUp">▲</button>
+                                <button type="button" class="o_lps_scroll_btn" title="Cuộn xuống" t-on-click="scrollOverviewDown">▼</button>
+                            </div>
+                            <div class="o_lps_scroll"
+                                 t-ref="overviewScroll"
+                                 style="position:absolute;top:0;right:0;bottom:0;left:0;overflow-y:scroll;overflow-x:hidden;overscroll-behavior:contain;">
+                            <section class="o_lps_overview" data-lps-dash="overview-v1">
+                                <header class="o_lps_ov_top">
+                                    <div>
+                                        <h1>
+                                            <span class="o_lps_ov_title_ico"><i class="fa fa-pie-chart"/></span>
+                                            TỔNG QUAN QUẢN TRỊ DỰ ÁN
+                                        </h1>
+                                        <p>Cập nhật số liệu theo thời gian thực</p>
                                     </div>
-                                </article>
-
-                                <div class="o_lps_widget_grid">
-                                    <article class="o_lps_card">
-                                        <header class="o_lps_card_head">
+                                    <div class="o_lps_ov_filters">
+                                        <select class="o_lps_ov_select" t-on-change="onOverviewPeriodChange">
+                                            <option value="month">Tháng này</option>
+                                            <option value="quarter">Quý này</option>
+                                            <option value="year">Năm 2026</option>
+                                        </select>
+                                        <select class="o_lps_ov_select" t-on-change="onOverviewTypeChange">
+                                            <option value="0">Tất cả loại DA</option>
+                                            <t t-foreach="overviewTypes" t-as="ptype" t-key="ptype.id">
+                                                <option t-att-value="ptype.id" t-esc="ptype.name"/>
+                                            </t>
+                                        </select>
+                                        <button type="button" class="o_lps_ov_export" t-on-click="exportOverview">
+                                            <i class="fa fa-file-excel-o"/>
+                                            Xuất Báo Cáo
+                                        </button>
+                                    </div>
+                                </header>
+                                <div class="o_lps_ov_kpis">
+                                    <t t-foreach="overviewKpis" t-as="kpi" t-key="kpi.key">
+                                        <article t-att-class="kpi.cardClass">
                                             <div>
-                                                <h3>3. Số lượng dự án theo thời gian</h3>
-                                                <p>Biết khối lượng dự án theo thời gian</p>
+                                                <p t-esc="kpi.label"/>
+                                                <strong t-esc="kpi.value"/>
+                                                <span t-esc="kpi.hint"/>
                                             </div>
-                                            <span class="o_lps_card_more">⋮</span>
+                                            <em><i t-att-class="kpi.iconClass"/></em>
+                                        </article>
+                                    </t>
+                                </div>
+                                <div class="o_lps_ov_charts">
+                                    <article class="o_lps_ov_card">
+                                        <header>
+                                            <h2><i class="fa fa-users"/> Phân bổ dự án theo nhân sự</h2>
+                                            <span>Số dự án / Nhân sự</span>
                                         </header>
-                                        <div class="o_lps_chart_wrap">
-                                            <canvas t-ref="monthChart"/>
+                                        <div class="o_lps_ov_chart">
+                                            <canvas t-ref="staffChart"/>
                                         </div>
                                     </article>
-
-                                    <article class="o_lps_card">
-                                        <header class="o_lps_card_head">
-                                            <div>
-                                                <h3>4. Tiến độ dự án</h3>
-                                                <p>So sánh % hoàn thành giữa các dự án</p>
-                                            </div>
-                                            <span class="o_lps_card_more">⋮</span>
+                                    <article class="o_lps_ov_card">
+                                        <header>
+                                            <h2><i class="fa fa-line-chart"/> Xu hướng dự án (6 tháng)</h2>
+                                            <span>Phát sinh vs Hoàn tất</span>
                                         </header>
-                                        <t t-if="!state.dashboard.progress.length">
-                                            <p class="o_lps_empty">Chưa có dự án.</p>
-                                        </t>
-                                        <ul t-else="" class="o_lps_progress">
-                                            <t t-foreach="state.dashboard.progress" t-as="row" t-key="row.id">
-                                                <li t-on-click="() => this.openProject(row.id)">
-                                                    <div class="o_lps_progress_meta">
-                                                        <span t-esc="row.name"/>
-                                                        <em t-esc="row.pct + '%'"/>
-                                                    </div>
-                                                    <div class="o_lps_progress_track">
-                                                        <i t-att-class="row.tone" t-att-style="'width:' + row.pct + '%'"/>
-                                                    </div>
-                                                </li>
-                                            </t>
-                                        </ul>
-                                        <div class="o_lps_progress_axis">
-                                            <span>0%</span><span>50%</span><span>100%</span>
+                                        <div class="o_lps_ov_chart">
+                                            <canvas t-ref="trendChart"/>
+                                        </div>
+                                    </article>
+                                    <article class="o_lps_ov_card">
+                                        <header>
+                                            <h2><i class="fa fa-money"/> Top chi phí theo dự án (Triệu VNĐ)</h2>
+                                            <span>Ngân sách dự toán</span>
+                                        </header>
+                                        <div class="o_lps_ov_chart">
+                                            <canvas t-ref="costChart"/>
+                                        </div>
+                                    </article>
+                                    <article class="o_lps_ov_card">
+                                        <header>
+                                            <h2><i class="fa fa-bullseye"/> Hiệu suất tiến độ thực tế</h2>
+                                            <span>Tỷ lệ hoàn thành hạn chót</span>
+                                        </header>
+                                        <div class="o_lps_ov_chart o_lps_ov_chart--donut">
+                                            <canvas t-ref="perfChart"/>
                                         </div>
                                     </article>
                                 </div>
-
-                                <div class="o_lps_widget_grid o_lps_widget_grid--bottom">
-                                    <article class="o_lps_card o_lps_card--pie">
-                                        <header class="o_lps_card_head">
-                                            <div>
-                                                <h3>2. Trạng thái dự án</h3>
-                                                <p>Hoàn thành / Đang thực hiện / Chưa bắt đầu / Quá hạn</p>
-                                            </div>
-                                            <span class="o_lps_card_more">⋮</span>
-                                        </header>
-                                        <t t-if="!statusPie.length">
-                                            <p class="o_lps_empty">Chưa có dữ liệu.</p>
-                                        </t>
-                                        <div t-else="" class="o_lps_pie_box">
-                                            <div class="o_lps_chart_wrap o_lps_chart_wrap--pie">
-                                                <canvas t-ref="pieChart"/>
-                                            </div>
-                                            <ul class="o_lps_legend">
-                                                <t t-foreach="statusPie" t-as="slice" t-key="slice.key">
-                                                    <li>
-                                                        <i t-att-style="'background:' + slice.color"/>
-                                                        <span t-esc="slice.label"/>
-                                                        <em t-esc="slice.count"/>
-                                                    </li>
-                                                </t>
-                                            </ul>
-                                        </div>
-                                    </article>
-
-                                    <article class="o_lps_card o_lps_card--heat">
-                                        <header class="o_lps_card_head">
-                                            <div>
-                                                <h3>5. Phân bổ công việc theo nhân sự</h3>
-                                                <p>Biết nhân sự nào đang nhiều/ít việc, quá tải</p>
-                                            </div>
-                                            <span class="o_lps_card_more">⋮</span>
-                                        </header>
-                                        <t t-if="!state.dashboard.heatmap.rows.length">
-                                            <p class="o_lps_empty">Chưa có dữ liệu phân công.</p>
-                                        </t>
-                                        <div t-else="" class="o_lps_heat">
-                                            <div class="o_lps_heat_head">
-                                                <span>Nhân sự</span>
-                                                <t t-foreach="state.dashboard.heatmap.months" t-as="month" t-key="month">
-                                                    <em t-esc="month"/>
-                                                </t>
-                                            </div>
-                                            <t t-foreach="state.dashboard.heatmap.rows" t-as="row" t-key="row.id">
-                                                <div class="o_lps_heat_row">
-                                                    <span t-esc="row.name"/>
-                                                    <t t-foreach="row.values" t-as="cell" t-key="cell_index">
-                                                        <i t-att-class="heatClass(cell)" t-att-title="cell + '%'"/>
-                                                    </t>
-                                                </div>
-                                            </t>
-                                        </div>
-                                    </article>
-                                </div>
+                                <div class="o_lps_scroll_spacer" aria-hidden="true"/>
                             </section>
+                            </div>
                         </t>
                         <t t-elif="isGantt">
+                            <div class="o_lps_scroll">
                             <section class="o_lps_dash" data-lps-dash="gantt-cal-v6">
                                 <article class="o_lps_card">
                                     <header class="o_lps_card_head">
@@ -250,6 +219,7 @@
                                     </div>
                                 </article>
                             </section>
+                            </div>
                         </t>
                         <t t-elif="state.viewError">
                             <div class="o_lps_view_error">
@@ -261,7 +231,10 @@
                             </div>
                         </t>
                         <div t-elif="isProjectList" class="o_lps_view_host o_lps_view_host--plist">
-                            <LugProjectList onNew.bind="() => this.setActive('intake')" onGantt.bind="(id) => this.viewGanttForProject(id)"/>
+                            <LugProjectList t-key="state.active"
+                                            archived="state.active === 'archived'"
+                                            onNew.bind="() => this.setActive('intake')"
+                                            onGantt.bind="(id) => this.viewGanttForProject(id)"/>
                         </div>
                         <div t-else="" class="o_lps_view_host">
                             <View t-props="viewProps" t-key="state.active"/>

@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_phan_he_work_shift_list" model="ir.ui.view">
+        <field name="name">phan.he.work.shift.list</field>
+        <field name="model">phan.he.work.shift</field>
+        <field name="arch" type="xml">
+            <list string="Ký hiệu công" class="o_phan_he_shift_list" js_class="phan_he_work_shift_list">
+                <field name="sequence" widget="handle"/>
+                <field name="color" column_invisible="1"/>
+                <field name="code" string="Mã công"/>
+                <field name="name" string="Tên ca"/>
+                <field name="shift_group" widget="badge" options="{'color_field': 'color'}"/>
+                <field name="time_in_display" string="Giờ vào"/>
+                <field name="time_out_display" string="Giờ về"/>
+                <field name="total_hours" string="Tổng giờ"/>
+                <field name="break_summary" string="Ghi chú"/>
+                <field name="actual_hours" string="Công thực tế" optional="hide" column_invisible="1"/>
+                <field name="state" optional="hide" widget="badge"
+                       decoration-success="state == 'applying'"
+                       decoration-muted="state == 'stopped'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_work_shift_form" model="ir.ui.view">
+        <field name="name">phan.he.work.shift.form</field>
+        <field name="model">phan.he.work.shift</field>
+        <field name="arch" type="xml">
+            <form string="Ký hiệu công" class="o_phan_he_shift_form" js_class="phan_he_work_shift_form">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="applying,stopped" options="{'clickable': '1'}"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="code" string="Mã công"/>
+                        <h1><field name="code" placeholder="VD: F1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name" placeholder="VD: Ca Full 08:00 - 20:00"/>
+                            <field name="shift_group"/>
+                        </group>
+                        <group>
+                            <field name="color" widget="color_picker"/>
+                        </group>
+                    </group>
+
+                    <separator string="Thời gian làm việc"/>
+                    <group>
+                        <group>
+                            <field name="time_in" widget="float_time"/>
+                            <label for="total_hours"/>
+                            <div class="o_row">
+                                <field name="total_hours" readonly="1"/>
+                                <span>giờ</span>
+                                <span class="text-muted">(Tự động tính)</span>
+                            </div>
+                            <label for="actual_hours"/>
+                            <div class="o_row">
+                                <field name="actual_hours" readonly="1"/>
+                                <span>giờ</span>
+                            </div>
+                        </group>
+                        <group>
+                            <field name="time_out" widget="float_time"/>
+                            <label for="break_time"/>
+                            <div class="o_row">
+                                <field name="break_time" readonly="1"/>
+                                <span>giờ</span>
+                            </div>
+                            <field name="work_coefficient"/>
+                        </group>
+                    </group>
+
+                    <separator string="Quy định nghỉ ăn / Ghi chú"/>
+                    <group>
+                        <label for="has_lunch_break"/>
+                        <div class="o_row">
+                            <field name="has_lunch_break" nolabel="1"/>
+                            <span invisible="not has_lunch_break">Từ</span>
+                            <field name="lunch_from" widget="float_time"
+                                   invisible="not has_lunch_break"
+                                   required="has_lunch_break"
+                                   nolabel="1"/>
+                            <span invisible="not has_lunch_break">đến</span>
+                            <field name="lunch_to" widget="float_time"
+                                   invisible="not has_lunch_break"
+                                   required="has_lunch_break"
+                                   nolabel="1"/>
+                            <span class="text-muted" invisible="not has_lunch_break">
+                                (Trừ <field name="lunch_hours" class="oe_inline"/> giờ)
+                            </span>
+                        </div>
+                        <label for="has_dinner_break"/>
+                        <div class="o_row">
+                            <field name="has_dinner_break" nolabel="1"/>
+                            <span invisible="not has_dinner_break">Từ</span>
+                            <field name="dinner_from" widget="float_time"
+                                   invisible="not has_dinner_break"
+                                   required="has_dinner_break"
+                                   nolabel="1"/>
+                            <span invisible="not has_dinner_break">đến</span>
+                            <field name="dinner_to" widget="float_time"
+                                   invisible="not has_dinner_break"
+                                   required="has_dinner_break"
+                                   nolabel="1"/>
+                            <span class="text-muted" invisible="not has_dinner_break">
+                                (Trừ <field name="dinner_hours" class="oe_inline"/> giờ)
+                            </span>
+                        </div>
+                    </group>
+
+                    <notebook>
+                        <page string="Ghi chú thêm" name="note">
+                            <field name="note" placeholder="VD: Ca chuẩn áp dụng cho nhân sự chạy full ngày tại các cụm cửa hàng TTTM." nolabel="1"/>
+                        </page>
+                        <page string="Phạm vi áp dụng" name="apply">
+                            <group>
+                                <field name="apply_weekday"/>
+                                <field name="apply_weekend"/>
+                                <field name="sequence"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_work_shift_search" model="ir.ui.view">
+        <field name="name">phan.he.work.shift.search</field>
+        <field name="model">phan.he.work.shift</field>
+        <field name="arch" type="xml">
+            <search string="Tìm ký hiệu công">
+                <field name="code" string="Mã / tên / nhóm / giờ"
+                       filter_domain="['|', '|', '|',
+                            ('code', 'ilike', self),
+                            ('name', 'ilike', self),
+                            ('shift_group', 'ilike', self),
+                            ('note', 'ilike', self)]"/>
+                <field name="name"/>
+                <field name="shift_group"/>
+                <filter name="filter_weekday" string="Ca ngày thường" domain="[('apply_weekday', '=', True)]"/>
+                <filter name="filter_weekend" string="Ca cuối tuần" domain="[('apply_weekend', '=', True)]"/>
+                <separator/>
+                <filter name="filter_full" string="FULL" domain="[('shift_group', '=', 'full')]"/>
+                <filter name="filter_sang" string="Sáng" domain="[('shift_group', '=', 'sang')]"/>
+                <filter name="filter_chieu" string="Chiều" domain="[('shift_group', '=', 'chieu')]"/>
+                <filter name="filter_gay" string="Gãy" domain="[('shift_group', '=', 'gay')]"/>
+                <filter name="filter_off" string="OFF" domain="[('shift_group', '=', 'off')]"/>
+                <separator/>
+                <filter name="filter_applying" string="Đang áp dụng" domain="[('state', '=', 'applying')]"/>
+                <filter name="filter_stopped" string="Ngừng áp dụng" domain="[('state', '=', 'stopped')]"/>
+                <group>
+                    <filter name="group_shift_group" string="Nhóm ca" context="{'group_by': 'shift_group'}"/>
+                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_work_shift" model="ir.actions.act_window">
+        <field name="name">Ký hiệu công</field>
+        <field name="res_model">phan.he.work.shift</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_work_shift_search"/>
+        <field name="context">{}</field>
+        <field name="limit">80</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có ký hiệu công</p>
+            <p>Tạo mã công (F1, S1, C1…) để dùng cho xếp ca / chấm công.</p>
+        </field>
+    </record>
+</odoo>

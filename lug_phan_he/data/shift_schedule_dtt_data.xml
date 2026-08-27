@@ -1,0 +1,487 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="dtt_aebd" model="linkq.shift.schedule.dtt">
+        <field name="sequence">10</field>
+        <field name="store_name">AEBD</field>
+    </record>
+    <record id="dtt_aebd_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_aebd"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_aebd_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_aebd"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S12 (08:30 - 16:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_aebd_glea" model="linkq.shift.schedule.dtt">
+        <field name="sequence">20</field>
+        <field name="store_name">LUG_AEBD &amp; GLEA_AEBD</field>
+    </record>
+    <record id="dtt_lug_aebd_glea_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_aebd_glea"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_lug_aebd_glea_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_lug_aebd_glea"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S12 (08:30 - 16:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_bcm_new" model="linkq.shift.schedule.dtt">
+        <field name="sequence">30</field>
+        <field name="store_name">LUG_BCM_NEW</field>
+    </record>
+    <record id="dtt_lug_bcm_new_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_bcm_new"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F9 (09:30 - 21:00)</field>
+        <field name="shift_split_afternoon">GC3 (12:00 - 21:00)</field>
+        <field name="shift_morning">S3 (09:30 - 15:00)</field>
+        <field name="shift_afternoon">C5 (14:00 - 21:00)</field>
+    </record>
+    <record id="dtt_lug_bcm_new_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_lug_bcm_new"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F5 (09:00 - 21:00)</field>
+        <field name="shift_split_afternoon">GC3 (12:00 - 21:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C5 (14:00 - 21:00)</field>
+    </record>
+
+    <record id="dtt_lug_bmt_nvc" model="linkq.shift.schedule.dtt">
+        <field name="sequence">40</field>
+        <field name="store_name">LUG_BMT_NVC</field>
+    </record>
+    <record id="dtt_lug_bmt_nvc_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_bmt_nvc"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F1 (08:00 - 20:00)</field>
+        <field name="shift_morning">S10 (08:00 - 16:00)</field>
+        <field name="shift_afternoon">C6 (12:00 - 20:00)</field>
+        <field name="note">Trước 01/08/2025 là S11, từ 01/08/2025 là S10</field>
+    </record>
+
+    <record id="dtt_lug_nt" model="linkq.shift.schedule.dtt">
+        <field name="sequence">50</field>
+        <field name="store_name">LUG_NT</field>
+    </record>
+    <record id="dtt_lug_nt_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_nt"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_nt_ab" model="linkq.shift.schedule.dtt">
+        <field name="sequence">60</field>
+        <field name="store_name">LUG_NT_AB</field>
+    </record>
+    <record id="dtt_lug_nt_ab_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_nt_ab"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_morning">GS4 (09:00 - 19:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_nt_ddl_dna" model="linkq.shift.schedule.dtt">
+        <field name="sequence">70</field>
+        <field name="store_name">NT_DDL_DNA</field>
+    </record>
+    <record id="dtt_nt_ddl_dna_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_nt_ddl_dna"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_vc304" model="linkq.shift.schedule.dtt">
+        <field name="sequence">80</field>
+        <field name="store_name">LUG_VC304</field>
+    </record>
+    <record id="dtt_lug_vc304_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_vc304"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F8 (09:30 - 22:00)</field>
+        <field name="shift_split_morning">GS5 (09:30 - 18:30)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S3 (09:30 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">GS5 áp dụng từ 01/05/2026</field>
+    </record>
+    <record id="dtt_lug_vc304_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_lug_vc304"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_morning">GS3 (09:00 - 18:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">GS3 áp dụng từ 01/05/2026</field>
+    </record>
+
+    <record id="dtt_vcbh_all" model="linkq.shift.schedule.dtt">
+        <field name="sequence">90</field>
+        <field name="store_name">VCBH_ALL</field>
+    </record>
+    <record id="dtt_vcbh_all_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_vcbh_all"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F8 (09:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S4 (09:30 - 15:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_vcbh_all_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_vcbh_all"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S2 (09:00 - 15:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_go_dian" model="linkq.shift.schedule.dtt">
+        <field name="sequence">100</field>
+        <field name="store_name">GO_DIAN</field>
+    </record>
+    <record id="dtt_go_dian_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_go_dian"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S10 (08:00 - 16:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_go_baria" model="linkq.shift.schedule.dtt">
+        <field name="sequence">110</field>
+        <field name="store_name">GO_BARIA</field>
+    </record>
+    <record id="dtt_go_baria_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_go_baria"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S5 (08:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">Gia Hân đi ca S10, C4 từ 01/08-01/11</field>
+    </record>
+
+    <record id="dtt_go_danang" model="linkq.shift.schedule.dtt">
+        <field name="sequence">120</field>
+        <field name="store_name">GO_DANANG</field>
+    </record>
+    <record id="dtt_go_danang_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_go_danang"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S5 (08:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_go_cantho" model="linkq.shift.schedule.dtt">
+        <field name="sequence">130</field>
+        <field name="store_name">GO_CANTHO</field>
+    </record>
+    <record id="dtt_go_cantho_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_go_cantho"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S5 (08:00 - 15:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_go_hue" model="linkq.shift.schedule.dtt">
+        <field name="sequence">140</field>
+        <field name="store_name">GO_HUE</field>
+    </record>
+    <record id="dtt_go_hue_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_go_hue"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S6 (08:00 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_rvs_tret" model="linkq.shift.schedule.dtt">
+        <field name="sequence">150</field>
+        <field name="store_name">RVS_TRET</field>
+    </record>
+    <record id="dtt_rvs_tret_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_rvs_tret"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F3 (08:30 - 21:30)</field>
+        <field name="shift_split_morning">GS1 (08:30 - 18:30)</field>
+        <field name="shift_split_afternoon">GC2 (12:00 - 21:30)</field>
+        <field name="shift_morning">S8 (08:30 - 15:30)</field>
+        <field name="shift_afternoon">C2 / C3 (15:00 - 21:30 / 14:30 - 21:30)</field>
+    </record>
+    <record id="dtt_rvs_tret_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_rvs_tret"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_morning">GS1 (08:30 - 18:30)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S8 (08:30 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_vcdn" model="linkq.shift.schedule.dtt">
+        <field name="sequence">160</field>
+        <field name="store_name">LUG_VCDN</field>
+    </record>
+    <record id="dtt_lug_vcdn_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_vcdn"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F8 (09:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S4 (09:30 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+    <record id="dtt_lug_vcdn_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_lug_vcdn"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S2 (09:00 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_leduan" model="linkq.shift.schedule.dtt">
+        <field name="sequence">170</field>
+        <field name="store_name">LUG_LEDUAN</field>
+    </record>
+    <record id="dtt_lug_leduan_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_leduan"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F5 (09:00 - 21:00)</field>
+        <field name="shift_split_afternoon">GC3 (12:00 - 21:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C9 (15:00 - 21:00)</field>
+    </record>
+
+    <record id="dtt_vinpearl_lug" model="linkq.shift.schedule.dtt">
+        <field name="sequence">180</field>
+        <field name="store_name">VINPEARL_LUG</field>
+    </record>
+    <record id="dtt_vinpearl_lug_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_vinpearl_lug"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_morning">GS4 (09:00 - 19:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+    </record>
+
+    <record id="dtt_aehue_ddl" model="linkq.shift.schedule.dtt">
+        <field name="sequence">190</field>
+        <field name="store_name">AEHUE_DDL</field>
+    </record>
+    <record id="dtt_aehue_ddl_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_aehue_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S2 (09:00 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">29/08-01/09/2026 mở tới 22:30</field>
+    </record>
+    <record id="dtt_aehue_ddl_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_aehue_ddl"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S8 (08:30 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">29/08-01/09/2026 mở tới 22:30</field>
+    </record>
+
+    <record id="dtt_countryhide_aehue" model="linkq.shift.schedule.dtt">
+        <field name="sequence">200</field>
+        <field name="store_name">COUNTRYHIDE_AEHUE</field>
+    </record>
+    <record id="dtt_countryhide_aehue_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_countryhide_aehue"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S2 (09:00 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">29/08-01/09/2026 mở tới 22:30</field>
+    </record>
+    <record id="dtt_countryhide_aehue_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_countryhide_aehue"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S8 (08:30 - 15:30)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+        <field name="note">29/08-01/09/2026 mở tới 22:30</field>
+    </record>
+
+    <record id="dtt_kg_koh_sora" model="linkq.shift.schedule.dtt">
+        <field name="sequence">210</field>
+        <field name="store_name">KG_KOH_SORA</field>
+    </record>
+    <record id="dtt_kg_koh_sora_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_kg_koh_sora"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F8 (09:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S14 (09:30 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_kg_koh_sora_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_kg_koh_sora"/>
+        <field name="apply_days">T7 - CN</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_aeta" model="linkq.shift.schedule.dtt">
+        <field name="sequence">220</field>
+        <field name="store_name">AETA</field>
+    </record>
+    <record id="dtt_aeta_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_aeta"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_aeta_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_aeta"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S12 (08:30 - 16:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_mmdn" model="linkq.shift.schedule.dtt">
+        <field name="sequence">230</field>
+        <field name="store_name">LUG_MMDN</field>
+    </record>
+    <record id="dtt_lug_mmdn_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_mmdn"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F2 (08:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S5 (08:00 - 15:00)</field>
+        <field name="shift_afternoon">C1 (15:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_tbl_aebd" model="linkq.shift.schedule.dtt">
+        <field name="sequence">240</field>
+        <field name="store_name">TBL_AEBD</field>
+    </record>
+    <record id="dtt_tbl_aebd_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_tbl_aebd"/>
+        <field name="apply_days">T2 - T6</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+    <record id="dtt_tbl_aebd_l2" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="dtt_tbl_aebd"/>
+        <field name="apply_days">T7, CN, LỄ</field>
+        <field name="shift_full">F4 (08:30 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S12 (08:30 - 16:30)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+    </record>
+
+    <record id="dtt_lug_ag" model="linkq.shift.schedule.dtt">
+        <field name="sequence">250</field>
+        <field name="store_name">LUG_AG</field>
+    </record>
+    <record id="dtt_lug_ag_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_ag"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F5 (09:00 - 21:00)</field>
+        <field name="shift_split_afternoon">GC3 (12:00 - 21:00)</field>
+        <field name="shift_morning">S1 (09:00 - 15:00)</field>
+        <field name="shift_afternoon">C9 (15:00 - 21:00)</field>
+    </record>
+
+    <record id="dtt_lug_vt" model="linkq.shift.schedule.dtt">
+        <field name="sequence">260</field>
+        <field name="store_name">LUG_VT</field>
+    </record>
+    <record id="dtt_lug_vt_l1" model="linkq.shift.schedule.dtt.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="dtt_lug_vt"/>
+        <field name="apply_days">FULL</field>
+        <field name="shift_full">F7 (09:00 - 22:00)</field>
+        <field name="shift_split_afternoon">GC1 (12:00 - 22:00)</field>
+        <field name="shift_morning">S9 (09:00 - 17:00)</field>
+        <field name="shift_afternoon">C4 (14:00 - 22:00)</field>
+        <field name="note">Đổi từ S1/C1 sang S9/C4 từ 01/07/2025</field>
+    </record>
+
+</odoo>

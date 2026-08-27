@@ -233,6 +233,7 @@
                         <div t-elif="isProjectList" class="o_lps_view_host o_lps_view_host--plist">
                             <LugProjectList t-key="state.active"
                                             archived="state.active === 'archived'"
+                                            overdue="state.active === 'overdue'"
                                             onNew.bind="() => this.setActive('intake')"
                                             onGantt.bind="(id) => this.viewGanttForProject(id)"/>
                         </div>

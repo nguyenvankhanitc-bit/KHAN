@@ -1175,10 +1175,22 @@ class ProjectProjectDashboard(models.Model):
         date_to=None,
         ids=None,
         archived=False,
+        overdue=False,
     ):
         domain = list(_PROJECT_DOMAIN)
         if archived:
             domain.append(("active", "=", False))
+        if overdue:
+            today = fields.Date.context_today(self)
+            domain += [
+                ("lug_workflow_state", "not in", ("done", "closed", "cancel")),
+                ("last_update_status", "not in", list(_DONE_STATUSES)),
+                "|",
+                ("lug_deadline", "<", today),
+                "&",
+                ("lug_deadline", "=", False),
+                ("date", "<", today),
+            ]
         if ids:
             domain.append(("id", "in", [int(item) for item in ids if item]))
         search = (search or "").strip()
@@ -1354,10 +1366,12 @@ class ProjectProjectDashboard(models.Model):
         date_from=None,
         date_to=None,
         archived=False,
+        overdue=False,
     ):
         """Paginated project rows for the custom list UI."""
         today = fields.Date.context_today(self)
         archived = bool(archived)
+        overdue = bool(overdue)
         domain = self._lug_list_domain(
             search=search,
             priority=priority,
@@ -1369,6 +1383,7 @@ class ProjectProjectDashboard(models.Model):
             date_from=date_from,
             date_to=date_to,
             archived=archived,
+            overdue=overdue,
         )
         Project = self.with_context(active_test=not archived)
         total = Project.search_count(domain)
@@ -1412,6 +1427,7 @@ class ProjectProjectDashboard(models.Model):
             date_to=params.get("date_to"),
             ids=params.get("ids"),
             archived=bool(params.get("archived")),
+            overdue=bool(params.get("overdue")),
         )
         archived = bool(params.get("archived"))
         projects = self.with_context(active_test=not archived).search(domain, order="lug_stt, id", limit=5000)

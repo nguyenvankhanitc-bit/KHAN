@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_phan_he_shift_roster_list" model="ir.ui.view">
+        <field name="name">phan.he.shift.roster.list</field>
+        <field name="model">phan.he.shift.roster</field>
+        <field name="arch" type="xml">
+            <list string="Bản xếp ca">
+                <field name="name"/>
+                <field name="week_start"/>
+                <field name="week_end"/>
+                <field name="store_id" optional="show"/>
+                <field name="department_id" optional="show"/>
+                <field name="line_count" string="Nhân sự"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_shift_roster_form" model="ir.ui.view">
+        <field name="name">phan.he.shift.roster.form</field>
+        <field name="model">phan.he.shift.roster</field>
+        <field name="arch" type="xml">
+            <form string="Bản xếp ca" class="o_phan_he_roster_form">
+                <header>
+                    <button name="action_load_employees" type="object"
+                            string="Tải nhân viên" class="btn-primary"
+                            invisible="state == 'confirmed'"/>
+                    <button name="action_copy_previous_week" type="object"
+                            string="Copy tuần trước"
+                            invisible="state == 'confirmed'"/>
+                    <button name="action_confirm" type="object"
+                            string="Chốt ca" class="btn-primary"
+                            invisible="state == 'confirmed'"/>
+                    <button name="action_draft" type="object"
+                            string="Mở lại" invisible="state != 'confirmed'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="week_start" readonly="state == 'confirmed'"/>
+                            <field name="week_end"/>
+                        </group>
+                        <group>
+                            <field name="store_id" readonly="state == 'confirmed'"/>
+                            <field name="department_id" readonly="state == 'confirmed'"/>
+                        </group>
+                    </group>
+                    <field name="line_ids" readonly="state == 'confirmed'" nolabel="1">
+                        <list editable="bottom" class="o_phan_he_roster_lines">
+                            <field name="employee_id" widget="many2one_avatar_employee"/>
+                            <field name="department_id" optional="hide"/>
+                            <field name="mon_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="tue_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="wed_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="thu_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="fri_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="sat_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="sun_shift_id" domain="[('state', '=', 'applying')]" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="total_hours" sum="Tổng giờ"/>
+                            <field name="actual_hours" sum="Công thực tế"/>
+                        </list>
+                    </field>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_shift_roster_search" model="ir.ui.view">
+        <field name="name">phan.he.shift.roster.search</field>
+        <field name="model">phan.he.shift.roster</field>
+        <field name="arch" type="xml">
+            <search string="Tìm bản xếp ca">
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="department_id"/>
+                <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_confirmed" string="Đã chốt" domain="[('state', '=', 'confirmed')]"/>
+                <group>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_week" string="Tuần" context="{'group_by': 'week_start'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_shift_roster" model="ir.actions.act_window">
+        <field name="name">Bản xếp ca</field>
+        <field name="res_model">phan.he.shift.roster</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_shift_roster_search"/>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có bản xếp ca</p>
+            <p>Tạo bản xếp ca tuần, bấm Tải nhân viên rồi gán mã công F1, S1, OFF… vào từng ngày.</p>
+        </field>
+    </record>
+</odoo>

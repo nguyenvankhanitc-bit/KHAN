@@ -1000,6 +1000,22 @@
     }
 }
 
+.o_lug_plist_overdue_title {
+    font-weight: 800;
+    color: #9f1239;
+    font-size: 14px;
+    padding: 0 4px;
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.2;
+
+    small {
+        font-weight: 600;
+        font-size: 11px;
+        color: #be123c;
+    }
+}
+
 .o_lug_plist_trash_left {
     display: block;
     margin-top: 3px;

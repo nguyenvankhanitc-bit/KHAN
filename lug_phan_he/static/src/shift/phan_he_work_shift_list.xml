@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.WorkShiftListView" t-inherit="web.ListView" t-inherit-mode="primary">
+        <xpath expr="//Layout" position="before">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+        </xpath>
+        <xpath expr="//t[@t-set-slot='control-panel-create-button']" position="replace">
+            <t t-set-slot="control-panel-create-button">
+                <button t-if="!editedRecord and activeActions.create and props.showButtons"
+                        type="button"
+                        class="btn btn-primary o_list_button_add o_phan_he_btn_create"
+                        data-hotkey="c"
+                        t-on-click="onClickCreate"
+                        data-bounce-button="">
+                    <i class="fa fa-plus"/>
+                    Tạo mới
+                </button>
+                <button t-if="!editedRecord and props.showButtons and !env.inDialog"
+                        type="button"
+                        class="btn btn-secondary o_phan_he_btn_import"
+                        t-on-click="onClickImport">
+                    <i class="fa fa-download"/>
+                    Nhập bản ghi
+                </button>
+                <CogMenu t-if="!hasSelectedRecords and !editedRecord"/>
+                <t t-if="props.showButtons and !env.inDialog" t-call="web.ListView.EditableButtons"/>
+            </t>
+        </xpath>
+        <xpath expr="//t[@t-set-slot='control-panel-additional-actions']" position="replace">
+            <t t-set-slot="control-panel-additional-actions">
+                <CogMenu t-if="hasSelectedRecords and env.isSmall and (props.info.actionMenus or archInfo.headerButtons.length)"
+                         t-props="this.actionMenuProps"
+                         hasSelectedRecords="hasSelectedRecords">
+                    <t t-foreach="archInfo.headerButtons" t-as="button" t-key="button.id" t-if="!evalViewModifier(button.invisible)">
+                        <DropdownItem class="'o-dropdown-item-unstyled-button'">
+                            <MultiRecordViewButton
+                                t-if="button.display !== 'always'"
+                                list="model.root"
+                                className="button.className"
+                                clickParams="button.clickParams"
+                                defaultRank="'btn-secondary'"
+                                domain="props.domain"
+                                icon="button.icon"
+                                string="button.string"
+                                title="button.title"
+                                attrs="button.attrs"
+                            />
+                        </DropdownItem>
+                    </t>
+                </CogMenu>
+            </t>
+        </xpath>
+    </t>
+
+    <t t-name="lug_phan_he.WorkShiftFormView" t-inherit="web.FormView" t-inherit-mode="primary">
+        <xpath expr="//div[@class='o_form_view_container']" position="before">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+        </xpath>
+        <xpath expr="//button[@data-hotkey='c']" position="replace">
+            <button t-if="canCreate" type="button" class="btn btn-primary o_form_button_create o_phan_he_btn_create" data-hotkey="c" t-on-click.stop="create">
+                <i class="fa fa-plus"/> Tạo mới
+            </button>
+        </xpath>
+    </t>
+
+    <t t-name="lug_phan_he.NorthScheduleListView" t-inherit="lug_phan_he.WorkShiftListView" t-inherit-mode="primary"/>
+
+    <t t-name="lug_phan_he.NorthScheduleFormView" t-inherit="lug_phan_he.WorkShiftFormView" t-inherit-mode="primary"/>
+
+    <t t-name="lug_phan_he.StoreScheduleListView" t-inherit="lug_phan_he.WorkShiftListView" t-inherit-mode="primary"/>
+
+    <t t-name="lug_phan_he.StoreScheduleFormView" t-inherit="lug_phan_he.WorkShiftFormView" t-inherit-mode="primary"/>
+
+    <t t-name="lug_phan_he.DttScheduleListView" t-inherit="lug_phan_he.WorkShiftListView" t-inherit-mode="primary"/>
+
+    <t t-name="lug_phan_he.RosterListView" t-inherit="lug_phan_he.WorkShiftListView" t-inherit-mode="primary">
+        <xpath expr="//t[@t-set-slot='control-panel-create-button']" position="replace">
+            <t t-set-slot="control-panel-create-button">
+                <div class="o_mm_form_header_btns d-flex align-items-center flex-wrap w-100 gap-2">
+                    <button t-if="!editedRecord and activeActions.create and props.showButtons"
+                            type="button"
+                            class="btn btn-outline-primary fw-bold o_mm_btn_new"
+                            data-hotkey="c"
+                            t-on-click="onClickCreate">
+                        <i class="fa fa-plus me-1"/> Thêm mới
+                    </button>
+                    <button t-if="editedRecord"
+                            type="button"
+                            class="btn btn-primary fw-bold px-3 o_mm_btn_save"
+                            t-on-click="() => this.onRosterListSave()">
+                        <i class="fa fa-floppy-o me-1"/> Lưu
+                    </button>
+                    <button t-if="editedRecord"
+                            type="button"
+                            class="btn btn-outline-secondary fw-bold px-3 o_mm_btn_cancel"
+                            t-on-click="() => this.onRosterListDiscard()">
+                        <i class="fa fa-times me-1"/> Hủy
+                    </button>
+                    <button t-if="!editedRecord"
+                            type="button"
+                            class="btn btn-outline-secondary fw-bold px-3 o_mm_btn_edit"
+                            t-on-click="() => this.onRosterListEdit()">
+                        <i class="fa fa-pencil me-1"/> Chỉnh sửa
+                    </button>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+    <t t-name="lug_phan_he.RosterFormView" t-inherit="lug_phan_he.WorkShiftFormView" t-inherit-mode="primary">
+        <xpath expr="//button[@data-hotkey='c']" position="replace">
+            <div class="o_mm_form_header_btns d-flex align-items-center flex-nowrap gap-2">
+                <button t-if="canCreate"
+                        type="button"
+                        class="btn btn-outline-primary fw-bold o_mm_btn_new flex-shrink-0"
+                        data-hotkey="c"
+                        t-on-click.stop="create">
+                    <i class="fa fa-plus me-1"/> Thêm mới
+                </button>
+                <button t-if="model.root.isInEdition"
+                        type="button"
+                        class="btn btn-primary fw-bold px-3 o_mm_btn_save flex-shrink-0"
+                        data-hotkey="s"
+                        t-on-click.stop="() => this.onRosterSave()">
+                    <i class="fa fa-floppy-o me-1"/> Lưu
+                </button>
+                <button t-if="!model.root.isInEdition and canEdit and model.root.data.state != 'confirmed'"
+                        type="button"
+                        class="btn btn-outline-secondary fw-bold px-3 o_mm_btn_edit flex-shrink-0"
+                        t-on-click.stop="() => this.onRosterEdit()">
+                    <i class="fa fa-pencil me-1"/> Chỉnh sửa
+                </button>
+            </div>
+        </xpath>
+        <xpath expr="//t[@t-set-slot='control-panel-status-indicator']" position="before">
+            <t t-set-slot="control-panel-always-buttons">
+                <button type="button"
+                        class="btn btn-outline-danger fw-bold px-3 o_mm_btn_cancel"
+                        data-hotkey="j"
+                        t-on-click.stop="() => this.onRosterDiscard()">
+                    <i class="fa fa-times me-1"/> Hủy
+                </button>
+            </t>
+        </xpath>
+        <xpath expr="//t[@t-set-slot='control-panel-status-indicator']" position="replace">
+            <t t-set-slot="control-panel-status-indicator"/>
+        </xpath>
+    </t>
+</templates>

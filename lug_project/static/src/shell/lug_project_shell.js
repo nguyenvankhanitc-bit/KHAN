@@ -384,7 +384,7 @@ export class LugProjectShell extends Component {
     }
 
     get isProjectList() {
-        return this.state.active === "list" || this.state.active === "archived";
+        return ["list", "archived", "overdue"].includes(this.state.active);
     }
 
     get isGantt() {

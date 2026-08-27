@@ -1,0 +1,133 @@
+/* LinkQ ERP — icon màu + hover bo tròn (sidebar OWL + menu Odoo) */
+
+/* Native Odoo navbar (xmlid thật + alias theo spec) */
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_dashboard"] i,
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_phan_he_linkq_nb_dashboard"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_dashboard i {
+    color: #3b82f6 !important;
+}
+
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_north"] i,
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_schedule_north"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_north i {
+    color: #ef4444 !important;
+}
+
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_south"] i,
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_schedule_south"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_south i {
+    color: #f59e0b !important;
+}
+
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_dtt"] i,
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_schedule_dtt"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_dtt i {
+    color: #14b8a6 !important;
+}
+
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_phan_he_shift_roster"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_roster i {
+    color: #8b5cf6 !important;
+}
+
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_linkq_shift_code"] i,
+.o_menu_sections .nav-item[data-menu-xmlid*="menu_phan_he_work_shift"] i,
+.o_phan_he_app_sidebar .o_linkq_nav_shift_code i {
+    color: #10b981 !important;
+}
+
+.o_menu_sections .nav-item {
+    border-radius: 6px;
+    margin: 2px 4px;
+    transition: all 0.2s ease;
+}
+
+.o_menu_sections .nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.o_phan_he_app_sidebar .o_phan_he_nav_sub {
+    border-radius: 6px;
+    margin: 2px 10px 2px 18px;
+    transition: all 0.2s ease;
+}
+
+.o_phan_he_app_sidebar .o_phan_he_nav_sub:hover {
+    background-color: rgba(109, 40, 217, 0.08) !important;
+}
+
+.o_phan_he_app_sidebar .o_phan_he_nav_sub i {
+    width: 1.15rem;
+    text-align: center;
+    font-size: 1rem;
+}
+
+/* Mục lớn: mỗi mục một màu */
+.o_phan_he_app_sidebar .o_nav_major_home,
+.o_phan_he_app_sidebar .o_nav_major_internet,
+.o_phan_he_app_sidebar .o_nav_major_camera,
+.o_phan_he_app_sidebar .o_nav_major_attendance,
+.o_phan_he_app_sidebar .o_nav_major_server,
+.o_phan_he_app_sidebar .o_nav_major_erp,
+.o_phan_he_app_sidebar .o_nav_major_hrm {
+    font-weight: 700;
+}
+
+.o_phan_he_app_sidebar .o_nav_major_home {
+    color: #4f46e5;
+    background: #eef2ff;
+    i { color: #4f46e5 !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_services {
+    color: #1d4ed8 !important;
+    background: #dbeafe;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 10px 8px 6px;
+}
+
+.o_phan_he_app_sidebar .o_nav_major_internet {
+    color: #0369a1;
+    background: #e0f2fe;
+    i { color: #0284c7 !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_camera {
+    color: #be185d;
+    background: #fce7f3;
+    i { color: #db2777 !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_attendance {
+    color: #c2410c;
+    background: #ffedd5;
+    i { color: #ea580c !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_server {
+    color: #0e7490;
+    background: #cffafe;
+    i { color: #0891b2 !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_erp,
+.o_phan_he_app_sidebar .o_nav_major_erp.is-active-group {
+    color: #6d28d9 !important;
+    background: #ede9fe !important;
+    i { color: #7c3aed !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_hrm {
+    color: #be123c;
+    background: #ffe4e6;
+    i { color: #e11d48 !important; }
+}
+
+.o_phan_he_app_sidebar .o_nav_major_config {
+    color: #475569 !important;
+    background: #f1f5f9;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin: 10px 8px 6px;
+}

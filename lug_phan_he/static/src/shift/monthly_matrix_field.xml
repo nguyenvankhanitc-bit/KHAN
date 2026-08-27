@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.MonthlyMatrixField">
+        <div class="o_monthly_matrix_wrap">
+            <div class="o_mm_toolbar" t-if="!confirmed">
+                <button type="button" class="btn btn-primary o_mm_add_btn" t-on-click="() => this.onAddEmployee()">
+                    Thêm nhân viên
+                </button>
+            </div>
+            <div class="o_monthly_matrix_scroll">
+                <table class="o_monthly_matrix_table">
+                    <thead>
+                        <tr class="o_mm_row_holiday">
+                            <th class="o_mm_sticky o_mm_col_name" rowspan="2">NHÂN VIÊN</th>
+                            <th class="o_mm_sticky o_mm_col_job" rowspan="2">CHỨC VỤ</th>
+                            <th class="o_mm_sticky o_mm_col_id" rowspan="2">MÃ ID</th>
+                            <th class="o_mm_sticky o_mm_col_ca" rowspan="2">CA</th>
+                            <t t-foreach="days" t-as="day" t-key="day">
+                                <th t-att-class="'o_mm_day ' + (headerOf(day).valid ? '' : ' is-invalid')">
+                                    <div t-esc="day"/>
+                                </th>
+                            </t>
+                            <th class="o_mm_count" colspan="9">CA</th>
+                            <th class="o_mm_total" rowspan="2">TỔNG GIỜ</th>
+                        </tr>
+                        <tr class="o_mm_row_wd">
+                            <t t-foreach="days" t-as="day" t-key="'wd-'+day">
+                                <th t-att-class="'o_mm_wd ' + (headerOf(day).sunday ? 'is-sunday' : (headerOf(day).weekend ? 'is-weekend' : '')) + (headerOf(day).valid ? '' : ' is-invalid')"
+                                    t-esc="headerOf(day).wd"/>
+                            </t>
+                            <t t-foreach="countCodes" t-as="code" t-key="code">
+                                <th class="o_mm_count" t-esc="code"/>
+                            </t>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="list.records" t-as="line" t-key="line.id">
+                            <tr class="o_mm_plan">
+                                <td class="o_mm_sticky o_mm_col_name" rowspan="3">
+                                    <input type="text"
+                                           class="o_mm_meta o_mm_emp_text"
+                                           placeholder="Tên nhân viên"
+                                           t-att-value="line.data.employee_name or employeeName(line) or ''"
+                                           t-att-disabled="confirmed"
+                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_name', ev)"/>
+                                </td>
+                                <td class="o_mm_sticky o_mm_col_job" rowspan="3">
+                                    <select class="o_mm_job_select"
+                                            t-att-value="line.data.job_title or 'NV'"
+                                            t-att-disabled="confirmed"
+                                            t-on-change="(ev) => this.onMetaInput(line, 'job_title', ev)">
+                                        <t t-foreach="jobTitles" t-as="job" t-key="job">
+                                            <option t-att-value="job" t-esc="job"/>
+                                        </t>
+                                    </select>
+                                </td>
+                                <td class="o_mm_sticky o_mm_col_id" rowspan="3">
+                                    <input type="number"
+                                           class="o_mm_meta"
+                                           t-att-value="line.data.employee_code or ''"
+                                           t-att-disabled="confirmed"
+                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_code', ev)"/>
+                                </td>
+                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-plan">DỰ KIẾN</span></td>
+                                <t t-foreach="days" t-as="day" t-key="'p-'+line.id+'-'+day">
+                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'plan', day)) + (headerOf(day).valid ? '' : ' is-invalid')">
+                                        <span class="o_mm_code_text" t-esc="codeOf(line, 'plan', day)"/>
+                                        <select class="o_mm_code_select"
+                                                t-att-value="codeOf(line, 'plan', day)"
+                                                t-att-title="codeOf(line, 'plan', day)"
+                                                t-att-disabled="confirmed or !headerOf(day).valid"
+                                                t-on-change="(ev) => this.onCellChange(line, 'plan', day, ev)">
+                                            <option value=""/>
+                                            <t t-foreach="shiftOptions" t-as="opt" t-key="'p-'+line.id+'-'+day+'-'+opt.code">
+                                                <option t-att-value="opt.code"
+                                                        t-att-selected="codeOf(line, 'plan', day) === opt.code"
+                                                        t-att-title="opt.label"
+                                                        t-esc="opt.code"/>
+                                            </t>
+                                        </select>
+                                    </td>
+                                </t>
+                                <t t-foreach="countCodes" t-as="code" t-key="'pc-'+line.id+'-'+code">
+                                    <td class="o_mm_count_val" t-esc="countOf(line, 'plan', code)"/>
+                                </t>
+                                <td class="o_mm_total_val" t-esc="line.data.plan_hours"/>
+                            </tr>
+                            <tr class="o_mm_actual">
+                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-actual">THỰC TẾ</span></td>
+                                <t t-foreach="days" t-as="day" t-key="'a-'+line.id+'-'+day">
+                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'actual', day)) + (headerOf(day).valid ? '' : ' is-invalid')">
+                                        <span class="o_mm_code_text" t-esc="codeOf(line, 'actual', day)"/>
+                                        <select class="o_mm_code_select"
+                                                t-att-value="codeOf(line, 'actual', day)"
+                                                t-att-title="codeOf(line, 'actual', day)"
+                                                t-att-disabled="confirmed or !headerOf(day).valid"
+                                                t-on-change="(ev) => this.onCellChange(line, 'actual', day, ev)">
+                                            <option value=""/>
+                                            <t t-foreach="shiftOptions" t-as="opt" t-key="'a-'+line.id+'-'+day+'-'+opt.code">
+                                                <option t-att-value="opt.code"
+                                                        t-att-selected="codeOf(line, 'actual', day) === opt.code"
+                                                        t-att-title="opt.label"
+                                                        t-esc="opt.code"/>
+                                            </t>
+                                        </select>
+                                    </td>
+                                </t>
+                                <t t-foreach="countCodes" t-as="code" t-key="'ac-'+line.id+'-'+code">
+                                    <td class="o_mm_count_val" t-esc="countOf(line, 'actual', code)"/>
+                                </t>
+                                <td class="o_mm_total_val" t-esc="line.data.actual_hours"/>
+                            </tr>
+                            <tr class="o_mm_hours">
+                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-hour">SỐ GIỜ</span></td>
+                                <t t-foreach="days" t-as="day" t-key="'h-'+line.id+'-'+day">
+                                    <td t-att-class="'o_mm_cell is-hour ' + (headerOf(day).valid ? '' : ' is-invalid')"
+                                        t-esc="hourOf(line, day)"/>
+                                </t>
+                                <t t-foreach="countCodes" t-as="code" t-key="'hc-'+line.id+'-'+code">
+                                    <td class="o_mm_count_val"/>
+                                </t>
+                                <td class="o_mm_total_val" t-esc="line.data.hour_total"/>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </t>
+</templates>

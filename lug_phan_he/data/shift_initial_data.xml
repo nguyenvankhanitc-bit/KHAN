@@ -1,0 +1,2150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- 51 mã ca -->
+    <record id="shift_code_f1" model="linkq.shift.code">
+        <field name="sequence">10</field>
+        <field name="code">F1</field>
+        <field name="name">Ca Full 08:00 - 20:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">20.0</field>
+    </record>
+    <record id="shift_code_f2" model="linkq.shift.code">
+        <field name="sequence">11</field>
+        <field name="code">F2</field>
+        <field name="name">Ca Full 08:00 - 22:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_f3" model="linkq.shift.code">
+        <field name="sequence">12</field>
+        <field name="code">F3</field>
+        <field name="name">Ca Full 08:30 - 21:30</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_f4" model="linkq.shift.code">
+        <field name="sequence">13</field>
+        <field name="code">F4</field>
+        <field name="name">Ca Full 08:30 - 22:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_f5" model="linkq.shift.code">
+        <field name="sequence">14</field>
+        <field name="code">F5</field>
+        <field name="name">Ca Full 09:00 - 21:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_f6" model="linkq.shift.code">
+        <field name="sequence">15</field>
+        <field name="code">F6</field>
+        <field name="name">Ca Full 09:00 - 21:30</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_f7" model="linkq.shift.code">
+        <field name="sequence">16</field>
+        <field name="code">F7</field>
+        <field name="name">Ca Full 09:00 - 22:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_f8" model="linkq.shift.code">
+        <field name="sequence">17</field>
+        <field name="code">F8</field>
+        <field name="name">Ca Full 09:30 - 22:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_f9" model="linkq.shift.code">
+        <field name="sequence">18</field>
+        <field name="code">F9</field>
+        <field name="name">Ca Full 09:30 - 21:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_f10" model="linkq.shift.code">
+        <field name="sequence">19</field>
+        <field name="code">F10</field>
+        <field name="name">Ca Full 07:30 - 22:30</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">22.5</field>
+    </record>
+    <record id="shift_code_f11" model="linkq.shift.code">
+        <field name="sequence">20</field>
+        <field name="code">F11</field>
+        <field name="name">Ca Full 07:30 - 22:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_f12" model="linkq.shift.code">
+        <field name="sequence">21</field>
+        <field name="code">F12</field>
+        <field name="name">Ca Full 09:30 - 22:30</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">22.5</field>
+    </record>
+    <record id="shift_code_f13" model="linkq.shift.code">
+        <field name="sequence">22</field>
+        <field name="code">F13</field>
+        <field name="name">Ca Full 08:00 - 21:00</field>
+        <field name="shift_group">FULL</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_gc1" model="linkq.shift.code">
+        <field name="sequence">23</field>
+        <field name="code">GC1</field>
+        <field name="name">Ca Gãy Chiều 12:00 - 22:00</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_gc2" model="linkq.shift.code">
+        <field name="sequence">24</field>
+        <field name="code">GC2</field>
+        <field name="name">Ca Gãy Chiều 12:00 - 21:30</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_gc3" model="linkq.shift.code">
+        <field name="sequence">25</field>
+        <field name="code">GC3</field>
+        <field name="name">Ca Gãy Chiều 12:00 - 21:00</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_gc4" model="linkq.shift.code">
+        <field name="sequence">26</field>
+        <field name="code">GC4</field>
+        <field name="name">Ca Gãy Chiều 12:00 - 22:30</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">22.5</field>
+    </record>
+    <record id="shift_code_gc5" model="linkq.shift.code">
+        <field name="sequence">27</field>
+        <field name="code">GC5</field>
+        <field name="name">Ca Gãy Chiều 10:00 - 21:00</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">10.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_gc6" model="linkq.shift.code">
+        <field name="sequence">28</field>
+        <field name="code">GC6</field>
+        <field name="name">Ca Gãy Chiều 11:00 - 21:00</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">11.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_gc7" model="linkq.shift.code">
+        <field name="sequence">29</field>
+        <field name="code">GC7</field>
+        <field name="name">Ca Gãy Chiều 10:00 - 20:00</field>
+        <field name="shift_group">GAY_CHIEU</field>
+        <field name="time_in">10.0</field>
+        <field name="time_out">20.0</field>
+    </record>
+    <record id="shift_code_gs1" model="linkq.shift.code">
+        <field name="sequence">30</field>
+        <field name="code">GS1</field>
+        <field name="name">Ca Gãy Sáng 08:30 - 18:30</field>
+        <field name="shift_group">GAY_SANG</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">18.5</field>
+    </record>
+    <record id="shift_code_gs2" model="linkq.shift.code">
+        <field name="sequence">31</field>
+        <field name="code">GS2</field>
+        <field name="name">Ca Gãy Sáng 09:00 - 17:00</field>
+        <field name="shift_group">GAY_SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.0</field>
+    </record>
+    <record id="shift_code_gs3" model="linkq.shift.code">
+        <field name="sequence">32</field>
+        <field name="code">GS3</field>
+        <field name="name">Ca Gãy Sáng 09:00 - 18:00</field>
+        <field name="shift_group">GAY_SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">18.0</field>
+    </record>
+    <record id="shift_code_gs4" model="linkq.shift.code">
+        <field name="sequence">33</field>
+        <field name="code">GS4</field>
+        <field name="name">Ca Gãy Sáng 09:00 - 19:00</field>
+        <field name="shift_group">GAY_SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">19.0</field>
+    </record>
+    <record id="shift_code_gs5" model="linkq.shift.code">
+        <field name="sequence">34</field>
+        <field name="code">GS5</field>
+        <field name="name">Ca Gãy Sáng 09:30 - 18:30</field>
+        <field name="shift_group">GAY_SANG</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">18.5</field>
+    </record>
+    <record id="shift_code_s1" model="linkq.shift.code">
+        <field name="sequence">35</field>
+        <field name="code">S1</field>
+        <field name="name">Ca Sáng 09:00 - 15:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">15.0</field>
+    </record>
+    <record id="shift_code_s2" model="linkq.shift.code">
+        <field name="sequence">36</field>
+        <field name="code">S2</field>
+        <field name="name">Ca Sáng 09:00 - 15:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">15.5</field>
+    </record>
+    <record id="shift_code_s3" model="linkq.shift.code">
+        <field name="sequence">37</field>
+        <field name="code">S3</field>
+        <field name="name">Ca Sáng 09:30 - 15:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">15.0</field>
+    </record>
+    <record id="shift_code_s4" model="linkq.shift.code">
+        <field name="sequence">38</field>
+        <field name="code">S4</field>
+        <field name="name">Ca Sáng 09:30 - 15:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">15.5</field>
+    </record>
+    <record id="shift_code_s5" model="linkq.shift.code">
+        <field name="sequence">39</field>
+        <field name="code">S5</field>
+        <field name="name">Ca Sáng 08:00 - 15:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">15.0</field>
+    </record>
+    <record id="shift_code_s6" model="linkq.shift.code">
+        <field name="sequence">40</field>
+        <field name="code">S6</field>
+        <field name="name">Ca Sáng 08:00 - 15:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">15.5</field>
+    </record>
+    <record id="shift_code_s7" model="linkq.shift.code">
+        <field name="sequence">41</field>
+        <field name="code">S7</field>
+        <field name="name">Ca Sáng 08:30 - 15:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">15.0</field>
+    </record>
+    <record id="shift_code_s8" model="linkq.shift.code">
+        <field name="sequence">42</field>
+        <field name="code">S8</field>
+        <field name="name">Ca Sáng 08:30 - 15:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">15.5</field>
+    </record>
+    <record id="shift_code_s9" model="linkq.shift.code">
+        <field name="sequence">43</field>
+        <field name="code">S9</field>
+        <field name="name">Ca Sáng 09:00 - 17:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.0</field>
+    </record>
+    <record id="shift_code_s10" model="linkq.shift.code">
+        <field name="sequence">44</field>
+        <field name="code">S10</field>
+        <field name="name">Ca Sáng 08:00 - 16:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">16.0</field>
+    </record>
+    <record id="shift_code_s11" model="linkq.shift.code">
+        <field name="sequence">45</field>
+        <field name="code">S11</field>
+        <field name="name">Ca Sáng 08:00 - 17:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">17.0</field>
+    </record>
+    <record id="shift_code_s12" model="linkq.shift.code">
+        <field name="sequence">46</field>
+        <field name="code">S12</field>
+        <field name="name">Ca Sáng 08:30 - 16:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">16.5</field>
+    </record>
+    <record id="shift_code_s13" model="linkq.shift.code">
+        <field name="sequence">47</field>
+        <field name="code">S13</field>
+        <field name="name">Ca Sáng 09:00 - 17:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.5</field>
+    </record>
+    <record id="shift_code_s14" model="linkq.shift.code">
+        <field name="sequence">48</field>
+        <field name="code">S14</field>
+        <field name="name">Ca Sáng 09:30 - 17:00</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">17.0</field>
+    </record>
+    <record id="shift_code_s15" model="linkq.shift.code">
+        <field name="sequence">49</field>
+        <field name="code">S15</field>
+        <field name="name">Ca Sáng 07:30 - 15:30</field>
+        <field name="shift_group">SANG</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">15.5</field>
+    </record>
+    <record id="shift_code_c1" model="linkq.shift.code">
+        <field name="sequence">50</field>
+        <field name="code">C1</field>
+        <field name="name">Ca Chiều 15:00 - 22:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_c2" model="linkq.shift.code">
+        <field name="sequence">51</field>
+        <field name="code">C2</field>
+        <field name="name">Ca Chiều 15:00 - 21:30</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_c3" model="linkq.shift.code">
+        <field name="sequence">52</field>
+        <field name="code">C3</field>
+        <field name="name">Ca Chiều 14:30 - 21:30</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">14.5</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_c4" model="linkq.shift.code">
+        <field name="sequence">53</field>
+        <field name="code">C4</field>
+        <field name="name">Ca Chiều 14:00 - 22:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">14.0</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_c5" model="linkq.shift.code">
+        <field name="sequence">54</field>
+        <field name="code">C5</field>
+        <field name="name">Ca Chiều 14:00 - 21:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">14.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_c6" model="linkq.shift.code">
+        <field name="sequence">55</field>
+        <field name="code">C6</field>
+        <field name="name">Ca Chiều 12:00 - 20:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">20.0</field>
+    </record>
+    <record id="shift_code_c7" model="linkq.shift.code">
+        <field name="sequence">56</field>
+        <field name="code">C7</field>
+        <field name="name">Ca Chiều 13:30 - 21:30</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">13.5</field>
+        <field name="time_out">21.5</field>
+    </record>
+    <record id="shift_code_c8" model="linkq.shift.code">
+        <field name="sequence">57</field>
+        <field name="code">C8</field>
+        <field name="name">Ca Chiều 13:30 - 22:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">13.5</field>
+        <field name="time_out">22.0</field>
+    </record>
+    <record id="shift_code_c9" model="linkq.shift.code">
+        <field name="sequence">58</field>
+        <field name="code">C9</field>
+        <field name="name">Ca Chiều 15:00 - 21:00</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">21.0</field>
+    </record>
+    <record id="shift_code_c10" model="linkq.shift.code">
+        <field name="sequence">59</field>
+        <field name="code">C10</field>
+        <field name="name">Ca Chiều 15:00 - 22:30</field>
+        <field name="shift_group">CHIEU</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">22.5</field>
+    </record>
+    <record id="shift_code_off" model="linkq.shift.code">
+        <field name="sequence">60</field>
+        <field name="code">OFF</field>
+        <field name="name">OFF</field>
+        <field name="shift_group">OFF</field>
+        <field name="time_in">0.0</field>
+        <field name="time_out">0.0</field>
+    </record>
+    <!-- Cửa hàng north -->
+    <record id="store_north_aehd_ddl" model="linkq.store.schedule">
+        <field name="sequence">10</field>
+        <field name="name">AEHD_DDL</field>
+        <field name="code">AEHD_DDL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_aehd_ddl_t2t5" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_aehd_ddl"/>
+        <field name="apply_days">T2 - T5</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aehd_ddl_t6" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_aehd_ddl"/>
+        <field name="apply_days">T6</field>
+            <field name="shift_full_id" ref="shift_code_f12"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc4"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c10"/>
+    </record>
+    <record id="store_north_aehd_ddl_t7" model="linkq.store.schedule.line">
+        <field name="sequence">12</field>
+        <field name="schedule_id" ref="store_north_aehd_ddl"/>
+        <field name="apply_days">T7</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc4"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c10"/>
+    </record>
+    <record id="store_north_aehd_ddl_cnle" model="linkq.store.schedule.line">
+        <field name="sequence">13</field>
+        <field name="schedule_id" ref="store_north_aehd_ddl"/>
+        <field name="apply_days">CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aelb_ddl" model="linkq.store.schedule">
+        <field name="sequence">20</field>
+        <field name="name">AELB_DDL</field>
+        <field name="code">AELB_DDL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_aelb_ddl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_aelb_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aelb_ddl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_aelb_ddl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+        <field name="note">Mở 9h, đi ca 8h30</field>
+    </record>
+    <record id="store_north_lug_aehd" model="linkq.store.schedule">
+        <field name="sequence">30</field>
+        <field name="name">LUG_AEHD</field>
+        <field name="code">LUG_AEHD</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_aehd_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_aehd"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_aehd_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_aehd"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aelb_ech_lug_aelb_l2" model="linkq.store.schedule">
+        <field name="sequence">40</field>
+        <field name="name">AELB_ECH&#10;LUG_AELB_L2</field>
+        <field name="code">AELB_ECH</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_aelb_ech_lug_aelb_l2_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_aelb_ech_lug_aelb_l2"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aelb_ech_lug_aelb_l2_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_aelb_ech_lug_aelb_l2"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_gdm_ddl" model="linkq.store.schedule">
+        <field name="sequence">50</field>
+        <field name="name">GDM_DDL</field>
+        <field name="code">GDM_DDL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_gdm_ddl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_gdm_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_morning_id" ref="shift_code_gs3"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+        <field name="note">Dương Tú: GS3</field>
+    </record>
+    <record id="store_north_gdm_ddl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_gdm_ddl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_iph" model="linkq.store.schedule">
+        <field name="sequence">60</field>
+        <field name="name">LUG_IPH</field>
+        <field name="code">LUG_IPH</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_iph_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_iph"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_iph_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_iph"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_go_tlong" model="linkq.store.schedule">
+        <field name="sequence">70</field>
+        <field name="name">GO_TLONG</field>
+        <field name="code">GO_TLONG</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_go_tlong_t2t5" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_go_tlong"/>
+        <field name="apply_days">T2 - T5</field>
+            <field name="shift_full_id" ref="shift_code_f2"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s5"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_go_tlong_t6cn" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_go_tlong"/>
+        <field name="apply_days">T6 - CN</field>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc4"/>
+            <field name="shift_morning_id" ref="shift_code_s5"/>
+            <field name="shift_afternoon_id" ref="shift_code_c10"/>
+        <field name="note">Full 08:00-22:30</field>
+    </record>
+    <record id="store_north_ltkm_ddl" model="linkq.store.schedule">
+        <field name="sequence">80</field>
+        <field name="name">LTKM_DDL</field>
+        <field name="code">LTKM_DDL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_ltkm_ddl_week" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_ltkm_ddl"/>
+        <field name="apply_days">Cả tuần</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_ltkm" model="linkq.store.schedule">
+        <field name="sequence">90</field>
+        <field name="name">LUG_LTKM</field>
+        <field name="code">LUG_LTKM</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_ltkm_week" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_ltkm"/>
+        <field name="apply_days">Cả tuần</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_morning_id" ref="shift_code_gs4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+        <field name="note">GS4 cho quầy LUG_LTKM_COU</field>
+    </record>
+    <record id="store_north_lug_ltth" model="linkq.store.schedule">
+        <field name="sequence">100</field>
+        <field name="name">LUG_LTTH</field>
+        <field name="code">LUG_LTTH</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_ltth_week" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_ltth"/>
+        <field name="apply_days">Cả tuần</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vcroyal" model="linkq.store.schedule">
+        <field name="sequence">110</field>
+        <field name="name">LUG_VCROYAL</field>
+        <field name="code">LUG_VCROYAL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_vcroyal_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_vcroyal"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vcroyal_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_vcroyal"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aehp_ddl" model="linkq.store.schedule">
+        <field name="sequence">120</field>
+        <field name="name">AEHP_DDL</field>
+        <field name="code">AEHP_DDL</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_aehp_ddl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_aehp_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_aehp_ddl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_aehp_ddl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_aehp" model="linkq.store.schedule">
+        <field name="sequence">130</field>
+        <field name="name">LUG_AEHP</field>
+        <field name="code">LUG_AEHP</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_aehp_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_aehp"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_aehp_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_aehp"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_go_hphong" model="linkq.store.schedule">
+        <field name="sequence">140</field>
+        <field name="name">GO_HPHONG</field>
+        <field name="code">GO_HPHONG</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_go_hphong_week" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_go_hphong"/>
+        <field name="apply_days">Cả tuần</field>
+            <field name="shift_full_id" ref="shift_code_f2"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s6"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_mgw" model="linkq.store.schedule">
+        <field name="sequence">150</field>
+        <field name="name">LUG_MGW</field>
+        <field name="code">LUG_MGW</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_mgw_t2t5" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_mgw"/>
+        <field name="apply_days">T2 - T5</field>
+            <field name="shift_full_id" ref="shift_code_f5"/>
+            <field name="shift_split_morning_id" ref="shift_code_gs3"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc3"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c9"/>
+    </record>
+    <record id="store_north_lug_mgw_t6cn" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_mgw"/>
+        <field name="apply_days">T6 - CN</field>
+            <field name="shift_full_id" ref="shift_code_f6"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc2"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c2"/>
+    </record>
+    <record id="store_north_lug_ktown" model="linkq.store.schedule">
+        <field name="sequence">160</field>
+        <field name="name">LUG_KTOWN</field>
+        <field name="code">LUG_KTOWN</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_ktown_t2t7" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_ktown"/>
+        <field name="apply_days">T2 - T7</field>
+            <field name="shift_morning_id" ref="shift_code_s13"/>
+    </record>
+    <record id="store_north_lug_ktown_cn" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_ktown"/>
+        <field name="apply_days">CN</field>
+            <field name="shift_full_id" ref="shift_code_off"/>
+            <field name="shift_morning_id" ref="shift_code_off"/>
+    </record>
+    <record id="store_north_lug_vcpnt24" model="linkq.store.schedule">
+        <field name="sequence">170</field>
+        <field name="name">LUG_VCPNT24</field>
+        <field name="code">LUG_VCPNT24</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_vcpnt24_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_vcpnt24"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vcpnt24_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_vcpnt24"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vctdh" model="linkq.store.schedule">
+        <field name="sequence">180</field>
+        <field name="name">LUG_VCTDH</field>
+        <field name="code">LUG_VCTDH</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_vctdh_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_vctdh"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vctdh_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_vctdh"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_dia_vcbt" model="linkq.store.schedule">
+        <field name="sequence">190</field>
+        <field name="name">DIA_VCBT</field>
+        <field name="code">DIA_VCBT</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_dia_vcbt_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_dia_vcbt"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_dia_vcbt_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_dia_vcbt"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vctic25" model="linkq.store.schedule">
+        <field name="sequence">200</field>
+        <field name="name">LUG_VCTIC25</field>
+        <field name="code">LUG_VCTIC25</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_vctic25_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_vctic25"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_vctic25_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_vctic25"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f7"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_aehp_l1" model="linkq.store.schedule">
+        <field name="sequence">210</field>
+        <field name="name">LUG_AEHP_L1</field>
+        <field name="code">LUG_AEHP_L1</field>
+        <field name="region">north</field>
+    </record>
+    <record id="store_north_lug_aehp_l1_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_north_lug_aehp_l1"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s2"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_north_lug_aehp_l1_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_north_lug_aehp_l1"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <!-- Cửa hàng south -->
+    <record id="store_south_aetl" model="linkq.store.schedule">
+        <field name="sequence">10</field>
+        <field name="name">AETL</field>
+        <field name="code">AETL</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_aetl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_aetl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_aetl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_aetl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_aetp" model="linkq.store.schedule">
+        <field name="sequence">20</field>
+        <field name="name">AETP</field>
+        <field name="code">AETP</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_aetp_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_aetp"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_aetp_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_aetp"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aetl" model="linkq.store.schedule">
+        <field name="sequence">30</field>
+        <field name="name">LUG_AETL</field>
+        <field name="code">LUG_AETL</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_aetl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_aetl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aetl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_aetl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aetp" model="linkq.store.schedule">
+        <field name="sequence">40</field>
+        <field name="name">LUG_AETP</field>
+        <field name="code">LUG_AETP</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_aetp_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_aetp"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aetp_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_aetp"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_ch" model="linkq.store.schedule">
+        <field name="sequence">50</field>
+        <field name="name">LUG_CH</field>
+        <field name="code">LUG_CH</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_ch_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_ch"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_ch_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_ch"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_dc" model="linkq.store.schedule">
+        <field name="sequence">60</field>
+        <field name="name">LUG_DC</field>
+        <field name="code">LUG_DC</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_dc_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_dc"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_dc_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_dc"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_taka_ddl" model="linkq.store.schedule">
+        <field name="sequence">70</field>
+        <field name="name">TAKA_DDL</field>
+        <field name="code">TAKA_DDL</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_taka_ddl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_taka_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_taka_ddl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_taka_ddl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_crm_all" model="linkq.store.schedule">
+        <field name="sequence">80</field>
+        <field name="name">CRM_ALL</field>
+        <field name="code">CRM_ALL</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_crm_all_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_crm_all"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_crm_all_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_crm_all"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_holdall_vc32" model="linkq.store.schedule">
+        <field name="sequence">90</field>
+        <field name="name">HOLDALL_VC32</field>
+        <field name="code">HOLDALL_VC32</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_holdall_vc32_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_holdall_vc32"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_holdall_vc32_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_holdall_vc32"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_scvivo" model="linkq.store.schedule">
+        <field name="sequence">100</field>
+        <field name="name">LUG_SCVIVO</field>
+        <field name="code">LUG_SCVIVO</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_scvivo_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_scvivo"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_scvivo_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_scvivo"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_crescent" model="linkq.store.schedule">
+        <field name="sequence">110</field>
+        <field name="name">LUG_CRESCENT</field>
+        <field name="code">LUG_CRESCENT</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_crescent_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_crescent"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_crescent_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_crescent"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_pnt" model="linkq.store.schedule">
+        <field name="sequence">120</field>
+        <field name="name">LUG_PNT</field>
+        <field name="code">LUG_PNT</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_pnt_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_pnt"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_pnt_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_pnt"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_go_q7" model="linkq.store.schedule">
+        <field name="sequence">130</field>
+        <field name="name">GO_Q7</field>
+        <field name="code">GO_Q7</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_go_q7_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_go_q7"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_go_q7_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_go_q7"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_gota" model="linkq.store.schedule">
+        <field name="sequence">140</field>
+        <field name="name">LUG_GOTA</field>
+        <field name="code">LUG_GOTA</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_gota_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_gota"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_gota_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_gota"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_ae_binhtan" model="linkq.store.schedule">
+        <field name="sequence">150</field>
+        <field name="name">AE_BINHTAN</field>
+        <field name="code">AE_BINHTAN</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_ae_binhtan_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_ae_binhtan"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_ae_binhtan_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_ae_binhtan"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_nsh" model="linkq.store.schedule">
+        <field name="sequence">160</field>
+        <field name="name">LUG_NSH</field>
+        <field name="code">LUG_NSH</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_nsh_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_nsh"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_nsh_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_nsh"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_nowzone" model="linkq.store.schedule">
+        <field name="sequence">170</field>
+        <field name="name">LUG_NOWZONE</field>
+        <field name="code">LUG_NOWZONE</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_nowzone_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_nowzone"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_nowzone_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_nowzone"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_sgct" model="linkq.store.schedule">
+        <field name="sequence">180</field>
+        <field name="name">LUG_SGCT</field>
+        <field name="code">LUG_SGCT</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_sgct_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_sgct"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_sgct_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_sgct"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_landmark81" model="linkq.store.schedule">
+        <field name="sequence">190</field>
+        <field name="name">LUG_LANDMARK81</field>
+        <field name="code">LUG_LANDMARK81</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_landmark81_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_landmark81"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_landmark81_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_landmark81"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_giga" model="linkq.store.schedule">
+        <field name="sequence">200</field>
+        <field name="name">LUG_GIGA</field>
+        <field name="code">LUG_GIGA</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_giga_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_giga"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_giga_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_giga"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_estella" model="linkq.store.schedule">
+        <field name="sequence">210</field>
+        <field name="name">LUG_ESTELLA</field>
+        <field name="code">LUG_ESTELLA</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_estella_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_estella"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_estella_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_estella"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_vctd" model="linkq.store.schedule">
+        <field name="sequence">220</field>
+        <field name="name">LUG_VCTD</field>
+        <field name="code">LUG_VCTD</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_vctd_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_vctd"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_vctd_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_vctd"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_parkson" model="linkq.store.schedule">
+        <field name="sequence">230</field>
+        <field name="name">LUG_PARKSON</field>
+        <field name="code">LUG_PARKSON</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_parkson_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_parkson"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_parkson_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_parkson"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_vincom_dk" model="linkq.store.schedule">
+        <field name="sequence">240</field>
+        <field name="name">LUG_VINCOM_DK</field>
+        <field name="code">LUG_VINCOM_DK</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_vincom_dk_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_vincom_dk"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_vincom_dk_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_vincom_dk"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_aeon_tanphu" model="linkq.store.schedule">
+        <field name="sequence">250</field>
+        <field name="name">AEON_TANPHU</field>
+        <field name="code">AEON_TANPHU</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_aeon_tanphu_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_aeon_tanphu"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_aeon_tanphu_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_aeon_tanphu"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aeon_td" model="linkq.store.schedule">
+        <field name="sequence">260</field>
+        <field name="name">LUG_AEON_TD</field>
+        <field name="code">LUG_AEON_TD</field>
+        <field name="region">south</field>
+    </record>
+    <record id="store_south_lug_aeon_td_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_south_lug_aeon_td"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_south_lug_aeon_td_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_south_lug_aeon_td"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <!-- Cửa hàng dtt -->
+    <record id="store_dtt_aebd" model="linkq.store.schedule">
+        <field name="sequence">10</field>
+        <field name="name">AEBD</field>
+        <field name="code">AEBD</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_aebd_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_aebd"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_aebd_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_aebd"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aebd" model="linkq.store.schedule">
+        <field name="sequence">20</field>
+        <field name="name">LUG_AEBD</field>
+        <field name="code">LUG_AEBD</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_aebd_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_aebd"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aebd_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_aebd"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bcm_new" model="linkq.store.schedule">
+        <field name="sequence">30</field>
+        <field name="name">LUG_BCM_NEW</field>
+        <field name="code">LUG_BCM_NEW</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_bcm_new_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_bcm_new"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bcm_new_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_bcm_new"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bmt_nvc" model="linkq.store.schedule">
+        <field name="sequence">40</field>
+        <field name="name">LUG_BMT_NVC</field>
+        <field name="code">LUG_BMT_NVC</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_bmt_nvc_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_bmt_nvc"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bmt_nvc_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_bmt_nvc"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_danang" model="linkq.store.schedule">
+        <field name="sequence">50</field>
+        <field name="name">GO_DANANG</field>
+        <field name="code">GO_DANANG</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_danang_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_danang"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_danang_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_danang"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_cantho" model="linkq.store.schedule">
+        <field name="sequence">60</field>
+        <field name="name">GO_CANTHO</field>
+        <field name="code">GO_CANTHO</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_cantho_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_cantho"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_cantho_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_cantho"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_aehue_ddl" model="linkq.store.schedule">
+        <field name="sequence">70</field>
+        <field name="name">AEHUE_DDL</field>
+        <field name="code">AEHUE_DDL</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_aehue_ddl_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_aehue_ddl"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_aehue_ddl_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_aehue_ddl"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aehue" model="linkq.store.schedule">
+        <field name="sequence">80</field>
+        <field name="name">LUG_AEHUE</field>
+        <field name="code">LUG_AEHUE</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_aehue_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_aehue"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aehue_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_aehue"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_bienhoa" model="linkq.store.schedule">
+        <field name="sequence">90</field>
+        <field name="name">GO_BIENHOA</field>
+        <field name="code">GO_BIENHOA</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_bienhoa_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_bienhoa"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_bienhoa_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_bienhoa"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_vungtau" model="linkq.store.schedule">
+        <field name="sequence">100</field>
+        <field name="name">GO_VUNGTAU</field>
+        <field name="code">GO_VUNGTAU</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_vungtau_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_vungtau"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_vungtau_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_vungtau"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_nhatrang" model="linkq.store.schedule">
+        <field name="sequence">110</field>
+        <field name="name">GO_NHATRANG</field>
+        <field name="code">GO_NHATRANG</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_nhatrang_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_nhatrang"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_nhatrang_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_nhatrang"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_quinhon" model="linkq.store.schedule">
+        <field name="sequence">120</field>
+        <field name="name">GO_QUINHON</field>
+        <field name="code">GO_QUINHON</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_go_quinhon_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_go_quinhon"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_go_quinhon_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_go_quinhon"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vsip_bd" model="linkq.store.schedule">
+        <field name="sequence">130</field>
+        <field name="name">LUG_VSIP_BD</field>
+        <field name="code">LUG_VSIP_BD</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vsip_bd_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vsip_bd"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vsip_bd_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vsip_bd"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_dn" model="linkq.store.schedule">
+        <field name="sequence">140</field>
+        <field name="name">LUG_VINCOM_DN</field>
+        <field name="code">LUG_VINCOM_DN</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_dn_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_dn"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_dn_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_dn"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_ct" model="linkq.store.schedule">
+        <field name="sequence">150</field>
+        <field name="name">LUG_VINCOM_CT</field>
+        <field name="code">LUG_VINCOM_CT</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_ct_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_ct"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_ct_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_ct"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_hue" model="linkq.store.schedule">
+        <field name="sequence">160</field>
+        <field name="name">LUG_VINCOM_HUE</field>
+        <field name="code">LUG_VINCOM_HUE</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_hue_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_hue"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_hue_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_hue"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_ae_binhduong" model="linkq.store.schedule">
+        <field name="sequence">170</field>
+        <field name="name">AE_BINHDUONG</field>
+        <field name="code">AE_BINHDUONG</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_ae_binhduong_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_ae_binhduong"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_ae_binhduong_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_ae_binhduong"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_ae_danang" model="linkq.store.schedule">
+        <field name="sequence">180</field>
+        <field name="name">AE_DANANG</field>
+        <field name="code">AE_DANANG</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_ae_danang_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_ae_danang"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_ae_danang_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_ae_danang"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bigc_dn" model="linkq.store.schedule">
+        <field name="sequence">190</field>
+        <field name="name">LUG_BIGC_DN</field>
+        <field name="code">LUG_BIGC_DN</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_bigc_dn_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_bigc_dn"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_bigc_dn_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_bigc_dn"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_coopmart_ct" model="linkq.store.schedule">
+        <field name="sequence">200</field>
+        <field name="name">LUG_COOPMART_CT</field>
+        <field name="code">LUG_COOPMART_CT</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_coopmart_ct_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_coopmart_ct"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_coopmart_ct_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_coopmart_ct"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_nt" model="linkq.store.schedule">
+        <field name="sequence">210</field>
+        <field name="name">LUG_VINCOM_NT</field>
+        <field name="code">LUG_VINCOM_NT</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_nt_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_nt"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_nt_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_nt"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_vt" model="linkq.store.schedule">
+        <field name="sequence">220</field>
+        <field name="name">LUG_VINCOM_VT</field>
+        <field name="code">LUG_VINCOM_VT</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_vt_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_vt"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_vt_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_vt"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aeon_hue" model="linkq.store.schedule">
+        <field name="sequence">230</field>
+        <field name="name">LUG_AEON_HUE</field>
+        <field name="code">LUG_AEON_HUE</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_aeon_hue_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_aeon_hue"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_aeon_hue_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_aeon_hue"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_bh" model="linkq.store.schedule">
+        <field name="sequence">240</field>
+        <field name="name">LUG_VINCOM_BH</field>
+        <field name="code">LUG_VINCOM_BH</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_bh_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_bh"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_bh_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_bh"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_lotte_dn" model="linkq.store.schedule">
+        <field name="sequence">250</field>
+        <field name="name">LUG_LOTTE_DN</field>
+        <field name="code">LUG_LOTTE_DN</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_lotte_dn_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_lotte_dn"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_lotte_dn_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_lotte_dn"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_qnh" model="linkq.store.schedule">
+        <field name="sequence">260</field>
+        <field name="name">LUG_VINCOM_QNH</field>
+        <field name="code">LUG_VINCOM_QNH</field>
+        <field name="region">dtt</field>
+    </record>
+    <record id="store_dtt_lug_vincom_qnh_t2t6" model="linkq.store.schedule.line">
+        <field name="sequence">10</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_qnh"/>
+        <field name="apply_days">T2 - T6</field>
+            <field name="shift_full_id" ref="shift_code_f8"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s4"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+    <record id="store_dtt_lug_vincom_qnh_t7cnle" model="linkq.store.schedule.line">
+        <field name="sequence">11</field>
+        <field name="schedule_id" ref="store_dtt_lug_vincom_qnh"/>
+        <field name="apply_days">T7, CN, Lễ</field>
+            <field name="shift_full_id" ref="shift_code_f4"/>
+            <field name="shift_split_afternoon_id" ref="shift_code_gc1"/>
+            <field name="shift_morning_id" ref="shift_code_s8"/>
+            <field name="shift_afternoon_id" ref="shift_code_c1"/>
+    </record>
+</odoo>

@@ -4,6 +4,7 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
+import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
 
 const INTERNET_NAV_SECTIONS = [
     {
@@ -143,6 +144,7 @@ function isoToDisplay(value) {
 export class PhanHeDashboard extends Component {
     static template = "lug_phan_he.PhanHeDashboard";
     static props = { ...standardActionServiceProps };
+    static components = { PhanHeAppSidebar };
 
     setup() {
         this.orm = useService("orm");
@@ -158,6 +160,7 @@ export class PhanHeDashboard extends Component {
                 payment: true,
                 alerts: true,
                 reports: true,
+                shifts: true,
             },
             activeNav: "overview",
             reportPeriod: "year",
@@ -214,10 +217,51 @@ export class PhanHeDashboard extends Component {
             || "Quản lý dịch vụ";
     }
 
+    get isLinkqErp() {
+        return this.serviceTypeCode === "linkq_nb";
+    }
+
+    get sidebarBrand() {
+        const brands = {
+            internet: "DỊCH VỤ INTERNET",
+            camera: "DỊCH VỤ CAMERA",
+            attendance: "MÁY CHẤM CÔNG",
+            linkq_hrm: "LINKQ HRM",
+            linkq_nb: "LINKQ ERP",
+            server: "MÁY CHỦ & CLOUD",
+        };
+        return brands[this.serviceTypeCode] || String(this.appTitle || "").toUpperCase();
+    }
+
     get navSections() {
         const code = this.serviceTypeCode;
         if (code === "internet") {
             return INTERNET_NAV_SECTIONS;
+        }
+        if (code === "linkq_nb") {
+            return [
+                {
+                    id: "shifts",
+                    label: "Xếp ca",
+                    icon: "fa-calendar",
+                    children: [
+                        {
+                            id: "shift_codes",
+                            label: "Ký hiệu công",
+                            icon: "fa-tags",
+                            iconColor: "#7c3aed",
+                            action: "lug_phan_he.action_linkq_shift_code",
+                        },
+                        {
+                            id: "roster",
+                            label: "Bản xếp ca",
+                            icon: "fa-th",
+                            iconColor: "#2563eb",
+                            action: "lug_phan_he.action_phan_he_shift_roster",
+                        },
+                    ],
+                },
+            ];
         }
 
         const trackingByType = {
@@ -380,6 +424,11 @@ export class PhanHeDashboard extends Component {
     }
 
     async load() {
+        if (this.isLinkqErp) {
+            this.state.loading = false;
+            this.state.data = this.state.data || {};
+            return;
+        }
         const year = Number(this.state.filters.year || new Date().getFullYear());
         this.state.filters.year = year;
         this.state.filters.date_from = yearStartDisplay(year);

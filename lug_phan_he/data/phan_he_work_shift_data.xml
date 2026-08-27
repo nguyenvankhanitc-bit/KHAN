@@ -1,0 +1,1023 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="work_shift_f1" model="phan.he.work.shift">
+        <field name="name">Ca Full 08:00 - 20:00</field>
+        <field name="code">F1</field>
+        <field name="sequence">10</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">20.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note">Ca chuẩn áp dụng cho nhân sự chạy full ngày tại các cụm cửa hàng TTTM.</field>
+    </record>
+    <record id="work_shift_f2" model="phan.he.work.shift">
+        <field name="name">Ca Full 08:00 - 22:00</field>
+        <field name="code">F2</field>
+        <field name="sequence">11</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f3" model="phan.he.work.shift">
+        <field name="name">Ca Full 08:30 - 21:30</field>
+        <field name="code">F3</field>
+        <field name="sequence">12</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f4" model="phan.he.work.shift">
+        <field name="name">Ca Full 08:30 - 22:00</field>
+        <field name="code">F4</field>
+        <field name="sequence">13</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f5" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:00 - 21:00</field>
+        <field name="code">F5</field>
+        <field name="sequence">14</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f6" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:00 - 21:30</field>
+        <field name="code">F6</field>
+        <field name="sequence">15</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f7" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:00 - 22:00</field>
+        <field name="code">F7</field>
+        <field name="sequence">16</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f8" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:30 - 22:00</field>
+        <field name="code">F8</field>
+        <field name="sequence">17</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f9" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:30 - 21:00</field>
+        <field name="code">F9</field>
+        <field name="sequence">18</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f10" model="phan.he.work.shift">
+        <field name="name">Ca Full 07:30 - 22:30</field>
+        <field name="code">F10</field>
+        <field name="sequence">19</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">22.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f11" model="phan.he.work.shift">
+        <field name="name">Ca Full 07:30 - 22:00</field>
+        <field name="code">F11</field>
+        <field name="sequence">20</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f12" model="phan.he.work.shift">
+        <field name="name">Ca Full 09:30 - 22:30</field>
+        <field name="code">F12</field>
+        <field name="sequence">21</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">22.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_f13" model="phan.he.work.shift">
+        <field name="name">Ca Full 08:00 - 21:00</field>
+        <field name="code">F13</field>
+        <field name="sequence">22</field>
+        <field name="shift_group">full</field>
+        <field name="color">11</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc1" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 12:00 - 22:00</field>
+        <field name="code">GC1</field>
+        <field name="sequence">30</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc2" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 12:00 - 21:30</field>
+        <field name="code">GC2</field>
+        <field name="sequence">31</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc3" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 12:00 - 21:00</field>
+        <field name="code">GC3</field>
+        <field name="sequence">32</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc4" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 12:00 - 22:30</field>
+        <field name="code">GC4</field>
+        <field name="sequence">33</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">22.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc5" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 10:00 - 21:00</field>
+        <field name="code">GC5</field>
+        <field name="sequence">34</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">10.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc6" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 11:00 - 21:00</field>
+        <field name="code">GC6</field>
+        <field name="sequence">35</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">11.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gc7" model="phan.he.work.shift">
+        <field name="name">Ca Gãy chiều 10:00 - 20:00</field>
+        <field name="code">GC7</field>
+        <field name="sequence">36</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">10.0</field>
+        <field name="time_out">20.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gs1" model="phan.he.work.shift">
+        <field name="name">Ca Gãy sáng 08:30 - 18:30</field>
+        <field name="code">GS1</field>
+        <field name="sequence">40</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">18.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gs2" model="phan.he.work.shift">
+        <field name="name">Ca Gãy sáng 09:00 - 17:00</field>
+        <field name="code">GS2</field>
+        <field name="sequence">41</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gs3" model="phan.he.work.shift">
+        <field name="name">Ca Gãy sáng 09:00 - 18:00</field>
+        <field name="code">GS3</field>
+        <field name="sequence">42</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">18.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gs4" model="phan.he.work.shift">
+        <field name="name">Ca Gãy sáng 09:00 - 19:00</field>
+        <field name="code">GS4</field>
+        <field name="sequence">43</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">19.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_gs5" model="phan.he.work.shift">
+        <field name="name">Ca Gãy sáng 09:30 - 18:30</field>
+        <field name="code">GS5</field>
+        <field name="sequence">44</field>
+        <field name="shift_group">gay</field>
+        <field name="color">3</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">18.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s1" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:00 - 15:00</field>
+        <field name="code">S1</field>
+        <field name="sequence">50</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">15.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s2" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:00 - 15:30</field>
+        <field name="code">S2</field>
+        <field name="sequence">51</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">15.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s3" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:30 - 15:00</field>
+        <field name="code">S3</field>
+        <field name="sequence">52</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">15.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s4" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:30 - 15:30</field>
+        <field name="code">S4</field>
+        <field name="sequence">53</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">15.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s5" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:00 - 15:00</field>
+        <field name="code">S5</field>
+        <field name="sequence">54</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">15.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s6" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:00 - 15:30</field>
+        <field name="code">S6</field>
+        <field name="sequence">55</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">15.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s7" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:30 - 15:00</field>
+        <field name="code">S7</field>
+        <field name="sequence">56</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">15.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s8" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:30 - 15:30</field>
+        <field name="code">S8</field>
+        <field name="sequence">57</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">15.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s9" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:00 - 17:00</field>
+        <field name="code">S9</field>
+        <field name="sequence">58</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s10" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:00 - 16:00</field>
+        <field name="code">S10</field>
+        <field name="sequence">59</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">16.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s11" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:00 - 17:00</field>
+        <field name="code">S11</field>
+        <field name="sequence">60</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.0</field>
+        <field name="time_out">17.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s12" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 08:30 - 16:30</field>
+        <field name="code">S12</field>
+        <field name="sequence">61</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">8.5</field>
+        <field name="time_out">16.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s13" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:00 - 17:30</field>
+        <field name="code">S13</field>
+        <field name="sequence">62</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.0</field>
+        <field name="time_out">17.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s14" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 09:30 - 17:00</field>
+        <field name="code">S14</field>
+        <field name="sequence">63</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">9.5</field>
+        <field name="time_out">17.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_s15" model="phan.he.work.shift">
+        <field name="name">Ca Sáng 07:30 - 15:30</field>
+        <field name="code">S15</field>
+        <field name="sequence">64</field>
+        <field name="shift_group">sang</field>
+        <field name="color">10</field>
+        <field name="state">applying</field>
+        <field name="time_in">7.5</field>
+        <field name="time_out">15.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="True"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c1" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 15:00 - 22:00</field>
+        <field name="code">C1</field>
+        <field name="sequence">70</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c2" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 15:00 - 21:30</field>
+        <field name="code">C2</field>
+        <field name="sequence">71</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c3" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 14:30 - 21:30</field>
+        <field name="code">C3</field>
+        <field name="sequence">72</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">14.5</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c4" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 14:00 - 22:00</field>
+        <field name="code">C4</field>
+        <field name="sequence">73</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">14.0</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c5" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 14:00 - 21:00</field>
+        <field name="code">C5</field>
+        <field name="sequence">74</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">14.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c6" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 12:00 - 20:00</field>
+        <field name="code">C6</field>
+        <field name="sequence">75</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">12.0</field>
+        <field name="time_out">20.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c7" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 13:30 - 21:30</field>
+        <field name="code">C7</field>
+        <field name="sequence">76</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">13.5</field>
+        <field name="time_out">21.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c8" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 13:30 - 22:00</field>
+        <field name="code">C8</field>
+        <field name="sequence">77</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">13.5</field>
+        <field name="time_out">22.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c9" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 15:00 - 21:00</field>
+        <field name="code">C9</field>
+        <field name="sequence">78</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">21.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_c10" model="phan.he.work.shift">
+        <field name="name">Ca Chiều 15:00 - 22:30</field>
+        <field name="code">C10</field>
+        <field name="sequence">79</field>
+        <field name="shift_group">chieu</field>
+        <field name="color">2</field>
+        <field name="state">applying</field>
+        <field name="time_in">15.0</field>
+        <field name="time_out">22.5</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="True"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+    <record id="work_shift_off" model="phan.he.work.shift">
+        <field name="name">Nghỉ (OFF)</field>
+        <field name="code">OFF</field>
+        <field name="sequence">90</field>
+        <field name="shift_group">off</field>
+        <field name="color">0</field>
+        <field name="state">applying</field>
+        <field name="time_in">0.0</field>
+        <field name="time_out">0.0</field>
+        <field name="work_coefficient">1.0</field>
+        <field name="has_lunch_break" eval="False"/>
+        <field name="lunch_from">11.5</field>
+        <field name="lunch_to">13.5</field>
+        <field name="has_dinner_break" eval="False"/>
+        <field name="dinner_from">17.5</field>
+        <field name="dinner_to">18.5</field>
+        <field name="apply_weekday" eval="True"/>
+        <field name="apply_weekend" eval="True"/>
+        <field name="note"></field>
+    </record>
+</odoo>

@@ -1,0 +1,145 @@
+.o_phan_he_shift_list {
+    .o_data_cell[name="code"] {
+        font-weight: 700;
+    }
+}
+
+.o_phan_he_north_schedule_list {
+    .o_data_cell[name="store_name"] {
+        font-weight: 800;
+        color: #111827;
+        white-space: pre-line !important;
+        line-height: 1.35;
+        vertical-align: middle;
+    }
+
+    .o_group_name {
+        font-weight: 800;
+    }
+
+    .o_data_cell[name="apply_days"] {
+        white-space: nowrap;
+        font-weight: 600;
+        color: #4b5563;
+    }
+}
+
+.o_phan_he_shift_form {
+    .oe_title h1 {
+        font-weight: 700;
+        letter-spacing: 0.02em;
+    }
+}
+
+/* Form lịch / ký hiệu công: luôn hiện gạch dưới chỗ nhập */
+.o_phan_he_app_shell.o_form_view {
+    .o_cell.o_wrap_input,
+    .o_inner_group .o_wrap_input,
+    .o_form_sheet .o_field_widget.o_field_text,
+    .o_form_sheet > .o_field_widget {
+        border-bottom: 1.5px solid #94a3b8 !important;
+        padding-bottom: 4px;
+    }
+
+    .o_cell.o_wrap_input:focus-within,
+    .o_inner_group .o_wrap_input:focus-within,
+    .o_form_sheet .o_field_widget:focus-within {
+        border-bottom-color: #7c3aed !important;
+        border-bottom-width: 2px !important;
+    }
+
+    .o_field_widget .o_input,
+    .o_field_widget input.o_input,
+    .o_field_widget textarea.o_input {
+        --o-input-border-color: transparent;
+        border: 0 !important;
+        min-height: 2rem;
+        background-color: transparent;
+    }
+
+    .o_field_text,
+    .o_field_widget textarea.o_input {
+        min-height: 4.5rem;
+    }
+}
+
+.o_linkq_schedule_form {
+    .o_linkq_form_hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 16px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        background: #eef2ff;
+        color: #475569;
+        font-size: 0.88rem;
+
+        .fa-info-circle {
+            color: #6366f1;
+        }
+    }
+
+    .o_linkq_form_card {
+        margin-bottom: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    }
+
+    .o_linkq_form_card_head {
+        padding: 8px 14px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        font-size: 0.78rem;
+        color: #475569;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .o_linkq_form_card_body {
+        padding: 12px 14px 4px;
+    }
+}
+
+.o_phan_he_app_shell.o_form_view {
+    .o_statusbar_buttons,
+    .o_form_statusbar_buttons,
+    header {
+        .o_linkq_btn_save,
+        .oe_highlight.o_linkq_btn_save,
+        button[name="action_save_and_close"] {
+            background: #7c3aed !important;
+            border-color: #6d28d9 !important;
+            color: #fff !important;
+            font-weight: 700 !important;
+            padding: 6px 16px !important;
+            border-radius: 8px !important;
+        }
+
+        .o_linkq_btn_discard,
+        button[special="cancel"] {
+            background: #f1f5f9 !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #334155 !important;
+            font-weight: 600 !important;
+            padding: 6px 16px !important;
+            border-radius: 8px !important;
+        }
+    }
+}
+
+.o_phan_he_roster_lines {
+    .o_data_cell[name="mon_shift_id"],
+    .o_data_cell[name="tue_shift_id"],
+    .o_data_cell[name="wed_shift_id"],
+    .o_data_cell[name="thu_shift_id"],
+    .o_data_cell[name="fri_shift_id"],
+    .o_data_cell[name="sat_shift_id"],
+    .o_data_cell[name="sun_shift_id"] {
+        font-weight: 700;
+        min-width: 4.2rem;
+    }
+}

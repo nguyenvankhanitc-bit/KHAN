@@ -1,0 +1,89 @@
+/* Bảng Lịch Miền Bắc / Nam / ĐTT — đóng khung group + ô dữ liệu */
+
+.o_phan_he_north_schedule_list {
+    table.o_list_table,
+    table.o_list_view {
+        border: 1px solid #e5e7eb;
+        border-collapse: separate;
+        border-spacing: 0;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+
+    thead th {
+        background-color: #f3f4f6 !important;
+        color: #374151 !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em;
+        border-bottom: 2px solid #cbd5e1 !important;
+        border-right: 1px solid #cbd5e1 !important;
+        white-space: nowrap;
+    }
+
+    thead th:last-child {
+        border-right: 0 !important;
+    }
+
+    tbody tr.o_group_header {
+        background-color: #ede9fe !important;
+        border-top: 2px solid #ddd6fe !important;
+        border-bottom: 1px solid #ddd6fe !important;
+        color: #6d28d9 !important;
+        font-weight: 700 !important;
+    }
+
+    tbody tr.o_group_header th,
+    tbody tr.o_group_header td {
+        background-color: transparent !important;
+        color: #6d28d9 !important;
+        font-weight: 800 !important;
+        border-right: 1px solid #ddd6fe !important;
+    }
+
+    tbody tr.o_group_header .o_group_name,
+    tbody tr.o_group_header .o_group_caret {
+        color: #6d28d9 !important;
+        font-weight: 800 !important;
+    }
+
+    tbody tr.o_group_header.o_group_open {
+        background-color: #eef2ff !important;
+        border-bottom: 0 !important;
+    }
+
+    tbody tr.o_group_header.o_group_open th:first-child {
+        border-left: 3px solid #7c3aed;
+    }
+
+    tbody tr.o_data_row td {
+        border-right: 1px solid #cbd5e1 !important;
+        border-bottom: 1px solid #cbd5e1 !important;
+        border-left: 0;
+        vertical-align: middle;
+    }
+
+    tbody tr.o_data_row td:first-child {
+        border-left: 3px solid #c4b5fd !important;
+        padding-left: 1.35rem !important;
+    }
+
+    tbody tr.o_data_row td:last-child {
+        border-right: 1px solid #cbd5e1 !important;
+    }
+
+    tbody tr.o_data_row:nth-child(odd) {
+        background-color: #ffffff !important;
+    }
+
+    tbody tr.o_data_row:nth-child(even) {
+        background-color: #f8fafc !important;
+    }
+
+    tbody tr.o_data_row:hover {
+        background-color: #f5f3ff !important;
+    }
+
+    tbody tr.o_data_row:last-of-type td {
+        border-bottom: 1px solid #c4b5fd !important;
+    }
+}

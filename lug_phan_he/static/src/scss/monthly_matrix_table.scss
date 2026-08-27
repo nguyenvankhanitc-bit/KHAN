@@ -1,0 +1,523 @@
+/* Bảng xếp ca tháng — lưới Excel, sticky cột trái */
+
+.o_monthly_matrix_wrap {
+    width: 100%;
+}
+
+.o_monthly_matrix_scroll {
+    overflow: auto;
+    max-height: calc(100vh - 220px);
+    border: 1px solid #94a3b8;
+    background: #fff;
+}
+
+.o_monthly_matrix_table {
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 1680px;
+    font-size: 12px;
+}
+
+.o_monthly_matrix_table th,
+.o_monthly_matrix_table td {
+    border: 1px solid #94a3b8;
+    padding: 0;
+    text-align: center;
+    vertical-align: middle;
+    background: #fff;
+}
+
+.o_monthly_matrix_table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 4;
+    background: #f8fafc;
+    font-weight: 800;
+    font-size: 11px;
+    padding: 4px 2px;
+}
+
+.o_monthly_matrix_table thead tr.o_mm_row_wd th {
+    top: 28px;
+}
+
+.o_mm_sticky {
+    position: sticky;
+    z-index: 5;
+    background: #fff;
+}
+
+.o_mm_col_name { left: 0; min-width: 150px; max-width: 170px; z-index: 6; }
+.o_mm_col_job { left: 150px; min-width: 72px; z-index: 6; }
+.o_mm_col_id { left: 222px; min-width: 64px; z-index: 6; }
+.o_mm_col_ca { left: 286px; min-width: 108px; z-index: 6; }
+
+thead .o_mm_sticky {
+    z-index: 8;
+    background: #e2e8f0;
+}
+
+.o_mm_day,
+.o_mm_wd,
+.o_mm_cell {
+    min-width: 48px;
+    width: 48px;
+}
+
+.o_mm_toolbar {
+    margin: 0;
+    padding: 6px 8px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    border: 1px solid #94a3b8;
+    border-bottom: 0;
+    background: #f8fafc;
+    min-height: 40px;
+}
+
+.o_mm_toolbar + .o_monthly_matrix_scroll {
+    border-top: 0;
+}
+
+.o_mm_add_btn {
+    background: #7c3aed !important;
+    border-color: #6d28d9 !important;
+    color: #fff !important;
+    font-weight: 800;
+    padding: 6px 16px;
+}
+
+.o_mm_badge.is-plan { background: #E0E7FF; color: #1e3a8a; }
+.o_mm_badge.is-actual { background: #DCFCE7; color: #15803d; }
+.o_mm_badge.is-hour { background: #F1F5F9; color: #0f172a; }
+
+.o_mm_emp_text {
+    text-transform: none !important;
+    text-align: left;
+    padding: 0 6px;
+    font-weight: 700;
+}
+
+.o_mm_emp_btn {
+    width: 100%;
+    border: 0;
+    background: transparent;
+    font-weight: 700;
+    text-align: left;
+    padding: 4px 6px;
+    min-height: 28px;
+}
+
+.o_mm_cell {
+    position: relative;
+    overflow: visible;
+    pointer-events: auto !important;
+    user-select: auto;
+}
+
+.o_mm_code_select {
+    display: block;
+    width: 100%;
+    height: 28px;
+    border: 0;
+    margin: 0;
+    padding: 0 1px;
+    background: transparent;
+    text-align: center;
+    text-align-last: center;
+    font-weight: 800;
+    font-size: 11px;
+    line-height: 28px;
+    cursor: pointer;
+    pointer-events: auto !important;
+    appearance: auto;
+    -webkit-appearance: menulist;
+    color: inherit;
+}
+
+.o_mm_cell.is-hour {
+    pointer-events: none;
+}
+
+.o_mm_job_select {
+    width: 48px;
+    max-width: 100%;
+    height: 28px;
+    border: 0;
+    background: transparent;
+    text-align: center;
+    font-weight: 700;
+    font-size: 11px;
+    padding: 0;
+}
+
+.o_mm_job_select {
+    width: 100%;
+    font-size: 11px;
+}
+
+.o_mm_holiday {
+    background: #fdba74;
+    color: #9a3412;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.1;
+    padding: 1px 2px;
+}
+
+th.is-holiday {
+    background: #ffedd5 !important;
+}
+
+th.is-weekend,
+.o_mm_wd.is-weekend {
+    background: #DCFCE7 !important;
+}
+
+th.is-sunday,
+.o_mm_wd.is-sunday {
+    background: #FEE2E2 !important;
+    color: #991B1B;
+}
+
+th.is-invalid,
+td.is-invalid {
+    background: #f1f5f9 !important;
+    opacity: 0.45;
+}
+
+.o_mm_ca_select {
+    width: 100%;
+    height: 28px;
+    border: 0;
+    background: #ede9fe;
+    color: #5b21b6;
+    font-weight: 800;
+    font-size: 11px;
+    text-align: center;
+    cursor: pointer;
+}
+
+.o_mm_col_job .o_mm_meta {
+    text-transform: none;
+    text-align: left;
+    padding: 0 4px;
+}
+
+.o_mm_col_id .o_mm_meta {
+    text-transform: none;
+}
+
+.o_mm_cell input,
+.o_mm_meta {
+    width: 100%;
+    min-width: 40px;
+    height: 28px;
+    border: 0;
+    text-align: center;
+    font-weight: 600;
+    background: transparent;
+    text-transform: uppercase;
+}
+
+.o_mm_cell.is-full { background: #DCFCE7; color: #166534; }
+.o_mm_cell.is-split { background: #FEF3C7; color: #b45309; }
+.o_mm_cell.is-half { background: #E0F2FE; color: #075985; }
+.o_mm_cell.is-off { background: #f1f5f9; color: #64748b; }
+.o_mm_cell.is-hour { background: #fff; font-variant-numeric: tabular-nums; height: 28px; }
+
+.o_mm_badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.o_mm_badge.is-plan { background: #E0E7FF; color: #1e3a8a; }
+.o_mm_badge.is-actual { background: #DCFCE7; color: #15803d; }
+.o_mm_badge.is-hour { background: #F1F5F9; color: #0f172a; }
+
+.o_mm_count { min-width: 38px; background: #f8fafc; }
+.o_mm_count_val,
+.o_mm_total_val {
+    font-weight: 700;
+    min-width: 48px;
+    padding: 0 4px;
+}
+
+.o_mm_total,
+.o_mm_total_val { background: #fef3c7; font-weight: 800; }
+
+.o_mm_plan td.o_mm_sticky,
+.o_mm_actual td.o_mm_sticky,
+.o_mm_hours td.o_mm_sticky {
+    box-shadow: 1px 0 0 #94a3b8;
+}
+
+.o_mm_hours { border-bottom: 2px solid #334155; }
+
+.o_monthly_lookup {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.o_monthly_lookup table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.o_monthly_lookup th,
+.o_monthly_lookup td {
+    border: 1px solid #94a3b8;
+    padding: 6px 8px;
+}
+
+.o_monthly_lookup th {
+    background: #f8fafc;
+}
+
+.o_monthly_roster_form .o_mm_card {
+    border: 1px solid #e9d5ff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    height: 100%;
+    background: #faf5ff;
+}
+
+.o_monthly_roster_form .o_mm_card_overview {
+    background: #fff;
+    border-color: #e2e8f0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.o_monthly_roster_form .o_mm_card_title,
+.o_monthly_roster_form .o_mm_card_overview_head {
+    font-weight: 800;
+    color: #6d28d9;
+    margin-bottom: 8px;
+}
+
+.o_monthly_roster_form .o_mm_card_overview_head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    color: #334155;
+    padding: 8px 12px;
+    margin: 0;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.o_monthly_roster_form .o_mm_card_overview .o_field_html {
+    max-height: 180px;
+    overflow: auto;
+    padding: 0;
+}
+
+.o_mm_overview_table {
+    width: 100%;
+    font-size: 12.5px;
+    margin: 0;
+}
+
+.o_mm_overview_table th {
+    font-size: 11px;
+    background: #f8fafc;
+    padding: 4px 8px;
+}
+
+.o_mm_overview_table td {
+    padding: 6px 8px;
+}
+
+.o_monthly_roster_form .o_mm_card_warn {
+    background: #fff7ed;
+    border-color: #fed7aa;
+}
+
+.o_monthly_roster_form .o_mm_card_warn h6 {
+    color: #c2410c;
+    font-weight: 800;
+}
+
+.o_monthly_roster_form .o_mm_card_info {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.o_monthly_roster_form .o_mm_card_info h6 {
+    color: #1d4ed8;
+    font-weight: 800;
+}
+
+.o_phan_he_app_shell.o_form_view .o_control_panel .o_control_panel_main_buttons,
+.o_phan_he_app_shell.o_form_view .o_control_panel .o_cp_buttons {
+    overflow: visible !important;
+    flex: 0 1 auto !important;
+    max-width: none !important;
+}
+
+.o_phan_he_app_shell.o_form_view .o_mm_form_header_btns {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: auto;
+    max-width: none;
+    flex-wrap: nowrap;
+}
+
+.o_mm_btn_cancel {
+    border-width: 2px !important;
+}
+
+.o_mm_btn_save {
+    background: #6d28d9 !important;
+    border-color: #6d28d9 !important;
+    color: #fff !important;
+}
+
+.o_mm_state_badge {
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-weight: 700;
+    font-size: 13px;
+}
+
+.o_mm_state_badge.is-draft {
+    background: #dcfce7;
+    color: #166534;
+    border: 1px solid #86efac;
+}
+
+.o_mm_state_badge.is-done {
+    background: #e0e7ff;
+    color: #3730a3;
+    border: 1px solid #c7d2fe;
+}
+
+.o_monthly_roster_form .oe_title {
+    display: block;
+}
+
+.o_mm_sheet_title {
+    color: #1e293b;
+    font-size: 24px;
+    letter-spacing: -0.3px;
+    text-transform: uppercase;
+
+    .o_field_widget,
+    .o_field_char {
+        font-size: inherit;
+        font-weight: 800;
+        color: #4c1d95;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    input {
+        text-align: center;
+        font-weight: 800;
+        border: 0;
+        background: transparent;
+    }
+}
+
+.o_mm_info_strip {
+    border: 1px solid #e9d5ff;
+    border-radius: 12px;
+    background: #faf5ff;
+    overflow: hidden;
+}
+
+.o_mm_info_strip_head {
+    padding: 8px 16px;
+    font-weight: 800;
+    color: #5b21b6;
+    border-bottom: 1px solid #ede9fe;
+}
+
+.o_mm_info_strip_body {
+    display: grid;
+    grid-template-columns: 1.2fr 1.15fr 1.15fr 0.8fr;
+    gap: 0;
+}
+
+.o_mm_info_col {
+    padding: 12px 16px;
+    min-width: 0;
+}
+
+.o_mm_info_strip_body > .o_inner_group,
+.o_mm_info_strip_body > .o_group,
+.o_mm_info_col_period {
+    margin-bottom: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+}
+
+.o_mm_info_col_period .o_horizontal_separator,
+.o_mm_info_col_period .o_group_col_12 {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.o_mm_period_fields {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
+    width: 100%;
+}
+
+.o_mm_period_item {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.o_mm_period_hint {
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    margin-bottom: 4px;
+}
+
+.o_mm_period_item .o_field_widget,
+.o_mm_period_item .o_select_menu,
+.o_mm_period_item select,
+.o_mm_period_item input {
+    width: 100% !important;
+    max-width: 100%;
+    font-weight: 700;
+}
+
+.o_mm_info_label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+}
+
+.o_mm_info_staff {
+    font-weight: 800;
+    color: #6d28d9;
+    font-size: 15px;
+}
+
+.o_mm_region_badge,
+.o_mm_info_col .o_field_badge {
+    font-size: 16px !important;
+    font-weight: 800 !important;
+    padding: 6px 12px !important;
+}
+
+.o_mm_info_col .o_field_widget {
+    width: 100%;
+}

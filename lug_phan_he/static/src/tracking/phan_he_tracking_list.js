@@ -14,7 +14,7 @@ const DASHBOARD_BY_SERVICE = {
     camera: "lug_phan_he.action_phan_he_dashboard_camera",
     attendance: "lug_phan_he.action_phan_he_dashboard_attendance",
     linkq_hrm: "lug_phan_he.action_phan_he_dashboard_linkq_hrm",
-    linkq_nb: "lug_phan_he.action_phan_he_dashboard_linkq_nb",
+    linkq_nb: "lug_phan_he.action_phan_he_work_shift",
     server: "lug_phan_he.action_phan_he_dashboard_server",
 };
 

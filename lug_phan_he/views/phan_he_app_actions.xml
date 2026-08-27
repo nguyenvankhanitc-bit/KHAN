@@ -20,9 +20,9 @@
     </record>
 
     <record id="action_phan_he_dashboard_linkq_nb" model="ir.actions.client">
-        <field name="name">Dashboard LinkQ NB</field>
+        <field name="name">LinkQ ERP</field>
         <field name="tag">phan_he_dashboard</field>
-        <field name="context">{'phan_he_service_type_code': 'linkq_nb', 'phan_he_app_title': 'LinkQ NB'}</field>
+        <field name="context">{'phan_he_service_type_code': 'linkq_nb', 'phan_he_app_title': 'LinkQ ERP'}</field>
     </record>
 
     <record id="action_phan_he_dashboard_server" model="ir.actions.client">

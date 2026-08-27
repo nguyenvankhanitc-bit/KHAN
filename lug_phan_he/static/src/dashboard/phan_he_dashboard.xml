@@ -2,11 +2,16 @@
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeDashboard">
         <div class="o_phan_he_shell o_action">
+            <t t-if="isLinkqErp">
+                <PhanHeAppSidebar activeKey="'dashboard'"/>
+            </t>
+            <t t-else="">
             <aside class="o_phan_he_sidebar">
                 <div class="o_phan_he_sidebar_brand" t-on-click="() => this.onOverview()" role="button" title="Tổng quan">
-                    <span class="o_phan_he_brand_text">DỊCH VỤ INTERNET</span>
+                    <span class="o_phan_he_brand_text" t-esc="sidebarBrand"/>
                 </div>
                 <nav class="o_phan_he_sidebar_nav">
+                    <t t-if="!isLinkqErp">
                     <button type="button"
                             class="o_phan_he_nav_item"
                             t-att-class="state.activeNav === 'overview' ? 'is-active' : ''"
@@ -14,6 +19,7 @@
                         <i class="fa fa-home"/>
                         <span>Tổng quan</span>
                     </button>
+                    </t>
 
                     <t t-foreach="navSections" t-as="section" t-key="section.id">
                         <div class="o_phan_he_nav_group"
@@ -47,8 +53,11 @@
                     </t>
                 </nav>
             </aside>
+            </t>
 
             <div class="o_phan_he_dashboard">
+                <t t-if="isLinkqErp"/>
+                <t t-else="">
                 <div class="o_phan_he_dash_top">
                     <div>
                         <h1>
@@ -429,6 +438,7 @@
                         </div>
                     </section>
                     </t>
+                </t>
                 </t>
             </div>
         </div>

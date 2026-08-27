@@ -1,0 +1,181 @@
+/* Thanh điều khiển đầu sidebar: Back / Collapse / Fullscreen */
+
+:root {
+    --phan-he-sidebar-width: 260px;
+}
+
+.o_phan_he_sidebar,
+.o_phan_he_app_sidebar {
+    position: relative !important;
+    overflow: visible !important;
+    width: var(--phan-he-sidebar-width, 260px) !important;
+    min-width: var(--phan-he-sidebar-width, 260px) !important;
+    max-width: var(--phan-he-sidebar-width, 260px) !important;
+    transition: width 0.18s ease, min-width 0.18s ease, max-width 0.18s ease;
+}
+
+.o_phan_he_app_shell {
+    grid-template-columns: var(--phan-he-sidebar-width, 260px) minmax(0, 1fr) !important;
+}
+
+.o_phan_he_sidebar_toolbar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px 10px 8px;
+    background: rgba(15, 23, 42, 0.04);
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.o_phan_he_sidebar_toolbar_btns {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+
+.o_phan_he_tb_btn {
+    position: relative;
+    flex: 1;
+    height: 34px;
+    border: 0;
+    border-radius: 999px;
+    background: #fff;
+    color: #4c1d95;
+    box-shadow: 0 0 0 1px #e5e7eb inset;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+
+    i {
+        font-size: 14px;
+        line-height: 1;
+    }
+
+    &:hover {
+        background: #f5f3ff;
+        color: #6d28d9;
+        box-shadow: 0 0 0 1px #c4b5fd inset;
+    }
+
+    &:active {
+        background: #ede9fe;
+    }
+
+    &.is-on {
+        background: #7c3aed;
+        color: #fff;
+        box-shadow: none;
+    }
+}
+
+.o_phan_he_sidebar_resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 6px;
+    z-index: 30;
+    cursor: col-resize;
+    touch-action: none;
+    background: #7c3aed;
+}
+
+.o_phan_he_sidebar_resizer_grip {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 3px;
+    height: 48px;
+    transform: translate(-50%, -50%);
+    border-radius: 99px;
+    background: #fff;
+    pointer-events: none;
+}
+
+.o_phan_he_sidebar_resizer:hover,
+.o_phan_he_sidebar_resizer:active,
+html.o_phan_he_sidebar_resizing .o_phan_he_sidebar_resizer {
+    width: 8px;
+    background: #5b21b6;
+}
+
+.o_phan_he_sidebar_resizer:hover .o_phan_he_sidebar_resizer_grip,
+html.o_phan_he_sidebar_resizing .o_phan_he_sidebar_resizer_grip {
+    background: #fff;
+}
+
+html.o_phan_he_sidebar_resizing,
+html.o_phan_he_sidebar_resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+html.o_phan_he_sidebar_resizing .o_phan_he_sidebar,
+html.o_phan_he_sidebar_resizing .o_phan_he_app_sidebar,
+html.o_phan_he_sidebar_resizing .o_phan_he_app_shell {
+    transition: none !important;
+}
+
+.o_phan_he_tb_btn[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: #1e1b4b;
+    color: #fff;
+    font-size: 0.68rem;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.o_phan_he_sidebar_collapsed,
+html.o_phan_he_sidebar_is_collapsed .o_phan_he_app_sidebar,
+html.o_phan_he_sidebar_is_collapsed .o_phan_he_sidebar {
+    .o_phan_he_nav_heading,
+    .o_phan_he_nav_caret,
+    .o_phan_he_nav_item span,
+    .o_phan_he_nav_sub span,
+    .o_phan_he_nav_section span,
+    .o_phan_he_sidebar_brand span {
+        display: none !important;
+    }
+
+    .o_phan_he_sidebar_toolbar_btns {
+        flex-direction: column;
+    }
+
+    .o_phan_he_tb_btn {
+        width: 34px;
+        flex: 0 0 34px;
+        margin: 0 auto;
+    }
+
+    .o_phan_he_sidebar_nav {
+        padding: 8px 6px;
+        align-items: center;
+    }
+
+    .o_phan_he_nav_item,
+    .o_phan_he_nav_sub,
+    .o_phan_he_nav_section {
+        justify-content: center;
+        padding: 10px 0;
+        gap: 0;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .o_phan_he_nav_item i,
+    .o_phan_he_nav_sub i,
+    .o_phan_he_nav_section i {
+        margin: 0;
+    }
+}

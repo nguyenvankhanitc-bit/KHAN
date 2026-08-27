@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Master: form cửa hàng + One2many khung ngày -->
+    <record id="view_linkq_shift_schedule_dtt_list" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.dtt.list</field>
+        <field name="model">linkq.shift.schedule.dtt</field>
+        <field name="arch" type="xml">
+            <list string="Lịch Miền ĐTT" js_class="phan_he_dtt_schedule_list">
+                <field name="sequence" widget="handle"/>
+                <field name="store_name" decoration-bf="1"/>
+                <field name="line_count" string="Số khung giờ"/>
+                <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_shift_schedule_dtt_form" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.dtt.form</field>
+        <field name="model">linkq.shift.schedule.dtt</field>
+        <field name="arch" type="xml">
+            <form string="Lịch Miền ĐTT" js_class="phan_he_dtt_schedule_form">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="store_name"/>
+                        <h1><field name="store_name" placeholder="VD: AEBD"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <separator string="Khung giờ áp dụng"/>
+                    <field name="line_ids">
+                        <list editable="bottom">
+                            <field name="sequence" widget="handle"/>
+                            <field name="apply_days" placeholder="VD: T2 - T6"/>
+                            <field name="shift_full" placeholder="VD: F7 (09:00 - 22:00)"/>
+                            <field name="shift_split_morning" placeholder="VD: GS4 (09:00 - 19:00)"/>
+                            <field name="shift_split_afternoon" placeholder="VD: GC1 (12:00 - 22:00)"/>
+                            <field name="shift_morning" placeholder="VD: S9 (09:00 - 17:00)"/>
+                            <field name="shift_afternoon" placeholder="VD: C4 (14:00 - 22:00)"/>
+                            <field name="note"/>
+                        </list>
+                    </field>
+                    <separator string="Ghi chú"/>
+                    <field name="note" placeholder="Ghi chú vận hành cửa hàng..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Detail: tree group by cửa hàng (accordion) -->
+    <record id="view_linkq_shift_schedule_dtt_line_list" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.dtt.line.list</field>
+        <field name="model">linkq.shift.schedule.dtt.line</field>
+        <field name="arch" type="xml">
+            <list string="Lịch Miền ĐTT"
+                  class="o_phan_he_north_schedule_list"
+                  js_class="phan_he_dtt_schedule_list"
+                  default_order="sequence, id">
+                <field name="sequence" widget="handle"/>
+                <field name="schedule_id" string="Cửa hàng / Mã quầy" decoration-bf="1"/>
+                <field name="apply_days"/>
+                <field name="shift_full"/>
+                <field name="shift_split_morning"/>
+                <field name="shift_split_afternoon"/>
+                <field name="shift_morning"/>
+                <field name="shift_afternoon"/>
+                <field name="note" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_shift_schedule_dtt_line_form" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.dtt.line.form</field>
+        <field name="model">linkq.shift.schedule.dtt.line</field>
+        <field name="arch" type="xml">
+            <form string="Lịch làm việc" class="o_form_sheet_bg o_linkq_schedule_form" js_class="phan_he_dtt_schedule_form">
+                <header>
+                    <button name="action_save_and_close" type="object" string="Lưu dữ liệu" class="oe_highlight o_linkq_btn_save" icon="fa-floppy-o"/>
+                    <button string="Hủy bỏ" special="cancel" class="o_linkq_btn_discard" icon="fa-times"/>
+                </header>
+                <sheet>
+                    <div class="o_linkq_form_hint">
+                        <i class="fa fa-info-circle"/> Nhấn <b>Lưu dữ liệu</b> để cập nhật lịch vào hệ thống
+                    </div>
+                    <div class="o_linkq_form_card">
+                        <div class="o_linkq_form_card_head">THÔNG TIN CỬA HÀNG &amp; THỜI GIAN ÁP DỤNG</div>
+                        <div class="o_linkq_form_card_body">
+                            <group>
+                                <group>
+                                    <field name="schedule_id" string="Cửa hàng / Quầy" placeholder="Chọn cửa hàng..."/>
+                                    <field name="sequence" string="Thứ tự hiển thị"/>
+                                </group>
+                                <group>
+                                    <field name="apply_days" string="Ngày áp dụng" placeholder="VD: T2 - T6, T7, CN, LỄ..."/>
+                                </group>
+                            </group>
+                        </div>
+                    </div>
+                    <div class="o_linkq_form_card">
+                        <div class="o_linkq_form_card_head">CẤU HÌNH CA LÀM VIỆC</div>
+                        <div class="o_linkq_form_card_body">
+                            <group>
+                                <group string="Ca Full &amp; Ca Gãy">
+                                    <field name="shift_full" string="Ca Full" placeholder="VD: F7 (09:00 - 22:00)"/>
+                                    <field name="shift_split_morning" string="Ca Gãy Sáng" placeholder="VD: GS4 (09:00 - 19:00)"/>
+                                    <field name="shift_split_afternoon" string="Ca Gãy Chiều" placeholder="VD: GC1 (12:00 - 22:00)"/>
+                                </group>
+                                <group string="Ca Sáng &amp; Ca Chiều">
+                                    <field name="shift_morning" string="Ca Sáng" placeholder="VD: S9 (09:00 - 17:00)"/>
+                                    <field name="shift_afternoon" string="Ca Chiều" placeholder="VD: C4 (14:00 - 22:00)"/>
+                                </group>
+                            </group>
+                        </div>
+                    </div>
+                    <div class="o_linkq_form_card">
+                        <div class="o_linkq_form_card_head">GHI CHÚ VẬN HÀNH</div>
+                        <div class="o_linkq_form_card_body">
+                            <field name="note" nolabel="1" placeholder="Nhập ghi chú giờ mở quầy, nhân sự đặc thù, ngày đổi ca..."/>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_linkq_shift_schedule_dtt_line_search" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.dtt.line.search</field>
+        <field name="model">linkq.shift.schedule.dtt.line</field>
+        <field name="arch" type="xml">
+            <search string="Tìm lịch Miền ĐTT">
+                <field name="schedule_id"/>
+                <field name="store_name"/>
+                <field name="apply_days"/>
+                <filter name="group_store" string="Cửa hàng" context="{'group_by': 'schedule_id'}"/>
+                <filter name="group_days" string="Ngày áp dụng" context="{'group_by': 'apply_days'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_linkq_shift_schedule_dtt" model="ir.actions.act_window">
+        <field name="name">Lịch Miền ĐTT</field>
+        <field name="res_model">linkq.shift.schedule.dtt.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_linkq_shift_schedule_dtt_line_search"/>
+        <field name="context">{'search_default_group_store': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có lịch Miền ĐTT</p>
+            <p>Bấm mũi tên ▶ trên từng cửa hàng để xem khung giờ T2-T6, T7, CN/Lễ.</p>
+        </field>
+    </record>
+</odoo>

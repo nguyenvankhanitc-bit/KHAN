@@ -36,6 +36,10 @@
                 <button t-if="!props.archived" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click="onNew">
                     + Tạo mới
                 </button>
+                <span t-if="props.overdue" class="o_lug_plist_overdue_title">
+                    Dự án trễ hạn
+                    <small>Deadline đã qua, chưa hoàn thành</small>
+                </span>
                 <span t-if="props.archived" class="o_lug_plist_archive_title">
                     Thùng rác
                     <small>Tự xóa vĩnh viễn sau 30 ngày</small>
@@ -144,6 +148,7 @@
             <t t-elif="!state.rows.length">
                 <div class="o_lug_plist_empty">
                     <t t-if="props.archived">Thùng rác trống.</t>
+                    <t t-elif="props.overdue">Không có dự án trễ hạn.</t>
                     <t t-else="">Không có dự án nào.</t>
                 </div>
             </t>

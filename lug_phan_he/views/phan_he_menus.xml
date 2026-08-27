@@ -298,25 +298,59 @@
               name="Dashboard"
               parent="menu_phan_he_linkq_nb_root"
               action="action_phan_he_dashboard_linkq_nb"
-              sequence="1"/>
+              sequence="1"
+              active="True"/>
 
     <menuitem id="menu_phan_he_linkq_nb_list"
-              name="License / phí bảo trì"
+              name="Hợp đồng"
               parent="menu_phan_he_linkq_nb_root"
               action="action_phan_he_service_tracking_linkq_nb"
-              sequence="2"/>
+              sequence="2"
+              active="False"/>
+
+    <menuitem id="menu_linkq_shift_schedule_north"
+              name="Lịch Miền Bắc"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_store_schedule_north"
+              sequence="25"/>
+
+    <menuitem id="menu_linkq_shift_schedule_south"
+              name="Lịch Miền Nam"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_store_schedule_south"
+              sequence="26"/>
+
+    <menuitem id="menu_linkq_shift_schedule_dtt"
+              name="Lịch Miền ĐTT"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_shift_schedule_dtt"
+              sequence="27"/>
+
+    <menuitem id="menu_phan_he_shift_roster"
+              name="Lịch xếp ca"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_monthly_roster"
+              sequence="28"/>
+
+    <menuitem id="menu_phan_he_work_shift"
+              name="Ký hiệu công"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_shift_code"
+              sequence="30"/>
 
     <menuitem id="menu_phan_he_linkq_nb_entry"
               name="Nhập liệu"
               parent="menu_phan_he_linkq_nb_root"
               action="action_phan_he_service_entry_linkq_nb"
-              sequence="3"/>
+              sequence="5"/>
 
     <menuitem id="menu_phan_he_linkq_nb_payment"
               name="Thanh toán"
               parent="menu_phan_he_linkq_nb_root"
               action="action_phan_he_payment_linkq_nb"
-              sequence="4"/>
+              sequence="6"/>
+
+    <!-- ========== MÁY CHỦ ========== -->
 
     <!-- ========== MÁY CHỦ ========== -->
     <menuitem id="menu_phan_he_server_root"

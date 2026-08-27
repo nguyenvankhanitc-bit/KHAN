@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_linkq_shift_schedule_north_list" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.north.list</field>
+        <field name="model">linkq.shift.schedule.north</field>
+        <field name="arch" type="xml">
+            <list string="Lịch Miền Bắc"
+                  class="o_phan_he_north_schedule_list"
+                  js_class="phan_he_north_schedule_list"
+                  default_order="sequence, store_name, apply_days">
+                <field name="sequence" widget="handle"/>
+                <field name="store_name" string="Cửa hàng / Mã quầy" decoration-bf="1"/>
+                <field name="apply_days" string="Ngày áp dụng"/>
+                <field name="shift_full"/>
+                <field name="shift_split_morning"/>
+                <field name="shift_split_afternoon"/>
+                <field name="shift_morning"/>
+                <field name="shift_afternoon"/>
+                <field name="note" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_shift_schedule_north_form" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.north.form</field>
+        <field name="model">linkq.shift.schedule.north</field>
+        <field name="arch" type="xml">
+            <form string="Lịch Miền Bắc" js_class="phan_he_north_schedule_form">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="store_name"/>
+                        <h1><field name="store_name" placeholder="VD: AEHD_DDL"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="apply_days" placeholder="VD: T2 - T5"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+                    <separator string="Ca làm việc"/>
+                    <group>
+                        <group>
+                            <field name="shift_full" placeholder="VD: F8 (09:30-22:00)"/>
+                            <field name="shift_split_morning" placeholder="VD: GS4 (09:00-19:00)"/>
+                            <field name="shift_split_afternoon" placeholder="VD: GC1 (12:00-22:00)"/>
+                        </group>
+                        <group>
+                            <field name="shift_morning" placeholder="VD: S4 (09:30-15:30)"/>
+                            <field name="shift_afternoon" placeholder="VD: C1 (15:00-22:00)"/>
+                        </group>
+                    </group>
+                    <separator string="Ghi chú vận hành"/>
+                    <field name="note" placeholder="Ghi chú mở cửa, đi ca, quầy đặc biệt..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_linkq_shift_schedule_north_search" model="ir.ui.view">
+        <field name="name">linkq.shift.schedule.north.search</field>
+        <field name="model">linkq.shift.schedule.north</field>
+        <field name="arch" type="xml">
+            <search string="Tìm lịch Miền Bắc">
+                <field name="store_name"/>
+                <field name="apply_days"/>
+                <group>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_name'}"/>
+                    <filter name="group_days" string="Ngày áp dụng" context="{'group_by': 'apply_days'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_linkq_shift_schedule_north" model="ir.actions.act_window">
+        <field name="name">Lịch Miền Bắc</field>
+        <field name="res_model">linkq.shift.schedule.north</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_linkq_shift_schedule_north_search"/>
+        <field name="context">{'search_default_group_store': 0}</field>
+        <field name="limit">80</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có lịch Miền Bắc</p>
+            <p>Khai báo ca theo cửa hàng / ngày áp dụng (T2-T5, T7, CN, Lễ...).</p>
+        </field>
+    </record>
+</odoo>

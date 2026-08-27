@@ -38,7 +38,7 @@ const SERVICE_APPS = [
         code: "linkq_nb",
         name: "LinkQ ERP",
         icon: "/lug_phan_he/static/description/icon_hub_erp.png",
-        action: "lug_phan_he.action_phan_he_dashboard_linkq_nb",
+        action: "lug_phan_he.action_linkq_shift_code",
         enabled: true,
     },
     {

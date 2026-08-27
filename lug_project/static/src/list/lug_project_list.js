@@ -20,6 +20,7 @@ export class LugProjectList extends Component {
         onNew: { type: Function, optional: true },
         onGantt: { type: Function, optional: true },
         archived: { type: Boolean, optional: true },
+        overdue: { type: Boolean, optional: true },
     };
 
     setup() {
@@ -100,6 +101,7 @@ export class LugProjectList extends Component {
             date_from: this.state.dateFrom || null,
             date_to: this.state.dateTo || null,
             archived: Boolean(this.props.archived),
+            overdue: Boolean(this.props.overdue),
         };
     }
 

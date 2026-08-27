@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_employee_roster_pick_list" model="ir.ui.view">
+        <field name="name">hr.employee.roster.pick.list</field>
+        <field name="model">hr.employee</field>
+        <field name="priority">999</field>
+        <field name="arch" type="xml">
+            <list string="Chọn nhân viên">
+                <field name="name"/>
+                <field name="barcode" string="Mã ID"/>
+                <field name="job_title" string="Chức vụ"/>
+                <field name="department_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_hr_employee_roster_pick_search" model="ir.ui.view">
+        <field name="name">hr.employee.roster.pick.search</field>
+        <field name="model">hr.employee</field>
+        <field name="priority">999</field>
+        <field name="arch" type="xml">
+            <search string="Tìm nhân viên">
+                <field name="name"/>
+                <field name="barcode"/>
+                <field name="work_email"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_linkq_monthly_roster_list" model="ir.ui.view">
+        <field name="name">linkq.monthly.roster.list</field>
+        <field name="model">linkq.monthly.roster</field>
+        <field name="arch" type="xml">
+            <list string="Bảng xếp ca tháng" js_class="phan_he_roster_list">
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="region" optional="show"/>
+                <field name="total_employees" string="Nhân sự"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'draft'"
+                       decoration-success="state == 'confirmed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_monthly_roster_form" model="ir.ui.view">
+        <field name="name">linkq.monthly.roster.form</field>
+        <field name="model">linkq.monthly.roster</field>
+        <field name="arch" type="xml">
+            <form string="Bảng xếp ca tháng" class="o_form_sheet_bg o_monthly_roster_form" js_class="phan_he_roster_form">
+                <sheet>
+                    <div class="oe_title text-center my-3">
+                        <h1 class="fw-bold m-0 o_mm_sheet_title">
+                            <field name="name" readonly="1" nolabel="1" class="oe_inline"/>
+                        </h1>
+                    </div>
+                    <div class="o_mm_info_strip mb-3">
+                        <div class="o_mm_info_strip_head">
+                            <i class="fa fa-sliders"/> THÔNG TIN KỲ XẾP CA
+                        </div>
+                        <div class="o_mm_info_strip_body">
+                            <div class="o_mm_info_col">
+                                <div class="o_mm_info_label">🏪 TÊN CỬA HÀNG</div>
+                                <field name="store_id" required="1" readonly="state == 'confirmed'"
+                                       options="{'no_create': True, 'no_open': True}"
+                                       placeholder="Chọn cửa hàng..."/>
+                            </div>
+                            <group class="o_mm_info_col o_mm_info_col_period" col="2">
+                                <separator string="📅 KỲ THÁNG / NĂM" colspan="2"/>
+                                <field name="month" string="Tháng" required="1" readonly="state == 'confirmed'"/>
+                                <field name="year" string="Năm" readonly="1"/>
+                            </group>
+                            <div class="o_mm_info_col o_mm_info_col_staff">
+                                <div class="o_mm_info_label">👥 NHÂN SỰ</div>
+                                <div class="o_mm_info_staff">
+                                    <field name="staff_summary_text" readonly="1" nolabel="1"/>
+                                </div>
+                                <field name="total_employees" invisible="1"/>
+                            </div>
+                            <div class="o_mm_info_col">
+                                <div class="o_mm_info_label">🌐 KHU VỰC</div>
+                                <field name="region" readonly="1" widget="badge"
+                                       class="fw-bold text-primary fs-6 o_mm_region_badge"
+                                       decoration-info="region == 'Bắc'"
+                                       decoration-warning="region == 'Nam'"
+                                       decoration-success="region in ('ĐTT', 'DTT')"
+                                       decoration-muted="region == 'VP'"/>
+                            </div>
+                        </div>
+                        <field name="holiday_map" invisible="1"/>
+                    </div>
+                    <field name="weekday_json" invisible="1"/>
+                    <field name="holiday_json" invisible="1"/>
+                    <field name="days_in_month" invisible="1"/>
+                    <field name="lack_morning" invisible="1"/>
+                    <field name="lack_evening" invisible="1"/>
+                    <field name="line_ids" widget="monthly_matrix_grid" nolabel="1" readonly="state == 'confirmed'" create="1" delete="1">
+                        <list editable="top" create="1" delete="1" default_order="sequence, id">
+                            <field name="sequence" widget="handle" column_invisible="1"/>
+                            <field name="employee_id" column_invisible="1"/>
+                            <field name="employee_name"/>
+                            <field name="job_title"/>
+                            <field name="employee_code"/>
+                            <field name="plan_codes"/>
+                            <field name="actual_codes"/>
+                            <field name="hour_codes"/>
+                            <field name="count_plan"/>
+                            <field name="count_actual"/>
+                            <field name="plan_hours"/>
+                            <field name="actual_hours"/>
+                            <field name="hour_total"/>
+                            <field name="shift_summary_text"/>
+                        </list>
+                    </field>
+                    <div class="row o_mm_footer_cards g-3 mt-2">
+                        <div class="col-md-6">
+                            <div class="o_mm_card o_mm_card_warn">
+                                <h6>KIỂM TRA THIẾU CA</h6>
+                                <p class="mb-0">S = thiếu ca sáng (mã S*) · T = thiếu ca tối (mã C*/GC*/F*). Kiểm tra từng ngày trên lưới: không có S* thì thiếu sáng; không có C*/GC*/F* thì thiếu tối.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="o_mm_card o_mm_card_info">
+                                <h6>LỊCH NGÀY THƯỜNG THAM KHẢO</h6>
+                                <p class="mb-0">F8: 09:30–22:00 (12.5h) · F7: 09:00–22:00 (13h) · C1: 15:00–22:00 (7h) · GC1: 12:00–22:00 (10h)</p>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_linkq_monthly_roster_search" model="ir.ui.view">
+        <field name="name">linkq.monthly.roster.search</field>
+        <field name="model">linkq.monthly.roster</field>
+        <field name="arch" type="xml">
+            <search string="Tìm bảng xếp ca">
+                <field name="name"/>
+                <field name="store_id"/>
+                <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_confirmed" string="Đã chốt" domain="[('state', '=', 'confirmed')]"/>
+                <group>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_month" string="Tháng" context="{'group_by': 'month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_linkq_monthly_roster" model="ir.actions.act_window">
+        <field name="name">Bảng xếp ca</field>
+        <field name="res_model">linkq.monthly.roster</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_linkq_monthly_roster_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có bảng xếp ca tháng</p>
+            <p>Chọn cửa hàng, tháng/năm, bấm Tải danh sách NV rồi nhập mã ca từng ngày (S9, F7, GC1, OFF…).</p>
+        </field>
+    </record>
+</odoo>

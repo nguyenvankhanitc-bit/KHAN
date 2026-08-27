@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeInternetList">
+        <div class="o_phan_he_inet_shell o_action" t-on-click="() => this.closeMenus()">
+            <aside class="o_phan_he_inet_sidebar">
+                <div class="o_phan_he_inet_brand" t-on-click="() => this.openOverview()" role="button">
+                    <span>DỊCH VỤ INTERNET</span>
+                </div>
+                <nav class="o_phan_he_inet_nav">
+                    <button type="button" class="o_phan_he_inet_link" t-on-click="() => this.openOverview()">
+                        <i class="fa fa-home"/>
+                        <span>Tổng quan</span>
+                    </button>
+
+                    <t t-foreach="navSections" t-as="section" t-key="section.id">
+                        <div class="o_phan_he_inet_group" t-att-class="isGroupOpen(section.id) ? 'is-open' : ''">
+                            <button type="button" class="o_phan_he_inet_section"
+                                    t-on-click="() => this.toggleGroup(section.id)">
+                                <i t-att-class="'fa ' + section.icon"/>
+                                <span t-esc="section.label"/>
+                                <i class="fa fa-angle-down o_phan_he_inet_caret"/>
+                            </button>
+                            <t t-if="isGroupOpen(section.id)">
+                                <t t-foreach="section.children" t-as="child" t-key="child.id">
+                                    <button type="button"
+                                            class="o_phan_he_inet_sub"
+                                            t-att-class="state.activeNav === child.id ? 'is-active' : ''"
+                                            t-on-click.stop="() => this.onNavChild(child)">
+                                        <i t-att-class="'fa ' + (child.icon || 'fa-circle-o')"/>
+                                        <span t-esc="child.label"/>
+                                    </button>
+                                </t>
+                            </t>
+                        </div>
+                    </t>
+                </nav>
+            </aside>
+
+            <main class="o_phan_he_inet_main">
+                <div class="o_phan_he_inet_page_head">
+                    <div>
+                        <h1 t-esc="pageMeta.title"/>
+                        <p t-esc="pageMeta.subtitle"/>
+                    </div>
+                    <button type="button" class="o_phan_he_inet_btn_primary" t-on-click="() => this.onAdd()">
+                        <i class="fa fa-plus"/> Thêm đường truyền
+                    </button>
+                </div>
+
+                <div class="o_phan_he_inet_stats">
+                    <div class="o_phan_he_inet_stat">
+                        <span class="o_phan_he_inet_stat_icon is-purple"><i class="fa fa-globe"/></span>
+                        <div>
+                            <small>Tổng đường truyền</small>
+                            <strong t-esc="state.stats.total"/>
+                        </div>
+                    </div>
+                    <div class="o_phan_he_inet_stat">
+                        <span class="o_phan_he_inet_stat_icon is-green"><i class="fa fa-check"/></span>
+                        <div>
+                            <small>Đang hoạt động</small>
+                            <strong t-esc="state.stats.active"/>
+                        </div>
+                    </div>
+                    <div class="o_phan_he_inet_stat">
+                        <span class="o_phan_he_inet_stat_icon is-orange"><i class="fa fa-pause"/></span>
+                        <div>
+                            <small>Tạm ngưng</small>
+                            <strong t-esc="state.stats.suspend"/>
+                        </div>
+                    </div>
+                    <div class="o_phan_he_inet_stat">
+                        <span class="o_phan_he_inet_stat_icon is-red"><i class="fa fa-times"/></span>
+                        <div>
+                            <small>Thanh lý</small>
+                            <strong t-esc="state.stats.liquidated"/>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_phan_he_inet_filters">
+                    <div class="o_phan_he_inet_search">
+                        <i class="fa fa-search"/>
+                        <input type="text"
+                               placeholder="Tìm kiếm theo tên / cửa hàng / mã đường truyền..."
+                               t-att-value="state.search"
+                               t-on-input="onSearchInput"/>
+                    </div>
+                    <select t-on-change="(ev) => this.onFilterChange('statusFilter', ev)">
+                        <option value="">Trạng thái</option>
+                        <option value="active" t-att-selected="state.statusFilter === 'active'">Đang hoạt động</option>
+                        <option value="suspend" t-att-selected="state.statusFilter === 'suspend'">Tạm ngưng</option>
+                        <option value="liquidated" t-att-selected="state.statusFilter === 'liquidated'">Thanh lý</option>
+                    </select>
+                    <select t-on-change="(ev) => this.onFilterChange('providerFilter', ev)">
+                        <option value="">Nhà cung cấp</option>
+                        <t t-foreach="state.providers" t-as="p" t-key="p.id">
+                            <option t-att-value="p.id"
+                                    t-att-selected="String(state.providerFilter) === String(p.id)"
+                                    t-esc="p.name"/>
+                        </t>
+                    </select>
+                    <select t-on-change="(ev) => this.onFilterChange('bandwidthFilter', ev)">
+                        <option value="">Băng thông</option>
+                        <t t-foreach="state.bandwidths" t-as="bw" t-key="bw">
+                            <option t-att-value="bw"
+                                    t-att-selected="state.bandwidthFilter === bw"
+                                    t-esc="bw"/>
+                        </t>
+                    </select>
+                    <button type="button" class="o_phan_he_inet_btn_refresh" t-on-click="() => this.resetFilters()">
+                        <i class="fa fa-refresh"/> Làm mới
+                    </button>
+                </div>
+
+                <div class="o_phan_he_inet_table_wrap">
+                    <t t-if="state.loading">
+                        <div class="o_phan_he_inet_loading">Đang tải...</div>
+                    </t>
+                    <t t-else="">
+                        <table class="o_phan_he_inet_table">
+                            <thead>
+                                <tr>
+                                    <th class="col-check">
+                                        <input type="checkbox"
+                                               t-att-checked="allSelectedOnPage"
+                                               t-on-change="toggleSelectAll"/>
+                                    </th>
+                                    <th class="col-stt">STT</th>
+                                    <th>TÊN / CỬA HÀNG</th>
+                                    <th>NGÀY BẮT ĐẦU</th>
+                                    <th>NGÀY KẾT THÚC</th>
+                                    <th>BĂNG THÔNG</th>
+                                    <th class="col-money">CƯỚC THÁNG (VNĐ)</th>
+                                    <th>TRẠNG THÁI</th>
+                                    <th>THỜI GIAN CÒN LẠI</th>
+                                    <th class="col-actions">THAO TÁC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!pageRecords.length">
+                                    <tr>
+                                        <td colspan="10" class="o_phan_he_inet_empty">Không có dữ liệu</td>
+                                    </tr>
+                                </t>
+                                <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
+                                    <tr>
+                                        <td class="col-check">
+                                            <input type="checkbox"
+                                                   t-att-checked="!!state.selected[rec.id]"
+                                                   t-on-change="(ev) => this.toggleSelect(rec.id, ev)"/>
+                                        </td>
+                                        <td class="col-stt" t-esc="rec.stt"/>
+                                        <td>
+                                            <div class="o_phan_he_inet_name" t-esc="storeName(rec)"/>
+                                            <div class="o_phan_he_inet_code" t-esc="lineCode(rec)"/>
+                                        </td>
+                                        <td t-esc="formatDate(rec.date_start)"/>
+                                        <td t-esc="formatDate(rec.date_end)"/>
+                                        <td t-esc="rec.bandwidth || '—'"/>
+                                        <td class="col-money" t-esc="formatMoney(rec.contract_amount)"/>
+                                        <td>
+                                            <span class="o_phan_he_inet_pill"
+                                                  t-att-class="statusMeta(rec.ops_status).className"
+                                                  t-esc="statusMeta(rec.ops_status).label"/>
+                                        </td>
+                                        <td>
+                                            <span class="o_phan_he_inet_remain"
+                                                  t-att-class="remainingClass(rec)"
+                                                  t-esc="rec.remaining_time || '—'"/>
+                                        </td>
+                                        <td class="col-actions">
+                                            <div class="o_phan_he_inet_menu">
+                                                <button type="button"
+                                                        class="o_phan_he_inet_menu_btn"
+                                                        t-on-click.stop="(ev) => this.toggleRowMenu(rec.id, ev)">
+                                                    <i class="fa fa-ellipsis-v"/>
+                                                </button>
+                                                <div t-if="state.openMenuId === rec.id"
+                                                     class="o_phan_he_inet_menu_drop"
+                                                     t-on-click.stop="">
+                                                    <button type="button" t-on-click="() => this.openRecord(rec.id)">
+                                                        Xem / sửa
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <div class="o_phan_he_inet_pager">
+                            <span t-esc="pageInfo"/>
+                            <div class="o_phan_he_inet_pages">
+                                <button type="button"
+                                        t-att-disabled="state.page &lt;= 1"
+                                        t-on-click="() => this.setPage(state.page - 1)">
+                                    <i class="fa fa-angle-left"/>
+                                </button>
+                                <t t-foreach="pageNumbers" t-as="p" t-key="p">
+                                    <button type="button"
+                                            t-att-class="state.page === p ? 'is-active' : ''"
+                                            t-on-click="() => this.setPage(p)"
+                                            t-esc="p"/>
+                                </t>
+                                <button type="button"
+                                        t-att-disabled="state.page &gt;= totalPages"
+                                        t-on-click="() => this.setPage(state.page + 1)">
+                                    <i class="fa fa-angle-right"/>
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </main>
+        </div>
+    </t>
+</templates>

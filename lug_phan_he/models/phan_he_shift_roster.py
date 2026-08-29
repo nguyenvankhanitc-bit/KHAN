@@ -13,7 +13,8 @@ class PhanHeShiftRoster(models.Model):
     _name = "phan.he.shift.roster"
     _description = "Bản xếp ca"
     _order = "week_start desc, id desc"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_main"
 
     name = fields.Char(compute="_compute_name", store=True)
     week_start = fields.Date(
@@ -125,6 +126,8 @@ class PhanHeShiftRosterLine(models.Model):
     _name = "phan.he.shift.roster.line"
     _description = "Dòng xếp ca"
     _order = "employee_id"
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_main"
 
     roster_id = fields.Many2one(
         "phan.he.shift.roster", required=True, ondelete="cascade", index=True

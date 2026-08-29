@@ -217,7 +217,7 @@ export class PhanHeRosterFormController extends PhanHeWorkShiftFormController {
     }
 
     get sidebarActiveKey() {
-        return "roster";
+        return this.model?.root?.resId ? "roster" : "roster_new";
     }
 
     async onRosterSave() {
@@ -227,16 +227,18 @@ export class PhanHeRosterFormController extends PhanHeWorkShiftFormController {
         }
     }
 
-    async onRosterDiscard() {
-        if (this.model.root.isInEdition) {
-            const resId = this.model.root.resId;
-            await this.discard();
-            if (resId && this.model.root?.resId) {
+    async discard() {
+        if (this.model.root.resId) {
+            if (this.model.root.isInEdition) {
                 await this.model.root.switchMode("readonly");
             }
             return;
         }
-        this.env.config.historyBack();
+        return;
+    }
+
+    async onRosterDiscard() {
+        return this.discard();
     }
 
     async onRosterEdit() {

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_phan_he_module_access_form_inherit_menu" model="ir.ui.view">
+        <field name="name">phan.he.module.access.form.inherit.menu</field>
+        <field name="model">phan.he.module.access</field>
+        <field name="inherit_id" ref="lug_phan_he.view_phan_he_module_access_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Phân quyền Menu LinkQ ERP" name="linkq_menus">
+                    <field name="menu_permission_line_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="menu_key"/>
+                            <field name="can_read"/>
+                            <field name="can_create"/>
+                            <field name="can_write"/>
+                            <field name="can_unlink"/>
+                            <field name="can_all"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

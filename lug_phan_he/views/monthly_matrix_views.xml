@@ -31,7 +31,7 @@
         <field name="name">linkq.monthly.roster.list</field>
         <field name="model">linkq.monthly.roster</field>
         <field name="arch" type="xml">
-            <list string="Bảng xếp ca tháng" js_class="phan_he_roster_list">
+            <list string="Bảng xếp ca tháng" js_class="phan_he_roster_list" duplicate="false" delete="false">
                 <field name="name"/>
                 <field name="store_id"/>
                 <field name="region" optional="show"/>
@@ -47,7 +47,11 @@
         <field name="name">linkq.monthly.roster.form</field>
         <field name="model">linkq.monthly.roster</field>
         <field name="arch" type="xml">
-            <form string="Bảng xếp ca tháng" class="o_form_sheet_bg o_monthly_roster_form" js_class="phan_he_roster_form">
+            <form string="Bảng xếp ca tháng" class="o_form_sheet_bg o_monthly_roster_form" js_class="phan_he_roster_form"
+                  create="true" edit="true" delete="false" duplicate="false">
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
+                </header>
                 <sheet>
                     <div class="oe_title text-center my-3">
                         <h1 class="fw-bold m-0 o_mm_sheet_title">

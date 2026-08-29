@@ -10,7 +10,7 @@ import { useService } from "@web/core/utils/hooks";
  */
 export class DailyWorkReminderSystray extends Component {
     static template = "daily_work_task.ReminderSystray";
-    static props = {};
+    static props = { "*": true };
 
     setup() {
         this.orm = useService("orm");

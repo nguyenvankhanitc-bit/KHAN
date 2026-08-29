@@ -8,6 +8,8 @@ class LinkqShiftScheduleNorth(models.Model):
     _description = "Lịch Miền Bắc"
     _order = "sequence, store_name, apply_days"
     _rec_name = "store_name"
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_north"
 
     sequence = fields.Integer(string="STT", default=10)
     store_name = fields.Char(

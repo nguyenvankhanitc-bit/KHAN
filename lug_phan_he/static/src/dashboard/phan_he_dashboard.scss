@@ -13,6 +13,27 @@
     padding: 0 !important;
 }
 
+.o_phan_he_shell > .o_phan_he_app_sidebar {
+    flex: 0 0 var(--phan-he-sidebar-width, 280px);
+    min-width: var(--phan-he-sidebar-width, 280px) !important;
+    width: var(--phan-he-sidebar-width, 280px) !important;
+    max-width: var(--phan-he-sidebar-width, 280px) !important;
+    align-self: stretch;
+}
+
+.o_phan_he_shell > .o_phan_he_dashboard {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+html.o_phan_he_sidebar_is_collapsed .o_phan_he_shell > .o_phan_he_app_sidebar,
+.o_phan_he_shell > .o_phan_he_app_sidebar.o_phan_he_sidebar_collapsed {
+    min-width: 70px !important;
+    width: 70px !important;
+    max-width: 70px !important;
+    flex: 0 0 70px !important;
+}
+
 .o_phan_he_sidebar {
     width: 268px;
     min-width: 268px;

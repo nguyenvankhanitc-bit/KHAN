@@ -7,6 +7,7 @@ class LinkqStoreSchedule(models.Model):
     _name = "linkq.store.schedule"
     _description = "Lịch cửa hàng"
     _order = "sequence, name"
+    _inherit = ["lug.menu.access.mixin"]
 
     sequence = fields.Integer(string="STT", default=10)
     name = fields.Char(string="Cửa hàng / Mã quầy", required=True, index=True)
@@ -55,6 +56,7 @@ class LinkqStoreScheduleLine(models.Model):
     _name = "linkq.store.schedule.line"
     _description = "Khung giờ áp dụng cửa hàng"
     _order = "schedule_id, sequence, id"
+    _inherit = ["lug.menu.access.mixin"]
 
     sequence = fields.Integer(string="STT", default=10)
     schedule_id = fields.Many2one(

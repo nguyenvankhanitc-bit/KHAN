@@ -1,0 +1,212 @@
+/* Subpanel LinkQ — bám SATACO / Dự án: nền xám xanh, chip module, CTA tím, pill nhóm, badge tròn, active peach */
+.o_sataco_sidebar.is-linkq-panel {
+    background: #eef2f7 !important;
+    border-right: 1px solid #dbe3ee;
+}
+
+.linkq-subpanel-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 12px 20px !important;
+    background: transparent;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #c5d0de transparent;
+
+    .linkq-module-chip {
+        background: #ffffff;
+        color: #1e293b;
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        text-align: left;
+        padding: 10px 14px;
+        border-radius: 14px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+        white-space: nowrap;
+    }
+
+    .btn-main-action {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        border: 0;
+        background: #7c3aed !important;
+        color: #fff !important;
+        font-size: 0.95rem;
+        font-weight: 700;
+        font-family: inherit;
+        padding: 11px 14px;
+        border-radius: 12px;
+        box-shadow: 0 6px 14px rgba(124, 58, 237, 0.28);
+        cursor: pointer;
+        white-space: nowrap;
+
+        &:hover {
+            background: #6d28d9 !important;
+            color: #fff !important;
+        }
+
+        i {
+            font-size: 0.95rem;
+        }
+    }
+
+    .subpanel-group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 8px 8px 10px;
+        background: #ffffff;
+        border: 1px solid #dbe3ee;
+        border-radius: 14px;
+    }
+
+    .group-header {
+        font-size: 0.72rem;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        color: #334155;
+        background: transparent;
+        padding: 4px 8px 8px;
+        border-radius: 0;
+        margin: 0;
+        border: 0;
+        border-bottom: 1px solid #e8eef5;
+        text-align: left;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .subpanel-item {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 8px 10px;
+        margin: 1px 0;
+        border: 0;
+        border-radius: 12px;
+        color: #334155;
+        background: transparent;
+        text-align: left;
+        font-family: inherit;
+        font-size: 0.9rem;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        min-width: 0;
+
+        &:hover {
+            background-color: #ffffff;
+            color: #0f172a;
+        }
+
+        &.active {
+            background-color: #ffe8d6;
+            color: #9a3412;
+            font-weight: 700;
+        }
+    }
+
+    .item-icon-box {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 10px;
+        font-size: 0.85rem;
+        flex-shrink: 0;
+
+        i {
+            color: #fff !important;
+        }
+
+        &.bg-blue { background-color: #0284c7; }
+        &.bg-purple { background-color: #7c3aed; }
+        &.bg-teal { background-color: #0d9488; }
+        &.bg-red { background-color: #ef4444; }
+        &.bg-orange { background-color: #f97316; }
+        &.bg-green { background-color: #10b981; }
+        &.bg-danger-solid { background-color: #dc2626; }
+    }
+
+    .item-title {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .sataco-badge {
+        flex-shrink: 0;
+        min-width: 22px;
+        height: 22px;
+        padding: 0 6px;
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: #fff;
+        line-height: 1;
+    }
+
+    .sataco-badge-blue { background: #2563eb; }
+    .sataco-badge-red { background: #dc2626; }
+}
+
+html.o_phan_he_sidebar_is_collapsed .linkq-subpanel-container,
+.o_phan_he_sidebar_collapsed .linkq-subpanel-container {
+    gap: 6px;
+    padding: 4px 6px 16px !important;
+    align-items: stretch;
+
+    .linkq-module-chip,
+    .group-header,
+    .item-title,
+    .sataco-badge,
+    .btn-main-action span {
+        display: none !important;
+    }
+
+    .subpanel-group {
+        padding: 4px 2px;
+        gap: 4px;
+        border: 0;
+        background: transparent;
+        border-radius: 0;
+    }
+
+    .subpanel-item {
+        justify-content: center;
+        padding: 8px 0;
+        margin: 0;
+        width: 100%;
+        border-radius: 10px;
+    }
+
+    .item-icon-box {
+        margin-right: 0;
+    }
+}
+
+html.o_phan_he_sidebar_is_collapsed .o_sataco_sidebar .sidebar-pill,
+html.o_phan_he_sidebar_is_collapsed .o_sataco_sidebar .sidebar-row > span:not(.sidebar-ico),
+.o_phan_he_sidebar_collapsed .sidebar-pill,
+.o_phan_he_sidebar_collapsed .sidebar-row > span:not(.sidebar-ico) {
+    display: none !important;
+}
+
+html.o_phan_he_sidebar_is_collapsed .o_sataco_sidebar .sidebar-row,
+.o_phan_he_sidebar_collapsed .sidebar-row {
+    justify-content: center;
+    padding: 8px 0;
+}

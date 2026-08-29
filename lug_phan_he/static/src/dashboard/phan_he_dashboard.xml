@@ -3,7 +3,7 @@
     <t t-name="lug_phan_he.PhanHeDashboard">
         <div class="o_phan_he_shell o_action">
             <t t-if="isLinkqErp">
-                <PhanHeAppSidebar activeKey="'dashboard'"/>
+                <PhanHeAppSidebar t-props="{ activeKey: linkqSidebarKey }"/>
             </t>
             <t t-else="">
             <aside class="o_phan_he_sidebar">
@@ -56,7 +56,14 @@
             </t>
 
             <div class="o_phan_he_dashboard">
-                <t t-if="isLinkqErp"/>
+                <t t-if="isLinkqErp">
+                    <div class="o_phan_he_dash_top">
+                        <div>
+                            <h1>LinkQ ERP</h1>
+                            <p>Chọn mục được phép trên thanh bên trái.</p>
+                        </div>
+                    </div>
+                </t>
                 <t t-else="">
                 <div class="o_phan_he_dash_top">
                     <div>

@@ -1,154 +1,109 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeAppSidebar">
-        <aside class="o_phan_he_sidebar o_phan_he_app_sidebar"
-               t-att-class="state.collapsed ? 'o_phan_he_sidebar_collapsed' : ''">
+        <aside class="o_phan_he_sidebar o_phan_he_app_sidebar o_sataco_sidebar"
+               t-att-class="(state.collapsed ? 'o_phan_he_sidebar_collapsed ' : '') + (showLinkqPanel ? 'is-linkq-panel' : '')">
             <div class="o_phan_he_sidebar_toolbar">
                 <div class="o_phan_he_sidebar_toolbar_btns">
                     <button type="button" class="o_phan_he_tb_btn" title="Quay lại" t-on-click="onBack">
                         <i class="fa fa-arrow-left"/>
                     </button>
                     <button type="button"
-                            class="o_phan_he_tb_btn"
+                            class="o_phan_he_tb_btn o_phan_he_tb_hamburger"
                             t-att-class="state.collapsed ? 'is-on' : ''"
-                            t-att-title="state.collapsed ? 'Mở rộng' : 'Thu gọn'"
+                            t-att-title="state.collapsed ? 'Mở rộng menu' : 'Thu gọn menu'"
                             t-on-click="onToggleCollapse">
-                        <i t-att-class="state.collapsed ? 'fa fa-angle-double-right' : 'fa fa-angle-double-left'"/>
-                    </button>
-                    <button type="button"
-                            class="o_phan_he_tb_btn"
-                            t-att-class="state.fullscreen ? 'is-on' : ''"
-                            t-att-title="state.fullscreen ? 'Thoát toàn màn hình' : 'Toàn màn hình'"
-                            t-on-click="onToggleFullscreen">
-                        <i t-att-class="state.fullscreen ? 'fa fa-compress' : 'fa fa-expand'"/>
+                        <i class="fa fa-bars"/>
                     </button>
                 </div>
             </div>
-            <nav class="o_phan_he_sidebar_nav">
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_home"
-                        t-att-class="isActive('home') ? 'is-active' : ''"
-                        t-on-click="onHome">
-                    <i class="fa fa-home"/>
+
+            <nav class="o_phan_he_sidebar_nav" t-if="!showLinkqPanel">
+                <button type="button" class="sidebar-row" t-att-class="isActive('home') ? 'is-active' : ''" t-on-click="onHome">
+                    <span class="sidebar-ico ico-indigo"><i class="fa fa-home"/></span>
                     <span>Trang chủ</span>
                 </button>
-
-                <div class="o_phan_he_nav_heading o_nav_major_services">Quản lý dịch vụ</div>
-
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_internet"
-                        t-att-class="isActive('internet') ? 'is-active' : ''"
-                        t-on-click="onInternet">
-                    <i class="fa fa-globe"/>
+                <div class="sidebar-pill">Quản lý dịch vụ</div>
+                <button type="button" class="sidebar-row" t-if="state.visible.internet" t-att-class="isActive('internet') ? 'is-active' : ''" t-on-click="onInternet">
+                    <span class="sidebar-ico ico-sky"><i class="fa fa-globe"/></span>
                     <span>Dịch vụ Internet</span>
                 </button>
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_camera"
-                        t-att-class="isActive('camera') ? 'is-active' : ''"
-                        t-on-click="onCamera">
-                    <i class="fa fa-video-camera"/>
+                <button type="button" class="sidebar-row" t-if="state.visible.camera" t-att-class="isActive('camera') ? 'is-active' : ''" t-on-click="onCamera">
+                    <span class="sidebar-ico ico-rose"><i class="fa fa-video-camera"/></span>
                     <span>Dịch vụ Camera</span>
                 </button>
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_attendance"
-                        t-att-class="isActive('attendance') ? 'is-active' : ''"
-                        t-on-click="onAttendance">
-                    <i class="fa fa-tablet"/>
+                <button type="button" class="sidebar-row" t-if="state.visible.attendance" t-att-class="isActive('attendance') ? 'is-active' : ''" t-on-click="onAttendance">
+                    <span class="sidebar-ico ico-amber"><i class="fa fa-mobile"/></span>
                     <span>Máy chấm công</span>
                 </button>
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_server"
-                        t-att-class="isActive('server') ? 'is-active' : ''"
-                        t-on-click="onServer">
-                    <i class="fa fa-server"/>
+                <button type="button" class="sidebar-row" t-if="state.visible.server" t-att-class="isActive('server') ? 'is-active' : ''" t-on-click="onServer">
+                    <span class="sidebar-ico ico-teal"><i class="fa fa-server"/></span>
                     <span>Máy chủ &amp; Cloud</span>
                 </button>
-
-                <div class="o_phan_he_nav_group" t-att-class="erpOpen ? 'is-open' : ''">
-                    <button type="button"
-                            class="o_phan_he_nav_item o_phan_he_nav_parent o_nav_major_erp"
-                            t-att-class="isActive('dashboard') or isActive('north_schedule') or isActive('south_schedule') or isActive('dtt_schedule') or isActive('roster') or isActive('work_shift') ? 'is-active-group' : ''"
-                            t-on-click="toggleErp">
-                        <i class="fa fa-link"/>
-                        <span>LinkQ ERP</span>
-                        <i class="fa fa-angle-down o_phan_he_nav_caret"/>
-                    </button>
-                    <t t-if="erpOpen">
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_dashboard"
-                                data-menu-xmlid="lug_phan_he.menu_phan_he_linkq_nb_dashboard"
-                                t-att-class="isActive('dashboard') ? 'is-active' : ''"
-                                t-on-click="onDashboard">
-                            <i class="fa fa-bar-chart"/>
-                            <span>Dashboard</span>
-                        </button>
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_north"
-                                data-menu-xmlid="lug_phan_he.menu_linkq_shift_schedule_north"
-                                t-att-class="isActive('north_schedule') ? 'is-active' : ''"
-                                t-on-click="onNorthSchedule">
-                            <i class="fa fa-calendar"/>
-                            <span>Lịch Miền Bắc</span>
-                        </button>
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_south"
-                                data-menu-xmlid="lug_phan_he.menu_linkq_shift_schedule_south"
-                                t-att-class="isActive('south_schedule') ? 'is-active' : ''"
-                                t-on-click="onSouthSchedule">
-                            <i class="fa fa-calendar"/>
-                            <span>Lịch Miền Nam</span>
-                        </button>
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_dtt"
-                                data-menu-xmlid="lug_phan_he.menu_linkq_shift_schedule_dtt"
-                                t-att-class="isActive('dtt_schedule') ? 'is-active' : ''"
-                                t-on-click="onDttSchedule">
-                            <i class="fa fa-calendar"/>
-                            <span>Lịch Miền ĐTT</span>
-                        </button>
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_roster"
-                                data-menu-xmlid="lug_phan_he.menu_phan_he_shift_roster"
-                                t-att-class="isActive('roster') ? 'is-active' : ''"
-                                t-on-click="onRoster">
-                            <i class="fa fa-calendar"/>
-                            <span>Lịch xếp ca</span>
-                        </button>
-                        <button type="button"
-                                class="o_phan_he_nav_sub o_linkq_nav_shift_code"
-                                data-menu-xmlid="lug_phan_he.menu_phan_he_work_shift"
-                                t-att-class="isActive('work_shift') ? 'is-active' : ''"
-                                t-on-click="onWorkShift">
-                            <i class="fa fa-clock-o"/>
-                            <span>Ký hiệu công</span>
-                        </button>
-                    </t>
-                </div>
-
-                <button type="button"
-                        class="o_phan_he_nav_item o_nav_major_hrm"
-                        t-on-click="onHrm">
-                    <i class="fa fa-users"/>
+                <button type="button" class="sidebar-row" t-if="state.visible.linkq_nb" t-att-class="erpGroupActive ? 'is-active' : ''" t-on-click="onDashboard">
+                    <span class="sidebar-ico ico-violet"><i class="fa fa-link"/></span>
+                    <span>LinkQ ERP</span>
+                </button>
+                <button type="button" class="sidebar-row" t-if="state.visible.linkq_hrm" t-on-click="onHrm">
+                    <span class="sidebar-ico ico-pink"><i class="fa fa-users"/></span>
                     <span>LinkQ HRM</span>
                 </button>
-
-                <div class="o_phan_he_nav_heading o_nav_major_config">Cấu hình &amp; Hệ thống</div>
-
-                <button type="button"
-                        class="o_phan_he_nav_item"
-                        t-att-class="isActive('provider') ? 'is-active' : ''"
-                        t-on-click="onProvider">
-                    <i class="fa fa-building"/>
-                    <span>Nhà cung cấp</span>
-                </button>
-                <button type="button"
-                        class="o_phan_he_nav_item"
-                        t-att-class="isActive('config') ? 'is-active' : ''"
-                        t-on-click="onConfig">
-                    <i class="fa fa-cog"/>
-                    <span>Cấu hình chung</span>
-                </button>
             </nav>
+
+            <nav class="o_phan_he_sidebar_nav linkq-subpanel-container" t-if="showLinkqPanel">
+                <div class="linkq-module-chip">LINKQ ERP</div>
+
+                <div class="subpanel-group">
+                    <div class="group-header">Công việc</div>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqRoster" t-att-class="isActive('roster_new') ? 'active' : ''" t-on-click="onRosterNew">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-plus"/></span>
+                        <span class="item-title">Thêm lịch ca</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqRoster" t-att-class="isActive('roster') ? 'active' : ''" t-on-click="onRoster">
+                        <span class="item-icon-box bg-teal"><i class="fa fa-window-maximize"/></span>
+                        <span class="item-title">Danh sách lịch ca</span>
+                        <span t-if="state.badges.rosterCount" class="sataco-badge sataco-badge-blue" t-esc="state.badges.rosterCount"/>
+                    </button>
+                    <button type="button" class="subpanel-item" t-att-class="isActive('dashboard') ? 'active' : ''" t-on-click="onDashboard">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-bar-chart"/></span>
+                        <span class="item-title">Dashboard lịch ca</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqShiftCode" t-att-class="isActive('work_shift') ? 'active' : ''" t-on-click="onWorkShift">
+                        <span class="item-icon-box bg-blue"><i class="fa fa-clock-o"/></span>
+                        <span class="item-title">Ký hiệu công</span>
+                    </button>
+                </div>
+
+                <div class="subpanel-group" t-if="state.visible.linkqNorth or state.visible.linkqSouth or state.visible.linkqDtt">
+                    <div class="group-header">Lịch theo vùng miền</div>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqNorth" t-att-class="isActive('north_schedule') ? 'active' : ''" t-on-click="onNorthSchedule">
+                        <span class="item-icon-box bg-red"><i class="fa fa-window-restore"/></span>
+                        <span class="item-title">Lịch Miền Bắc</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqSouth" t-att-class="isActive('south_schedule') ? 'active' : ''" t-on-click="onSouthSchedule">
+                        <span class="item-icon-box bg-orange"><i class="fa fa-window-restore"/></span>
+                        <span class="item-title">Lịch Miền Nam</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqDtt" t-att-class="isActive('dtt_schedule') ? 'active' : ''" t-on-click="onDttSchedule">
+                        <span class="item-icon-box bg-green"><i class="fa fa-window-restore"/></span>
+                        <span class="item-title">Lịch Miền ĐTT</span>
+                    </button>
+                </div>
+
+                <div class="subpanel-group">
+                    <div class="group-header">Báo cáo &amp; giám sát</div>
+                    <button type="button" class="subpanel-item" t-att-class="isActive('report') ? 'active' : ''" t-on-click="onShiftReport">
+                        <span class="item-icon-box bg-blue"><i class="fa fa-line-chart"/></span>
+                        <span class="item-title">Báo cáo tổng hợp</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-att-class="isActive('missing') ? 'active' : ''" t-on-click="onMissingShifts">
+                        <span class="item-icon-box bg-danger-solid"><i class="fa fa-exclamation-triangle"/></span>
+                        <span class="item-title">Cửa hàng thiếu ca</span>
+                        <span t-if="state.badges.missingCount" class="sataco-badge sataco-badge-red" t-esc="state.badges.missingCount"/>
+                    </button>
+                </div>
+            </nav>
+
             <div t-if="!state.collapsed"
                  class="o_phan_he_sidebar_resizer"
                  title="Kéo để đổi độ rộng sidebar"

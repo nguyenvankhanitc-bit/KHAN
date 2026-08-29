@@ -38,7 +38,7 @@ const SERVICE_APPS = [
         code: "linkq_nb",
         name: "LinkQ ERP",
         icon: "/lug_phan_he/static/description/icon_hub_erp.png",
-        action: "lug_phan_he.action_linkq_shift_code",
+        action: "lug_phan_he.action_phan_he_dashboard_linkq_nb",
         enabled: true,
     },
     {
@@ -73,7 +73,12 @@ const CONFIG_ITEMS = [
 
 export class PhanHeHub extends Component {
     static template = "lug_phan_he.PhanHeHub";
-    static props = { ...standardActionServiceProps };
+    static props = { ...standardActionServiceProps, "*": true };
+
+    canSee(code) {
+        const right = this.state?.rights?.[code];
+        return Boolean(right && right.view);
+    }
 
     setup() {
         this.orm = useService("orm");
@@ -85,7 +90,9 @@ export class PhanHeHub extends Component {
             activeNav: "home",
             sidebarCollapsed: false,
             apps: SERVICE_APPS.filter((app) => app.enabled),
+            cards: SERVICE_APPS.filter((app) => app.enabled),
             rights: {},
+            showConfig: false,
         });
         onWillStart(async () => {
             await this.loadRights();
@@ -99,17 +106,22 @@ export class PhanHeHub extends Component {
                 "get_user_module_rights",
                 []
             );
-            this.state.rights = rights || {};
+            this.state.rights = rights && typeof rights === "object" && !Array.isArray(rights) ? rights : {};
             this.state.apps = SERVICE_APPS.filter((app) => {
                 if (!app.enabled) {
                     return false;
                 }
                 const right = this.state.rights[app.code];
-                return !right || right.view;
+                return Boolean(right && right.view);
             });
+            this.state.cards = this.state.apps.slice();
+            this.state.showConfig = Object.values(this.state.rights).some(
+                (row) => row && typeof row === "object" && row.admin
+            );
         } catch (error) {
             console.error(error);
             this.state.apps = SERVICE_APPS.filter((app) => app.enabled);
+            this.state.cards = this.state.apps.slice();
         }
     }
 
@@ -144,6 +156,22 @@ export class PhanHeHub extends Component {
 
     setHome() {
         this.state.activeNav = "home";
+    }
+
+    onNavService(ev) {
+        const code = ev.currentTarget.dataset.code;
+        const app = (this.state.apps || []).find((item) => item.code === code);
+        if (app) {
+            this.openService(app);
+        }
+    }
+
+    onNavConfig(ev) {
+        const code = ev.currentTarget.dataset.code;
+        const item = this.configItems.find((cfg) => cfg.code === code);
+        if (item) {
+            this.openConfig(item);
+        }
     }
 
     async openConfig(item) {

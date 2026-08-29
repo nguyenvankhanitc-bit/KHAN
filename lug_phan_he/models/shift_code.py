@@ -9,6 +9,8 @@ class LinkqShiftCode(models.Model):
     _order = "sequence, code"
     _rec_name = "code"
     _rec_names_search = ["code", "name"]
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_symbol"
 
     sequence = fields.Integer(string="STT", default=10)
     code = fields.Char(string="Mã ca", required=True, index=True)

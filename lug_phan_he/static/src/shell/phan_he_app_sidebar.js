@@ -1,7 +1,8 @@
 /** @odoo-module **/
 
-import { Component, onMounted, onWillUnmount, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
+import { user } from "@web/core/user";
 import {
     SIDEBAR_DEFAULT,
     applySidebarLayout,
@@ -19,17 +20,39 @@ export class PhanHeAppSidebar extends Component {
     static template = "lug_phan_he.PhanHeAppSidebar";
     static props = {
         activeKey: { type: String, optional: true },
+        "*": true,
     };
 
     setup() {
+        this.orm = useService("orm");
         this.action = useService("action");
         this.state = useState({
             erpOpen: true,
             width: loadSidebarWidth(),
             collapsed: loadSidebarCollapsed(),
             fullscreen: isFullscreen(),
+            rights: {},
+            showConfig: false,
+            badges: { rosterCount: 0, missingCount: 0 },
+            visible: {
+                internet: false,
+                camera: false,
+                attendance: false,
+                server: false,
+                linkq_nb: false,
+                linkq_hrm: false,
+                linkqNorth: false,
+                linkqSouth: false,
+                linkqDtt: false,
+                linkqRoster: false,
+                linkqShiftCode: false,
+            },
         });
         applySidebarLayout(this.state.width, this.state.collapsed);
+
+        onWillStart(async () => {
+            await this.loadRights();
+        });
 
         this._onFullscreenChange = () => {
             this.state.fullscreen = isFullscreen();
@@ -47,15 +70,115 @@ export class PhanHeAppSidebar extends Component {
     }
 
     get activeKey() {
-        return this.props.activeKey || "";
+        const raw = this.props.activeKey;
+        if (raw == null || raw === "") {
+            return "";
+        }
+        return String(raw).replace(/^['"]+|['"]+$/g, "");
+    }
+
+    get showLinkqPanel() {
+        return [
+            "dashboard",
+            "north_schedule",
+            "south_schedule",
+            "dtt_schedule",
+            "roster",
+            "roster_new",
+            "work_shift",
+            "report",
+            "missing",
+        ].includes(this.activeKey);
     }
 
     get erpOpen() {
         return this.state.erpOpen;
     }
 
+    get erpGroupActive() {
+        return [
+            "dashboard",
+            "north_schedule",
+            "south_schedule",
+            "dtt_schedule",
+            "roster",
+            "roster_new",
+            "work_shift",
+        ].includes(this.activeKey);
+    }
+
     isActive(key) {
         return this.activeKey === key;
+    }
+
+    canSee(code) {
+        const right = this.state.rights[code];
+        return Boolean(right && right.view);
+    }
+
+    async loadRights() {
+        try {
+            const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
+            this.state.rights = rights || {};
+            const menus = rights.linkq_menus || {};
+            const manager = await user.hasGroup("lug_phan_he.group_phan_he_service_manager");
+            const admin = await user.hasGroup("lug_phan_he.group_phan_he_admin");
+            const settings = await user.hasGroup("base.group_system");
+            this.state.visible = {
+                internet: Boolean(rights?.internet?.view),
+                camera: Boolean(rights?.camera?.view),
+                attendance: Boolean(rights?.attendance?.view),
+                server: Boolean(rights?.server?.view),
+                linkq_nb: Boolean(rights?.linkq_nb?.view),
+                linkq_hrm: Boolean(rights?.linkq_hrm?.view),
+                linkqNorth: Boolean(
+                    settings || admin || manager || (menus.schedule_north && menus.schedule_north.read)
+                ),
+                linkqSouth: Boolean(
+                    settings || admin || manager || (menus.schedule_south && menus.schedule_south.read)
+                ),
+                linkqDtt: Boolean(
+                    settings || admin || manager || (menus.schedule_dtt && menus.schedule_dtt.read)
+                ),
+                linkqRoster: Boolean(
+                    settings || admin || manager || (menus.schedule_main && menus.schedule_main.read)
+                ),
+                linkqShiftCode: Boolean(
+                    settings || admin || manager || (menus.schedule_symbol && menus.schedule_symbol.read)
+                ),
+            };
+            this.state.showConfig =
+                manager ||
+                admin ||
+                settings ||
+                Object.values(this.state.rights).some((row) => row && row.admin);
+            try {
+                const stats = await this.orm.call("linkq.monthly.roster", "get_linkq_sidebar_stats", []);
+                this.state.badges = {
+                    rosterCount: stats?.roster_count || 0,
+                    missingCount: stats?.missing_store_count || 0,
+                };
+            } catch {
+                this.state.badges = { rosterCount: 0, missingCount: 0 };
+            }
+        } catch (error) {
+            console.error(error);
+            this.state.rights = {};
+            this.state.showConfig = false;
+            this.state.visible = {
+                internet: false,
+                camera: false,
+                attendance: false,
+                server: false,
+                linkq_nb: false,
+                linkq_hrm: false,
+                linkqNorth: false,
+                linkqSouth: false,
+                linkqDtt: false,
+                linkqRoster: false,
+                linkqShiftCode: false,
+            };
+        }
     }
 
     toggleErp() {
@@ -160,8 +283,26 @@ export class PhanHeAppSidebar extends Component {
         this.open("lug_phan_he.action_linkq_monthly_roster");
     }
 
+    onRosterNew() {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Thêm lịch ca",
+            res_model: "linkq.monthly.roster",
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
     onWorkShift() {
         this.open("lug_phan_he.action_linkq_shift_code");
+    }
+
+    onShiftReport() {
+        this.open("lug_phan_he.action_phan_he_dashboard_linkq_nb");
+    }
+
+    onMissingShifts() {
+        this.open("lug_phan_he.action_linkq_monthly_roster");
     }
 
     onHrm() {

@@ -29,6 +29,8 @@ class PhanHeWorkShift(models.Model):
     _description = "Ký hiệu công"
     _order = "sequence, code"
     _rec_names_search = ["name", "code"]
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_symbol"
 
     name = fields.Char(string="Tên ca", required=True)
     code = fields.Char(string="Mã công", required=True)

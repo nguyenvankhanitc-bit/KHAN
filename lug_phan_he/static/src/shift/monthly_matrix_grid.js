@@ -7,6 +7,20 @@ import { X2ManyField, x2ManyField } from "@web/views/fields/x2many/x2many_field"
 
 const COUNT_CODES = ["S2", "S4", "S9", "C1", "GS1", "GS2", "GC1", "F8", "F7"];
 const JOB_TITLES = ["NV", "NT", "CHT", "NVPT", "TV", "ASM", "RSM"];
+const HOUR_MAP = {
+    S2: 6.5,
+    S4: 6.0,
+    S9: 8.0,
+    C1: 7.0,
+    GS1: 10.0,
+    GS2: 8.0,
+    GC1: 10.0,
+    F8: 12.5,
+    F7: 13.0,
+    OFF: 0,
+    LE: 0,
+    "LỄ": 0,
+};
 
 function displayCode(raw) {
     let value = (raw || "").toString().replace(/（/g, "(").trim();
@@ -43,7 +57,13 @@ export class MonthlyMatrixGrid extends X2ManyField {
     setup() {
         super.setup();
         this.orm = useService("orm");
+        this.notification = useService("notification");
         this.catalog = useState({ options: [] });
+        this.state = useState({
+            isDirty: false,
+            isSaving: false,
+            pendingChanges: {},
+        });
         onWillStart(async () => {
             this.catalog.options = await this.loadShiftOptions();
         });
@@ -126,21 +146,178 @@ export class MonthlyMatrixGrid extends X2ManyField {
         return { ...header, valid: header.valid !== false && fallbackValid };
     }
 
+    lineKey(line) {
+        return String(line.resId || line.id);
+    }
+
+    mergedMap(line, kind) {
+        const field = kind === "actual" ? "actual_codes" : "plan_codes";
+        const result = { ...(line.data[field] || {}) };
+        const keyPrefix = `${this.lineKey(line)}_${kind}_`;
+        for (const [changeKey, item] of Object.entries(this.state.pendingChanges)) {
+            if (!changeKey.startsWith(keyPrefix) || item.meta) {
+                continue;
+            }
+            result[String(item.day)] = item.code || "";
+        }
+        return result;
+    }
+
     codeOf(line, kind, day) {
+        const changeKey = `${this.lineKey(line)}_${kind}_${day}`;
+        const pending = this.state.pendingChanges[changeKey];
+        if (pending && !pending.meta) {
+            return displayCode(pending.code);
+        }
         const map = line.data[kind === "actual" ? "actual_codes" : "plan_codes"] || {};
         const raw = (map[String(day)] || map[day] || "").toString();
         return displayCode(raw.split(" ")[0].split("(")[0]);
     }
 
     hourOf(line, day) {
-        const map = line.data.hour_codes || {};
-        const value = map[String(day)] || map[day] || "";
-        return value === "" || value === 0 ? "" : value;
+        const actual = this.codeOf(line, "actual", day);
+        const plan = this.codeOf(line, "plan", day);
+        const code = actual || plan;
+        if (!code) {
+            return "";
+        }
+        const hours = HOUR_MAP[code];
+        return hours === undefined ? "" : hours;
     }
 
     countOf(line, kind, code) {
-        const map = line.data[kind === "actual" ? "count_actual" : "count_plan"] || {};
-        return map[code] || 0;
+        const map = this.mergedMap(line, kind);
+        let total = 0;
+        for (let day = 1; day <= 31; day += 1) {
+            if (displayCode(map[String(day)] || map[day] || "") === code) {
+                total += 1;
+            }
+        }
+        return total;
+    }
+
+    hoursTotal(line, kind) {
+        const map = this.mergedMap(line, kind);
+        let total = 0;
+        for (let day = 1; day <= 31; day += 1) {
+            const code = displayCode(map[String(day)] || map[day] || "");
+            total += HOUR_MAP[code] || 0;
+        }
+        return total;
+    }
+
+    hourRowTotal(line) {
+        let total = 0;
+        for (let day = 1; day <= 31; day += 1) {
+            total += Number(this.hourOf(line, day) || 0);
+        }
+        return total;
+    }
+
+    metaOf(line, field) {
+        const changeKey = `${this.lineKey(line)}_meta_${field}`;
+        const pending = this.state.pendingChanges[changeKey];
+        if (pending) {
+            return pending.value;
+        }
+        return line.data[field];
+    }
+
+    markDirty(changeKey, payload) {
+        this.state.pendingChanges = {
+            ...this.state.pendingChanges,
+            [changeKey]: payload,
+        };
+        this.state.isDirty = true;
+    }
+
+    onCellChange(line, kind, day, ev) {
+        if (this.confirmed) {
+            return;
+        }
+        const code = displayCode(ev.target.value);
+        ev.target.value = code;
+        this.markDirty(`${this.lineKey(line)}_${kind}_${day}`, {
+            line_id: line.resId || false,
+            lineKey: this.lineKey(line),
+            day,
+            shift_type: kind,
+            code,
+        });
+    }
+
+    onMetaInput(line, field, ev) {
+        if (this.confirmed) {
+            return;
+        }
+        let value = ev.target.value;
+        if (field === "employee_code") {
+            const parsed = parseInt(value, 10);
+            value = Number.isFinite(parsed) ? parsed : 0;
+        }
+        this.markDirty(`${this.lineKey(line)}_meta_${field}`, {
+            line_id: line.resId || false,
+            lineKey: this.lineKey(line),
+            meta: true,
+            shift_type: field,
+            value,
+        });
+    }
+
+    async onSaveSchedule() {
+        if (!this.state.isDirty || this.state.isSaving) {
+            return;
+        }
+        const rosterId = this.roster.resId;
+        if (!rosterId) {
+            this.notification.add("Hãy lưu bảng xếp ca trước khi lưu lưới ca.", {
+                type: "warning",
+            });
+            return;
+        }
+        const pending = Object.values(this.state.pendingChanges);
+        const missingLine = pending.find((item) => !item.line_id);
+        if (missingLine) {
+            this.notification.add("Lưu nhân viên mới trên phiếu trước, rồi lưu lưới ca.", {
+                type: "warning",
+            });
+            return;
+        }
+        this.state.isSaving = true;
+        try {
+            const result = await this.orm.call(
+                "linkq.monthly.roster",
+                "action_save_shift_grid",
+                [rosterId, pending]
+            );
+            if (result && result.success) {
+                this.notification.add("Đã lưu bảng phân ca thành công!", { type: "success" });
+                this.state.pendingChanges = {};
+                this.state.isDirty = false;
+                if (this.roster.load) {
+                    await this.roster.load();
+                }
+            } else {
+                this.notification.add((result && result.message) || "Không lưu được bảng ca.", {
+                    type: "danger",
+                });
+            }
+        } catch (error) {
+            this.notification.add(
+                "Có lỗi xảy ra khi lưu: " + (error.message || error.data?.message || ""),
+                { type: "danger" }
+            );
+        } finally {
+            this.state.isSaving = false;
+        }
+    }
+
+    onCancelChanges() {
+        this.state.pendingChanges = {};
+        this.state.isDirty = false;
+        if (this.roster.load) {
+            this.roster.load();
+        }
     }
 
     cellClass(code) {
@@ -150,29 +327,6 @@ export class MonthlyMatrixGrid extends X2ManyField {
     employeeName(line) {
         const emp = line.data.employee_id;
         return Array.isArray(emp) ? emp[1] : emp?.display_name || "";
-    }
-
-    async onCellChange(line, kind, day, ev) {
-        if (this.confirmed) {
-            return;
-        }
-        const field = kind === "actual" ? "actual_codes" : "plan_codes";
-        const next = { ...(line.data[field] || {}) };
-        next[String(day)] = displayCode(ev.target.value);
-        ev.target.value = next[String(day)];
-        await line.update({ [field]: next });
-    }
-
-    async onMetaInput(line, field, ev) {
-        if (this.confirmed) {
-            return;
-        }
-        if (field === "employee_code") {
-            const parsed = parseInt(ev.target.value, 10);
-            await line.update({ employee_code: Number.isFinite(parsed) ? parsed : 0 });
-            return;
-        }
-        await line.update({ [field]: ev.target.value });
     }
 
     async onAddEmployee() {

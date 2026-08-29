@@ -42,7 +42,7 @@ const SIDEBAR_ICONS = {
 export class LugAppCenter extends Component {
     static template = "lug_app_center.LugAppCenter";
     static components = { Dropdown, DropdownItem };
-    static props = { ...standardActionServiceProps };
+    static props = { ...standardActionServiceProps, "*": true };
 
     setup() {
         this.orm = useService("orm");

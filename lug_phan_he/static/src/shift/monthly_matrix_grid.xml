@@ -6,6 +6,23 @@
                 <button type="button" class="btn btn-primary o_mm_add_btn" t-on-click="() => this.onAddEmployee()">
                     Thêm nhân viên
                 </button>
+                <div class="o_mm_toolbar_actions">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            t-if="state.isDirty"
+                            t-att-disabled="state.isSaving"
+                            t-on-click="() => this.onCancelChanges()">
+                        Hủy bỏ
+                    </button>
+                    <button type="button"
+                            class="btn btn-success o_mm_btn_grid_save"
+                            t-att-disabled="!state.isDirty || state.isSaving"
+                            t-on-click="() => this.onSaveSchedule()">
+                        <i t-if="state.isSaving" class="fa fa-spinner fa-spin me-1"/>
+                        <i t-else="" class="fa fa-floppy-o me-1"/>
+                        Lưu thay đổi
+                    </button>
+                </div>
             </div>
             <div class="o_monthly_matrix_scroll">
                 <table class="o_monthly_matrix_table">
@@ -40,13 +57,13 @@
                                     <input type="text"
                                            class="o_mm_meta o_mm_emp_text"
                                            placeholder="Tên nhân viên"
-                                           t-att-value="line.data.employee_name or employeeName(line) or ''"
+                                           t-att-value="metaOf(line, 'employee_name') or employeeName(line) or ''"
                                            t-att-disabled="confirmed"
                                            t-on-change="(ev) => this.onMetaInput(line, 'employee_name', ev)"/>
                                 </td>
                                 <td class="o_mm_sticky o_mm_col_job" rowspan="3">
                                     <select class="o_mm_job_select"
-                                            t-att-value="line.data.job_title or 'NV'"
+                                            t-att-value="metaOf(line, 'job_title') or 'NV'"
                                             t-att-disabled="confirmed"
                                             t-on-change="(ev) => this.onMetaInput(line, 'job_title', ev)">
                                         <t t-foreach="jobTitles" t-as="job" t-key="job">
@@ -57,7 +74,7 @@
                                 <td class="o_mm_sticky o_mm_col_id" rowspan="3">
                                     <input type="number"
                                            class="o_mm_meta"
-                                           t-att-value="line.data.employee_code or ''"
+                                           t-att-value="metaOf(line, 'employee_code') || ''"
                                            t-att-disabled="confirmed"
                                            t-on-change="(ev) => this.onMetaInput(line, 'employee_code', ev)"/>
                                 </td>
@@ -80,7 +97,7 @@
                                 <t t-foreach="countCodes" t-as="code" t-key="'pc-'+line.id+'-'+code">
                                     <td class="o_mm_count_val" t-esc="countOf(line, 'plan', code)"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="line.data.plan_hours"/>
+                                <td class="o_mm_total_val" t-esc="hoursTotal(line, 'plan')"/>
                             </tr>
                             <tr class="o_mm_actual">
                                 <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-actual">THỰC TẾ</span></td>
@@ -102,7 +119,7 @@
                                 <t t-foreach="countCodes" t-as="code" t-key="'ac-'+line.id+'-'+code">
                                     <td class="o_mm_count_val" t-esc="countOf(line, 'actual', code)"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="line.data.actual_hours"/>
+                                <td class="o_mm_total_val" t-esc="hoursTotal(line, 'actual')"/>
                             </tr>
                             <tr class="o_mm_hours">
                                 <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-hour">SỐ GIỜ</span></td>
@@ -113,7 +130,7 @@
                                 <t t-foreach="countCodes" t-as="code" t-key="'hc-'+line.id+'-'+code">
                                     <td class="o_mm_count_val"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="line.data.hour_total"/>
+                                <td class="o_mm_total_val" t-esc="hourRowTotal(line)"/>
                             </tr>
                         </t>
                     </tbody>

@@ -8,7 +8,8 @@ import re
 from datetime import date, datetime
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
+from odoo.osv import expression
 
 COUNT_CODES = ("S2", "S4", "S9", "C1", "GS1", "GS2", "GC1", "F8", "F7")
 JOB_TITLES = [("NV", "NV"), ("NT", "NT"), ("CHT", "CHT"), ("NVPT", "NVPT"), ("TV", "TV")]
@@ -92,7 +93,79 @@ class LinkqMonthlyRoster(models.Model):
     _name = "linkq.monthly.roster"
     _description = "Bảng xếp ca tháng"
     _order = "year desc, month desc, id desc"
-    _inherit = ["mail.thread"]
+    _inherit = ["mail.thread", "lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_main"
+
+    def copy(self, default=None):
+        raise UserError("Không được nhân bản bảng xếp ca.")
+
+    def unlink(self):
+        if not self.env.su and not self.env.user.has_group("base.group_system"):
+            raise UserError("Bạn không có quyền xóa Bảng xếp ca sau khi đã tạo!")
+        return super().unlink()
+
+    @api.model
+    def get_linkq_sidebar_stats(self):
+        rosters = self.search([])
+        missing_stores = set()
+        for rec in rosters:
+            n = rec.days_in_month or 0
+            morning = rec.lack_morning or []
+            evening = rec.lack_evening or []
+            limit = min(n, len(morning), len(evening))
+            if any((morning[i] or evening[i]) for i in range(limit)):
+                if rec.store_id:
+                    missing_stores.add(rec.store_id.id)
+        return {
+            "roster_count": len(rosters),
+            "missing_store_count": len(missing_stores),
+        }
+
+    @api.model
+    def action_save_shift_grid(self, schedule_id, changes):
+        roster = self.browse(schedule_id)
+        if not roster.exists():
+            return {"success": False, "message": "Không tìm thấy bảng ca!"}
+        roster.check_access("write")
+        Line = self.env["linkq.monthly.roster.line"]
+        grouped = {}
+        for item in changes or []:
+            line_id = item.get("line_id")
+            if not line_id:
+                continue
+            grouped.setdefault(int(line_id), []).append(item)
+        for line_id, items in grouped.items():
+            line = Line.browse(line_id)
+            if not line.exists() or line.roster_id.id != roster.id:
+                continue
+            plan = dict(line._code_map(line.plan_codes))
+            actual = dict(line._code_map(line.actual_codes))
+            meta = {}
+            for item in items:
+                kind = item.get("shift_type") or item.get("kind")
+                if kind in ("employee_name", "job_title", "employee_code"):
+                    meta[kind] = item.get("value")
+                    continue
+                day = str(item.get("day") or "")
+                if not day.isdigit():
+                    continue
+                code = _norm_code(item.get("code") or item.get("shift_code") or "")
+                if kind == "actual":
+                    actual[day] = code
+                else:
+                    plan[day] = code
+            vals = {"plan_codes": plan, "actual_codes": actual}
+            if "employee_name" in meta:
+                vals["employee_name"] = meta["employee_name"] or ""
+            if "job_title" in meta:
+                vals["job_title"] = meta["job_title"] or "NV"
+            if "employee_code" in meta:
+                try:
+                    vals["employee_code"] = int(meta["employee_code"] or 0)
+                except (TypeError, ValueError):
+                    vals["employee_code"] = 0
+            line.write(vals)
+        return {"success": True}
 
     name = fields.Char(string="Tên bảng xếp ca", required=True, default="Bảng xếp ca tháng")
     year = fields.Integer(string="Năm", required=True, default=lambda self: fields.Date.context_today(self).year)
@@ -110,10 +183,7 @@ class LinkqMonthlyRoster(models.Model):
         ondelete="restrict",
         tracking=True,
         check_company=True,
-        default=lambda self: self.env["hr.store"].search(
-            [("company_id", "=", self.env.company.id), ("active", "=", True)],
-            limit=1,
-        ).id,
+        default=lambda self: self._default_store_id(),
     )
     region = fields.Selection(
         related="store_id.mien",
@@ -144,6 +214,92 @@ class LinkqMonthlyRoster(models.Model):
     lack_evening = fields.Json(compute="_compute_lack")
     shift_catalog_json = fields.Json(compute="_compute_shift_catalog")
     company_id = fields.Many2one("res.company", default=lambda self: self.env.company, required=True)
+
+    @api.model
+    def _default_store_id(self):
+        allowed = self.env.user._linkq_allowed_hr_store_ids()
+        if allowed and not self._linkq_bypass():
+            return allowed[0]
+        return self.env["hr.store"].search(
+            [("company_id", "=", self.env.company.id), ("active", "=", True)],
+            limit=1,
+        ).id
+
+    @api.model
+    def _linkq_store_scope_domain(self):
+        if self.env.su or self._linkq_bypass():
+            return []
+        store_ids = self.env.user._linkq_allowed_hr_store_ids()
+        if not store_ids:
+            return []
+        return [("store_id", "in", store_ids)]
+
+    def _linkq_store_forbidden(self):
+        domain = self._linkq_store_scope_domain()
+        if not domain:
+            return self.browse()
+        allowed = set(self.env.user._linkq_allowed_hr_store_ids())
+        return self.filtered(lambda rec: rec.store_id.id and rec.store_id.id not in allowed)
+
+    def _check_access(self, operation):
+        result = super()._check_access(operation)
+        if result is not None:
+            return result
+        if self.env.su or self._linkq_bypass() or not self:
+            return None
+        forbidden = self._linkq_store_forbidden()
+        if forbidden:
+            return forbidden, lambda: AccessError(
+                "Bạn chỉ được xem bảng xếp ca của cửa hàng mình phụ trách."
+            )
+        return None
+
+    @api.model
+    def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
+        extra = self._linkq_store_scope_domain()
+        if extra and not kwargs.get("bypass_access"):
+            domain = expression.AND([extra, domain or []])
+        return super()._search(
+            domain, offset=offset, limit=limit, order=order, **kwargs
+        )
+
+    @api.model
+    def fields_get(self, allfields=None, attributes=None):
+        res = super().fields_get(allfields=allfields, attributes=attributes)
+        extra = self._linkq_store_scope_domain()
+        if extra and "store_id" in res:
+            res["store_id"]["domain"] = [
+                ("id", "in", self.env.user._linkq_allowed_hr_store_ids())
+            ]
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        allowed = self.env.user._linkq_allowed_hr_store_ids()
+        if allowed and not self.env.su and not self._linkq_bypass():
+            for vals in vals_list:
+                store_id = vals.get("store_id")
+                if store_id and store_id not in allowed:
+                    raise AccessError(
+                        "Bạn chỉ được tạo bảng xếp ca cho cửa hàng mình phụ trách."
+                    )
+                if not store_id:
+                    vals["store_id"] = allowed[0]
+        return super().create(vals_list)
+
+    def write(self, vals):
+        allowed = self.env.user._linkq_allowed_hr_store_ids()
+        if (
+            allowed
+            and not self.env.su
+            and not self._linkq_bypass()
+            and vals.get("store_id")
+            and vals["store_id"] not in allowed
+        ):
+            raise AccessError(
+                "Bạn chỉ được sửa bảng xếp ca của cửa hàng mình phụ trách."
+            )
+        return super().write(vals)
 
     def _compute_shift_catalog(self):
         codes = self.env["linkq.shift.code"].sudo().search([], order="sequence, code")
@@ -176,7 +332,7 @@ class LinkqMonthlyRoster(models.Model):
                SET store_id = hs.id
               FROM phan_he_store ps
               JOIN hr_store hs
-                ON lower(btrim(coalesce(hs.name, ''))) = lower(btrim(coalesce(ps.name, '')))
+                ON lower(btrim(coalesce(hs.name->>'en_US', hs.name->>'vi_VN', ''))) = lower(btrim(coalesce(ps.name, '')))
                 OR (
                     hs.code IS NOT NULL AND ps.code IS NOT NULL
                     AND lower(btrim(hs.code)) = lower(btrim(ps.code))
@@ -498,9 +654,21 @@ class LinkqMonthlyRosterLine(models.Model):
     _name = "linkq.monthly.roster.line"
     _description = "Dòng xếp ca tháng"
     _order = "sequence, id"
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_main"
 
     roster_id = fields.Many2one("linkq.monthly.roster", required=True, ondelete="cascade", index=True)
     sequence = fields.Integer(default=10)
+
+    @api.model
+    def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
+        extra = self.env["linkq.monthly.roster"]._linkq_store_scope_domain()
+        if extra and not kwargs.get("bypass_access"):
+            line_extra = [(f"roster_id.{term[0]}", term[1], term[2]) for term in extra]
+            domain = expression.AND([line_extra, domain or []])
+        return super()._search(
+            domain, offset=offset, limit=limit, order=order, **kwargs
+        )
     employee_id = fields.Many2one("hr.employee", string="Nhân viên (HR)", ondelete="set null")
     employee_name = fields.Char(string="Nhân viên")
     job_title = fields.Char(string="Chức vụ", default="NV")

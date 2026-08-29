@@ -7,11 +7,21 @@
 .o_phan_he_sidebar,
 .o_phan_he_app_sidebar {
     position: relative !important;
-    overflow: visible !important;
-    width: var(--phan-he-sidebar-width, 260px) !important;
-    min-width: var(--phan-he-sidebar-width, 260px) !important;
-    max-width: var(--phan-he-sidebar-width, 260px) !important;
+    overflow: hidden !important;
+    flex-shrink: 0;
+    width: var(--phan-he-sidebar-width, 280px) !important;
+    min-width: var(--phan-he-sidebar-width, 280px) !important;
+    max-width: var(--phan-he-sidebar-width, 280px) !important;
     transition: width 0.18s ease, min-width 0.18s ease, max-width 0.18s ease;
+}
+
+html.o_phan_he_sidebar_is_collapsed .o_phan_he_app_sidebar,
+html.o_phan_he_sidebar_is_collapsed .o_phan_he_sidebar,
+.o_phan_he_app_sidebar.o_phan_he_sidebar_collapsed,
+.o_phan_he_sidebar.o_phan_he_sidebar_collapsed {
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
 }
 
 .o_phan_he_app_shell {
@@ -76,11 +86,11 @@
     top: 0;
     right: 0;
     bottom: 0;
-    width: 6px;
+    width: 8px;
     z-index: 30;
     cursor: col-resize;
     touch-action: none;
-    background: #7c3aed;
+    background: transparent;
 }
 
 .o_phan_he_sidebar_resizer_grip {
@@ -177,5 +187,37 @@ html.o_phan_he_sidebar_is_collapsed .o_phan_he_sidebar {
     .o_phan_he_nav_sub i,
     .o_phan_he_nav_section i {
         margin: 0;
+    }
+}
+
+.o_phan_he_app_sidebar.o_sataco_sidebar .o_phan_he_sidebar_toolbar {
+    background: transparent;
+    border-bottom: 0;
+    padding: 12px 10px 4px;
+}
+
+.o_phan_he_app_sidebar.o_sataco_sidebar .o_phan_he_sidebar_toolbar_btns {
+    justify-content: flex-start;
+    gap: 10px;
+}
+
+.o_phan_he_app_sidebar.o_sataco_sidebar .o_phan_he_tb_btn {
+    flex: 0 0 36px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #5b2c86;
+    color: #fff;
+    box-shadow: 0 4px 10px rgba(91, 44, 134, 0.25);
+
+    &:hover {
+        background: #6d28d9;
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(91, 44, 134, 0.35);
+    }
+
+    &.is-on {
+        background: #4c1d95;
+        color: #fff;
     }
 }

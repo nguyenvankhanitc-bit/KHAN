@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.150.0",
+    "version": "19.0.2.171.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ HRM, LinkQ NB, Máy chủ",
     "description": """
@@ -22,6 +22,7 @@ Quản lý dịch vụ
     ],
     "data": [
         "security/phan_he_security.xml",
+        "security/linkq_erp_security.xml",
         "security/ir.model.access.csv",
         "data/ir_sequence_data.xml",
         "data/phan_he_service_type_data.xml",
@@ -43,6 +44,7 @@ Quản lý dịch vụ
         "views/phan_he_app_actions.xml",
         "views/phan_he_hub_action.xml",
         "views/phan_he_access_views.xml",
+        "views/lug_menu_permission_views.xml",
         "views/phan_he_access_action.xml",
         "data/phan_he_access_group_data.xml",
         "views/phan_he_menus.xml",
@@ -62,6 +64,8 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/shift/monthly_matrix_grid.js",
             "lug_phan_he/static/src/shift/monthly_matrix_grid.xml",
             "lug_phan_he/static/src/scss/custom_sidebar.scss",
+            "lug_phan_he/static/src/scss/sidebar_tree.scss",
+            "lug_phan_he/static/src/scss/linkq_subpanel.scss",
             "lug_phan_he/static/src/shift/phan_he_work_shift_list.js",
             "lug_phan_he/static/src/shift/phan_he_work_shift_list.xml",
             "lug_phan_he/static/src/hub/phan_he_hub.js",

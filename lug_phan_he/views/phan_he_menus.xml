@@ -292,7 +292,7 @@
               name="LinkQ ERP"
               parent="menu_phan_he_root"
               sequence="50"
-              groups="base.group_user"/>
+              groups="lug_phan_he.group_phan_he_admin,base.group_system"/>
 
     <menuitem id="menu_phan_he_linkq_nb_dashboard"
               name="Dashboard"
@@ -388,7 +388,7 @@
               name="Cấu hình &amp; Hệ thống"
               parent="menu_phan_he_root"
               sequence="90"
-              groups="base.group_user"/>
+              groups="lug_phan_he.group_phan_he_admin,base.group_system"/>
 
     <menuitem id="menu_phan_he_ops_root"
               name="Vận hành"

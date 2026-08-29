@@ -2,9 +2,9 @@
 
 export const SIDEBAR_WIDTH_KEY = "sidebar_custom_width";
 export const SIDEBAR_COLLAPSED_KEY = "sidebar_collapsed";
-export const SIDEBAR_MIN = 200;
+export const SIDEBAR_MIN = 260;
 export const SIDEBAR_MAX = 420;
-export const SIDEBAR_DEFAULT = 260;
+export const SIDEBAR_DEFAULT = 280;
 export const SIDEBAR_COLLAPSED_WIDTH = 70;
 
 export function clampWidth(value) {

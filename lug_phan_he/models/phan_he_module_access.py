@@ -109,7 +109,15 @@ class PhanHeModuleAccess(models.Model):
     def get_user_module_rights(self, user_id=None):
         """Trả về dict {service_code: {view, create, edit, delete, ...}}."""
         user = self.env["res.users"].browse(user_id or self.env.user.id)
-        if user.has_group("lug_phan_he.group_phan_he_admin") or user.has_group("base.group_system"):
+        groups = self.sudo().search([
+            ("user_ids", "in", user.id),
+            ("company_id", "=", self.env.company.id),
+            ("active", "=", True),
+        ])
+        is_full_admin = user.has_group("lug_phan_he.group_phan_he_admin") or user.has_group(
+            "base.group_system"
+        )
+        if is_full_admin and not groups:
             return {
                 code: {
                     "view": True,
@@ -144,11 +152,6 @@ class PhanHeModuleAccess(models.Model):
             for code, name, icon in SERVICE_MODULES
         }
 
-        groups = self.sudo().search([
-            ("user_ids", "in", user.id),
-            ("company_id", "=", self.env.company.id),
-            ("active", "=", True),
-        ])
         if not groups:
             # Chưa cấu hình: cho xem tất cả để không khóa hệ thống
             for code in result:

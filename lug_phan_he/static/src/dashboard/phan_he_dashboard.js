@@ -143,7 +143,7 @@ function isoToDisplay(value) {
 
 export class PhanHeDashboard extends Component {
     static template = "lug_phan_he.PhanHeDashboard";
-    static props = { ...standardActionServiceProps };
+    static props = { ...standardActionServiceProps, "*": true };
     static components = { PhanHeAppSidebar };
 
     setup() {
@@ -219,6 +219,10 @@ export class PhanHeDashboard extends Component {
 
     get isLinkqErp() {
         return this.serviceTypeCode === "linkq_nb";
+    }
+
+    get linkqSidebarKey() {
+        return "dashboard";
     }
 
     get sidebarBrand() {

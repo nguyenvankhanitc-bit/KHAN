@@ -68,12 +68,26 @@ thead .o_mm_sticky {
     margin: 0;
     padding: 6px 8px;
     display: flex;
-    justify-content: flex-start;
+    justify-content: space-between;
     align-items: center;
+    gap: 8px;
     border: 1px solid #94a3b8;
     border-bottom: 0;
     background: #f8fafc;
     min-height: 40px;
+}
+
+.o_mm_toolbar_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.o_mm_btn_grid_save:not(:disabled) {
+    background: #16a34a;
+    border-color: #15803d;
+    color: #fff;
+    font-weight: 700;
 }
 
 .o_mm_toolbar + .o_monthly_matrix_scroll {

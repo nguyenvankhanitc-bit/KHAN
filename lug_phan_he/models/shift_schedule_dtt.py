@@ -8,6 +8,8 @@ class LinkqShiftScheduleDtt(models.Model):
     _description = "Lịch Miền ĐTT"
     _order = "sequence, store_name"
     _rec_name = "store_name"
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_dtt"
 
     sequence = fields.Integer(string="STT", default=10)
     store_name = fields.Char(
@@ -33,6 +35,8 @@ class LinkqShiftScheduleDttLine(models.Model):
     _name = "linkq.shift.schedule.dtt.line"
     _description = "Khung giờ Lịch Miền ĐTT"
     _order = "schedule_id, sequence, id"
+    _inherit = ["lug.menu.access.mixin"]
+    _linkq_menu_key = "schedule_dtt"
 
     sequence = fields.Integer(string="STT", default=10)
     schedule_id = fields.Many2one(

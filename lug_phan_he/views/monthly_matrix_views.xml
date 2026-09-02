@@ -9,6 +9,10 @@
                 <field name="name"/>
                 <field name="barcode" string="Mã ID"/>
                 <field name="job_title" string="Chức vụ"/>
+                <field name="work_status" string="Trạng thái" widget="badge"
+                       decoration-success="work_status == 'working'"
+                       decoration-danger="work_status == 'resigned'"
+                       decoration-warning="work_status == 'transferred'"/>
                 <field name="department_id"/>
             </list>
         </field>
@@ -31,14 +35,29 @@
         <field name="name">linkq.monthly.roster.list</field>
         <field name="model">linkq.monthly.roster</field>
         <field name="arch" type="xml">
-            <list string="Bảng xếp ca tháng" js_class="phan_he_roster_list" duplicate="false" delete="false">
-                <field name="name"/>
-                <field name="store_id"/>
-                <field name="region" optional="show"/>
-                <field name="total_employees" string="Nhân sự"/>
-                <field name="state" widget="badge"
-                       decoration-info="state == 'draft'"
-                       decoration-success="state == 'confirmed'"/>
+            <list string="Danh sách lịch ca" js_class="phan_he_roster_list"
+                  create="false" edit="false" delete="false" duplicate="false"
+                  class="o_roster_lock_list o_linkq_roster_tree">
+                <field name="store_id" column_invisible="1"/>
+                <field name="name" string="TÊN BẢNG XẾP CA"/>
+                <field name="period_label" string="THÁNG / NĂM"/>
+                <field name="region" string="KHU VỰC / MIỀN"/>
+                <field name="apply_status" string="TRẠNG THÁI" widget="roster_apply_status"/>
+                <field name="lock_status" string="KHÓA LỊCH" widget="roster_lock_badge"/>
+                <field name="write_date" string="CẬP NHẬT" widget="datetime"/>
+                <field name="lock_datetime" column_invisible="1"/>
+                <field name="lock_badge_text" column_invisible="1"/>
+                <field name="is_locked" column_invisible="1"/>
+                <field name="state" column_invisible="1"/>
+                <button name="action_open_schedule_popup" type="object"
+                        string="Xem chi tiết" icon="fa-external-link"
+                        class="btn-primary btn-sm"/>
+                <button name="action_edit_schedule" type="object" icon="fa-pencil"
+                        title="Sửa" groups="base.group_system"/>
+                <button name="unlink" type="object" icon="fa-trash"
+                        title="Xóa"
+                        confirm="Bạn chắc chắn muốn xóa bảng lịch ca này?"
+                        groups="base.group_system"/>
             </list>
         </field>
     </record>
@@ -49,56 +68,149 @@
         <field name="arch" type="xml">
             <form string="Bảng xếp ca tháng" class="o_form_sheet_bg o_monthly_roster_form" js_class="phan_he_roster_form"
                   create="true" edit="true" delete="false" duplicate="false">
-                <header>
-                    <field name="state" widget="statusbar" statusbar_visible="draft,confirmed"/>
-                </header>
                 <sheet>
-                    <div class="oe_title text-center my-3">
-                        <h1 class="fw-bold m-0 o_mm_sheet_title">
-                            <field name="name" readonly="1" nolabel="1" class="oe_inline"/>
+                    <field name="state" invisible="1"/>
+                    <field name="is_locked" invisible="1"/>
+                    <field name="auto_lock" invisible="1"/>
+                    <field name="period_edit_blocked" invisible="1"/>
+                    <field name="period_lock_notice" invisible="1"/>
+                    <field name="lock_status" invisible="1"/>
+                    <field name="lock_datetime" invisible="1"/>
+                    <div class="alert alert-danger mb-2" role="alert" invisible="not period_edit_blocked">
+                        <i class="fa fa-lock" title="Khóa"/>
+                        <field name="period_lock_notice" nolabel="1" readonly="1"/>
+                    </div>
+                    <div class="alert alert-warning mb-2" role="alert" invisible="lock_status != 'expiring'">
+                        <i class="fa fa-clock-o"/> Lịch ca <b>sắp khóa</b>.
+                    </div>
+                    <div class="o_mm_header_frame">
+                    <div class="o_mm_title_block">
+                        <h1 class="o_mm_sheet_title">
+                            <field name="name" readonly="1" nolabel="1"/>
                         </h1>
                     </div>
-                    <div class="o_mm_info_strip mb-3">
+                    <div class="o_mm_info_strip">
                         <div class="o_mm_info_strip_head">
-                            <i class="fa fa-sliders"/> THÔNG TIN KỲ XẾP CA
+                            <i class="fa fa-calendar"/> THÔNG TIN KỲ XẾP CA
                         </div>
-                        <div class="o_mm_info_strip_body">
-                            <div class="o_mm_info_col">
-                                <div class="o_mm_info_label">🏪 TÊN CỬA HÀNG</div>
-                                <field name="store_id" required="1" readonly="state == 'confirmed'"
-                                       options="{'no_create': True, 'no_open': True}"
-                                       placeholder="Chọn cửa hàng..."/>
-                            </div>
-                            <group class="o_mm_info_col o_mm_info_col_period" col="2">
-                                <separator string="📅 KỲ THÁNG / NĂM" colspan="2"/>
-                                <field name="month" string="Tháng" required="1" readonly="state == 'confirmed'"/>
-                                <field name="year" string="Năm" readonly="1"/>
-                            </group>
-                            <div class="o_mm_info_col o_mm_info_col_staff">
-                                <div class="o_mm_info_label">👥 NHÂN SỰ</div>
-                                <div class="o_mm_info_staff">
-                                    <field name="staff_summary_text" readonly="1" nolabel="1"/>
+                        <div class="o_mm_info_2col">
+                            <div class="o_mm_info_left">
+                                <div class="o_mm_info_block">
+                                    <div class="o_mm_info_label">CỬA HÀNG</div>
+                                    <div class="o_mm_info_store_name">
+                                        <field name="store_id" required="1" readonly="state == 'confirmed' or is_locked"
+                                               options="{'no_create': True, 'no_open': True}"
+                                               placeholder="Chọn cửa hàng..."/>
+                                    </div>
+                                    <div class="o_mm_info_region">
+                                        <i class="fa fa-map-marker"/> Khu vực:
+                                        <field name="region" readonly="1" nolabel="1"/>
+                                    </div>
                                 </div>
-                                <field name="total_employees" invisible="1"/>
+                                <div class="o_mm_info_block">
+                                    <div class="o_mm_info_label"><i class="fa fa-calendar-o"/> KỲ XẾP CA</div>
+                                    <div class="o_mm_period_title">
+                                        <field name="month" required="1" readonly="state == 'confirmed' or is_locked" nolabel="1"/>
+                                        năm <field name="year" readonly="1" nolabel="1"/>
+                                    </div>
+                                    <div class="o_mm_period_range">
+                                        Từ ngày 01 đến ngày <field name="days_in_month" readonly="1" nolabel="1"/>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="o_mm_info_col">
-                                <div class="o_mm_info_label">🌐 KHU VỰC</div>
-                                <field name="region" readonly="1" widget="badge"
-                                       class="fw-bold text-primary fs-6 o_mm_region_badge"
-                                       decoration-info="region == 'Bắc'"
-                                       decoration-warning="region == 'Nam'"
-                                       decoration-success="region in ('ĐTT', 'DTT')"
-                                       decoration-muted="region == 'VP'"/>
+                            <div class="o_mm_info_col_staff">
+                                <field name="staff_summary_text" widget="monthly_staff_summary" nolabel="1"/>
+                                <field name="employee_summary_html" invisible="1"/>
+                                <field name="total_employees" invisible="1"/>
                             </div>
                         </div>
                         <field name="holiday_map" invisible="1"/>
                     </div>
+                    </div>
+                    <div name="send_roster_mail" class="o_mm_send_mail_card">
+                        <div class="o_mm_send_mail_head">
+                            <div class="o_mm_send_mail_title">
+                                <i class="fa fa-paper-plane"/> GỬI EMAIL &amp; TIN NHẮN LỊCH CA
+                            </div>
+                            <button name="action_send_email_now"
+                                    type="object"
+                                    string="Gửi ngay"
+                                    icon="fa-paper-plane"
+                                    class="btn btn-primary btn-sm o_mm_send_mail_btn"
+                                    confirm="Hệ thống sẽ gửi email và thông báo đến Nhân viên, ASM và Admin. Tiếp tục?"/>
+                        </div>
+                        <div class="o_mm_send_mail_grid">
+                            <div class="o_mm_send_mail_field">
+                                <label for="sender_email" class="o_mm_send_mail_label">
+                                    <i class="fa fa-building-o"/> NGƯỜI GỬI (CỬA HÀNG)
+                                </label>
+                                <field name="sender_email" readonly="1" nolabel="1"/>
+                            </div>
+                            <div class="o_mm_send_mail_field">
+                                <label for="asm_email" class="o_mm_send_mail_label">
+                                    <i class="fa fa-user"/> GỬI ĐẾN ASM
+                                </label>
+                                <div class="o_mm_send_mail_input">
+                                    <field name="asm_email" nolabel="1"/>
+                                    <span class="o_mm_send_mail_ok" invisible="not asm_email_valid">
+                                        <i class="fa fa-check-circle"/> Hợp lệ
+                                    </span>
+                                    <span class="o_mm_send_mail_bad" invisible="asm_email_valid">
+                                        <i class="fa fa-times-circle"/> Không hợp lệ
+                                    </span>
+                                </div>
+                                <field name="asm_email_valid" invisible="1"/>
+                            </div>
+                            <div class="o_mm_send_mail_field">
+                                <label for="admin_email" class="o_mm_send_mail_label">
+                                    <i class="fa fa-shield"/> GỬI ĐẾN ADMIN
+                                </label>
+                                <div class="o_mm_send_mail_input">
+                                    <field name="admin_email" nolabel="1"/>
+                                    <span class="o_mm_send_mail_ok" invisible="not admin_email_valid">
+                                        <i class="fa fa-check-circle"/> Hợp lệ
+                                    </span>
+                                    <span class="o_mm_send_mail_bad" invisible="admin_email_valid">
+                                        <i class="fa fa-times-circle"/> Không hợp lệ
+                                    </span>
+                                </div>
+                                <field name="admin_email_valid" invisible="1"/>
+                            </div>
+                            <div class="o_mm_send_mail_field">
+                                <label for="email_subject" class="o_mm_send_mail_label">TIÊU ĐỀ EMAIL</label>
+                                <field name="email_subject" nolabel="1"/>
+                            </div>
+                        </div>
+                        <div class="o_mm_send_mail_foot">
+                            <div class="o_mm_send_mail_attach">
+                                <span class="o_mm_send_mail_label"><i class="fa fa-paperclip"/> Tệp đính kèm:</span>
+                                <span class="o_mm_send_mail_file">
+                                    <i class="fa fa-file-pdf-o"/>
+                                    <field name="attachment_name" readonly="1" nolabel="1"/>
+                                </span>
+                                <field name="attachment_file" filename="attachment_name" widget="binary" nolabel="1"/>
+                            </div>
+                            <button name="action_preview_email"
+                                    type="object"
+                                    string="Xem trước email"
+                                    icon="fa-envelope-o"
+                                    class="btn btn-outline-secondary btn-sm"/>
+                        </div>
+                    </div>
                     <field name="weekday_json" invisible="1"/>
                     <field name="holiday_json" invisible="1"/>
-                    <field name="days_in_month" invisible="1"/>
                     <field name="lack_morning" invisible="1"/>
                     <field name="lack_evening" invisible="1"/>
-                    <field name="line_ids" widget="monthly_matrix_grid" nolabel="1" readonly="state == 'confirmed'" create="1" delete="1">
+                    <div class="o_mm_grid_section">
+                        <div class="o_mm_section_head">
+                            <span><i class="fa fa-users"/> BẢNG CA NHÂN VIÊN</span>
+                            <button name="action_export_excel"
+                                    type="object"
+                                    string="Xuất Excel"
+                                    icon="fa-file-excel-o"
+                                    class="btn btn-sm o_mm_export_excel_btn"/>
+                        </div>
+                    <field name="line_ids" widget="monthly_matrix_grid" nolabel="1" readonly="state == 'confirmed' or is_locked or period_edit_blocked" create="1" delete="1">
                         <list editable="top" create="1" delete="1" default_order="sequence, id">
                             <field name="sequence" widget="handle" column_invisible="1"/>
                             <field name="employee_id" column_invisible="1"/>
@@ -107,6 +219,8 @@
                             <field name="employee_code"/>
                             <field name="plan_codes"/>
                             <field name="actual_codes"/>
+                            <field name="plan_notes" column_invisible="1"/>
+                            <field name="actual_notes" column_invisible="1"/>
                             <field name="hour_codes"/>
                             <field name="count_plan"/>
                             <field name="count_actual"/>
@@ -116,21 +230,25 @@
                             <field name="shift_summary_text"/>
                         </list>
                     </field>
-                    <div class="row o_mm_footer_cards g-3 mt-2">
+                    </div>
+                    <div class="row o_mm_footer_cards g-3">
                         <div class="col-md-6">
                             <div class="o_mm_card o_mm_card_warn">
-                                <h6>KIỂM TRA THIẾU CA</h6>
-                                <p class="mb-0">S = thiếu ca sáng (mã S*) · T = thiếu ca tối (mã C*/GC*/F*). Kiểm tra từng ngày trên lưới: không có S* thì thiếu sáng; không có C*/GC*/F* thì thiếu tối.</p>
+                                <h6><i class="fa fa-exclamation-triangle"/> KIỂM TRA THIẾU CA</h6>
+                                <p class="mb-1">S = thiếu ca sáng (mã S*) • T = thiếu ca tối (mã C*/GC*/F*)</p>
+                                <p class="mb-0">Kiểm tra từng ngày trên lưới: không có S* thì thiếu sáng; không có C*/GC*/F* thì thiếu tối.</p>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="o_mm_card o_mm_card_info">
-                                <h6>LỊCH NGÀY THƯỜNG THAM KHẢO</h6>
-                                <p class="mb-0">F8: 09:30–22:00 (12.5h) · F7: 09:00–22:00 (13h) · C1: 15:00–22:00 (7h) · GC1: 12:00–22:00 (10h)</p>
+                                <h6><i class="fa fa-clock-o"/> LỊCH NGÀY THƯỜNG THAM KHẢO</h6>
+                                <p class="mb-1">F8: 09:30–22:00 (12.5h) • F7: 09:00–22:00 (13h)</p>
+                                <p class="mb-0">C1: 15:00–22:00 (7h) • GC1: 12:00–22:00 (10h)</p>
                             </div>
                         </div>
                     </div>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -142,21 +260,36 @@
             <search string="Tìm bảng xếp ca">
                 <field name="name"/>
                 <field name="store_id"/>
+                <field name="period_label"/>
                 <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
                 <filter name="filter_confirmed" string="Đã chốt" domain="[('state', '=', 'confirmed')]"/>
-                <group>
-                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
-                    <filter name="group_month" string="Tháng" context="{'group_by': 'month'}"/>
-                </group>
+                <filter name="filter_locked" string="Đã khóa" domain="[('is_locked', '=', True)]"/>
+                <filter name="filter_expiring" string="Sắp khóa" domain="[('lock_status', '=', 'expiring')]"/>
+                <separator/>
+                <filter name="group_by_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                <filter name="group_month" string="Tháng" context="{'group_by': 'month'}"/>
             </search>
         </field>
     </record>
 
+    <record id="view_linkq_monthly_roster_calendar" model="ir.ui.view">
+        <field name="name">linkq.monthly.roster.calendar</field>
+        <field name="model">linkq.monthly.roster</field>
+        <field name="arch" type="xml">
+            <calendar string="Lịch bảng ca" date_start="period_start" color="lock_status" mode="month" quick_create="0">
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="lock_status"/>
+            </calendar>
+        </field>
+    </record>
+
     <record id="action_linkq_monthly_roster" model="ir.actions.act_window">
-        <field name="name">Bảng xếp ca</field>
+        <field name="name">Danh sách lịch ca</field>
         <field name="res_model">linkq.monthly.roster</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">list,form,calendar</field>
         <field name="search_view_id" ref="view_linkq_monthly_roster_search"/>
+        <field name="context">{'search_default_group_by_store': 1, 'group_by': ['store_id']}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Chưa có bảng xếp ca tháng</p>
             <p>Chọn cửa hàng, tháng/năm, bấm Tải danh sách NV rồi nhập mã ca từng ngày (S9, F7, GC1, OFF…).</p>

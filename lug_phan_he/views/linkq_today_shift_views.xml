@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_linkq_today_shift_list" model="ir.ui.view">
+        <field name="name">linkq.today.shift.list</field>
+        <field name="model">linkq.today.shift</field>
+        <field name="arch" type="xml">
+            <list string="Lịch ca hôm nay" create="0" edit="0" delete="0" import="0" export_xlsx="0"
+                  js_class="phan_he_today_shift_list"
+                  class="o_linkq_bordered_table o_linkq_today_shift_list table-bordered table-hover align-middle">
+                <field name="stt" string="STT"/>
+                <field name="employee_name" string="HỌ VÀ TÊN"/>
+                <field name="job_position" string="CHỨC VỤ"/>
+                <field name="employee_code" string="MÃ ID"/>
+                <field name="store_id" string="CỬA HÀNG"/>
+                <field name="shift_symbol" string="CA (DỰ KIẾN)" widget="badge" decoration-info="1"/>
+                <field name="shift_time" string="THỜI GIAN"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_today_shift_search" model="ir.ui.view">
+        <field name="name">linkq.today.shift.search</field>
+        <field name="model">linkq.today.shift</field>
+        <field name="arch" type="xml">
+            <search string="Lịch ca hôm nay">
+                <field name="employee_name" string="Nhân viên"/>
+                <field name="employee_code" string="Mã ID"/>
+                <field name="shift_symbol" string="Ca"/>
+                <field name="store_id" string="Cửa hàng"/>
+                <filter string="Cửa hàng" name="filter_store" context="{'group_by': 'store_id'}"/>
+                <searchpanel>
+                    <field name="store_id" string="Cửa hàng" enable_counters="1" select="multi"/>
+                </searchpanel>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_linkq_today_shift_window" model="ir.actions.act_window">
+        <field name="name">Lịch ca hôm nay</field>
+        <field name="res_model">linkq.today.shift</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_linkq_today_shift_search"/>
+        <field name="view_id" ref="view_linkq_today_shift_list"/>
+        <field name="target">current</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Không có nhân viên làm ca hôm nay</p>
+        </field>
+    </record>
+
+    <record id="action_linkq_today_shift" model="ir.actions.server">
+        <field name="name">Lịch ca hôm nay</field>
+        <field name="model_id" ref="model_linkq_today_shift"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_today_shift()</field>
+    </record>
+</odoo>

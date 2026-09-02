@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.RosterLockBadgeField">
+        <span t-att-class="badgeClass">
+            <i t-att-class="iconClass"/>
+            <span t-esc="text"/>
+        </span>
+    </t>
+
+    <t t-name="lug_phan_he.RosterApplyStatusField">
+        <span t-att-class="wrapClass">
+            <span class="o_roster_dot"/>
+            <span t-esc="meta.label"/>
+        </span>
+    </t>
+
+    <t t-name="lug_phan_he.RosterLockKpis">
+        <div class="o_roster_kpi_row">
+            <div class="o_roster_kpi is-total">
+                <div class="o_roster_kpi_ico"><i class="fa fa-calendar"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Tổng số bảng ca</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.total"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-applying">
+                <div class="o_roster_kpi_ico"><i class="fa fa-file-text-o"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Đang áp dụng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.applying"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-upcoming">
+                <div class="o_roster_kpi_ico"><i class="fa fa-file-o"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Sắp áp dụng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.upcoming"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-paused">
+                <div class="o_roster_kpi_ico"><i class="fa fa-wrench"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Tạm dừng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.paused"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-locked">
+                <div class="o_roster_kpi_ico"><i class="fa fa-lock"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Đang bị khóa</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.locked"/>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_phan_he.RosterLockPanel">
+        <aside class="o_roster_right" t-ref="panelRoot">
+            <div t-if="state.canConfigure" class="o_roster_widget">
+                <div class="o_roster_widget_head">CÀI ĐẶT KHÓA LỊCH CA</div>
+                <div class="o_roster_widget_body">
+                    <p class="small text-muted mb-2">Thiết lập thời gian khóa lịch ca tự động trên trang chuyên biệt.</p>
+                    <button type="button" class="btn o_roster_save_btn" t-on-click="openFullSettings">Mở cài đặt khóa lịch</button>
+                </div>
+            </div>
+        </aside>
+    </t>
+
+    <t t-name="lug_phan_he.RosterNotificationFeed">
+        <div class="notification-sidebar-container">
+            <div class="card notification-card mb-3">
+                <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center pb-2">
+                    <h6 class="fw-bold mb-0 text-dark">THÔNG BÁO</h6>
+                    <button type="button" class="btn btn-link p-0 text-primary text-decoration-none fw-semibold small" t-on-click="() => this.props.onViewAll()">Xem tất cả</button>
+                </div>
+                <div class="card-body p-0">
+                    <div class="notification-list">
+                        <t t-if="!hasEvents">
+                            <div class="notif-item">
+                                <div class="notif-content">
+                                    <div class="notif-desc">Chưa có thông báo khóa lịch.</div>
+                                </div>
+                            </div>
+                        </t>
+                        <t t-foreach="items" t-as="item" t-key="item.id">
+                            <div class="notif-item">
+                                <div t-attf-class="notif-icon {{item.iconWrap}}">
+                                    <i t-attf-class="{{item.icon}}"/>
+                                </div>
+                                <div class="notif-content">
+                                    <span t-attf-class="badge {{item.badgeClass}}" t-esc="item.badge"/>
+                                    <div class="notif-title" t-esc="item.title"/>
+                                    <div class="notif-desc" t-esc="item.detail"/>
+                                    <div class="notif-time" t-esc="item.time"/>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+            <div class="guide-card">
+                <div class="guide-title">
+                    <i class="fa fa-info-circle me-1"/>
+                    <span>HƯỚNG DẪN</span>
+                    <i class="fa fa-question-circle-o ms-1 opacity-75"/>
+                </div>
+                <p class="guide-desc">
+                    Lịch ca sau khi bị khóa sẽ không thể chỉnh sửa. Vui lòng thiết lập thời gian khóa phù hợp.
+                </p>
+                <button type="button" class="btn btn-guide" t-on-click="() => this.props.onGuide()">Xem hướng dẫn chi tiết</button>
+            </div>
+        </div>
+    </t>
+</templates>

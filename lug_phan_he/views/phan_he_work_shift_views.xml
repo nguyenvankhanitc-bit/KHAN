@@ -151,10 +151,10 @@
                 <separator/>
                 <filter name="filter_applying" string="Đang áp dụng" domain="[('state', '=', 'applying')]"/>
                 <filter name="filter_stopped" string="Ngừng áp dụng" domain="[('state', '=', 'stopped')]"/>
-                <group>
+                
                     <filter name="group_shift_group" string="Nhóm ca" context="{'group_by': 'shift_group'}"/>
                     <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="shift_guide_doc_roster" model="shift.guide.document">
+        <field name="name">Hướng dẫn sử dụng lịch ca</field>
+        <field name="file_name">huong_dan_lich_ca.pdf</field>
+        <field name="sequence">10</field>
+        <field name="allow_view" eval="True"/>
+        <field name="allow_download" eval="True"/>
+    </record>
+    <record id="shift_guide_doc_excel" model="shift.guide.document">
+        <field name="name">Mẫu Excel nhập lịch ca</field>
+        <field name="file_name">mau_nhap_lich_ca.xlsx</field>
+        <field name="sequence">20</field>
+        <field name="allow_view" eval="True"/>
+        <field name="allow_download" eval="True"/>
+    </record>
+    <record id="shift_guide_doc_lock" model="shift.guide.document">
+        <field name="name">Quy định về khóa lịch ca</field>
+        <field name="file_name">quy_dinh_khoa_lich.pdf</field>
+        <field name="sequence">30</field>
+        <field name="allow_view" eval="True"/>
+        <field name="allow_download" eval="False"/>
+    </record>
+</odoo>

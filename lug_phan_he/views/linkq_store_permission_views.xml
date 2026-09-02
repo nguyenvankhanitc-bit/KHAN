@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_linkq_store_permission_line_form" model="ir.ui.view">
+        <field name="name">linkq.store.permission.line.form</field>
+        <field name="model">linkq.store.permission.line</field>
+        <field name="arch" type="xml">
+            <form string="Cấu hình phạm vi cửa hàng">
+                <sheet>
+                    <group>
+                        <group string="Thông tin tài khoản">
+                            <field name="user_id" options="{'no_create': True}"/>
+                            <field name="can_view"/>
+                            <field name="type_scope" widget="radio"/>
+                        </group>
+                        <group string="Phạm vi truy cập">
+                            <field name="region" invisible="type_scope != 'region'"/>
+                            <field name="store_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   invisible="type_scope != 'custom'"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu" special="save" class="btn-primary"/>
+                    <button string="Đóng" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

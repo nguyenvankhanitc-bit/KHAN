@@ -60,10 +60,15 @@ def _month_int(value):
 def _clean_shift_code(val):
     if not val:
         return ""
+    if isinstance(val, dict):
+        return _clean_shift_code(val.get("code") or "")
     if hasattr(val, "code") and val.code:
         return _clean_shift_code(val.code)
     token = re.split(r"[\s\(]", str(val).strip())[0]
-    return token.upper() if token else ""
+    token = token.upper() if token else ""
+    if token in WD_LABELS:
+        return ""
+    return token
 
 
 def _norm_code(value):
@@ -100,25 +105,56 @@ class LinkqMonthlyRoster(models.Model):
         raise UserError("Không được nhân bản bảng xếp ca.")
 
     def unlink(self):
-        if not self.env.su and not self.env.user.has_group("base.group_system"):
+        if self.env.context.get("skip_roster_unlink_check"):
+            return super().unlink()
+        if not self.env.su and not (
+            self.env.user.has_group("base.group_system")
+            or self.env.user.has_group("lug_phan_he.group_linkq_manager")
+            or self.env.user.has_group("lug_phan_he.group_phan_he_admin")
+        ):
             raise UserError("Bạn không có quyền xóa Bảng xếp ca sau khi đã tạo!")
         return super().unlink()
 
     @api.model
+    def action_hard_delete_permanent(self, schedule_ids, confirm_code):
+        if not self.env.user.has_group("base.group_system"):
+            raise AccessError("Chỉ có Quản trị viên tối cao (Administrator) mới có quyền xóa vĩnh viễn!")
+        code = (confirm_code or "").strip().upper()
+        if code not in ("DELETE", "XOA"):
+            raise UserError("Mã xác nhận không đúng! Vui lòng nhập 'DELETE' để xác nhận.")
+        ids = [int(i) for i in (schedule_ids or []) if i]
+        records = self.sudo().browse(ids).exists()
+        if not records:
+            raise UserError("Vui lòng chọn ít nhất một lịch ca cần xóa vĩnh viễn!")
+        count = len(records)
+        self.env["linkq.monthly.roster.line"].sudo().search([("roster_id", "in", records.ids)]).unlink()
+        records.with_context(active_test=False, skip_roster_unlink_check=True).sudo().unlink()
+        return {
+            "status": "success",
+            "message": "Đã xóa vĩnh viễn %s bảng lịch ca khỏi hệ thống!" % count,
+        }
+
+    @api.model
     def get_linkq_sidebar_stats(self):
         rosters = self.search([])
+        data = self.env["linkq.store.notification"].get_store_notification_cards("all")
+        counts = data.get("counts") or {}
         missing_stores = set()
         for rec in rosters:
             n = rec.days_in_month or 0
             morning = rec.lack_morning or []
             evening = rec.lack_evening or []
             limit = min(n, len(morning), len(evening))
-            if any((morning[i] or evening[i]) for i in range(limit)):
-                if rec.store_id:
-                    missing_stores.add(rec.store_id.id)
+            if rec.store_id and any((morning[i] or evening[i]) for i in range(limit)):
+                missing_stores.add(rec.store_id.id)
         return {
             "roster_count": len(rosters),
             "missing_store_count": len(missing_stores),
+            "notify_expiring": counts.get("expiring") or 0,
+            "notify_locked": counts.get("locked") or 0,
+            "notify_reminder": counts.get("reminder") or 0,
+            "notify_need": counts.get("need") or 0,
+            "notify_info": counts.get("info") or 0,
         }
 
     @api.model
@@ -198,6 +234,11 @@ class LinkqMonthlyRoster(models.Model):
     department_id = fields.Many2one("hr.department", string="Phòng ban", ondelete="set null")
     holiday_map = fields.Char(string="Ghi chú lễ", default=False)
     staff_overview_html = fields.Html(string="Tổng quan công", compute="_compute_staff_overview_html")
+    employee_summary_html = fields.Html(
+        string="Danh sách nhân sự",
+        compute="_compute_employee_summary_html",
+        sanitize=False,
+    )
     state = fields.Selection(
         [("draft", "Nháp"), ("confirmed", "Đã chốt")],
         default="draft",
@@ -231,7 +272,7 @@ class LinkqMonthlyRoster(models.Model):
             return []
         store_ids = self.env.user._linkq_allowed_hr_store_ids()
         if not store_ids:
-            return []
+            return [("id", "=", False)]
         return [("store_id", "in", store_ids)]
 
     def _linkq_store_forbidden(self):
@@ -377,6 +418,68 @@ class LinkqMonthlyRoster(models.Model):
             rec.staff_full_count = full
             rec.staff_part_count = part
             rec.staff_summary_text = f"{n} Nhân viên ({full} Full, {part} Part)" if n else "0 Nhân viên"
+
+    @api.depends(
+        "line_ids",
+        "line_ids.employee_id",
+        "line_ids.employee_name",
+        "line_ids.job_title",
+        "line_ids.hour_total",
+    )
+    def _compute_employee_summary_html(self):
+        table_style = (
+            "width:100%;border-collapse:collapse;font-size:12px;text-align:center;"
+            "border:1px solid #cbd5e1;table-layout:fixed;background:#fff"
+        )
+        th_title = (
+            "background-color:#fff;color:#111;font-weight:800;text-align:center;"
+            "padding:4px;border:1px solid #cbd5e1"
+        )
+        th_col = (
+            "background-color:#fff;color:#111;font-weight:600;text-align:center;"
+            "padding:4px;border:1px solid #cbd5e1"
+        )
+        td = "border:1px solid #cbd5e1;padding:4px 6px;background:#fff;color:#111"
+        for rec in self:
+            head = (
+                f"<table style='{table_style}'><thead>"
+                f"<tr><th colspan='4' style='{th_title}'>NHÂN SỰ</th></tr>"
+                f"<tr>"
+                f"<th style='{th_col};width:10%'>STT</th>"
+                f"<th style='{th_col};width:45%'>TÊN NV</th>"
+                f"<th style='{th_col};width:25%'>CHỨC VỤ</th>"
+                f"<th style='{th_col};width:20%'>TỔNG GIỜ</th>"
+                f"</tr></thead><tbody>"
+            )
+            if not rec.line_ids:
+                rec.employee_summary_html = (
+                    head
+                    + f"<tr><td colspan='4' style='{td};text-align:center;color:#64748b'>"
+                    "Chưa có nhân sự</td></tr></tbody></table>"
+                )
+                continue
+            rows = []
+            for idx, line in enumerate(rec.line_ids, start=1):
+                name = html.escape(
+                    line.employee_name
+                    or (line.employee_id.name if line.employee_id else "")
+                    or "N/A"
+                )
+                role = html.escape(line.job_title or "NV")
+                hours = line.hour_total or 0.0
+                if abs(hours - round(hours)) < 0.05:
+                    hours_txt = str(int(round(hours)))
+                else:
+                    hours_txt = f"{hours:.1f}".replace(".", ",")
+                rows.append(
+                    "<tr>"
+                    f"<td style='{td};text-align:center'>{idx}</td>"
+                    f"<td style='{td};text-align:left'>{name}</td>"
+                    f"<td style='{td};text-align:left'>{role}</td>"
+                    f"<td style='{td};text-align:right'>{hours_txt}</td>"
+                    "</tr>"
+                )
+            rec.employee_summary_html = head + "".join(rows) + "</tbody></table>"
 
     def _compute_line_count(self):
         for rec in self:
@@ -583,56 +686,123 @@ class LinkqMonthlyRoster(models.Model):
         try:
             from openpyxl import Workbook
             from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
         except ImportError as err:
             raise UserError("Cần thư viện openpyxl để xuất Excel.") from err
+
+        days = self.days_in_month or calendar.monthrange(self.year or 2026, _month_int(self.month))[1]
+        last_col = 4 + days
+        headers = self.weekday_json or []
+        header_fill = PatternFill("solid", fgColor="EDE9FE")
+        title_fill = PatternFill("solid", fgColor="5B21B6")
+        info_fill = PatternFill("solid", fgColor="F5F3FF")
+        thin_side = Side(style="thin", color="64748B")
+        med_side = Side(style="medium", color="4C1D95")
+        center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        left_mid = Alignment(horizontal="left", vertical="center", wrap_text=True)
+
+        def _box(r1, c1, r2, c2):
+            for r in range(r1, r2 + 1):
+                for c in range(c1, c2 + 1):
+                    cell = ws.cell(r, c)
+                    cell.border = Border(
+                        left=med_side if c == c1 else thin_side,
+                        right=med_side if c == c2 else thin_side,
+                        top=med_side if r == r1 else thin_side,
+                        bottom=med_side if r == r2 else thin_side,
+                    )
 
         wb = Workbook()
         ws = wb.active
         ws.title = f"T{_month_int(self.month):02d}.{str(self.year)[-2:]}"
-        thin = Border(
-            left=Side(style="thin", color="94A3B8"),
-            right=Side(style="thin", color="94A3B8"),
-            top=Side(style="thin", color="94A3B8"),
-            bottom=Side(style="thin", color="94A3B8"),
-        )
-        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=45)
-        ws.cell(1, 1, self.title_display or self.name)
-        ws.cell(1, 1).font = Font(bold=True, size=14)
-        ws.cell(1, 1).alignment = Alignment(horizontal="center")
 
-        headers = self.weekday_json or []
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=last_col)
+        title_cell = ws.cell(1, 1, (self.title_display or self.name or "").upper())
+        title_cell.font = Font(bold=True, size=16, color="FFFFFF")
+        title_cell.fill = title_fill
+        title_cell.alignment = Alignment(horizontal="center", vertical="center")
+        ws.row_dimensions[1].height = 28
+        for col in range(2, last_col + 1):
+            ws.cell(1, col).fill = title_fill
+
+        store_name = self.store_id.display_name or self.store_id.name or ""
+        region = self.region or ""
+        period = self.period_label or f"Tháng {_month_int(self.month)} / {self.year or ''}"
+        ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=last_col)
+        info_cell = ws.cell(
+            2,
+            1,
+            f"Cửa hàng: {store_name}    |    Khu vực: {region}    |    Kỳ xếp ca: {period}    |    Từ ngày 01 đến ngày {days}",
+        )
+        info_cell.font = Font(size=11, color="4C1D95")
+        info_cell.fill = info_fill
+        info_cell.alignment = left_mid
+        ws.row_dimensions[2].height = 20
+        for col in range(2, last_col + 1):
+            ws.cell(2, col).fill = info_fill
+
+        staff_bits = []
+        for idx, line in enumerate(self.line_ids, 1):
+            name = line.employee_name or (line.employee_id.name if line.employee_id else "")
+            staff_bits.append(f"{idx}. {name} ({line.job_title or 'NV'}) {line.hour_total or 0}h")
+        ws.merge_cells(start_row=3, start_column=1, end_row=3, end_column=last_col)
+        staff_cell = ws.cell(3, 1, "Nhân sự: " + ("  •  ".join(staff_bits) if staff_bits else "—"))
+        staff_cell.font = Font(size=10, color="334155")
+        staff_cell.fill = info_fill
+        staff_cell.alignment = left_mid
+        ws.row_dimensions[3].height = 18
+        for col in range(2, last_col + 1):
+            ws.cell(3, col).fill = info_fill
+
         labels = ["NHÂN VIÊN", "CHỨC VỤ", "MÃ ID", "CA"]
         for col, text in enumerate(labels, 1):
-            ws.cell(3, col, text)
-        for day in range(1, 32):
-            ws.cell(3, 4 + day, day)
+            cell = ws.cell(4, col, text)
+            cell.font = Font(bold=True, color="5B21B6")
+            cell.fill = header_fill
+            cell.alignment = center
+        for day in range(1, days + 1):
+            cell = ws.cell(4, 4 + day, day)
+            cell.font = Font(bold=True)
+            cell.fill = header_fill
+            cell.alignment = center
             info = headers[day - 1] if day - 1 < len(headers) else {}
-            ws.cell(4, 4 + day, info.get("wd") or "")
-        for idx, code in enumerate(COUNT_CODES):
-            ws.cell(4, 36 + idx, code)
-        ws.cell(3, 36, "CA")
-        ws.cell(3, 45, "Tổng giờ")
+            wd = ws.cell(5, 4 + day, info.get("wd") or "")
+            wd.font = Font(size=9, color="64748B")
+            wd.fill = header_fill
+            wd.alignment = center
+        for col in range(1, 5):
+            ws.cell(5, col).fill = header_fill
+            ws.cell(5, col).alignment = center
 
-        row = 5
+        row = 6
         for line in self.line_ids:
-            ws.cell(row, 1, line.employee_name or (line.employee_id.name if line.employee_id else ""))
-            ws.cell(row, 2, line.job_title)
-            ws.cell(row, 3, line.employee_code)
-            ws.cell(row, 4, "DỰ KIẾN")
-            ws.cell(row + 1, 4, "THỰC TẾ")
-            ws.cell(row + 2, 4, "SỐ GIỜ")
-            for day in range(1, 32):
+            ws.merge_cells(start_row=row, start_column=1, end_row=row + 2, end_column=1)
+            ws.merge_cells(start_row=row, start_column=2, end_row=row + 2, end_column=2)
+            ws.merge_cells(start_row=row, start_column=3, end_row=row + 2, end_column=3)
+            name_cell = ws.cell(row, 1, line.employee_name or (line.employee_id.name if line.employee_id else ""))
+            name_cell.alignment = Alignment(horizontal="left", vertical="center")
+            ws.cell(row, 2, line.job_title or "").alignment = center
+            ws.cell(row, 3, line.employee_code or "").alignment = center
+            ws.cell(row, 4, "DỰ KIẾN").alignment = center
+            ws.cell(row + 1, 4, "THỰC TẾ").alignment = center
+            ws.cell(row + 2, 4, "SỐ GIỜ").alignment = center
+            for day in range(1, days + 1):
                 key = str(day)
-                ws.cell(row, 4 + day, (line.plan_codes or {}).get(key, ""))
-                ws.cell(row + 1, 4 + day, (line.actual_codes or {}).get(key, ""))
-                ws.cell(row + 2, 4 + day, (line.hour_codes or {}).get(key, "") or None)
-            counts = line.count_plan or {}
-            for idx, code in enumerate(COUNT_CODES):
-                ws.cell(row, 36 + idx, counts.get(code, 0))
-            ws.cell(row, 45, line.plan_hours)
-            ws.cell(row + 1, 45, line.actual_hours)
-            ws.cell(row + 2, 45, line.hour_total)
+                hours_val = (line.hour_codes or {}).get(key, "") or None
+                ws.cell(row, 4 + day, (line.plan_codes or {}).get(key, "")).alignment = center
+                ws.cell(row + 1, 4 + day, (line.actual_codes or {}).get(key, "")).alignment = center
+                hour_cell = ws.cell(row + 2, 4 + day, hours_val)
+                hour_cell.alignment = center
             row += 3
+
+        last_row = max(row - 1, 5)
+        _box(1, 1, last_row, last_col)
+        ws.column_dimensions["A"].width = 22
+        ws.column_dimensions["B"].width = 12
+        ws.column_dimensions["C"].width = 10
+        ws.column_dimensions["D"].width = 12
+        for col in range(5, last_col + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 6
 
         buf = io.BytesIO()
         wb.save(buf)
@@ -646,7 +816,7 @@ class LinkqMonthlyRoster(models.Model):
         return {
             "type": "ir.actions.act_url",
             "url": f"/web/content/{attachment.id}?download=true",
-            "target": "self",
+            "target": "new",
         }
 
 
@@ -675,6 +845,8 @@ class LinkqMonthlyRosterLine(models.Model):
     employee_code = fields.Integer(string="ID")
     plan_codes = fields.Json(string="Dự kiến", default=lambda self: {})
     actual_codes = fields.Json(string="Chính thức", default=lambda self: {})
+    plan_notes = fields.Json(string="Ghi chú dự kiến", default=lambda self: {})
+    actual_notes = fields.Json(string="Ghi chú thực tế", default=lambda self: {})
     hour_codes = fields.Json(compute="_compute_counts", store=True)
     count_plan = fields.Json(compute="_compute_counts", store=True)
     count_actual = fields.Json(compute="_compute_counts", store=True)
@@ -687,6 +859,25 @@ class LinkqMonthlyRosterLine(models.Model):
         "unique(roster_id, employee_id)",
         "Mỗi nhân viên chỉ có một dòng trong bảng xếp ca tháng.",
     )
+
+    def _notes_map(self, payload):
+        data = payload or {}
+        result = {}
+        for i in range(1, 32):
+            item = data.get(str(i)) or data.get(i)
+            if not isinstance(item, dict):
+                continue
+            content = (item.get("content") or "").strip()
+            title = (item.get("title") or "").strip()
+            if not content and not title:
+                continue
+            result[str(i)] = {
+                "title": title,
+                "content": content,
+                "author": (item.get("author") or "").strip(),
+                "updated_at": item.get("updated_at") or "",
+            }
+        return result
 
     def _code_map(self, payload):
         data = payload or {}
@@ -706,6 +897,10 @@ class LinkqMonthlyRosterLine(models.Model):
                 vals["plan_codes"] = self._code_map(vals["plan_codes"])
             if "actual_codes" in vals:
                 vals["actual_codes"] = self._code_map(vals["actual_codes"])
+            if "plan_notes" in vals:
+                vals["plan_notes"] = self._notes_map(vals["plan_notes"])
+            if "actual_notes" in vals:
+                vals["actual_notes"] = self._notes_map(vals["actual_notes"])
         return super().create(vals_list)
 
     def write(self, vals):
@@ -714,6 +909,10 @@ class LinkqMonthlyRosterLine(models.Model):
             vals["plan_codes"] = self._code_map(vals["plan_codes"])
         if "actual_codes" in vals:
             vals["actual_codes"] = self._code_map(vals["actual_codes"])
+        if "plan_notes" in vals:
+            vals["plan_notes"] = self._notes_map(vals["plan_notes"])
+        if "actual_notes" in vals:
+            vals["actual_notes"] = self._notes_map(vals["actual_notes"])
         return super().write(vals)
 
     def read(self, fields=None, load="_classic_read"):

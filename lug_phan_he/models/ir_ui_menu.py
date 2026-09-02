@@ -9,7 +9,6 @@ SERVICE_ROOT_XMLIDS = {
     "lug_phan_he.menu_phan_he_attendance_root": "attendance",
     "lug_phan_he.menu_phan_he_server_root": "server",
     "lug_phan_he.menu_phan_he_linkq_nb_root": "linkq_nb",
-    "lug_phan_he.menu_phan_he_linkq_hrm_root": "linkq_hrm",
     "lug_phan_he.menu_phan_he_config_root": "config",
 }
 
@@ -20,6 +19,9 @@ LINKQ_CHILD_XMLIDS = {
     "lug_phan_he.menu_linkq_shift_schedule_dtt": "schedule_dtt",
     "lug_phan_he.menu_phan_he_shift_roster": "schedule_main",
     "lug_phan_he.menu_phan_he_work_shift": "schedule_symbol",
+    "lug_phan_he.menu_linkq_hr_root": "hr_group",
+    "lug_phan_he.menu_linkq_employee_create": "hr_add",
+    "lug_phan_he.menu_linkq_employee_list": "hr_list",
 }
 
 
@@ -28,6 +30,12 @@ class IrUiMenu(models.Model):
 
     def _load_menus_blacklist(self):
         res = super()._load_menus_blacklist()
+        try:
+            return self._phan_he_blacklist_menus(res)
+        except Exception:
+            return res
+
+    def _phan_he_blacklist_menus(self, res):
         if self.env.su:
             return res
         user = self.env.user

@@ -2,19 +2,24 @@
 
 .o_monthly_matrix_wrap {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
 }
 
-.o_monthly_matrix_scroll {
-    overflow: auto;
-    max-height: calc(100vh - 220px);
-    border: 1px solid #94a3b8;
-    background: #fff;
+.o_monthly_matrix_scroll,
+.o_mm_hscroll {
+    overflow-x: scroll !important;
+    overflow-y: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
 }
 
 .o_monthly_matrix_table {
     border-collapse: separate;
     border-spacing: 0;
-    min-width: 1680px;
+    width: max-content;
+    min-width: 2200px;
     font-size: 12px;
 }
 
@@ -125,29 +130,15 @@ thead .o_mm_sticky {
 
 .o_mm_cell {
     position: relative;
-    overflow: visible;
+    overflow: hidden;
     pointer-events: auto !important;
     user-select: auto;
+    cursor: pointer;
+    height: 28px;
 }
 
 .o_mm_code_select {
-    display: block;
-    width: 100%;
-    height: 28px;
-    border: 0;
-    margin: 0;
-    padding: 0 1px;
-    background: transparent;
-    text-align: center;
-    text-align-last: center;
-    font-weight: 800;
-    font-size: 11px;
-    line-height: 28px;
-    cursor: pointer;
-    pointer-events: auto !important;
-    appearance: auto;
-    -webkit-appearance: menulist;
-    color: inherit;
+    display: none !important;
 }
 
 .o_mm_cell.is-hour {
@@ -186,7 +177,8 @@ th.is-holiday {
 
 th.is-weekend,
 .o_mm_wd.is-weekend {
-    background: #DCFCE7 !important;
+    background: #ffedd5 !important;
+    color: #c2410c !important;
 }
 
 th.is-sunday,
@@ -257,8 +249,9 @@ td.is-invalid {
 .o_mm_count_val,
 .o_mm_total_val {
     font-weight: 700;
-    min-width: 48px;
-    padding: 0 4px;
+    min-width: 52px;
+    max-width: 52px;
+    padding: 0 2px;
 }
 
 .o_mm_total,
@@ -415,56 +408,190 @@ td.is-invalid {
     border: 1px solid #c7d2fe;
 }
 
-.o_monthly_roster_form .oe_title {
+.o_monthly_roster_form .oe_title,
+.o_mm_title_block {
     display: block;
+    width: 100%;
+    text-align: center;
+    margin: 4px 0 20px;
 }
 
 .o_mm_sheet_title {
-    color: #1e293b;
-    font-size: 24px;
-    letter-spacing: -0.3px;
+    display: block;
+    width: 100%;
+    margin: 0;
+    color: #4c1d95;
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
+    text-align: center;
 
     .o_field_widget,
-    .o_field_char {
-        font-size: inherit;
-        font-weight: 800;
-        color: #4c1d95;
+    .o_field_char,
+    span,
+    input {
+        display: block;
         width: 100%;
         max-width: 100%;
-    }
-
-    input {
-        text-align: center;
-        font-weight: 800;
+        font-size: inherit;
+        font-weight: 800 !important;
+        color: #4c1d95;
+        text-align: center !important;
         border: 0;
         background: transparent;
+        justify-content: center;
     }
 }
 
 .o_mm_info_strip {
-    border: 1px solid #e9d5ff;
-    border-radius: 12px;
-    background: #faf5ff;
+    border: 1px solid #ddd6fe;
+    border-radius: 14px;
+    background: #fafafa;
     overflow: hidden;
+    margin-bottom: 20px;
 }
 
-.o_mm_info_strip_head {
-    padding: 8px 16px;
+.o_mm_info_strip_head,
+.o_mm_section_head {
+    padding: 10px 16px;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-align: center;
+    color: #5b21b6;
+    background: #ede9fe;
+    border-bottom: 1px solid #ddd6fe;
+}
+
+.o_mm_info_3col {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    width: 100%;
+    margin: 0 !important;
+}
+
+.o_mm_info_3col > .o_mm_info_col {
+    padding: 12px 14px;
+    min-width: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+.o_mm_info_col_store,
+.o_mm_info_col_period {
+    flex: 0 0 25%;
+    max-width: 25%;
+    text-align: center;
+}
+
+.o_mm_info_col_staff {
+    flex: 0 0 50%;
+    max-width: 50%;
+    text-align: left;
+}
+
+.o_mm_info_3col > .o_mm_info_col + .o_mm_info_col {
+    border-left: 2px solid #e9ecef;
+}
+
+.o_mm_info_store_name {
+    font-size: 20px;
+    font-weight: 800;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.o_mm_info_store_name .o_field_widget {
+    font-size: 20px;
+    font-weight: 800;
+    justify-content: center;
+}
+
+.o_mm_info_region {
+    color: #64748b;
+    font-size: 13px;
+}
+
+.o_mm_info_region .o_field_widget {
+    display: inline;
+    font-weight: 700;
+    color: #334155;
+}
+
+.o_mm_period_inline {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+.o_mm_period_inline .o_field_widget,
+.o_mm_period_inline select,
+.o_mm_period_inline input {
+    width: auto !important;
     font-weight: 800;
     color: #5b21b6;
-    border-bottom: 1px solid #ede9fe;
+    font-size: 16px;
+}
+
+.o_mm_period_slash {
+    font-weight: 800;
+    color: #94a3b8;
+}
+
+.o_mm_info_col_staff .o_form_label,
+.o_mm_info_col_staff .o_field_widget > label {
+    display: none !important;
+}
+
+.o_mm_info_col_staff {
+    text-align: left;
+    max-height: none;
+    overflow: visible;
+}
+
+.o_mm_info_col_staff .o_field_html,
+.o_mm_info_col_staff .o_field_widget,
+.o_mm_info_col_staff .o_readonly {
+    text-align: left;
+    width: 100% !important;
+    max-width: 100%;
+    display: block;
+}
+
+.o_mm_info_col_staff iframe,
+.o_mm_info_col_staff .o_field_html .note-editable {
+    min-height: 0 !important;
+    height: auto !important;
+    border: 0 !important;
+}
+
+.o_mm_info_col_staff table th {
+    background: #fff !important;
+    color: #111 !important;
+    border-color: #cbd5e1 !important;
 }
 
 .o_mm_info_strip_body {
     display: grid;
-    grid-template-columns: 1.2fr 1.15fr 1.15fr 0.8fr;
-    gap: 0;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    padding: 14px;
 }
 
 .o_mm_info_col {
-    padding: 12px 16px;
+    padding: 12px 14px;
     min-width: 0;
+    background: #fff;
+    border: 1px solid #e9d5ff;
+    border-radius: 10px;
 }
 
 .o_mm_info_strip_body > .o_inner_group,
@@ -516,13 +643,15 @@ td.is-invalid {
     font-weight: 800;
     color: #64748b;
     letter-spacing: 0.04em;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
+    text-align: center;
 }
 
 .o_mm_info_staff {
     font-weight: 800;
     color: #6d28d9;
     font-size: 15px;
+    text-align: center;
 }
 
 .o_mm_region_badge,
@@ -534,4 +663,48 @@ td.is-invalid {
 
 .o_mm_info_col .o_field_widget {
     width: 100%;
+}
+
+.o_form_view:has(.o_monthly_roster_form) .o_form_sheet,
+.o_form_view:has(.o_monthly_roster_form) .o_form_sheet_bg,
+.o_monthly_roster_form {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.o_mm_grid_section .o_field_x2many,
+.o_mm_grid_section .o_field_one2many {
+    max-width: 100%;
+    min-width: 0;
+    display: block;
+}
+
+.o_mm_grid_section {
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #fff;
+    margin-bottom: 20px;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.o_mm_grid_section .o_mm_toolbar {
+    border-left: 0;
+    border-right: 0;
+    border-top: 0;
+}
+
+.o_mm_grid_section .o_monthly_matrix_scroll {
+    border-left: 0;
+    border-right: 0;
+    border-bottom: 0;
+}
+
+.o_mm_footer_cards {
+    margin-top: 4px;
+}
+
+.o_form_view:has(.o_monthly_roster_form) .o_control_panel .o_statusbar_status {
+    display: none !important;
 }

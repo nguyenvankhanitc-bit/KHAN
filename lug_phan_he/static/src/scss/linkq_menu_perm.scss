@@ -1,0 +1,43 @@
+.o_linkq_menu_perm_tree {
+    thead th {
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #64748b !important;
+        background: #f8fafc !important;
+    }
+
+    .o_data_row td {
+        vertical-align: middle;
+        padding-top: 8px;
+        padding-bottom: 8px;
+    }
+
+    .o_data_cell:has(.o-checkbox),
+    .o_data_cell:has(.form-check-input),
+    .o_boolean_cell {
+        text-align: center;
+    }
+
+    .o_linkq_menu_group {
+        font-weight: 700;
+        color: #1e293b;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+    }
+
+    .o_linkq_menu_group .fa-folder {
+        color: #7c3aed;
+        font-size: 1.05rem;
+    }
+
+    .o_linkq_menu_child {
+        display: inline-block;
+        padding-left: 28px;
+        color: #334155;
+        white-space: nowrap;
+    }
+}

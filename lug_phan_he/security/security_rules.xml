@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Phạm vi: User — công ty hiện tại. Lọc cửa hàng HR nằm ở Python (_linkq_store_scope_domain). -->
+    <record id="rule_linkq_roster_user_company" model="ir.rule">
+        <field name="name">Bảng xếp ca: User theo công ty</field>
+        <field name="model_id" ref="model_linkq_monthly_roster"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_user'))]"/>
+    </record>
+    <record id="rule_linkq_roster_line_user_company" model="ir.rule">
+        <field name="name">Dòng bảng xếp ca: User theo công ty</field>
+        <field name="model_id" ref="model_linkq_monthly_roster_line"/>
+        <field name="domain_force">[('roster_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_user'))]"/>
+    </record>
+
+    <record id="rule_store_user_shift_schedule" model="ir.rule">
+        <field name="name">Store User: chỉ xem lịch ca cửa hàng mình</field>
+        <field name="model_id" ref="model_linkq_monthly_roster"/>
+        <field name="domain_force">[('store_id', 'in', user.linkq_store_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_user')), (4, ref('group_linkq_schedule_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_store_user_shift_schedule_line" model="ir.rule">
+        <field name="name">Store User: chỉ dòng lịch ca cửa hàng mình</field>
+        <field name="model_id" ref="model_linkq_monthly_roster_line"/>
+        <field name="domain_force">[('roster_id.store_id', 'in', user.linkq_store_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_user')), (4, ref('group_linkq_schedule_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <!-- Phạm vi: Manager — toàn bộ bản ghi công ty (OR với rule User vì Manager implied User). -->
+    <record id="rule_linkq_roster_manager_all" model="ir.rule">
+        <field name="name">Bảng xếp ca: Manager toàn hệ thống (công ty)</field>
+        <field name="model_id" ref="model_linkq_monthly_roster"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_manager'))]"/>
+    </record>
+    <record id="rule_linkq_roster_line_manager_all" model="ir.rule">
+        <field name="name">Dòng bảng xếp ca: Manager toàn hệ thống (công ty)</field>
+        <field name="model_id" ref="model_linkq_monthly_roster_line"/>
+        <field name="domain_force">[('roster_id.company_id', 'in', company_ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_manager'))]"/>
+    </record>
+
+    <record id="rule_store_user_linkq_employee" model="ir.rule">
+        <field name="name">Nhân sự: User chỉ cửa hàng của mình</field>
+        <field name="model_id" ref="model_linkq_employee"/>
+        <field name="domain_force">[('store_id', 'in', user.linkq_store_ids.ids)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_user')), (4, ref('group_linkq_schedule_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+    <record id="rule_linkq_employee_manager_all" model="ir.rule">
+        <field name="name">Nhân sự LinkQ: Manager toàn hệ thống</field>
+        <field name="model_id" ref="model_linkq_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_linkq_manager'))]"/>
+    </record>
+    <record id="rule_linkq_employee_admin_all" model="ir.rule">
+        <field name="name">Nhân sự: Administrator xem toàn bộ</field>
+        <field name="model_id" ref="model_linkq_employee"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('base.group_system'))]"/>
+    </record>
+</odoo>

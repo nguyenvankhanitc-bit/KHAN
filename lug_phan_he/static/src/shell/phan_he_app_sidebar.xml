@@ -44,33 +44,72 @@
                     <span class="sidebar-ico ico-violet"><i class="fa fa-link"/></span>
                     <span>LinkQ ERP</span>
                 </button>
-                <button type="button" class="sidebar-row" t-if="state.visible.linkq_hrm" t-on-click="onHrm">
-                    <span class="sidebar-ico ico-pink"><i class="fa fa-users"/></span>
-                    <span>LinkQ HRM</span>
-                </button>
             </nav>
 
             <nav class="o_phan_he_sidebar_nav linkq-subpanel-container" t-if="showLinkqPanel">
                 <div class="linkq-module-chip">LINKQ ERP</div>
 
-                <div class="subpanel-group">
+                <div class="subpanel-group" t-if="menuCan('dashboard') or state.visible.linkqRoster or state.visible.linkqRosterCreate or state.visible.linkqShiftCode or menuCan('guide_docs')">
                     <div class="group-header">Công việc</div>
-                    <button type="button" class="subpanel-item" t-if="state.visible.linkqRoster" t-att-class="isActive('roster_new') ? 'active' : ''" t-on-click="onRosterNew">
+                    <button type="button" class="subpanel-item o_linkq_menu_dashboard" t-if="menuCan('dashboard')" t-att-class="isActive('dashboard') || isActive('store_dash') ? 'active' : ''" t-on-click="onDashboard">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-bar-chart"/></span>
+                        <span class="item-title">Dashboard</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqRoster" t-att-class="isActive('today_shift') ? 'active' : ''" t-on-click="onTodayShift">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-calendar-check-o"/></span>
+                        <span class="item-title">Lịch ca hôm nay</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqRosterCreate" t-att-class="isActive('roster_new') ? 'active' : ''" t-on-click="onRosterNew">
                         <span class="item-icon-box bg-purple"><i class="fa fa-plus"/></span>
                         <span class="item-title">Thêm lịch ca</span>
                     </button>
                     <button type="button" class="subpanel-item" t-if="state.visible.linkqRoster" t-att-class="isActive('roster') ? 'active' : ''" t-on-click="onRoster">
-                        <span class="item-icon-box bg-teal"><i class="fa fa-window-maximize"/></span>
+                        <span class="item-icon-box bg-teal"><i class="fa fa-calendar"/></span>
                         <span class="item-title">Danh sách lịch ca</span>
-                        <span t-if="state.badges.rosterCount" class="sataco-badge sataco-badge-blue" t-esc="state.badges.rosterCount"/>
-                    </button>
-                    <button type="button" class="subpanel-item" t-att-class="isActive('dashboard') ? 'active' : ''" t-on-click="onDashboard">
-                        <span class="item-icon-box bg-purple"><i class="fa fa-bar-chart"/></span>
-                        <span class="item-title">Dashboard lịch ca</span>
                     </button>
                     <button type="button" class="subpanel-item" t-if="state.visible.linkqShiftCode" t-att-class="isActive('work_shift') ? 'active' : ''" t-on-click="onWorkShift">
                         <span class="item-icon-box bg-blue"><i class="fa fa-clock-o"/></span>
                         <span class="item-title">Ký hiệu công</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('guide_docs')" t-on-click="onOpenGuideDocuments">
+                        <span class="item-icon-box bg-info-light"><i class="fa fa-book"/></span>
+                        <span class="item-title">Tài liệu hướng dẫn</span>
+                    </button>
+                </div>
+
+                <div class="subpanel-group" t-if="state.visible.linkqHrAdd or state.visible.linkqHrList">
+                    <div class="group-header">Nhân sự</div>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqHrAdd" t-att-class="isActive('employee_new') ? 'active' : ''" t-on-click="onEmployeeNew">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-user-plus"/></span>
+                        <span class="item-title">Thêm nhân sự</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqHrList" t-att-class="isActive('employees') ? 'active' : ''" t-on-click="onEmployees">
+                        <span class="item-icon-box bg-teal"><i class="fa fa-users"/></span>
+                        <span class="item-title">Danh sách nhân sự</span>
+                    </button>
+                </div>
+
+                <div class="subpanel-group lq-notify-card" t-if="menuCan('notify_group') or menuCan('notify_expiring') or menuCan('notify_reminder') or menuCan('notify_locked') or menuCan('notify_info')">
+                    <div class="group-header">Thông báo</div>
+                    <button type="button" class="subpanel-item" t-if="menuCan('notify_expiring')" t-on-click="onNotifyExpiring">
+                        <span class="item-icon-box bg-warning-light"><i class="fa fa-bell-o"/></span>
+                        <span class="item-title">Sắp khóa</span>
+                        <span t-if="state.badges.notifyExpiring" class="sataco-badge sataco-badge-warn" t-esc="state.badges.notifyExpiring"/>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('notify_reminder')" t-on-click="onNotifyReminder">
+                        <span class="item-icon-box bg-info-light"><i class="fa fa-clock-o"/></span>
+                        <span class="item-title">Nhắc nhở</span>
+                        <span t-if="state.badges.notifyReminder" class="sataco-badge sataco-badge-info" t-esc="state.badges.notifyReminder"/>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('notify_locked')" t-on-click="onNotifyLocked">
+                        <span class="item-icon-box bg-danger-light"><i class="fa fa-lock"/></span>
+                        <span class="item-title">Đã khóa</span>
+                        <span t-if="state.badges.notifyLocked" class="sataco-badge sataco-badge-red" t-esc="state.badges.notifyLocked"/>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('notify_info')" t-on-click="onNotifyInfo">
+                        <span class="item-icon-box bg-success-light"><i class="fa fa-info-circle"/></span>
+                        <span class="item-title">Thông tin</span>
+                        <span t-if="state.badges.notifyInfo" class="sataco-badge sataco-badge-green" t-esc="state.badges.notifyInfo"/>
                     </button>
                 </div>
 
@@ -90,18 +129,39 @@
                     </button>
                 </div>
 
-                <div class="subpanel-group">
+                <div class="subpanel-group" t-if="menuCan('report_group') or menuCan('report_summary') or menuCan('report_missing')">
                     <div class="group-header">Báo cáo &amp; giám sát</div>
-                    <button type="button" class="subpanel-item" t-att-class="isActive('report') ? 'active' : ''" t-on-click="onShiftReport">
+                    <button type="button" class="subpanel-item" t-if="menuCan('report_summary')" t-att-class="isActive('report') ? 'active' : ''" t-on-click="onShiftReport">
                         <span class="item-icon-box bg-blue"><i class="fa fa-line-chart"/></span>
                         <span class="item-title">Báo cáo tổng hợp</span>
                     </button>
-                    <button type="button" class="subpanel-item" t-att-class="isActive('missing') ? 'active' : ''" t-on-click="onMissingShifts">
+                    <button type="button" class="subpanel-item" t-if="menuCan('report_missing')" t-att-class="isActive('missing') ? 'active' : ''" t-on-click="onMissingShifts">
                         <span class="item-icon-box bg-danger-solid"><i class="fa fa-exclamation-triangle"/></span>
                         <span class="item-title">Cửa hàng thiếu ca</span>
                         <span t-if="state.badges.missingCount" class="sataco-badge sataco-badge-red" t-esc="state.badges.missingCount"/>
                     </button>
                 </div>
+
+                <div class="subpanel-group is-sys" t-if="state.showSystemSettings">
+                    <div class="group-header">Hệ thống &amp; cài đặt</div>
+                    <button type="button" class="subpanel-item" t-if="menuCan('system_lock')" t-att-class="isActive('lock_settings') ? 'active' : ''" t-on-click="onLockSettings">
+                        <span class="item-icon-box bg-purple"><i class="fa fa-lock"/></span>
+                        <span class="item-title">Cài đặt khóa lịch ca</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('system_access')" t-att-class="isActive('access') ? 'active' : ''" t-on-click="onAccessRoles">
+                        <span class="item-icon-box bg-blue"><i class="fa fa-shield"/></span>
+                        <span class="item-title">Phân quyền &amp; Vai trò</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="state.visible.linkqShiftCode" t-att-class="isActive('work_shift') ? 'active' : ''" t-on-click="onWorkShift">
+                        <span class="item-icon-box bg-orange"><i class="fa fa-circle-o"/></span>
+                        <span class="item-title">Cấu hình ca &amp; Ký hiệu</span>
+                    </button>
+                    <button type="button" class="subpanel-item" t-if="menuCan('system_access')" t-att-class="isActive('audit_log') ? 'active' : ''" t-on-click="onAuditLog">
+                        <span class="item-icon-box bg-gray"><i class="fa fa-file-text-o"/></span>
+                        <span class="item-title">Nhật ký hệ thống (Audit Log)</span>
+                    </button>
+                </div>
+
             </nav>
 
             <div t-if="!state.collapsed"

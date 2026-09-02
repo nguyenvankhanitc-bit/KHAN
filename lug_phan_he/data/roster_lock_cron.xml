@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="ir_cron_roster_auto_lock" model="ir.cron">
+        <field name="name">Tự động khóa bảng xếp ca</field>
+        <field name="model_id" ref="model_linkq_monthly_roster"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_process_roster_locks()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="ir_cron_purge_lock_events" model="ir.cron">
+        <field name="name">Dọn nhật ký khóa lịch ca</field>
+        <field name="model_id" ref="model_linkq_roster_lock_event"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_purge_lock_events()</field>
+        <field name="user_id" ref="base.user_root"/>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="nextcall">2026-09-02 02:00:00</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

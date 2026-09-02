@@ -64,9 +64,9 @@
                 <filter name="grp_sang" string="SÁNG" domain="[('shift_group', '=', 'SANG')]"/>
                 <filter name="grp_chieu" string="CHIỀU" domain="[('shift_group', '=', 'CHIEU')]"/>
                 <filter name="grp_off" string="OFF" domain="[('shift_group', '=', 'OFF')]"/>
-                <group>
+                
                     <filter name="group_shift" string="Nhóm ca" context="{'group_by': 'shift_group'}"/>
-                </group>
+                
             </search>
         </field>
     </record>

@@ -261,6 +261,7 @@
               name="LinkQ HRM"
               parent="menu_phan_he_root"
               sequence="40"
+              active="False"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_linkq_hrm_dashboard"
@@ -297,9 +298,22 @@
     <menuitem id="menu_phan_he_linkq_nb_dashboard"
               name="Dashboard"
               parent="menu_phan_he_linkq_nb_root"
-              action="action_phan_he_dashboard_linkq_nb"
+              action="action_linkq_store_dashboard"
               sequence="1"
               active="True"/>
+
+    <menuitem id="menu_linkq_today_shift"
+              name="Lịch ca hôm nay"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_today_shift"
+              sequence="15"/>
+
+    <menuitem id="menu_linkq_store_dashboard"
+              name="Dashboard"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_store_dashboard"
+              sequence="2"
+              active="False"/>
 
     <menuitem id="menu_phan_he_linkq_nb_list"
               name="Hợp đồng"
@@ -337,6 +351,32 @@
               parent="menu_phan_he_linkq_nb_root"
               action="action_linkq_shift_code"
               sequence="30"/>
+
+    <menuitem id="menu_linkq_hr_root"
+              name="Nhân sự"
+              parent="menu_phan_he_linkq_nb_root"
+              sequence="20"/>
+
+    <menuitem id="menu_linkq_employee_create"
+              name="Thêm nhân sự"
+              parent="menu_linkq_hr_root"
+              action="action_linkq_employee_create"
+              sequence="1"/>
+
+    <menuitem id="menu_linkq_employee_list"
+              name="Danh sách nhân sự"
+              parent="menu_linkq_hr_root"
+              action="action_linkq_employee_list"
+              sequence="2"/>
+
+    <delete model="ir.ui.menu" id="menu_linkq_roster_notifications"/>
+    <delete model="ir.actions.client" id="action_linkq_roster_notifications"/>
+
+    <menuitem id="menu_linkq_shift_summary_report"
+              name="Báo cáo tổng hợp"
+              parent="menu_phan_he_linkq_nb_root"
+              action="action_linkq_shift_summary_report"
+              sequence="32"/>
 
     <menuitem id="menu_phan_he_linkq_nb_entry"
               name="Nhập liệu"
@@ -443,9 +483,16 @@
     <menuitem id="menu_phan_he_access"
               name="Phân quyền"
               parent="menu_phan_he_config_root"
-              action="action_phan_he_module_access"
+              action="action_linkq_permission_matrix"
               sequence="40"
-              groups="lug_phan_he.group_phan_he_service_manager"/>
+              groups="base.group_system"/>
+
+    <menuitem id="menu_phan_he_roster_lock_settings"
+              name="Cài đặt khóa lịch ca"
+              parent="menu_phan_he_config_root"
+              action="action_linkq_roster_lock_settings"
+              sequence="35"
+              groups="base.group_system,lug_phan_he.group_phan_he_admin,lug_phan_he.group_phan_he_lock_settings"/>
 
     <menuitem id="menu_phan_he_service_type"
               name="Loại dịch vụ"

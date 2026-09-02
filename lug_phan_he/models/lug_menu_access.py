@@ -4,7 +4,7 @@ from odoo import api, models
 from odoo.exceptions import AccessError
 from odoo.osv import expression
 
-from .lug_menu_permission import OP_TO_FLAG
+from .lug_menu_permission import MENU_PARENT, OP_TO_FLAG
 
 
 REGION_TO_MENU = {
@@ -29,6 +29,7 @@ class LugMenuAccessMixin(models.AbstractModel):
             or user.has_group("base.group_system")
             or user.has_group("lug_phan_he.group_phan_he_admin")
             or user.has_group("lug_phan_he.group_phan_he_service_manager")
+            or user.has_group("lug_phan_he.group_linkq_manager")
         )
 
     def _linkq_matrix_applies(self):
@@ -86,7 +87,10 @@ class LugMenuAccessMixin(models.AbstractModel):
             ):
                 return True
             return False
-        return bool(row.get(flag))
+        return bool(row.get(flag)) or (
+            bool(MENU_PARENT.get(menu_key))
+            and bool((self._linkq_menu_rights().get(MENU_PARENT.get(menu_key)) or {}).get(flag))
+        )
 
     def _linkq_model_allows(self, operation):
         keys = self._linkq_keys_for_model()
@@ -126,21 +130,28 @@ class LugMenuAccessMixin(models.AbstractModel):
         )
 
     def _check_access(self, operation):
-        if self.env.su or self._linkq_bypass() or not self._linkq_matrix_applies():
+        if self.env.su or self._linkq_bypass():
             return super()._check_access(operation)
 
-        if not self._linkq_model_allows(operation):
-            return self, lambda: self._linkq_access_error(operation, self)
+        if self._linkq_matrix_applies():
+            if not self._linkq_model_allows(operation):
+                return self, lambda: self._linkq_access_error(operation, self)
 
-        forbidden = self.browse()
-        for rec in self:
-            if not isinstance(rec.id, int):
-                continue
-            key = self._linkq_key_for_record(rec)
-            if key and not self._linkq_flag(key, operation):
-                forbidden |= rec
-        if forbidden:
-            return forbidden, lambda: self._linkq_access_error(operation, forbidden)
+            forbidden = self.browse()
+            for rec in self:
+                if not isinstance(rec.id, int):
+                    continue
+                key = self._linkq_key_for_record(rec)
+                if key and not self._linkq_flag(key, operation):
+                    forbidden |= rec
+            if forbidden:
+                return forbidden, lambda: self._linkq_access_error(operation, forbidden)
+            return super()._check_access(operation)
+
+        if self._name in ("linkq.monthly.roster", "linkq.monthly.roster.line") and not self.env.user.has_group(
+            "lug_phan_he.group_linkq_schedule_user"
+        ):
+            return self, lambda: self._linkq_access_error(operation, self)
         return super()._check_access(operation)
 
     @api.model

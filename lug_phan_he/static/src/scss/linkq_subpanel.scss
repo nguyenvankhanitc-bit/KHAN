@@ -134,6 +134,7 @@
         &.bg-orange { background-color: #f97316; }
         &.bg-green { background-color: #10b981; }
         &.bg-danger-solid { background-color: #dc2626; }
+        &.bg-gray { background-color: #64748b; }
     }
 
     .item-title {
@@ -161,6 +162,71 @@
 
     .sataco-badge-blue { background: #2563eb; }
     .sataco-badge-red { background: #dc2626; }
+    .sataco-badge-warn { background: #ea580c; }
+    .sataco-badge-info { background: #2563eb; }
+    .sataco-badge-green { background: #10b981; }
+
+    .lq-notify-card {
+        .item-icon-box.bg-warning-light {
+            background-color: #fff7ed;
+            i { color: #ea580c !important; }
+        }
+        .item-icon-box.bg-danger-light {
+            background-color: #fef2f2;
+            i { color: #dc2626 !important; }
+        }
+        .item-icon-box.bg-info-light {
+            background-color: #eff6ff;
+            i { color: #2563eb !important; }
+        }
+        .item-icon-box.bg-success-light {
+            background-color: #ecfdf5;
+            i { color: #10b981 !important; }
+        }
+    }
+
+    .lq-guide-card {
+        background-color: #f5f6ff;
+        border: 1px dashed #c7d2fe;
+        border-radius: 14px;
+        padding: 12px;
+
+        .guide-title {
+            color: #4338ca;
+            font-size: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            margin-bottom: 6px;
+        }
+
+        .guide-desc {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.4;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+
+        .btn-guide {
+            background-color: #ffffff;
+            color: #4f46e5;
+            border: 1px solid #c7d2fe;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 5px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .btn-guide:hover {
+            background-color: #4f46e5;
+            color: #ffffff;
+        }
+    }
 }
 
 html.o_phan_he_sidebar_is_collapsed .linkq-subpanel-container,
@@ -195,6 +261,10 @@ html.o_phan_he_sidebar_is_collapsed .linkq-subpanel-container,
 
     .item-icon-box {
         margin-right: 0;
+    }
+
+    .lq-guide-card {
+        display: none !important;
     }
 }
 

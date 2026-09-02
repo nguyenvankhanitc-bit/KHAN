@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="email_template_weekly_roster" model="mail.template">
+        <field name="name">Lịch ca tháng (LinkQ)</field>
+        <field name="model_id" ref="model_linkq_monthly_roster"/>
+        <field name="subject">{{ object.email_subject or object.name }}</field>
+        <field name="email_from">{{ object.sender_email or user.email or 'no-reply@linkq.vn' }}</field>
+        <field name="email_to">{{ object.admin_email }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Segoe UI,Arial,sans-serif;font-size:14px;color:#1e293b;">
+                <p>Kính gửi Anh/Chị,</p>
+                <p>Hệ thống gửi bảng xếp ca <strong t-out="object.name or ''"/>.</p>
+                <ul>
+                    <li>Cửa hàng: <t t-out="object.store_id.display_name or ''"/></li>
+                    <li>Kỳ: <t t-out="object.period_label or ''"/></li>
+                    <li>Người gửi: <t t-out="object.sender_email or ''"/></li>
+                </ul>
+                <p>Vui lòng xem tệp đính kèm (nếu có) hoặc mở bảng xếp ca trên hệ thống.</p>
+                <p>Trân trọng,<br/>LinkQ</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>

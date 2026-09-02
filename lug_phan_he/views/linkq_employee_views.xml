@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_linkq_employee_popup_form" model="ir.ui.view">
+        <field name="name">linkq.employee.form.popup</field>
+        <field name="model">linkq.employee</field>
+        <field name="arch" type="xml">
+            <form string="Thông tin nhân sự" js_class="phan_he_employee_form">
+                <header>
+                    <field name="state" widget="statusbar" options="{'clickable': '1'}"
+                           statusbar_visible="working,transferred,support,resigned"/>
+                </header>
+                <sheet>
+                    <div class="row g-3 o_linkq_emp_form">
+                        <div class="col-md-6">
+                            <div class="card h-100 border shadow-none o_linkq_emp_card">
+                                <div class="card-header bg-white py-2 border-bottom fw-bold text-uppercase o_linkq_emp_card_title">
+                                    Thông tin cơ bản
+                                </div>
+                                <div class="card-body p-3">
+                                    <group class="m-0">
+                                        <field name="stt" string="STT (Tự động)"/>
+                                        <field name="name" string="Họ và tên" placeholder="VD: NGUYỄN VĂN AN"
+                                               class="o_linkq_emp_name"/>
+                                        <field name="job_position" string="Chức vụ"/>
+                                        <field name="store_id" string="Cửa hàng" options="{'no_create': True}"/>
+                                    </group>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border shadow-none o_linkq_emp_card">
+                                <div class="card-header bg-white py-2 border-bottom fw-bold text-uppercase o_linkq_emp_card_title">
+                                    Định danh &amp; Liên hệ
+                                </div>
+                                <div class="card-body p-3">
+                                    <group class="m-0">
+                                        <field name="employee_id_num" string="Mã ID" options="{'format': false}" placeholder="VD: 1024"/>
+                                        <field name="cccd" string="Số CCCD" placeholder="12 chữ số"/>
+                                        <field name="phone" string="Số điện thoại" placeholder="090x xxx xxx"/>
+                                        <field name="joining_date" string="Ngày vào làm"/>
+                                    </group>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="card border shadow-none o_linkq_emp_card">
+                                <div class="card-header bg-white py-2 border-bottom fw-bold text-uppercase text-muted" style="font-size: 0.85rem;">
+                                    Ghi chú bổ sung
+                                </div>
+                                <div class="card-body p-3">
+                                    <field name="note" placeholder="Nhập ghi chú thêm nếu có..." nolabel="1" class="w-100"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_linkq_staff_tree" model="ir.ui.view">
+        <field name="name">linkq.employee.tree</field>
+        <field name="model">linkq.employee</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách nhân sự" js_class="phan_he_employee_list" create="0" delete="1" import="0" export_xlsx="0" edit="0"
+                  class="o_linkq_bordered_table table-bordered table-hover align-middle">
+                <header>
+                    <button name="action_hard_delete_permanent" type="object"
+                            string="Xóa vĩnh viễn" icon="fa-trash"
+                            class="btn-danger"
+                            groups="base.group_system"
+                            confirm="Bạn có chắc chắn muốn XÓA VĨNH VIỄN các nhân sự đã chọn? Dữ liệu không thể phục hồi!"/>
+                </header>
+                <field name="stt_display" string="STT"/>
+                <field name="name" string="HỌ VÀ TÊN" class="o_linkq_emp_name"/>
+                <field name="job_position" string="CHỨC VỤ"/>
+                <field name="employee_id_num" string="ID" options="{'format': false}"/>
+                <field name="state" string="TRẠNG THÁI" widget="linkq_emp_state"/>
+                <field name="store_id" column_invisible="1"/>
+                <field name="store_group_label" column_invisible="1"/>
+                <field name="cccd" column_invisible="1"/>
+                <field name="phone" column_invisible="1"/>
+                <field name="joining_date" column_invisible="1"/>
+                <field name="stt" column_invisible="1"/>
+                <button name="action_open_employee_edit" type="object" icon="fa-pencil"
+                        title="Chỉnh sửa" class="btn-link text-primary p-1" string=" "
+                        groups="base.group_system"/>
+                <button name="action_hard_delete_permanent" type="object" icon="fa-trash"
+                        title="Xóa vĩnh viễn" class="btn-link text-danger p-1" string=" "
+                        groups="base.group_system"
+                        confirm="Bạn có chắc chắn muốn XÓA VĨNH VIỄN nhân sự này? Dữ liệu không thể phục hồi!"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_staff_search" model="ir.ui.view">
+        <field name="name">linkq.employee.search</field>
+        <field name="model">linkq.employee</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="cccd"/>
+                <field name="phone"/>
+                <filter string="Đang công tác" name="working" domain="[('state', '=', 'working')]"/>
+                <filter string="Điều chuyển" name="transferred" domain="[('state', '=', 'transferred')]"/>
+                <filter string="Hỗ trợ" name="support" domain="[('state', '=', 'support')]"/>
+                <filter string="Nghỉ việc" name="resigned" domain="[('state', '=', 'resigned')]"/>
+                <separator/>
+                <filter string="Cửa hàng" name="group_store" context="{'group_by': 'store_group_label'}"/>
+                <filter string="Chức vụ" name="group_job" context="{'group_by': 'job_position'}"/>
+                <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_linkq_employee_list" model="ir.actions.act_window">
+        <field name="name">Danh sách nhân sự</field>
+        <field name="res_model">linkq.employee</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_linkq_staff_search"/>
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'list', 'view_id': ref('view_linkq_staff_tree')}), (0, 0, {'view_mode': 'form', 'view_id': ref('view_linkq_employee_popup_form')})]"/>
+        <field name="context">{'search_default_working': 1, 'search_default_group_store': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có nhân sự</p>
+        </field>
+    </record>
+
+    <record id="action_linkq_employee_create" model="ir.actions.act_window">
+        <field name="name">Thêm mới nhân sự</field>
+        <field name="res_model">linkq.employee</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_linkq_employee_popup_form"/>
+        <field name="target">new</field>
+        <field name="context">{'form_view_initial_mode': 'edit'}</field>
+    </record>
+</odoo>

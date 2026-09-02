@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.StoreNotifDialog">
+        <Dialog size="'xl'" contentClass="'store-notification-popup'" header="false" footer="false" withBodyPadding="false">
+            <div class="store-notification-popup">
+                <div class="store-notif-popup-head">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="popup-header-title">
+                            <i class="fa fa-bell-o text-warning fs-4"/>
+                            <span>Thông báo cửa hàng</span>
+                            <span class="badge-total-count" t-esc="totalCount"/>
+                        </div>
+                        <button type="button" class="btn-close text-muted" aria-label="Close" t-on-click="() => this.props.close()"/>
+                    </div>
+                    <div class="filter-tab-container">
+                    <button type="button" t-attf-class="filter-tab-btn {{isFilter('all')}}" t-on-click="() => this.setFilter('all')">
+                        <span>Tất cả</span>
+                        <span class="tab-badge" t-esc="countOf('all')"/>
+                    </button>
+                    <button type="button" t-attf-class="filter-tab-btn {{isFilter('expiring')}}" t-on-click="() => this.setFilter('expiring')">
+                        <i class="fa fa-bell-o text-warning"/>
+                        <span>Sắp khóa</span>
+                        <span class="tab-badge tab-badge-orange" t-esc="countOf('expiring')"/>
+                    </button>
+                    <button type="button" t-attf-class="filter-tab-btn {{isFilter('reminder')}}" t-on-click="() => this.setFilter('reminder')">
+                        <i class="fa fa-clock-o text-primary"/>
+                        <span>Nhắc nhở</span>
+                        <span class="tab-badge tab-badge-blue" t-esc="countOf('reminder')"/>
+                    </button>
+                    <button type="button" t-attf-class="filter-tab-btn {{isFilter('locked')}}" t-on-click="() => this.setFilter('locked')">
+                        <i class="fa fa-lock text-danger"/>
+                        <span>Đã khóa</span>
+                        <span class="tab-badge tab-badge-red" t-esc="countOf('locked')"/>
+                    </button>
+                    <button type="button" t-attf-class="filter-tab-btn {{isFilter('info')}}" t-on-click="() => this.setFilter('info')">
+                        <i class="fa fa-info-circle text-success"/>
+                        <span>Thông tin</span>
+                        <span class="tab-badge tab-badge-green" t-esc="countOf('info')"/>
+                    </button>
+                    </div>
+                </div>
+
+                <div class="store-notif-popup-body">
+                    <div class="sort-container" t-on-click="toggleSort" role="button">
+                    <span>Sắp xếp:</span>
+                    <strong class="text-dark" t-esc="sortLabel"/>
+                    <i class="fa fa-angle-down"/>
+                </div>
+
+                <div class="d-flex flex-column">
+                    <t t-if="state.loading">
+                        <div class="text-muted small">Đang tải thông báo cửa hàng…</div>
+                    </t>
+                    <t t-elif="!visibleCards.length">
+                        <div class="store-notif-card card-border-blue">
+                            <div class="fw-semibold">Không có thông báo trong mục này.</div>
+                        </div>
+                    </t>
+                    <t t-foreach="visibleCards" t-as="card" t-key="card.key">
+                        <div t-attf-class="store-notif-card {{cardSkin(card)}}">
+                            <t t-if="card.type === 'expiring'">
+                                <div class="card-top-header">
+                                    <div class="card-title-group title-orange">
+                                        <span class="notif-icon-circle"><i class="fa fa-bell"/></span>
+                                        <span>SẮP KHÓA LỊCH XẾP CA</span>
+                                    </div>
+                                    <span t-attf-class="status-pill-tag {{remainClass(card)}}">
+                                        <i class="fa fa-clock-o"/>
+                                        <t t-esc="remainLabel(card)"/>
+                                    </span>
+                                </div>
+                                <div class="card-store-subtitle" t-esc="card.store_line"/>
+                                <div class="card-desc-text">
+                                    <i class="fa fa-clock-o text-muted me-1"/> Thời gian khóa: <strong t-esc="card.lock_full or card.lock_txt or '—'"/>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-end flex-wrap gap-2 mt-2">
+                                    <span class="card-subtext-warn">Vui lòng hoàn tất xếp lịch trước thời gian khóa.</span>
+                                    <button type="button" class="btn-action-purple" t-on-click="() => this.openRoster(card)">Xem chi tiết</button>
+                                </div>
+                            </t>
+                            <t t-elif="card.type === 'reminder'">
+                                <div class="card-top-header">
+                                    <div class="card-title-group title-blue">
+                                        <i class="fa fa-info-circle"/>
+                                        <span>NHẮC NHỞ XẾP LỊCH CA</span>
+                                    </div>
+                                    <span class="status-pill-tag pill-blue-light">Mới</span>
+                                </div>
+                                <div class="fw-bold text-dark mb-1 lq-store-line">
+                                    Bạn chưa xếp lịch ca <t t-esc="card.period"/>
+                                    <t t-if="card.store_name">
+                                        <span class="d-block card-store-subtitle mt-1" t-esc="card.store_line"/>
+                                    </t>
+                                </div>
+                                <div class="card-desc-text fw-semibold">
+                                    Hãy xếp lịch ca trước ngày <strong t-esc="card.lock_full or 'hạn khóa'"/>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="text-muted small">Để đảm bảo công việc của cửa hàng được vận hành tốt.</span>
+                                    <button type="button" class="btn-action-purple" t-on-click="() => this.openRoster(card)">Xếp lịch ngay</button>
+                                </div>
+                            </t>
+                            <t t-elif="card.type === 'locked'">
+                                <div class="card-top-header">
+                                    <div class="card-title-group title-red">
+                                        <i class="fa fa-lock"/>
+                                        <span>LỊCH XẾP CA ĐÃ KHÓA</span>
+                                    </div>
+                                    <span class="status-pill-tag pill-green">
+                                        <i class="fa fa-check"/> Đã hoàn tất
+                                    </span>
+                                </div>
+                                <div class="card-store-subtitle" t-esc="card.store_line"/>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div class="card-desc-text mb-0">
+                                        Đã khóa lúc <strong t-esc="card.lock_txt or '—'"/> (Tổng: <t t-esc="card.staff"/> nhân viên • <t t-esc="card.shift_count"/> ca)
+                                    </div>
+                                    <button type="button" class="btn-action-outline" t-on-click="() => this.openRoster(card)">Xem lịch</button>
+                                </div>
+                            </t>
+                            <t t-elif="card.type === 'need'">
+                                <div class="card-top-header">
+                                    <div class="card-title-group title-orange">
+                                        <i class="fa fa-bell"/>
+                                        <span>CA LÀM THIẾU NHÂN SỰ</span>
+                                    </div>
+                                    <span class="status-pill-tag pill-orange">Thiếu <t t-esc="card.missing_count or card.missing_slots"/> người</span>
+                                </div>
+                                <div class="card-desc-text">
+                                    <i class="fa fa-calendar me-1"/> Ngày: <strong t-esc="card.first_date or '—'"/>
+                                    <span class="ms-1">|</span>
+                                    <i class="fa fa-clock-o ms-2 me-1"/> Ca: <strong t-esc="card.shift_span"/>
+                                </div>
+                                <div class="metric-grid-box">
+                                    <div>
+                                        <div class="metric-item-label"><i class="fa fa-users me-1"/> Cần</div>
+                                        <div class="metric-item-val" t-esc="card.need_n"/>
+                                    </div>
+                                    <div class="metric-mid">
+                                        <div class="metric-item-label"><i class="fa fa-user me-1"/> Đã xếp</div>
+                                        <div class="metric-item-val" t-esc="card.staff"/>
+                                    </div>
+                                    <div>
+                                        <div class="metric-item-label text-danger"><i class="fa fa-times me-1"/> Thiếu</div>
+                                        <div class="metric-item-val text-danger"><t t-esc="card.missing_count or card.missing_slots"/> người</div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end mt-2">
+                                    <button type="button" class="btn-action-purple" t-on-click="() => this.openRoster(card)">Xếp bù nhân sự</button>
+                                </div>
+                            </t>
+                            <t t-else="">
+                                <div class="card-top-header">
+                                    <div class="card-title-group title-green">
+                                        <i class="fa fa-info-circle"/>
+                                        <span>THÔNG TIN LỊCH CA</span>
+                                    </div>
+                                    <span class="status-pill-tag pill-green">Đang áp dụng</span>
+                                </div>
+                                <div class="card-store-subtitle" t-esc="card.store_line"/>
+                                <div class="d-flex justify-content-end mt-2">
+                                    <button type="button" class="btn-action-outline" t-on-click="() => this.openRoster(card)">Xem lịch</button>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </div>
+                </div>
+            </div>
+        </Dialog>
+    </t>
+</templates>

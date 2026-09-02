@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.GuideDocsDialog">
+        <Dialog title="state.isAdmin ? 'QUẢN TRỊ TÀI LIỆU HƯỚNG DẪN' : 'TÀI LIỆU HƯỚNG DẪN'" size="state.isAdmin ? 'xl' : 'md'">
+            <t t-if="state.isAdmin">
+                <div class="admin-doc-manager p-2">
+                    <div class="text-muted mb-3 small">Quản lý và cấu hình quyền truy cập tài liệu hướng dẫn sử dụng LinkQ ERP</div>
+                    <div class="table-responsive border rounded">
+                        <table class="table table-bordered table-hover align-middle mb-0 o_guide_admin_table">
+                            <thead class="table-light text-center">
+                                <tr>
+                                    <th class="col-stt">STT</th>
+                                    <th>NỘI DUNG</th>
+                                    <th class="col-file">FILE HƯỚNG DẪN</th>
+                                    <th class="col-perm">QUYỀN TRUY CẬP</th>
+                                    <th class="col-act">THAO TÁC</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.documents" t-as="doc" t-key="doc_index">
+                                    <tr>
+                                        <td class="text-center">
+                                            <input type="number" class="form-control form-control-sm text-center" t-on-input="(ev) => this.setSequence(doc, ev)"/>
+                                        </td>
+                                        <td>
+                                            <input type="text" class="form-control form-control-sm" placeholder="Nhập tiêu đề tài liệu..." t-on-input="(ev) => this.setName(doc, ev)"/>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i t-attf-class="fa {{getFileIcon(doc.file_type)}} fs-4"/>
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <div class="text-truncate fw-bold small" t-esc="doc.file_name or 'Chưa chọn file'"/>
+                                                    <small class="text-muted" t-esc="doc.file_size_text"/>
+                                                </div>
+                                                <label class="btn btn-sm btn-outline-secondary mb-0">
+                                                    <i class="fa fa-upload"/>
+                                                    <input type="file" class="d-none" accept=".pdf,.xlsx,.xls,.docx" t-on-change="(ev) => this.onFileChange(ev, doc)"/>
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex flex-column gap-1">
+                                                <label class="form-check-label small d-flex align-items-center gap-1">
+                                                    <input type="checkbox" class="form-check-input" t-on-click.stop="(ev) => this.toggleAllow(doc, 'allow_view', ev)"/> Cho phép Xem
+                                                </label>
+                                                <label class="form-check-label small d-flex align-items-center gap-1">
+                                                    <input type="checkbox" class="form-check-input" t-on-click.stop="(ev) => this.toggleAllow(doc, 'allow_download', ev)"/> Cho phép Tải về
+                                                </label>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" t-on-click="() => this.deleteRow(doc, doc_index)" title="Xóa dòng">
+                                                <i class="fa fa-trash"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <button type="button" class="btn btn-outline-primary btn-sm" t-on-click="addNewRow">
+                            <i class="fa fa-plus me-1"/> Thêm tài liệu
+                        </button>
+                    </div>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="user-doc-view p-2">
+                    <p class="text-muted mb-3 small">Các tài liệu hướng dẫn sử dụng LinkQ ERP</p>
+                    <div class="input-group mb-3">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa fa-search text-muted"/></span>
+                        <input type="text" class="form-control border-start-0 ps-0" placeholder="Tìm kiếm tài liệu..." t-on-input="onSearch"/>
+                    </div>
+                    <div class="doc-list d-flex flex-column gap-2 o_guide_doc_scroll">
+                        <t t-if="!filteredDocuments.length">
+                            <div class="text-center text-muted py-4">Không có tài liệu hướng dẫn nào.</div>
+                        </t>
+                        <t t-foreach="filteredDocuments" t-as="doc" t-key="doc.id">
+                            <div class="p-3 border rounded d-flex justify-content-between align-items-center bg-white shadow-sm o_guide_doc_row">
+                                <div class="d-flex align-items-start gap-3">
+                                    <i t-attf-class="fa {{getFileIcon(doc.file_type)}} fs-2 mt-1"/>
+                                    <div>
+                                        <div class="fw-bold text-dark" t-esc="doc.name"/>
+                                        <div class="text-muted small">
+                                            <span class="text-uppercase" t-esc="doc.file_type"/>
+                                            <t t-if="doc.file_size_text"> · <t t-esc="doc.file_size_text"/></t>
+                                            · Cập nhật: <t t-esc="formatDate(doc.write_date)"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a t-attf-href="/web/content/shift.guide.document/{{doc.id}}/file_data" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa fa-eye me-1"/> Xem
+                                    </a>
+                                    <a t-if="doc.allow_download" t-attf-href="/web/content/shift.guide.document/{{doc.id}}/file_data?download=true" t-att-class="downloadBtnClass(doc.file_type)">
+                                        <i class="fa fa-download me-1"/> Tải về
+                                    </a>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </t>
+            <t t-set-slot="footer">
+                <t t-if="state.isAdmin">
+                    <button type="button" class="btn btn-primary me-2 o_guide_btn_save" t-on-click="saveAdminData">Lưu cấu hình</button>
+                    <button type="button" class="btn btn-secondary" t-on-click="() => this.props.close()">Đóng</button>
+                </t>
+                <t t-else="">
+                    <button type="button" class="btn btn-secondary" t-on-click="() => this.props.close()">Đóng</button>
+                </t>
+            </t>
+        </Dialog>
+    </t>
+</templates>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.RosterLockBadgeField">
+        <span t-att-class="badgeClass">
+            <i t-att-class="iconClass"/>
+            <span t-esc="text"/>
+        </span>
+    </t>
+
+    <t t-name="lug_phan_he.RosterApplyStatusField">
+        <span t-att-class="wrapClass">
+            <span class="o_roster_dot"/>
+            <span t-esc="meta.label"/>
+        </span>
+    </t>
+
+    <t t-name="lug_phan_he.RosterLockKpis">
+        <div class="o_roster_kpi_row">
+            <div class="o_roster_kpi is-total">
+                <div class="o_roster_kpi_ico"><i class="fa fa-calendar"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Tổng số bảng ca</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.total"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-applying">
+                <div class="o_roster_kpi_ico"><i class="fa fa-file-text-o"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Đang áp dụng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.applying"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-upcoming">
+                <div class="o_roster_kpi_ico"><i class="fa fa-file-o"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Sắp áp dụng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.upcoming"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-paused">
+                <div class="o_roster_kpi_ico"><i class="fa fa-wrench"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Tạm dừng</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.paused"/>
+                </div>
+            </div>
+            <div class="o_roster_kpi is-locked">
+                <div class="o_roster_kpi_ico"><i class="fa fa-lock"/></div>
+                <div>
+                    <div class="o_roster_kpi_label">Đang bị khóa</div>
+                    <div class="o_roster_kpi_val" t-esc="lockDash.kpis.locked"/>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_phan_he.RosterLockPanel">
+        <aside class="o_roster_right" t-ref="panelRoot">
+            <div t-if="state.canConfigure" class="o_roster_widget">
+                <div class="o_roster_widget_head">CÀI ĐẶT KHÓA LỊCH CA</div>
+                <div class="o_roster_widget_body">
+                    <p class="small text-muted mb-2">Thiết lập thời gian khóa lịch ca tự động trên trang chuyên biệt.</p>
+                    <button type="button" class="btn o_roster_save_btn" t-on-click="openFullSettings">Mở cài đặt khóa lịch</button>
+                </div>
+            </div>
+            <div class="o_roster_widget">
+                <div class="o_roster_widget_head">THÔNG BÁO</div>
+                <div class="o_roster_widget_body o_roster_timeline">
+                    <t t-if="!hasEvents">
+                        <div class="text-muted small">Chưa có thông báo khóa lịch.</div>
+                    </t>
+                    <t t-foreach="state.events" t-as="item" t-key="item.id">
+                        <div t-att-class="eventClass(item)">
+                            <div class="o_roster_ev_ico"><i t-att-class="eventIconClass(item)"/></div>
+                            <div>
+                                <div class="o_roster_ev_title" t-esc="item.title"/>
+                                <div class="o_roster_ev_detail" t-esc="item.detail"/>
+                                <div class="o_roster_ev_time" t-esc="item.time"/>
+                            </div>
+                        </div>
+                    </t>
+                    <div class="o_roster_guide">
+                        <b>HƯỚNG DẪN</b>
+                        <div>Lịch tự khóa theo cài đặt. Quản lý có thể mở khóa và thao tác sẽ được ghi vào chatter.</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </t>
+</templates>

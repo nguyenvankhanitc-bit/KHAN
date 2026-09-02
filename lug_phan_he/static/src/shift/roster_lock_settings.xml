@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.RosterLockSettingsPage">
+        <div class="o_action o_phan_he_app_shell o_lk_settings_page">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+            <div class="o_lk_settings container-fluid p-4">
+                <div class="mb-4">
+                    <span class="o_lk_crumb">Cấu hình &amp; Hệ thống <span>&gt;</span> Cài đặt khóa lịch ca</span>
+                    <h3 class="fw-bold mt-1 text-dark mb-1">Cài đặt khóa lịch ca tự động</h3>
+                    <p class="text-muted small mb-0">Thiết lập thời gian khóa và mở khóa lịch ca theo quy tắc tự động</p>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 p-4 mb-4 o_lk_card">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <span class="o_lk_head_ico me-2"><i class="fa fa-lock"/></span>
+                            <span class="fw-bold text-uppercase o_lk_title_purple">Thời gian khóa lịch ca</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button type="button" t-att-class="state.auto_lock ? 'o_lk_switch is-on me-2' : 'o_lk_switch me-2'" t-on-click="() => this.toggle('auto_lock')"/>
+                            <div>
+                                <div class="fw-bold small">Bật tự động khóa lịch ca</div>
+                                <div class="text-muted o_lk_hint_xs">Hệ thống sẽ tự động khóa lịch ca theo thời gian đã thiết lập</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 align-items-stretch" t-att-class="state.auto_lock ? '' : 'o_lk_dimmed'">
+                        <div class="col-lg-3 col-md-6">
+                            <label class="small text-muted mb-1">Ngày khóa</label>
+                            <div class="input-group">
+                                <select class="form-select" t-on-change="onLockDaySelect">
+                                    <t t-foreach="daysRange" t-as="d" t-key="d">
+                                        <option t-att-value="d" t-att-selected="lockDayNum === d ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                    </t>
+                                </select>
+                                <select class="form-select" t-on-change="onLockRepeatSelect">
+                                    <option value="monthly" t-att-selected="state.repeat_type === 'monthly' ? 'selected' : undefined">Hằng tháng</option>
+                                    <option value="weekly" t-att-selected="state.repeat_type === 'weekly' ? 'selected' : undefined">Hàng tuần</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label class="small text-muted mb-1">Giờ khóa</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa fa-clock-o text-muted"/></span>
+                                <select class="form-select" t-on-change="onLockTimeChange">
+                                    <t t-foreach="hourOptions" t-as="hm" t-key="hm">
+                                        <option t-att-value="hm" t-att-selected="state.lock_time === hm ? 'selected' : undefined"><t t-esc="hm"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label class="small text-muted mb-1">Lặp lại</label>
+                            <div class="o_lk_repeat_box">
+                                <i class="fa fa-calendar me-1"/> Hằng tháng
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="o_lk_preview o_lk_preview_green h-100">
+                                <i class="fa fa-calendar-check-o"/>
+                                <div class="small">
+                                    <div class="text-muted">Hệ thống sẽ khóa lịch ca vào</div>
+                                    <strong>ngày <t t-esc="padDay(lockDayNum)"/> hằng tháng lúc <t t-esc="state.lock_time"/></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 p-4 mb-4 o_lk_card">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <span class="o_lk_head_ico me-2"><i class="fa fa-unlock-alt"/></span>
+                            <span class="fw-bold text-uppercase o_lk_title_purple">Thời gian mở lịch ca</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <button type="button" t-att-class="isAutoUnlock ? 'o_lk_switch is-on me-2' : 'o_lk_switch me-2'" t-on-click="toggleAutoUnlock"/>
+                            <div>
+                                <div class="fw-bold small">Bật tự động mở khóa lịch ca</div>
+                                <div class="text-muted o_lk_hint_xs">Hệ thống sẽ tự động mở khóa lịch ca theo thời gian đã thiết lập</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row g-3 align-items-stretch" t-att-class="isAutoUnlock ? '' : 'o_lk_dimmed'">
+                        <div class="col-lg-3 col-md-6">
+                            <label class="small text-muted mb-1">Ngày mở khóa</label>
+                            <div class="input-group">
+                                <select class="form-select" t-on-change="onUnlockDaySelect">
+                                    <t t-foreach="daysRange" t-as="d" t-key="'u' + d">
+                                        <option t-att-value="d" t-att-selected="unlockDayNum === d ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                    </t>
+                                </select>
+                                <select class="form-select" t-on-change="onUnlockRepeatChange">
+                                    <option value="monthly" t-att-selected="state.unlock_repeat === 'monthly' ? 'selected' : undefined">Hằng tháng</option>
+                                    <option value="weekly" t-att-selected="state.unlock_repeat === 'weekly' ? 'selected' : undefined">Hàng tuần</option>
+                                    <option value="none" t-att-selected="state.unlock_repeat === 'none' ? 'selected' : undefined">Không lặp lại</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <label class="small text-muted mb-1">Giờ mở khóa</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fa fa-clock-o text-muted"/></span>
+                                <select class="form-select" t-on-change="onUnlockTimeChange">
+                                    <t t-foreach="hourOptions" t-as="hm" t-key="'uh' + hm">
+                                        <option t-att-value="hm" t-att-selected="state.unlock_time === hm ? 'selected' : undefined"><t t-esc="hm"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <label class="small text-muted mb-1">Lặp lại</label>
+                            <div class="o_lk_repeat_box">
+                                <i class="fa fa-calendar me-1"/> Hằng tháng
+                            </div>
+                        </div>
+                        <div class="col-lg-4 col-md-6">
+                            <div class="o_lk_preview o_lk_preview_blue h-100">
+                                <i class="fa fa-calendar"/>
+                                <div class="small">
+                                    <div class="text-muted">Hệ thống sẽ mở khóa lịch ca vào</div>
+                                    <strong>ngày <t t-esc="padDay(unlockDayNum)"/> hằng tháng lúc <t t-esc="state.unlock_time"/></strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-3 p-4 mb-4 o_lk_card">
+                    <h6 class="text-uppercase fw-bold text-muted small mb-4">Tóm tắt lịch khóa / mở khóa</h6>
+                    <div class="o_lk_timeline">
+                        <div class="o_lk_tl_node text-center">
+                            <div class="o_lk_tl_box o_lk_tl_box_red">
+                                <i class="fa fa-lock"/>
+                                <div class="o_lk_tl_num" t-esc="padDay(lockDayNum)"/>
+                                <div class="o_lk_tl_sub">Hằng tháng</div>
+                            </div>
+                            <div class="fw-bold small text-danger mt-2" t-esc="state.lock_time"/>
+                            <div class="text-muted o_lk_hint_xs">Khóa lịch ca</div>
+                        </div>
+                        <div class="o_lk_tl_bar">
+                            <div class="o_lk_tl_popup">
+                                <div class="fw-bold">Lịch ca bị khóa</div>
+                                <div class="text-muted">Từ: <t t-esc="padDay(lockDayNum)"/> - <t t-esc="state.lock_time"/></div>
+                                <div class="text-muted">Đến: <t t-esc="padDay(unlockDayNum)"/> - <t t-esc="state.unlock_time"/></div>
+                            </div>
+                        </div>
+                        <div class="o_lk_tl_node text-center">
+                            <div class="o_lk_tl_box o_lk_tl_box_blue">
+                                <i class="fa fa-unlock"/>
+                                <div class="o_lk_tl_num" t-esc="padDay(unlockDayNum)"/>
+                                <div class="o_lk_tl_sub">Hằng tháng</div>
+                            </div>
+                            <div class="fw-bold small text-primary mt-2" t-esc="state.unlock_time"/>
+                            <div class="text-muted o_lk_hint_xs">Mở khóa lịch ca</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-primary d-flex align-items-center rounded-3 mb-4" role="alert">
+                    <i class="fa fa-info-circle fa-lg me-3"/>
+                    <div class="small mb-0">
+                        <strong>Lưu ý:</strong> Khi lịch ca đã bị khóa, nhân viên hoặc quản trị viên (theo quyền) chỉ có thể xem, không thể thêm/sửa/xóa lịch ca.
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="button" class="btn btn-light px-4" t-on-click="onCancel">Hủy bỏ</button>
+                    <button type="button" class="btn o_lk_save px-4" t-on-click="onSave">
+                        <i class="fa fa-floppy-o me-1"/> Lưu cấu hình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>

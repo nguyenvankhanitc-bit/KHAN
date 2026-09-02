@@ -108,11 +108,11 @@
                 <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
                 <filter name="filter_ready" string="Đã lấy dữ liệu" domain="[('state', '=', 'ready')]"/>
                 <filter name="filter_done" string="Hoàn tất" domain="[('state', '=', 'done')]"/>
-                <group>
+                
                     <filter name="group_year" string="Năm" context="{'group_by': 'year'}"/>
                     <filter name="group_month" string="Tháng" context="{'group_by': 'month'}"/>
                     <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>

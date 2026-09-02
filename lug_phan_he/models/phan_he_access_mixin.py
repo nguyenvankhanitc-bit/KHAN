@@ -30,13 +30,12 @@ class PhanHeAccessMixin(models.AbstractModel):
         )
 
     def _phan_he_user_in_access_group(self):
-        return bool(
-            self.env["phan.he.module.access"].sudo().search([
-                ("user_ids", "in", self.env.user.id),
-                ("company_id", "=", self.env.company.id),
-                ("active", "=", True),
-            ], limit=1)
-        )
+        groups = self.env["phan.he.module.access"].sudo().search([
+            ("user_ids", "in", self.env.user.id),
+            ("company_id", "=", self.env.company.id),
+            ("active", "=", True),
+        ])
+        return bool(groups.filtered(lambda g: not g._is_linkq_scope()))
 
     def _phan_he_service_code(self):
         """Override trên model cụ thể — trả mã dịch vụ của record."""

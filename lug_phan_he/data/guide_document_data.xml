@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="guide_doc_roster" model="linkq.guide.document">
+        <field name="name">Hướng dẫn sử dụng lịch ca</field>
+        <field name="sequence">10</field>
+        <field name="file_kind">pdf</field>
+        <field name="file_name">huong_dan_su_dung_lich_ca.pdf</field>
+        <field name="file_size_label">2.4 MB</field>
+        <field name="perm_view" eval="True"/>
+        <field name="perm_download" eval="True"/>
+    </record>
+    <record id="guide_doc_excel" model="linkq.guide.document">
+        <field name="name">Mẫu Excel nhập lịch ca</field>
+        <field name="sequence">20</field>
+        <field name="file_kind">xlsx</field>
+        <field name="file_name">mau_excel_nhap_lich_ca.xlsx</field>
+        <field name="file_size_label">125 KB</field>
+        <field name="perm_view" eval="True"/>
+        <field name="perm_download" eval="True"/>
+    </record>
+    <record id="guide_doc_lock" model="linkq.guide.document">
+        <field name="name">Quy định về khóa lịch ca</field>
+        <field name="sequence">30</field>
+        <field name="file_kind">pdf</field>
+        <field name="file_name">quy_dinh_khoa_lich_ca.pdf</field>
+        <field name="file_size_label">850 KB</field>
+        <field name="perm_view" eval="True"/>
+        <field name="perm_download" eval="False"/>
+    </record>
+</odoo>

@@ -1,0 +1,212 @@
+.o_linkq_perm_shell {
+    display: grid !important;
+    grid-template-columns: var(--phan-he-sidebar-width, 260px) minmax(0, 1fr);
+    height: 100%;
+    overflow: hidden;
+    background: #f4f5f9;
+}
+
+.o_linkq_perm {
+    overflow: auto;
+    padding: 20px 24px 32px;
+    min-width: 0;
+}
+
+.o_lp_top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.o_lp_crumb {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    span { color: #c4b5fd; padding: 0 6px; }
+}
+
+.o_lp_top h1 {
+    margin: 4px 0 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: #111827;
+}
+
+.o_lp_actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.o_lp_btn {
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-weight: 700;
+    font-size: 13px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+}
+
+.o_lp_btn_primary {
+    background: #6f42c1 !important;
+    border-color: #6f42c1 !important;
+    color: #fff !important;
+}
+
+.o_lp_filters {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+    label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 700;
+        color: #6b7280;
+        min-width: 240px;
+    }
+    select {
+        height: 38px;
+        border: 1px solid #d1d5db;
+        border-radius: 8px;
+        padding: 0 10px;
+        font-weight: 600;
+        color: #111827;
+        background: #fff;
+    }
+}
+
+.o_lp_legend {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.o_lp_help {
+    background: #e8f1ff;
+    border: 1px solid #cfe2ff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    p { margin: 0 0 4px; font-size: 13px; color: #334155; }
+}
+
+.o_lp_help_title {
+    font-weight: 800;
+    color: #1d4ed8;
+    margin-bottom: 8px;
+    i { margin-right: 6px; }
+}
+
+.o_lp_keys {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px 16px;
+    font-size: 13px;
+    color: #334155;
+}
+
+.o_lp_key { margin-bottom: 6px; }
+.o_lp_crown { font-size: 14px; margin-right: 4px; }
+
+.o_lp_swatches {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+    span {
+        font-weight: 800;
+        font-size: 12px;
+        &.is-view { color: #6f42c1; }
+        &.is-add { color: #198754; }
+        &.is-edit { color: #0d6efd; }
+        &.is-del { color: #dc3545; }
+        &.is-admin { color: #fd7e14; }
+    }
+}
+
+.o_lp_table_wrap {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: auto;
+}
+
+.o_lp_table {
+    width: 100%;
+    border-collapse: collapse;
+    th, td {
+        border-bottom: 1px solid #eef0f4;
+        padding: 10px 8px;
+        text-align: center;
+        vertical-align: middle;
+    }
+    th {
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        color: #6b7280;
+        background: #f8fafc;
+        font-weight: 800;
+    }
+    th.is-menu, td.is-menu { text-align: left; }
+    tr.is-group { background: #faf7ff; }
+}
+
+.o_lp_name {
+    border: 0;
+    background: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #111827;
+    .fa-folder { color: #6f42c1; }
+    .fa-file-text-o, .fa-cog { color: #64748b; }
+}
+
+.o_lp_custom { color: #94a3b8; font-size: 12px; }
+
+.o_lp_crown_btn {
+    border: 0;
+    background: none;
+    font-size: 16px;
+    line-height: 1;
+    opacity: 0.85;
+}
+
+.o_lp_check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    input { display: none; }
+    span {
+        width: 18px;
+        height: 18px;
+        border-radius: 4px;
+        border: 2px solid #cbd5e1;
+        background: #fff;
+        display: block;
+    }
+    input:checked + span {
+        border-color: transparent;
+        &::after {
+            content: "";
+            display: block;
+            width: 5px;
+            height: 9px;
+            border: solid #fff;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+            margin: 1px 0 0 5px;
+        }
+    }
+    &.is-view input:checked + span { background: #6f42c1; }
+    &.is-add input:checked + span { background: #198754; }
+    &.is-edit input:checked + span { background: #0d6efd; }
+    &.is-del input:checked + span { background: #dc3545; }
+    &.is-admin input:checked + span { background: #fd7e14; }
+}

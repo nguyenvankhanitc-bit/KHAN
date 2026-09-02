@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.KPICardGroup">
+        <div class="o_sr_kpis">
+            <t t-foreach="props.kpis or []" t-as="kpi" t-key="kpi.key">
+                <div t-attf-class="o_sr_kpi is-{{kpi.tone}}">
+                    <div class="o_sr_kpi_ico"><i t-attf-class="fa {{kpi.icon}}"/></div>
+                    <div class="o_sr_kpi_body">
+                        <div class="o_sr_kpi_label" t-esc="kpi.label"/>
+                        <div class="o_sr_kpi_val" t-esc="kpi.value"/>
+                        <div t-att-class="kpi.up ? 'o_sr_kpi_delta is-up' : 'o_sr_kpi_delta is-down'">
+                            <i t-att-class="kpi.up ? 'fa fa-caret-up' : 'fa fa-caret-down'"/>
+                            <span t-esc="kpi.delta"/>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <t t-name="lug_phan_he.RegionalDistributionChart">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">PHÂN BỔ NHÂN SỰ THEO VÙNG MIỀN</div>
+            <div class="o_sr_dist">
+                <div class="o_sr_donut_wrap">
+                    <svg viewBox="0 0 140 140" class="o_sr_donut">
+                        <circle cx="70" cy="70" r="54" fill="none" stroke="#f1f5f9" stroke-width="16"/>
+                        <g transform="rotate(-90 70 70)">
+                            <t t-foreach="arcs" t-as="arc" t-key="arc.key">
+                                <circle cx="70" cy="70" r="54" fill="none" stroke-width="16"
+                                        t-attf-stroke="{{arc.color}}"
+                                        t-attf-stroke-dasharray="{{arc.dash}}"
+                                        t-attf-stroke-dashoffset="{{arc.offset}}"/>
+                            </t>
+                        </g>
+                        <text x="70" y="66" text-anchor="middle" class="o_sr_donut_num" t-esc="staffLabel"/>
+                        <text x="70" y="84" text-anchor="middle" class="o_sr_donut_sub">nhân sự</text>
+                    </svg>
+                </div>
+            </div>
+            <div class="o_sr_legend">
+                <t t-foreach="regions" t-as="r" t-key="r.key">
+                    <div class="o_sr_leg">
+                        <span class="o_sr_dot" t-attf-style="{{r.dotStyle}}"/>
+                        <span t-esc="r.name"/>
+                        <b t-esc="r.staff"/>
+                        <span class="text-muted" t-esc="r.pctLegend"/>
+                    </div>
+                </t>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.StaffTrendChart">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">XU HƯỚNG NHÂN SỰ THEO VÙNG MIỀN</div>
+            <svg viewBox="0 0 420 240" class="o_sr_line">
+                <polyline fill="none" stroke="#2563eb" stroke-width="2.5" t-attf-points="{{chart.north}}"/>
+                <polyline fill="none" stroke="#f97316" stroke-width="2.5" t-attf-points="{{chart.south}}"/>
+                <polyline fill="none" stroke="#22c55e" stroke-width="2.5" t-attf-points="{{chart.dtt}}"/>
+                <t t-foreach="chart.labels" t-as="lb" t-key="lb.key">
+                    <text t-attf-x="{{lb.x}}" y="228" text-anchor="middle" class="o_sr_axis" t-esc="lb.label"/>
+                </t>
+            </svg>
+            <div class="o_sr_legend">
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#2563eb"/> Miền Bắc</div>
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#f97316"/> Miền Nam</div>
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#22c55e"/> Miền ĐTT</div>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.RegionalStatsTable">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">THỐNG KÊ NHÂN SỰ THEO VÙNG MIỀN</div>
+            <table class="o_sr_mini">
+                <thead>
+                    <tr>
+                        <th>VÙNG MIỀN</th>
+                        <th>TỔNG NHÂN SỰ</th>
+                        <th>TỶ LỆ</th>
+                        <th>SO VỚI THÁNG TRƯỚC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-foreach="regions" t-as="r" t-key="r.key">
+                        <tr>
+                            <td>
+                                <span class="o_sr_dot" t-attf-style="{{r.dotStyle}}"/>
+                                <span t-esc="r.name"/>
+                            </td>
+                            <td t-esc="r.staff"/>
+                            <td t-esc="r.pctLabel"/>
+                            <td class="is-up" t-esc="r.deltaLabel"/>
+                        </tr>
+                    </t>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td>TỔNG CỘNG</td>
+                        <td t-esc="props.data.staff_total"/>
+                        <td>100%</td>
+                        <td class="is-up" t-esc="staffDeltaLabel"/>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.FillRateBarChart">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">TỶ LỆ BÙ CA THEO VÙNG MIỀN</div>
+            <div class="o_sr_vbars">
+                <t t-foreach="items" t-as="r" t-key="r.key">
+                    <div class="o_sr_vbar">
+                        <div class="o_sr_vbar_val" t-esc="r.fillLabel"/>
+                        <div class="o_sr_vbar_track">
+                            <div class="o_sr_vbar_fill" t-attf-style="{{r.fillStyle}}"/>
+                        </div>
+                        <div class="o_sr_vbar_name" t-esc="r.name"/>
+                    </div>
+                </t>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.MissingDonutChart">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">SỐ CA THIẾU THEO VÙNG MIỀN</div>
+            <div class="o_sr_donut_wrap">
+                <svg viewBox="0 0 140 140" class="o_sr_donut">
+                    <g transform="rotate(-90 70 70)">
+                        <t t-foreach="arcs" t-as="arc" t-key="arc.key">
+                            <circle cx="70" cy="70" r="54" fill="none" stroke-width="16"
+                                    t-attf-stroke="{{arc.color}}"
+                                    t-attf-stroke-dasharray="{{arc.dash}}"
+                                    t-attf-stroke-dashoffset="{{arc.offset}}"/>
+                        </t>
+                    </g>
+                    <text x="70" y="66" text-anchor="middle" class="o_sr_donut_num" t-esc="total"/>
+                    <text x="70" y="84" text-anchor="middle" class="o_sr_donut_sub">ca thiếu</text>
+                </svg>
+            </div>
+            <div class="o_sr_legend">
+                <t t-foreach="props.regions or []" t-as="r" t-key="r.key">
+                    <div class="o_sr_leg">
+                        <span class="o_sr_dot" t-attf-style="background:{{r.color}}"/>
+                        <span t-esc="r.name"/>
+                        <b t-esc="r.missing"/>
+                    </div>
+                </t>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.ShiftStackBarChart">
+        <section class="o_sr_card">
+            <div class="o_sr_card_title">TỔNG GIỜ THEO CA THEO VÙNG MIỀN</div>
+            <div class="o_sr_stacks">
+                <t t-foreach="rows" t-as="r" t-key="r.key">
+                    <div class="o_sr_stack_row">
+                        <div class="o_sr_stack_name" t-esc="r.name"/>
+                        <div class="o_sr_stack_track">
+                            <div class="is-s" t-attf-style="{{r.sStyle}}"/>
+                            <div class="is-c" t-attf-style="{{r.cStyle}}"/>
+                            <div class="is-t" t-attf-style="{{r.tStyle}}"/>
+                        </div>
+                    </div>
+                </t>
+            </div>
+            <div class="o_sr_legend">
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#22c55e"/> Ca sáng (S)</div>
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#f97316"/> Ca chiều (C)</div>
+                <div class="o_sr_leg"><span class="o_sr_dot" style="background:#2563eb"/> Ca tối (T)</div>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.AlertPanel">
+        <section class="o_sr_card o_sr_alerts">
+            <div class="o_sr_card_title">CẢNH BÁO</div>
+            <t t-foreach="items" t-as="al" t-key="al.id">
+                <button type="button" class="o_sr_alert" t-on-click="() => this.props.onOpen(al)">
+                    <span class="o_sr_alert_ico"><i class="fa fa-exclamation-circle"/></span>
+                    <span class="o_sr_alert_text" t-esc="al.text"/>
+                    <span class="o_sr_alert_link">Xem chi tiết &gt;</span>
+                </button>
+            </t>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.StoreSummaryTable">
+        <section class="o_sr_card o_sr_table_card">
+            <div class="o_sr_table_head">
+                <div class="o_sr_card_title mb-0">BẢNG TỔNG HỢP THEO CỬA HÀNG</div>
+                <div class="o_sr_table_tools">
+                    <div class="o_sr_search">
+                        <i class="fa fa-search"/>
+                        <input type="text" placeholder="Tìm kiếm cửa hàng..." t-on-input="(ev) => this.props.onSearch(ev)"/>
+                    </div>
+                    <button type="button" class="btn o_sr_excel" t-on-click="() => this.props.onExport()">
+                        <i class="fa fa-file-excel-o"/> Xuất Excel
+                    </button>
+                </div>
+            </div>
+            <div class="o_sr_table_wrap">
+                <table class="o_sr_store">
+                    <thead>
+                        <tr>
+                            <th rowspan="2">STT</th>
+                            <th rowspan="2">MÃ CỬA HÀNG</th>
+                            <th rowspan="2">TÊN CỬA HÀNG</th>
+                            <th rowspan="2">KHU VỰC</th>
+                            <th colspan="3">NHÂN SỰ</th>
+                            <th colspan="5">GIỜ THEO CA</th>
+                            <th rowspan="2">TỶ LỆ ĐỦ CA (%)</th>
+                            <th rowspan="2">SỐ CA THIẾU</th>
+                        </tr>
+                        <tr>
+                            <th>Tổng số</th><th>Đang làm</th><th>Nghỉ việc</th>
+                            <th>S</th><th>C</th><th>T</th><th>Nghỉ</th><th>Tổng giờ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="pageRows" t-as="row" t-key="row.roster_id">
+                            <tr>
+                                <td t-esc="row.stt"/>
+                                <td class="is-code" t-esc="row.code"/>
+                                <td class="is-name" t-esc="row.name"/>
+                                <td t-esc="row.region"/>
+                                <td t-esc="row.staff_total"/>
+                                <td t-esc="row.staff_working"/>
+                                <td t-esc="row.staff_left"/>
+                                <td t-esc="row.hours_s"/>
+                                <td t-esc="row.hours_c"/>
+                                <td t-esc="row.hours_t"/>
+                                <td t-esc="row.hours_off"/>
+                                <td t-esc="row.hours_total"/>
+                                <td><span t-attf-class="o_sr_fill {{row.fillClass}}" t-esc="row.fillText"/></td>
+                                <td t-esc="row.missing_shifts"/>
+                            </tr>
+                        </t>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4">TỔNG CỘNG</td>
+                            <td t-esc="totals.staff_total"/>
+                            <td t-esc="totals.staff_working"/>
+                            <td t-esc="totals.staff_left"/>
+                            <td t-esc="totals.hours_s"/>
+                            <td t-esc="totals.hours_c"/>
+                            <td t-esc="totals.hours_t"/>
+                            <td t-esc="totals.hours_off"/>
+                            <td t-esc="totals.hours_total"/>
+                            <td t-esc="totals.fill"/>
+                            <td t-esc="totals.missing"/>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="o_sr_pager">
+                <span>Hiển thị <t t-esc="fromN"/> - <t t-esc="toN"/> trên <t t-esc="filtered.length"/> bảng xếp ca</span>
+                <div class="o_sr_pages">
+                    <t t-foreach="pages" t-as="p" t-key="p_index">
+                        <button type="button" t-att-class="p === props.page ? 'is-on' : ''" t-on-click="() => this.props.onPage(p)" t-esc="p"/>
+                    </t>
+                </div>
+            </div>
+        </section>
+    </t>
+
+    <t t-name="lug_phan_he.ShiftSummaryReportPage">
+        <div class="o_action o_phan_he_app_shell o_sr_page">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+            <div class="o_sr_main">
+                <div class="o_sr_top">
+                    <div>
+                        <div class="o_sr_crumb">Quản lý dịch vụ <span>&gt;</span> Báo cáo &amp; giám sát <span>&gt;</span> Báo cáo tổng hợp</div>
+                        <h1>BÁO CÁO TỔNG HỢP</h1>
+                        <p>Tổng quan tình hình xếp ca và nhân sự theo cửa hàng</p>
+                    </div>
+                    <div class="o_sr_filters">
+                        <div class="o_sr_chip">
+                            <i class="fa fa-calendar"/>
+                            <span t-esc="state.data.period.label"/>
+                        </div>
+                        <select class="o_sr_chip o_sr_select" t-on-change="onCompare">
+                            <option value="prev_month" selected="selected">So sánh: Tháng trước</option>
+                            <option value="prev_year">So sánh: Cùng kỳ năm trước</option>
+                        </select>
+                        <button type="button" class="btn o_sr_filter_btn" t-on-click="onToggleFilters">
+                            <i class="fa fa-filter"/> Bộ lọc
+                        </button>
+                    </div>
+                </div>
+                <div class="o_sr_kpis">
+                    <t t-foreach="kpiCards" t-as="kpi" t-key="kpi.key">
+                        <div t-attf-class="o_sr_kpi is-{{kpi.tone}}">
+                            <div class="o_sr_kpi_ico"><i t-attf-class="fa {{kpi.icon}}"/></div>
+                            <div class="o_sr_kpi_body">
+                                <div class="o_sr_kpi_label" t-esc="kpi.label"/>
+                                <div class="o_sr_kpi_val" t-esc="kpi.value"/>
+                                <div t-att-class="kpi.up ? 'o_sr_kpi_delta is-up' : 'o_sr_kpi_delta is-down'">
+                                    <i t-att-class="kpi.up ? 'fa fa-caret-up' : 'fa fa-caret-down'"/>
+                                    <span t-esc="kpi.delta"/>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+                <div class="o_sr_row3">
+                    <RegionalDistributionChart data="state.data"/>
+                    <StaffTrendChart data="state.data"/>
+                    <RegionalStatsTable data="state.data"/>
+                </div>
+                <div class="o_sr_row4">
+                    <FillRateBarChart regions="state.data.regions or []"/>
+                    <MissingDonutChart regions="state.data.regions or []"/>
+                    <ShiftStackBarChart regions="state.data.regions or []"/>
+                    <AlertPanel alerts="state.data.alerts or []" onOpen.bind="onAlert"/>
+                </div>
+                <StoreSummaryTable stores="state.data.stores or []" search="state.search" page="state.page"
+                    onSearch.bind="onSearch" onPage.bind="onPage" onExport.bind="onExport"/>
+            </div>
+        </div>
+    </t>
+</templates>

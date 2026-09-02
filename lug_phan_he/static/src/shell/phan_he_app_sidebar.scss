@@ -133,6 +133,38 @@
     min-width: 280px;
 }
 
+.o_phan_he_app_shell.o_linkq_employee_list {
+    .o_phan_he_btn_import,
+    .o_cp_action_menus,
+    .o_control_panel_navigation,
+    .o_breadcrumb,
+    .o_last_breadcrumb_item,
+    .o_open_form_view,
+    .o_list_record_open_form_view {
+        display: none !important;
+    }
+    .o_data_row .o_list_view {
+        cursor: pointer;
+    }
+}
+
+.o_linkq_emp_name input,
+.o_linkq_emp_name,
+.o_data_cell[name="name"].o_linkq_emp_name,
+td[name="name"] {
+    text-transform: uppercase;
+}
+
+.o_linkq_emp_card {
+    border-color: #d1d5db !important;
+    background-color: #fafbfc;
+}
+
+.o_linkq_emp_card_title {
+    color: #6f42c1;
+    font-size: 0.85rem;
+}
+
 .o_phan_he_app_shell .o_list_renderer thead th {
     text-transform: uppercase;
     font-size: 0.72rem;

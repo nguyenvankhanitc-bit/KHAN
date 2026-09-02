@@ -1,0 +1,457 @@
+﻿.o_roster_dash_body:not(:has(.o_roster_right)) {
+    grid-template-columns: 1fr;
+}
+
+.o_list_view.o_phan_he_app_shell:has(.o_roster_dash_body) {
+    background: #f4f1fb;
+}
+
+/* áº¨n thanh cÃ´ng cá»¥ list: CÃ i Ä‘áº·t khÃ³a, Xem lá»‹ch, ThÃªm lá»‹ch ca, tiÃªu Ä‘á», Ã´ tÃ¬m kiáº¿m */
+.o_list_view.o_phan_he_app_shell:has(.o_roster_dash_body):not(:has(.o_mm_form_header_btns)) > .o_control_panel {
+    display: none !important;
+}
+
+.o_list_view.o_phan_he_app_shell:has(.o_roster_dash_body):has(.o_mm_form_header_btns) > .o_control_panel {
+    .o_control_panel_navigation,
+    .o_control_panel_actions,
+    .o_breadcrumb,
+    .o_searchview,
+    .o_cp_searchview,
+    .o_cp_action_menus {
+        display: none !important;
+    }
+}
+
+.o_roster_dash_body {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 16px;
+    align-items: start;
+    padding: 0 12px 16px 0;
+    min-width: 0;
+}
+
+.o_roster_dash_main {
+    min-width: 0;
+}
+
+.o_roster_kpi_row {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    margin: 8px 0 14px;
+}
+
+.o_roster_kpi {
+    background: #fff;
+    border: 1px solid #ece6f8;
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.o_roster_kpi.is-locked {
+    border-color: #fecaca;
+}
+
+.o_roster_kpi_ico {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 16px;
+}
+
+.o_roster_kpi.is-total .o_roster_kpi_ico { background: #7c3aed; }
+.o_roster_kpi.is-applying .o_roster_kpi_ico { background: #2563eb; }
+.o_roster_kpi.is-upcoming .o_roster_kpi_ico { background: #16a34a; }
+.o_roster_kpi.is-paused .o_roster_kpi_ico { background: #f59e0b; }
+.o_roster_kpi.is-locked .o_roster_kpi_ico { background: #dc2626; }
+
+.o_roster_kpi_label {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.o_roster_kpi_val {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+    line-height: 1.1;
+}
+
+.o_roster_right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.o_roster_widget {
+    background: #fff;
+    border: 1px solid #ece6f8;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.o_roster_widget_head {
+    padding: 12px 16px;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    color: #6d28d9;
+    background: #f5f3ff;
+    border-bottom: 1px solid #ede9fe;
+}
+
+.o_roster_widget_body {
+    padding: 14px 16px 16px;
+}
+
+.o_roster_switch, .o_roster_check {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 13px;
+    margin-bottom: 8px;
+}
+
+.o_roster_switch input {
+    accent-color: #7c3aed;
+    width: 36px;
+    height: 18px;
+}
+
+.o_roster_field {
+    font-weight: 700;
+    font-size: 13px;
+    margin: 10px 0 6px;
+}
+
+.o_roster_field_label {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 700;
+    margin: 8px 0 4px;
+}
+
+.o_roster_save_btn {
+    width: 100%;
+    margin-top: 12px;
+    background: #7c3aed !important;
+    border-color: #7c3aed !important;
+    color: #fff !important;
+    font-weight: 700;
+}
+
+.o_roster_lock_badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.o_roster_lock_badge.is-locked {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.o_roster_lock_badge.is-expiring {
+    background: #ffedd5;
+    color: #c2410c;
+}
+
+.o_roster_lock_badge.is-unlocked {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+.o_roster_apply_dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.o_roster_dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #22c55e;
+}
+
+.o_roster_apply_dot.is-upcoming .o_roster_dot { background: #16a34a; }
+.o_roster_apply_dot.is-paused .o_roster_dot { background: #f59e0b; }
+.o_roster_apply_dot.is-locked .o_roster_dot { background: #dc2626; }
+
+.notification-sidebar-container {
+    width: 100%;
+    max-width: 320px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+
+    .notification-card {
+        border-radius: 16px;
+        border: 1px solid #f0f1f8;
+        background: #ffffff;
+        box-shadow: 0 4px 20px rgba(99, 102, 241, 0.05);
+        padding: 12px;
+    }
+
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        padding: 12px 6px;
+        border-bottom: 1px solid #f7f7fc;
+
+        &:last-child {
+            border-bottom: none;
+        }
+
+        .notif-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .notif-content {
+            flex-grow: 1;
+
+            .badge {
+                font-weight: 600;
+                font-size: 11px;
+                padding: 3px 8px;
+                border-radius: 6px;
+                display: inline-block;
+                margin-bottom: 4px;
+            }
+
+            .notif-title {
+                font-weight: 600;
+                font-size: 12.5px;
+                color: #242c42;
+                line-height: 1.3;
+                margin-bottom: 2px;
+            }
+
+            .notif-desc {
+                font-size: 11.5px;
+                color: #7b8395;
+                margin-bottom: 3px;
+            }
+
+            .notif-time {
+                font-size: 11px;
+                color: #9aa1b2;
+            }
+        }
+    }
+
+    .bg-warning-light { background-color: #fff6eb; color: #f59e0b !important; }
+    .badge-warning-custom { background-color: #fff1dc; color: #d97706; }
+
+    .bg-danger-light { background-color: #feecee; color: #ef4444 !important; }
+    .badge-danger-custom { background-color: #fde2e4; color: #dc2626; }
+
+    .bg-info-light { background-color: #eff6ff; color: #3b82f6 !important; }
+    .badge-info-custom { background-color: #e0f0fe; color: #2563eb; }
+
+    .bg-success-light { background-color: #eafaf1; color: #10b981 !important; }
+    .badge-success-custom { background-color: #d1f7e3; color: #059669; }
+
+    .guide-card {
+        background-color: #f6f7ff;
+        border-radius: 14px;
+        padding: 14px;
+        text-align: center;
+        border: 1px dashed #d5d9fb;
+
+        .guide-title {
+            color: #4f46e5;
+            font-weight: 700;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+        }
+
+        .guide-desc {
+            font-size: 11.5px;
+            color: #5d6785;
+            line-height: 1.4;
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .btn-guide {
+            background-color: #ffffff;
+            color: #6366f1;
+            border: 1px solid #c7d2fe;
+            border-radius: 8px;
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 6px 14px;
+            width: 100%;
+            transition: all 0.2s ease;
+
+            &:hover {
+                background-color: #6366f1;
+                color: #ffffff;
+                border-color: #6366f1;
+            }
+        }
+    }
+}
+
+.o_roster_ev {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+}
+
+.o_roster_ev_ico {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.o_roster_ev.is-expiring .o_roster_ev_ico,
+.o_roster_ev.is-reminder .o_roster_ev_ico { background: #f59e0b; }
+.o_roster_ev.is-locked .o_roster_ev_ico { background: #dc2626; }
+.o_roster_ev.is-ended .o_roster_ev_ico { background: #2563eb; }
+.o_roster_ev.is-success .o_roster_ev_ico,
+.o_roster_ev.is-unlocked .o_roster_ev_ico { background: #16a34a; }
+
+.o_roster_ev_title { font-weight: 700; }
+.o_roster_ev_detail, .o_roster_ev_time { color: #94a3b8; font-size: 12px; }
+
+.o_roster_guide {
+    margin-top: 8px;
+    padding: 10px;
+    background: #f8fafc;
+    border-radius: 10px;
+    font-size: 12px;
+    color: #64748b;
+}
+
+.o_phan_he_btn_create.o_roster_add_btn {
+    background: #7c3aed !important;
+    border-color: #7c3aed !important;
+}
+
+@media (max-width: 1200px) {
+    .o_roster_dash_body {
+        grid-template-columns: 1fr;
+    }
+    .o_roster_kpi_row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.roster-list-container {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    .table-header-custom {
+        background-color: #f8fafc;
+        th {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            letter-spacing: 0.5px;
+        }
+    }
+
+    .roster-row {
+        td {
+            padding: 12px 14px;
+            vertical-align: middle;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        &:hover {
+            background-color: #f8fafc;
+        }
+    }
+
+    .status-dot {
+        display: inline-block;
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+    }
+
+    .hover-primary:hover {
+        color: #4f46e5 !important;
+        text-decoration: underline;
+    }
+
+    .cursor-pointer {
+        cursor: pointer;
+    }
+
+    .custom-pagination {
+        .page-link {
+            color: #4b5563;
+            border: 1px solid #e5e7eb;
+            padding: 4px 10px;
+            margin: 0 2px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            background: #fff;
+            &:hover {
+                background-color: #f3f4f6;
+            }
+        }
+        .page-item.active .page-link {
+            background-color: #5b328a;
+            border-color: #5b328a;
+            color: #ffffff;
+            font-weight: bold;
+        }
+        .page-item.disabled .page-link {
+            opacity: 0.45;
+            pointer-events: none;
+        }
+    }
+}
+
+.o_linkq_roster_tree .o_list_renderer {
+    .o_linkq_roster_group th {
+        background: #f8fafc !important;
+        padding: 10px 12px !important;
+    }
+    .o_linkq_emp_group_bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        font-weight: 700;
+        color: #111;
+    }
+}

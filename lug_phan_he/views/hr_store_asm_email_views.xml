@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_store_form_asm_email" model="ir.ui.view">
+        <field name="name">hr.store.form.asm.email</field>
+        <field name="model">hr.store</field>
+        <field name="inherit_id" ref="hr_store.view_hr_store_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='phone']" position="after">
+                <field name="asm_email" placeholder="asm.aebd@linkq.vn"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

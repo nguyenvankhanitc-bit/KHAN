@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_tree_work_status" model="ir.ui.view">
+        <field name="name">hr.employee.list.work.status</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="work_status"
+                       string="Trạng thái"
+                       widget="badge"
+                       optional="show"
+                       decoration-success="work_status == 'working'"
+                       decoration-danger="work_status == 'resigned'"
+                       decoration-warning="work_status == 'transferred'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_employee_filter_work_status" model="ir.ui.view">
+        <field name="name">hr.employee.search.work.status</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='newly_hired']" position="after">
+                <separator/>
+                <filter string="Đang công tác" name="status_working" domain="[('work_status', '=', 'working')]"/>
+                <filter string="Nghỉ việc" name="status_resigned" domain="[('work_status', '=', 'resigned')]"/>
+                <filter string="Điều chuyển" name="status_transferred" domain="[('work_status', '=', 'transferred')]"/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Trạng thái" name="group_work_status" context="{'group_by': 'work_status'}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_employee_form_work_status" model="ir.ui.view">
+        <field name="name">hr.employee.form.work.status</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <field name="work_status" widget="statusbar" options="{'clickable': '1'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

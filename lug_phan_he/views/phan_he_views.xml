@@ -162,9 +162,9 @@
                 <field name="code"/>
                 <field name="mien_id"/>
                 <filter name="filter_active" string="Đang dùng" domain="[('active', '=', True)]"/>
-                <group>
+                
                     <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -267,11 +267,11 @@
                 <field name="responsible_id"/>
                 <filter name="filter_active" string="Đang hoạt động" domain="[('state', '=', 'active')]"/>
                 <filter name="filter_inactive" string="Ngừng hoạt động" domain="[('state', '=', 'inactive')]"/>
-                <group>
+                
                     <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
                     <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
                     <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -468,9 +468,9 @@
                 <field name="account_number"/>
                 <field name="bank_name"/>
                 <filter name="filter_default" string="Mặc định" domain="[('is_default', '=', True)]"/>
-                <group>
+                
                     <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -875,14 +875,14 @@
                 <separator/>
                 <filter name="filter_draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
                 <filter name="filter_waiting" string="Chờ duyệt" domain="[('state', '=', 'waiting')]"/>
-                <group>
+                
                     <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
                     <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
                     <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
                     <filter name="group_type" string="Loại dịch vụ" context="{'group_by': 'service_type_id'}"/>
                     <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
                     <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -1149,12 +1149,12 @@
                         domain="[('payment_state', '=', 'paid')]"/>
                 <filter name="filter_due_soon" string="Sắp đến hạn"
                         domain="[('payment_state', '=', 'due_soon')]"/>
-                <group>
+                
                     <filter name="group_service" string="Hợp đồng" context="{'group_by': 'service_id'}"/>
                     <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
                     <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
                     <filter name="group_state" string="Trạng thái" context="{'group_by': 'payment_state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -1314,11 +1314,11 @@
                 <filter name="filter_draft" string="Nháp" domain="[('reconcile_state', '=', 'draft')]"/>
                 <filter name="filter_matched" string="Đã đối soát" domain="[('reconcile_state', '=', 'matched')]"/>
                 <filter name="filter_mismatch" string="Lệch" domain="[('reconcile_state', '=', 'mismatch')]"/>
-                <group>
+                
                     <filter name="group_provider" string="Nhà cung cấp" context="{'group_by': 'provider_id'}"/>
                     <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
                     <filter name="group_reconcile" string="Đối soát" context="{'group_by': 'reconcile_state'}"/>
-                </group>
+                
             </search>
         </field>
     </record>
@@ -1383,10 +1383,10 @@
                 <filter name="filter_contract" string="Hồ sơ hợp đồng" domain="[('doc_type', '=', 'contract')]"/>
                 <filter name="filter_invoice" string="Hóa đơn" domain="[('doc_type', '=', 'invoice')]"/>
                 <filter name="filter_appendix" string="Phụ lục" domain="[('doc_type', '=', 'appendix')]"/>
-                <group>
+                
                     <filter name="group_type" string="Loại" context="{'group_by': 'doc_type'}"/>
                     <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
-                </group>
+                
             </search>
         </field>
     </record>

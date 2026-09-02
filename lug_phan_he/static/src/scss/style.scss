@@ -1,0 +1,166 @@
+/* Kẻ khung ô sắc nét cho bảng danh sách nhân sự LinkQ */
+.o_list_view.o_linkq_bordered_table,
+.o_list_renderer.o_linkq_bordered_table,
+.o_linkq_employee_list .o_list_renderer,
+.o_linkq_today_shift_list .o_list_renderer {
+    border: 1px solid #ced4da !important;
+    border-radius: 6px;
+    overflow: hidden;
+
+    thead {
+        background-color: #f1f3f5 !important;
+
+        th {
+            border: 1px solid #ced4da !important;
+            border-bottom: 2px solid #adb5bd !important;
+            vertical-align: middle !important;
+            color: #343a40 !important;
+            font-weight: 700 !important;
+            padding: 10px 8px !important;
+        }
+    }
+
+    tbody {
+        tr {
+            td {
+                border: 1px solid #dee2e6 !important;
+                vertical-align: middle !important;
+                padding: 8px 10px !important;
+                background-color: #ffffff;
+            }
+
+            &:hover td {
+                background-color: #f8f9fa !important;
+            }
+        }
+    }
+
+    .o_data_cell[name="stt"],
+    .o_data_cell[name="job_position"],
+    .o_data_cell[name="employee_id_num"],
+    .o_data_cell[name="cccd"],
+    .o_data_cell[name="phone"],
+    .o_data_cell[name="joining_date"],
+    .o_data_cell[name="state"],
+    .o_data_cell[name="employee_code"],
+    .o_data_cell[name="store_id"],
+    .o_data_cell[name="shift_symbol"],
+    .o_data_cell[name="shift_time"],
+    thead th[data-name="stt"],
+    thead th[data-name="job_position"],
+    thead th[data-name="employee_id_num"],
+    thead th[data-name="cccd"],
+    thead th[data-name="phone"],
+    thead th[data-name="joining_date"],
+    thead th[data-name="state"],
+    thead th[data-name="employee_code"],
+    thead th[data-name="store_id"],
+    thead th[data-name="shift_symbol"],
+    thead th[data-name="shift_time"] {
+        text-align: center !important;
+        justify-content: center;
+    }
+
+    .o_data_cell[name="employee_name"] {
+        font-weight: 700 !important;
+        text-transform: uppercase;
+        text-align: left !important;
+    }
+
+    .o_data_cell[name="stt"] {
+        width: 50px;
+        max-width: 50px;
+    }
+
+    .o_list_button {
+        padding: 2px 4px !important;
+    }
+}
+
+.o_linkq_employee_list .o_list_renderer {
+    border: 1px dashed #c5c9ce !important;
+    border-radius: 10px;
+    background: #f7f7f8;
+
+    thead th {
+        background: #f1f3f5 !important;
+        border: 1px solid #cfd4da !important;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        color: #343a40 !important;
+        font-weight: 700 !important;
+    }
+
+    tbody tr.o_data_row td {
+        border: 1px solid #cfd4da !important;
+        background: #ffffff !important;
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+        font-size: 13px;
+        padding: 8px 10px !important;
+        vertical-align: middle !important;
+    }
+
+    tbody tr.o_data_row:hover td {
+        background: #f8f9fa !important;
+    }
+
+    tbody tr.o_linkq_emp_group_header th {
+        background: #f7f7f8 !important;
+        border: none !important;
+        border-bottom: 1px solid #d9d9d9 !important;
+        padding: 10px 12px !important;
+    }
+
+    .o_linkq_emp_group_bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+    }
+
+    .o_linkq_emp_group_caret,
+    .o_linkq_emp_group_icon {
+        color: #222;
+        width: 14px;
+        text-align: center;
+    }
+
+    .o_linkq_emp_group_title {
+        font-weight: 700;
+        color: #111;
+    }
+
+    .o_linkq_emp_group_count {
+        margin-left: auto;
+        color: #6c757d;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+
+    .o_linkq_emp_status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: none !important;
+        font-weight: 500;
+    }
+
+    .o_linkq_emp_dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: #22c55e;
+        display: inline-block;
+        flex: 0 0 10px;
+    }
+
+    .o_linkq_emp_status_transferred .o_linkq_emp_dot,
+    .o_linkq_emp_status_support .o_linkq_emp_dot {
+        background: #f59e0b;
+    }
+
+    .o_linkq_emp_status_resigned .o_linkq_emp_dot {
+        background: #ef4444;
+    }
+}

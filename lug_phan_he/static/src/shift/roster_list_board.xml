@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.RosterListBoard">
+        <div class="roster-list-container p-3 bg-white rounded">
+            <div class="filter-bar bg-light p-3 rounded mb-4 border">
+                <div class="row g-2 align-items-end">
+                    <div class="col-6 col-md-auto" style="min-width: 110px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Tháng</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.month">
+                            <option value="all">Tất cả</option>
+                            <t t-foreach="months" t-as="m" t-key="m.value">
+                                <option t-att-value="m.value" t-esc="m.label"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-auto" style="min-width: 100px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Năm</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.year">
+                            <t t-foreach="years" t-as="y" t-key="y">
+                                <option t-att-value="y" t-esc="y"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-auto flex-grow-1" style="min-width: 170px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Cửa hàng</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.storeId">
+                            <option value="all">Tất cả cửa hàng</option>
+                            <t t-foreach="state.storeOptions" t-as="st" t-key="st.id">
+                                <option t-att-value="st.id" t-esc="st.name"/>
+                            </t>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-auto" style="min-width: 160px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Khu vực / Miền</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.regionId">
+                            <option value="all">Tất cả khu vực</option>
+                            <option value="north">Miền Bắc</option>
+                            <option value="south">Miền Nam</option>
+                            <option value="dtt">Miền ĐTT</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-auto" style="min-width: 160px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Trạng thái</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.status">
+                            <option value="all">Tất cả trạng thái</option>
+                            <option value="applying">Đang áp dụng</option>
+                            <option value="unapplied">Chưa áp dụng</option>
+                        </select>
+                    </div>
+                    <div class="col-6 col-md-auto" style="min-width: 130px;">
+                        <label class="form-label small fw-bold text-muted mb-1">Khóa lịch</label>
+                        <select class="form-select form-select-sm" t-model="state.filters.lockStatus">
+                            <option value="all">Tất cả</option>
+                            <option value="locked">Đã khóa</option>
+                            <option value="unlocked">Chưa khóa</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-auto d-flex gap-2 ms-auto mt-2 mt-md-0">
+                        <button type="button" class="btn btn-success btn-sm px-3 d-flex align-items-center" t-on-click="onSearch">
+                            <i class="fa fa-search me-1"/> Xem
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 d-flex align-items-center bg-white" t-on-click="onReset">
+                            <i class="fa fa-refresh me-1"/> Đặt lại
+                        </button>
+                        <button t-if="state.isAdmin" type="button" class="btn btn-danger btn-sm px-3 d-flex align-items-center fw-bold"
+                                t-on-click="onHardDelete" title="Xóa triệt để khỏi cơ sở dữ liệu">
+                            <i class="fa fa-fire me-1"/>
+                            <t t-if="selectedCount">Xóa vĩnh viễn (<t t-esc="selectedCount"/>)</t>
+                            <t t-else="">Xóa vĩnh viễn</t>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div t-if="state.isAdmin and selectedCount" class="alert alert-warning py-2 px-3 mb-3 d-flex align-items-center gap-2">
+                <span>Đã chọn <strong t-esc="selectedCount"/> bảng lịch ca</span>
+                <button type="button" class="btn btn-danger btn-sm fw-bold ms-auto" t-on-click="onHardDelete">
+                    <i class="fa fa-exclamation-triangle me-1"/> Xóa vĩnh viễn (<t t-esc="selectedCount"/> mục)
+                </button>
+            </div>
+
+            <div class="table-responsive border rounded mb-3">
+                <table class="table table-hover align-middle mb-0 roster-table">
+                    <thead class="table-header-custom">
+                        <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" class="form-check-input" t-on-change="onToggleSelectAll"/>
+                            </th>
+                            <th>TÊN BẢNG XẾP CA</th>
+                            <th class="text-center" style="width: 140px;">THÁNG / NĂM</th>
+                            <th style="width: 130px;">CỬA HÀNG</th>
+                            <th style="width: 130px;">KHU VỰC / MIỀN</th>
+                            <th style="width: 150px;">TRẠNG THÁI</th>
+                            <th style="width: 130px;">KHÓA LỊCH</th>
+                            <th class="text-center" style="width: 160px;">CẬP NHẬT</th>
+                            <th class="text-center" style="width: 96px;">THAO TÁC</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-if="!state.rosterList.length">
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-5">
+                                    Không có dữ liệu bảng xếp ca phù hợp với bộ lọc.
+                                </td>
+                            </tr>
+                        </t>
+                        <t t-foreach="state.rosterList" t-as="row" t-key="row.id">
+                            <tr class="roster-row">
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input" t-att-checked="row.selected" t-on-change="() => this.onToggleRow(row)"/>
+                                </td>
+                                <td>
+                                    <span class="fw-medium text-dark cursor-pointer hover-primary" t-on-click="() => this.onOpenDetail(row.id)">
+                                        <t t-esc="row.name"/>
+                                    </span>
+                                </td>
+                                <td class="text-center text-muted">
+                                    Tháng <t t-esc="row.month"/> / <t t-esc="row.year"/>
+                                </td>
+                                <td class="fw-semibold text-secondary"><t t-esc="row.store_name"/></td>
+                                <td class="text-secondary"><t t-esc="row.region_name"/></td>
+                                <td>
+                                    <t t-if="row.is_applied">
+                                        <span class="d-inline-flex align-items-center text-success fw-medium small">
+                                            <span class="status-dot bg-success me-1"/> Đang áp dụng
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="d-inline-flex align-items-center text-primary fw-medium small">
+                                            <span class="status-dot bg-primary me-1"/> Chưa áp dụng
+                                        </span>
+                                    </t>
+                                </td>
+                                <td>
+                                    <t t-if="row.is_locked">
+                                        <span class="lock-tag text-danger fw-medium small">
+                                            <i class="fa fa-lock me-1"/> Đã khóa
+                                        </span>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="lock-tag text-secondary fw-medium small">
+                                            <i class="fa fa-unlock-alt me-1 text-muted"/> Chưa khóa
+                                        </span>
+                                    </t>
+                                </td>
+                                <td class="text-center text-muted small"><t t-esc="formatDateTime(row.write_date)"/></td>
+                                <td class="text-center">
+                                    <t t-if="state.canManage">
+                                        <button type="button"
+                                                class="btn btn-sm btn-link text-primary p-1"
+                                                title="Chỉnh sửa lịch ca"
+                                                t-on-click.stop="() => this.onOpenDetail(row.id)">
+                                            <i class="fa fa-pencil"/>
+                                        </button>
+                                        <button type="button"
+                                                class="btn btn-sm btn-link text-danger p-1"
+                                                title="Xóa lịch ca"
+                                                t-on-click.stop="() => this.onDeleteRoster(row.id)">
+                                            <i class="fa fa-trash"/>
+                                        </button>
+                                    </t>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="d-flex flex-wrap justify-content-between align-items-center pt-2">
+                <div class="d-flex align-items-center gap-2 small text-muted">
+                    <span>Hiển thị</span>
+                    <select class="form-select form-select-sm" style="width: 70px;" t-on-change="onChangePageSize">
+                        <option value="10" t-att-selected="state.pageSize === 10">10</option>
+                        <option value="20" t-att-selected="state.pageSize === 20">20</option>
+                        <option value="50" t-att-selected="state.pageSize === 50">50</option>
+                    </select>
+                    <span>/ trang</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="small text-muted" t-esc="paginationInfo"/>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0 custom-pagination">
+                            <li t-attf-class="page-item #{state.currentPage === 1 ? 'disabled' : ''}">
+                                <button type="button" class="page-link" t-on-click="() => this.setPage(state.currentPage - 1)">
+                                    <i class="fa fa-chevron-left"/>
+                                </button>
+                            </li>
+                            <t t-foreach="pageNumbers" t-as="p" t-key="p">
+                                <li t-attf-class="page-item #{state.currentPage === p ? 'active' : ''}">
+                                    <button type="button" class="page-link" t-on-click="() => this.setPage(p)" t-esc="p"/>
+                                </li>
+                            </t>
+                            <li t-attf-class="page-item #{state.currentPage === state.totalPages ? 'disabled' : ''}">
+                                <button type="button" class="page-link" t-on-click="() => this.setPage(state.currentPage + 1)">
+                                    <i class="fa fa-chevron-right"/>
+                                </button>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="lug_phan_he.RosterHardDeleteDialog">
+        <Dialog title="'CẢNH BÁO NGUY HIỂM: XÓA VĨNH VIỄN DỮ LIỆU'" size="'md'">
+            <div class="text-danger fw-bold mb-2">CẢNH BÁO NGUY HIỂM: XÓA VĨNH VIỄN DỮ LIỆU</div>
+            <p class="mb-2">
+                Thao tác này sẽ XÓA TRIỆT ĐỂ <strong t-esc="props.count"/> bảng xếp ca đã chọn
+                cùng toàn bộ dữ liệu ca làm việc liên quan khỏi cơ sở dữ liệu.
+            </p>
+            <p class="mb-3">Dữ liệu KHÔNG thể phục hồi. Để xác nhận, vui lòng nhập chữ <strong>DELETE</strong> vào ô bên dưới:</p>
+            <input type="text" class="form-control" placeholder="DELETE" t-model="state.code"/>
+            <t t-set-slot="footer">
+                <button type="button" class="btn btn-secondary" t-on-click="props.close">Hủy</button>
+                <button type="button" class="btn btn-danger fw-bold"
+                        t-att-disabled="!canConfirm or state.busy"
+                        t-on-click="onConfirm">
+                    Xác nhận xóa vĩnh viễn
+                </button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

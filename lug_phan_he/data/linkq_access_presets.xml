@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_preset_view" model="phan.he.module.access">
+        <field name="name">Chỉ xem</field>
+        <field name="code">preset_view</field>
+        <field name="description">Preset: chỉ xem lịch ca, ký hiệu và thông báo. Không thêm/sửa/xóa.</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="access_preset_staff" model="phan.he.module.access">
+        <field name="name">Nhân viên ca</field>
+        <field name="code">preset_staff</field>
+        <field name="description">Preset: xem/thêm/sửa lịch ca, không xóa, không báo cáo.</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="access_preset_store_mgr" model="phan.he.module.access">
+        <field name="name">Quản lý cửa hàng</field>
+        <field name="code">preset_store_mgr</field>
+        <field name="description">Preset: quyền nhân viên ca + lịch vùng miền (xem).</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="access_preset_region_mgr" model="phan.he.module.access">
+        <field name="name">Quản lý miền</field>
+        <field name="code">preset_region_mgr</field>
+        <field name="description">Preset: lịch vùng miền sửa được, báo cáo, khóa/mở khóa.</field>
+        <field name="active" eval="True"/>
+    </record>
+    <record id="access_preset_admin" model="phan.he.module.access">
+        <field name="name">Toàn quyền (Admin)</field>
+        <field name="code">preset_admin</field>
+        <field name="description">Preset: đầy đủ Xem/Thêm/Sửa/Xóa. Gắn nhóm Manager.</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

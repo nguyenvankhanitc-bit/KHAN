@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.GuideDocsManageDialog">
+        <Dialog size="'xl'" contentClass="'o_guide_manage_dialog'" header="false" footer="false" withBodyPadding="false">
+            <div class="o_guide_manage">
+                <div class="o_guide_manage_header">
+                    <h2>TÀI LIỆU HƯỚNG DẪN</h2>
+                    <p>Quản lý và cấu hình tài liệu hướng dẫn sử dụng LinkQ ERP</p>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="text-muted small">Đang tải…</div>
+                </t>
+                <t t-else="">
+                    <table class="o_guide_manage_table">
+                        <thead>
+                            <tr>
+                                <th class="col-stt">STT</th>
+                                <th class="col-title">Nội dung (Tiêu đề)</th>
+                                <th class="col-file">File đính kèm</th>
+                                <th class="col-perm">Quyền User</th>
+                                <th class="col-del">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.rows" t-as="row" t-key="row.uid">
+                                <tr>
+                                    <td class="col-stt" t-esc="row_index + 1"/>
+                                    <td>
+                                        <input type="text" class="input-title" placeholder="Nhập tiêu đề" t-on-input="(ev) => this.setTitle(row, ev)"/>
+                                    </td>
+                                    <td>
+                                        <div class="file-box">
+                                            <i t-attf-class="fa {{row.kind === 'xlsx' ? 'fa-file-excel-o text-success' : 'fa-file-pdf-o text-danger'}} o_guide_file_ico"/>
+                                            <div class="file-info">
+                                                <strong t-esc="row.file_name or 'Chưa có file'"/>
+                                                <span t-esc="row.size or '—'"/>
+                                            </div>
+                                            <button type="button" class="btn-change-file" t-on-click="() => this.changeFile(row)">Đổi</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="perm-group">
+                                            <label>
+                                                <input type="checkbox" t-on-click.stop="(ev) => this.togglePerm(row, 'perm_view', ev)"/>
+                                                Xem
+                                            </label>
+                                            <label>
+                                                <input type="checkbox" t-on-click.stop="(ev) => this.togglePerm(row, 'perm_download', ev)"/>
+                                                Tải về
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td class="col-del">
+                                        <button type="button" class="btn-action-del" title="Xóa dòng" t-on-click="() => this.removeRow(row)">
+                                            <i class="fa fa-trash-o"/>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+
+                <div class="footer-actions">
+                    <button type="button" class="btn-add" t-on-click="addRow">
+                        <i class="fa fa-plus"/> Thêm dòng tài liệu
+                    </button>
+                    <div class="group-save">
+                        <button type="button" class="btn-cancel" t-on-click="() => this.props.close()">Hủy</button>
+                        <button type="button" class="btn-save" t-on-click="saveRows">
+                            <i class="fa fa-check"/> Lưu thay đổi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Dialog>
+    </t>
+</templates>

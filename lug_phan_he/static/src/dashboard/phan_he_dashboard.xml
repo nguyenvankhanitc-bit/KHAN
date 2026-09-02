@@ -3,7 +3,7 @@
     <t t-name="lug_phan_he.PhanHeDashboard">
         <div class="o_phan_he_shell o_action">
             <t t-if="isLinkqErp">
-                <PhanHeAppSidebar t-props="{ activeKey: linkqSidebarKey }"/>
+                <PhanHeAppSidebar activeKey="linkqSidebarKey"/>
             </t>
             <t t-else="">
             <aside class="o_phan_he_sidebar">
@@ -380,7 +380,7 @@
                             <div class="o_phan_he_year_tools">
                                 <label class="o_phan_he_year_filter">
                                     Năm
-                                    <select t-att-value="state.filters.year" t-on-change="onYearChange">
+                                    <select t-on-change="onYearChange">
                                         <t t-foreach="yearOptions" t-as="y" t-key="y">
                                             <option t-att-value="y"
                                                     t-att-selected="y === state.filters.year"

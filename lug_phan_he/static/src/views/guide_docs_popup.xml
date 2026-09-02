@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.GuideDocsDialog">
+        <Dialog size="'md'" contentClass="'o_guide_docs_dialog'" header="false" footer="false" withBodyPadding="false">
+            <div class="o_doc_modal_container p-3">
+                <div class="d-flex align-items-center mb-3 pb-2 border-bottom">
+                    <i class="fa fa-arrow-left me-2 cursor-pointer text-muted" role="button" t-on-click="() => this.props.close()"/>
+                    <div>
+                        <h5 class="mb-0 fw-bold">TÀI LIỆU HƯỚNG DẪN</h5>
+                        <small class="text-muted">Các tài liệu hướng dẫn sử dụng LinkQ ERP</small>
+                    </div>
+                </div>
+
+                <div class="input-group mb-3">
+                    <span class="input-group-text bg-white border-end-0"><i class="fa fa-search text-muted"/></span>
+                    <input type="text" class="form-control border-start-0 ps-0" placeholder="Tìm kiếm tài liệu..." t-on-input="onSearch"/>
+                </div>
+
+                <div class="doc-list d-flex flex-column gap-2 o_guide_doc_scroll">
+                    <t t-if="!docsList().length">
+                        <div class="text-center text-muted py-4">Không tìm thấy tài liệu phù hợp.</div>
+                    </t>
+                    <t t-foreach="docsList()" t-as="doc" t-key="doc.id + '-' + doc.name">
+                        <div class="p-3 border rounded d-flex justify-content-between align-items-center bg-white shadow-sm o_guide_doc_row">
+                            <div class="d-flex align-items-start gap-3">
+                                <i t-att-class="fileIcon(doc.file_type)"/>
+                                <div>
+                                    <div class="fw-bold text-dark" t-esc="doc.name"/>
+                                    <div class="text-muted small">
+                                        <span class="text-uppercase" t-esc="doc.file_type"/>
+                                        <t t-if="doc.file_size_text"> · <t t-esc="doc.file_size_text"/></t>
+                                        <t t-if="doc.updated"> · Cập nhật: <t t-esc="doc.updated"/></t>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2 flex-shrink-0">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="() => this.openDoc(doc, false)">
+                                    <i class="fa fa-eye me-1"/> Xem
+                                </button>
+                                <button type="button" t-att-class="downloadBtnClass(doc.file_type)" t-on-click="() => this.openDoc(doc, true)">
+                                    <i class="fa fa-download me-1"/> Tải về
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </Dialog>
+    </t>
+</templates>

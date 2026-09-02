@@ -7,14 +7,45 @@
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 <page string="Phân quyền Menu LinkQ ERP" name="linkq_menus">
-                    <field name="menu_permission_line_ids" nolabel="1">
-                        <list editable="bottom" create="0" delete="0">
+                    <field name="menu_permission_line_ids" nolabel="1" widget="linkq_menu_permission_tree">
+                        <list create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_group"/>
+                            <field name="is_custom"/>
+                            <field name="parent_id"/>
                             <field name="menu_key"/>
+                            <field name="name"/>
                             <field name="can_read"/>
                             <field name="can_create"/>
                             <field name="can_write"/>
                             <field name="can_unlink"/>
                             <field name="can_all"/>
+                        </list>
+                    </field>
+                </page>
+                <page string="Phân quyền Cửa hàng (Lịch ca &amp; Nhân sự)" name="page_store_permission">
+                    <div class="mb-3">
+                        <h3 class="mt-2" style="font-weight: 600; color: #2c3e50;">
+                            Ma trận phân quyền xem Lịch ca &amp; Nhân sự
+                        </h3>
+                    </div>
+                    <field name="store_permission_ids" nolabel="1">
+                        <list editable="bottom" create="1" delete="1">
+                            <field name="sequence" widget="handle"/>
+                            <field name="stt_display" string="STT" readonly="1"/>
+                            <field name="user_id" string="TÊN USER" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="can_view" string="PHÂN QUYỀN XEM" widget="boolean_toggle"/>
+                            <field name="type_scope" string="PHẠM VI"/>
+                            <field name="region" string="MIỀN"
+                                   invisible="type_scope != 'region'"/>
+                            <field name="store_ids" string="CỬA HÀNG ĐƯỢC XEM"
+                                   widget="many2many_tags"
+                                   options="{'no_create': True, 'no_open': True}"
+                                   invisible="type_scope != 'custom'"/>
+                            <field name="store_display_text" column_invisible="1"/>
+                            <button name="action_open_store_detail" type="object"
+                                    icon="fa-pencil" title="Chỉnh sửa danh sách cửa hàng"
+                                    class="btn-link text-warning p-0"/>
                         </list>
                     </field>
                 </page>

@@ -55,6 +55,13 @@
         <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
     </record>
 
+    <!-- group_system implied_ids được gộp trong security/security.xml -->
+
+    <record id="group_phan_he_lock_settings" model="res.groups">
+        <field name="name">Cài đặt khóa lịch ca</field>
+        <field name="privilege_id" ref="res_groups_privilege_phan_he"/>
+    </record>
+
     <!-- Multi-company only — không chặn dữ liệu khi chưa gán miền/khu vực -->
     <record id="rule_phan_he_store_company" model="ir.rule">
         <field name="name">Store multi-company</field>

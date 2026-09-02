@@ -63,10 +63,10 @@
             <search string="Tìm lịch Miền Bắc">
                 <field name="store_name"/>
                 <field name="apply_days"/>
-                <group>
+                
                     <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_name'}"/>
                     <filter name="group_days" string="Ngày áp dụng" context="{'group_by': 'apply_days'}"/>
-                </group>
+                
             </search>
         </field>
     </record>

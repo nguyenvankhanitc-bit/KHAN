@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.LinkqStoreDashboard">
+        <div class="o_phan_he_shell o_action o_store_dash_shell">
+            <PhanHeAppSidebar activeKey="'store_dash'"/>
+            <div class="o_store_dash">
+                <header class="o_sd_top">
+                    <div>
+                        <h1 class="o_sd_title">DASHBOARD CỬA HÀNG</h1>
+                        <div class="o_sd_sub">
+                            Cửa hàng:
+                            <span t-if="!data.can_switch_store" t-esc="data.store_name"/>
+                            <select t-else="" class="o_sd_store" t-on-change="onStoreChange">
+                                <t t-foreach="data.stores or []" t-as="st" t-key="st.id">
+                                    <option t-att-value="st.id" t-att-selected="st.id === state.storeId" t-esc="st.name"/>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="o_sd_month">
+                        <button type="button" class="o_sd_month_btn" t-on-click="prevMonth" title="Tháng trước">
+                            <i class="fa fa-chevron-left"/>
+                        </button>
+                        <label class="o_sd_month_pick">
+                            <i class="fa fa-calendar"/>
+                            <span t-esc="monthLabel"/>
+                            <input type="month" t-att-value="monthInputValue" t-on-change="onMonthInput"/>
+                        </label>
+                        <button type="button" class="o_sd_month_btn" t-on-click="nextMonth" title="Tháng sau">
+                            <i class="fa fa-chevron-right"/>
+                        </button>
+                    </div>
+                </header>
+
+                <section class="o_sd_kpis">
+                    <article class="o_sd_kpi">
+                        <span class="o_sd_kpi_ico is-purple"><i class="fa fa-users"/></span>
+                        <div>
+                            <div class="o_sd_kpi_label">Tổng nhân viên</div>
+                            <div class="o_sd_kpi_val" t-esc="kpis.staff_total_label"/>
+                            <div class="o_sd_kpi_sub" t-esc="kpis.staff_sub"/>
+                        </div>
+                    </article>
+                    <article class="o_sd_kpi">
+                        <span class="o_sd_kpi_ico is-blue"><i class="fa fa-clock-o"/></span>
+                        <div>
+                            <div class="o_sd_kpi_label">Tổng giờ làm</div>
+                            <div class="o_sd_kpi_val" t-esc="kpis.hours_label"/>
+                            <div class="o_sd_kpi_sub" t-esc="monthLabel"/>
+                        </div>
+                    </article>
+                    <article class="o_sd_kpi">
+                        <span class="o_sd_kpi_ico is-green"><i class="fa fa-calendar"/></span>
+                        <div>
+                            <div class="o_sd_kpi_label">Tổng số ca</div>
+                            <div class="o_sd_kpi_val" t-esc="kpis.shifts_label"/>
+                            <div class="o_sd_kpi_sub" t-esc="monthLabel"/>
+                        </div>
+                    </article>
+                    <article class="o_sd_kpi">
+                        <span class="o_sd_kpi_ico is-green"><i class="fa fa-check-circle"/></span>
+                        <div>
+                            <div class="o_sd_kpi_label">Tỷ lệ đủ ca</div>
+                            <div class="o_sd_kpi_val" t-esc="kpis.fill_label"/>
+                            <div class="o_sd_kpi_sub" t-esc="kpis.fill_sub"/>
+                        </div>
+                    </article>
+                    <article class="o_sd_kpi">
+                        <span class="o_sd_kpi_ico is-red"><i class="fa fa-exclamation-triangle"/></span>
+                        <div>
+                            <div class="o_sd_kpi_label">Số ca thiếu</div>
+                            <div class="o_sd_kpi_val" t-esc="kpis.missing_label"/>
+                            <div class="o_sd_kpi_sub">Cần bổ sung</div>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="o_sd_row">
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">1. TỔNG SỐ LƯỢNG NHÂN VIÊN</div>
+                        <div class="o_sd_split">
+                            <div class="o_sd_chart"><canvas t-ref="staffCanvas"/></div>
+                            <div class="o_sd_legend">
+                                <t t-foreach="staffSlices" t-as="s" t-key="s.key">
+                                    <div class="o_sd_leg">
+                                        <span class="o_sd_dot" t-attf-style="background: {{s.color}}"/>
+                                        <span t-esc="s.label"/>
+                                        <b t-esc="s.count"/>
+                                        <span class="text-muted" t-esc="'(' + s.pct + '%)'"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">2. TỔNG GIỜ THEO TỪNG NHÂN VIÊN (Top 5)</div>
+                        <div class="o_sd_chart is-bar"><canvas t-ref="barCanvas"/></div>
+                    </article>
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">3. TỔNG GIỜ LÀM THEO NGÀY (Biểu đồ miền)</div>
+                        <div class="o_sd_chart is-area"><canvas t-ref="areaCanvas"/></div>
+                    </article>
+                </section>
+
+                <section class="o_sd_row">
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">4. PHÂN BỐ CA</div>
+                        <div class="o_sd_split">
+                            <div class="o_sd_chart"><canvas t-ref="shiftCanvas"/></div>
+                            <div class="o_sd_legend">
+                                <t t-foreach="shiftSlices" t-as="s" t-key="s.key">
+                                    <div class="o_sd_leg">
+                                        <span class="o_sd_dot" t-attf-style="background: {{s.color}}"/>
+                                        <span t-esc="s.label"/>
+                                        <b t-esc="s.pct + '%'"/>
+                                        <span class="text-muted" t-esc="'(' + s.count + ' ca)'"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">5. LỊCH CA HÔM NAY</div>
+                        <table class="o_sd_table">
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>HỌ VÀ TÊN</th>
+                                    <th>CHỨC VỤ</th>
+                                    <th>CA</th>
+                                    <th>THỜI GIAN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="pagedEmployees" t-as="emp" t-key="emp.stt">
+                                    <tr>
+                                        <td t-esc="emp.stt"/>
+                                        <td t-esc="emp.name"/>
+                                        <td t-esc="emp.job"/>
+                                        <td>
+                                            <span t-if="emp.shift_code" class="o_sd_pill is-ok" t-esc="emp.shift_code"/>
+                                            <span t-else="">—</span>
+                                        </td>
+                                        <td t-esc="emp.shift_time"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div class="o_sd_pager">
+                            <span>Hiển thị <t t-esc="pageFrom"/> - <t t-esc="pageTo"/> / <t t-esc="employees.length"/> nhân viên</span>
+                            <div class="o_sd_pages">
+                                <button type="button" t-on-click="() => this.setPage(state.page - 1)">&lt;</button>
+                                <t t-foreach="pages" t-as="p" t-key="p">
+                                    <button type="button" t-att-class="p === state.page ? 'is-on' : ''" t-on-click="() => this.setPage(p)" t-esc="p"/>
+                                </t>
+                                <button type="button" t-on-click="() => this.setPage(state.page + 1)">&gt;</button>
+                            </div>
+                        </div>
+                    </article>
+                    <article class="o_sd_card">
+                        <div class="o_sd_card_title">6. CẢNH BÁO</div>
+                        <div class="o_sd_alerts">
+                            <t t-foreach="alerts" t-as="al" t-key="al.key">
+                                <button type="button" class="o_sd_alert" t-attf-class="is-{{al.tone}}" t-on-click="() => this.onAlert(al)">
+                                    <span class="o_sd_alert_ico"><i t-attf-class="fa {{al.icon}}"/></span>
+                                    <span class="o_sd_alert_text" t-esc="al.text"/>
+                                    <i class="fa fa-chevron-right"/>
+                                </button>
+                            </t>
+                            <div t-if="!alerts.length" class="o_sd_empty">Không có cảnh báo</div>
+                        </div>
+                    </article>
+                </section>
+
+                <footer class="o_sd_foot">
+                    <button type="button" class="o_sd_refresh" t-on-click="refresh" title="Tải lại">
+                        <i t-att-class="state.loading ? 'fa fa-refresh fa-spin' : 'fa fa-refresh'"/>
+                    </button>
+                    <span>Dữ liệu được cập nhật lúc <t t-esc="data.updated_at or '—'"/></span>
+                </footer>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -41,13 +41,6 @@ const SERVICE_APPS = [
         action: "lug_phan_he.action_phan_he_dashboard_linkq_nb",
         enabled: true,
     },
-    {
-        code: "linkq_hrm",
-        name: "LinkQ HRM",
-        icon: "/lug_phan_he/static/description/icon_hub_hrm.png",
-        action: "lug_phan_he.action_phan_he_dashboard_linkq_hrm",
-        enabled: true,
-    },
 ];
 
 const CONFIG_ITEMS = [
@@ -120,8 +113,8 @@ export class PhanHeHub extends Component {
             );
         } catch (error) {
             console.error(error);
-            this.state.apps = SERVICE_APPS.filter((app) => app.enabled);
-            this.state.cards = this.state.apps.slice();
+            this.state.apps = [];
+            this.state.cards = [];
         }
     }
 

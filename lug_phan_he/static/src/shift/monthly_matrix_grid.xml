@@ -1,40 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
+    <t t-name="lug_phan_he.MonthlyStaffSummary">
+        <div class="o_mm_staff_panel">
+            <div class="o_mm_staff_head">
+                <i class="fa fa-users"/> NHÂN SỰ
+            </div>
+            <table class="o_mm_staff_table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Tên Nhân viên</th>
+                        <th>Chức vụ</th>
+                        <th>Tổng giờ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-if="!staffRows.length">
+                        <tr>
+                            <td colspan="4" class="o_mm_staff_empty">
+                                <i class="fa fa-users"/>
+                                <div>Chưa có nhân sự</div>
+                                <small>Thêm nhân sự để xem tổng giờ</small>
+                            </td>
+                        </tr>
+                    </t>
+                    <t t-foreach="staffRows" t-as="row" t-key="row.key">
+                        <tr>
+                            <td t-esc="row.idx"/>
+                            <td class="text-start" t-esc="row.name"/>
+                            <td t-esc="row.job"/>
+                            <td t-esc="row.hours"/>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
+    </t>
+
     <t t-name="lug_phan_he.MonthlyMatrixGrid">
-        <div class="o_monthly_matrix_wrap">
-            <div class="o_mm_toolbar" t-if="!confirmed">
-                <button type="button" class="btn btn-primary o_mm_add_btn" t-on-click="() => this.onAddEmployee()">
-                    Thêm nhân viên
+        <div class="o_monthly_matrix_wrap" t-on-click="() => this.closePicker()">
+            <div class="o_mm_toolbar">
+                <button t-if="isEditMode" type="button" class="btn o_mm_add_btn" t-on-click="() => this.onAddEmployee()">
+                    <i class="fa fa-plus"/> Thêm nhân viên
                 </button>
-                <div class="o_mm_toolbar_actions">
-                    <button type="button"
-                            class="btn btn-outline-secondary"
-                            t-if="state.isDirty"
-                            t-att-disabled="state.isSaving"
-                            t-on-click="() => this.onCancelChanges()">
-                        Hủy bỏ
-                    </button>
-                    <button type="button"
-                            class="btn btn-success o_mm_btn_grid_save"
-                            t-att-disabled="!state.isDirty || state.isSaving"
-                            t-on-click="() => this.onSaveSchedule()">
-                        <i t-if="state.isSaving" class="fa fa-spinner fa-spin me-1"/>
-                        <i t-else="" class="fa fa-floppy-o me-1"/>
-                        Lưu thay đổi
-                    </button>
+                <div class="o_mm_legend">
+                    <span class="o_mm_leg is-t7">T7</span>
+                    <span>Thiếu ca sáng</span>
+                    <span class="o_mm_leg is-cn">CN</span>
+                    <span>Thiếu ca tối</span>
+                    <span class="o_mm_leg is-off">-</span>
+                    <span>Nghỉ</span>
+                    <span class="o_mm_hint">
+                        <i class="fa fa-info-circle"/> Nhấn vào ô để xem chi tiết
+                    </span>
                 </div>
             </div>
-            <div class="o_monthly_matrix_scroll">
-                <table class="o_monthly_matrix_table">
+            <div class="o_monthly_matrix_scroll o_mm_hscroll" t-on-click="() => this.closePicker()">
+                <table class="o_monthly_matrix_table o_mm_excel_table" style="min-width:2600px;width:max-content;">
                     <thead>
-                        <tr class="o_mm_row_holiday">
+                        <tr class="o_mm_row_day">
                             <th class="o_mm_sticky o_mm_col_name" rowspan="2">NHÂN VIÊN</th>
                             <th class="o_mm_sticky o_mm_col_job" rowspan="2">CHỨC VỤ</th>
                             <th class="o_mm_sticky o_mm_col_id" rowspan="2">MÃ ID</th>
                             <th class="o_mm_sticky o_mm_col_ca" rowspan="2">CA</th>
                             <t t-foreach="days" t-as="day" t-key="day">
-                                <th t-att-class="'o_mm_day ' + (headerOf(day).valid ? '' : ' is-invalid')">
+                                <th t-att-class="'o_mm_day ' + wdClass(day) + lackClass(day) + holidayClass(day) + (headerOf(day).valid ? '' : ' is-invalid')">
                                     <div t-esc="day"/>
+                                    <div t-if="headerOf(day).holiday" class="o_mm_holiday" t-esc="headerOf(day).holiday"/>
                                 </th>
                             </t>
                             <th class="o_mm_count" colspan="9">CA</th>
@@ -42,7 +74,7 @@
                         </tr>
                         <tr class="o_mm_row_wd">
                             <t t-foreach="days" t-as="day" t-key="'wd-'+day">
-                                <th t-att-class="'o_mm_wd ' + (headerOf(day).sunday ? 'is-sunday' : (headerOf(day).weekend ? 'is-weekend' : '')) + (headerOf(day).valid ? '' : ' is-invalid')"
+                                <th t-att-class="'o_mm_wd ' + wdClass(day) + lackClass(day) + (headerOf(day).valid ? '' : ' is-invalid')"
                                     t-esc="headerOf(day).wd"/>
                             </t>
                             <t t-foreach="countCodes" t-as="code" t-key="code">
@@ -51,96 +83,131 @@
                         </tr>
                     </thead>
                     <tbody>
+                        <t t-if="!hasEmployees">
+                            <tr>
+                                <td t-att-colspan="5 + days.length + countCodes.length" class="o_mm_grid_empty">
+                                    <i class="fa fa-users"/>
+                                    <div>Chưa có nhân viên nào trong bảng ca</div>
+                                    <small t-if="isEditMode">Nhấn "Thêm nhân viên" để bắt đầu</small>
+                                </td>
+                            </tr>
+                        </t>
                         <t t-foreach="list.records" t-as="line" t-key="line.id">
                             <tr class="o_mm_plan">
                                 <td class="o_mm_sticky o_mm_col_name" rowspan="3">
-                                    <input type="text"
+                                    <input t-if="isEditMode"
+                                           type="text"
                                            class="o_mm_meta o_mm_emp_text"
                                            placeholder="Tên nhân viên"
                                            t-att-value="metaOf(line, 'employee_name') or employeeName(line) or ''"
-                                           t-att-disabled="confirmed"
-                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_name', ev)"/>
+                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_name', ev)"
+                                           t-on-focus="(ev) => this.hydrateInput(ev, this.metaOf(line, 'employee_name') or this.employeeName(line) or '')"/>
+                                    <span t-else="" class="o_mm_meta o_mm_emp_text" t-esc="metaOf(line, 'employee_name') or employeeName(line) or ''"/>
                                 </td>
                                 <td class="o_mm_sticky o_mm_col_job" rowspan="3">
-                                    <select class="o_mm_job_select"
-                                            t-att-value="metaOf(line, 'job_title') or 'NV'"
-                                            t-att-disabled="confirmed"
-                                            t-on-change="(ev) => this.onMetaInput(line, 'job_title', ev)">
+                                    <select t-if="isEditMode"
+                                            class="o_mm_job_select"
+                                            t-on-change="(ev) => this.onMetaInput(line, 'job_title', ev)"
+                                            t-on-focus="(ev) => this.hydrateInput(ev, this.metaOf(line, 'job_title') or 'NV')">
                                         <t t-foreach="jobTitles" t-as="job" t-key="job">
-                                            <option t-att-value="job" t-esc="job"/>
+                                            <option t-att-value="job" t-att-selected="job === (metaOf(line, 'job_title') or 'NV')" t-esc="job"/>
                                         </t>
                                     </select>
+                                    <span t-else="" class="o_mm_meta" t-esc="metaOf(line, 'job_title') or 'NV'"/>
                                 </td>
                                 <td class="o_mm_sticky o_mm_col_id" rowspan="3">
-                                    <input type="number"
+                                    <input t-if="isEditMode"
+                                           type="number"
                                            class="o_mm_meta"
-                                           t-att-value="metaOf(line, 'employee_code') || ''"
-                                           t-att-disabled="confirmed"
-                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_code', ev)"/>
+                                           t-att-value="metaOf(line, 'employee_code') or ''"
+                                           t-on-change="(ev) => this.onMetaInput(line, 'employee_code', ev)"
+                                           t-on-focus="(ev) => this.hydrateInput(ev, this.metaOf(line, 'employee_code') or '')"/>
+                                    <span t-else="" class="o_mm_meta" t-esc="metaOf(line, 'employee_code') || ''"/>
                                 </td>
-                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-plan">DỰ KIẾN</span></td>
+                                <td class="o_mm_sticky o_mm_col_ca">
+                                    <span class="o_mm_badge is-plan">DỰ KIẾN</span>
+                                </td>
                                 <t t-foreach="days" t-as="day" t-key="'p-'+line.id+'-'+day">
-                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'plan', day)) + (headerOf(day).valid ? '' : ' is-invalid')">
-                                        <select class="o_mm_code_select"
-                                                t-att-value="codeOf(line, 'plan', day)"
-                                                t-att-disabled="confirmed or !headerOf(day).valid"
-                                                t-on-change="(ev) => this.onCellChange(line, 'plan', day, ev)">
-                                            <option value=""/>
-                                            <t t-foreach="getShiftOptionsFor(line, 'plan', day)" t-as="opt" t-key="'p-'+line.id+'-'+day+'-'+opt">
-                                                <option t-att-value="opt"
-                                                        t-att-selected="codeOf(line, 'plan', day) === opt"
-                                                        t-esc="opt"/>
-                                            </t>
-                                        </select>
+                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'plan', day)) + (headerOf(day).valid ? '' : ' is-invalid') + (isEditMode ? '' : ' is-locked') + (hasComment(line, 'plan', day) ? ' has-note' : '')"
+                                        t-on-click.stop="(ev) => this.onOpenPicker(ev, line, 'plan', day)"
+                                        t-on-contextmenu.stop="(ev) => this.onCellContextMenu(ev, line, 'plan', day)"
+                                        t-on-dblclick.stop="(ev) => this.onCellDblClick(ev, line, 'plan', day)"
+                                        t-on-mouseenter="(ev) => this.onCellHover(ev, line, 'plan', day, true)"
+                                        t-on-mouseleave="() => this.onCellHover(null, line, 'plan', day, false)">
+                                        <span class="o_mm_code_text" t-esc="codeOf(line, 'plan', day)"/>
+                                        <span t-if="hasComment(line, 'plan', day)" class="o_mm_note_mark"/>
                                     </td>
                                 </t>
                                 <t t-foreach="countCodes" t-as="code" t-key="'pc-'+line.id+'-'+code">
                                     <td class="o_mm_count_val" t-esc="countOf(line, 'plan', code)"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="hoursTotal(line, 'plan')"/>
+                                <td class="o_mm_total_val" t-esc="formatHours(hoursTotal(line, 'plan'))"/>
                             </tr>
                             <tr class="o_mm_actual">
-                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-actual">THỰC TẾ</span></td>
+                                <td class="o_mm_sticky o_mm_col_ca">
+                                    <span class="o_mm_badge is-actual">THỰC TẾ</span>
+                                </td>
                                 <t t-foreach="days" t-as="day" t-key="'a-'+line.id+'-'+day">
-                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'actual', day)) + (headerOf(day).valid ? '' : ' is-invalid')">
-                                        <select class="o_mm_code_select"
-                                                t-att-value="codeOf(line, 'actual', day)"
-                                                t-att-disabled="confirmed or !headerOf(day).valid"
-                                                t-on-change="(ev) => this.onCellChange(line, 'actual', day, ev)">
-                                            <option value=""/>
-                                            <t t-foreach="getShiftOptionsFor(line, 'actual', day)" t-as="opt" t-key="'a-'+line.id+'-'+day+'-'+opt">
-                                                <option t-att-value="opt"
-                                                        t-att-selected="codeOf(line, 'actual', day) === opt"
-                                                        t-esc="opt"/>
-                                            </t>
-                                        </select>
+                                    <td t-att-class="'o_mm_cell ' + cellClass(codeOf(line, 'actual', day)) + (headerOf(day).valid ? '' : ' is-invalid') + (isEditMode ? '' : ' is-locked') + (hasComment(line, 'actual', day) ? ' has-note' : '')"
+                                        t-on-click.stop="(ev) => this.onOpenPicker(ev, line, 'actual', day)"
+                                        t-on-contextmenu.stop="(ev) => this.onCellContextMenu(ev, line, 'actual', day)"
+                                        t-on-dblclick.stop="(ev) => this.onCellDblClick(ev, line, 'actual', day)"
+                                        t-on-mouseenter="(ev) => this.onCellHover(ev, line, 'actual', day, true)"
+                                        t-on-mouseleave="() => this.onCellHover(null, line, 'actual', day, false)">
+                                        <span class="o_mm_code_text" t-esc="codeOf(line, 'actual', day)"/>
+                                        <span t-if="hasComment(line, 'actual', day)" class="o_mm_note_mark"/>
                                     </td>
                                 </t>
                                 <t t-foreach="countCodes" t-as="code" t-key="'ac-'+line.id+'-'+code">
                                     <td class="o_mm_count_val" t-esc="countOf(line, 'actual', code)"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="hoursTotal(line, 'actual')"/>
+                                <td class="o_mm_total_val" t-esc="formatHours(hoursTotal(line, 'actual'))"/>
                             </tr>
                             <tr class="o_mm_hours">
-                                <td class="o_mm_sticky o_mm_col_ca"><span class="o_mm_badge is-hour">SỐ GIỜ</span></td>
+                                <td class="o_mm_sticky o_mm_col_ca">
+                                    <span class="o_mm_badge is-hour">SỐ GIỜ</span>
+                                </td>
                                 <t t-foreach="days" t-as="day" t-key="'h-'+line.id+'-'+day">
                                     <td t-att-class="'o_mm_cell is-hour ' + (headerOf(day).valid ? '' : ' is-invalid')"
-                                        t-esc="hourOf(line, day)"/>
+                                        t-esc="formatHours(hourOf(line, day))"/>
                                 </t>
                                 <t t-foreach="countCodes" t-as="code" t-key="'hc-'+line.id+'-'+code">
                                     <td class="o_mm_count_val"/>
                                 </t>
-                                <td class="o_mm_total_val" t-esc="hourRowTotal(line)"/>
+                                <td class="o_mm_total_val" t-esc="formatHours(hourRowTotal(line))"/>
                             </tr>
                         </t>
                     </tbody>
                 </table>
             </div>
-            <datalist id="o_mm_shift_codes">
-                <t t-foreach="shiftOptions" t-as="opt" t-key="opt">
-                    <option t-att-value="opt"/>
+            <div t-if="state.picker and isEditMode" class="o_mm_shift_picker" t-att-style="pickerStyle" t-on-click.stop="() => this.noop()">
+                <button type="button" class="o_mm_pick_empty" t-on-click="() => this.onPickCode('')">—</button>
+                <t t-foreach="pickerOptions" t-as="opt" t-key="opt">
+                    <button type="button" t-att-class="'o_mm_pick_code ' + cellClass(opt)" t-on-click="() => this.onPickCode(opt)" t-esc="opt"/>
                 </t>
-            </datalist>
+            </div>
+            <div t-if="state.hover and !state.menu and !state.editor" class="o_mm_note_tip" t-att-style="hoverStyle">
+                <div t-if="state.hover.title" class="o_mm_note_tip_title" t-esc="state.hover.title"/>
+                <div class="o_mm_note_tip_body" t-esc="state.hover.content"/>
+                <div t-if="state.hover.author or state.hover.updated_at" class="o_mm_note_tip_foot">
+                    – <t t-esc="state.hover.author"/> | <t t-esc="state.hover.updated_at"/>
+                </div>
+            </div>
+            <div t-if="state.menu" class="o_mm_note_menu" t-att-style="menuStyle" t-on-click.stop="() => this.noop()">
+                <button t-if="!state.menu.hasNote" type="button" t-on-click="() => this.openNoteEditorFromMenu()">Thêm ghi chú</button>
+                <button t-if="state.menu.hasNote" type="button" t-on-click="() => this.openNoteEditorFromMenu()">Sửa ghi chú</button>
+                <button t-if="state.menu.hasNote" type="button" class="is-danger" t-on-click="() => this.deleteNoteFromMenu()">Xóa ghi chú</button>
+                <button type="button" class="is-muted" t-on-click="() => this.closeMenu()">Hủy</button>
+            </div>
+            <div t-if="state.editor" class="o_mm_note_editor" t-att-style="editorStyle" t-on-click.stop="() => this.noop()">
+                <input type="text" class="o_mm_note_title" placeholder="Tiêu đề (vd: CÓ VIỆC GĐ)" t-on-input="(ev) => this.onEditorTitle(ev)" t-on-focus="(ev) => this.hydrateInput(ev, state.editor.title or '')"/>
+                <textarea class="o_mm_note_body" placeholder="Nội dung ghi chú..." t-on-input="(ev) => this.onEditorContent(ev)" t-esc="state.editor.content"/>
+                <div class="o_mm_note_actions">
+                    <button type="button" class="btn btn-primary btn-sm" t-on-click="() => this.saveNoteEditor()">Lưu ghi chú</button>
+                    <button type="button" class="btn btn-danger btn-sm" t-on-click="() => this.deleteNoteFromEditor()">Xóa ghi chú</button>
+                    <button type="button" class="btn btn-secondary btn-sm" t-on-click="() => this.cancelNoteEditor()">Hủy</button>
+                </div>
+            </div>
         </div>
     </t>
 </templates>

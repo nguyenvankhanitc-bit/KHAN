@@ -47,7 +47,6 @@
                     <i class="fa fa-search"/>
                     <input type="search"
                            placeholder="Tìm dịch vụ..."
-                           t-att-value="state.query"
                            t-on-input="onSearch"/>
                 </div>
                 <div class="o_phan_he_hub_grid">

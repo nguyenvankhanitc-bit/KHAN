@@ -2,7 +2,8 @@
 
 import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
-import { user } from "@web/core/user";
+import { StoreNotifDialog } from "../shift/store_notif_popup";
+import { GuideDocsDialog } from "../js/guide_docs_dialog";
 import {
     SIDEBAR_DEFAULT,
     applySidebarLayout,
@@ -26,6 +27,8 @@ export class PhanHeAppSidebar extends Component {
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
+        this.dialog = useService("dialog");
+        this.notification = useService("notification");
         this.state = useState({
             erpOpen: true,
             width: loadSidebarWidth(),
@@ -33,19 +36,22 @@ export class PhanHeAppSidebar extends Component {
             fullscreen: isFullscreen(),
             rights: {},
             showConfig: false,
-            badges: { rosterCount: 0, missingCount: 0 },
+            showSystemSettings: false,
+            badges: { rosterCount: 0, missingCount: 0, notifyExpiring: 0, notifyLocked: 0, notifyReminder: 0, notifyNeed: 0, notifyInfo: 0 },
             visible: {
                 internet: false,
                 camera: false,
                 attendance: false,
                 server: false,
                 linkq_nb: false,
-                linkq_hrm: false,
                 linkqNorth: false,
                 linkqSouth: false,
                 linkqDtt: false,
                 linkqRoster: false,
+                linkqRosterCreate: false,
                 linkqShiftCode: false,
+                linkqHrAdd: false,
+                linkqHrList: false,
             },
         });
         applySidebarLayout(this.state.width, this.state.collapsed);
@@ -80,6 +86,8 @@ export class PhanHeAppSidebar extends Component {
     get showLinkqPanel() {
         return [
             "dashboard",
+            "store_dash",
+            "today_shift",
             "north_schedule",
             "south_schedule",
             "dtt_schedule",
@@ -88,6 +96,11 @@ export class PhanHeAppSidebar extends Component {
             "work_shift",
             "report",
             "missing",
+            "lock_settings",
+            "access",
+            "audit_log",
+            "employees",
+            "employee_new",
         ].includes(this.activeKey);
     }
 
@@ -98,12 +111,15 @@ export class PhanHeAppSidebar extends Component {
     get erpGroupActive() {
         return [
             "dashboard",
+            "today_shift",
             "north_schedule",
             "south_schedule",
             "dtt_schedule",
             "roster",
             "roster_new",
             "work_shift",
+            "employees",
+            "employee_new",
         ].includes(this.activeKey);
     }
 
@@ -116,67 +132,81 @@ export class PhanHeAppSidebar extends Component {
         return Boolean(right && right.view);
     }
 
+    menuCan(key) {
+        const row = (this.state.rights.linkq_menus || {})[key];
+        return Boolean(row && row.read);
+    }
+
+    menuCanCreate(key) {
+        const row = (this.state.rights.linkq_menus || {})[key];
+        return Boolean(row && row.create);
+    }
+
     async loadRights() {
         try {
             const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
             this.state.rights = rights || {};
-            const menus = rights.linkq_menus || {};
-            const manager = await user.hasGroup("lug_phan_he.group_phan_he_service_manager");
-            const admin = await user.hasGroup("lug_phan_he.group_phan_he_admin");
-            const settings = await user.hasGroup("base.group_system");
             this.state.visible = {
                 internet: Boolean(rights?.internet?.view),
                 camera: Boolean(rights?.camera?.view),
                 attendance: Boolean(rights?.attendance?.view),
                 server: Boolean(rights?.server?.view),
                 linkq_nb: Boolean(rights?.linkq_nb?.view),
-                linkq_hrm: Boolean(rights?.linkq_hrm?.view),
-                linkqNorth: Boolean(
-                    settings || admin || manager || (menus.schedule_north && menus.schedule_north.read)
-                ),
-                linkqSouth: Boolean(
-                    settings || admin || manager || (menus.schedule_south && menus.schedule_south.read)
-                ),
-                linkqDtt: Boolean(
-                    settings || admin || manager || (menus.schedule_dtt && menus.schedule_dtt.read)
-                ),
-                linkqRoster: Boolean(
-                    settings || admin || manager || (menus.schedule_main && menus.schedule_main.read)
-                ),
-                linkqShiftCode: Boolean(
-                    settings || admin || manager || (menus.schedule_symbol && menus.schedule_symbol.read)
-                ),
+                linkqNorth: this.menuCan("schedule_north"),
+                linkqSouth: this.menuCan("schedule_south"),
+                linkqDtt: this.menuCan("schedule_dtt"),
+                linkqRoster: this.menuCan("schedule_list") || this.menuCan("schedule_main"),
+                linkqRosterCreate: this.menuCanCreate("schedule_add") || this.menuCan("schedule_add"),
+                linkqShiftCode: this.menuCan("schedule_symbol") || this.menuCan("schedule_symbol_list"),
+                linkqHrAdd: this.menuCan("hr_add") || this.menuCanCreate("hr_add"),
+                linkqHrList: this.menuCan("hr_list") || this.menuCan("hr_group"),
             };
-            this.state.showConfig =
-                manager ||
-                admin ||
-                settings ||
-                Object.values(this.state.rights).some((row) => row && row.admin);
+            this.state.showConfig = ["internet", "camera", "attendance", "server", "linkq_nb"].some(
+                (code) => Boolean(rights?.[code]?.admin)
+            );
+            this.state.showSystemSettings =
+                this.menuCan("system_group") || this.menuCan("system_lock") || this.menuCan("system_access");
             try {
                 const stats = await this.orm.call("linkq.monthly.roster", "get_linkq_sidebar_stats", []);
                 this.state.badges = {
                     rosterCount: stats?.roster_count || 0,
                     missingCount: stats?.missing_store_count || 0,
+                    notifyExpiring: stats?.notify_expiring || 0,
+                    notifyLocked: stats?.notify_locked || 0,
+                    notifyReminder: stats?.notify_reminder || 0,
+                    notifyNeed: stats?.notify_need || 0,
+                    notifyInfo: stats?.notify_info || 0,
                 };
             } catch {
-                this.state.badges = { rosterCount: 0, missingCount: 0 };
+                this.state.badges = {
+                    rosterCount: 0,
+                    missingCount: 0,
+                    notifyExpiring: 0,
+                    notifyLocked: 0,
+                    notifyReminder: 0,
+                    notifyNeed: 0,
+                    notifyInfo: 0,
+                };
             }
         } catch (error) {
             console.error(error);
             this.state.rights = {};
             this.state.showConfig = false;
+            this.state.showSystemSettings = false;
             this.state.visible = {
                 internet: false,
                 camera: false,
                 attendance: false,
                 server: false,
                 linkq_nb: false,
-                linkq_hrm: false,
                 linkqNorth: false,
                 linkqSouth: false,
                 linkqDtt: false,
                 linkqRoster: false,
+                linkqRosterCreate: false,
                 linkqShiftCode: false,
+                linkqHrAdd: false,
+                linkqHrList: false,
             };
         }
     }
@@ -264,7 +294,11 @@ export class PhanHeAppSidebar extends Component {
     }
 
     onDashboard() {
-        this.open("lug_phan_he.action_phan_he_dashboard_linkq_nb");
+        this.open("lug_phan_he.action_linkq_store_dashboard");
+    }
+
+    onStoreDashboard() {
+        this.open("lug_phan_he.action_linkq_store_dashboard");
     }
 
     onNorthSchedule() {
@@ -279,8 +313,18 @@ export class PhanHeAppSidebar extends Component {
         this.open("lug_phan_he.action_linkq_shift_schedule_dtt");
     }
 
+    onTodayShift() {
+        this.open("lug_phan_he.action_linkq_today_shift");
+    }
+
     onRoster() {
-        this.open("lug_phan_he.action_linkq_monthly_roster");
+        this.action.doAction("lug_phan_he.action_linkq_monthly_roster", {
+            clearBreadcrumbs: true,
+            additionalContext: {
+                search_default_group_by_store: 1,
+                group_by: ["store_id"],
+            },
+        });
     }
 
     onRosterNew() {
@@ -290,6 +334,7 @@ export class PhanHeAppSidebar extends Component {
             res_model: "linkq.monthly.roster",
             views: [[false, "form"]],
             target: "current",
+            context: { form_view_initial_mode: "edit" },
         });
     }
 
@@ -297,16 +342,74 @@ export class PhanHeAppSidebar extends Component {
         this.open("lug_phan_he.action_linkq_shift_code");
     }
 
+    onEmployees() {
+        this.open("lug_phan_he.action_linkq_employee_list");
+    }
+
+    onEmployeeNew() {
+        this.open("lug_phan_he.action_linkq_employee_create");
+    }
+
     onShiftReport() {
-        this.open("lug_phan_he.action_phan_he_dashboard_linkq_nb");
+        this.open("lug_phan_he.action_linkq_shift_summary_report");
     }
 
     onMissingShifts() {
-        this.open("lug_phan_he.action_linkq_monthly_roster");
+        this.onRoster();
     }
 
-    onHrm() {
-        this.open("lug_phan_he.action_phan_he_dashboard_linkq_hrm");
+    onLockSettings() {
+        this.open("lug_phan_he.action_linkq_roster_lock_settings");
+    }
+
+    onAccessRoles() {
+        this.open("lug_phan_he.action_phan_he_module_access");
+    }
+
+    onAuditLog() {
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Nhật ký hệ thống (Audit Log)",
+            res_model: "linkq.roster.lock.event",
+            views: [
+                [false, "list"],
+                [false, "form"],
+            ],
+            target: "current",
+        });
+    }
+
+    onOpenGuideDocuments() {
+        this.dialog.add(GuideDocsDialog, {});
+    }
+
+    onNotifyGuide() {
+        this.onOpenGuideDocuments();
+    }
+
+    onNotifyExpiring() {
+        this.openNotificationPopup("expiring");
+    }
+
+    onNotifyReminder() {
+        this.openNotificationPopup("reminder");
+    }
+
+    onNotifyLocked() {
+        this.openNotificationPopup("locked");
+    }
+
+    onNotifyInfo() {
+        this.openNotificationPopup("info");
+    }
+
+    openNotificationPopup(kind) {
+        try {
+            this.dialog.add(StoreNotifDialog, { kind: kind || "expiring" });
+        } catch (error) {
+            console.error(error);
+            this.notification.add("Không mở được thông báo cửa hàng.", { type: "danger" });
+        }
     }
 
     onProvider() {

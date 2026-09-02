@@ -1,0 +1,40 @@
+.o_dialog .modal-dialog:has(.user-doc-view) {
+    max-width: 650px !important;
+    width: 95% !important;
+}
+
+.o_dialog .modal-dialog:has(.admin-doc-manager) {
+    max-width: 980px !important;
+    width: 95% !important;
+}
+
+.o_guide_doc_scroll {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.o_guide_doc_row:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08) !important;
+}
+
+.o_guide_btn_purple {
+    background: #5a4b81;
+    border-color: #5a4b81;
+    color: #fff;
+}
+
+.o_guide_btn_purple:hover {
+    background: #483b68;
+    border-color: #483b68;
+    color: #fff;
+}
+
+.o_guide_btn_save {
+    background: #5a4b81;
+    border-color: #5a4b81;
+}
+
+.o_guide_admin_table .col-stt { width: 60px; }
+.o_guide_admin_table .col-file { width: 250px; }
+.o_guide_admin_table .col-perm { width: 170px; }
+.o_guide_admin_table .col-act { width: 70px; }

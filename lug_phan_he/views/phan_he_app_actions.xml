@@ -25,6 +25,85 @@
         <field name="context">{'phan_he_service_type_code': 'linkq_nb', 'phan_he_app_title': 'LinkQ ERP'}</field>
     </record>
 
+    <record id="action_linkq_store_dashboard" model="ir.actions.client">
+        <field name="name">Dashboard</field>
+        <field name="tag">linkq_store_dashboard</field>
+    </record>
+
+    <record id="action_linkq_permission_matrix" model="ir.actions.client">
+        <field name="name">Phân quyền</field>
+        <field name="tag">linkq_permission_matrix</field>
+    </record>
+
+    <record id="action_linkq_roster_lock_settings" model="ir.actions.client">
+        <field name="name">Cài đặt khóa lịch ca</field>
+        <field name="tag">linkq_roster_lock_settings</field>
+    </record>
+
+    <record id="action_linkq_shift_summary_report" model="ir.actions.client">
+        <field name="name">Báo cáo tổng hợp</field>
+        <field name="tag">linkq_shift_summary_report</field>
+    </record>
+
+    <record id="view_linkq_roster_lock_event_list" model="ir.ui.view">
+        <field name="name">linkq.roster.lock.event.list</field>
+        <field name="model">linkq.roster.lock.event</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false">
+                <field name="event_time"/>
+                <field name="event_type"/>
+                <field name="name"/>
+                <field name="detail"/>
+                <field name="roster_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_linkq_roster_lock_event_form" model="ir.ui.view">
+        <field name="name">linkq.roster.lock.event.form</field>
+        <field name="model">linkq.roster.lock.event</field>
+        <field name="arch" type="xml">
+            <form create="false" edit="false">
+                <sheet>
+                    <group>
+                        <field name="event_type"/>
+                        <field name="event_time"/>
+                        <field name="name"/>
+                        <field name="detail"/>
+                        <field name="roster_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_popup_sap_khoa" model="ir.actions.act_window">
+        <field name="name">Thông báo: Lịch ca sắp khóa</field>
+        <field name="res_model">linkq.roster.lock.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">new</field>
+        <field name="domain">[('event_type', '=', 'expiring')]</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+    </record>
+
+    <record id="action_popup_da_khoa" model="ir.actions.act_window">
+        <field name="name">Thông báo: Lịch ca đã khóa</field>
+        <field name="res_model">linkq.roster.lock.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">new</field>
+        <field name="domain">[('event_type', '=', 'locked')]</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+    </record>
+
+    <record id="action_popup_nhac_nho" model="ir.actions.act_window">
+        <field name="name">Thông báo: Nhắc nhở xếp ca</field>
+        <field name="res_model">linkq.roster.lock.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="target">new</field>
+        <field name="domain">[('event_type', '=', 'reminder')]</field>
+        <field name="context">{'create': False, 'delete': False}</field>
+    </record>
+
     <record id="action_phan_he_dashboard_server" model="ir.actions.client">
         <field name="name">Dashboard Máy chủ</field>
         <field name="tag">phan_he_dashboard</field>

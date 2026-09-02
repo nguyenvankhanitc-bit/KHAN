@@ -107,24 +107,33 @@ class LinkqMonthlyRosterSendMail(models.Model):
             employees |= Employee.search([("store_id", "=", self.store_id.id), ("active", "=", True)])
         return employees
 
+    def _current_user_employee(self):
+        """Hồ sơ nhân viên của user đang đăng nhập."""
+        user = self.env.user
+        Employee = self.env["hr.employee"].sudo()
+        emp = Employee.search([("user_id", "=", user.id)], limit=1)
+        if emp:
+            return emp
+        candidates = []
+        for val in (user.login, user.email, user.partner_id.email):
+            mail = (val or "").strip()
+            if mail and mail not in candidates:
+                candidates.append(mail)
+        if not candidates:
+            return Employee.browse()
+        emp = Employee.search(
+            ["|", ("work_email", "in", candidates), ("private_email", "in", candidates)],
+            limit=1,
+        )
+        return emp
+
     def _lookup_asm_emails(self):
-        """ASM = email Quản lý (parent_id) của Cửa hàng trưởng tại cửa hàng."""
+        """ASM = email Quản lý (parent_id) trên hồ sơ nhân viên của user đang login."""
         self.ensure_one()
-        employees = self._store_employees()
-        cht = employees.filtered(_is_cht_title)
-        if not cht and self.store_id and self.store_id.manager_id:
-            cht = self.store_id.manager_id
-        sources = cht or employees
-        emails = []
-        seen = set()
-        for emp in sources:
-            manager = _employee_manager(emp)
-            mail = _employee_email(manager)
-            key = mail.lower()
-            if mail and key not in seen:
-                seen.add(key)
-                emails.append(mail)
-        return emails
+        employee = self._current_user_employee()
+        manager = _employee_manager(employee)
+        mail = _employee_email(manager)
+        return [mail] if mail else []
 
     def _lookup_admin_emails(self):
         """Chỉ lấy Chức danh (job_title) = Admin hoặc Admin Tổng, không dùng Job Position."""
@@ -152,19 +161,14 @@ class LinkqMonthlyRosterSendMail(models.Model):
                     emails.append(mail)
         return emails
 
+    @api.depends_context("uid")
     @api.depends(
         "store_id",
         "store_id.code",
-        "store_id.manager_id",
-        "store_id.manager_id.work_email",
         "name",
         "month",
         "year",
         "period_label",
-        "line_ids.employee_id",
-        "line_ids.employee_id.parent_id",
-        "line_ids.employee_id.parent_id.work_email",
-        "line_ids.employee_id.job_title",
     )
     def _compute_email_setup(self):
         admin_emails = None

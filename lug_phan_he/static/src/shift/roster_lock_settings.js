@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
@@ -10,12 +10,21 @@ function pad2(n) {
     return (n < 10 ? "0" : "") + n;
 }
 
+function clampDay(day) {
+    const n = parseInt(day, 10);
+    if (!Number.isFinite(n) || n < 1) {
+        return 1;
+    }
+    return Math.min(n, 31);
+}
+
 function isoFromDay(day, base) {
     const src = String(base || "") || isoDate(new Date());
     const parts = src.split("-");
     const y = parseInt(parts[0] || String(new Date().getFullYear()), 10);
     const m = parseInt(parts[1] || String(new Date().getMonth() + 1), 10);
-    const d = Math.min(Math.max(parseInt(day, 10) || 1, 1), 31);
+    const last = new Date(y, m, 0).getDate();
+    const d = Math.min(clampDay(day), last);
     return y + "-" + pad2(m) + "-" + pad2(d);
 }
 
@@ -43,17 +52,22 @@ export class RosterLockSettingsPage extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.lockDaySelect = useRef("lockDaySelect");
+        this.unlockDaySelect = useRef("unlockDaySelect");
         this.state = useState({
             auto_lock: true,
+            lock_day: 10,
             lock_date: isoDate(new Date()),
             lock_time: "22:00",
             repeat_type: "monthly",
             unlock_mode: "manual",
+            unlock_day: 1,
             unlock_date: isoFromDay(1),
             unlock_time: "00:00",
             unlock_repeat: "monthly",
             notify_on: true,
             notify_before: "2h",
+            saving: false,
         });
         this._snapshot = null;
         onWillStart(async () => {
@@ -86,13 +100,11 @@ export class RosterLockSettingsPage extends Component {
     }
 
     get lockDayNum() {
-        const parts = String(this.state.lock_date || "").split("-");
-        return parseInt(parts[2] || "10", 10) || 10;
+        return clampDay(this.state.lock_day);
     }
 
     get unlockDayNum() {
-        const parts = String(this.state.unlock_date || "").split("-");
-        return parseInt(parts[2] || "1", 10) || 1;
+        return clampDay(this.state.unlock_day);
     }
 
     get isAutoUnlock() {
@@ -103,19 +115,31 @@ export class RosterLockSettingsPage extends Component {
         return pad2(n);
     }
 
+    isLockDay(d) {
+        return this.lockDayNum === d;
+    }
+
+    isUnlockDay(d) {
+        return this.unlockDayNum === d;
+    }
+
     applyConfig(cfg) {
         this.state.auto_lock = cfg.auto_lock !== false;
         this.state.lock_time = cfg.lock_time || "22:00";
         this.state.repeat_type = cfg.repeat_type || "monthly";
-        const day = cfg.lock_day || 10;
+        const day = clampDay(cfg.lock_day != null ? cfg.lock_day : 10);
+        this.state.lock_day = day;
         if (cfg.lock_anchor_date) {
-            this.state.lock_date = cfg.lock_anchor_date;
+            this.state.lock_date = isoFromDay(day, cfg.lock_anchor_date);
         } else {
-            const now = new Date();
-            this.state.lock_date = isoDate(new Date(now.getFullYear(), now.getMonth(), day));
+            this.state.lock_date = isoFromDay(day);
         }
         this.state.unlock_mode = cfg.unlock_mode || "manual";
-        this.state.unlock_date = cfg.unlock_date || isoFromDay(1, this.state.lock_date);
+        const unlockDay = clampDay(
+            cfg.unlock_date ? String(cfg.unlock_date).split("-")[2] : cfg.unlock_day || 1
+        );
+        this.state.unlock_day = unlockDay;
+        this.state.unlock_date = isoFromDay(unlockDay, cfg.unlock_date || this.state.lock_date);
         this.state.unlock_time = cfg.unlock_time || "00:00";
         this.state.unlock_repeat = cfg.unlock_repeat && cfg.unlock_repeat !== "none"
             ? cfg.unlock_repeat
@@ -124,16 +148,28 @@ export class RosterLockSettingsPage extends Component {
         this.state.notify_before = cfg.notify_before || cfg.notify_offset || "2h";
     }
 
+    syncDaysFromDom() {
+        if (this.lockDaySelect.el) {
+            this.state.lock_day = clampDay(this.lockDaySelect.el.value);
+            this.state.lock_date = isoFromDay(this.state.lock_day, this.state.lock_date);
+        }
+        if (this.unlockDaySelect.el) {
+            this.state.unlock_day = clampDay(this.unlockDaySelect.el.value);
+            this.state.unlock_date = isoFromDay(this.state.unlock_day, this.state.unlock_date || this.state.lock_date);
+        }
+    }
+
     payloadFromState() {
+        this.syncDaysFromDom();
         return {
             auto_lock: this.state.auto_lock,
             lock_day: this.lockDayNum,
             lock_day_val: this.lockDayNum,
-            lock_anchor_date: this.state.lock_date,
+            lock_anchor_date: isoFromDay(this.lockDayNum, this.state.lock_date),
             repeat_type: this.state.repeat_type,
             lock_time: this.state.lock_time,
             unlock_mode: this.state.unlock_mode,
-            unlock_date: this.state.unlock_date || false,
+            unlock_date: isoFromDay(this.unlockDayNum, this.state.unlock_date || this.state.lock_date),
             unlock_time: this.state.unlock_time,
             unlock_repeat: this.state.unlock_repeat,
             notify_before: this.state.notify_before,
@@ -157,7 +193,9 @@ export class RosterLockSettingsPage extends Component {
     }
 
     onLockDaySelect(ev) {
-        this.state.lock_date = isoFromDay(ev.target.value, this.state.lock_date);
+        const day = clampDay(ev.target.value);
+        this.state.lock_day = day;
+        this.state.lock_date = isoFromDay(day, this.state.lock_date);
     }
 
     onLockRepeatSelect(ev) {
@@ -169,7 +207,9 @@ export class RosterLockSettingsPage extends Component {
     }
 
     onUnlockDaySelect(ev) {
-        this.state.unlock_date = isoFromDay(ev.target.value, this.state.unlock_date || this.state.lock_date);
+        const day = clampDay(ev.target.value);
+        this.state.unlock_day = day;
+        this.state.unlock_date = isoFromDay(day, this.state.unlock_date || this.state.lock_date);
     }
 
     onUnlockTimeChange(ev) {
@@ -186,11 +226,13 @@ export class RosterLockSettingsPage extends Component {
         }
         const snap = this._snapshot;
         this.state.auto_lock = snap.auto_lock;
-        this.state.lock_date = snap.lock_anchor_date;
+        this.state.lock_day = clampDay(snap.lock_day);
+        this.state.lock_date = isoFromDay(this.state.lock_day, snap.lock_anchor_date);
         this.state.lock_time = snap.lock_time;
         this.state.repeat_type = snap.repeat_type;
         this.state.unlock_mode = snap.unlock_mode;
-        this.state.unlock_date = snap.unlock_date || isoFromDay(1);
+        this.state.unlock_day = clampDay(String(snap.unlock_date || "01").split("-")[2] || 1);
+        this.state.unlock_date = isoFromDay(this.state.unlock_day, snap.unlock_date || isoFromDay(1));
         this.state.unlock_time = snap.unlock_time;
         this.state.unlock_repeat = snap.unlock_repeat;
         this.state.notify_on = snap.notify_odoo;
@@ -198,9 +240,26 @@ export class RosterLockSettingsPage extends Component {
     }
 
     async onSave() {
-        await this.orm.call("linkq.roster.lock.config", "action_save_settings", [this.payloadFromState()]);
-        this._snapshot = this.payloadFromState();
-        this.notification.add("Đã lưu cấu hình khóa lịch ca.", { type: "success" });
+        if (this.state.saving) {
+            return;
+        }
+        this.state.saving = true;
+        try {
+            const saved = await this.orm.call(
+                "linkq.roster.lock.config",
+                "action_save_settings",
+                [this.payloadFromState()]
+            );
+            this.applyConfig(saved || {});
+            this._snapshot = this.payloadFromState();
+            this.notification.add("Đã lưu và áp dụng cấu hình khóa lịch ca.", { type: "success" });
+        } catch (err) {
+            this.notification.add(err?.data?.message || err?.message || "Không lưu được cấu hình khóa lịch ca.", {
+                type: "danger",
+            });
+        } finally {
+            this.state.saving = false;
+        }
     }
 }
 

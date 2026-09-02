@@ -1,12 +1,36 @@
-.o_lk_settings_page {
-    display: flex;
-    min-height: 100%;
-    background: #f8f9fa;
+.o_action.o_phan_he_app_shell.o_lk_settings_page {
+    overflow: hidden !important;
+    background: #f8f9fa !important;
+}
+
+.o_action.o_phan_he_app_shell.o_lk_settings_page > .o_lk_settings {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow: auto !important;
+    padding-bottom: 24px;
 }
 
 .o_lk_settings {
     flex: 1;
     min-width: 0;
+}
+
+.o_lk_action_bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin: 0 -1.5rem -1.5rem;
+    padding: 12px 1.5rem;
+    background: rgba(248, 249, 250, 0.96);
+    border-top: 1px solid #e5e7eb;
+    backdrop-filter: blur(6px);
 }
 
 .o_lk_crumb {

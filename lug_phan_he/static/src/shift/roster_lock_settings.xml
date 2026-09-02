@@ -4,10 +4,17 @@
         <div class="o_action o_phan_he_app_shell o_lk_settings_page">
             <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
             <div class="o_lk_settings container-fluid p-4">
-                <div class="mb-4">
+                <div class="mb-3">
                     <span class="o_lk_crumb">Cấu hình &amp; Hệ thống <span>&gt;</span> Cài đặt khóa lịch ca</span>
                     <h3 class="fw-bold mt-1 text-dark mb-1">Cài đặt khóa lịch ca tự động</h3>
-                    <p class="text-muted small mb-0">Thiết lập thời gian khóa và mở khóa lịch ca theo quy tắc tự động</p>
+                    <p class="text-muted small mb-3">Thiết lập thời gian khóa và mở khóa lịch ca theo quy tắc tự động</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn o_lk_save px-4" t-att-disabled="state.saving ? 'disabled' : undefined" t-on-click="onSave">
+                            <i t-att-class="state.saving ? 'fa fa-spinner fa-spin me-1' : 'fa fa-floppy-o me-1'"/>
+                            <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu thay đổi'"/>
+                        </button>
+                        <button type="button" class="btn btn-light px-4" t-att-disabled="state.saving ? 'disabled' : undefined" t-on-click="onCancel">Hủy bỏ</button>
+                    </div>
                 </div>
 
                 <div class="card border-0 shadow-sm rounded-3 p-4 mb-4 o_lk_card">
@@ -28,9 +35,9 @@
                         <div class="col-lg-3 col-md-6">
                             <label class="small text-muted mb-1">Ngày khóa</label>
                             <div class="input-group">
-                                <select class="form-select" t-on-change="onLockDaySelect">
+                                <select class="form-select" t-ref="lockDaySelect" t-on-change="onLockDaySelect">
                                     <t t-foreach="daysRange" t-as="d" t-key="d">
-                                        <option t-att-value="d" t-att-selected="lockDayNum === d ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                        <option t-att-value="d" t-att-selected="isLockDay(d) ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
                                     </t>
                                 </select>
                                 <select class="form-select" t-on-change="onLockRepeatSelect">
@@ -86,9 +93,9 @@
                         <div class="col-lg-3 col-md-6">
                             <label class="small text-muted mb-1">Ngày mở khóa</label>
                             <div class="input-group">
-                                <select class="form-select" t-on-change="onUnlockDaySelect">
+                                <select class="form-select" t-ref="unlockDaySelect" t-on-change="onUnlockDaySelect">
                                     <t t-foreach="daysRange" t-as="d" t-key="'u' + d">
-                                        <option t-att-value="d" t-att-selected="unlockDayNum === d ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                        <option t-att-value="d" t-att-selected="isUnlockDay(d) ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
                                     </t>
                                 </select>
                                 <select class="form-select" t-on-change="onUnlockRepeatChange">
@@ -165,10 +172,11 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2">
-                    <button type="button" class="btn btn-light px-4" t-on-click="onCancel">Hủy bỏ</button>
-                    <button type="button" class="btn o_lk_save px-4" t-on-click="onSave">
-                        <i class="fa fa-floppy-o me-1"/> Lưu cấu hình
+                <div class="o_lk_action_bar">
+                    <button type="button" class="btn btn-light px-4" t-att-disabled="state.saving ? 'disabled' : undefined" t-on-click="onCancel">Hủy bỏ</button>
+                    <button type="button" class="btn o_lk_save px-4" t-att-disabled="state.saving ? 'disabled' : undefined" t-on-click="onSave">
+                        <i t-att-class="state.saving ? 'fa fa-spinner fa-spin me-1' : 'fa fa-floppy-o me-1'"/>
+                        <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu thay đổi'"/>
                     </button>
                 </div>
             </div>

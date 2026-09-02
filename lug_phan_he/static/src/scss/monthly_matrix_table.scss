@@ -708,3 +708,9 @@ td.is-invalid {
 .o_form_view:has(.o_monthly_roster_form) .o_control_panel .o_statusbar_status {
     display: none !important;
 }
+
+.o_mm_shift_picker {
+    display: grid !important;
+    grid-template-columns: repeat(9, 52px) !important;
+    width: max-content !important;
+}

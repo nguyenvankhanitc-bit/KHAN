@@ -131,17 +131,37 @@ class LinkqRosterLockConfig(models.Model):
                 pass
         if "notify_odoo" in mapped:
             mapped["notify_expiring"] = bool(mapped["notify_odoo"])
-        if mapped.get("lock_anchor_date"):
+        today = fields.Date.context_today(self)
+        raw_day = mapped.get("lock_day", mapped.get("lock_day_val", rec.lock_day))
+        try:
+            lock_day = int(raw_day)
+        except (TypeError, ValueError):
+            lock_day = rec.lock_day or 10
+        lock_day = min(max(lock_day, 1), 31)
+        mapped["lock_day"] = lock_day
+        last_lock = monthrange(today.year, today.month)[1]
+        mapped["lock_anchor_date"] = date(today.year, today.month, min(lock_day, last_lock))
+        raw_unlock = mapped.get("unlock_date")
+        unlock_day = None
+        if isinstance(raw_unlock, str) and len(raw_unlock) >= 10:
             try:
-                raw = mapped["lock_anchor_date"]
-                if isinstance(raw, str) and len(raw) >= 10:
-                    mapped["lock_day"] = int(raw[8:10])
+                unlock_day = int(raw_unlock[8:10])
             except (TypeError, ValueError):
-                pass
-        rec.sudo().write(mapped)
+                unlock_day = None
+        if unlock_day:
+            unlock_day = min(max(unlock_day, 1), 31)
+            last_unlock = monthrange(today.year, today.month)[1]
+            mapped["unlock_date"] = date(today.year, today.month, min(unlock_day, last_unlock))
+        allowed = set(self._fields)
+        rec.sudo().write({k: v for k, v in mapped.items() if k in allowed})
+        rec.invalidate_recordset()
         Roster = self.env["linkq.monthly.roster"]
-        Roster.search([("is_locked", "=", False)])._sync_lock_datetime()
-        Roster._cron_process_roster_locks()
+        try:
+            with self.env.cr.savepoint():
+                Roster.search([("is_locked", "=", False)])._sync_lock_datetime()
+                Roster._cron_process_roster_locks()
+        except Exception:
+            pass
         return rec._as_dashboard_dict()
 
     def _parse_clock(self, raw, default_h=8, default_m=0):
@@ -173,8 +193,8 @@ class LinkqRosterLockConfig(models.Model):
             "id": rec.id,
             "auto_lock": rec.auto_lock_enabled,
             "auto_lock_enabled": rec.auto_lock_enabled,
-            "lock_day": rec.lock_day or 10,
-            "lock_day_val": rec.lock_day or 10,
+            "lock_day": rec.lock_day if rec.lock_day else 10,
+            "lock_day_val": rec.lock_day if rec.lock_day else 10,
             "repeat_type": rec.repeat_type or "monthly",
             "lock_time": rec.lock_time or "22:00",
             "lock_hour": rec.lock_hour,

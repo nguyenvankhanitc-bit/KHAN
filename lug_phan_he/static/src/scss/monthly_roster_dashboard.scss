@@ -405,7 +405,8 @@ thead .o_mm_sticky {
     position: fixed;
     z-index: 10050;
     display: grid;
-    grid-template-columns: repeat(4, 52px);
+    grid-template-columns: repeat(9, 52px) !important;
+    width: max-content;
     gap: 4px;
     padding: 8px;
     background: #fff;

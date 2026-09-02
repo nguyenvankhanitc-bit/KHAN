@@ -466,8 +466,12 @@ export class MonthlyMatrixGrid extends X2ManyField {
             this.state.picker = null;
             return;
         }
-        const left = Math.min(rect.left, window.innerWidth - 240);
-        const top = rect.bottom + 4 + 220 > window.innerHeight ? rect.top - 224 : rect.bottom + 4;
+        const pickerWidth = 9 * 52 + 8 * 4 + 16;
+        const pickerHeight = 7 * 32 + 16;
+        const left = Math.min(rect.left, window.innerWidth - pickerWidth);
+        const top = rect.bottom + 4 + pickerHeight > window.innerHeight
+            ? rect.top - pickerHeight - 4
+            : rect.bottom + 4;
         this.state.picker = {
             key,
             lineKey: this.lineKey(line),
@@ -767,7 +771,7 @@ export class MonthlyMatrixGrid extends X2ManyField {
         if (!picker) {
             return "";
         }
-        return `top:${picker.top}px;left:${picker.left}px;`;
+        return `top:${picker.top}px;left:${picker.left}px;display:grid;grid-template-columns:repeat(9,52px);width:max-content;gap:4px;`;
     }
 
     get pickerOptions() {

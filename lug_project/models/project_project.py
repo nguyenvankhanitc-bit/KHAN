@@ -135,6 +135,45 @@ class ProjectProject(models.Model):
         string="Tiến độ tổng thể",
         compute="_compute_lug_progress_pct",
     )
+    code = fields.Char(
+        related="lug_code",
+        string="Mã dự án",
+        readonly=True,
+    )
+    project_type = fields.Selection(
+        [
+            ("event", "Sự Kiện"),
+            ("maintenance", "Bảo trì"),
+            ("internal", "Internal"),
+            ("other", "Khác"),
+        ],
+        string="Loại dự án",
+        compute="_compute_project_type",
+        store=True,
+    )
+    deadline_status = fields.Char(
+        string="Tình trạng hạn",
+        compute="_compute_deadline_status",
+    )
+    deadline_color = fields.Char(
+        string="Màu hạn",
+        compute="_compute_deadline_status",
+    )
+    phase_num = fields.Integer(
+        string="Mốc giai đoạn",
+        compute="_compute_project_phase",
+        store=True,
+        default=1,
+    )
+    progress = fields.Float(
+        string="Tiến độ (%)",
+        compute="_compute_project_progress",
+        store=True,
+    )
+    lug_priority_label = fields.Char(
+        string="Độ ưu tiên",
+        compute="_compute_lug_priority_label",
+    )
     lug_archived_date = fields.Date(
         string="Ngày vào Thùng rác",
         copy=False,
@@ -144,6 +183,110 @@ class ProjectProject(models.Model):
         "unique(lug_code)",
         "Mã dự án phải duy nhất.",
     )
+
+    @api.depends("lug_type_id", "lug_type_id.name", "lug_type_id.code")
+    def _compute_project_type(self):
+        for rec in self:
+            name = (rec.lug_type_id.name or "").lower()
+            type_code = (rec.lug_type_id.code or "").upper()
+            if "sự kiện" in name or "su kien" in name or "event" in name or type_code == "SK":
+                rec.project_type = "event"
+            elif "bảo trì" in name or "bao tri" in name or type_code == "BT":
+                rec.project_type = "maintenance"
+            elif "nội bộ" in name or "noi bo" in name or "internal" in name or type_code == "NB":
+                rec.project_type = "internal"
+            else:
+                rec.project_type = "other"
+
+    @api.depends("date", "lug_deadline")
+    def _compute_deadline_status(self):
+        today = fields.Date.context_today(self)
+        for rec in self:
+            deadline = rec.lug_deadline or rec.date
+            if not deadline:
+                rec.deadline_status = "Chưa đặt hạn"
+                rec.deadline_color = "muted"
+                continue
+            delta = (deadline - today).days
+            if delta > 0:
+                rec.deadline_status = "⏳ Còn %s ngày (Đúng hạn)" % delta
+                rec.deadline_color = "warning" if delta <= 5 else "success"
+            elif delta == 0:
+                rec.deadline_status = "🔥 Đến hạn hôm nay"
+                rec.deadline_color = "danger"
+            else:
+                rec.deadline_status = "⚠️ Quá hạn: Trễ %s ngày" % abs(delta)
+                rec.deadline_color = "danger"
+
+    def _lug_phase_from_name(self, name):
+        stage_name = (name or "").lower()
+        if "đóng" in stage_name or "gđ 4" in stage_name or "gd 4" in stage_name or "hoàn thành" in stage_name:
+            return 4
+        if "nghiệm thu" in stage_name or "gđ 3" in stage_name or "gd 3" in stage_name:
+            return 3
+        if "thực hiện" in stage_name or "triển khai" in stage_name or "gđ 2" in stage_name or "gd 2" in stage_name:
+            return 2
+        if "chuẩn bị" in stage_name or "gđ 1" in stage_name or "gd 1" in stage_name:
+            return 1
+        return 0
+
+    @api.depends(
+        "stage_id",
+        "stage_id.name",
+        "stage_line_ids.sequence",
+        "stage_line_ids.name",
+        "stage_line_ids.task_ids.state",
+        "lug_stage_ids.sequence",
+        "lug_stage_ids.name",
+        "lug_stage_ids.task_ids.lug_status",
+    )
+    def _compute_project_phase(self):
+        for rec in self:
+            phase = rec._lug_phase_from_name(rec.stage_id.name)
+            lines = rec.stage_line_ids.sorted(lambda line: (line.sequence or 0, line.id or 0))[:4]
+            if lines:
+                current = 1
+                for index, line in enumerate(lines, 1):
+                    named = rec._lug_phase_from_name(line.name)
+                    tasks = line.task_ids
+                    if tasks and all(task.state == "done" for task in tasks):
+                        current = 4 if index >= 4 else index + 1
+                    elif tasks and any(task.state in ("in_progress", "done") for task in tasks):
+                        current = named or index
+                        break
+                    elif named:
+                        current = named
+                rec.phase_num = max(1, min(4, current))
+                continue
+            rec.phase_num = phase or 1
+
+    @api.depends(
+        "task_ids.stage_id",
+        "task_ids.stage_id.fold",
+        "task_ids.is_closed",
+        "stage_line_ids.task_ids.state",
+    )
+    def _compute_project_progress(self):
+        for rec in self:
+            stage_tasks = rec.stage_line_ids.task_ids
+            if stage_tasks:
+                closed = len(stage_tasks.filtered(lambda task: task.state == "done"))
+                rec.progress = round((closed / float(len(stage_tasks))) * 100, 1)
+                continue
+            total_tasks = len(rec.task_ids)
+            if not total_tasks:
+                rec.progress = 0.0
+                continue
+            closed_tasks = rec.task_ids.filtered(
+                lambda task: task.is_closed or (task.stage_id and task.stage_id.fold)
+            )
+            rec.progress = round((len(closed_tasks) / float(total_tasks)) * 100, 1)
+
+    @api.depends("lug_priority")
+    def _compute_lug_priority_label(self):
+        labels = dict(self._fields["lug_priority"].selection)
+        for rec in self:
+            rec.lug_priority_label = labels.get(rec.lug_priority) or "Bình thường"
 
     @api.depends(
         "stage_line_ids.task_ids.state",

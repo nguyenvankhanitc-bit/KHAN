@@ -79,6 +79,13 @@ class DailyTask(models.Model):
         tracking=True,
         index=True,
     )
+    date_done = fields.Date(
+        string="Ngày hoàn thành",
+        tracking=True,
+        index=True,
+        copy=False,
+        help="Ngày bấm hoàn thành công việc. Dùng để tính cột Quá hạn.",
+    )
     note = fields.Text(string="Ghi chú")
     work_group_id = fields.Many2one(
         "daily.task.work.group",
@@ -259,7 +266,7 @@ class DailyTask(models.Model):
         return self.state != "done" and self._days_past_deadline() > 0
 
     def _days_past_deadline(self):
-        """Số ngày đã trễ so với hạn (không phụ thuộc trạng thái hoàn thành)."""
+        """Số ngày đã trễ so với hạn theo ngày hôm nay (việc chưa HT)."""
         self.ensure_one()
         if not self.deadline:
             return 0
@@ -268,9 +275,41 @@ class DailyTask(models.Model):
             return 0
         return (today - self.deadline).days
 
+    def _completion_reference_date(self):
+        """Mốc so sánh cột Quá hạn: ngày bấm HT nếu đã xong, không thì hôm nay."""
+        self.ensure_one()
+        if self.state == "done":
+            return self.date_done or False
+        return fields.Date.context_today(self)
+
     def _overdue_days(self):
-        """Số ngày trễ hiển thị cột Quá hạn — giữ cả khi đã hoàn thành."""
-        return self._days_past_deadline()
+        """
+        Số ngày trễ hiển thị cột Quá hạn.
+        - Chưa HT: so hạn với hôm nay.
+        - Đã HT: so hạn với ngày bấm hoàn thành (date_done).
+          Nếu date_done <= hạn → 0 (bỏ trống).
+          Nếu hạn < date_done → (date_done - hạn).days.
+        """
+        self.ensure_one()
+        if not self.deadline:
+            return 0
+        ref = self._completion_reference_date()
+        if not ref:
+            # Việc đã HT nhưng thiếu mốc cũ: không gắn nhãn trễ theo hôm nay
+            return 0
+        if self.deadline >= ref:
+            return 0
+        return (ref - self.deadline).days
+
+    def _overdue_label(self):
+        """Nhãn cột Quá hạn."""
+        self.ensure_one()
+        days = self._overdue_days()
+        if not days:
+            return ""
+        if self.state == "done":
+            return "Hoàn thành trễ %s ngày" % days
+        return "Trễ hạn %s ngày" % days
 
     def _is_today_work(self, today=None):
         """
@@ -379,8 +418,15 @@ class DailyTask(models.Model):
         if vals.get("state") == "done" and "completion_percent" not in vals:
             vals["completion_percent"] = 100
         becoming_done = self.browse()
-        if vals.get("state") == "done":
-            becoming_done = self.filtered(lambda t: t.state != "done")
+        if "state" in vals:
+            if vals.get("state") == "done":
+                becoming_done = self.filtered(lambda t: t.state != "done")
+                if becoming_done and "date_done" not in vals:
+                    vals["date_done"] = fields.Date.context_today(self)
+            elif "date_done" not in vals:
+                # Mở lại việc đã HT → xóa mốc ngày hoàn thành
+                if self.filtered(lambda t: t.state == "done"):
+                    vals["date_done"] = False
         res = super().write(vals)
         if becoming_done:
             becoming_done._notify_assigner_done()
@@ -420,12 +466,15 @@ class DailyTask(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         assigner = self._assigner_uid()
+        today = fields.Date.context_today(self)
         for vals in vals_list:
             if not vals.get("assigned_by_id") and assigner:
                 vals["assigned_by_id"] = assigner
             # Tránh default/sudo ghi OdooBot đè người giao thật
             if vals.get("assigned_by_id") in (1, False, None) and assigner and assigner != 1:
                 vals["assigned_by_id"] = assigner
+            if vals.get("state") == "done" and not vals.get("date_done"):
+                vals["date_done"] = today
         return super().create(vals_list)
 
     def _assignee_user(self):
@@ -893,7 +942,7 @@ class DailyTask(models.Model):
         minutes = int(self.duration_minutes or 0)
         hours = float(self.duration_hours or 0.0)
         wg = self.sudo().work_group_id
-        overdue_days = self._days_past_deadline()
+        overdue_days = self._overdue_days()
         active_overdue = self.state != "done" and overdue_days > 0
         return {
             "id": self.id,
@@ -932,11 +981,13 @@ class DailyTask(models.Model):
             "state": self.state or "",
             "state_label": dict(self._fields["state"].selection).get(self.state, "") or "",
             "note": self.note or "",
-            # Cột Quá hạn: hiện số ngày trễ kể cả khi đã hoàn thành
+            # Cột Quá hạn: đã HT → so ngày bấm HT với hạn; chưa HT → so hôm nay
             "is_overdue": overdue_days > 0,
             "is_active_overdue": active_overdue,
             "overdue_days": overdue_days,
-            "overdue_label": ("Trễ hạn %s ngày" % overdue_days) if overdue_days else "",
+            "date_done": self.date_done.isoformat() if self.date_done else "",
+            "date_done_display": self.date_done.strftime("%d/%m/%Y") if self.date_done else "",
+            "overdue_label": self._overdue_label(),
             "color": int(self.color or 0),
             "color_token": (
                 "overdue"
@@ -1918,7 +1969,7 @@ class DailyTask(models.Model):
                     row.get("duration_hours") or 0,
                     "%s%%" % (row.get("completion_percent") or 0),
                     note_text,
-                    ("%s" % (row.get("overdue_label") or ("Trễ hạn %s ngày" % late_days)))
+                    (row.get("overdue_label") or "")
                     if late_days > 0
                     else "",
                 ]

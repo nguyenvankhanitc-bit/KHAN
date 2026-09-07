@@ -443,4 +443,120 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Kanban card ngang: dashboard tiến độ + 4 giai đoạn -->
+    <record id="view_project_kanban_horizontal_dashboard" model="ir.ui.view">
+        <field name="name">project.project.kanban.horizontal.dashboard</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban" position="attributes">
+                <attribute name="class" add="o_kanban_dashboard o_project_horizontal_cards" separator=" "/>
+            </xpath>
+            <xpath expr="//field[@name='sequence']" position="before">
+                <field name="code"/>
+                <field name="lug_code"/>
+                <field name="project_type"/>
+                <field name="lug_type_id"/>
+                <field name="deadline_status"/>
+                <field name="deadline_color"/>
+                <field name="progress"/>
+                <field name="phase_num"/>
+                <field name="lug_priority_label"/>
+                <field name="lug_pic_id"/>
+                <field name="lug_assignee_ids"/>
+                <field name="lug_deadline"/>
+            </xpath>
+            <xpath expr="//t[@t-name='card']" position="replace">
+                <t t-name="card">
+                    <div class="p-0 mb-0 bg-white border rounded-3 shadow-sm w-100" style="overflow: hidden; border-color: #CBD5E1 !important;">
+                        <div class="d-flex justify-content-between align-items-center px-3 py-2 border-bottom" style="background-color: #F8FAFC; border-color: #E2E8F0 !important;">
+                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <span class="fw-bold fs-6 text-dark">🏢 [<field name="code"/>] <field name="name"/></span>
+                                <span t-if="record.project_type.raw_value == 'event'" class="badge rounded-pill" style="background-color: #EDE9FE; color: #6D28D9; font-size: 11px;">Sự Kiện</span>
+                                <span t-if="record.project_type.raw_value == 'maintenance'" class="badge rounded-pill" style="background-color: #CCFBF1; color: #0F766E; font-size: 11px;">Bảo trì</span>
+                                <span t-if="record.project_type.raw_value == 'internal'" class="badge rounded-pill" style="background-color: #DBEAFE; color: #1D4ED8; font-size: 11px;">Internal</span>
+                                <span t-if="record.project_type.raw_value == 'other'" class="badge rounded-pill" style="background-color: #F1F5F9; color: #475569; font-size: 11px;"><field name="lug_type_id"/></span>
+                            </div>
+                            <div>
+                                <span t-if="record.deadline_color.raw_value != 'danger'" class="badge bg-success-subtle text-success border border-success px-2 py-1">
+                                    🟢 <field name="stage_id"/>
+                                </span>
+                                <span t-if="record.deadline_color.raw_value == 'danger'" class="badge bg-danger-subtle text-danger border border-danger px-2 py-1">
+                                    🔴 Trễ hạn
+                                </span>
+                            </div>
+                        </div>
+                        <div class="row g-0 p-3 align-items-center">
+                            <div class="col-md-3 pe-3">
+                                <div class="fw-bold small mb-2" style="color: #6D28D9;">👤 NHÂN SỰ &amp; QUẢN TRỊ</div>
+                                <div class="small text-secondary mb-1">
+                                    • Trưởng DA: <b class="text-dark"><field name="user_id"/></b>
+                                </div>
+                                <div class="small text-secondary d-flex align-items-center gap-1 mb-1 flex-wrap">
+                                    <span>• Phụ trách:</span>
+                                    <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                                    <field name="lug_assignee_ids" widget="many2many_avatar_user"/>
+                                </div>
+                                <div class="small text-muted">
+                                    • Độ ưu tiên: <field name="lug_priority_label"/>
+                                </div>
+                            </div>
+                            <div class="col-md-3 px-3 border-start border-end" style="border-color: #E2E8F0 !important;">
+                                <div class="fw-bold small mb-2" style="color: #0369A1;">📅 KẾ HOẠCH &amp; DEADLINE</div>
+                                <div class="small text-secondary mb-1">
+                                    • Bắt đầu: <field name="date_start"/>
+                                </div>
+                                <div class="small text-dark mb-2">
+                                    • Deadline: <b><field name="lug_deadline"/></b>
+                                </div>
+                                <div>
+                                    <span t-attf-class="badge w-100 py-1 #{record.deadline_color.raw_value == 'danger' ? 'bg-danger-subtle text-danger border border-danger' : (record.deadline_color.raw_value == 'warning' ? 'bg-warning-subtle text-warning-emphasis border border-warning' : 'bg-success-subtle text-success border border-success')}">
+                                        <t t-esc="record.deadline_status.value"/>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6 ps-3 d-flex align-items-center gap-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                     t-attf-style="width: 76px; height: 76px; flex-shrink: 0; background: conic-gradient(#{record.deadline_color.raw_value == 'danger' ? '#EF4444' : (record.progress.raw_value &gt;= 50 ? '#10B981' : '#F59E0B')} #{record.progress.raw_value * 3.6}deg, #E2E8F0 0deg);">
+                                    <div class="bg-white rounded-circle d-flex flex-column align-items-center justify-content-center" style="width: 58px; height: 58px;">
+                                        <span class="fw-bold text-dark" style="font-size: 13px;"><t t-esc="record.progress.raw_value"/>%</span>
+                                        <span class="text-muted" style="font-size: 8px; font-weight: bold; line-height: 1;">TIẾN ĐỘ</span>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="fw-bold small text-dark mb-1">📈 TIẾN ĐỘ THỰC HIỆN DỰ ÁN</div>
+                                    <div class="progress mb-2" style="height: 6px; border-radius: 4px;">
+                                        <div t-attf-class="progress-bar #{record.deadline_color.raw_value == 'danger' ? 'bg-danger' : (record.progress.raw_value &gt;= 50 ? 'bg-success' : 'bg-warning')}"
+                                             role="progressbar"
+                                             t-attf-style="width: #{record.progress.raw_value}%;"/>
+                                    </div>
+                                    <div class="text-muted fw-bold mb-1" style="font-size: 10px;">4 GIAI ĐOẠN QUẢN TRỊ DỰ ÁN:</div>
+                                    <div class="d-flex gap-1 flex-wrap">
+                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value &gt;= 1 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border'}" style="font-size: 10.5px;">
+                                            <t t-if="record.phase_num.raw_value &gt; 1">✓</t> GĐ 1: Chuẩn bị
+                                        </span>
+                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 2 ? 'bg-warning-subtle text-warning-emphasis border border-warning' : (record.phase_num.raw_value &gt; 2 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border')}" style="font-size: 10.5px;">
+                                            <t t-if="record.phase_num.raw_value == 2">▶</t> GĐ 2: Thực hiện
+                                        </span>
+                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 3 ? 'bg-warning-subtle text-warning-emphasis border border-warning' : (record.phase_num.raw_value &gt; 3 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border')}" style="font-size: 10.5px;">
+                                            <t t-if="record.phase_num.raw_value == 3">▶</t> GĐ 3: Nghiệm thu
+                                        </span>
+                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 4 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border'}" style="font-size: 10.5px;">
+                                            GĐ 4: Đóng DA
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </t>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="project.open_view_project_all" model="ir.actions.act_window">
+        <field name="view_mode">kanban,list,form</field>
+        <field name="view_id" ref="project.view_project_kanban"/>
+    </record>
 </odoo>

@@ -344,3 +344,26 @@
 .o_lug_task_detail .o_list_table td[name="name"] {
     text-align: left !important;
 }
+
+/* Horizontal multi-project Kanban dashboard */
+.o_kanban_view.o_project_horizontal_cards .o_kanban_renderer.o_kanban_ungrouped {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 12px 16px 24px !important;
+}
+
+.o_kanban_view.o_project_horizontal_cards .o_kanban_record {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 0 12px 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    border: 0 !important;
+}
+
+.o_kanban_view.o_project_horizontal_cards .o_kanban_record:hover {
+    box-shadow: none !important;
+}

@@ -213,7 +213,7 @@ class PhanHeModuleAccessInternetMenu(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        if self.env.context.get("phan_he_ensure_lines"):
+        if not self.env.context.get("skip_internet_menu_ensure"):
             self._ensure_internet_menu_lines()
         return res
 

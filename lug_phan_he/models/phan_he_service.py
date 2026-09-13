@@ -921,16 +921,26 @@ class PhanHeService(models.Model):
             if drift:
                 region_rows[0]["pct"] = round(region_rows[0]["pct"] + drift, 1)
 
+        year_history = {}
+        year_rows_by_year = {}
         year_bars = []
         for y in range(year - 3, year + 1):
-            last_mo = month if y == year else 12
             ys = fields.Date.to_date(f"{y}-01-01")
-            ye = fields.Date.to_date(f"{y}-{last_mo:02d}-01") + relativedelta(months=1, days=-1)
-            y_amt = self._dash_sum(base + self._dash_cost_domain(ys, ye))
-            year_bars.append({"year": y, "amount": y_amt, "is_current": y == year})
+            ye = fields.Date.to_date(f"{y}-12-31")
+            y_recs = self.search(base + self._dash_cost_domain(ys, ye), order="id desc")
+            y_rows, y_sum = self._dash_group_due_stores(y_recs)
+            year_history[y] = y_sum
+            year_rows_by_year[y] = y_rows
+            year_bars.append({
+                "year": y,
+                "amount": self._dash_mien_total(y_sum, mien_meta),
+                "is_current": y == year,
+            })
         cur_year = year_bars[-1]["amount"] if year_bars else 0.0
         prev_year = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
         year_delta = self._dash_delta(cur_year, prev_year)
+        year_by_rows = year_rows_by_year.get(year, {})
+        year_sum = year_history.get(year, {})
 
         usage_rows = self.read_group(
             base, ["id:count"], ["ops_status"]
@@ -989,22 +999,14 @@ class PhanHeService(models.Model):
             spark_max = max((s["amount"] for s in spark), default=1) or 1
             for item in spark:
                 item["pct"] = max(8, round((item["amount"] / spark_max) * 100)) if item["amount"] else 8
-            y_amt = 0.0
-            py_amt = 0.0
+            y_amt = float(year_sum.get(m["id"], 0.0) or 0.0)
+            py_amt = float(year_history.get(year - 1, {}).get(m["id"], 0.0) or 0.0)
             year_spark = []
             for y in range(year - 3, year + 1):
-                last_mo = month if y == year else 12
-                ys = fields.Date.to_date(f"{y}-01-01")
-                ye = fields.Date.to_date(f"{y}-{last_mo:02d}-01") + relativedelta(months=1, days=-1)
-                tot = self._dash_sum(
-                    self._dash_base_domain(m["id"], store_id)
-                    + self._dash_cost_domain(ys, ye)
-                )
-                year_spark.append({"key": str(y), "amount": tot})
-                if y == year:
-                    y_amt = tot
-                if y == year - 1:
-                    py_amt = tot
+                year_spark.append({
+                    "key": str(y),
+                    "amount": float(year_history.get(y, {}).get(m["id"], 0.0) or 0.0),
+                })
             ys_max = max((s["amount"] for s in year_spark), default=1) or 1
             for item in year_spark:
                 item["pct"] = max(8, round((item["amount"] / ys_max) * 100)) if item["amount"] else 8
@@ -1017,14 +1019,7 @@ class PhanHeService(models.Model):
                 "spark": spark,
                 "year_amount": y_amt,
                 "year_delta": self._dash_delta(y_amt, py_amt),
-                "year_count": self.search_count(
-                    self._dash_base_domain(m["id"], store_id)
-                    + self._dash_cost_domain(
-                        fields.Date.to_date(f"{year}-01-01"),
-                        fields.Date.to_date(f"{year}-{month:02d}-01")
-                        + relativedelta(months=1, days=-1),
-                    )
-                ),
+                "year_count": len(year_by_rows.get(m["id"], [])),
                 "year_spark": year_spark,
                 "year_rows": rows[:8],
             })

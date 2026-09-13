@@ -1135,6 +1135,13 @@ class PhanHeService(models.Model):
                 ("state", "=", "active"),
                 ("date_end", "<", today),
             ]
+        elif code in ("payment_due", "payment_schedule"):
+            domain += [
+                ("ops_status", "=", "active"),
+                ("state", "=", "active"),
+                ("date_end", "!=", False),
+                ("date_end", "<=", soon30),
+            ]
         elif code in ("month", "quarter", "year", "report_month", "report_quarter", "report_year"):
             start, end = self._internet_period_bounds(code)
             domain += self._dash_overlap(start, end)
@@ -1150,6 +1157,147 @@ class PhanHeService(models.Model):
             "remaining_days", "remaining_time", "alert_level", "store_mien",
         ]
         return self.search_read(domain, fields_list, offset=offset, limit=limit, order="date_end desc, id desc")
+
+    @api.model
+    def export_internet_list_excel(self, filter_code="payment_due", region=None, search=""):
+        """Xuất danh sách Internet (lịch thanh toán / đang dùng) ra Excel."""
+        import base64
+        import io
+
+        try:
+            import openpyxl
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError as exc:
+            from odoo.exceptions import UserError
+
+            raise UserError("Thiếu thư viện openpyxl trên server.") from exc
+
+        domain = self.internet_board_domain(filter_code or "payment_due")
+        if region:
+            domain.append(("store_mien", "=", region))
+        q = (search or "").strip()
+        if q:
+            domain += [
+                "|", "|", "|",
+                ("name", "ilike", q),
+                ("code", "ilike", q),
+                ("customer_code", "ilike", q),
+                ("store_id.name", "ilike", q),
+            ]
+        recs = self.search(domain, order="remaining_days asc, date_end asc, id desc")
+        titles = {
+            "payment_due": "Lịch thanh toán Internet (≤ 30 ngày / trễ hạn)",
+            "payment_schedule": "Lịch thanh toán Internet (≤ 30 ngày / trễ hạn)",
+            "active": "Internet đang sử dụng",
+            "expire_soon": "Sắp tới hạn thanh toán",
+            "expired": "Quá hạn",
+        }
+        title = titles.get(filter_code or "payment_due", "Danh sách Internet")
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Lich thanh toan"[:31]
+        headers = [
+            "STT", "Cửa hàng", "Mã khách hàng", "Nhà cung cấp", "Băng thông",
+            "Ngày bắt đầu", "Ngày kết thúc", "Cước tháng", "Số tiền thanh toán",
+            "Trạng thái", "Thời gian còn lại",
+        ]
+        header_fill = PatternFill("solid", fgColor="6D28D9")
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        title_font = Font(bold=True, size=14, color="4C1D95")
+        thin = Border(
+            left=Side(style="thin", color="64748B"),
+            right=Side(style="thin", color="64748B"),
+            top=Side(style="thin", color="64748B"),
+            bottom=Side(style="thin", color="64748B"),
+        )
+        money_fmt = '#,##0" đ"'
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+        tcell = ws.cell(1, 1, title)
+        tcell.font = title_font
+        tcell.alignment = Alignment(horizontal="left", vertical="center")
+        ws.row_dimensions[1].height = 22
+
+        for col, text in enumerate(headers, 1):
+            c = ws.cell(3, col, text)
+            c.fill = header_fill
+            c.font = header_font
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = thin
+
+        ops_label = {
+            "active": "Đang hoạt động",
+            "suspend": "Tạm ngưng",
+            "liquidated": "Thanh lý",
+        }
+
+        def fmt_date(val):
+            if not val:
+                return ""
+            try:
+                y, m, d = str(val)[:10].split("-")
+                return f"{d}/{m}/{y}"
+            except Exception:
+                return str(val)
+
+        tot_pay = 0.0
+        for idx, rec in enumerate(recs, 1):
+            days = int(rec.remaining_days or 0)
+            remain_txt = rec.remaining_time or (
+                f"Quá hạn {abs(days)} ngày" if days < 0 else f"Còn {days} ngày"
+            )
+            pay = float(rec.next_payment_amount or 0.0)
+            tot_pay += pay
+            values = [
+                idx,
+                rec.store_id.name or rec.name or "",
+                rec.customer_code or "",
+                rec.provider_id.name or "",
+                rec.bandwidth or "",
+                fmt_date(rec.date_start),
+                fmt_date(rec.date_end),
+                float(rec.contract_amount or 0.0),
+                pay,
+                ops_label.get(rec.ops_status or "active", rec.ops_status or ""),
+                remain_txt,
+            ]
+            ridx = 3 + idx
+            for col, val in enumerate(values, 1):
+                c = ws.cell(ridx, col, val)
+                c.border = thin
+                c.alignment = Alignment(
+                    vertical="center",
+                    horizontal="right" if col in (8, 9) else "left",
+                )
+                if col in (8, 9):
+                    c.number_format = money_fmt
+
+        foot_row = 4 + len(recs)
+        foot = ["", "TỔNG CỘNG", "", "", "", "", "", 0.0, tot_pay, "", ""]
+        foot[7] = sum(float(r.contract_amount or 0.0) for r in recs)
+        for col, val in enumerate(foot, 1):
+            c = ws.cell(foot_row, col, val)
+            c.border = thin
+            c.font = Font(bold=True)
+            if col in (8, 9):
+                c.number_format = money_fmt
+                c.alignment = Alignment(horizontal="right")
+
+        for col in range(1, len(headers) + 1):
+            maxlen = len(str(headers[col - 1]))
+            for r in range(3, foot_row + 1):
+                maxlen = max(maxlen, len(str(ws.cell(r, col).value or "")))
+            ws.column_dimensions[get_column_letter(col)].width = min(42, max(12, maxlen + 2))
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        fname = "Lich_thanh_toan.xlsx" if (filter_code or "") in ("payment_due", "payment_schedule") else "Danh_sach_Internet.xlsx"
+        return {
+            "file_base64": base64.b64encode(buf.getvalue()).decode("ascii"),
+            "filename": fname,
+            "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
 
     @api.model
     def _dash_base_domain(self, region_id=None, store_id=None):

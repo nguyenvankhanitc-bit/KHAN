@@ -22,6 +22,7 @@ const OWL_LIST_NAV = {
     list_liquidated: "liquidated",
     expire_soon: "expire_soon",
     expired: "expired",
+    payment_schedule: "payment_due",
     report_year: "report_year",
 };
 

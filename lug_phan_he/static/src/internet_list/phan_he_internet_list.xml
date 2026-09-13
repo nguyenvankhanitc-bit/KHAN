@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
-        <div class="lq-inet-board">
+        <div t-attf-class="lq-inet-board {{ listFilter === 'payment_due' ? 'is-payment' : '' }}">
             <div class="lq-board-crumb">
                 <span>Quản lý dịch vụ</span>
                 <i class="fa fa-angle-right"/>
@@ -19,7 +19,7 @@
                     </div>
                 </div>
                 <div class="lq-board-tools">
-                    <button t-if="canCreateNav" type="button" class="btn btn-primary lq-add-btn"
+                    <button t-if="canCreateNav and listFilter !== 'payment_due'" type="button" class="btn btn-primary lq-add-btn"
                             t-on-click="() => this.onAdd()">
                         <i class="fa fa-plus"/> Thêm
                     </button>
@@ -54,7 +54,10 @@
                             <span t-esc="state.totalCount"/> hợp đồng
                         </div>
                     <div class="lq-table-actions">
-                        <button type="button" class="lq-ghost"><i class="fa fa-download"/> Xuất Excel</button>
+                        <button type="button" class="lq-ghost" t-att-disabled="state.exporting"
+                                t-on-click="() => this.exportListExcel()">
+                            <i class="fa fa-download"/> <t t-if="state.exporting">Đang xuất...</t><t t-else="">Xuất Excel</t>
+                        </button>
                         <button type="button" class="lq-ghost"><i class="fa fa-sliders"/> Tùy chọn hiển thị</button>
                         <button type="button" class="lq-ico is-on"><i class="fa fa-th-large"/></button>
                         <button type="button" class="lq-ico"><i class="fa fa-bars"/></button>

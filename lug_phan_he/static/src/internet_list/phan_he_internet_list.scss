@@ -313,6 +313,27 @@
     .lq-money { font-weight: 700; }
 }
 
+.lq-inet-board.is-payment {
+    .lq-board-title h1 {
+        font-weight: 800;
+    }
+    .lq-table-card {
+        border: 1px solid #94a3b8;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .lq-inet-table {
+        th, td {
+            border: 1px solid #cbd5e1 !important;
+        }
+        th {
+            font-weight: 800 !important;
+            color: #0f172a !important;
+            background: #eef2ff !important;
+        }
+    }
+}
+
 .lq-isp {
     display: inline-flex;
     align-items: center;

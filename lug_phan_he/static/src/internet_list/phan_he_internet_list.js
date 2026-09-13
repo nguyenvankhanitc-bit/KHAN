@@ -201,6 +201,11 @@ const FILTER_TITLES = {
         subtitle: "Hợp đồng đang dùng đã quá ngày kết thúc",
         activeNav: "expired",
     },
+    payment_due: {
+        title: "Lịch thanh toán",
+        subtitle: "Internet đang sử dụng: còn ≤ 30 ngày hoặc đã trễ hạn",
+        activeNav: "payment_schedule",
+    },
     report_month: {
         title: "Chi phí tháng",
         subtitle: "Hợp đồng giao thoa tháng hiện tại",
@@ -261,6 +266,7 @@ export class PhanHeInternetListBoard extends Component {
             detailRecord: null,
             detailForm: {},
             internetMenus: {},
+            exporting: false,
         });
         onWillStart(async () => {
             try {
@@ -296,6 +302,7 @@ export class PhanHeInternetListBoard extends Component {
             liquidated: "list_liquidated",
             expire_soon: "expire_soon",
             expired: "expired",
+            payment_due: "payment_schedule",
             report_month: "report_month",
             report_quarter: "report_quarter",
             report_year: "report_year",
@@ -368,6 +375,11 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
+        } else if (f === "payment_due") {
+            domain.push(["ops_status", "=", "active"]);
+            domain.push(["state", "=", "active"]);
+            domain.push(["date_end", "!=", false]);
+            domain.push(["date_end", "<=", soon30]);
         } else if (f === "report_month" || f === "report_quarter" || f === "report_year") {
             const { from, to } = periodBounds(f);
             domain.push("|", ["date_start", "=", false], ["date_start", "<=", to]);
@@ -717,7 +729,7 @@ export class PhanHeInternetListBoard extends Component {
                         "invoice_filename",
                         "invoice_file",
                     ],
-                    { order: "date_end desc, id desc", limit: pageSize, offset }
+                    { order: this.listFilter === "payment_due" ? "remaining_days asc, date_end asc, id desc" : "date_end desc, id desc", limit: pageSize, offset }
                 ),
                 this.orm.searchRead("phan.he.provider", [["active", "=", true]], ["name"], { order: "name asc" }),
             ]);
@@ -795,6 +807,45 @@ export class PhanHeInternetListBoard extends Component {
             );
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    async exportListExcel() {
+        if (this.state.exporting) {
+            return;
+        }
+        this.state.exporting = true;
+        try {
+            const result = await this.orm.call("phan.he.service", "export_internet_list_excel", [
+                this.listFilter,
+                this.state.regionFilter || false,
+                this.state.search || "",
+            ]);
+            if (!result?.file_base64) {
+                throw new Error("Không nhận được file Excel.");
+            }
+            const bin = atob(result.file_base64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) {
+                bytes[i] = bin.charCodeAt(i);
+            }
+            const blob = new Blob([bytes], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = result.filename || "Lich_thanh_toan.xlsx";
+            a.click();
+            URL.revokeObjectURL(url);
+            this.notification.add("Đã xuất file Excel.", { type: "success" });
+        } catch (err) {
+            console.error(err);
+            this.notification.add(err?.data?.message || err?.message || "Không xuất được Excel.", {
+                type: "danger",
+            });
+        } finally {
+            this.state.exporting = false;
         }
     }
 

@@ -969,11 +969,16 @@ class PhanHeService(models.Model):
                 ),
             })
 
-        month_recs = self.search(month_dom, order="remaining_days asc, id desc")
+        month_recs = self.search(
+            base + self._dash_due_soon_domain(m_start, m_end),
+            order="remaining_days asc, id desc",
+        )
         by_rows = {}
+        due_sum = {}
         for svc in month_recs:
             mid = svc.mien_id.id or 0
             by_rows.setdefault(mid, [])
+            due_sum[mid] = due_sum.get(mid, 0.0) + float(svc.next_payment_amount or 0.0)
             if len(by_rows[mid]) < 80:
                 by_rows[mid].append({
                     "id": svc.id,
@@ -988,7 +993,6 @@ class PhanHeService(models.Model):
 
         detail_tables = []
         for m in mien_meta:
-            kpi = next((r for r in region_rows if r["id"] == m["id"]), None)
             rows = by_rows.get(m["id"], [])
             spark = []
             for i in range(3, -1, -1):
@@ -998,7 +1002,7 @@ class PhanHeService(models.Model):
                     "key": f"{ts.year}-{ts.month:02d}",
                     "amount": self._dash_sum(
                         self._dash_base_domain(m["id"], store_id)
-                        + self._dash_cost_domain(ts, te)
+                        + self._dash_due_soon_domain(ts, te)
                     ),
                 })
             spark_max = max((s["amount"] for s in spark), default=1) or 1
@@ -1025,14 +1029,21 @@ class PhanHeService(models.Model):
                 item["pct"] = max(8, round((item["amount"] / ys_max) * 100)) if item["amount"] else 8
             detail_tables.append({
                 **m,
-                "amount": kpi["amount"] if kpi else 0.0,
-                "delta": kpi["delta"] if kpi else 0.0,
-                "count": kpi["count"] if kpi else len(rows),
+                "amount": due_sum.get(m["id"], 0.0),
+                "delta": 0.0,
+                "count": len(rows),
                 "rows": rows,
                 "spark": spark,
                 "year_amount": y_amt,
                 "year_delta": self._dash_delta(y_amt, py_amt),
-                "year_count": len(rows),
+                "year_count": self.search_count(
+                    self._dash_base_domain(m["id"], store_id)
+                    + self._dash_cost_domain(
+                        fields.Date.to_date(f"{year}-01-01"),
+                        fields.Date.to_date(f"{year}-{month:02d}-01")
+                        + relativedelta(months=1, days=-1),
+                    )
+                ),
                 "year_spark": year_spark,
                 "year_rows": rows[:8],
             })
@@ -1200,9 +1211,28 @@ class PhanHeService(models.Model):
         ] + self._dash_overlap(start, end)
 
     @api.model
+    def _dash_due_soon_domain(self, start, end, soon_days=30):
+        """HĐ đang dùng, thời gian còn lại ≤ 30 ngày (kể cả quá hạn)."""
+        if not start or not end or start > end:
+            return [("id", "=", 0)]
+        today = fields.Date.context_today(self)
+        soon = today + relativedelta(days=int(soon_days or 30))
+        domain = [
+            ("ops_status", "=", "active"),
+            ("date_end", "!=", False),
+            ("date_end", "<=", soon),
+        ]
+        if start <= today <= end:
+            return domain
+        return domain + [
+            ("date_end", ">=", start),
+            ("date_end", "<=", end),
+        ]
+
+    @api.model
     def _dash_pay_due_domain(self, start, end, soon_days=30):
-        """Giữ API cũ: cùng miền với chi phí tháng (HĐ đang dùng trong kỳ)."""
-        return self._dash_cost_domain(start, end)
+        """API cũ: cần thanh toán ≤ 30 ngày trong kỳ."""
+        return self._dash_due_soon_domain(start, end, soon_days=soon_days)
 
     @api.model
     def _dash_sum(self, domain):

@@ -1352,9 +1352,26 @@ class PhanHeService(models.Model):
 
     @api.model
     def _dash_group_due_stores(self, recs):
-        """Gộp 1 cửa hàng / miền; trả bảng và tổng tiền theo miền."""
+        """Gộp 1 cửa hàng / miền; bỏ Tạm ngưng / Thanh lý."""
+        blocked_dom = [
+            ("active", "=", True),
+            "|", ("ops_status", "in", ("suspend", "liquidated")),
+            ("state", "in", ("suspend", "liquidated", "cancel")),
+        ]
+        stype = self.env["phan.he.service.type"].search([("code", "=", "internet")], limit=1)
+        if stype:
+            blocked_dom.append(("service_type_id", "=", stype.id))
+        else:
+            blocked_dom.append(("category", "=", "internet"))
+        blocked = set(self.search(blocked_dom).mapped("store_id").ids)
         by_best = {}
         for svc in recs:
+            if (svc.ops_status or "") in ("suspend", "liquidated"):
+                continue
+            if (svc.state or "") in ("suspend", "liquidated", "cancel", "expired"):
+                continue
+            if svc.store_id.id and svc.store_id.id in blocked:
+                continue
             mid = svc.mien_id.id or 0
             store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
             key = (mid, store_key)
@@ -1412,6 +1429,9 @@ class PhanHeService(models.Model):
         soon = today + relativedelta(days=int(soon_days or 30))
         domain = [
             ("ops_status", "=", "active"),
+            ("state", "=", "active"),
+            ("ops_status", "not in", ("suspend", "liquidated")),
+            ("state", "not in", ("suspend", "liquidated", "cancel", "expired")),
             ("date_end", "!=", False),
             ("date_end", "<=", soon),
         ]

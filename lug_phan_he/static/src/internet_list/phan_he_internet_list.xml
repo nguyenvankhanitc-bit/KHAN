@@ -19,10 +19,6 @@
                     </div>
                 </div>
                 <div class="lq-board-tools">
-                    <button t-if="canCreateNav and listFilter !== 'payment_due'" type="button" class="btn btn-primary lq-add-btn"
-                            t-on-click="() => this.onAdd()">
-                        <i class="fa fa-plus"/> Thêm
-                    </button>
                     <label class="lq-chip">
                         <i class="fa fa-map-marker"/>
                         <select t-on-change="(ev) => this.onFilterChange('regionFilter', ev)">

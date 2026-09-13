@@ -658,6 +658,12 @@
                                 <field name="contract_amount" nolabel="1" widget="monetary" required="1"/>
                             </div>
                             <div class="ph-inet-field">
+                                <label for="next_payment_amount">
+                                    <i class="fa fa-money"/> Số tiền thanh toán
+                                </label>
+                                <field name="next_payment_amount" nolabel="1" widget="monetary"/>
+                            </div>
+                            <div class="ph-inet-field">
                                 <label for="payment_type">
                                     <i class="fa fa-credit-card"/> Loại thanh toán
                                 </label>

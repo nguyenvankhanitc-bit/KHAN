@@ -333,24 +333,20 @@
                                                 <tr>
                                                     <th>STT</th>
                                                     <th>Cửa hàng</th>
-                                                    <th>Gói cước</th>
-                                                    <th>Băng thông</th>
-                                                    <th>Còn lại</th>
-                                                    <th>Số tiền TT</th>
+                                                    <th>Số tiền</th>
+                                                    <th>Thời gian còn lại</th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 <t t-if="!(tb.rows or []).length">
-                                                    <tr><td colspan="6" class="lq-empty">Không có dữ liệu</td></tr>
+                                                    <tr><td colspan="4" class="lq-empty">Không có dữ liệu</td></tr>
                                                 </t>
                                                 <t t-foreach="tb.rows or []" t-as="row" t-key="row.id">
                                                     <tr t-on-click="() => this.openInetRecord(row)">
                                                         <td t-esc="row.stt"/>
                                                         <td class="lq-col-store" t-att-title="row.store" t-esc="row.store"/>
-                                                        <td class="lq-col-pkg" t-att-title="row.provider" t-esc="row.provider"/>
-                                                        <td t-esc="row.bandwidth"/>
-                                                        <td t-esc="row.remaining_time or (row.remaining_days + ' ngày')"/>
                                                         <td class="lq-col-money" t-esc="formatNumber(row.amount)"/>
+                                                        <td t-att-title="row.remaining_time" t-esc="row.remaining_time or (row.remaining_days + ' ngày')"/>
                                                     </tr>
                                                 </t>
                                             </tbody>

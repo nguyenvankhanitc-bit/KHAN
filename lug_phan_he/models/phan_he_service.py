@@ -973,23 +973,42 @@ class PhanHeService(models.Model):
             base + self._dash_due_soon_domain(m_start, m_end),
             order="remaining_days asc, id desc",
         )
-        by_rows = {}
-        due_sum = {}
+        by_best = {}
         for svc in month_recs:
             mid = svc.mien_id.id or 0
-            by_rows.setdefault(mid, [])
-            due_sum[mid] = due_sum.get(mid, 0.0) + float(svc.next_payment_amount or 0.0)
-            if len(by_rows[mid]) < 80:
-                by_rows[mid].append({
+            store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
+            key = (mid, store_key)
+            amt = float(svc.next_payment_amount or 0.0)
+            days = int(svc.remaining_days or 0)
+            row = by_best.get(key)
+            if not row:
+                by_best[key] = {
                     "id": svc.id,
-                    "stt": len(by_rows[mid]) + 1,
                     "store": svc.store_id.name or "—",
                     "provider": svc.provider_id.name or "—",
                     "bandwidth": svc.bandwidth or "—",
-                    "amount": float(svc.next_payment_amount or 0.0),
-                    "remaining_days": int(svc.remaining_days or 0),
+                    "amount": amt,
+                    "remaining_days": days,
                     "remaining_time": svc.remaining_time or "",
-                })
+                }
+                continue
+            row["amount"] += amt
+            if days < row["remaining_days"]:
+                row["id"] = svc.id
+                row["provider"] = svc.provider_id.name or row["provider"]
+                row["bandwidth"] = svc.bandwidth or row["bandwidth"]
+                row["remaining_days"] = days
+                row["remaining_time"] = svc.remaining_time or row["remaining_time"]
+
+        by_rows = {}
+        due_sum = {}
+        for (mid, _sk), row in by_best.items():
+            by_rows.setdefault(mid, []).append(row)
+            due_sum[mid] = due_sum.get(mid, 0.0) + row["amount"]
+        for mid, rows in by_rows.items():
+            rows.sort(key=lambda r: (r["remaining_days"], r["store"]))
+            for i, row in enumerate(rows, 1):
+                row["stt"] = i
 
         detail_tables = []
         for m in mien_meta:

@@ -1039,7 +1039,7 @@ export class PhanHeDashboard extends Component {
         this.destroyInetCharts();
         const inet = this.state.inet || {};
         const money = (v) => this.formatMoney(v);
-        const spark = inet.trend && inet.trend.length ? inet.trend : inet.month_weeks || [];
+        const spark = inet.month_weeks && inet.month_weeks.length ? inet.month_weeks : inet.trend || [];
         const sparkCtx = this._inetChartOrNull(this.inetSparkRef);
         if (sparkCtx) {
             this.inetCharts.spark = new Chart(sparkCtx, {

@@ -799,8 +799,9 @@ class PhanHeService(models.Model):
             # Chi phí tháng: cộng mọi HĐ chưa hủy / chưa thanh lý
             is_closed = svc.state in ("cancel", "liquidated")
             if not is_closed:
-                row["amount"] += svc.contract_amount or 0.0
-                totals["amount"] += svc.contract_amount or 0.0
+                pay = float(svc.next_payment_amount or 0.0)
+                row["amount"] += pay
+                totals["amount"] += pay
 
             if svc.date_end and not is_closed:
                 if svc.date_end < today:
@@ -888,20 +889,20 @@ class PhanHeService(models.Model):
         by_mien = {
             (row["mien_id"][0] if row.get("mien_id") else 0): row
             for row in self.read_group(
-                month_dom, ["contract_amount:sum", "mien_id"], ["mien_id"]
+                month_dom, ["next_payment_amount:sum", "mien_id"], ["mien_id"]
             )
         }
         by_mien_prev = {
             (row["mien_id"][0] if row.get("mien_id") else 0): row
             for row in self.read_group(
-                prev_dom, ["contract_amount:sum", "mien_id"], ["mien_id"]
+                prev_dom, ["next_payment_amount:sum", "mien_id"], ["mien_id"]
             )
         }
         region_rows = []
         for m in mien_meta:
             mid = m["id"]
-            amt = float((by_mien.get(mid) or {}).get("contract_amount") or 0.0)
-            prev_amt = float((by_mien_prev.get(mid) or {}).get("contract_amount") or 0.0)
+            amt = float((by_mien.get(mid) or {}).get("next_payment_amount") or 0.0)
+            prev_amt = float((by_mien_prev.get(mid) or {}).get("next_payment_amount") or 0.0)
             cnt = int((by_mien.get(mid) or {}).get("mien_id_count") or 0)
             pct = round((amt / month_total) * 100, 1) if month_total else 0.0
             region_rows.append({
@@ -964,7 +965,7 @@ class PhanHeService(models.Model):
                 "amount": self._dash_sum(base + self._dash_overlap(ys, ye)),
             })
 
-        month_recs = self.search(month_dom, order="contract_amount desc")
+        month_recs = self.search(month_dom, order="next_payment_amount desc, id desc")
         by_rows = {}
         for svc in month_recs:
             mid = svc.mien_id.id or 0
@@ -976,7 +977,7 @@ class PhanHeService(models.Model):
                     "store": svc.store_id.name or "—",
                     "provider": svc.provider_id.name or "—",
                     "bandwidth": svc.bandwidth or "—",
-                    "amount": float(svc.contract_amount or 0.0),
+                    "amount": float(svc.next_payment_amount or 0.0),
                 })
 
         detail_tables = []
@@ -1185,10 +1186,11 @@ class PhanHeService(models.Model):
 
     @api.model
     def _dash_sum(self, domain):
-        groups = self.read_group(domain, ["contract_amount:sum"], [])
+        """Tổng chi phí dashboard = Số tiền thanh toán (không dùng cước tháng)."""
+        groups = self.read_group(domain, ["next_payment_amount:sum"], [])
         if not groups:
             return 0.0
-        return float(groups[0].get("contract_amount") or 0.0)
+        return float(groups[0].get("next_payment_amount") or 0.0)
 
     @api.model
     def _parse_dash_month(self, selected_month, today):

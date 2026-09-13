@@ -823,6 +823,30 @@ class PhanHeService(models.Model):
     REGION_ORDER = ("NAM", "DTT", "BAC", "VP", "TRUNG")
 
     @api.model
+    def get_internet_alert_counts(self):
+        """Số HĐ sidebar: cùng điều kiện danh sách Sắp tới hạn / Quá hạn."""
+        today = fields.Date.context_today(self)
+        soon30 = today + relativedelta(days=30)
+        base = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+            ("date_end", "!=", False),
+        ]
+        expire_soon = self.search_count(base + [
+            ("date_end", ">=", today),
+            ("date_end", "<=", soon30),
+        ])
+        overdue = self.search_count(base + [
+            ("date_end", "<", today),
+        ])
+        return {
+            "expire_soon": expire_soon,
+            "overdue_contract": overdue,
+            "alert_count": expire_soon + overdue,
+        }
+
+    @api.model
     def get_dashboard_data(self, month=None, year=None, region_id=None, store_id=None):
         """Dashboard Internet: read_group, lọc tháng/năm + miền + cửa hàng."""
         today = fields.Date.context_today(self)
@@ -1076,6 +1100,7 @@ class PhanHeService(models.Model):
             "updated_at": fields.Datetime.context_timestamp(
                 self, fields.Datetime.now()
             ).strftime("%H:%M %d/%m/%Y"),
+            **self.get_internet_alert_counts(),
         }
 
     @api.model

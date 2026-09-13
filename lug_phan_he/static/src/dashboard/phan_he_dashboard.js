@@ -98,7 +98,7 @@ const INTERNET_NAV_SECTIONS = [
                 id: "expire_soon",
                 label: "Sắp tới hạn thanh toán",
                 icon: "fa-exclamation-triangle",
-                tone: "warn",
+                tone: "danger",
                 iconTone: "alert",
                 badgeKey: "expire_soon",
                 action: "lug_phan_he.action_phan_he_service_expire_soon",
@@ -231,11 +231,22 @@ export class PhanHeDashboard extends Component {
         this.inetYearRef = useRef("inetYear");
         this.inetMonthTrendRef = useRef("inetMonthTrend");
         this.inetCharts = {};
+        this._applyInternetAlertCounts = (counts) => {
+            const c = counts || {};
+            this.state.data = {
+                ...(this.state.data || {}),
+                expire_soon: Number(c.expire_soon || 0),
+                overdue_contract: Number(c.overdue_contract || 0),
+                alert_count: Number(c.alert_count || 0),
+            };
+        };
         onWillStart(async () => {
             try {
                 if (this.serviceTypeCode === "internet") {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                     this.state.internetMenus = rights?.internet_menus || {};
+                    const counts = await this.orm.call("phan.he.service", "get_internet_alert_counts", []);
+                    this._applyInternetAlertCounts(counts);
                 }
                 let openNav = this.actionContext.phan_he_open_nav;
                 if (this.serviceTypeCode === "internet") {
@@ -974,13 +985,7 @@ export class PhanHeDashboard extends Component {
             if (data?.selected_month) {
                 this.state.selectedMonth = data.selected_month;
             }
-            this.state.data = {
-                ...(this.state.data || {}),
-                user_name: data.user_name,
-                updated_at: data.updated_at,
-                expire_soon: 0,
-                overdue_contract: 0,
-            };
+            this._applyInternetAlertCounts(data);
         } catch (error) {
             console.error(error);
             this.notification.add(

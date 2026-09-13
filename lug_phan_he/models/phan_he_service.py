@@ -1184,15 +1184,69 @@ class PhanHeService(models.Model):
         return self.search_read(domain, fields_list, offset=offset, limit=limit, order="date_end desc, id desc")
 
     @api.model
+    def _excel_dmy(self, val):
+        if not val:
+            return ""
+        try:
+            y, m, d = str(val)[:10].split("-")
+            return f"{d}/{m}/{y}"
+        except Exception:
+            return str(val)
+
+    def _excel_payment_content(self, rec, month, year):
+        pay = rec._get_next_payment_record()
+        if pay and (pay.payment_content or "").strip():
+            return pay.payment_content.strip()
+        pkg = (rec.package_name or rec.duration or "").strip()
+        start = self._excel_dmy(rec.date_start)
+        end = self._excel_dmy(rec.date_end)
+        store = rec.store_id.name or rec.name or ""
+        if pkg and start and end:
+            return f"Thanh toán {pkg} từ: {start} - {end}"
+        if start and end:
+            return f"Thanh toán cước internet {store} từ: {start} - {end}"
+        return f"Thanh toán cước internet {store} Tháng {month}/{year}"
+
+    def _excel_account_block(self, rec):
+        pay = rec._get_next_payment_record()
+        bank = pay.bank_account_id if pay else False
+        if not bank and rec.provider_id:
+            bank = rec.provider_id.bank_account_ids.filtered("is_default")[:1] \
+                or rec.provider_id.bank_account_ids[:1]
+        name = ""
+        stk = ""
+        bank_name = ""
+        ndung = ""
+        if bank:
+            name = bank.account_name or rec.provider_id.name or ""
+            stk = bank.account_number or ""
+            bank_name = " - ".join(
+                p for p in [(bank.bank_name or "").strip(), (bank.bank_branch or "").strip()] if p
+            )
+            ndung = (bank.transfer_content_template or "").strip()
+        elif rec.payment_info_text:
+            return rec.payment_info_text.strip()
+        if pay and (pay.payment_content or "").strip():
+            ndung = pay.payment_content.strip()
+        lines = [
+            f"- TÊN TK: {name}",
+            f"- STK: {stk}",
+            f"- NGÂN HÀNG: {bank_name}",
+        ]
+        if ndung:
+            lines.append(f"- Nội dung: {ndung}")
+        return "\n".join(lines)
+
+    @api.model
     def export_internet_list_excel(self, filter_code="payment_due", region=None, search=""):
-        """Xuất danh sách Internet (lịch thanh toán / đang dùng) ra Excel."""
+        """Xuất Excel mẫu thanh toán internet (STT, CÔNG TY, CỬA HÀNG, MÃ KH, NỘI DUNG, SỐ TIỀN, TK)."""
         import base64
         import io
+        import os
 
         try:
             import openpyxl
             from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
-            from openpyxl.utils import get_column_letter
         except ImportError as exc:
             from odoo.exceptions import UserError
 
@@ -1211,113 +1265,134 @@ class PhanHeService(models.Model):
                 ("store_id.name", "ilike", q),
             ]
         recs = self.search(domain, order="remaining_days asc, date_end asc, id desc")
-        titles = {
-            "payment_due": "Lịch thanh toán Internet (≤ 30 ngày / trễ hạn)",
-            "payment_schedule": "Lịch thanh toán Internet (≤ 30 ngày / trễ hạn)",
-            "active": "Internet đang sử dụng",
-            "expire_soon": "Sắp tới hạn thanh toán",
-            "expired": "Quá hạn",
-        }
-        title = titles.get(filter_code or "payment_due", "Danh sách Internet")
+        today = fields.Date.context_today(self)
+        month, year = today.month, today.year
 
         wb = openpyxl.Workbook()
         ws = wb.active
-        ws.title = "Lich thanh toan"[:31]
-        headers = [
-            "STT", "Cửa hàng", "Mã khách hàng", "Nhà cung cấp", "Băng thông",
-            "Ngày bắt đầu", "Ngày kết thúc", "Cước tháng", "Số tiền thanh toán",
-            "Trạng thái", "Thời gian còn lại",
-        ]
-        header_fill = PatternFill("solid", fgColor="6D28D9")
-        header_font = Font(bold=True, color="FFFFFF", size=11)
-        title_font = Font(bold=True, size=14, color="4C1D95")
+        ws.title = f"T{month} {year}"[:31]
+
+        font_title = Font(name="Times New Roman", size=18, bold=True)
+        font_header = Font(name="Times New Roman", size=10, bold=True)
+        font_cell = Font(name="Times New Roman", size=10)
+        font_cell_bold = Font(name="Times New Roman", size=10, bold=True)
+        fill_peach = PatternFill("solid", fgColor="FBE4D5")
         thin = Border(
-            left=Side(style="thin", color="64748B"),
-            right=Side(style="thin", color="64748B"),
-            top=Side(style="thin", color="64748B"),
-            bottom=Side(style="thin", color="64748B"),
+            left=Side(style="thin"),
+            right=Side(style="thin"),
+            top=Side(style="thin"),
+            bottom=Side(style="thin"),
         )
-        money_fmt = '#,##0" đ"'
-        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
-        tcell = ws.cell(1, 1, title)
-        tcell.font = title_font
-        tcell.alignment = Alignment(horizontal="left", vertical="center")
-        ws.row_dimensions[1].height = 22
+        align_center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        align_left = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        num_fmt = '_-* #,##0\\ _₫_-;\\-* #,##0\\ _₫_-;_-* "-"??\\ _₫_-;_-@'
 
-        for col, text in enumerate(headers, 1):
-            c = ws.cell(3, col, text)
-            c.fill = header_fill
-            c.font = header_font
-            c.alignment = Alignment(horizontal="center", vertical="center")
-            c.border = thin
+        ws.merge_cells("A1:G1")
+        ws.row_dimensions[1].height = 36
+        ws["A1"].value = f"DANH SÁCH THANH TOÁN INTERNET THÁNG T{month}/{year} "
+        ws["A1"].font = font_title
+        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+        ws.row_dimensions[2].height = 18
+        ws.row_dimensions[3].height = 30.75
 
-        ops_label = {
-            "active": "Đang hoạt động",
-            "suspend": "Tạm ngưng",
-            "liquidated": "Thanh lý",
-        }
+        headers = ["STT", "CÔNG TY", "CỬA HÀNG", "MÃ KH", "NỘI DUNG", "SỐ TIỀN", "TÊN TÀI KHOẢN"]
+        for col, h in enumerate(headers, 1):
+            cell = ws.cell(3, col, h)
+            cell.font = font_header
+            cell.fill = fill_peach
+            cell.border = thin
+            cell.alignment = align_center
+            if col == 6:
+                cell.number_format = num_fmt
 
-        def fmt_date(val):
-            if not val:
-                return ""
-            try:
-                y, m, d = str(val)[:10].split("-")
-                return f"{d}/{m}/{y}"
-            except Exception:
-                return str(val)
-
-        tot_pay = 0.0
+        data_start = 4
+        row_i = data_start
         for idx, rec in enumerate(recs, 1):
-            days = int(rec.remaining_days or 0)
-            remain_txt = rec.remaining_time or (
-                f"Quá hạn {abs(days)} ngày" if days < 0 else f"Còn {days} ngày"
-            )
-            pay = float(rec.next_payment_amount or 0.0)
-            tot_pay += pay
+            acct = self._excel_account_block(rec)
+            content = self._excel_payment_content(rec, month, year)
+            ws.row_dimensions[row_i].height = max(45, 18 * (acct.count("\n") + 2))
             values = [
                 idx,
+                "ST",
                 rec.store_id.name or rec.name or "",
                 rec.customer_code or "",
-                rec.provider_id.name or "",
-                rec.bandwidth or "",
-                fmt_date(rec.date_start),
-                fmt_date(rec.date_end),
-                float(rec.contract_amount or 0.0),
-                pay,
-                ops_label.get(rec.ops_status or "active", rec.ops_status or ""),
-                remain_txt,
+                content,
+                float(rec.next_payment_amount or 0.0),
+                acct,
             ]
-            ridx = 3 + idx
             for col, val in enumerate(values, 1):
-                c = ws.cell(ridx, col, val)
-                c.border = thin
-                c.alignment = Alignment(
-                    vertical="center",
-                    horizontal="right" if col in (8, 9) else "left",
-                )
-                if col in (8, 9):
-                    c.number_format = money_fmt
+                cell = ws.cell(row_i, col, val)
+                cell.border = thin
+                if col in (1, 2):
+                    cell.font = font_cell_bold
+                    cell.alignment = align_center
+                elif col == 6:
+                    cell.font = font_cell
+                    cell.alignment = align_center
+                    cell.number_format = num_fmt
+                elif col == 7:
+                    cell.font = font_cell
+                    cell.alignment = align_left
+                    cell.number_format = "@"
+                else:
+                    cell.font = font_cell
+                    cell.alignment = align_center if col in (3, 4) else align_left
+            row_i += 1
 
-        foot_row = 4 + len(recs)
-        foot = ["", "TỔNG CỘNG", "", "", "", "", "", 0.0, tot_pay, "", ""]
-        foot[7] = sum(float(r.contract_amount or 0.0) for r in recs)
-        for col, val in enumerate(foot, 1):
-            c = ws.cell(foot_row, col, val)
-            c.border = thin
-            c.font = Font(bold=True)
-            if col in (8, 9):
-                c.number_format = money_fmt
-                c.alignment = Alignment(horizontal="right")
+        data_end = row_i - 1 if recs else data_start - 1
+        total_row = row_i
+        ws.row_dimensions[total_row].height = 31.5
+        ws.merge_cells(start_row=total_row, start_column=1, end_row=total_row, end_column=5)
+        for col in range(1, 8):
+            cell = ws.cell(total_row, col)
+            cell.border = thin
+            if col <= 6:
+                cell.fill = fill_peach
+            cell.font = font_header if col in (1, 6) else font_cell
+            cell.alignment = align_center
+        ws.cell(total_row, 1).value = "TỔNG THANH TOÁN"
+        ws.cell(total_row, 6).value = f"=SUM(F{data_start}:F{data_end})" if recs else 0
+        ws.cell(total_row, 6).number_format = num_fmt
+        ws.cell(total_row, 6).font = font_header
 
-        for col in range(1, len(headers) + 1):
-            maxlen = len(str(headers[col - 1]))
-            for r in range(3, foot_row + 1):
-                maxlen = max(maxlen, len(str(ws.cell(r, col).value or "")))
-            ws.column_dimensions[get_column_letter(col)].width = min(42, max(12, maxlen + 2))
+        sig_row = total_row + 2
+        ws.merge_cells(start_row=sig_row, start_column=2, end_row=sig_row, end_column=4)
+        ws.merge_cells(start_row=sig_row, start_column=5, end_row=sig_row, end_column=6)
+        for col, label in ((2, "NGƯỜI ĐỀ NGHỊ"), (5, "KẾ TOÁN"), (7, "NGƯỜI DUYỆT")):
+            cell = ws.cell(sig_row, col, label)
+            cell.font = font_header
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+
+        name_row = sig_row + 6
+        ws.merge_cells(start_row=name_row, start_column=2, end_row=name_row, end_column=4)
+        ws.merge_cells(start_row=name_row, start_column=6, end_row=name_row, end_column=7)
+        proposer = (self.env.user.name or "").upper()
+        ws.cell(name_row, 2).value = proposer
+        ws.cell(name_row, 2).font = font_cell_bold
+        ws.cell(name_row, 2).alignment = Alignment(horizontal="center", vertical="center")
+        ws.cell(name_row, 7).font = font_cell_bold
+        ws.cell(name_row, 7).alignment = Alignment(horizontal="center", vertical="center")
+
+        for letter, width in {
+            "A": 6.29, "B": 10.86, "C": 17.71, "D": 21.71, "E": 39.66, "F": 13.43, "G": 68.0,
+        }.items():
+            ws.column_dimensions[letter].width = width
+
+        try:
+            from openpyxl.drawing.image import Image as XLImage
+            static_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "description")
+            logo0 = os.path.join(static_dir, "payment_logo_0.png")
+            if os.path.isfile(logo0):
+                img0 = XLImage(logo0)
+                img0.width = 228
+                img0.height = 77
+                ws.add_image(img0, "A1")
+        except Exception:
+            pass
 
         buf = io.BytesIO()
         wb.save(buf)
-        fname = "Lich_thanh_toan.xlsx" if (filter_code or "") in ("payment_due", "payment_schedule") else "Danh_sach_Internet.xlsx"
+        fname = f"Thanh toan internet T{month} {year}.xlsx"
         return {
             "file_base64": base64.b64encode(buf.getvalue()).decode("ascii"),
             "filename": fname,

@@ -207,7 +207,7 @@
                                 </div>
                             </article>
                             <article class="lq-card">
-                                <div class="lq-card-title">Chi phí theo khu vực</div>
+                                <div class="lq-card-title">Chi phí theo khu vực theo tháng</div>
                                 <div class="lq-donut-wrap">
                                     <div class="lq-donut lq-donut-canvas-wrap">
                                         <canvas t-ref="inetDonut"/>
@@ -229,7 +229,7 @@
                                 </div>
                             </article>
                             <article class="lq-card">
-                                <div class="lq-card-title">Chi phí theo năm</div>
+                                <div class="lq-card-title">Tổng chi phí theo năm <t t-esc="inet.selected_year"/></div>
                                 <div class="lq-card-value" t-esc="formatMoney(inet.year_total)"/>
                                 <span class="lq-delta" t-att-class="{ 'is-up': inet.year_delta >= 0, 'is-down': inet.year_delta &lt; 0 }">
                                     <t t-if="inet.year_delta >= 0">▲</t><t t-else="">▼</t>
@@ -360,7 +360,7 @@
                         </div>
 
                         <div class="lq-sec-head">
-                            <h2>Chi phí theo năm</h2>
+                            <h2>Tổng chi phí theo năm <t t-esc="inet.selected_year"/></h2>
                         </div>
                         <div class="lq-tables">
                             <t t-foreach="inet.detail_tables or []" t-as="yt" t-key="'y-' + yt.id">

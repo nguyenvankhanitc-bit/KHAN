@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.InternetFormView" t-inherit="web.FormView" t-inherit-mode="primary">
+        <xpath expr="//t[@t-set-slot='layout-buttons']" position="replace">
+            <t t-set-slot="layout-buttons">
+                <div class="ph-inet-form-btns">
+                    <button t-if="canEdit and !model.root.isInEdition"
+                            type="button"
+                            class="btn ph-inet-btn-edit"
+                            title="Chỉnh sửa"
+                            t-on-click.stop="onClickEdit">
+                        <i class="fa fa-pencil"/>
+                        Chỉnh sửa
+                    </button>
+                    <button t-if="canEdit and model.root.isInEdition"
+                            type="button"
+                            class="btn ph-inet-btn-cancel"
+                            title="Hủy"
+                            t-on-click.stop="onClickCancel">
+                        Hủy
+                    </button>
+                    <button t-if="canEdit and model.root.isInEdition"
+                            type="button"
+                            class="btn ph-inet-btn-save"
+                            title="Lưu"
+                            t-on-click.stop="onClickSave">
+                        <i class="fa fa-save"/>
+                        Lưu
+                    </button>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+    <t t-name="lug_phan_he.InvoiceDropzone">
+        <div class="ph-inet-dropzone-box"
+             t-att-class="(drop.over ? 'is-over ' : '') + (props.className || '')"
+             t-on-dragover.prevent="onDragOver"
+             t-on-dragleave.prevent="onDragLeave"
+             t-on-drop.prevent="onDrop">
+            <t t-if="fileName">
+                <div class="ph-inet-file-row">
+                    <span class="ph-inet-file-ico"><i class="fa fa-file-pdf-o"/></span>
+                    <span class="ph-inet-file-name" t-esc="fileName"/>
+                    <button type="button" class="btn btn-sm btn-light ph-inet-btn-view"
+                            t-on-click.stop="onViewMain">
+                        <i class="fa fa-eye"/> Xem
+                    </button>
+                    <button type="button" class="btn btn-sm btn-light text-danger"
+                            t-if="!props.readonly"
+                            t-on-click.stop="clearMain">Xóa</button>
+                </div>
+            </t>
+            <t t-foreach="extraFiles" t-as="file" t-key="file.id">
+                <div class="ph-inet-file-row">
+                    <span class="ph-inet-file-ico"><i class="fa fa-paperclip"/></span>
+                    <span class="ph-inet-file-name" t-esc="file.name"/>
+                    <a class="btn btn-sm btn-light ph-inet-btn-view" t-att-href="getUrl(file.id)" target="_blank">
+                        <i class="fa fa-eye"/> Xem
+                    </a>
+                </div>
+            </t>
+            <div t-if="!props.readonly" class="ph-inet-drop-core">
+                <i class="fa fa-cloud-upload fa-2x"/>
+                <div class="ph-inet-drop-title">Kéo thả file hóa đơn vào đây</div>
+                <div class="ph-inet-drop-or">hoặc</div>
+                <label class="btn btn-primary ph-inet-upload-btn">
+                    + Tải file hóa đơn
+                    <input type="file" class="d-none" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                           t-on-change="onInputChange"/>
+                </label>
+            </div>
+        </div>
+    </t>
+</templates>

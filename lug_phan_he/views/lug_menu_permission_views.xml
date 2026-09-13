@@ -23,6 +23,23 @@
                         </list>
                     </field>
                 </page>
+                <page string="Phân quyền Menu Internet" name="page_internet_menu_permission">
+                    <field name="internet_menu_permission_ids" nolabel="1">
+                        <list editable="bottom" create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_folder" column_invisible="1"/>
+                            <field name="menu_code" column_invisible="1"/>
+                            <field name="parent_id" column_invisible="1"/>
+                            <field name="menu_name" string="MENU INTERNET" readonly="1"
+                                   decoration-bf="is_folder"/>
+                            <field name="can_read" string="XEM" widget="boolean_toggle"/>
+                            <field name="can_create" string="THÊM" widget="boolean_toggle"/>
+                            <field name="can_write" string="SỬA" widget="boolean_toggle"/>
+                            <field name="can_unlink" string="XÓA" widget="boolean_toggle"/>
+                            <field name="can_admin" string="QUẢN TRỊ" widget="boolean_toggle"/>
+                        </list>
+                    </field>
+                </page>
                 <page string="Phân quyền Cửa hàng (Lịch ca &amp; Nhân sự)" name="page_store_permission">
                     <div class="mb-3">
                         <h3 class="mt-2" style="font-weight: 600; color: #2c3e50;">

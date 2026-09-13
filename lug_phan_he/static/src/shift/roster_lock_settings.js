@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useRef, useState } from "@odoo/owl";
+import { Component, onWillStart, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
@@ -52,8 +52,6 @@ export class RosterLockSettingsPage extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
-        this.lockDaySelect = useRef("lockDaySelect");
-        this.unlockDaySelect = useRef("unlockDaySelect");
         this.state = useState({
             auto_lock: true,
             lock_day: 10,
@@ -115,19 +113,11 @@ export class RosterLockSettingsPage extends Component {
         return pad2(n);
     }
 
-    isLockDay(d) {
-        return this.lockDayNum === d;
-    }
-
-    isUnlockDay(d) {
-        return this.unlockDayNum === d;
-    }
-
     applyConfig(cfg) {
         this.state.auto_lock = cfg.auto_lock !== false;
         this.state.lock_time = cfg.lock_time || "22:00";
         this.state.repeat_type = cfg.repeat_type || "monthly";
-        const day = clampDay(cfg.lock_day != null ? cfg.lock_day : 10);
+        const day = clampDay(cfg.lock_day || 10);
         this.state.lock_day = day;
         if (cfg.lock_anchor_date) {
             this.state.lock_date = isoFromDay(day, cfg.lock_anchor_date);
@@ -148,19 +138,7 @@ export class RosterLockSettingsPage extends Component {
         this.state.notify_before = cfg.notify_before || cfg.notify_offset || "2h";
     }
 
-    syncDaysFromDom() {
-        if (this.lockDaySelect.el) {
-            this.state.lock_day = clampDay(this.lockDaySelect.el.value);
-            this.state.lock_date = isoFromDay(this.state.lock_day, this.state.lock_date);
-        }
-        if (this.unlockDaySelect.el) {
-            this.state.unlock_day = clampDay(this.unlockDaySelect.el.value);
-            this.state.unlock_date = isoFromDay(this.state.unlock_day, this.state.unlock_date || this.state.lock_date);
-        }
-    }
-
     payloadFromState() {
-        this.syncDaysFromDom();
         return {
             auto_lock: this.state.auto_lock,
             lock_day: this.lockDayNum,

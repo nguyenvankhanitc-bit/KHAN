@@ -582,3 +582,557 @@ class PhanHeDashboard(models.AbstractModel):
         if user.has_group("lug_phan_he.group_phan_he_staff"):
             return "Staff"
         return "Viewer"
+
+    @api.model
+    def get_month_cost_board(self, params=None):
+        """Bảng điều khiển Chi phí tháng — hợp đồng Internet."""
+        params = params or {}
+        today = fields.Date.context_today(self)
+        year = int(params.get("year") or today.year)
+        month = int(params.get("month") or today.month)
+        month = min(12, max(1, month))
+        region = (params.get("region") or "all") or "all"
+        provider_id = int(params["provider_id"]) if params.get("provider_id") else False
+        pay_filter = (params.get("pay_status") or "all") or "all"
+
+        start = fields.Date.from_string(f"{year:04d}-{month:02d}-01")
+        end = (start + relativedelta(months=1)) - relativedelta(days=1)
+        Service = self.env["phan.he.service"]
+        domain = Service.internet_board_domain("report_month") if hasattr(Service, "internet_board_domain") else [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+        ]
+        # internet_board_domain("report_month") already overlaps current month — override to selected month
+        domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "not in", ("cancel", "draft")),
+            "|", ("date_start", "=", False), ("date_start", "<=", end),
+            "|", ("date_end", "=", False), ("date_end", ">=", start),
+        ]
+        if region and region != "all":
+            domain.append(("store_mien", "=", region))
+        if provider_id:
+            domain.append(("provider_id", "=", provider_id))
+
+        services = Service.search(domain, order="date_end asc, id asc")
+        rows = []
+        due_buckets = {"lt7": 0, "d7_15": 0, "d16_30": 0}
+        status_counts = {"paid": 0, "partial": 0, "unpaid": 0, "none": 0}
+        kpi = {
+            "total_amount": 0.0,
+            "total_count": 0,
+            "paid_amount": 0.0,
+            "paid_count": 0,
+            "unpaid_amount": 0.0,
+            "unpaid_count": 0,
+        }
+
+        def week_ranges():
+            last = end.day
+            cuts = [(1, min(5, last)), (6, min(12, last)), (13, min(19, last)), (20, last)]
+            out = []
+            for i, (a, b) in enumerate(cuts, 1):
+                if a > last:
+                    break
+                b = max(a, b)
+                out.append({
+                    "key": f"w{i}",
+                    "label": f"Tuần {i}",
+                    "sub": f"{a:02d}-{b:02d}/{month:02d}",
+                    "d0": start.replace(day=a),
+                    "d1": start.replace(day=b),
+                })
+            return out
+
+        weeks = week_ranges()
+        week_total = [0.0] * len(weeks)
+        week_paid = [0.0] * len(weeks)
+        week_remain = [0.0] * len(weeks)
+
+        def week_index(day):
+            if not day:
+                return None
+            for i, w in enumerate(weeks):
+                if w["d0"] <= day <= w["d1"]:
+                    return i
+            return None
+
+        for rec in services:
+            monthly = float(rec.contract_amount or 0.0)
+            paid_sum = sum(
+                float(p.amount or 0.0)
+                for p in rec.payment_ids
+                if p.payment_state == "paid"
+            )
+            remain_amt = max(monthly - paid_sum, 0.0)
+            if monthly <= 0 and paid_sum <= 0:
+                pay_status = "none"
+            elif remain_amt <= 0 and (monthly > 0 or paid_sum > 0):
+                pay_status = "paid"
+            elif paid_sum > 0:
+                pay_status = "partial"
+            else:
+                pay_status = "unpaid"
+
+            if pay_filter not in ("all", "", False) and pay_status != pay_filter:
+                continue
+
+            days = rec.remaining_days
+            if rec.date_end:
+                days = (rec.date_end - today).days
+            due_key = ""
+            if rec.state == "active" and days is not False and days is not None:
+                if 0 <= days < 7:
+                    due_key = "lt7"
+                    due_buckets["lt7"] += 1
+                elif 7 <= days <= 15:
+                    due_key = "d7_15"
+                    due_buckets["d7_15"] += 1
+                elif 16 <= days <= 30:
+                    due_key = "d16_30"
+                    due_buckets["d16_30"] += 1
+
+            status_counts[pay_status] = status_counts.get(pay_status, 0) + 1
+            kpi["total_amount"] += monthly
+            kpi["total_count"] += 1
+            if pay_status == "paid":
+                kpi["paid_amount"] += monthly or paid_sum
+                kpi["paid_count"] += 1
+            else:
+                kpi["unpaid_amount"] += remain_amt
+                if pay_status in ("unpaid", "partial"):
+                    kpi["unpaid_count"] += 1
+                    if pay_status == "partial":
+                        kpi["paid_amount"] += paid_sum
+                        kpi["paid_count"] += 0
+
+            wi = week_index(rec.date_end) if rec.date_end and start <= rec.date_end <= end else None
+            if wi is None:
+                wi = week_index(rec.next_payment_date) if rec.next_payment_date else len(weeks) - 1
+            if wi is None:
+                wi = len(weeks) - 1
+            week_total[wi] += monthly
+            week_paid[wi] += min(paid_sum, monthly)
+            week_remain[wi] += remain_amt
+
+            store = rec.store_id
+            provider = rec.provider_id
+            rows.append({
+                "id": rec.id,
+                "store": store.name or rec.name or "—",
+                "code": rec.customer_code or rec.code or "",
+                "provider": provider.name or "—",
+                "provider_id": provider.id or False,
+                "region": rec.store_mien or "",
+                "date_start": fields.Date.to_string(rec.date_start) if rec.date_start else False,
+                "date_end": fields.Date.to_string(rec.date_end) if rec.date_end else False,
+                "remaining_days": days if days is not False else 0,
+                "due_key": due_key,
+                "monthly": monthly,
+                "paid": paid_sum,
+                "remain": remain_amt,
+                "pay_status": pay_status,
+            })
+
+        # paid_count: contracts fully paid; unpaid_count: unpaid + partial
+        kpi["paid_count"] = status_counts["paid"]
+        kpi["unpaid_count"] = status_counts["unpaid"] + status_counts["partial"]
+
+        total_n = kpi["total_count"] or 1
+        donut = [
+            {"id": "paid", "label": "Đã thanh toán", "count": status_counts["paid"],
+             "pct": round(status_counts["paid"] * 100 / total_n), "color": "#22c55e"},
+            {"id": "partial", "label": "Thanh toán 1 phần", "count": status_counts["partial"],
+             "pct": round(status_counts["partial"] * 100 / total_n), "color": "#f59e0b"},
+            {"id": "unpaid", "label": "Chưa thanh toán", "count": status_counts["unpaid"],
+             "pct": round(status_counts["unpaid"] * 100 / total_n), "color": "#ef4444"},
+        ]
+
+        providers = self.env["phan.he.provider"].search_read(
+            [("active", "=", True)], ["name"], order="name asc"
+        )
+        regions = sorted({r["region"] for r in rows if r.get("region")})
+
+        return {
+            "year": year,
+            "month": month,
+            "month_label": f"Tháng {month:02d}/{year}",
+            "kpi": kpi,
+            "weeks": [
+                {
+                    "label": w["label"],
+                    "sub": w["sub"],
+                    "total": week_total[i],
+                    "paid": week_paid[i],
+                    "remain": week_remain[i],
+                }
+                for i, w in enumerate(weeks)
+            ],
+            "due_bars": [
+                {"id": "lt7", "label": "< 7 ngày", "count": due_buckets["lt7"], "color": "#ef4444"},
+                {"id": "d7_15", "label": "7 - 15 ngày", "count": due_buckets["d7_15"], "color": "#f97316"},
+                {"id": "d16_30", "label": "16 - 30 ngày", "count": due_buckets["d16_30"], "color": "#facc15"},
+            ],
+            "donut": donut,
+            "rows": rows,
+            "providers": providers,
+            "regions": regions,
+        }
+
+    @api.model
+    def get_quarter_cost_board(self, params=None):
+        """Dashboard Chi phí quý — KPI 4 quý, biểu đồ tháng/NCC/khu vực, danh sách hợp đồng."""
+        params = params or {}
+        today = fields.Date.context_today(self)
+        year = int(params.get("year") or today.year)
+        quarter = int(params.get("quarter") or ((today.month - 1) // 3 + 1))
+        quarter = min(4, max(1, quarter))
+        region = (params.get("region") or "all") or "all"
+        provider_id = int(params["provider_id"]) if params.get("provider_id") else False
+        pay_filter = (params.get("pay_status") or "all") or "all"
+
+        Service = self.env["phan.he.service"]
+        month_names = {1: "01", 2: "02", 3: "03", 4: "04", 5: "05", 6: "06",
+                       7: "07", 8: "08", 9: "09", 10: "10", 11: "11", 12: "12"}
+        region_label = {
+            "Bắc": "Miền Bắc",
+            "Nam": "Miền Nam",
+            "ĐTT": "Miền Trung",
+            "Trung": "Miền Trung",
+        }
+        region_color = {
+            "Miền Bắc": "#3b82f6",
+            "Miền Trung": "#22c55e",
+            "Miền Nam": "#f59e0b",
+            "Tây Nguyên": "#ef4444",
+            "Khác": "#94a3b8",
+        }
+
+        def quarter_bounds(y, q):
+            start_m = (q - 1) * 3 + 1
+            start = fields.Date.from_string(f"{y:04d}-{start_m:02d}-01")
+            end = (start + relativedelta(months=3)) - relativedelta(days=1)
+            return start, end
+
+        def overlap_domain(start, end):
+            domain = [
+                ("active", "=", True),
+                ("service_type_id.code", "=", "internet"),
+                ("state", "not in", ("cancel", "draft")),
+                "|", ("date_start", "=", False), ("date_start", "<=", end),
+                "|", ("date_end", "=", False), ("date_end", ">=", start),
+            ]
+            if region and region != "all":
+                domain.append(("store_mien", "=", region))
+            if provider_id:
+                domain.append(("provider_id", "=", provider_id))
+            return domain
+
+        def pay_of(rec):
+            monthly = float(rec.contract_amount or 0.0)
+            paid_sum = sum(
+                float(p.amount or 0.0)
+                for p in rec.payment_ids
+                if p.payment_state == "paid"
+            )
+            remain_amt = max(monthly - paid_sum, 0.0)
+            if monthly <= 0 and paid_sum <= 0:
+                status = "none"
+            elif remain_amt <= 0 and (monthly > 0 or paid_sum > 0):
+                status = "paid"
+            elif paid_sum > 0:
+                status = "partial"
+            else:
+                status = "unpaid"
+            return monthly, paid_sum, remain_amt, status
+
+        def provider_color(name):
+            u = (name or "").upper()
+            if "VIETTEL" in u:
+                return "#4f7cff"
+            if "FPT" in u:
+                return "#3b82f6"
+            if "VNPT" in u:
+                return "#22c55e"
+            return "#f59e0b"
+
+        quarter_kpis = []
+        for q in (1, 2, 3, 4):
+            q_start, q_end = quarter_bounds(year, q)
+            recs = Service.search(overlap_domain(q_start, q_end))
+            providers = set()
+            total = 0.0
+            count = 0
+            for rec in recs:
+                monthly, paid_sum, remain_amt, status = pay_of(rec)
+                if pay_filter not in ("all", "", False) and status != pay_filter:
+                    continue
+                total += monthly
+                count += 1
+                if rec.provider_id:
+                    providers.add(rec.provider_id.id)
+            sm = (q - 1) * 3 + 1
+            quarter_kpis.append({
+                "quarter": q,
+                "year": year,
+                "month_range": f"Tháng {month_names[sm]} – {month_names[sm + 2]}/{year}",
+                "total_amount": total,
+                "contract_count": count,
+                "provider_count": len(providers),
+            })
+
+        q_start, q_end = quarter_bounds(year, quarter)
+        services = Service.search(overlap_domain(q_start, q_end), order="date_end asc, id asc")
+        rows = []
+        monthly_map = {}
+        provider_map = {}
+        region_map = {}
+        kpi = {
+            "total_amount": 0.0,
+            "paid_amount": 0.0,
+            "unpaid_amount": 0.0,
+            "total_count": 0,
+        }
+        for rec in services:
+            monthly, paid_sum, remain_amt, status = pay_of(rec)
+            if pay_filter not in ("all", "", False) and status != pay_filter:
+                continue
+            kpi["total_amount"] += monthly
+            kpi["paid_amount"] += min(paid_sum, monthly) if monthly else paid_sum
+            kpi["unpaid_amount"] += remain_amt
+            kpi["total_count"] += 1
+
+            bucket_month = rec.date_start.month if rec.date_start and q_start <= rec.date_start <= q_end else (
+                rec.date_end.month if rec.date_end and q_start <= rec.date_end <= q_end else q_start.month
+            )
+            monthly_map[bucket_month] = monthly_map.get(bucket_month, 0.0) + monthly
+            pname = rec.provider_id.name or "Khác"
+            provider_map[pname] = provider_map.get(pname, 0.0) + monthly
+            rkey = region_label.get(rec.store_mien or "", "Khác")
+            region_map[rkey] = region_map.get(rkey, 0.0) + monthly
+
+            store = rec.store_id
+            provider = rec.provider_id
+            rows.append({
+                "id": rec.id,
+                "store": store.name or rec.name or "—",
+                "code": rec.customer_code or rec.code or "",
+                "customer_code": rec.customer_code or "",
+                "contract_code": rec.code or "",
+                "provider": provider.name or "—",
+                "provider_id": provider.id or False,
+                "bandwidth": rec.bandwidth or "—",
+                "region": rec.store_mien or "",
+                "date_start": fields.Date.to_string(rec.date_start) if rec.date_start else False,
+                "date_end": fields.Date.to_string(rec.date_end) if rec.date_end else False,
+                "monthly": monthly,
+                "paid": float(rec.next_payment_amount or 0.0),
+                "next_payment_amount": float(rec.next_payment_amount or 0.0),
+                "remain": remain_amt,
+                "pay_status": status,
+                "ops_status": rec.ops_status or rec.state or "active",
+                "remaining_days": rec.remaining_days if rec.remaining_days is not False else 0,
+                "remaining_time": rec.remaining_time or "",
+                "alert_level": rec.alert_level or "ok",
+            })
+
+        months_in_q = [(quarter - 1) * 3 + i for i in (1, 2, 3)]
+        monthly_trend = [
+            {
+                "label": f"Tháng {m}/{year}",
+                "value": monthly_map.get(m, 0.0),
+            }
+            for m in months_in_q
+        ]
+        by_provider = [
+            {"label": name, "value": amt, "color": provider_color(name)}
+            for name, amt in sorted(provider_map.items(), key=lambda x: -x[1])
+        ]
+        region_total = sum(region_map.values()) or 1.0
+        by_region = [
+            {
+                "label": name,
+                "value": amt,
+                "percent": round(amt * 100 / region_total),
+                "color": region_color.get(name, "#94a3b8"),
+            }
+            for name, amt in sorted(region_map.items(), key=lambda x: -x[1])
+        ]
+        providers = self.env["phan.he.provider"].search_read(
+            [("active", "=", True)], ["name"], order="name asc"
+        )
+        regions = sorted({r["region"] for r in rows if r.get("region")})
+        sm = (quarter - 1) * 3 + 1
+        return {
+            "year": year,
+            "quarter": quarter,
+            "quarter_label": f"Quý {quarter}/{year} (Tháng {month_names[sm]} - {month_names[sm + 2]}/{year})",
+            "kpi": kpi,
+            "quarter_kpis": quarter_kpis,
+            "monthly_trend": monthly_trend,
+            "by_provider": by_provider,
+            "by_region": by_region,
+            "rows": rows,
+            "providers": providers,
+            "regions": regions,
+        }
+
+    @api.model
+    def export_quarter_cost_excel(self, params=None):
+        """Xuất danh sách chi phí quý ra Excel."""
+        import base64
+        import io
+
+        try:
+            import openpyxl
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError as exc:
+            from odoo.exceptions import UserError
+
+            raise UserError("Thiếu thư viện openpyxl trên server.") from exc
+
+        params = params or {}
+        data = self.get_quarter_cost_board(params)
+        search = (params.get("search") or "").strip().lower()
+        table_region = params.get("table_region") or "all"
+        table_provider = str(params.get("table_provider") or "")
+        table_status = params.get("table_status") or "all"
+
+        def keep(row):
+            if table_region not in ("all", "", None) and row.get("region") != table_region:
+                return False
+            if table_provider and str(row.get("provider_id") or "") != table_provider:
+                return False
+            days = int(row.get("remaining_days") or 0)
+            alert = row.get("alert_level") or ""
+            if table_status == "active" and (days < 0 or alert in ("expired", "danger")):
+                return False
+            if table_status == "expire_soon" and not (0 <= days <= 30 or alert == "warn"):
+                return False
+            if table_status == "expired" and not (days < 0 or alert in ("expired", "danger")):
+                return False
+            if search:
+                blob = " ".join([
+                    str(row.get("store") or ""),
+                    str(row.get("code") or ""),
+                    str(row.get("customer_code") or ""),
+                    str(row.get("contract_code") or ""),
+                    str(row.get("region") or ""),
+                    str(row.get("provider") or ""),
+                ]).lower()
+                if search not in blob:
+                    return False
+            return True
+
+        rows = [r for r in (data.get("rows") or []) if keep(r)]
+        year = data.get("year")
+        quarter = data.get("quarter")
+        ops_label = {
+            "active": "Đang hoạt động",
+            "suspend": "Tạm ngưng",
+            "liquidated": "Thanh lý",
+        }
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Chi phi Q{quarter}-{year}"[:31]
+
+        headers = [
+            "STT", "Cửa hàng", "Mã KH", "Mã hợp đồng", "Nhà cung cấp", "Băng thông",
+            "Khu vực", "Ngày bắt đầu", "Ngày kết thúc", "Cước tháng",
+            "Số tiền thanh toán", "Trạng thái", "Thời gian còn lại",
+        ]
+        header_fill = PatternFill("solid", fgColor="6D28D9")
+        header_font = Font(bold=True, color="FFFFFF", size=11)
+        total_fill = PatternFill("solid", fgColor="EDE9FE")
+        thin = Border(
+            left=Side(style="thin", color="CBD5E1"),
+            right=Side(style="thin", color="CBD5E1"),
+            top=Side(style="thin", color="CBD5E1"),
+            bottom=Side(style="thin", color="CBD5E1"),
+        )
+        money_fmt = '#,##0" đ"'
+        ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers))
+        tcell = ws.cell(1, 1, f"Danh sách chi phí quý {quarter}/{year}")
+        tcell.font = Font(bold=True, size=14, color="4C1D95")
+        tcell.alignment = Alignment(horizontal="left", vertical="center")
+
+        for col, text in enumerate(headers, 1):
+            c = ws.cell(3, col, text)
+            c.fill = header_fill
+            c.font = header_font
+            c.alignment = Alignment(horizontal="center", vertical="center")
+            c.border = thin
+
+        def fmt_date(val):
+            if not val:
+                return ""
+            try:
+                y, m, d = str(val)[:10].split("-")
+                return f"{d}/{m}/{y}"
+            except Exception:
+                return str(val)
+
+        tot_m = tot_p = 0.0
+        for idx, row in enumerate(rows, 1):
+            days = int(row.get("remaining_days") or 0)
+            remain_txt = row.get("remaining_time") or (
+                f"Quá hạn {abs(days)} ngày" if days < 0 else f"Còn {days} ngày"
+            )
+            ops = row.get("ops_status") or "active"
+            status_txt = ops_label.get(ops, ops)
+            values = [
+                idx,
+                row.get("store") or "",
+                row.get("customer_code") or row.get("code") or "",
+                row.get("contract_code") or "",
+                row.get("provider") or "",
+                row.get("bandwidth") or "",
+                row.get("region") or "",
+                fmt_date(row.get("date_start")),
+                fmt_date(row.get("date_end")),
+                float(row.get("monthly") or 0),
+                float(row.get("next_payment_amount") or row.get("paid") or 0),
+                status_txt,
+                remain_txt,
+            ]
+            tot_m += values[9]
+            tot_p += values[10]
+            ridx = 3 + idx
+            for col, val in enumerate(values, 1):
+                c = ws.cell(ridx, col, val)
+                c.border = thin
+                c.alignment = Alignment(
+                    vertical="center",
+                    horizontal="right" if col in (10, 11) else "left",
+                )
+                if col in (10, 11):
+                    c.number_format = money_fmt
+
+        foot_row = 4 + len(rows)
+        foot = ["", "TỔNG CỘNG", "", "", "", "", "", "", "", tot_m, tot_p, "", ""]
+        for col, val in enumerate(foot, 1):
+            c = ws.cell(foot_row, col, val)
+            c.border = thin
+            c.fill = total_fill
+            c.font = Font(bold=True)
+            if col in (10, 11):
+                c.number_format = money_fmt
+                c.alignment = Alignment(horizontal="right")
+
+        for col in range(1, len(headers) + 1):
+            maxlen = len(str(headers[col - 1]))
+            for r in range(3, foot_row + 1):
+                maxlen = max(maxlen, len(str(ws.cell(r, col).value or "")))
+            ws.column_dimensions[get_column_letter(col)].width = min(42, max(12, maxlen + 2))
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        return {
+            "file_base64": base64.b64encode(buf.getvalue()).decode("ascii"),
+            "filename": f"Chi_phi_quy_{year}_Q{quarter}.xlsx",
+            "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+

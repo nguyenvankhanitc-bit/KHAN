@@ -1,61 +1,49 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeDashboard">
-        <div class="o_phan_he_shell o_action">
-            <t t-if="isLinkqErp">
+        <t t-if="isLinkqErp">
+            <div class="o_phan_he_shell o_action">
                 <PhanHeAppSidebar activeKey="linkqSidebarKey"/>
-            </t>
-            <t t-else="">
-            <aside class="o_phan_he_sidebar">
-                <div class="o_phan_he_sidebar_brand" t-on-click="() => this.onOverview()" role="button" title="Tổng quan">
-                    <span class="o_phan_he_brand_text" t-esc="sidebarBrand"/>
+                <div class="o_phan_he_dashboard">
+                    <t t-call="lug_phan_he.PhanHeDashboardInner"/>
                 </div>
-                <nav class="o_phan_he_sidebar_nav">
-                    <t t-if="!isLinkqErp">
-                    <button type="button"
-                            class="o_phan_he_nav_item"
-                            t-att-class="state.activeNav === 'overview' ? 'is-active' : ''"
-                            t-on-click="() => this.onOverview()">
-                        <i class="fa fa-home"/>
-                        <span>Tổng quan</span>
-                    </button>
-                    </t>
+            </div>
+        </t>
+        <t t-else="">
+            <PhanHeInternetShell
+                    brand="sidebarBrand"
+                    moduleCode="serviceTypeCode"
+                    navSections="navSections"
+                    openGroups="state.openGroups"
+                    activeNav="state.activeNav"
+                    alertCount="alertCount"
+                    badgeData="state.data"
+                    contentMode="state.contentMode"
+                    showOverview="canSeeInternetOverview"
+                    embeddedViewProps="embeddedViewProps"
+                    viewKey="state.viewKey"
+                    onOverview.bind="onOverview"
+                    onToggleGroup.bind="toggleGroup"
+                    onNavChild.bind="onNavChild"
+                    isGroupOpen.bind="isGroupOpen"
+                    navChildClass.bind="navChildClass">
+                <t t-if="state.contentMode === 'owl_list'">
+                    <PhanHeInternetListBoard listFilter="state.listFilter" onOpenEntry.bind="openEntryForm"/>
+                </t>
+                <t t-if="state.contentMode === 'month_cost'">
+                    <PhanHeMonthCostBoard onOpenEntry.bind="openEntryForm"/>
+                </t>
+                <t t-if="state.contentMode === 'quarter_cost'">
+                    <PhanHeQuarterCostBoard onOpenEntry.bind="openEntryForm"/>
+                </t>
+                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost'">
+                    <t t-call="lug_phan_he.PhanHeDashboardInner"/>
+                </t>
+            </PhanHeInternetShell>
+        </t>
+    </t>
 
-                    <t t-foreach="navSections" t-as="section" t-key="section.id">
-                        <div class="o_phan_he_nav_group"
-                             t-att-class="isGroupOpen(section.id) ? 'is-open' : ''">
-                            <button type="button"
-                                    class="o_phan_he_nav_section"
-                                    t-on-click="() => this.toggleGroup(section.id)">
-                                <i t-att-class="'fa ' + section.icon"/>
-                                <span t-esc="section.label"/>
-                                <t t-if="section.id === 'alerts' and alertCount > 0">
-                                    <span class="o_phan_he_nav_badge" t-esc="alertCount"/>
-                                </t>
-                                <i class="fa fa-angle-down o_phan_he_nav_caret"/>
-                            </button>
-                            <t t-if="isGroupOpen(section.id)">
-                                <t t-foreach="section.children" t-as="child" t-key="child.id">
-                                    <button type="button"
-                                            class="o_phan_he_nav_sub"
-                                            t-att-class="navChildClass(child)"
-                                            t-on-click="() => this.onNavChild(child)">
-                                        <i t-att-class="'fa ' + (child.icon || 'fa-circle-o')"
-                                           t-att-style="child.iconColor ? ('color:' + child.iconColor) : null"/>
-                                        <span t-esc="child.label"/>
-                                        <t t-if="child.badgeKey">
-                                            <b t-esc="state.data[child.badgeKey] || 0"/>
-                                        </t>
-                                    </button>
-                                </t>
-                            </t>
-                        </div>
-                    </t>
-                </nav>
-            </aside>
-            </t>
-
-            <div class="o_phan_he_dashboard">
+    <t t-name="lug_phan_he.PhanHeDashboardInner">
                 <t t-if="isLinkqErp">
                     <div class="o_phan_he_dash_top">
                         <div>
@@ -65,6 +53,7 @@
                     </div>
                 </t>
                 <t t-else="">
+                <t t-if="!isInternetDash">
                 <div class="o_phan_he_dash_top">
                     <div>
                         <h1>
@@ -88,6 +77,7 @@
                         </div>
                     </div>
                 </div>
+                </t>
 
                 <t t-if="state.loading">
                     <div class="o_phan_he_dash_loading">Đang tải dữ liệu...</div>
@@ -150,8 +140,256 @@
                         </div>
                     </section>
                     </t>
+                    <t t-elif="isInternetDash">
+                    <div class="lq-inet-dash">
+                        <div class="lq-inet-topbar">
+                            <div class="lq-inet-search">
+                                <i class="fa fa-search"/>
+                                <input type="text" placeholder="Tìm kiếm..."/>
+                            </div>
+                            <div class="lq-inet-top-actions">
+                                <span class="lq-inet-bell"><i class="fa fa-bell-o"/><b class="lq-inet-bell-dot"/></span>
+                                <span class="lq-inet-user">
+                                    <span class="lq-inet-avatar">A</span>
+                                    <span>Admin</span>
+                                    <i class="fa fa-angle-down"/>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="lq-inet-head">
+                            <div class="lq-inet-head-left">
+                                <div class="lq-inet-wifi"><i class="fa fa-wifi"/></div>
+                                <div>
+                                    <h1>Tổng quan chi phí &amp; sử dụng Internet</h1>
+                                    <p>Thống kê chi phí dịch vụ Internet theo khu vực và chi phí theo tháng/năm</p>
+                                </div>
+                            </div>
+                            <div class="lq-inet-filters">
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-calendar"/>
+                                    <select t-att-value="state.selectedMonth" t-on-change="onInetMonthChange">
+                                        <t t-foreach="inet.month_options or []" t-as="mo" t-key="mo.value">
+                                            <option t-att-value="mo.value" t-esc="mo.label"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-map-marker"/>
+                                    <select t-att-value="state.selectedRegion" t-on-change="onInetRegionChange">
+                                        <t t-foreach="inet.region_options or []" t-as="rg" t-key="rg.id">
+                                            <option t-att-value="rg.id" t-esc="rg.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-building"/>
+                                    <select t-att-value="state.selectedStore" t-on-change="onInetStoreChange">
+                                        <t t-foreach="inet.store_options or []" t-as="st" t-key="st.id">
+                                            <option t-att-value="st.id" t-esc="st.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="lq-inet-grid4">
+                            <article class="lq-card lq-card-month">
+                                <div class="lq-card-title">Tổng chi phí theo tháng</div>
+                                <div class="lq-card-sub" t-esc="inet.selected_month_label or 'Tất cả khu vực'"/>
+                                <div class="lq-card-value is-blue" t-esc="formatMoney(inet.month_total)"/>
+                                <span class="lq-delta" t-att-class="{ 'is-up': inet.month_delta >= 0, 'is-down': inet.month_delta &lt; 0 }">
+                                    <t t-if="inet.month_delta >= 0">▲</t><t t-else="">▼</t>
+                                    <t t-esc="formatDelta(inet.month_delta)"/> so với tháng trước
+                                </span>
+                                <div class="lq-chart-box">
+                                    <canvas t-ref="inetSpark"/>
+                                </div>
+                            </article>
+                            <article class="lq-card">
+                                <div class="lq-card-title">Chi phí theo khu vực</div>
+                                <div class="lq-donut-wrap">
+                                    <div class="lq-donut lq-donut-canvas-wrap">
+                                        <canvas t-ref="inetDonut"/>
+                                        <div class="lq-donut-center">
+                                            <small>Tổng chi phí</small>
+                                            <b t-esc="formatTrieuVnd(inet.month_total)"/>
+                                        </div>
+                                    </div>
+                                    <ul class="lq-legend">
+                                        <t t-foreach="inet.regions or []" t-as="rg" t-key="rg.id">
+                                            <li>
+                                                <i t-att-style="'background:' + rg.color"/>
+                                                <span t-esc="rg.name"/>
+                                                <em><t t-esc="rg.pct"/>%</em>
+                                                <b t-esc="formatMoney(rg.amount)"/>
+                                            </li>
+                                        </t>
+                                    </ul>
+                                </div>
+                            </article>
+                            <article class="lq-card">
+                                <div class="lq-card-title">Chi phí theo năm</div>
+                                <div class="lq-card-value" t-esc="formatMoney(inet.year_total)"/>
+                                <span class="lq-delta" t-att-class="{ 'is-up': inet.year_delta >= 0, 'is-down': inet.year_delta &lt; 0 }">
+                                    <t t-if="inet.year_delta >= 0">▲</t><t t-else="">▼</t>
+                                    <t t-esc="formatDelta(inet.year_delta)"/> so với năm trước
+                                </span>
+                                <div class="lq-chart-box">
+                                    <canvas t-ref="inetYear"/>
+                                </div>
+                            </article>
+                            <article class="lq-card">
+                                <div class="lq-card-title">Tình hình sử dụng dịch vụ</div>
+                                <div class="lq-usage">
+                                    <div class="lq-status-v4" style="width:120px;height:120px;flex:0 0 120px;">
+                                        <div class="lq-status-v4-ring"
+                                             t-att-style="'width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:conic-gradient(#22c55e ' + inetUsagePct + '%, #e8edf5 0)'">
+                                            <div class="lq-status-v4-hole" style="width:84px;height:84px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+                                                <span style="font-size:22px;font-weight:800;color:#16a34a;line-height:1;">
+                                                    <t t-esc="inetUsagePct"/>%
+                                                </span>
+                                                <span style="font-size:10px;color:#94a3b8;margin-top:2px;line-height:1.2;">Đang hoạt động</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <ul>
+                                        <li><i class="is-ok"/> Đang hoạt động <b t-esc="inetUsage.active"/></li>
+                                        <li><i class="is-warn"/> Tạm ngưng <b t-esc="inetUsage.suspend"/></li>
+                                        <li><i class="is-bad"/> Chờ thanh lý <b t-esc="inetUsage.liquidated"/></li>
+                                    </ul>
+                                </div>
+                                <button type="button" class="lq-link" t-on-click="openInetListActive">
+                                    Xem chi tiết <i class="fa fa-arrow-right"/>
+                                </button>
+                            </article>
+                        </div>
+
+                        <div class="lq-kpi4">
+                            <t t-foreach="inet.kpis or []" t-as="kpi" t-key="kpi.id">
+                                <div t-attf-class="lq-kpi {{ regionToneClass(kpi.code) }}">
+                                    <i class="fa fa-wifi"/>
+                                        <div>
+                                            <strong t-esc="kpi.name"/>
+                                            <small>CHI PHÍ</small>
+                                            <b t-esc="formatMoney(kpi.amount)"/>
+                                        </div>
+                                </div>
+                            </t>
+                        </div>
+
+                        <div class="lq-sec-head">
+                            <h2>Chi phí theo tháng</h2>
+                            <div class="lq-inet-filters">
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-calendar"/>
+                                    <select t-att-value="state.selectedMonth" t-on-change="onInetMonthChange">
+                                        <t t-foreach="inet.month_options or []" t-as="mo2" t-key="mo2.value">
+                                            <option t-att-value="mo2.value" t-esc="mo2.label"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-map-marker"/>
+                                    <select t-att-value="state.selectedRegion" t-on-change="onInetRegionChange">
+                                        <t t-foreach="inet.region_options or []" t-as="rg2" t-key="rg2.id">
+                                            <option t-att-value="rg2.id" t-esc="rg2.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-building"/>
+                                    <select t-att-value="state.selectedStore" t-on-change="onInetStoreChange">
+                                        <t t-foreach="inet.store_options or []" t-as="st2" t-key="st2.id">
+                                            <option t-att-value="st2.id" t-esc="st2.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+                        <article class="lq-card lq-month-trend">
+                            <canvas t-ref="inetMonthTrend"/>
+                        </article>
+                        <div class="lq-tables">
+                            <t t-foreach="inet.detail_tables or []" t-as="tb" t-key="tb.id">
+                                <section t-attf-class="lq-region-card {{ regionToneClass(tb.code) }}">
+                                    <header>
+                                        <div>
+                                            <strong t-esc="tb.short or tb.name"/>
+                                            <b t-esc="formatMoney(tb.amount)"/>
+                                        </div>
+                                        <div class="lq-region-meta">
+                                            <em><t t-esc="tb.count or 0"/> hợp đồng</em>
+                                            <div class="lq-mini-bars">
+                                                <t t-foreach="tb.spark or []" t-as="sp" t-key="sp.key">
+                                                    <i t-att-style="'height:' + sparkPct(sp) + '%'"/>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </header>
+                                    <div class="lq-table-scroll region-table-wrapper">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>STT</th>
+                                                    <th>Cửa hàng</th>
+                                                    <th>Gói cước</th>
+                                                    <th>Băng thông</th>
+                                                    <th>Chi phí</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-if="!(tb.rows or []).length">
+                                                    <tr><td colspan="5" class="lq-empty">Không có dữ liệu</td></tr>
+                                                </t>
+                                                <t t-foreach="tb.rows or []" t-as="row" t-key="row.id">
+                                                    <tr t-on-click="() => this.openInetRecord(row)">
+                                                        <td t-esc="row.stt"/>
+                                                        <td class="lq-col-store" t-att-title="row.store" t-esc="row.store"/>
+                                                        <td class="lq-col-pkg" t-att-title="row.provider" t-esc="row.provider"/>
+                                                        <td t-esc="row.bandwidth"/>
+                                                        <td class="lq-col-money" t-esc="formatNumber(row.amount)"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <button type="button" class="lq-link" t-on-click="openInetListActive">
+                                        Xem chi tiết <i class="fa fa-arrow-right"/>
+                                    </button>
+                                </section>
+                            </t>
+                        </div>
+
+                        <div class="lq-sec-head">
+                            <h2>Chi phí theo năm</h2>
+                        </div>
+                        <div class="lq-tables">
+                            <t t-foreach="inet.detail_tables or []" t-as="yt" t-key="'y-' + yt.id">
+                                <section t-attf-class="lq-region-card is-year {{ regionToneClass(yt.code) }}">
+                                    <header>
+                                        <div>
+                                            <strong t-esc="yt.short or yt.name"/>
+                                            <b t-esc="formatMoney(yt.year_amount)"/>
+                                        </div>
+                                        <div class="lq-region-meta">
+                                            <em><t t-esc="yt.year_count or 0"/> hợp đồng</em>
+                                            <div class="lq-mini-bars is-year">
+                                                <t t-foreach="yt.year_spark or []" t-as="ysp" t-key="ysp.key">
+                                                    <i t-att-style="'height:' + sparkPct(ysp) + '%'"/>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </header>
+                                    <button type="button" class="lq-link" t-on-click="openInetListActive">
+                                        Xem chi tiết <i class="fa fa-arrow-right"/>
+                                    </button>
+                                </section>
+                            </t>
+                        </div>
+                    </div>
+                    </t>
                     <t t-else="">
-                    <!-- 1. Thống kê chi phí theo miền -->
                     <section class="o_phan_he_section">
                         <h2 class="o_phan_he_section_title">
                             <span class="o_phan_he_section_num">1</span>
@@ -447,7 +685,366 @@
                     </t>
                 </t>
                 </t>
-            </div>
+    </t>
+    <t t-name="lug_phan_he.PhanHeMonthCostBoard">
+        <div class="lq-month-cost">
+            <header class="lq-mc-top">
+                <h1><i class="fa fa-line-chart"/> Chi phí tháng</h1>
+                <div class="lq-mc-nav">
+                    <button type="button" t-on-click="() => this.shiftMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                    <span t-esc="monthLabel"/>
+                    <button type="button" t-on-click="() => this.shiftMonth(1)"><i class="fa fa-chevron-right"/></button>
+                </div>
+                <div class="lq-mc-filters">
+                    <select t-att-value="state.region" t-on-change="(ev) => this.onFilterChange('region', ev)">
+                        <option value="all">Tất cả khu vực</option>
+                        <t t-foreach="regions" t-as="rg" t-key="rg">
+                            <option t-att-value="rg" t-esc="rg"/>
+                        </t>
+                    </select>
+                    <select t-att-value="state.providerId" t-on-change="(ev) => this.onFilterChange('providerId', ev)">
+                        <option value="">Nhà cung cấp</option>
+                        <t t-foreach="providers" t-as="p" t-key="p.id">
+                            <option t-att-value="p.id" t-esc="p.name"/>
+                        </t>
+                    </select>
+                    <select t-att-value="state.payStatus" t-on-change="(ev) => this.onFilterChange('payStatus', ev)">
+                        <option value="all">Trạng thái</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="partial">Thanh toán 1 phần</option>
+                        <option value="unpaid">Chưa thanh toán</option>
+                        <option value="none">Không phát sinh</option>
+                    </select>
+                </div>
+                <button type="button" class="lq-mc-export" t-on-click="exportCsv">
+                    <i class="fa fa-download"/> Xuất Excel
+                </button>
+            </header>
+            <t t-if="state.loading">
+                <div class="lq-mc-loading">Đang tải...</div>
+            </t>
+            <t t-else="">
+                <div class="lq-mc-kpis">
+                    <article class="is-total">
+                        <span class="lq-mc-ico"><i class="fa fa-money"/></span>
+                        <div>
+                            <small>Tổng chi phí tháng</small>
+                            <b t-esc="formatMoney(kpi.total_amount)"/>
+                            <em t-esc="kpiCountLabel('total')"/>
+                        </div>
+                    </article>
+                    <article class="is-paid">
+                        <span class="lq-mc-ico"><i class="fa fa-check-circle"/></span>
+                        <div>
+                            <small>Đã thanh toán</small>
+                            <b t-esc="formatMoney(kpi.paid_amount)"/>
+                            <em t-esc="kpiCountLabel('paid')"/>
+                        </div>
+                    </article>
+                    <article class="is-unpaid">
+                        <span class="lq-mc-ico"><i class="fa fa-exclamation-circle"/></span>
+                        <div>
+                            <small>Chưa thanh toán</small>
+                            <b t-esc="formatMoney(kpi.unpaid_amount)"/>
+                            <em t-esc="kpiCountLabel('unpaid')"/>
+                        </div>
+                    </article>
+                </div>
+                <div class="lq-mc-charts">
+                    <section class="lq-mc-card">
+                        <header>
+                            <div>
+                                <strong>Tổng chi phí tháng hiện tại (<t t-esc="padMonth"/>)</strong>
+                                <div class="lq-mc-legend">
+                                    <i class="is-purple"/> Tổng chi phí
+                                    <i class="is-green"/> Đã thanh toán
+                                    <i class="is-orange"/> Còn phải trả
+                                </div>
+                            </div>
+                            <span class="lq-mc-week-lbl">Theo tuần</span>
+                        </header>
+                        <div class="lq-mc-canvas"><canvas t-ref="costLine"/></div>
+                    </section>
+                    <section class="lq-mc-card">
+                        <header>
+                            <strong>Sắp đến hạn trong tháng <i class="fa fa-info-circle" title="Số hợp đồng còn hạn trong 30 ngày"/></strong>
+                        </header>
+                        <div class="lq-mc-canvas"><canvas t-ref="dueBar"/></div>
+                    </section>
+                    <section class="lq-mc-card">
+                        <header><strong>Tình trạng thanh toán</strong></header>
+                        <div class="lq-mc-donut">
+                            <div class="lq-mc-canvas is-donut"><canvas t-ref="payDonut"/></div>
+                            <ul>
+                                <t t-foreach="donutRows" t-as="d" t-key="d.id">
+                                    <li>
+                                        <i t-att-style="'background:' + d.color"/>
+                                        <span t-esc="d.label"/>
+                                        <b t-esc="d.count"/>
+                                        <em t-esc="d.pctLabel"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+                <section class="lq-mc-table-card">
+                    <div class="lq-mc-toolbar">
+                        <h2><i class="fa fa-calendar"/> Danh sách cửa hàng sắp đến hạn (dưới 30 ngày)</h2>
+                        <div class="lq-mc-tabs">
+                            <button type="button" t-att-class="state.dueTab === 'all' ? 'is-on' : ''" t-on-click="() => this.setDueTab('all')">Tất cả</button>
+                            <button type="button" t-att-class="state.dueTab === 'lt7' ? 'is-on' : ''" t-on-click="() => this.setDueTab('lt7')">Dưới 7 ngày</button>
+                            <button type="button" t-att-class="state.dueTab === 'd7_15' ? 'is-on' : ''" t-on-click="() => this.setDueTab('d7_15')">7 - 15 ngày</button>
+                            <button type="button" t-att-class="state.dueTab === 'd16_30' ? 'is-on' : ''" t-on-click="() => this.setDueTab('d16_30')">16 - 30 ngày</button>
+                        </div>
+                        <label class="lq-mc-search">
+                            <i class="fa fa-search"/>
+                            <input type="text" placeholder="Tìm cửa hàng / Mã KH..." t-att-value="state.search"
+                                   t-on-input="(ev) => this.onTableFilter('search', ev)"/>
+                        </label>
+                    </div>
+                    <div class="lq-mc-table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-check"> </th>
+                                    <th>STT</th>
+                                    <th>Cửa hàng / Mã KH</th>
+                                    <th>Nhà cung cấp</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Còn lại</th>
+                                    <th>Cước tháng</th>
+                                    <th>Đã thanh toán</th>
+                                    <th>Còn phải trả</th>
+                                    <th>Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!pageRows.length">
+                                    <tr><td colspan="11" class="lq-empty">Không có dữ liệu</td></tr>
+                                </t>
+                                <t t-foreach="pageRows" t-as="row" t-key="row.id">
+                                    <tr>
+                                        <td class="col-check"><input type="checkbox"/></td>
+                                        <td t-esc="row.stt"/>
+                                        <td>
+                                            <button type="button" class="lq-mc-store" t-on-click="() => this.openRow(row)" t-esc="row.store"/>
+                                            <small t-esc="row.code"/>
+                                        </td>
+                                        <td t-esc="row.provider"/>
+                                        <td t-esc="formatDate(row.date_start)"/>
+                                        <td t-esc="formatDate(row.date_end)"/>
+                                        <td><span t-att-class="'lq-mc-remain ' + remainClass(row)" t-esc="remainLabel(row)"/></td>
+                                        <td t-esc="formatMoney(row.monthly)"/>
+                                        <td t-esc="formatMoney(row.paid)"/>
+                                        <td t-esc="formatMoney(row.remain)"/>
+                                        <td>
+                                            <span t-att-class="payClass(row)" t-esc="payLabel(row)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="lq-mc-pager">
+                        <span t-esc="pageInfo"/>
+                        <div>
+                            <button type="button" t-att-disabled="state.page &lt;= 1" t-on-click="() => this.setPage(state.page - 1)">&lt;</button>
+                            <t t-foreach="pageNumbers" t-as="pn" t-key="pn">
+                                <button type="button" t-att-class="state.page === pn ? 'is-on' : ''" t-on-click="() => this.setPage(pn)" t-esc="pn"/>
+                            </t>
+                            <button type="button" t-att-disabled="state.page &gt;= totalPages" t-on-click="() => this.setPage(state.page + 1)">&gt;</button>
+                        </div>
+                    </div>
+                    <footer class="lq-mc-foot">
+                        <span class="is-purple"><i class="fa fa-money"/> Tổng cước tháng <b t-esc="formatMoney(kpi.total_amount)"/></span>
+                        <span class="is-green"><i class="fa fa-check-circle"/> Đã thanh toán <b t-esc="formatMoney(kpi.paid_amount)"/></span>
+                        <span class="is-red"><i class="fa fa-exclamation-circle"/> Còn phải trả <b t-esc="formatMoney(kpi.unpaid_amount)"/></span>
+                    </footer>
+                </section>
+            </t>
+        </div>
+    </t>
+    <t t-name="lug_phan_he.PhanHeQuarterCostBoard">
+        <div class="lq-month-cost lq-quarter-cost">
+            <header class="lq-mc-top">
+                <h1><i class="fa fa-area-chart"/> Chi phí quý</h1>
+                <div class="lq-mc-nav">
+                    <button type="button" t-on-click="() => this.shiftQuarter(-1)"><i class="fa fa-chevron-left"/></button>
+                    <span t-esc="quarterLabel"/>
+                    <button type="button" t-on-click="() => this.shiftQuarter(1)"><i class="fa fa-chevron-right"/></button>
+                </div>
+                <div class="lq-mc-filters">
+                    <select t-att-value="state.region" t-on-change="(ev) => this.onFilterChange('region', ev)">
+                        <option value="all">Tất cả khu vực</option>
+                        <t t-foreach="regions" t-as="rg" t-key="rg">
+                            <option t-att-value="rg" t-esc="rg"/>
+                        </t>
+                    </select>
+                    <select t-att-value="state.providerId" t-on-change="(ev) => this.onFilterChange('providerId', ev)">
+                        <option value="">Nhà cung cấp</option>
+                        <t t-foreach="providers" t-as="p" t-key="p.id">
+                            <option t-att-value="p.id" t-esc="p.name"/>
+                        </t>
+                    </select>
+                    <select t-att-value="state.payStatus" t-on-change="(ev) => this.onFilterChange('payStatus', ev)">
+                        <option value="all">Trạng thái</option>
+                        <option value="paid">Đã thanh toán</option>
+                        <option value="partial">Thanh toán 1 phần</option>
+                        <option value="unpaid">Chưa thanh toán</option>
+                    </select>
+                </div>
+                <button type="button" class="lq-mc-export" t-att-disabled="state.exporting" t-on-click="exportExcel">
+                    <i class="fa fa-file-excel-o"/>
+                    <t t-if="state.exporting">Đang xuất...</t>
+                    <t t-else="">Xuất Excel</t>
+                </button>
+            </header>
+            <t t-if="state.loading">
+                <div class="lq-mc-loading">Đang tải...</div>
+            </t>
+            <t t-else="">
+                <div class="lq-q-kpis">
+                    <t t-foreach="quarterKpis" t-as="item" t-key="item.quarter">
+                        <button type="button" t-att-class="kpiCardClass(item)" t-on-click="() => this.selectQuarter(item.quarter)">
+                            <span class="lq-q-ico">$</span>
+                            <strong>Quý <t t-esc="item.quarter"/>/<t t-esc="item.year"/></strong>
+                            <small t-esc="item.month_range"/>
+                            <b t-esc="formatMoney(item.total_amount)"/>
+                            <em><t t-esc="item.contract_count"/> hợp đồng · <t t-esc="item.provider_count"/> nhà cung cấp</em>
+                        </button>
+                    </t>
+                </div>
+                <div class="lq-mc-charts">
+                    <section class="lq-mc-card">
+                        <header>
+                            <strong>Tổng chi phí theo tháng trong quý <t t-esc="state.quarter"/>/<t t-esc="state.year"/></strong>
+                        </header>
+                        <div class="lq-mc-canvas"><canvas t-ref="qLine"/></div>
+                    </section>
+                    <section class="lq-mc-card">
+                        <header>
+                            <strong>Chi phí theo nhà cung cấp (Quý <t t-esc="state.quarter"/>/<t t-esc="state.year"/>)</strong>
+                        </header>
+                        <div class="lq-mc-canvas"><canvas t-ref="qBar"/></div>
+                    </section>
+                    <section class="lq-mc-card">
+                        <header><strong>Cơ cấu chi phí theo khu vực (Quý <t t-esc="state.quarter"/>/<t t-esc="state.year"/>)</strong></header>
+                        <div class="lq-mc-donut">
+                            <div class="lq-mc-canvas is-donut"><canvas t-ref="qDonut"/></div>
+                            <ul>
+                                <t t-foreach="regionShares" t-as="d" t-key="d.label">
+                                    <li>
+                                        <i t-att-style="'background:' + d.color"/>
+                                        <span t-esc="d.label"/>
+                                        <b t-esc="formatMoney(d.value)"/>
+                                        <em t-esc="d.percent + '%'"/>
+                                    </li>
+                                </t>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+                <section class="lq-mc-table-card">
+                    <div class="lq-mc-toolbar">
+                        <h2><i class="fa fa-list"/> Danh sách chi phí theo quý</h2>
+                        <label class="lq-mc-search">
+                            <i class="fa fa-search"/>
+                            <input type="text"
+                                   placeholder="Tìm cửa hàng, mã KH, mã HĐ, khu vực..."
+                                   t-att-value="state.search"
+                                   t-on-input="(ev) => this.onTableFilter('search', ev)"/>
+                        </label>
+                        <select t-att-value="state.tableRegion" t-on-change="(ev) => this.onTableFilter('tableRegion', ev)">
+                            <option value="all">Tất cả khu vực</option>
+                            <t t-foreach="regions" t-as="rg" t-key="'tr-'+rg">
+                                <option t-att-value="rg" t-esc="rg"/>
+                            </t>
+                        </select>
+                        <select t-att-value="state.tableProvider" t-on-change="(ev) => this.onTableFilter('tableProvider', ev)">
+                            <option value="">Nhà cung cấp</option>
+                            <t t-foreach="providers" t-as="p" t-key="'tp-'+p.id">
+                                <option t-att-value="p.id" t-esc="p.name"/>
+                            </t>
+                        </select>
+                        <select t-att-value="state.tableStatus" t-on-change="(ev) => this.onTableFilter('tableStatus', ev)">
+                            <option value="all">Trạng thái</option>
+                            <option value="active">Đang hoạt động</option>
+                            <option value="expire_soon">Sắp hết hạn</option>
+                            <option value="expired">Quá hạn</option>
+                        </select>
+                    </div>
+                    <div class="lq-mc-table-wrap lq-q-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>STT</th>
+                                    <th>Cửa hàng / Mã KH</th>
+                                    <th>Nhà cung cấp</th>
+                                    <th>Băng thông</th>
+                                    <th>Ngày bắt đầu</th>
+                                    <th>Ngày kết thúc</th>
+                                    <th>Cước tháng</th>
+                                    <th>Số tiền thanh toán</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thời gian còn lại</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!pageRows.length">
+                                    <tr><td colspan="10" class="lq-empty">Không có dữ liệu</td></tr>
+                                </t>
+                                <t t-foreach="pageRows" t-as="row" t-key="row.id">
+                                    <tr>
+                                        <td t-esc="row.stt"/>
+                                        <td>
+                                            <button type="button" class="lq-mc-store" t-on-click="() => this.openRow(row)" t-esc="row.store"/>
+                                            <small t-esc="customerCodeLabel(row)"/>
+                                        </td>
+                                        <td>
+                                            <span class="lq-isp" t-att-class="providerClass(row)">
+                                                <b t-esc="providerMark(row)"/>
+                                                <t t-esc="row.provider"/>
+                                            </span>
+                                        </td>
+                                        <td t-esc="row.bandwidth || '—'"/>
+                                        <td t-esc="formatDate(row.date_start)"/>
+                                        <td t-esc="formatDate(row.date_end)"/>
+                                        <td class="lq-money" t-esc="formatMoney(row.monthly)"/>
+                                        <td class="lq-money" t-esc="formatMoney(row.next_payment_amount)"/>
+                                        <td>
+                                            <span t-att-class="opsPillClass(row)" t-esc="opsStatusLabel(row)"/>
+                                        </td>
+                                        <td>
+                                            <span t-attf-class="lq-remain-pill is-{{remainTone(row)}}">
+                                                <i t-att-class="remainIcon(row)"/>
+                                                <t t-esc="remainLabel(row)"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="lq-mc-pager">
+                        <span t-esc="pageInfo"/>
+                        <div>
+                            <button type="button" t-att-disabled="state.page &lt;= 1" t-on-click="() => this.setPage(state.page - 1)">&lt;</button>
+                            <t t-foreach="pageNumbers" t-as="pn" t-key="pn">
+                                <button type="button" t-att-class="state.page === pn ? 'is-on' : ''" t-on-click="() => this.setPage(pn)" t-esc="pn"/>
+                            </t>
+                            <button type="button" t-att-disabled="state.page &gt;= totalPages" t-on-click="() => this.setPage(state.page + 1)">&gt;</button>
+                        </div>
+                    </div>
+                    <footer class="lq-mc-foot">
+                        <span class="is-purple"><i class="fa fa-money"/> TỔNG CỘNG QUÝ <t t-esc="state.quarter"/> <b t-esc="formatMoney(kpi.total_amount)"/></span>
+                        <span class="is-green"><i class="fa fa-check-circle"/> Đã thanh toán <b t-esc="formatMoney(kpi.paid_amount)"/></span>
+                        <span class="is-red"><i class="fa fa-exclamation-circle"/> Còn phải trả <b t-esc="formatMoney(kpi.unpaid_amount)"/></span>
+                    </footer>
+                </section>
+            </t>
         </div>
     </t>
 </templates>
+

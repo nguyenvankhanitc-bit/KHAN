@@ -12,6 +12,37 @@
         <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet'}</field>
     </record>
 
+    <record id="action_phan_he_internet_list_master" model="ir.actions.client">
+        <field name="name">Danh sách Internet</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_list_filter': 'all', 'phan_he_open_nav': 'list_all'}</field>
+    </record>
+    <record id="action_phan_he_internet_entry_master" model="ir.actions.client">
+        <field name="name">Khai báo cửa hàng</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'store_declare'}</field>
+    </record>
+    <record id="action_phan_he_internet_active_master" model="ir.actions.client">
+        <field name="name">Internet đang sử dụng</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'list_active'}</field>
+    </record>
+    <record id="action_phan_he_internet_suspend_master" model="ir.actions.client">
+        <field name="name">Internet tạm ngưng</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'list_suspend'}</field>
+    </record>
+    <record id="action_phan_he_internet_liquidated_master" model="ir.actions.client">
+        <field name="name">Thanh lý</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'list_liquidated'}</field>
+    </record>
+    <record id="action_phan_he_internet_payment_master" model="ir.actions.client">
+        <field name="name">Lịch thanh toán</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'payment_schedule'}</field>
+    </record>
+
     <!-- ========== MIỀN ========== -->
     <record id="view_phan_he_mien_list" model="ir.ui.view">
         <field name="name">phan.he.mien.list</field>
@@ -560,110 +591,154 @@
         <field name="model">phan.he.service</field>
         <field name="priority">5</field>
         <field name="arch" type="xml">
-            <form string="Nhập liệu theo dõi Internet" class="o_phan_he_entry_form">
-                <header>
-                    <button name="action_approve" type="object" string="Đang hoạt động"
-                            invisible="state == 'active'" class="btn-primary"/>
-                    <button name="action_suspend" type="object" string="Tạm dừng"
-                            invisible="state != 'active'"/>
-                    <button name="action_liquidate" type="object" string="Thanh lý"
-                            invisible="state == 'liquidated'"/>
-                    <field name="state" widget="statusbar"
-                           statusbar_visible="active,suspend,liquidated"/>
-                </header>
+            <form string="Internet" class="o_phan_he_entry_form o_phan_he_internet_form"
+                  js_class="phan_he_internet_form">
                 <sheet>
-                    <div class="oe_title">
-                        <h1>
-                            <field name="name" readonly="1" force_save="1"
-                                   placeholder="INTERNET - Tên cửa hàng"/>
-                        </h1>
+                    <field name="name" invisible="1" force_save="1"/>
+                    <field name="stt" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="service_type_id" invisible="1" force_save="1"/>
+                    <field name="state" invisible="1"/>
+                    <field name="remaining_time" invisible="1"/>
+                    <field name="remaining_days" invisible="1"/>
+                    <field name="alert_level" invisible="1"/>
+                    <field name="note" invisible="1"/>
+                    <field name="payment_info_manual" invisible="1"/>
+                    <field name="next_payment_id" invisible="1"/>
+                    <field name="duration" invisible="1"/>
+
+                    <div class="ph-inet-section">
+                        <div class="ph-inet-section-head">
+                            <span class="ph-inet-num">1</span>
+                            THÔNG TIN CỬA HÀNG &amp; DỊCH VỤ
+                        </div>
+                        <div class="ph-inet-grid-4">
+                            <div class="ph-inet-field">
+                                <label for="store_id">
+                                    <i class="fa fa-home"/> Cửa hàng <span class="ph-req">*</span>
+                                </label>
+                                <field name="store_id" nolabel="1" required="1" placeholder="Chọn cửa hàng"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="mien_id">
+                                    <i class="fa fa-map-marker"/> Miền
+                                </label>
+                                <field name="mien_id" nolabel="1" readonly="1" force_save="1"
+                                       placeholder="Tự lấy theo cửa hàng"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="provider_id">
+                                    <i class="fa fa-building-o"/> Nhà cung cấp <span class="ph-req">*</span>
+                                </label>
+                                <field name="provider_id" nolabel="1" placeholder="Chọn nhà cung cấp"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="code">
+                                    <i class="fa fa-barcode"/> Mã hợp đồng
+                                </label>
+                                <field name="code" nolabel="1" readonly="1"/>
+                            </div>
+
+                            <div class="ph-inet-field">
+                                <label for="customer_code">
+                                    <i class="fa fa-id-card-o"/> Mã khách hàng
+                                </label>
+                                <field name="customer_code" nolabel="1" placeholder="VD: SGH414537"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="bandwidth">
+                                    <i class="fa fa-wifi"/> Băng thông
+                                </label>
+                                <field name="bandwidth" nolabel="1" placeholder="100 Mbps"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="contract_amount">
+                                    <i class="fa fa-money"/> Cước tháng
+                                </label>
+                                <field name="contract_amount" nolabel="1" widget="monetary" required="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="payment_type">
+                                    <i class="fa fa-credit-card"/> Loại thanh toán
+                                </label>
+                                <field name="payment_type" nolabel="1"/>
+                            </div>
+
+                            <div class="ph-inet-field">
+                                <label for="date_start">
+                                    <i class="fa fa-calendar"/> Ngày bắt đầu <span class="ph-req">*</span>
+                                </label>
+                                <field name="date_start" nolabel="1" widget="date"
+                                       options="{'numeric': True}"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="date_end">
+                                    <i class="fa fa-calendar"/> Ngày kết thúc <span class="ph-req">*</span>
+                                </label>
+                                <field name="date_end" nolabel="1" widget="date"
+                                       options="{'numeric': True}"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="remaining_alert">
+                                    <i class="fa fa-clock-o"/> Còn lại
+                                </label>
+                                <field name="remaining_alert" nolabel="1" readonly="1" widget="html"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="ops_status">
+                                    <i class="fa fa-circle-o"/> Trạng thái
+                                </label>
+                                <field name="ops_status" nolabel="1" required="1" widget="phan_he_ops_status"/>
+                            </div>
+
+                            <div class="ph-inet-field ph-inet-span-4">
+                                <label for="usage_address">
+                                    <i class="fa fa-map-marker"/> Địa chỉ lắp đặt <span class="ph-req">*</span>
+                                </label>
+                                <field name="usage_address" nolabel="1"
+                                       placeholder="Số nhà, đường, phường, quận, thành phố..."/>
+                            </div>
+                        </div>
                     </div>
 
-                    <group string="Thông tin cửa hàng / hợp đồng">
-                        <group>
-                            <field name="stt" string="STT"/>
-                            <field name="mien_id" string="MIỀN" readonly="1"
-                                   force_save="1"
-                                   placeholder="Tự lấy theo cửa hàng"/>
-                            <field name="store_id" string="CỬA HÀNG" required="1"
-                                   options="{'no_quick_create': False}"/>
-                            <field name="customer_code" string="MÃ KH"
-                                   placeholder="VD: SGH414537"/>
-                            <field name="date_start" string="NGÀY BẮT ĐẦU" widget="date"
-                                   options="{'numeric': True}"/>
-                            <field name="date_end" string="NGÀY KẾT THÚC" widget="date"
-                                   options="{'numeric': True}"/>
-                            <field name="bandwidth" string="BĂNG THÔNG"
-                                   placeholder="VD: 100Mbps"/>
-                        </group>
-                        <group>
-                            <field name="package_name" string="Loại thanh toán"
-                                   placeholder="VD: Trả trước / 12 tháng + 1"/>
-                            <field name="contract_amount" string="CƯỚC THÁNG"/>
-                            <field name="currency_id" invisible="1"/>
-                            <field name="service_type_id" string="HẠNG MỤC" required="1"/>
-                            <field name="ops_status" string="TRẠNG THÁI" required="1"
-                                   widget="phan_he_ops_status"/>
-                            <field name="state" invisible="1"/>
-                            <label for="remaining_alert" string="THỜI GIAN CÒN LẠI"/>
-                            <div class="o_phan_he_remaining_box">
-                                <field name="remaining_alert" nolabel="1" readonly="1"
-                                       widget="html"/>
-                                <div class="alert alert-warning mt-1 mb-0 py-1 px-2"
-                                     role="alert"
-                                     invisible="alert_level != 'warn'">
-                                    <i class="fa fa-exclamation-triangle"/>
-                                    Còn ≤ 30 ngày — cần gia hạn / theo dõi thanh toán
-                                </div>
-                                <div class="alert alert-danger mt-1 mb-0 py-1 px-2"
-                                     role="alert"
-                                     invisible="alert_level not in ('danger', 'expired')">
-                                    <i class="fa fa-exclamation-circle"/>
-                                    Sắp hết hạn hoặc đã hết hạn — xử lý ngay
-                                </div>
+                    <div class="ph-inet-section">
+                        <div class="ph-inet-section-head">
+                            <span class="ph-inet-num">2</span>
+                            THÔNG TIN THANH TOÁN
+                        </div>
+                        <div class="ph-inet-grid-4">
+                            <div class="ph-inet-field">
+                                <label for="bank_account_holder">
+                                    <i class="fa fa-user"/> Tên tài khoản <span class="ph-req">*</span>
+                                </label>
+                                <field name="bank_account_holder" nolabel="1"
+                                       placeholder="Tên chủ tài khoản"/>
                             </div>
-                            <field name="remaining_time" invisible="1"/>
-                            <field name="remaining_days" invisible="1"/>
-                            <field name="alert_level" invisible="1"/>
-                            <field name="code" string="Mã hợp đồng" readonly="1"/>
-                        </group>
-                    </group>
-
-                    <group string="Địa chỉ &amp; thanh toán">
-                        <group>
-                            <field name="usage_address" string="ĐỊA CHỈ"
-                                   placeholder="Địa chỉ lắp đặt / cửa hàng..."
-                                   nolabel="0"/>
-                        </group>
-                        <group>
-                            <field name="provider_id" string="Nhà cung cấp"/>
-                            <field name="payment_info_text" string="THÔNG TIN THANH TOÁN"
-                                   placeholder="Tên TK / STK / Ngân hàng..."/>
-                        </group>
-                    </group>
-
-                    <group string="Thanh toán kỳ hiện tại (HĐ)">
-                        <group>
-                            <field name="next_invoice_number" string="Số hóa đơn (HĐ)"
-                                   placeholder="VD: 1703009"/>
-                            <field name="next_payment_amount" string="Số tiền thanh toán"/>
-                        </group>
-                        <group>
-                            <field name="next_payment_date" string="Ngày TT tiếp theo"
-                                   widget="date" options="{'numeric': True}"/>
-                        </group>
-                    </group>
-
-                    <group string="Ghi chú thêm">
-                        <field name="service_content" string="Mô tả chi tiết" nolabel="1"
-                               placeholder="Ghi chú thêm nếu cần..."/>
-                        <field name="note" invisible="1"/>
-                        <field name="payment_info_manual" invisible="1"/>
-                        <field name="next_payment_id" invisible="1"/>
-                        <field name="alert_level" invisible="1"/>
-                    </group>
+                            <div class="ph-inet-field">
+                                <label for="bank_account_number">
+                                    <i class="fa fa-credit-card"/> Số tài khoản <span class="ph-req">*</span>
+                                </label>
+                                <field name="bank_account_number" nolabel="1"
+                                       placeholder="Số tài khoản"/>
+                            </div>
+                            <div class="ph-inet-field ph-inet-span-2">
+                                <label for="bank_display">
+                                    <i class="fa fa-university"/> Ngân hàng <span class="ph-req">*</span>
+                                </label>
+                                <field name="bank_display" nolabel="1"
+                                       placeholder="VD: Vietcombank - Chi nhánh Hồ Chí Minh"/>
+                            </div>
+                            <div class="ph-inet-field ph-inet-span-4">
+                                <label for="invoice_file">
+                                    <i class="fa fa-paperclip"/> File hóa đơn đính kèm
+                                </label>
+                                <field name="invoice_filename" invisible="1"/>
+                                <field name="invoice_file" nolabel="1" filename="invoice_filename"
+                                       widget="phan_he_dropzone" class="ph-inet-dropzone"/>
+                            </div>
+                        </div>
+                    </div>
                 </sheet>
-                <chatter/>
             </form>
         </field>
     </record>
@@ -971,7 +1046,7 @@
     </record>
 
     <record id="action_phan_he_service_internet_liquidated" model="ir.actions.act_window">
-        <field name="name">Internet chờ thanh lý</field>
+        <field name="name">Thanh lý</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
         <field name="domain" eval="[('service_type_id', '=', ref('service_type_internet')), ('ops_status', '=', 'liquidated')]"/>

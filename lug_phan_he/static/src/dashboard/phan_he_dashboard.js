@@ -2,71 +2,88 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState, useSubEnv } from "@odoo/owl";
+import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
+import { PhanHeInternetShell } from "../internet_shell/phan_he_internet_shell";
+import { PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard } from "../internet_list/phan_he_internet_list";
+import {
+    INTERNET_NAV_TO_CODE,
+    filterInternetNavSections,
+    firstAllowedInternetNav,
+    internetNavCan,
+} from "../access/internet_menu_nav";
+
+const OWL_LIST_NAV = {
+    list_all: "all",
+    list_active: "active",
+    list_suspend: "suspend",
+    list_liquidated: "liquidated",
+    expire_soon: "expire_soon",
+    expired: "expired",
+    report_year: "report_year",
+};
 
 const INTERNET_NAV_SECTIONS = [
-    {
-        id: "declare",
-        label: "Khai báo & nhập liệu",
-        icon: "fa-download",
-        children: [
-            {
-                id: "store_declare",
-                label: "Khai báo cửa hàng",
-                icon: "fa-building",
-                iconColor: "#2563eb",
-                action: "lug_phan_he.action_phan_he_service_entry",
-            },
-        ],
-    },
     {
         id: "manage",
         label: "Quản lý Internet",
         icon: "fa-sitemap",
+        iconTone: "manage",
         children: [
             {
-                id: "list_all",
-                label: "Danh sách Internet",
-                icon: "fa-list-ul",
-                iconColor: "#7c3aed",
-                action: "lug_phan_he.action_phan_he_service_tracking",
-            },
-            {
                 id: "list_active",
-                label: "Internet đang sử dụng",
-                icon: "fa-check-circle",
-                iconColor: "#16a34a",
-                action: "lug_phan_he.action_phan_he_service_internet_active",
+                label: "Đang sử dụng",
+                icon: "fa-globe",
+                statusTone: "active",
+                iconTone: "active",
+                action: "lug_phan_he.action_phan_he_internet_active_master",
             },
             {
                 id: "list_suspend",
-                label: "Internet tạm ngưng",
-                icon: "fa-pause-circle",
-                iconColor: "#d97706",
+                label: "Tạm ngưng",
+                icon: "fa-globe",
+                statusTone: "suspend",
+                iconTone: "suspend",
                 action: "lug_phan_he.action_phan_he_service_internet_suspend",
             },
             {
                 id: "list_liquidated",
-                label: "Internet chờ thanh lý",
-                icon: "fa-times-circle",
-                iconColor: "#dc2626",
+                label: "Thanh lý",
+                icon: "fa-globe",
+                statusTone: "liquidated",
+                iconTone: "liquidated",
                 action: "lug_phan_he.action_phan_he_service_internet_liquidated",
+            },
+            {
+                id: "store_declare",
+                label: "Nhập thông tin",
+                icon: "fa-globe",
+                iconTone: "store",
+                action: "lug_phan_he.action_phan_he_service_entry",
             },
         ],
     },
     {
         id: "payment",
         label: "Chi phí & thanh toán",
-        icon: "fa-money",
+        icon: "fa-credit-card",
+        iconTone: "payment",
         children: [
             {
                 id: "payment_schedule",
                 label: "Lịch thanh toán",
                 icon: "fa-calendar",
-                iconColor: "#0891b2",
+                iconTone: "payment",
                 action: "lug_phan_he.action_phan_he_payment",
+            },
+            {
+                id: "payment_track",
+                label: "Theo dõi thanh toán",
+                icon: "fa-money",
+                iconTone: "payment",
+                action: "lug_phan_he.action_phan_he_payment_pending",
             },
         ],
     },
@@ -74,13 +91,14 @@ const INTERNET_NAV_SECTIONS = [
         id: "alerts",
         label: "Cảnh báo",
         icon: "fa-bell",
+        iconTone: "alert",
         children: [
             {
                 id: "expire_soon",
-                label: "Sắp hết hạn",
+                label: "Sắp tới hạn thanh toán",
                 icon: "fa-exclamation-triangle",
-                iconColor: "#ca8a04",
                 tone: "warn",
+                iconTone: "alert",
                 badgeKey: "expire_soon",
                 action: "lug_phan_he.action_phan_he_service_expire_soon",
             },
@@ -88,8 +106,8 @@ const INTERNET_NAV_SECTIONS = [
                 id: "expired",
                 label: "Quá hạn",
                 icon: "fa-times-circle",
-                iconColor: "#e11d48",
                 tone: "danger",
+                iconTone: "overdue",
                 badgeKey: "overdue_contract",
                 action: "lug_phan_he.action_phan_he_service_expired",
             },
@@ -99,10 +117,24 @@ const INTERNET_NAV_SECTIONS = [
         id: "reports",
         label: "Báo cáo",
         icon: "fa-bar-chart",
+        iconTone: "report",
         children: [
-            { id: "report_month", label: "Chi phí tháng", icon: "fa-calendar-o", iconColor: "#4f46e5", reportPeriod: "month" },
-            { id: "report_quarter", label: "Chi phí quý", icon: "fa-calendar", iconColor: "#db2777", reportPeriod: "quarter" },
-            { id: "report_year", label: "Chi phí năm", icon: "fa-calendar-check-o", iconColor: "#059669", reportPeriod: "year" },
+            { id: "report_month", label: "Chi phí tháng", icon: "fa-line-chart", iconTone: "report", reportPeriod: "month" },
+            { id: "report_quarter", label: "Chi phí quý", icon: "fa-area-chart", iconTone: "report", reportPeriod: "quarter" },
+            { id: "report_year", label: "Chi phí năm", icon: "fa-pie-chart", iconTone: "report", reportPeriod: "year" },
+        ],
+    },
+    {
+        id: "settings",
+        label: "Cài đặt",
+        icon: "fa-cog",
+        children: [
+            {
+                id: "settings_provider",
+                label: "Nhà cung cấp",
+                icon: "fa-building",
+                action: "lug_phan_he.action_phan_he_provider",
+            },
         ],
     },
 ];
@@ -144,29 +176,46 @@ function isoToDisplay(value) {
 export class PhanHeDashboard extends Component {
     static template = "lug_phan_he.PhanHeDashboard";
     static props = { ...standardActionServiceProps, "*": true };
-    static components = { PhanHeAppSidebar };
+    static components = { PhanHeAppSidebar, PhanHeInternetShell, PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard };
 
     setup() {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        useSubEnv({
+            config: {
+                ...(this.env.config || {}),
+                historyBack: () => this.closeEmbeddedView(),
+            },
+        });
         const year = new Date().getFullYear();
         this.state = useState({
             loading: true,
             exporting: false,
             openGroups: {
-                declare: true,
                 manage: true,
                 payment: true,
                 alerts: true,
                 reports: true,
+                settings: false,
                 shifts: true,
             },
             activeNav: "overview",
+            listFilter: "active",
+            contentMode: "dashboard",
+            embeddedViewProps: null,
+            viewKey: 0,
+            listActionXml: null,
+            formReturn: null,
             reportPeriod: "year",
             trendHover: null,
             data: {},
+            inet: {},
+            internetMenus: {},
             paymentReport: { tables: [] },
+            selectedMonth: `${year}-${pad2(new Date().getMonth() + 1)}`,
+            selectedRegion: "all",
+            selectedStore: "all",
             filters: {
                 year: year,
                 date_from: yearStartDisplay(year),
@@ -176,12 +225,84 @@ export class PhanHeDashboard extends Component {
                 employee_id: "",
             },
         });
+        this.inetSparkRef = useRef("inetSpark");
+        this.inetDonutRef = useRef("inetDonut");
+        this.inetYearRef = useRef("inetYear");
+        this.inetMonthTrendRef = useRef("inetMonthTrend");
+        this.inetCharts = {};
         onWillStart(async () => {
-            if (this.actionContext.phan_he_dash_view === "reports") {
-                this.state.activeNav = "reports";
+            try {
+                if (this.serviceTypeCode === "internet") {
+                    const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
+                    this.state.internetMenus = rights?.internet_menus || {};
+                }
+                let openNav = this.actionContext.phan_he_open_nav;
+                if (this.serviceTypeCode === "internet") {
+                    const menus = this.state.internetMenus;
+                    if (openNav && !internetNavCan(menus, openNav === "overview" ? "overview" : openNav)) {
+                        openNav = false;
+                    }
+                    if ((!openNav || openNav === "overview") && !internetNavCan(menus, "overview")) {
+                        const first = firstAllowedInternetNav(
+                            filterInternetNavSections(INTERNET_NAV_SECTIONS, menus)
+                        );
+                        openNav = first ? first.id : false;
+                    }
+                }
+                if (openNav === "report_quarter") {
+                    this.state.contentMode = "quarter_cost";
+                    this.state.activeNav = "report_quarter";
+                    this._openGroupForNav("report_quarter");
+                    this.state.loading = false;
+                    return;
+                }
+                if (openNav === "report_month") {
+                    this.state.contentMode = "month_cost";
+                    this.state.activeNav = "report_month";
+                    this._openGroupForNav("report_month");
+                    this.state.loading = false;
+                    return;
+                }
+                const openList = Boolean(openNav && OWL_LIST_NAV[openNav]);
+                if (openList) {
+                    this.state.contentMode = "owl_list";
+                    this.state.listFilter = OWL_LIST_NAV[openNav];
+                    this.state.activeNav = openNav;
+                    this._openGroupForNav(openNav);
+                    this.state.loading = false;
+                    return;
+                }
+                if (this.serviceTypeCode === "internet") {
+                    await loadBundle("web.chartjs_lib");
+                }
+                if (this.actionContext.phan_he_dash_view === "reports") {
+                    this.state.activeNav = "reports";
+                    this._openGroupForNav("reports");
+                }
+                await this.load();
+                if (openNav && openNav !== "overview") {
+                    const child = this.findNavChild(openNav);
+                    if (child) {
+                        await this.openEmbedded(child);
+                    }
+                    this._openGroupForNav(openNav);
+                }
+            } catch (err) {
+                console.error(err);
+                this.state.loading = false;
             }
-            await this.load();
         });
+        useEffect(
+            () => {
+                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost") {
+                    return () => {};
+                }
+                this.renderInetCharts();
+                return () => this.destroyInetCharts();
+            },
+            () => [this.state.inet, this.state.loading, this.state.activeNav]
+        );
+        onWillUnmount(() => this.destroyInetCharts());
     }
 
     get yearOptions() {
@@ -217,8 +338,149 @@ export class PhanHeDashboard extends Component {
             || "Quản lý dịch vụ";
     }
 
+    get isInternetDash() {
+        return (
+            this.serviceTypeCode === "internet"
+            && this.state.activeNav !== "reports"
+            && this.state.contentMode !== "view"
+            && this.state.contentMode !== "month_cost"
+            && this.state.contentMode !== "quarter_cost"
+        );
+    }
+
+    get isInternetMaster() {
+        return this.serviceTypeCode === "internet";
+    }
+
+    get embeddedViewProps() {
+        return this.state.embeddedViewProps;
+    }
+
     get isLinkqErp() {
         return this.serviceTypeCode === "linkq_nb";
+    }
+
+    get inet() {
+        return this.state.inet || {};
+    }
+
+    get inetUsage() {
+        return this.inet.usage || { active: 0, suspend: 0, liquidated: 0, active_pct: 0 };
+    }
+
+    get inetUsagePct() {
+        return this.inetUsage.active_pct || 0;
+    }
+
+    get inetUsageDash() {
+        const pct = Math.min(100, Math.max(0, Number(this.inetUsagePct || 0)));
+        return `${pct} 100`;
+    }
+
+    get inetLineChart() {
+        const pts = this.inet.trend || [];
+        const w = 360;
+        const h = 148;
+        const left = 40;
+        const right = 8;
+        const top = 12;
+        const bottom = 22;
+        if (!pts.length) {
+            return { line: "", area: "", dots: [], yTicks: [], xLabels: [], tip: null };
+        }
+        const vals = pts.map((p) => Number(p.amount || 0));
+        const max = Math.max(...vals, 1);
+        const innerW = w - left - right;
+        const innerH = h - top - bottom;
+        const coords = vals.map((v, i) => {
+            const x = left + (i * innerW) / Math.max(pts.length - 1, 1);
+            const y = top + innerH - (v / max) * innerH;
+            return {
+                x,
+                y,
+                amount: v,
+                label: pts[i].full || pts[i].label || "",
+                key: pts[i].key,
+            };
+        });
+        const line = coords.map((c, i) => `${i ? "L" : "M"}${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(" ");
+        const last = coords[coords.length - 1];
+        const first = coords[0];
+        const area = `${line} L${last.x.toFixed(1)},${top + innerH} L${first.x.toFixed(1)},${top + innerH} Z`;
+        const yTicks = [1, 0.75, 0.5, 0.25, 0].map((ratio) => ({
+            y: top + innerH - ratio * innerH,
+            label: this.formatTrieu(max * ratio),
+        }));
+        return {
+            line,
+            area,
+            dots: coords,
+            yTicks,
+            xLabels: coords.map((c, i) => ({ x: c.x, label: pts[i].label || "" })),
+            tip: null,
+            gridY: top + innerH,
+        };
+    }
+
+    formatTrieu(amount) {
+        const n = Number(amount || 0);
+        if (n >= 1e6) {
+            return `${(n / 1e6).toFixed(1)} Tr`;
+        }
+        if (n >= 1e3) {
+            return `${Math.round(n / 1e3)}k`;
+        }
+        return `${Math.round(n)}`;
+    }
+
+    formatTrieuVnd(amount) {
+        const n = Number(amount || 0);
+        return `${(n / 1e6).toFixed(1)} Tr. VNĐ`;
+    }
+
+    sparkPct(sp) {
+        return Number(sp?.pct || 8);
+    }
+
+    regionToneClass(code) {
+        const c = String(code || "").toUpperCase();
+        if (c === "NAM") {
+            return "is-nam";
+        }
+        if (c === "DTT" || c === "TRUNG") {
+            return "is-dtt";
+        }
+        if (c === "BAC") {
+            return "is-bac";
+        }
+        if (c === "VP") {
+            return "is-vp";
+        }
+        return "is-nam";
+    }
+
+    get inetDonutBg() {
+        const regions = this.inet.regions || [];
+        if (!regions.length) {
+            return "#eef2f7";
+        }
+        let acc = 0;
+        const parts = [];
+        for (const r of regions) {
+            const start = acc;
+            acc += Number(r.pct || 0);
+            parts.push(`${r.color || "#94a3b8"} ${start}% ${acc}%`);
+        }
+        return `conic-gradient(${parts.join(",")})`;
+    }
+
+    get inetYearMax() {
+        const ys = this.inet.year_bars || [];
+        return Math.max(...ys.map((y) => Number(y.amount || 0)), 1);
+    }
+
+    yearBarPct(yb) {
+        return Math.round((Number(yb?.amount || 0) / this.inetYearMax) * 100);
     }
 
     get linkqSidebarKey() {
@@ -240,7 +502,7 @@ export class PhanHeDashboard extends Component {
     get navSections() {
         const code = this.serviceTypeCode;
         if (code === "internet") {
-            return INTERNET_NAV_SECTIONS;
+            return filterInternetNavSections(INTERNET_NAV_SECTIONS, this.state.internetMenus);
         }
         if (code === "linkq_nb") {
             return [
@@ -324,6 +586,13 @@ export class PhanHeDashboard extends Component {
         ];
     }
 
+    get canSeeInternetOverview() {
+        if (this.serviceTypeCode !== "internet") {
+            return true;
+        }
+        return internetNavCan(this.state.internetMenus, "overview");
+    }
+
     get alertCount() {
         return Number(this.state.data.alert_count || 0);
     }
@@ -342,13 +611,28 @@ export class PhanHeDashboard extends Component {
         if (isActive) {
             classes.push("is-active");
         }
-        if (child.tone === "warn") {
-            classes.push("is-warn");
+        if (child.iconTone) {
+            classes.push("is-icon-" + child.iconTone);
         }
-        if (child.tone === "danger") {
-            classes.push("is-danger");
+        if (child.tone) {
+            classes.push("is-tone-" + child.tone);
         }
         return classes.join(" ");
+    }
+
+    _openGroupForNav(navId) {
+        if (!navId || navId === "overview") {
+            return;
+        }
+        if (navId === "reports") {
+            this.state.openGroups.reports = true;
+            return;
+        }
+        for (const section of this.navSections || []) {
+            if ((section.children || []).some((c) => c.id === navId)) {
+                this.state.openGroups[section.id] = true;
+            }
+        }
     }
 
     toggleGroup(groupId) {
@@ -356,20 +640,243 @@ export class PhanHeDashboard extends Component {
     }
 
     onOverview() {
+        if (this.serviceTypeCode === "internet" && !this.canSeeInternetOverview) {
+            const first = firstAllowedInternetNav(this.navSections);
+            if (first) {
+                this.onNavChild(first);
+            }
+            return;
+        }
         this.state.activeNav = "overview";
+        this.state.contentMode = "dashboard";
+        this.state.embeddedViewProps = null;
+        this.state.listActionXml = null;
+        this.state.formReturn = null;
+        this.load();
+    }
+
+    findNavChild(navId) {
+        for (const section of this.navSections || []) {
+            const child = (section.children || []).find((c) => c.id === navId);
+            if (child) {
+                return child;
+            }
+        }
+        return null;
     }
 
     onNavChild(child) {
         if (!child) {
             return;
         }
+        if (this.serviceTypeCode === "internet" && !internetNavCan(this.state.internetMenus, child.id)) {
+            this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
+            return;
+        }
+        if (child.action && !OWL_LIST_NAV[child.id] && !child.reportPeriod) {
+            this._rememberFormReturn();
+        }
         this.state.activeNav = child.id;
+        this._openGroupForNav(child.id);
+        if (OWL_LIST_NAV[child.id]) {
+            this.state.contentMode = "owl_list";
+            this.state.listFilter = OWL_LIST_NAV[child.id];
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            return;
+        }
         if (child.reportPeriod) {
             this.openReportPeriod(child.reportPeriod);
             return;
         }
         if (child.action) {
-            this.openAction(child.action);
+            this.openEmbedded(child);
+        }
+    }
+
+    asViewDisplay(display) {
+        const d = display && typeof display === "object" ? { ...display } : {};
+        if (!d.controlPanel || typeof d.controlPanel !== "object") {
+            d.controlPanel = {};
+        }
+        return d;
+    }
+
+    parseActionContext(context) {
+        if (!context) {
+            return {};
+        }
+        if (typeof context === "object" && !Array.isArray(context)) {
+            return { ...context };
+        }
+        return {};
+    }
+
+    normalizeActionViews(act, preferredType) {
+        const views = Array.isArray(act.views) ? act.views.map((v) => [...v]) : [];
+        if (!views.some((v) => v[1] === "form")) {
+            views.push([false, "form"]);
+        }
+        if (preferredType !== "form" && !views.some((v) => v[1] === "list")) {
+            views.push([false, "list"]);
+        }
+        if (!views.some((v) => v[1] === "search")) {
+            views.push([false, "search"]);
+        }
+        return views;
+    }
+
+    _rememberFormReturn() {
+        if (this.state.contentMode === "view") {
+            return;
+        }
+        this.state.formReturn = {
+            contentMode: this.state.contentMode,
+            listFilter: this.state.listFilter,
+            activeNav: this.state.activeNav,
+        };
+    }
+
+    closeEmbeddedView() {
+        const ret = this.state.formReturn || {};
+        this.state.embeddedViewProps = null;
+        this.state.formReturn = null;
+        this.state.listActionXml = null;
+        if (ret.contentMode === "owl_list" || OWL_LIST_NAV[ret.activeNav]) {
+            this.state.contentMode = "owl_list";
+            this.state.listFilter = ret.listFilter || OWL_LIST_NAV[ret.activeNav] || "active";
+            this.state.activeNav = OWL_LIST_NAV[ret.activeNav]
+                ? ret.activeNav
+                : Object.entries(OWL_LIST_NAV).find(([, v]) => v === ret.listFilter)?.[0] || "list_active";
+            return;
+        }
+        if (ret.contentMode === "month_cost" || ret.activeNav === "report_month") {
+            this.state.contentMode = "month_cost";
+            this.state.activeNav = "report_month";
+            return;
+        }
+        if (ret.contentMode === "quarter_cost" || ret.activeNav === "report_quarter") {
+            this.state.contentMode = "quarter_cost";
+            this.state.activeNav = "report_quarter";
+            return;
+        }
+        this.onOverview();
+    }
+
+    async openEntryForm(resId = false) {
+        this._rememberFormReturn();
+        this.state.openGroups.manage = true;
+        const nav =
+            (this.state.activeNav && OWL_LIST_NAV[this.state.activeNav] && this.state.activeNav) ||
+            (resId ? "list_active" : "store_declare");
+        await this.openEmbedded(
+            { id: nav, action: "lug_phan_he.action_phan_he_service_entry" },
+            {
+                type: "form",
+                resId: resId || false,
+                action: "lug_phan_he.action_phan_he_service_entry",
+                activeNav: nav,
+            }
+        );
+    }
+
+    async openEmbedded(child, extra = {}) {
+        const navId = extra.activeNav || child.id;
+        // Chỉ chuyển sang board OWL khi không phải mở form chi tiết.
+        if (OWL_LIST_NAV[navId] && extra.type !== "form") {
+            this.state.contentMode = "owl_list";
+            this.state.listFilter = OWL_LIST_NAV[navId];
+            this.state.activeNav = navId;
+            this._openGroupForNav(navId);
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            return;
+        }
+        const xmlid = extra.action || child.action;
+        if (!xmlid) {
+            return;
+        }
+        this.state.activeNav = extra.activeNav || child.id || this.state.activeNav;
+        this._openGroupForNav(this.state.activeNav);
+        if (!extra.type || extra.type === "list") {
+            this.state.listActionXml = xmlid;
+        }
+        try {
+            const act = await this.action.loadAction(xmlid);
+            if (!act || act.type === "ir.actions.client") {
+                this.action.doAction(xmlid);
+                return;
+            }
+            const viewMode = String(act.view_mode || "list,form");
+            const defaultType = extra.type || (viewMode.split(",")[0] === "form" ? "form" : "list");
+            const views = this.normalizeActionViews(act, defaultType);
+            const typedView = views.find((v) => v[1] === defaultType);
+            this.state.viewKey += 1;
+            this.state.contentMode = "view";
+            const menuKey = this.state.activeNav || navId;
+            const menuCode = INTERNET_NAV_TO_CODE[menuKey] || false;
+            const canWrite = internetNavCan(this.state.internetMenus, menuKey, "write")
+                || (menuKey === "store_declare" && internetNavCan(this.state.internetMenus, "store_declare", "write"));
+            const canCreate = internetNavCan(this.state.internetMenus, menuKey, "create")
+                || internetNavCan(this.state.internetMenus, "store_declare", "create");
+            const viewProps = {
+                resModel: act.res_model,
+                type: defaultType,
+                domain: act.domain || [],
+                context: {
+                    ...this.parseActionContext(act.context),
+                    phan_he_service_type_code: "internet",
+                    phan_he_internet_menu: menuCode || (extra.resId ? "internet_active" : "internet_entry"),
+                    form_view_initial_mode:
+                        (extra.resId === false || extra.resId === undefined
+                            ? canCreate
+                            : canWrite)
+                            ? "edit"
+                            : "readonly",
+                },
+                views,
+                display: this.asViewDisplay({ controlPanel: {} }),
+                loadActionMenus: true,
+                loadIrFilters: false,
+                onDiscard: () => this.closeEmbeddedView(),
+                selectRecord: (resId) => {
+                    this.openEmbedded(child, {
+                        type: "form",
+                        resId,
+                        action: xmlid,
+                        activeNav: this.state.activeNav,
+                    });
+                },
+                createRecord: () => {
+                    if (!canCreate && !internetNavCan(this.state.internetMenus, "store_declare", "create")) {
+                        this.notification.add("Bạn không có quyền Thêm.", { type: "warning" });
+                        return;
+                    }
+                    this.openEmbedded(child, {
+                        type: "form",
+                        resId: false,
+                        action: xmlid,
+                        activeNav: this.state.activeNav,
+                    });
+                },
+            };
+            if (typedView && typedView[0]) {
+                viewProps.viewId = typedView[0];
+            }
+            if (defaultType === "form") {
+                viewProps.resId = extra.resId === undefined ? false : extra.resId;
+                const openingNew = !viewProps.resId;
+                viewProps.readonly = openingNew ? !canCreate : !canWrite;
+                viewProps.preventEdit = !canWrite;
+                viewProps.preventCreate = !canCreate;
+            }
+            this.state.embeddedViewProps = viewProps;
+        } catch (err) {
+            console.error(err);
+            this.notification.add(
+                err?.data?.message || err?.message || "Không mở được form khai báo.",
+                { type: "danger" }
+            );
         }
     }
 
@@ -394,7 +901,22 @@ export class PhanHeDashboard extends Component {
         this.state.filters.year = year;
         this.state.filters.date_from = `${pad2(from.getDate())}/${pad2(from.getMonth() + 1)}/${from.getFullYear()}`;
         this.state.filters.date_to = `${pad2(to.getDate())}/${pad2(to.getMonth() + 1)}/${to.getFullYear()}`;
+        this._openGroupForNav("reports");
+        this.state.embeddedViewProps = null;
+        if (period === "month" && this.serviceTypeCode === "internet") {
+            this.state.activeNav = "report_month";
+            this.state.contentMode = "month_cost";
+            this.state.loading = false;
+            return;
+        }
+        if (period === "quarter" && this.serviceTypeCode === "internet") {
+            this.state.activeNav = "report_quarter";
+            this.state.contentMode = "quarter_cost";
+            this.state.loading = false;
+            return;
+        }
         this.state.activeNav = "reports";
+        this.state.contentMode = "dashboard";
         this.loadPaymentReport();
     }
 
@@ -427,10 +949,272 @@ export class PhanHeDashboard extends Component {
         }
     }
 
+    async loadInternetDash() {
+        this.state.loading = true;
+        try {
+            const parts = String(this.state.selectedMonth || "").split("-");
+            const year = Number(parts[0]) || new Date().getFullYear();
+            const month = Number(parts[1]) || new Date().getMonth() + 1;
+            const region =
+                this.state.selectedRegion && this.state.selectedRegion !== "all"
+                    ? this.state.selectedRegion
+                    : false;
+            const store =
+                this.state.selectedStore && this.state.selectedStore !== "all"
+                    ? this.state.selectedStore
+                    : false;
+            const data = await this.orm.call("phan.he.service", "get_dashboard_data", [
+                month,
+                year,
+                region,
+                store,
+            ]);
+            this.state.inet = data || {};
+            if (data?.selected_month) {
+                this.state.selectedMonth = data.selected_month;
+            }
+            this.state.data = {
+                ...(this.state.data || {}),
+                user_name: data.user_name,
+                updated_at: data.updated_at,
+                expire_soon: 0,
+                overdue_contract: 0,
+            };
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được dashboard Internet.",
+                { type: "danger" }
+            );
+        } finally {
+            this.state.loading = false;
+        }
+    }
+
+    async onInetMonthChange(ev) {
+        this.state.selectedMonth = ev.target.value;
+        await this.loadInternetDash();
+    }
+
+    async onInetRegionChange(ev) {
+        this.state.selectedRegion = ev.target.value;
+        this.state.selectedStore = "all";
+        await this.loadInternetDash();
+    }
+
+    async onInetStoreChange(ev) {
+        this.state.selectedStore = ev.target.value;
+        await this.loadInternetDash();
+    }
+
+    destroyInetCharts() {
+        Object.values(this.inetCharts || {}).forEach((chart) => {
+            try {
+                chart.destroy();
+            } catch (e) {
+                /* ignore */
+            }
+        });
+        this.inetCharts = {};
+        [this.inetSparkRef, this.inetDonutRef, this.inetYearRef, this.inetMonthTrendRef].forEach((ref) => {
+            const el = ref && ref.el;
+            if (!el || typeof Chart === "undefined" || !Chart.getChart) {
+                return;
+            }
+            const existing = Chart.getChart(el);
+            if (existing) {
+                existing.destroy();
+            }
+        });
+    }
+
+    _inetChartOrNull(ref) {
+        return ref && ref.el ? ref.el.getContext("2d") : null;
+    }
+
+    renderInetCharts() {
+        if (typeof Chart === "undefined") {
+            return;
+        }
+        this.destroyInetCharts();
+        const inet = this.state.inet || {};
+        const money = (v) => this.formatMoney(v);
+        const spark = inet.trend && inet.trend.length ? inet.trend : inet.month_weeks || [];
+        const sparkCtx = this._inetChartOrNull(this.inetSparkRef);
+        if (sparkCtx) {
+            this.inetCharts.spark = new Chart(sparkCtx, {
+                type: "line",
+                data: {
+                    labels: spark.map((p) => p.label || p.full),
+                    datasets: [{
+                        data: spark.map((p) => Number(p.amount || 0)),
+                        borderColor: "#6b7cff",
+                        backgroundColor: "rgba(107, 124, 255, 0.16)",
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 3,
+                        pointBackgroundColor: "#fff",
+                        pointBorderColor: "#6b7cff",
+                        borderWidth: 2.4,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    layout: { padding: { top: 8, right: 6, left: 2, bottom: 0 } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#94a3b8" } },
+                        y: { display: false, beginAtZero: true },
+                    },
+                },
+            });
+        }
+        const donutCtx = this._inetChartOrNull(this.inetDonutRef);
+        if (donutCtx) {
+            const regions = inet.regions || [];
+            this.inetCharts.donut = new Chart(donutCtx, {
+                type: "doughnut",
+                data: {
+                    labels: regions.map((r) => r.name),
+                    datasets: [{
+                        data: regions.map((r) => Number(r.amount || 0)),
+                        backgroundColor: regions.map((r) => r.color || "#94a3b8"),
+                        borderWidth: 0,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "68%",
+                    plugins: { legend: { display: false } },
+                },
+            });
+        }
+        const yearCtx = this._inetChartOrNull(this.inetYearRef);
+        if (yearCtx) {
+            const bars = inet.year_bars || [];
+            this.inetCharts.year = new Chart(yearCtx, {
+                type: "bar",
+                data: {
+                    labels: bars.map((b) => String(b.year)),
+                    datasets: [{
+                        data: bars.map((b) => Number(b.amount || 0)),
+                        backgroundColor: bars.map((b) => (b.is_current ? "#5b4cf5" : "#d6dcff")),
+                        borderRadius: 6,
+                        barPercentage: 0.55,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 } } },
+                        y: { display: false },
+                    },
+                },
+            });
+        }
+        const trendCtx = this._inetChartOrNull(this.inetMonthTrendRef);
+        if (trendCtx) {
+            const mb = inet.month_bars || [];
+            this.inetCharts.monthTrend = new Chart(trendCtx, {
+                type: "bar",
+                data: {
+                    labels: mb.map((b) => b.label),
+                    datasets: [{
+                        label: "Chi phí",
+                        data: mb.map((b) => Number(b.amount || 0)),
+                        backgroundColor: "#7c6ff7",
+                        borderRadius: 8,
+                        barPercentage: 0.6,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: { label: (ctx) => money(ctx.parsed.y) },
+                        },
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#64748b" } },
+                        y: {
+                            grid: { color: "#eef2f7" },
+                            ticks: {
+                                callback: (v) => this.formatTrieu(v),
+                                color: "#94a3b8",
+                            },
+                        },
+                    },
+                },
+            });
+        }
+    }
+
+    formatDelta(delta) {
+        const n = Number(delta || 0);
+        const sign = n > 0 ? "+" : "";
+        return `${sign}${n}%`;
+    }
+
+    deltaClass(delta) {
+        return Number(delta || 0) >= 0 ? "is-up" : "is-down";
+    }
+
+    formatBillion(amount) {
+        const n = Number(amount || 0);
+        if (n >= 1e9) {
+            return `${(n / 1e9).toFixed(2)} tỷ`;
+        }
+        return this.formatMoney(n);
+    }
+
+    openInetRecord(row) {
+        if (!row?.id) {
+            return;
+        }
+        this.action.doAction({
+            type: "ir.actions.act_window",
+            res_model: "phan.he.service",
+            res_id: row.id,
+            views: [[false, "form"]],
+            target: "current",
+        });
+    }
+
+    openInetListActive() {
+        this.openInetList("active");
+    }
+
+    openInetList(opsStatus) {
+        const xml = {
+            active: "lug_phan_he.action_phan_he_service_internet_active",
+            suspend: "lug_phan_he.action_phan_he_service_internet_suspend",
+            liquidated: "lug_phan_he.action_phan_he_service_internet_liquidated",
+        }[opsStatus] || "lug_phan_he.action_phan_he_service_tracking";
+        this.action.doAction(xml);
+    }
+
     async load() {
         if (this.isLinkqErp) {
             this.state.loading = false;
             this.state.data = this.state.data || {};
+            return;
+        }
+        if (this.serviceTypeCode === "internet" && this.state.contentMode === "owl_list") {
+            this.state.loading = false;
+            return;
+        }
+        if (this.serviceTypeCode === "internet" && (this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost")) {
+            this.state.loading = false;
+            return;
+        }
+        if (this.serviceTypeCode === "internet" && this.state.activeNav !== "reports") {
+            await this.loadInternetDash();
             return;
         }
         const year = Number(this.state.filters.year || new Date().getFullYear());
@@ -870,7 +1654,18 @@ export class PhanHeDashboard extends Component {
     }
 
     openAction(xmlid) {
-        this.action.doAction(xmlid);
+        const child = this.findNavChildByAction(xmlid) || { id: this.state.activeNav, action: xmlid };
+        this.openEmbedded(child);
+    }
+
+    findNavChildByAction(xmlid) {
+        for (const section of this.navSections || []) {
+            const child = (section.children || []).find((c) => c.action === xmlid);
+            if (child) {
+                return child;
+            }
+        }
+        return null;
     }
 }
 

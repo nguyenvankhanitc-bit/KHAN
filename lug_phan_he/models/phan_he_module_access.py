@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from odoo import api, fields, models
+from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
+import copy
 
 
 SERVICE_MODULES = [
@@ -130,14 +131,8 @@ class PhanHeModuleAccess(models.Model):
 
     def _register_hook(self):
         super()._register_hook()
-        try:
-            self.sudo()._ensure_linkq_presets()
-            all_groups = self.sudo().search([])
-            all_groups._ensure_module_lines()
-            if hasattr(self, "_ensure_menu_lines"):
-                all_groups._ensure_menu_lines()
-        except Exception:
-            pass
+        # Không chạy ensure hàng loạt lúc load registry (làm chậm boot/login).
+        # Dòng quyền được tạo khi create nhóm / khi mở form.
 
     @api.model
     def _ensure_linkq_presets(self):
@@ -178,12 +173,31 @@ class PhanHeModuleAccess(models.Model):
                 vals["line_ids"] = self._default_module_line_commands()
         records = super().create(vals_list)
         records._ensure_module_lines()
+        records.mapped("user_ids")._phan_he_force_logout()
         return records
 
     def write(self, vals):
+        before_users = self.mapped("user_ids")
         res = super().write(vals)
-        self._ensure_module_lines()
+        # Chỉ seed dòng quyền khi form/nhóm mới cần — tránh rewrite nặng mỗi lần Lưu.
+        if self.env.context.get("phan_he_ensure_lines"):
+            self._ensure_module_lines()
+        logout_keys = {
+            "group_ids",
+            "custom_user_ids",
+            "user_ids",
+            "line_ids",
+            "menu_permission_line_ids",
+            "internet_menu_permission_ids",
+            "store_permission_ids",
+            "active",
+        }
+        if set(vals) & logout_keys:
+            (before_users | self.mapped("user_ids"))._phan_he_force_logout()
         return res
+
+    def _phan_he_logout_users(self):
+        self.mapped("user_ids")._phan_he_force_logout()
 
     def _ensure_module_lines(self):
         Line = self.env["phan.he.module.access.line"].sudo()
@@ -234,11 +248,27 @@ class PhanHeModuleAccess(models.Model):
 
     @api.model
     def get_user_module_rights(self, user_id=None):
-        """Trả về dict {service_code: {view, create, edit, delete, ...}}."""
+        """Trả về dict {service_code: {view, create, edit, delete, ...}} (có cache)."""
         try:
-            return self._get_user_module_rights_impl(user_id)
+            uid = int(user_id or self.env.uid)
+            user = self.env["res.users"].sudo().browse(uid)
+            stamp = user.phan_he_access_stamp or "0"
+            # deepcopy: tránh caller mutate làm bẩn ormcache
+            return copy.deepcopy(self._cached_user_module_rights(uid, stamp))
         except Exception:
             return self._blank_rights(view=False)
+
+    @api.model
+    @tools.ormcache("uid", "stamp")
+    def _cached_user_module_rights(self, uid, stamp):
+        result = self._get_user_module_rights_impl(uid)
+        self._phan_he_extend_module_rights(result, uid)
+        return result
+
+    @api.model
+    def _phan_he_extend_module_rights(self, result, user_id):
+        """Hook cho inherit (LinkQ / Internet menu rights)."""
+        return result
 
     @api.model
     def _get_user_module_rights_impl(self, user_id=None):
@@ -337,6 +367,12 @@ class PhanHeModuleAccessLine(models.Model):
             code = rec.service_code or ""
             rec.service_name = SERVICE_NAME_MAP.get(code, code)
             rec.icon_url = SERVICE_ICON_MAP.get(code, "")
+
+    def write(self, vals):
+        res = super().write(vals)
+        if set(vals) & set(PERM_FIELDS):
+            self.mapped("access_id.user_ids")._phan_he_force_logout()
+        return res
 
     @api.constrains(*PERM_FIELDS)
     def _check_view_required(self):

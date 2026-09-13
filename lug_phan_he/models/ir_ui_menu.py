@@ -2,7 +2,6 @@
 
 from odoo import models
 
-
 SERVICE_ROOT_XMLIDS = {
     "lug_phan_he.menu_phan_he_internet_root": "internet",
     "lug_phan_he.menu_phan_he_camera_root": "camera",
@@ -10,6 +9,18 @@ SERVICE_ROOT_XMLIDS = {
     "lug_phan_he.menu_phan_he_server_root": "server",
     "lug_phan_he.menu_phan_he_linkq_nb_root": "linkq_nb",
     "lug_phan_he.menu_phan_he_config_root": "config",
+}
+
+INTERNET_CHILD_XMLIDS = {
+    "lug_phan_he.menu_phan_he_dashboard": "overview_dashboard",
+    "lug_phan_he.menu_phan_he_entry": "internet_entry",
+    "lug_phan_he.menu_phan_he_internet_active": "internet_active",
+    "lug_phan_he.menu_phan_he_internet_suspend": "internet_suspend",
+    "lug_phan_he.menu_phan_he_internet_liquidated": "internet_liquidation",
+    "lug_phan_he.menu_phan_he_payment": "payment_schedule",
+    "lug_phan_he.menu_phan_he_payment_pending": "payment_tracking",
+    "lug_phan_he.menu_phan_he_service_expire_soon": "alert_due_soon",
+    "lug_phan_he.menu_phan_he_service_expired": "alert_overdue",
 }
 
 LINKQ_CHILD_XMLIDS = {
@@ -35,29 +46,41 @@ class IrUiMenu(models.Model):
         except Exception:
             return res
 
+    def _phan_he_menu_id(self, xmlid):
+        menu = self.env.ref(xmlid, raise_if_not_found=False)
+        return menu.id if menu else False
+
     def _phan_he_blacklist_menus(self, res):
         if self.env.su:
             return res
         user = self.env.user
+        # has_group đã được cache sẵn trên user
         if user.has_group("base.group_system") or user.has_group(
             "lug_phan_he.group_phan_he_admin"
         ):
             return res
+
         rights = self.env["phan.he.module.access"].get_user_module_rights()
+        internet_menus = rights.get("internet_menus") or {}
+        linkq_menus = rights.get("linkq_menus") or {}
+
         for xmlid, code in SERVICE_ROOT_XMLIDS.items():
-            menu = self.env.ref(xmlid, raise_if_not_found=False)
-            if not menu:
+            mid = self._phan_he_menu_id(xmlid)
+            if not mid:
                 continue
             if code in ("config", "linkq_nb"):
-                res.append(menu.id)
+                res.append(mid)
                 continue
             if not (rights.get(code) or {}).get("view"):
-                res.append(menu.id)
-        menus = rights.get("linkq_menus") or {}
+                res.append(mid)
+
+        for xmlid, menu_key in INTERNET_CHILD_XMLIDS.items():
+            mid = self._phan_he_menu_id(xmlid)
+            if mid and not (internet_menus.get(menu_key) or {}).get("read"):
+                res.append(mid)
+
         for xmlid, menu_key in LINKQ_CHILD_XMLIDS.items():
-            menu = self.env.ref(xmlid, raise_if_not_found=False)
-            if not menu:
-                continue
-            if not (menus.get(menu_key) or {}).get("read"):
-                res.append(menu.id)
+            mid = self._phan_he_menu_id(xmlid)
+            if mid and not (linkq_menus.get(menu_key) or {}).get("read"):
+                res.append(mid)
         return res

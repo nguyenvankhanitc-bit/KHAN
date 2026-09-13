@@ -6,7 +6,7 @@ from odoo import api, fields, models
 class PhanHeProvider(models.Model):
     _name = "phan.he.provider"
     _description = "Nhà cung cấp"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.access.mixin"]
     _order = "name"
     _rec_names_search = ["name"]
 
@@ -51,10 +51,50 @@ class PhanHeProvider(models.Model):
             "context": {"default_provider_id": self.id},
         }
 
+    def _phan_he_service_code(self):
+        return "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS
+        if operation == "read":
+            return list(SERVICE_READ_MENUS) + ["setting_provider"]
+        return ["setting_provider"]
+
+    def unlink(self):
+        """Gỡ liên kết hợp đồng / thanh toán (kể cả đã ẩn) rồi xóa."""
+        ids = tuple(self.ids)
+        if not ids:
+            return True
+        cr = self.env.cr
+        cr.execute(
+            "UPDATE phan_he_service SET provider_id = NULL WHERE provider_id IN %s",
+            [ids],
+        )
+        cr.execute(
+            "UPDATE phan_he_payment SET provider_id = NULL, bank_account_id = NULL WHERE provider_id IN %s",
+            [ids],
+        )
+        cr.execute(
+            """
+            UPDATE phan_he_payment SET bank_account_id = NULL
+            WHERE bank_account_id IN (
+                SELECT id FROM phan_he_bank_account WHERE provider_id IN %s
+            )
+            """,
+            [ids],
+        )
+        cr.execute(
+            "UPDATE phan_he_invoice SET provider_id = NULL WHERE provider_id IN %s",
+            [ids],
+        )
+        self.env.invalidate_all()
+        return super().unlink()
+
 
 class PhanHeBankAccount(models.Model):
     _name = "phan.he.bank.account"
     _description = "Tài khoản ngân hàng nhận"
+    _inherit = ["phan.he.access.mixin"]
     _order = "provider_id, name"
     _rec_names_search = ["name", "account_number", "bank_name"]
 
@@ -91,3 +131,12 @@ class PhanHeBankAccount(models.Model):
             if rec.account_number:
                 parts.append(rec.account_number)
             rec.name = " — ".join(parts) if parts else "Tài khoản"
+
+    def _phan_he_service_code(self):
+        return "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS
+        if operation == "read":
+            return list(SERVICE_READ_MENUS) + ["setting_bank"]
+        return ["setting_bank"]

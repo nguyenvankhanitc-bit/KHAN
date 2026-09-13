@@ -59,7 +59,7 @@ const CONFIG_ITEMS = [
     {
         code: "access",
         name: "Phân quyền",
-        fa: "fa-key",
+        fa: "fa-shield",
         action: "lug_phan_he.action_phan_he_module_access",
     },
 ];

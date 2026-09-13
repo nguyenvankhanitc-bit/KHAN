@@ -1,147 +1,95 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
-    <t t-name="lug_phan_he.PhanHeInternetList">
-        <div class="o_phan_he_inet_shell o_action" t-on-click="() => this.closeMenus()">
-            <aside class="o_phan_he_inet_sidebar">
-                <div class="o_phan_he_inet_brand" t-on-click="() => this.openOverview()" role="button">
-                    <span>DỊCH VỤ INTERNET</span>
-                </div>
-                <nav class="o_phan_he_inet_nav">
-                    <button type="button" class="o_phan_he_inet_link" t-on-click="() => this.openOverview()">
-                        <i class="fa fa-home"/>
-                        <span>Tổng quan</span>
-                    </button>
+    <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
+        <div class="lq-inet-board">
+            <div class="lq-board-crumb">
+                <span>Quản lý dịch vụ</span>
+                <i class="fa fa-angle-right"/>
+                <span>Internet</span>
+                <i class="fa fa-angle-right"/>
+                <b t-esc="pageMeta.title"/>
+            </div>
 
-                    <t t-foreach="navSections" t-as="section" t-key="section.id">
-                        <div class="o_phan_he_inet_group" t-att-class="isGroupOpen(section.id) ? 'is-open' : ''">
-                            <button type="button" class="o_phan_he_inet_section"
-                                    t-on-click="() => this.toggleGroup(section.id)">
-                                <i t-att-class="'fa ' + section.icon"/>
-                                <span t-esc="section.label"/>
-                                <i class="fa fa-angle-down o_phan_he_inet_caret"/>
-                            </button>
-                            <t t-if="isGroupOpen(section.id)">
-                                <t t-foreach="section.children" t-as="child" t-key="child.id">
-                                    <button type="button"
-                                            class="o_phan_he_inet_sub"
-                                            t-att-class="state.activeNav === child.id ? 'is-active' : ''"
-                                            t-on-click.stop="() => this.onNavChild(child)">
-                                        <i t-att-class="'fa ' + (child.icon || 'fa-circle-o')"/>
-                                        <span t-esc="child.label"/>
-                                    </button>
-                                </t>
-                            </t>
-                        </div>
-                    </t>
-                </nav>
-            </aside>
-
-            <main class="o_phan_he_inet_main">
-                <div class="o_phan_he_inet_page_head">
+            <div class="lq-board-head">
+                <div class="lq-board-title">
+                    <span class="lq-wifi"><i class="fa fa-wifi"/></span>
                     <div>
                         <h1 t-esc="pageMeta.title"/>
                         <p t-esc="pageMeta.subtitle"/>
                     </div>
-                    <button type="button" class="o_phan_he_inet_btn_primary" t-on-click="() => this.onAdd()">
-                        <i class="fa fa-plus"/> Thêm đường truyền
+                </div>
+                <div class="lq-board-tools">
+                    <button t-if="canCreateNav" type="button" class="btn btn-primary lq-add-btn"
+                            t-on-click="() => this.onAdd()">
+                        <i class="fa fa-plus"/> Thêm
                     </button>
-                </div>
-
-                <div class="o_phan_he_inet_stats">
-                    <div class="o_phan_he_inet_stat">
-                        <span class="o_phan_he_inet_stat_icon is-purple"><i class="fa fa-globe"/></span>
-                        <div>
-                            <small>Tổng đường truyền</small>
-                            <strong t-esc="state.stats.total"/>
-                        </div>
-                    </div>
-                    <div class="o_phan_he_inet_stat">
-                        <span class="o_phan_he_inet_stat_icon is-green"><i class="fa fa-check"/></span>
-                        <div>
-                            <small>Đang hoạt động</small>
-                            <strong t-esc="state.stats.active"/>
-                        </div>
-                    </div>
-                    <div class="o_phan_he_inet_stat">
-                        <span class="o_phan_he_inet_stat_icon is-orange"><i class="fa fa-pause"/></span>
-                        <div>
-                            <small>Tạm ngưng</small>
-                            <strong t-esc="state.stats.suspend"/>
-                        </div>
-                    </div>
-                    <div class="o_phan_he_inet_stat">
-                        <span class="o_phan_he_inet_stat_icon is-red"><i class="fa fa-times"/></span>
-                        <div>
-                            <small>Thanh lý</small>
-                            <strong t-esc="state.stats.liquidated"/>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="o_phan_he_inet_filters">
-                    <div class="o_phan_he_inet_search">
+                    <label class="lq-chip">
+                        <i class="fa fa-map-marker"/>
+                        <select t-on-change="(ev) => this.onFilterChange('regionFilter', ev)">
+                            <option value="">Tất cả khu vực</option>
+                            <option value="Nam" t-att-selected="state.regionFilter === 'Nam'">Miền Nam</option>
+                            <option value="Bắc" t-att-selected="state.regionFilter === 'Bắc'">Miền Bắc</option>
+                            <option value="ĐTT" t-att-selected="state.regionFilter === 'ĐTT'">Miền ĐTT</option>
+                        </select>
+                    </label>
+                    <span class="lq-chip">
+                        <i class="fa fa-calendar"/>
+                        <t t-esc="dateRangeLabel"/>
+                    </span>
+                    <label class="lq-chip lq-search">
                         <i class="fa fa-search"/>
                         <input type="text"
-                               placeholder="Tìm kiếm theo tên / cửa hàng / mã đường truyền..."
+                               placeholder="Tìm kiếm khách hàng, mã hợp đồng..."
                                t-att-value="state.search"
                                t-on-input="onSearchInput"/>
+                    </label>
+                </div>
+            </div>
+
+            <div class="lq-table-card">
+                <div class="lq-table-bar">
+                        <div class="lq-region-tag">
+                            <i class="fa fa-map-marker"/>
+                            <b t-esc="regionLabel"/>
+                            <span t-esc="state.totalCount"/> hợp đồng
+                        </div>
+                    <div class="lq-table-actions">
+                        <button type="button" class="lq-ghost"><i class="fa fa-download"/> Xuất Excel</button>
+                        <button type="button" class="lq-ghost"><i class="fa fa-sliders"/> Tùy chọn hiển thị</button>
+                        <button type="button" class="lq-ico is-on"><i class="fa fa-th-large"/></button>
+                        <button type="button" class="lq-ico"><i class="fa fa-bars"/></button>
                     </div>
-                    <select t-on-change="(ev) => this.onFilterChange('statusFilter', ev)">
-                        <option value="">Trạng thái</option>
-                        <option value="active" t-att-selected="state.statusFilter === 'active'">Đang hoạt động</option>
-                        <option value="suspend" t-att-selected="state.statusFilter === 'suspend'">Tạm ngưng</option>
-                        <option value="liquidated" t-att-selected="state.statusFilter === 'liquidated'">Thanh lý</option>
-                    </select>
-                    <select t-on-change="(ev) => this.onFilterChange('providerFilter', ev)">
-                        <option value="">Nhà cung cấp</option>
-                        <t t-foreach="state.providers" t-as="p" t-key="p.id">
-                            <option t-att-value="p.id"
-                                    t-att-selected="String(state.providerFilter) === String(p.id)"
-                                    t-esc="p.name"/>
-                        </t>
-                    </select>
-                    <select t-on-change="(ev) => this.onFilterChange('bandwidthFilter', ev)">
-                        <option value="">Băng thông</option>
-                        <t t-foreach="state.bandwidths" t-as="bw" t-key="bw">
-                            <option t-att-value="bw"
-                                    t-att-selected="state.bandwidthFilter === bw"
-                                    t-esc="bw"/>
-                        </t>
-                    </select>
-                    <button type="button" class="o_phan_he_inet_btn_refresh" t-on-click="() => this.resetFilters()">
-                        <i class="fa fa-refresh"/> Làm mới
-                    </button>
                 </div>
 
-                <div class="o_phan_he_inet_table_wrap">
-                    <t t-if="state.loading">
-                        <div class="o_phan_he_inet_loading">Đang tải...</div>
-                    </t>
-                    <t t-else="">
-                        <table class="o_phan_he_inet_table">
+                <t t-if="state.loading">
+                    <div class="lq-empty">Đang tải...</div>
+                </t>
+                <t t-else="">
+                    <div class="lq-table-body">
+                    <div class="lq-table-scroll">
+                        <table class="lq-inet-table">
                             <thead>
                                 <tr>
                                     <th class="col-check">
-                                        <input type="checkbox"
-                                               t-att-checked="allSelectedOnPage"
-                                               t-on-change="toggleSelectAll"/>
+                                        <input type="checkbox" t-att-checked="allSelectedOnPage" t-on-change="toggleSelectAll"/>
                                     </th>
                                     <th class="col-stt">STT</th>
-                                    <th>TÊN / CỬA HÀNG</th>
-                                    <th>NGÀY BẮT ĐẦU</th>
-                                    <th>NGÀY KẾT THÚC</th>
-                                    <th>BĂNG THÔNG</th>
-                                    <th class="col-money">CƯỚC THÁNG (VNĐ)</th>
-                                    <th>TRẠNG THÁI</th>
-                                    <th>THỜI GIAN CÒN LẠI</th>
-                                    <th class="col-actions">THAO TÁC</th>
+                                    <th class="col-store">Cửa hàng / Mã KH</th>
+                                    <th class="col-provider">Nhà cung cấp</th>
+                                    <th class="col-bw">Băng thông</th>
+                                    <th class="col-date-start">Ngày bắt đầu</th>
+                                    <th class="col-date-end">Ngày kết thúc</th>
+                                    <th class="col-fee">Cước tháng</th>
+                                    <th class="col-pay">Số tiền thanh toán</th>
+                                    <th class="col-ops">Trạng thái</th>
+                                    <th class="col-status">Thời gian còn lại</th>
+                                    <th class="col-invoice">Hóa đơn</th>
+                                    <th class="col-act">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <t t-if="!pageRecords.length">
-                                    <tr>
-                                        <td colspan="10" class="o_phan_he_inet_empty">Không có dữ liệu</td>
-                                    </tr>
+                                    <tr><td colspan="13" class="lq-empty">Không có dữ liệu</td></tr>
                                 </t>
                                 <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
                                     <tr>
@@ -151,69 +99,260 @@
                                                    t-on-change="(ev) => this.toggleSelect(rec.id, ev)"/>
                                         </td>
                                         <td class="col-stt" t-esc="rec.stt"/>
-                                        <td>
-                                            <div class="o_phan_he_inet_name" t-esc="storeName(rec)"/>
-                                            <div class="o_phan_he_inet_code" t-esc="lineCode(rec)"/>
+                                        <td class="col-store">
+                                            <button type="button" class="lq-name lq-store-link"
+                                                    title="Xem cửa hàng"
+                                                    t-on-click.stop="() => this.openStore(rec)">
+                                                <t t-esc="storeName(rec)"/>
+                                            </button>
+                                            <small t-esc="customerCodeLabel(rec)"/>
                                         </td>
-                                        <td t-esc="formatDate(rec.date_start)"/>
-                                        <td t-esc="formatDate(rec.date_end)"/>
-                                        <td t-esc="rec.bandwidth || '—'"/>
-                                        <td class="col-money" t-esc="formatMoney(rec.contract_amount)"/>
-                                        <td>
-                                            <span class="o_phan_he_inet_pill"
-                                                  t-att-class="statusMeta(rec.ops_status).className"
-                                                  t-esc="statusMeta(rec.ops_status).label"/>
+                                        <td class="col-provider">
+                                            <button type="button" class="lq-isp lq-isp-link"
+                                                    t-att-class="providerClass(rec)"
+                                                    t-on-click.stop="() => this.openProvider(rec)"
+                                                    title="Mở nhà cung cấp (Cài đặt)">
+                                                <b t-esc="providerMark(rec)"/>
+                                                <t t-esc="providerName(rec)"/>
+                                            </button>
                                         </td>
-                                        <td>
-                                            <span class="o_phan_he_inet_remain"
-                                                  t-att-class="remainingClass(rec)"
-                                                  t-esc="rec.remaining_time || '—'"/>
+                                        <td class="col-bw" t-esc="rec.bandwidth || '—'"/>
+                                        <td class="col-date-start" t-esc="formatDate(rec.date_start)"/>
+                                        <td class="col-date-end" t-esc="formatDate(rec.date_end)"/>
+                                        <td class="col-fee" t-esc="formatMoney(rec.contract_amount)"/>
+                                        <td class="col-pay lq-money" t-esc="formatMoney(rec.next_payment_amount)"/>
+                                        <td class="col-ops">
+                                            <span t-attf-class="lq-ops-pill is-{{opsStatusCode(rec)}}">
+                                                <t t-esc="opsStatusLabel(rec)"/>
+                                            </span>
                                         </td>
-                                        <td class="col-actions">
-                                            <div class="o_phan_he_inet_menu">
-                                                <button type="button"
-                                                        class="o_phan_he_inet_menu_btn"
-                                                        t-on-click.stop="(ev) => this.toggleRowMenu(rec.id, ev)">
-                                                    <i class="fa fa-ellipsis-v"/>
+                                        <td class="col-status">
+                                            <span t-attf-class="lq-remain-pill is-{{statusCode(rec)}}">
+                                                <i t-att-class="remainIcon(rec)"/>
+                                                <t t-esc="remainLabel(rec)"/>
+                                            </span>
+                                        </td>
+                                        <td class="col-invoice">
+                                            <button t-if="hasInvoice(rec)"
+                                                    type="button"
+                                                    class="lq-act is-view"
+                                                    title="Xem hóa đơn"
+                                                    t-on-click.stop="() => this.viewInvoice(rec)">
+                                                <i class="fa fa-eye"/>
+                                            </button>
+                                            <span t-else="" class="lq-invoice-empty">—</span>
+                                        </td>
+                                        <td class="col-act">
+                                            <div class="lq-row-acts">
+                                                <button t-if="canWriteNav" type="button" class="lq-act is-edit"
+                                                        title="Chỉnh sửa"
+                                                        t-on-click.stop="() => this.openStore(rec)">
+                                                    <i class="fa fa-pencil"/>
                                                 </button>
-                                                <div t-if="state.openMenuId === rec.id"
-                                                     class="o_phan_he_inet_menu_drop"
-                                                     t-on-click.stop="">
-                                                    <button type="button" t-on-click="() => this.openRecord(rec.id)">
-                                                        Xem / sửa
-                                                    </button>
-                                                </div>
+                                                <button t-if="!canWriteNav" type="button" class="lq-act is-view"
+                                                        title="Xem"
+                                                        t-on-click.stop="() => this.openStore(rec)">
+                                                    <i class="fa fa-eye"/>
+                                                </button>
+                                                <button t-if="canUnlinkNav" type="button" class="lq-act is-del"
+                                                        title="Xóa"
+                                                        t-on-click.stop="() => this.archiveRecord(rec)">
+                                                    <i class="fa fa-trash"/>
+                                                </button>
+                                                <button t-if="canUnlinkNav" type="button" class="lq-act is-purge"
+                                                        title="Xóa vĩnh viễn, không lưu"
+                                                        t-on-click.stop="() => this.purgeRecord(rec)">
+                                                    <i class="fa fa-times-circle"/>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 </t>
                             </tbody>
                         </table>
+                    </div>
+                    <div class="lq-pager">
+                        <span t-esc="pageInfo"/>
+                        <div class="lq-pages">
+                            <button type="button" t-att-disabled="state.page &lt;= 1" t-on-click="() => this.setPage(state.page - 1)">
+                                <i class="fa fa-chevron-left"/>
+                            </button>
+                            <t t-foreach="pageNumbers" t-as="p" t-key="p">
+                                <button type="button" t-att-class="state.page === p ? 'is-on' : ''" t-on-click="() => this.setPage(p)" t-esc="p"/>
+                            </t>
+                            <button type="button" t-att-disabled="state.page &gt;= totalPages" t-on-click="() => this.setPage(state.page + 1)">
+                                <i class="fa fa-chevron-right"/>
+                            </button>
+                            <select t-on-change="onPageSizeChange">
+                                <option value="10" t-att-selected="state.pageSize === 10">10 / trang</option>
+                                <option value="15" t-att-selected="state.pageSize === 15">15 / trang</option>
+                                <option value="20" t-att-selected="state.pageSize === 20">20 / trang</option>
+                            </select>
+                        </div>
+                    </div>
+                    </div>
+                </t>
+            </div>
 
-                        <div class="o_phan_he_inet_pager">
-                            <span t-esc="pageInfo"/>
-                            <div class="o_phan_he_inet_pages">
-                                <button type="button"
-                                        t-att-disabled="state.page &lt;= 1"
-                                        t-on-click="() => this.setPage(state.page - 1)">
-                                    <i class="fa fa-angle-left"/>
+            <t t-if="state.detailOpen and detailRec">
+                <div class="lq-detail-overlay" t-on-click="() => this.closeLineDetail()">
+                    <aside class="lq-detail-panel" t-on-click.stop="">
+                        <header class="lq-detail-head">
+                            <div>
+                                <small>Thông tin đường truyền</small>
+                                <h2 t-esc="storeName(detailRec)"/>
+                                <p t-esc="customerCodeLabel(detailRec)"/>
+                            </div>
+                            <div class="lq-detail-tools">
+                                <button t-if="canWriteNav" type="button" class="lq-icon-btn is-edit"
+                                        title="Chỉnh sửa"
+                                        t-att-disabled="state.detailSaving"
+                                        t-on-click="() => this.startEditDetail()">
+                                    <i class="fa fa-pencil"/>
                                 </button>
-                                <t t-foreach="pageNumbers" t-as="p" t-key="p">
-                                    <button type="button"
-                                            t-att-class="state.page === p ? 'is-active' : ''"
-                                            t-on-click="() => this.setPage(p)"
-                                            t-esc="p"/>
-                                </t>
-                                <button type="button"
-                                        t-att-disabled="state.page &gt;= totalPages"
-                                        t-on-click="() => this.setPage(state.page + 1)">
-                                    <i class="fa fa-angle-right"/>
+                                <button t-if="canUnlinkNav" type="button" class="lq-icon-btn is-del"
+                                        title="Xóa"
+                                        t-att-disabled="state.detailSaving"
+                                        t-on-click="() => this.deleteLineDetail()">
+                                    <i class="fa fa-trash"/>
+                                </button>
+                                <button type="button" class="lq-icon-btn"
+                                        title="Đóng"
+                                        t-on-click="() => this.closeLineDetail()">
+                                    <i class="fa fa-times"/>
                                 </button>
                             </div>
+                        </header>
+
+                        <div class="lq-detail-body">
+                            <div class="lq-detail-grid">
+                                <label>
+                                    <span>Cửa hàng</span>
+                                    <b t-esc="storeName(detailRec)"/>
+                                </label>
+                                <label>
+                                    <span>Mã khách hàng</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="text" t-att-value="state.detailForm.customer_code"
+                                               t-on-input="(ev) => this.onDetailField('customer_code', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="state.detailForm.customer_code || '—'"/></t>
+                                </label>
+                                <label>
+                                    <span>Nhà cung cấp</span>
+                                    <t t-if="state.detailEditing">
+                                        <select t-att-value="state.detailForm.provider_id"
+                                                t-on-change="(ev) => this.onDetailField('provider_id', ev)">
+                                            <option value="">— Chọn —</option>
+                                            <t t-foreach="state.providers" t-as="p" t-key="p.id">
+                                                <option t-att-value="p.id"
+                                                        t-att-selected="String(state.detailForm.provider_id) === String(p.id)"
+                                                        t-esc="p.name"/>
+                                            </t>
+                                        </select>
+                                    </t>
+                                    <t t-else=""><b t-esc="providerName(detailRec)"/></t>
+                                </label>
+                                <label>
+                                    <span>Băng thông</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="text" placeholder="VD: 100Mbps"
+                                               t-att-value="state.detailForm.bandwidth"
+                                               t-on-input="(ev) => this.onDetailField('bandwidth', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="state.detailForm.bandwidth || '—'"/></t>
+                                </label>
+                                <label>
+                                    <span>Ngày bắt đầu</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="date" t-att-value="state.detailForm.date_start"
+                                               t-on-change="(ev) => this.onDetailField('date_start', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="formatDate(state.detailForm.date_start)"/></t>
+                                </label>
+                                <label>
+                                    <span>Ngày kết thúc</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="date" t-att-value="state.detailForm.date_end"
+                                               t-on-change="(ev) => this.onDetailField('date_end', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="formatDate(state.detailForm.date_end)"/></t>
+                                </label>
+                                <label>
+                                    <span>Cước tháng</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="number" min="0" step="1000"
+                                               t-att-value="state.detailForm.contract_amount"
+                                               t-on-input="(ev) => this.onDetailField('contract_amount', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="formatMoney(state.detailForm.contract_amount)"/></t>
+                                </label>
+                                <label>
+                                    <span>Trạng thái</span>
+                                    <t t-if="state.detailEditing">
+                                        <select t-att-value="state.detailForm.ops_status"
+                                                t-on-change="(ev) => this.onDetailField('ops_status', ev)">
+                                            <option value="active">Đang hoạt động</option>
+                                            <option value="suspend">Tạm ngưng</option>
+                                            <option value="liquidated">Thanh lý</option>
+                                        </select>
+                                    </t>
+                                    <t t-else="">
+                                        <b t-esc="statusMeta(state.detailForm.ops_status).label"/>
+                                    </t>
+                                </label>
+                                <label>
+                                    <span>Thời gian còn lại</span>
+                                    <b t-esc="remainLabel(detailRec)"/>
+                                </label>
+                                <label>
+                                    <span>Loại thanh toán</span>
+                                    <t t-if="state.detailEditing">
+                                        <input type="text" t-att-value="state.detailForm.package_name"
+                                               t-on-input="(ev) => this.onDetailField('package_name', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="state.detailForm.package_name || '—'"/></t>
+                                </label>
+                                <label class="is-full">
+                                    <span>Địa chỉ sử dụng</span>
+                                    <t t-if="state.detailEditing">
+                                        <textarea rows="2" t-att-value="state.detailForm.usage_address"
+                                                  t-on-input="(ev) => this.onDetailField('usage_address', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="state.detailForm.usage_address || '—'"/></t>
+                                </label>
+                                <label class="is-full">
+                                    <span>Ghi chú</span>
+                                    <t t-if="state.detailEditing">
+                                        <textarea rows="2" t-att-value="state.detailForm.note"
+                                                  t-on-input="(ev) => this.onDetailField('note', ev)"/>
+                                    </t>
+                                    <t t-else=""><b t-esc="state.detailForm.note || '—'"/></t>
+                                </label>
+                            </div>
                         </div>
-                    </t>
+
+                        <footer class="lq-detail-foot">
+                            <button type="button" class="lq-btn-cancel" t-on-click="() => this.cancelDetail()">
+                                Hủy
+                            </button>
+                            <button type="button" class="lq-btn-save"
+                                    t-att-disabled="!state.detailEditing or state.detailSaving"
+                                    t-on-click="() => this.saveLineDetail()">
+                                <t t-if="state.detailSaving">Đang lưu...</t>
+                                <t t-else="">Lưu</t>
+                            </button>
+                        </footer>
+                    </aside>
                 </div>
-            </main>
+            </t>
+
+        </div>
+    </t>
+
+    <t t-name="lug_phan_he.PhanHeInternetList" owl="1">
+        <div class="lq-inet-page o_action">
+            <PhanHeInternetListBoard listFilter="boardFilter"/>
         </div>
     </t>
 </templates>

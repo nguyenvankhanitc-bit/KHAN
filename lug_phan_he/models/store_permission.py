@@ -146,12 +146,15 @@ class LinkqStorePermissionLine(models.Model):
     def create(self, vals_list):
         records = super().create(vals_list)
         records._sync_user_linkq_stores()
+        records.mapped("user_id")._phan_he_force_logout()
         return records
 
     def write(self, vals):
         old_users = self.mapped("user_id")
         res = super().write(vals)
-        (old_users | self.mapped("user_id"))._compute_linkq_store()
+        users = old_users | self.mapped("user_id")
+        users._compute_linkq_store()
+        users._phan_he_force_logout()
         return res
 
     def unlink(self):
@@ -159,4 +162,5 @@ class LinkqStorePermissionLine(models.Model):
         res = super().unlink()
         if users:
             users._compute_linkq_store()
+            users._phan_he_force_logout()
         return res

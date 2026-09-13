@@ -23,11 +23,16 @@ class PhanHeInvoice(models.Model):
         string="Hợp đồng",
         required=True,
         tracking=True,
-        ondelete="restrict",
+        ondelete="cascade",
         index=True,
     )
     store_id = fields.Many2one(related="service_id.store_id", store=True, string="Cửa hàng")
-    provider_id = fields.Many2one(related="service_id.provider_id", store=True, string="Nhà cung cấp")
+    provider_id = fields.Many2one(
+        related="service_id.provider_id",
+        store=True,
+        string="Nhà cung cấp",
+        ondelete="set null",
+    )
     invoice_date = fields.Date(string="Ngày hóa đơn", tracking=True)
     amount = fields.Monetary(string="Số tiền", currency_field="currency_id", tracking=True)
     currency_id = fields.Many2one(

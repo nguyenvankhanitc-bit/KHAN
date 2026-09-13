@@ -148,10 +148,6 @@
                         <span class="item-icon-box bg-purple"><i class="fa fa-lock"/></span>
                         <span class="item-title">Cài đặt khóa lịch ca</span>
                     </button>
-                    <button type="button" class="subpanel-item" t-if="menuCan('system_access')" t-att-class="isActive('access') ? 'active' : ''" t-on-click="onAccessRoles">
-                        <span class="item-icon-box bg-blue"><i class="fa fa-shield"/></span>
-                        <span class="item-title">Phân quyền &amp; Vai trò</span>
-                    </button>
                     <button type="button" class="subpanel-item" t-if="state.visible.linkqShiftCode" t-att-class="isActive('work_shift') ? 'active' : ''" t-on-click="onWorkShift">
                         <span class="item-icon-box bg-orange"><i class="fa fa-circle-o"/></span>
                         <span class="item-title">Cấu hình ca &amp; Ký hiệu</span>

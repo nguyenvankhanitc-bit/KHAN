@@ -6,6 +6,7 @@ from odoo import api, fields, models
 class PhanHeMien(models.Model):
     _name = "phan.he.mien"
     _description = "Miền"
+    _inherit = ["phan.he.access.mixin"]
     _order = "sequence, name"
     _rec_names_search = ["name", "code"]
 
@@ -26,10 +27,20 @@ class PhanHeMien(models.Model):
             rec.area_count = len(rec.area_ids)
             rec.store_count = len(rec.store_ids)
 
+    def _phan_he_service_code(self):
+        return "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS
+        if operation == "read":
+            return list(SERVICE_READ_MENUS) + ["setting_region"]
+        return ["setting_region"]
+
 
 class PhanHeArea(models.Model):
     _name = "phan.he.area"
     _description = "Khu vực"
+    _inherit = ["phan.he.access.mixin"]
     _order = "mien_id, sequence, name"
     _rec_names_search = ["name", "code"]
 
@@ -68,3 +79,12 @@ class PhanHeArea(models.Model):
                 rec.display_name = f"{rec.mien_id.name} / {rec.name}"
             else:
                 rec.display_name = rec.name or ""
+
+    def _phan_he_service_code(self):
+        return "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS
+        if operation == "read":
+            return list(SERVICE_READ_MENUS) + ["setting_area"]
+        return ["setting_area"]

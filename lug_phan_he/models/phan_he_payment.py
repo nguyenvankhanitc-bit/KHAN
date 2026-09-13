@@ -8,7 +8,7 @@ from odoo import api, fields, models
 class PhanHePayment(models.Model):
     _name = "phan.he.payment"
     _description = "Thanh toán"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.access.mixin"]
     _order = "date_due desc, code, id desc"
     _rec_names_search = ["code", "invoice_number", "period"]
 
@@ -18,7 +18,7 @@ class PhanHePayment(models.Model):
     )
     service_id = fields.Many2one(
         "phan.he.service", string="Hợp đồng", required=True,
-        tracking=True, ondelete="restrict", index=True,
+        tracking=True, ondelete="cascade", index=True,
     )
     store_id = fields.Many2one(related="service_id.store_id", store=True, string="Cửa hàng")
     store_name = fields.Char(related="store_id.name", string="Tên cửa hàng", readonly=True)
@@ -26,12 +26,12 @@ class PhanHePayment(models.Model):
     area_id = fields.Many2one(related="service_id.area_id", store=True, string="Khu vực")
     provider_id = fields.Many2one(
         "phan.he.provider", string="Nhà cung cấp",
-        tracking=True, ondelete="restrict", index=True,
+        tracking=True, ondelete="set null", index=True,
     )
     bank_account_id = fields.Many2one(
         "phan.he.bank.account", string="Tài khoản nhận",
         domain="[('provider_id', '=', provider_id)]",
-        tracking=True, ondelete="restrict",
+        tracking=True, ondelete="set null",
     )
     provider_account_name = fields.Char(related="bank_account_id.account_name")
     provider_account_number = fields.Char(related="bank_account_id.account_number")
@@ -84,7 +84,7 @@ class PhanHePayment(models.Model):
         if not self.service_id:
             return
         if not self.amount:
-            self.amount = self.service_id.contract_amount
+            self.amount = self.service_id.next_payment_amount
         if self.service_id.provider_id and not self.provider_id:
             self.provider_id = self.service_id.provider_id
         if self.provider_id and not self.bank_account_id:
@@ -120,8 +120,8 @@ class PhanHePayment(models.Model):
                     vals["provider_id"] = service.provider_id.id
             if vals.get("service_id") and not vals.get("amount"):
                 service = self.env["phan.he.service"].browse(vals["service_id"])
-                if service.contract_amount:
-                    vals["amount"] = service.contract_amount
+                if service.next_payment_amount:
+                    vals["amount"] = service.next_payment_amount
         return super().create(vals_list)
 
     def action_mark_paid(self):
@@ -197,3 +197,16 @@ class PhanHePayment(models.Model):
         ])
         not_due.write({"payment_state": "not_due"})
         return True
+
+    def _phan_he_service_code(self):
+        self.ensure_one()
+        return (self.service_id.service_type_id.code or "").lower() or "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        if self and self.id and self._phan_he_service_code() != "internet":
+            return []
+        code = self.env.context.get("phan_he_internet_menu") or "payment_schedule"
+        if operation == "read":
+            return ["payment_schedule", "payment_tracking", code]
+        return [code]
+

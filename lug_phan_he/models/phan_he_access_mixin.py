@@ -64,10 +64,55 @@ class PhanHeAccessMixin(models.AbstractModel):
             % (label, detail)
         )
 
+    def _phan_he_bypass_internet_menus(self):
+        user = self.env.user
+        return bool(
+            self.env.su
+            or user.has_group("base.group_system")
+            or user.has_group("lug_phan_he.group_phan_he_admin")
+        )
+
+    def _phan_he_internet_menu_code(self):
+        return self.env.context.get("phan_he_internet_menu") or False
+
+    def _phan_he_internet_menu_codes(self, operation):
+        code = False
+        if self and len(self) == 1 and self.id:
+            code = self._phan_he_internet_menu_code()
+        else:
+            code = self.env.context.get("phan_he_internet_menu") or self._phan_he_internet_menu_code()
+        return [code] if code else []
+
+    def _internet_menu_forbidden(self, operation):
+        if self._phan_he_bypass_internet_menus():
+            return self.browse()
+        Access = self.env["phan.he.module.access"]
+        if not hasattr(Access, "internet_operation_allowed"):
+            return self.browse()
+        if not self:
+            codes = self._phan_he_internet_menu_codes(operation)
+            if not codes:
+                return self.browse()
+            if Access.internet_operation_allowed(codes, operation):
+                return self.browse()
+            return self
+        forbidden = self.browse()
+        for rec in self:
+            codes = rec._phan_he_internet_menu_codes(operation)
+            if codes and not Access.internet_operation_allowed(codes, operation):
+                forbidden |= rec
+        return forbidden
+
     def _check_access(self, operation):
         result = super()._check_access(operation)
         if result is not None:
             return result
+        internet_denied = self._internet_menu_forbidden(operation)
+        if internet_denied is not None and internet_denied:
+            def _raise_internet():
+                raise self._phan_he_make_access_error(operation, internet_denied)
+
+            return internet_denied, _raise_internet
         if self._phan_he_bypass_matrix():
             return None
         # Chưa gán vào nhóm phân quyền → giữ ACL Odoo cũ
@@ -108,6 +153,10 @@ class PhanHeAccessMixin(models.AbstractModel):
 
     @api.model_create_multi
     def create(self, vals_list):
+        if not self._phan_he_bypass_internet_menus():
+            codes = self._phan_he_internet_menu_codes("create")
+            if codes and not self.env["phan.he.module.access"].internet_operation_allowed(codes, "create"):
+                raise AccessError("Bạn không có quyền Thêm trên menu Internet này.")
         if not self._phan_he_bypass_matrix() and self._phan_he_user_in_access_group():
             rights = self.env["phan.he.module.access"].get_user_module_rights()
             for vals in vals_list:

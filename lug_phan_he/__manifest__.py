@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.286.0",
+    "version": "19.0.2.344.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -113,7 +113,19 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/access/linkq_permission_matrix.scss",
             "lug_phan_he/static/src/access/linkq_permission_matrix.js",
             "lug_phan_he/static/src/access/linkq_permission_matrix.xml",
+            "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.scss",
+            "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.js",
+            "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.xml",
+            "lug_phan_he/static/src/internet_list/phan_he_internet_list.scss",
+            "lug_phan_he/static/src/internet_list/phan_he_internet_list.js",
+            "lug_phan_he/static/src/internet_list/phan_he_internet_list.xml",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.scss",
+            "lug_phan_he/static/src/dashboard/internet_overview.scss",
+            "lug_phan_he/static/src/internet_form/phan_he_internet_form.scss",
+            "lug_phan_he/static/src/internet_form/phan_he_internet_form.js",
+            "lug_phan_he/static/src/internet_form/phan_he_internet_form.xml",
+            "lug_phan_he/static/src/access/internet_menu_nav.js",
+            "lug_phan_he/static/src/access/phan_he_session_logout.js",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.js",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.xml",
             "lug_phan_he/static/src/dashboard/store_dashboard.scss",

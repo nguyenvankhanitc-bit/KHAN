@@ -35,9 +35,9 @@
                         <div class="col-lg-3 col-md-6">
                             <label class="small text-muted mb-1">Ngày khóa</label>
                             <div class="input-group">
-                                <select class="form-select" t-ref="lockDaySelect" t-on-change="onLockDaySelect">
+                                <select class="form-select" t-att-value="state.lock_day" t-on-change="onLockDaySelect">
                                     <t t-foreach="daysRange" t-as="d" t-key="d">
-                                        <option t-att-value="d" t-att-selected="isLockDay(d) ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                        <option t-att-value="d"><t t-esc="padDay(d)"/></option>
                                     </t>
                                 </select>
                                 <select class="form-select" t-on-change="onLockRepeatSelect">
@@ -93,9 +93,9 @@
                         <div class="col-lg-3 col-md-6">
                             <label class="small text-muted mb-1">Ngày mở khóa</label>
                             <div class="input-group">
-                                <select class="form-select" t-ref="unlockDaySelect" t-on-change="onUnlockDaySelect">
+                                <select class="form-select" t-att-value="state.unlock_day" t-on-change="onUnlockDaySelect">
                                     <t t-foreach="daysRange" t-as="d" t-key="'u' + d">
-                                        <option t-att-value="d" t-att-selected="isUnlockDay(d) ? 'selected' : undefined"><t t-esc="padDay(d)"/></option>
+                                        <option t-att-value="d"><t t-esc="padDay(d)"/></option>
                                     </t>
                                 </select>
                                 <select class="form-select" t-on-change="onUnlockRepeatChange">

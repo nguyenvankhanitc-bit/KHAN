@@ -132,11 +132,10 @@ class LinkqRosterLockConfig(models.Model):
         if "notify_odoo" in mapped:
             mapped["notify_expiring"] = bool(mapped["notify_odoo"])
         today = fields.Date.context_today(self)
-        raw_day = mapped.get("lock_day", mapped.get("lock_day_val", rec.lock_day))
         try:
-            lock_day = int(raw_day)
+            lock_day = int(mapped.get("lock_day") or rec.lock_day or 10)
         except (TypeError, ValueError):
-            lock_day = rec.lock_day or 10
+            lock_day = 10
         lock_day = min(max(lock_day, 1), 31)
         mapped["lock_day"] = lock_day
         last_lock = monthrange(today.year, today.month)[1]
@@ -154,14 +153,9 @@ class LinkqRosterLockConfig(models.Model):
             mapped["unlock_date"] = date(today.year, today.month, min(unlock_day, last_unlock))
         allowed = set(self._fields)
         rec.sudo().write({k: v for k, v in mapped.items() if k in allowed})
-        rec.invalidate_recordset()
         Roster = self.env["linkq.monthly.roster"]
-        try:
-            with self.env.cr.savepoint():
-                Roster.search([("is_locked", "=", False)])._sync_lock_datetime()
-                Roster._cron_process_roster_locks()
-        except Exception:
-            pass
+        Roster.search([("is_locked", "=", False)])._sync_lock_datetime()
+        Roster._cron_process_roster_locks()
         return rec._as_dashboard_dict()
 
     def _parse_clock(self, raw, default_h=8, default_m=0):
@@ -193,8 +187,8 @@ class LinkqRosterLockConfig(models.Model):
             "id": rec.id,
             "auto_lock": rec.auto_lock_enabled,
             "auto_lock_enabled": rec.auto_lock_enabled,
-            "lock_day": rec.lock_day if rec.lock_day else 10,
-            "lock_day_val": rec.lock_day if rec.lock_day else 10,
+            "lock_day": rec.lock_day or 10,
+            "lock_day_val": rec.lock_day or 10,
             "repeat_type": rec.repeat_type or "monthly",
             "lock_time": rec.lock_time or "22:00",
             "lock_hour": rec.lock_hour,

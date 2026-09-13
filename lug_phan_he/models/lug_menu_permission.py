@@ -33,7 +33,7 @@ MENU_TREE = [
     ("report_missing", "Cửa hàng thiếu ca", False, "report_group"),
     ("system_group", "Cấu hình hệ thống", True, False),
     ("system_lock", "Cài đặt khóa lịch ca", False, "system_group"),
-    ("system_access", "Phân quyền & Vai trò", False, "system_group"),
+    ("system_access", "Nhật ký hệ thống (Audit Log)", False, "system_group"),
 ]
 
 MENU_LABEL = {key: label for key, label, _g, _p in MENU_TREE}
@@ -282,6 +282,7 @@ class LugMenuPermissionLine(models.Model):
         if set(vals) & set(PERM_BOOLS):
             for rec in self:
                 rec._cascade_permissions_to_children()
+            self.mapped("permission_id.user_ids")._phan_he_force_logout()
         return res
 
 
@@ -302,7 +303,8 @@ class PhanHeModuleAccessMenu(models.Model):
 
     def write(self, vals):
         res = super().write(vals)
-        self._ensure_menu_lines()
+        if self.env.context.get("phan_he_ensure_lines"):
+            self._ensure_menu_lines()
         return res
 
     def _menu_defaults_map(self):
@@ -496,7 +498,7 @@ class PhanHeModuleAccessMenu(models.Model):
         return _fold_parent_rights(result)
 
     @api.model
-    def get_user_module_rights(self, user_id=None):
-        result = super().get_user_module_rights(user_id)
+    def _phan_he_extend_module_rights(self, result, user_id):
+        super()._phan_he_extend_module_rights(result, user_id)
         result["linkq_menus"] = self.get_user_linkq_menu_rights(user_id)
         return result

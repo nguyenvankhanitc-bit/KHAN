@@ -362,10 +362,6 @@ export class PhanHeAppSidebar extends Component {
         this.open("lug_phan_he.action_linkq_roster_lock_settings");
     }
 
-    onAccessRoles() {
-        this.open("lug_phan_he.action_phan_he_module_access");
-    }
-
     onAuditLog() {
         this.action.doAction({
             type: "ir.actions.act_window",

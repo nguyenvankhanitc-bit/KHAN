@@ -1,0 +1,445 @@
+html.o_internet_resizing,
+html.o_internet_resizing * {
+    cursor: col-resize !important;
+    user-select: none !important;
+}
+
+.o_internet_master.o_phan_he_shell {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+    position: relative;
+    background: #f4f5f9 !important;
+}
+
+.sidebar-top-actions {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 20;
+    padding: 0;
+}
+
+.btn-circle-action {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    color: #5b21b6;
+    border: 1px solid #e5e7eb;
+    outline: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+    i {
+        pointer-events: none;
+    }
+
+    &:hover {
+        background-color: #f5f3ff;
+        border-color: #ddd6fe;
+        color: #4c1d95;
+        transform: none;
+    }
+
+    &:active {
+        transform: none;
+        background-color: #ede9fe;
+    }
+}
+
+.o_internet_sidebar.o_phan_he_sidebar {
+    flex: 0 0 var(--o-internet-sidebar-width, 280px);
+    width: var(--o-internet-sidebar-width, 280px) !important;
+    min-width: 240px !important;
+    max-width: 360px !important;
+    transition: width 0.2s ease, flex-basis 0.2s ease;
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    padding-top: 52px;
+    background: #ffffff !important;
+    border-right: 1px solid #e8eaef !important;
+    color: #334155;
+    box-shadow: none !important;
+}
+
+.o_internet_master.is-sidebar-collapsed .o_internet_sidebar {
+    flex: 0 0 65px !important;
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+    opacity: 1;
+    pointer-events: auto;
+    padding: 88px 6px 10px !important;
+}
+
+.o_internet_sidebar_toolbar {
+    display: none;
+}
+
+.o_sidebar_resizer {
+    flex: 0 0 5px;
+    width: 5px;
+    cursor: col-resize;
+    background: transparent;
+    position: relative;
+    z-index: 3;
+    transition: background 0.15s ease;
+}
+
+.o_sidebar_resizer:hover,
+.o_sidebar_resizer.is-dragging {
+    background: #c4b5fd;
+}
+
+.o_sidebar_resizer_grip {
+    position: absolute;
+    top: 50%;
+    left: 1px;
+    width: 3px;
+    height: 28px;
+    margin-top: -14px;
+    border-radius: 4px;
+    background: rgba(109, 40, 217, 0.25);
+}
+
+.o_internet_master.is-sidebar-collapsed .o_sidebar_resizer,
+.o_sidebar_resizer.is-disabled {
+    display: none !important;
+}
+
+.o_internet_content {
+    flex: 1 1 auto;
+    min-width: 0 !important;
+    height: 100%;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    background: #f4f5f9;
+}
+
+.o_internet_content > .o_view {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.o_internet_content .o_control_panel,
+.o_internet_content .o_list_view,
+.o_internet_content .o_form_view {
+    background: #fff;
+}
+
+/* —— Internet nav: sáng, gọn, khớp phần nội dung —— */
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar {
+    .o_phan_he_sidebar_brand {
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        white-space: nowrap;
+        padding: 6px 14px 14px;
+        cursor: pointer;
+        color: #0f172a !important;
+        background: transparent !important;
+        border-bottom: 1px solid #f1f5f9;
+        margin-bottom: 6px;
+    }
+
+    .o_phan_he_sidebar_nav {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        padding: 4px 10px 18px;
+    }
+
+    .o_phan_he_nav_group {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 8px;
+
+        &:first-child {
+            margin-top: 0;
+        }
+    }
+
+    .o_phan_he_nav_item,
+    .o_phan_he_nav_section,
+    .o_phan_he_nav_sub {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        margin: 0;
+        background: transparent !important;
+        box-shadow: none !important;
+        border: 0 !important;
+        white-space: nowrap;
+        text-align: left;
+        cursor: pointer;
+        transition: background 0.12s ease, color 0.12s ease;
+
+        > i:first-child {
+            flex: 0 0 18px;
+            width: 18px;
+            text-align: center;
+            font-size: 15px;
+            color: #64748b !important;
+        }
+
+        &.is-icon-overview > i:first-child,
+        &.is-icon-store > i:first-child { color: #0284c7 !important; }
+        &.is-icon-list > i:first-child { color: #6366f1 !important; }
+        &.is-icon-active > i:first-child,
+        &.is-status-active > i:first-child { color: #059669 !important; }
+        &.is-icon-suspend > i:first-child,
+        &.is-status-suspend > i:first-child { color: #d97706 !important; }
+        &.is-icon-liquidated > i:first-child,
+        &.is-status-liquidated > i:first-child,
+        &.is-icon-overdue > i:first-child { color: #dc2626 !important; }
+        &.is-icon-payment > i:first-child { color: #0d9488 !important; }
+        &.is-icon-alert > i:first-child { color: #ea580c !important; }
+        &.is-icon-report > i:first-child { color: #7c3aed !important; }
+        &.is-icon-manage > i:first-child { color: #6d28d9 !important; }
+
+        &:hover {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+        }
+    }
+
+    .o_phan_he_nav_item {
+        height: 38px;
+        min-height: 38px;
+        padding: 0 12px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #334155 !important;
+
+        &.is-active {
+            background: #f5f3ff !important;
+            color: #5b21b6 !important;
+            font-weight: 600;
+            box-shadow: none !important;
+
+            &::before {
+                display: block;
+                background: #7c3aed;
+                top: 9px;
+                bottom: 9px;
+            }
+
+            > i:first-child {
+                color: #7c3aed !important;
+            }
+        }
+    }
+
+    .o_phan_he_nav_section {
+        min-height: 32px;
+        height: auto;
+        padding: 8px 10px 4px;
+        margin-top: 0;
+        border-radius: 0;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #94a3b8 !important;
+
+        > i:first-child {
+            font-size: 13px;
+            color: #94a3b8 !important;
+        }
+
+        &:hover {
+            background: transparent !important;
+            color: #64748b !important;
+        }
+
+        > span {
+            flex: 0 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+    }
+
+    .o_phan_he_nav_item > span,
+    .o_phan_he_nav_sub > span:not(.o_phan_he_nav_badge) {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .o_phan_he_nav_caret {
+        margin-left: auto;
+        color: #cbd5e1 !important;
+        opacity: 1;
+        font-size: 12px !important;
+        transform: none !important;
+    }
+
+    .o_phan_he_nav_sub {
+        width: 100%;
+        margin-left: 0;
+        height: 38px;
+        min-height: 38px;
+        padding: 0 10px 0 14px;
+        border-radius: 10px;
+        font-size: 13.5px;
+        font-weight: 500;
+        color: #475569 !important;
+        position: relative;
+
+        > i:first-child {
+            font-size: 14px;
+        }
+
+        &:hover {
+            background: #f8fafc !important;
+            color: #0f172a !important;
+        }
+
+        &.is-active {
+            background: #f5f3ff !important;
+            color: #5b21b6 !important;
+            font-weight: 600;
+
+            &::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 9px;
+                bottom: 9px;
+                width: 3px;
+                border-radius: 0 3px 3px 0;
+                background: #7c3aed;
+            }
+
+            > i:first-child {
+                color: #7c3aed !important;
+            }
+        }
+
+        &.is-status-active > i:first-child {
+            color: #059669 !important;
+        }
+
+        &.is-status-suspend > i:first-child {
+            color: #d97706 !important;
+        }
+
+        &.is-status-liquidated > i:first-child {
+            color: #dc2626 !important;
+        }
+
+        .o_phan_he_nav_badge {
+            margin-left: auto;
+            flex: 0 0 auto;
+            min-width: 20px;
+            height: 18px;
+            padding: 0 6px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 18px;
+        }
+
+        .o_phan_he_nav_badge.is-warn {
+            background: #ffedd5 !important;
+            color: #c2410c !important;
+        }
+
+        .o_phan_he_nav_badge.is-danger {
+            background: #fee2e2 !important;
+            color: #b91c1c !important;
+        }
+
+        .o_phan_he_nav_badge.is-muted {
+            background: #f1f5f9 !important;
+            color: #64748b !important;
+        }
+    }
+}
+
+.o_internet_master.is-sidebar-collapsed {
+    .sidebar-top-actions {
+        left: 0;
+        right: auto;
+        transform: none;
+        width: 65px;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px !important;
+        padding: 8px 0 !important;
+    }
+
+    .btn-circle-action {
+        width: 32px;
+        height: 32px;
+        font-size: 13px;
+    }
+
+    .o_phan_he_sidebar_brand,
+    .o_phan_he_brand_text,
+    .brand-text,
+    .o_phan_he_nav_item span,
+    .o_phan_he_nav_section span,
+    .o_phan_he_nav_sub span,
+    .o_phan_he_nav_caret,
+    .o_phan_he_nav_badge,
+    .sidebar-footer-card {
+        display: none !important;
+    }
+
+    .o_phan_he_nav_item,
+    .o_phan_he_nav_section,
+    .o_phan_he_nav_sub {
+        justify-content: center !important;
+        padding: 10px 0 !important;
+        margin: 4px 0 !important;
+        border-radius: 10px !important;
+        text-align: center;
+        width: 100%;
+        height: auto;
+        min-height: 40px;
+
+        > i:first-child {
+            font-size: 18px !important;
+            margin: 0 !important;
+            width: auto;
+        }
+
+        &:hover {
+            background: #f1f5f9 !important;
+        }
+
+        &.is-active {
+            background: #f5f3ff !important;
+            border-radius: 10px;
+            color: #5b21b6 !important;
+            box-shadow: none !important;
+
+            &::before {
+                display: none;
+            }
+        }
+    }
+}

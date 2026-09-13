@@ -36,35 +36,36 @@
     <menuitem id="menu_phan_he_tracking_top"
               name="Danh sách Internet"
               parent="menu_phan_he_internet_root"
-              action="action_phan_he_service_tracking"
+              action="action_phan_he_internet_list_master"
               sequence="3"
+              active="False"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_entry"
               name="Khai báo cửa hàng"
               parent="menu_phan_he_internet_root"
-              action="action_phan_he_service_entry"
+              action="action_phan_he_internet_entry_master"
               sequence="4"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_internet_active"
               name="Internet đang sử dụng"
               parent="menu_phan_he_internet_root"
-              action="action_phan_he_service_internet_active"
+              action="action_phan_he_internet_active_master"
               sequence="5"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_internet_suspend"
               name="Internet tạm ngưng"
               parent="menu_phan_he_internet_root"
-              action="action_phan_he_service_internet_suspend"
+              action="action_phan_he_internet_suspend_master"
               sequence="6"
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_internet_liquidated"
-              name="Internet chờ thanh lý"
+              name="Thanh lý"
               parent="menu_phan_he_internet_root"
-              action="action_phan_he_service_internet_liquidated"
+              action="action_phan_he_internet_liquidated_master"
               sequence="7"
               groups="base.group_user"/>
 
@@ -113,7 +114,7 @@
     <menuitem id="menu_phan_he_payment"
               name="Lịch thanh toán"
               parent="menu_phan_he_payment_root"
-              action="action_phan_he_payment"
+              action="action_phan_he_internet_payment_master"
               sequence="10"/>
 
     <menuitem id="menu_phan_he_payment_file"
@@ -480,7 +481,7 @@
     <menuitem id="menu_phan_he_access"
               name="Phân quyền"
               parent="menu_phan_he_config_root"
-              action="action_linkq_permission_matrix"
+              action="action_phan_he_module_access"
               sequence="40"
               groups="base.group_system"/>
 

@@ -55,6 +55,10 @@
         <field name="user_ids" eval="[(4, ref('base.user_admin'))]"/>
     </record>
 
+    <record id="base.group_system" model="res.groups">
+        <field name="implied_ids" eval="[(4, ref('group_phan_he_admin'))]"/>
+    </record>
+
     <!-- group_system implied_ids được gộp trong security/security.xml -->
 
     <record id="group_phan_he_lock_settings" model="res.groups">

@@ -6,6 +6,28 @@ from odoo import api, fields, models
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    phan_he_access_stamp = fields.Char(
+        string="Stamp phân quyền",
+        default="0",
+        copy=False,
+        help="Đổi giá trị này để vô hiệu hóa session (ép đăng xuất sau khi apply phân quyền).",
+    )
+
+    def _get_session_token_fields(self):
+        return super()._get_session_token_fields() | {"phan_he_access_stamp"}
+
+    def _phan_he_force_logout(self):
+        """Ép đăng xuất user bằng cách xoay stamp session token."""
+        if self.env.context.get("skip_phan_he_logout"):
+            return
+        users = self.sudo().filtered(
+            lambda u: u.id and u.active and not u.share and u.id != self.env.uid
+        )
+        if not users:
+            return
+        stamp = fields.Datetime.now().isoformat()
+        users.with_context(skip_phan_he_logout=True).write({"phan_he_access_stamp": stamp})
+
     def _linkq_store_ids_from_permission_matrix(self):
         """Cửa hàng từ tab Phân quyền Cửa hàng (Lịch ca & Nhân sự)."""
         self.ensure_one()
@@ -90,11 +112,13 @@ class ResUsers(models.Model):
         "hr.store",
         string="Cửa hàng",
         compute="_compute_linkq_store",
+        compute_sudo=True,
     )
     branch_id = fields.Many2one(
         "hr.store",
         string="Chi nhánh",
         compute="_compute_linkq_store",
+        compute_sudo=True,
     )
     linkq_store_ids = fields.Many2many(
         "hr.store",
@@ -139,12 +163,8 @@ class ResUsers(models.Model):
 
     def _register_hook(self):
         super()._register_hook()
-        try:
-            users = self.env["linkq.store.permission.line"].sudo().search([]).mapped("user_id")
-            if users:
-                users._compute_linkq_store()
-        except Exception:
-            pass
+        # Không recompute toàn bộ user lúc boot (rất chậm).
+        # linkq_store_ids tự tính khi đọc / khi dòng phân quyền cửa hàng thay đổi.
 
     @property
     def SELF_WRITEABLE_FIELDS(self):

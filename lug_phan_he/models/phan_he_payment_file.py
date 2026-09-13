@@ -162,7 +162,7 @@ class PhanHePaymentFile(models.Model):
             # Cột NỘI DUNG để trống — kế toán/người đề nghị tự điền
             content = ""
 
-            amount = svc.next_payment_amount or svc.contract_amount or 0.0
+            amount = svc.next_payment_amount or 0.0
             account_info = svc.payment_info_text or ""
             if not account_info and svc.provider_id:
                 bank = svc.provider_id.bank_account_ids.filtered("is_default")[:1] \

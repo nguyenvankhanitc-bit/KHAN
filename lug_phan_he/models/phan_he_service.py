@@ -59,7 +59,35 @@ class PhanHeService(models.Model):
         string="Băng thông",
         compute="_compute_bandwidth_display",
     )
-    usage_address = fields.Text(string="Địa chỉ")
+    usage_address = fields.Text(string="Địa chỉ lắp đặt")
+    payment_type = fields.Selection(
+        selection=[
+            ("monthly", "Trả sau hàng tháng"),
+            ("prepaid_6", "Trả trước / 6 tháng"),
+            ("prepaid_12", "Trả trước / 12 tháng"),
+        ],
+        string="Loại thanh toán",
+        default="prepaid_12",
+        tracking=True,
+    )
+    bank_account_holder = fields.Char(string="Tên tài khoản")
+    bank_account_number = fields.Char(string="Số tài khoản")
+    bank_name = fields.Char(string="Ngân hàng")
+    bank_branch = fields.Char(string="Chi nhánh")
+    bank_display = fields.Char(
+        string="Ngân hàng",
+        compute="_compute_bank_display",
+        inverse="_inverse_bank_display",
+    )
+    invoice_attachment_ids = fields.Many2many(
+        "ir.attachment",
+        "phan_he_service_invoice_attachment_rel",
+        "service_id",
+        "attachment_id",
+        string="File hóa đơn đính kèm",
+    )
+    invoice_file = fields.Binary(string="File hóa đơn đính kèm", attachment=True)
+    invoice_filename = fields.Char(string="Tên file hóa đơn")
     technical_info = fields.Text(string="Thông tin kỹ thuật")
     stt = fields.Integer(string="STT", copy=False, index=True)
     date_start = fields.Date(string="Ngày bắt đầu", tracking=True)
@@ -68,19 +96,24 @@ class PhanHeService(models.Model):
         string="Cước tháng",
         currency_field="currency_id",
         tracking=True,
+        required=True,
+        readonly=False,
     )
     currency_id = fields.Many2one(
         "res.currency",
         string="Tiền tệ",
-        default=lambda self: self._default_currency_vnd(),
+        default=lambda self: self._default_currency_vnd() or self.env.company.currency_id,
+        required=True,
     )
     duration = fields.Char(compute="_compute_duration", store=True, string="Thời hạn")
     remaining_time = fields.Char(
         compute="_compute_remaining",
+        store=True,
         string="Thời gian còn lại",
     )
     remaining_days = fields.Integer(
         compute="_compute_remaining",
+        store=True,
         string="Số ngày còn lại",
     )
     alert_level = fields.Selection(
@@ -91,6 +124,7 @@ class PhanHeService(models.Model):
             ("expired", "Đã hết hạn"),
         ],
         compute="_compute_remaining",
+        store=True,
         string="Mức cảnh báo",
     )
     remaining_alert = fields.Html(
@@ -137,7 +171,7 @@ class PhanHeService(models.Model):
 
     provider_id = fields.Many2one(
         "phan.he.provider", string="Nhà cung cấp",
-        tracking=True, ondelete="restrict", index=True,
+        tracking=True, ondelete="set null", index=True,
     )
     company_id = fields.Many2one(related="store_id.company_id", store=True, readonly=True)
     payment_ids = fields.One2many("phan.he.payment", "service_id", string="Lịch thanh toán")
@@ -159,23 +193,28 @@ class PhanHeService(models.Model):
         "phan.he.payment",
         compute="_compute_next_payment",
         store=True,
+        ondelete="set null",
         string="Kỳ TT gần nhất",
     )
     next_invoice_number = fields.Char(
         string="HĐ / Số hóa đơn",
         compute="_compute_next_payment_fields",
         inverse="_inverse_next_payment_fields",
+        readonly=False,
     )
     next_payment_amount = fields.Monetary(
-        string="Số tiền TT",
+        string="Số tiền thanh toán",
         currency_field="currency_id",
         compute="_compute_next_payment_fields",
         inverse="_inverse_next_payment_fields",
+        store=True,
+        readonly=False,
     )
     next_payment_date = fields.Date(
         string="Ngày TT tiếp theo",
         compute="_compute_next_payment_fields",
         inverse="_inverse_next_payment_fields",
+        readonly=False,
     )
     payment_info_text = fields.Text(
         string="Thông tin thanh toán",
@@ -256,6 +295,32 @@ class PhanHeService(models.Model):
         default = self._default_service_type_id()
         return (default.code or "").lower() if default else False
 
+    def _phan_he_internet_menu_code(self):
+        if self and self.id:
+            status = (self.ops_status or "active")
+            from .internet_menu_permission import STATUS_TO_MENU
+            return STATUS_TO_MENU.get(status, "internet_active")
+        return self.env.context.get("phan_he_internet_menu") or "internet_entry"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS, STATUS_TO_MENU
+        if self and self.id:
+            if (self.service_type_id.code or self.category or "").lower() != "internet":
+                return []
+        else:
+            ctx_type = (self.env.context.get("phan_he_service_type_code") or "").lower()
+            if ctx_type and ctx_type != "internet":
+                return []
+        if operation == "read":
+            return list(SERVICE_READ_MENUS)
+        if operation == "create":
+            return [self.env.context.get("phan_he_internet_menu") or "internet_entry"]
+        status = "active"
+        if self and self.id:
+            status = self.ops_status or "active"
+        return [STATUS_TO_MENU.get(status, "internet_active")]
+
+
     @api.depends("service_type_id", "store_id")
     def _compute_name(self):
         for rec in self:
@@ -312,14 +377,17 @@ class PhanHeService(models.Model):
         "payment_ids.amount",
         "payment_ids.date_due",
         "payment_ids.payment_state",
-        "contract_amount",
     )
     def _compute_next_payment_fields(self):
         for rec in self:
             pay = rec._get_next_payment_record()
             rec.next_invoice_number = pay.invoice_number if pay else False
-            rec.next_payment_amount = pay.amount if pay else rec.contract_amount
             rec.next_payment_date = pay.date_due if pay else False
+            # Cước tháng ≠ số tiền thanh toán (chu kỳ 6/12 tháng): không copy contract_amount.
+            if pay:
+                rec.next_payment_amount = pay.amount
+            else:
+                rec.next_payment_amount = rec.next_payment_amount or 0.0
 
     def _inverse_next_payment_fields(self):
         """Cho phép nhập liệu trên bảng tổng → ghi vào kỳ thanh toán (tạo mới nếu chưa có).
@@ -331,7 +399,7 @@ class PhanHeService(models.Model):
         for rec in self:
             pay = rec._get_next_payment_record()
             invoice_number = rec.next_invoice_number or False
-            amount = rec.next_payment_amount or rec.contract_amount or 0.0
+            amount = rec.next_payment_amount or 0.0
             date_due = rec.next_payment_date or False
             if pay:
                 self.env.cr.execute(
@@ -410,6 +478,21 @@ class PhanHeService(models.Model):
             else:
                 rec.payment_info_text = False
 
+    @api.depends("bank_name", "bank_branch")
+    def _compute_bank_display(self):
+        for rec in self:
+            name = (rec.bank_name or "").strip()
+            branch = (rec.bank_branch or "").strip()
+            if branch and name and branch.lower() not in name.lower():
+                rec.bank_display = f"{name} - {branch}"
+            else:
+                rec.bank_display = name or branch
+
+    def _inverse_bank_display(self):
+        for rec in self:
+            rec.bank_name = (rec.bank_display or "").strip() or False
+            rec.bank_branch = False
+
     def _inverse_payment_info_text(self):
         for rec in self:
             rec.payment_info_manual = rec.payment_info_text
@@ -430,7 +513,9 @@ class PhanHeService(models.Model):
             else:
                 vals.setdefault("ops_status", "active")
                 vals.setdefault("state", vals.get("ops_status", "active"))
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        records._bind_invoice_attachments()
+        return records
 
     def write(self, vals):
         vals = dict(vals)
@@ -440,7 +525,28 @@ class PhanHeService(models.Model):
             vals["state"] = vals["ops_status"]
         elif "state" in vals and "ops_status" not in vals:
             vals["ops_status"] = self._map_state_to_ops(vals["state"])
-        return super().write(vals)
+        res = super().write(vals)
+        if "invoice_attachment_ids" in vals:
+            self._bind_invoice_attachments()
+        return res
+
+    def _bind_invoice_attachments(self):
+        for rec in self:
+            atts = rec.invoice_attachment_ids.filtered(lambda a: not a.res_id or a.res_model != rec._name)
+            if atts:
+                atts.sudo().write({"res_model": rec._name, "res_id": rec.id})
+
+    def unlink(self):
+        Payment = self.env["phan.he.payment"].sudo()
+        Invoice = self.env["phan.he.invoice"].sudo()
+        self.sudo().write({"next_payment_id": False})
+        invoices = Invoice.search([("service_id", "in", self.ids)])
+        if invoices:
+            invoices.unlink()
+        payments = Payment.search([("service_id", "in", self.ids)])
+        if payments:
+            payments.unlink()
+        return super().unlink()
 
     @api.model
     def _normalize_bandwidth(self, value):
@@ -514,38 +620,24 @@ class PhanHeService(models.Model):
             days = (rec.date_end - today).days
             rec.remaining_days = days
 
-            if days > 0:
+            if days >= 0:
                 rec.remaining_time = f"Còn {days} ngày"
-            elif days == 0:
-                rec.remaining_time = "Hết hạn hôm nay"
             else:
-                rec.remaining_time = f"Trễ {abs(days)} ngày"
+                rec.remaining_time = f"Quá hạn {abs(days)} ngày"
 
             if days < 0:
                 rec.alert_level = "expired"
-                icon = "fa-times-circle"
-                icon_css = "text-danger"
-                label = rec.remaining_time
             elif days <= 7:
                 rec.alert_level = "danger"
-                icon = "fa-exclamation-circle"
-                icon_css = "text-danger"
-                label = rec.remaining_time
             elif days <= 30:
                 rec.alert_level = "warn"
-                icon = "fa-exclamation-triangle"
-                icon_css = "text-warning"
-                label = rec.remaining_time
             else:
                 rec.alert_level = "ok"
-                icon = "fa-check-circle"
-                icon_css = "text-success"
-                label = rec.remaining_time
+            label = rec.remaining_time
 
             rec.remaining_alert = (
-                f'<span class="o_phan_he_remaining_alert">'
-                f'<i class="fa {icon} {icon_css}" title="Cảnh báo hết hạn"/> '
-                f'<b style="color:#111827">{label}</b></span>'
+                f'<span class="o_phan_he_remaining_alert is-{rec.alert_level}">'
+                f'<i class="fa fa-clock-o"/> {label}</span>'
             )
 
     @api.depends("name", "code")
@@ -580,8 +672,17 @@ class PhanHeService(models.Model):
 
     @api.onchange("store_id")
     def _onchange_store_id_address(self):
-        if self.store_id and self.store_id.address and not self.usage_address:
+        if self.store_id and self.store_id.address:
             self.usage_address = self.store_id.address
+
+    @api.onchange("payment_type")
+    def _onchange_payment_type(self):
+        labels = dict(self._fields["payment_type"].selection or [])
+        if self.payment_type:
+            self.package_name = labels.get(self.payment_type)
+
+    def action_save_internet_form(self):
+        return True
 
     def action_open_payments(self):
         self.ensure_one()
@@ -593,7 +694,7 @@ class PhanHeService(models.Model):
             "domain": [("service_id", "=", self.id)],
             "context": {
                 "default_service_id": self.id,
-                "default_amount": self.contract_amount,
+                "default_amount": self.next_payment_amount,
                 "default_provider_id": self.provider_id.id,
             },
         }
@@ -710,3 +811,433 @@ class PhanHeService(models.Model):
                     totals["expire_soon"] += 1
 
         return {"by_mien": by_mien, "totals": totals}
+
+    REGION_COLORS = {
+        "NAM": "#2f80ed",
+        "DTT": "#f2994a",
+        "TRUNG": "#f2994a",
+        "BAC": "#27ae60",
+        "VP": "#9b51e0",
+    }
+    REGION_ORDER = ("NAM", "DTT", "BAC", "VP", "TRUNG")
+
+    @api.model
+    def get_dashboard_data(self, month=None, year=None, region_id=None, store_id=None):
+        """Dashboard Internet: read_group, lọc tháng/năm + miền + cửa hàng."""
+        today = fields.Date.context_today(self)
+        # Gọi cũ: get_dashboard_data("2026-09", region)
+        if isinstance(month, str):
+            extra_region = year
+            year, month = self._parse_dash_month(month, today)
+            if region_id in (None, False, "", "all") and extra_region not in (None, False):
+                if not isinstance(extra_region, int) or extra_region < 1000:
+                    region_id = extra_region
+        else:
+            if not year:
+                year = today.year
+            if not month:
+                month = today.month
+            year = int(year)
+            month = int(month)
+
+        region_id = self._dash_int(region_id)
+        store_id = self._dash_int(store_id)
+
+        m_start = fields.Date.to_date(f"{year}-{month:02d}-01")
+        m_end = m_start + relativedelta(months=1, days=-1)
+        prev_start = m_start - relativedelta(months=1)
+        prev_end = m_start - relativedelta(days=1)
+
+        base = self._dash_base_domain(region_id, store_id)
+        miens = self.env["phan.he.mien"].search([("active", "=", True)])
+        mien_meta = self._dash_mien_meta(miens)
+
+        month_dom = base + self._dash_overlap(m_start, m_end)
+        prev_dom = base + self._dash_overlap(prev_start, prev_end)
+        month_total = self._dash_sum(month_dom)
+        prev_total = self._dash_sum(prev_dom)
+        month_delta = self._dash_delta(month_total, prev_total)
+
+        # Sparkline: từng tuần trong tháng đang chọn
+        month_weeks = []
+        day = m_start
+        w = 1
+        while day <= m_end:
+            week_end = min(day + relativedelta(days=6), m_end)
+            month_weeks.append({
+                "key": f"W{w}",
+                "label": f"Tuần {w}",
+                "full": f"{day.day:02d}/{day.month:02d}",
+                "amount": self._dash_sum(base + self._dash_overlap(day, week_end)),
+            })
+            day = week_end + relativedelta(days=1)
+            w += 1
+
+        # Xu hướng 6 tháng (card 1 phụ)
+        trend = []
+        for i in range(5, -1, -1):
+            ts = m_start - relativedelta(months=i)
+            te = ts + relativedelta(months=1, days=-1)
+            trend.append({
+                "key": f"{ts.year}-{ts.month:02d}",
+                "label": f"Th{ts.month}",
+                "full": f"{ts.month:02d}/{ts.year}",
+                "amount": self._dash_sum(base + self._dash_overlap(ts, te)),
+            })
+
+        by_mien = {
+            (row["mien_id"][0] if row.get("mien_id") else 0): row
+            for row in self.read_group(
+                month_dom, ["contract_amount:sum", "mien_id"], ["mien_id"]
+            )
+        }
+        by_mien_prev = {
+            (row["mien_id"][0] if row.get("mien_id") else 0): row
+            for row in self.read_group(
+                prev_dom, ["contract_amount:sum", "mien_id"], ["mien_id"]
+            )
+        }
+        region_rows = []
+        for m in mien_meta:
+            mid = m["id"]
+            amt = float((by_mien.get(mid) or {}).get("contract_amount") or 0.0)
+            prev_amt = float((by_mien_prev.get(mid) or {}).get("contract_amount") or 0.0)
+            cnt = int((by_mien.get(mid) or {}).get("mien_id_count") or 0)
+            pct = round((amt / month_total) * 100, 1) if month_total else 0.0
+            region_rows.append({
+                **m,
+                "amount": amt,
+                "pct": pct,
+                "count": cnt,
+                "delta": self._dash_delta(amt, prev_amt),
+            })
+        if month_total and region_rows:
+            drift = round(100.0 - sum(r["pct"] for r in region_rows), 1)
+            if drift:
+                region_rows[0]["pct"] = round(region_rows[0]["pct"] + drift, 1)
+
+        year_bars = []
+        for y in range(year - 3, year + 1):
+            last_mo = month if y == year else 12
+            y_amt = 0.0
+            for mo in range(1, last_mo + 1):
+                ys = fields.Date.to_date(f"{y}-{mo:02d}-01")
+                ye = ys + relativedelta(months=1, days=-1)
+                y_amt += self._dash_sum(base + self._dash_overlap(ys, ye))
+            year_bars.append({"year": y, "amount": y_amt, "is_current": y == year})
+        cur_year = year_bars[-1]["amount"] if year_bars else 0.0
+        prev_year = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
+        year_delta = self._dash_delta(cur_year, prev_year)
+
+        usage_rows = self.read_group(
+            base, ["id:count"], ["ops_status"]
+        )
+        usage_map = {r.get("ops_status") or "": r.get("ops_status_count") or r.get("id_count") or 0 for r in usage_rows}
+        # Odoo read_group count key is typically ops_status_count
+        def _cnt(key):
+            for row in usage_rows:
+                if (row.get("ops_status") or "") == key:
+                    for k, v in row.items():
+                        if k.endswith("_count") and k != "__count":
+                            return int(v or 0)
+                    return int(row.get("__count") or 0)
+            return 0
+
+        n_active = _cnt("active")
+        n_suspend = _cnt("suspend")
+        n_liq = _cnt("liquidated")
+        total_cnt = sum(_cnt(k) for k in ("active", "suspend", "liquidated", "expired")) or (
+            n_active + n_suspend + n_liq
+        )
+        if not total_cnt:
+            total_cnt = n_active + n_suspend + n_liq
+        active_pct = round((n_active / total_cnt) * 100) if total_cnt else 0
+
+        # Widget 6: T1 → tháng đang chọn của năm
+        month_bars = []
+        for mo in range(1, month + 1):
+            ys = fields.Date.to_date(f"{year}-{mo:02d}-01")
+            ye = ys + relativedelta(months=1, days=-1)
+            month_bars.append({
+                "month": mo,
+                "label": f"T{mo}",
+                "amount": self._dash_sum(base + self._dash_overlap(ys, ye)),
+            })
+
+        month_recs = self.search(month_dom, order="contract_amount desc")
+        by_rows = {}
+        for svc in month_recs:
+            mid = svc.mien_id.id or 0
+            by_rows.setdefault(mid, [])
+            if len(by_rows[mid]) < 40:
+                by_rows[mid].append({
+                    "id": svc.id,
+                    "stt": len(by_rows[mid]) + 1,
+                    "store": svc.store_id.name or "—",
+                    "provider": svc.provider_id.name or "—",
+                    "bandwidth": svc.bandwidth or "—",
+                    "amount": float(svc.contract_amount or 0.0),
+                })
+
+        detail_tables = []
+        for m in mien_meta:
+            kpi = next((r for r in region_rows if r["id"] == m["id"]), None)
+            rows = by_rows.get(m["id"], [])
+            spark = []
+            for i in range(3, -1, -1):
+                ts = m_start - relativedelta(months=i)
+                te = ts + relativedelta(months=1, days=-1)
+                spark.append({
+                    "key": f"{ts.year}-{ts.month:02d}",
+                    "amount": self._dash_sum(
+                        self._dash_base_domain(m["id"], store_id) + self._dash_overlap(ts, te)
+                    ),
+                })
+            spark_max = max((s["amount"] for s in spark), default=1) or 1
+            for item in spark:
+                item["pct"] = max(8, round((item["amount"] / spark_max) * 100)) if item["amount"] else 8
+            y_amt = 0.0
+            py_amt = 0.0
+            year_spark = []
+            for y in range(year - 3, year + 1):
+                last_mo = month if y == year else 12
+                tot = 0.0
+                for mo in range(1, last_mo + 1):
+                    ys = fields.Date.to_date(f"{y}-{mo:02d}-01")
+                    ye = ys + relativedelta(months=1, days=-1)
+                    tot += self._dash_sum(
+                        self._dash_base_domain(m["id"], store_id) + self._dash_overlap(ys, ye)
+                    )
+                year_spark.append({"key": str(y), "amount": tot})
+                if y == year:
+                    y_amt = tot
+                if y == year - 1:
+                    py_amt = tot
+            ys_max = max((s["amount"] for s in year_spark), default=1) or 1
+            for item in year_spark:
+                item["pct"] = max(8, round((item["amount"] / ys_max) * 100)) if item["amount"] else 8
+            detail_tables.append({
+                **m,
+                "amount": kpi["amount"] if kpi else 0.0,
+                "delta": kpi["delta"] if kpi else 0.0,
+                "count": kpi["count"] if kpi else len(rows),
+                "rows": rows,
+                "spark": spark,
+                "year_amount": y_amt,
+                "year_delta": self._dash_delta(y_amt, py_amt),
+                "year_count": len(rows),
+                "year_spark": year_spark,
+                "year_rows": rows[:8],
+            })
+
+        Store = self.env["phan.he.store"]
+        store_dom = []
+        if "active" in Store._fields:
+            store_dom.append(("active", "=", True))
+        if region_id:
+            store_dom.append(("mien_id", "=", region_id))
+        stores = Store.search(store_dom, limit=500, order="name")
+        store_options = [{"id": "all", "name": "Tất cả cửa hàng"}] + [
+            {"id": s.id, "name": s.name} for s in stores
+        ]
+
+        month_options = []
+        for i in range(0, 18):
+            dt = today.replace(day=1) - relativedelta(months=i)
+            month_options.append({
+                "value": f"{dt.year}-{dt.month:02d}",
+                "label": f"Tháng {dt.month}/{dt.year}",
+            })
+
+        return {
+            "user_name": self.env.user.name or "Admin",
+            "selected_month": f"{year}-{month:02d}",
+            "selected_month_label": f"Tháng {month}/{year}",
+            "selected_year": year,
+            "selected_region": region_id or "all",
+            "selected_store": store_id or "all",
+            "month_total": month_total,
+            "month_delta": month_delta,
+            "month_weeks": month_weeks,
+            "trend": trend,
+            "regions": region_rows,
+            "region_options": [{"id": "all", "name": "Tất cả khu vực"}] + [
+                {"id": m["id"], "name": m["name"]} for m in mien_meta
+            ],
+            "store_options": store_options,
+            "year_total": cur_year,
+            "year_delta": year_delta,
+            "year_bars": year_bars,
+            "month_bars": month_bars,
+            "usage": {
+                "active_pct": active_pct,
+                "active": n_active,
+                "suspend": n_suspend,
+                "liquidated": n_liq,
+                "total": total_cnt,
+            },
+            "kpis": region_rows,
+            "detail_tables": detail_tables,
+            "month_options": month_options,
+            "updated_at": fields.Datetime.context_timestamp(
+                self, fields.Datetime.now()
+            ).strftime("%H:%M %d/%m/%Y"),
+        }
+
+    @api.model
+    def _dash_int(self, value):
+        if value in (None, False, "", "all", "0", 0, "false"):
+            return False
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            mien = self.env["phan.he.mien"].search(
+                [("code", "=", str(value).upper())], limit=1
+            )
+            return mien.id or False
+
+    @api.model
+    def _internet_period_bounds(self, period):
+        today = fields.Date.context_today(self)
+        year = today.year
+        month = today.month
+        if period in ("month", "report_month"):
+            start = today.replace(day=1)
+            end = (start + relativedelta(months=1)) - relativedelta(days=1)
+            return start, end
+        if period in ("quarter", "report_quarter"):
+            q_start_month = ((month - 1) // 3) * 3 + 1
+            start = today.replace(month=q_start_month, day=1)
+            end = (start + relativedelta(months=3)) - relativedelta(days=1)
+            return start, end
+        start = today.replace(month=1, day=1)
+        end = today.replace(month=12, day=31)
+        return start, end
+
+    @api.model
+    def internet_board_domain(self, filter_code="all"):
+        """Domain OWL danh sách Internet — không đổi action xmlid."""
+        today = fields.Date.context_today(self)
+        soon30 = today + relativedelta(days=30)
+        domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+        ]
+        code = filter_code or "all"
+        if code == "active":
+            domain.append(("state", "=", "active"))
+        elif code in ("suspend", "paused"):
+            domain.append(("state", "=", "suspend"))
+        elif code == "liquidated":
+            domain.append(("state", "in", ("liquidated", "cancel")))
+        elif code == "expire_soon":
+            domain += [
+                ("state", "=", "active"),
+                ("date_end", ">=", today),
+                ("date_end", "<=", soon30),
+            ]
+        elif code == "expired":
+            domain += [
+                ("state", "=", "active"),
+                ("date_end", "<", today),
+            ]
+        elif code in ("month", "quarter", "year", "report_month", "report_quarter", "report_year"):
+            start, end = self._internet_period_bounds(code)
+            domain += self._dash_overlap(start, end)
+        return domain
+
+    @api.model
+    def search_internet_board(self, filter_code="all", limit=300, offset=0):
+        domain = self.internet_board_domain(filter_code)
+        fields_list = [
+            "name", "code", "customer_code", "store_id", "provider_id",
+            "date_start", "date_end", "bandwidth", "contract_amount",
+            "next_payment_amount", "ops_status", "state",
+            "remaining_days", "remaining_time", "alert_level", "store_mien",
+        ]
+        return self.search_read(domain, fields_list, offset=offset, limit=limit, order="date_end desc, id desc")
+
+    @api.model
+    def _dash_base_domain(self, region_id=None, store_id=None):
+        domain = [
+            ("active", "=", True),
+            ("state", "not in", ("cancel", "draft")),
+        ]
+        stype = self.env["phan.he.service.type"].search(
+            [("code", "=", "internet")], limit=1
+        )
+        if stype:
+            domain.append(("service_type_id", "=", stype.id))
+        else:
+            domain.append(("category", "=", "internet"))
+        if store_id:
+            domain.append(("store_id", "=", store_id))
+        elif region_id:
+            domain.append(("mien_id", "=", region_id))
+        return domain
+
+    @api.model
+    def _dash_overlap(self, start, end):
+        return [
+            "|", ("date_start", "=", False), ("date_start", "<=", end),
+            "|", ("date_end", "=", False), ("date_end", ">=", start),
+        ]
+
+    @api.model
+    def _dash_sum(self, domain):
+        groups = self.read_group(domain, ["contract_amount:sum"], [])
+        if not groups:
+            return 0.0
+        return float(groups[0].get("contract_amount") or 0.0)
+
+    @api.model
+    def _parse_dash_month(self, selected_month, today):
+        raw = str(selected_month or "").strip()
+        if raw:
+            if "-" in raw and len(raw) >= 7:
+                parts = raw.split("-")
+                try:
+                    return int(parts[0]), int(parts[1])
+                except (TypeError, ValueError):
+                    pass
+            if "/" in raw:
+                parts = raw.split("/")
+                try:
+                    if len(parts[0]) == 4:
+                        return int(parts[0]), int(parts[1])
+                    return int(parts[1]), int(parts[0])
+                except (TypeError, ValueError, IndexError):
+                    pass
+        return today.year, today.month
+
+    @api.model
+    def _dash_mien_meta(self, miens):
+        ordered = []
+        used = set()
+        by_code = {(m.code or "").upper(): m for m in miens}
+        for code in self.REGION_ORDER:
+            m = by_code.get(code)
+            if m:
+                ordered.append(m)
+                used.add(m.id)
+        for m in miens:
+            if m.id not in used:
+                ordered.append(m)
+        rows = []
+        fallback = ["#2f80ed", "#f2994a", "#27ae60", "#9b51e0"]
+        for i, m in enumerate(ordered):
+            code = (m.code or "").upper()
+            rows.append({
+                "id": m.id,
+                "code": code,
+                "name": m.name or code,
+                "short": (m.name or "").replace("Miền ", "").strip() or code,
+                "color": self.REGION_COLORS.get(code) or fallback[i % len(fallback)],
+            })
+        return rows
+
+    @api.model
+    def _dash_delta(self, current, previous):
+        if not previous:
+            return 0.0 if not current else 100.0
+        return round(((current - previous) / previous) * 100.0, 1)

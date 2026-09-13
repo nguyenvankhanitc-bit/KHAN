@@ -6,7 +6,7 @@ from odoo import api, fields, models
 class PhanHeStore(models.Model):
     _name = "phan.he.store"
     _description = "Cửa hàng"
-    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.access.mixin"]
     _order = "code, name"
     _rec_names_search = ["code", "name"]
 
@@ -110,3 +110,12 @@ class PhanHeStore(models.Model):
             "domain": [("store_id", "=", self.id)],
             "context": {"default_store_id": self.id},
         }
+
+    def _phan_he_service_code(self):
+        return "internet"
+
+    def _phan_he_internet_menu_codes(self, operation):
+        from .internet_menu_permission import SERVICE_READ_MENUS
+        if operation == "read":
+            return list(SERVICE_READ_MENUS) + ["setting_store"]
+        return ["setting_store"]

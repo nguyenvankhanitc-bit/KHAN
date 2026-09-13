@@ -853,10 +853,19 @@ class PhanHeService(models.Model):
         miens = self.env["phan.he.mien"].search([("active", "=", True)])
         mien_meta = self._dash_mien_meta(miens)
 
-        month_dom = base + self._dash_cost_domain(m_start, m_end)
-        prev_dom = base + self._dash_cost_domain(prev_start, prev_end)
-        month_total = self._dash_sum(month_dom)
-        prev_total = self._dash_sum(prev_dom)
+        month_recs = self.search(
+            base + self._dash_due_soon_domain(m_start, m_end),
+            order="remaining_days asc, id desc",
+        )
+        by_rows, due_sum = self._dash_group_due_stores(month_recs)
+        month_total = self._dash_mien_total(due_sum, mien_meta)
+
+        prev_recs = self.search(
+            base + self._dash_due_soon_domain(prev_start, prev_end),
+            order="remaining_days asc, id desc",
+        )
+        _prev_rows, prev_sum = self._dash_group_due_stores(prev_recs)
+        prev_total = self._dash_mien_total(prev_sum, mien_meta)
         month_delta = self._dash_delta(month_total, prev_total)
 
         # Sparkline: từng tuần trong tháng đang chọn
@@ -865,13 +874,16 @@ class PhanHeService(models.Model):
         w = 1
         while day <= m_end:
             week_end = min(day + relativedelta(days=6), m_end)
+            week_recs = self.search(
+                base + self._dash_due_soon_domain(day, week_end),
+                order="id desc",
+            )
+            _wr, week_sum = self._dash_group_due_stores(week_recs)
             month_weeks.append({
                 "key": f"W{w}",
                 "label": f"Tuần {w}",
                 "full": f"{day.day:02d}/{day.month:02d}",
-                "amount": self._dash_sum(
-                    base + self._dash_cost_domain(day, week_end)
-                ),
+                "amount": self._dash_mien_total(week_sum, mien_meta),
             })
             day = week_end + relativedelta(days=1)
             w += 1
@@ -881,33 +893,21 @@ class PhanHeService(models.Model):
         for i in range(5, -1, -1):
             ts = m_start - relativedelta(months=i)
             te = ts + relativedelta(months=1, days=-1)
+            tr_recs = self.search(base + self._dash_due_soon_domain(ts, te), order="id desc")
+            _tr, tr_sum = self._dash_group_due_stores(tr_recs)
             trend.append({
                 "key": f"{ts.year}-{ts.month:02d}",
                 "label": f"Th{ts.month}",
                 "full": f"{ts.month:02d}/{ts.year}",
-                "amount": self._dash_sum(
-                    base + self._dash_cost_domain(ts, te)
-                ),
+                "amount": self._dash_mien_total(tr_sum, mien_meta),
             })
 
-        by_mien = {
-            (row["mien_id"][0] if row.get("mien_id") else 0): row
-            for row in self.read_group(
-                month_dom, ["next_payment_amount:sum", "mien_id"], ["mien_id"]
-            )
-        }
-        by_mien_prev = {
-            (row["mien_id"][0] if row.get("mien_id") else 0): row
-            for row in self.read_group(
-                prev_dom, ["next_payment_amount:sum", "mien_id"], ["mien_id"]
-            )
-        }
         region_rows = []
         for m in mien_meta:
             mid = m["id"]
-            amt = float((by_mien.get(mid) or {}).get("next_payment_amount") or 0.0)
-            prev_amt = float((by_mien_prev.get(mid) or {}).get("next_payment_amount") or 0.0)
-            cnt = int((by_mien.get(mid) or {}).get("mien_id_count") or 0)
+            amt = float(due_sum.get(mid, 0.0) or 0.0)
+            prev_amt = float(prev_sum.get(mid, 0.0) or 0.0)
+            cnt = len(by_rows.get(mid, []))
             pct = round((amt / month_total) * 100, 1) if month_total else 0.0
             region_rows.append({
                 **m,
@@ -964,51 +964,13 @@ class PhanHeService(models.Model):
             month_bars.append({
                 "month": mo,
                 "label": f"T{mo}",
-                "amount": self._dash_sum(
-                    base + self._dash_cost_domain(ys, ye)
+                "amount": self._dash_mien_total(
+                    self._dash_group_due_stores(
+                        self.search(base + self._dash_due_soon_domain(ys, ye), order="id desc")
+                    )[1],
+                    mien_meta,
                 ),
             })
-
-        month_recs = self.search(
-            base + self._dash_due_soon_domain(m_start, m_end),
-            order="remaining_days asc, id desc",
-        )
-        by_best = {}
-        for svc in month_recs:
-            mid = svc.mien_id.id or 0
-            store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
-            key = (mid, store_key)
-            amt = float(svc.next_payment_amount or 0.0)
-            days = int(svc.remaining_days or 0)
-            row = by_best.get(key)
-            if not row:
-                by_best[key] = {
-                    "id": svc.id,
-                    "store": svc.store_id.name or "—",
-                    "provider": svc.provider_id.name or "—",
-                    "bandwidth": svc.bandwidth or "—",
-                    "amount": amt,
-                    "remaining_days": days,
-                    "remaining_time": svc.remaining_time or "",
-                }
-                continue
-            row["amount"] += amt
-            if days < row["remaining_days"]:
-                row["id"] = svc.id
-                row["provider"] = svc.provider_id.name or row["provider"]
-                row["bandwidth"] = svc.bandwidth or row["bandwidth"]
-                row["remaining_days"] = days
-                row["remaining_time"] = svc.remaining_time or row["remaining_time"]
-
-        by_rows = {}
-        due_sum = {}
-        for (mid, _sk), row in by_best.items():
-            by_rows.setdefault(mid, []).append(row)
-            due_sum[mid] = due_sum.get(mid, 0.0) + row["amount"]
-        for mid, rows in by_rows.items():
-            rows.sort(key=lambda r: (r["remaining_days"], r["store"]))
-            for i, row in enumerate(rows, 1):
-                row["stt"] = i
 
         detail_tables = []
         for m in mien_meta:
@@ -1219,6 +1181,50 @@ class PhanHeService(models.Model):
             "|", ("date_start", "=", False), ("date_start", "<=", end),
             "|", ("date_end", "=", False), ("date_end", ">=", start),
         ]
+
+    @api.model
+    def _dash_group_due_stores(self, recs):
+        """Gộp 1 cửa hàng / miền; trả bảng và tổng tiền theo miền."""
+        by_best = {}
+        for svc in recs:
+            mid = svc.mien_id.id or 0
+            store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
+            key = (mid, store_key)
+            amt = float(svc.next_payment_amount or 0.0)
+            days = int(svc.remaining_days or 0)
+            row = by_best.get(key)
+            if not row:
+                by_best[key] = {
+                    "id": svc.id,
+                    "store": svc.store_id.name or "—",
+                    "provider": svc.provider_id.name or "—",
+                    "bandwidth": svc.bandwidth or "—",
+                    "amount": amt,
+                    "remaining_days": days,
+                    "remaining_time": svc.remaining_time or "",
+                }
+                continue
+            row["amount"] += amt
+            if days < row["remaining_days"]:
+                row["id"] = svc.id
+                row["provider"] = svc.provider_id.name or row["provider"]
+                row["bandwidth"] = svc.bandwidth or row["bandwidth"]
+                row["remaining_days"] = days
+                row["remaining_time"] = svc.remaining_time or row["remaining_time"]
+        by_rows = {}
+        due_sum = {}
+        for (mid, _sk), row in by_best.items():
+            by_rows.setdefault(mid, []).append(row)
+            due_sum[mid] = due_sum.get(mid, 0.0) + row["amount"]
+        for mid, rows in by_rows.items():
+            rows.sort(key=lambda r: (r["remaining_days"], r["store"]))
+            for i, row in enumerate(rows, 1):
+                row["stt"] = i
+        return by_rows, due_sum
+
+    @api.model
+    def _dash_mien_total(self, due_sum, mien_meta):
+        return sum(float(due_sum.get(m["id"], 0.0) or 0.0) for m in mien_meta)
 
     @api.model
     def _dash_cost_domain(self, start, end):

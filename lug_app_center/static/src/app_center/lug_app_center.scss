@@ -13,7 +13,6 @@
     --eac-radius: 14px;
     --eac-topbar-h: 64px;
     --eac-sidebar-w: 248px;
-    --eac-sidebar-w-collapsed: 72px;
 
     display: flex;
     flex-direction: column;
@@ -293,43 +292,7 @@
     }
 
     &.is-collapsed .o_eac_sidebar {
-        width: var(--eac-sidebar-w-collapsed);
-
-        .o_eac_nav {
-            padding: 0.85rem 0.45rem;
-            align-items: center;
-        }
-
-        .o_eac_nav_item {
-            justify-content: center;
-            padding: 0.7rem 0.4rem;
-            gap: 0;
-
-            span,
-            .o_eac_nav_new {
-                display: none;
-            }
-
-            .o_eac_nav_badge {
-                position: absolute;
-                top: 0.28rem;
-                right: 0.28rem;
-                display: inline-flex;
-                min-width: 1.05rem;
-                height: 1.05rem;
-                padding: 0 0.28rem;
-                font-size: 0.62rem;
-            }
-
-            i {
-                width: auto;
-                font-size: 1.05rem;
-            }
-        }
-
-        .o_eac_sidebar_foot {
-            display: none;
-        }
+        width: 0;
     }
 
     .o_eac_nav {
@@ -385,40 +348,17 @@
     .o_eac_nav_badge,
     .o_eac_nav_new {
         font-style: normal;
-        font-size: 0.72rem;
+        font-size: 0.68rem;
         font-weight: 700;
         border-radius: 999px;
-        margin-left: auto;
-        flex-shrink: 0;
-        min-width: 1.35rem;
-        height: 1.35rem;
-        padding: 0 0.38rem;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        line-height: 1;
-        background: #ef4444;
+        padding: 0.1rem 0.4rem;
+        background: var(--eac-purple-2);
         color: #fff;
-        box-shadow: 0 1px 3px rgba(185, 28, 28, 0.35);
-    }
-
-    .o_eac_nav_badge + .o_eac_nav_badge {
-        margin-left: 0.28rem;
-    }
-
-    .o_eac_nav_badge_overdue {
-        background: #ef4444;
-    }
-
-    .o_eac_nav_badge_today {
-        background: #f97316;
-        box-shadow: 0 1px 3px rgba(194, 65, 12, 0.35);
     }
 
     .o_eac_nav_new {
         background: #c084fc;
         color: #3b0764;
-        box-shadow: none;
     }
 
     .o_eac_sidebar_foot {
@@ -481,53 +421,13 @@
     }
 
     .o_eac_welcome_text {
-        flex: 1;
-        min-width: 0;
-        max-width: 42rem;
-
-        .o_eac_greet_title {
-            margin: 0 0 0.35rem;
-            font-size: clamp(1.2rem, 2.1vw, 1.55rem);
-            font-weight: 800;
-            color: var(--eac-purple-deep);
-            line-height: 1.3;
-        }
-
-        .o_eac_greet_date {
-            margin: 0 0 0.65rem;
-            font-size: 0.92rem;
-            font-weight: 550;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .o_eac_greet_primary {
-            margin: 0 0 0.35rem;
-            font-size: 1rem;
-            font-weight: 650;
-            color: #334155;
-            line-height: 1.45;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: baseline;
-            gap: 0.25rem;
-        }
-
-        .o_eac_greet_count {
-            font-style: normal;
-            font-size: 1.35rem;
-            font-weight: 850;
-            color: #c2410c;
-            line-height: 1;
-            padding: 0 0.1rem;
-        }
-
-        .o_eac_greet_tip {
+        p {
             margin: 0;
-            font-size: 0.9rem;
-            font-weight: 550;
-            color: #6366f1;
-            line-height: 1.45;
+            font-size: clamp(1.15rem, 2vw, 1.45rem);
+            font-weight: 750;
+            color: var(--eac-purple-deep);
+            max-width: 40rem;
+            line-height: 1.35;
         }
     }
 
@@ -658,21 +558,6 @@
             display: block;
         }
 
-        &--lg {
-            width: 72px;
-            height: 72px;
-            border-radius: 14px;
-            background: #fff;
-
-            img {
-                width: 118%;
-                height: 118%;
-                max-width: none;
-                object-fit: contain;
-                transform: scale(1.12);
-            }
-        }
-
         &--fa {
             font-size: 1.35rem;
 
@@ -680,11 +565,6 @@
                 line-height: 1;
             }
         }
-    }
-
-    .o_eac_app_card--phan-he .o_eac_app_icon--img {
-        width: 72px;
-        height: 72px;
     }
 
     .o_eac_app_meta {
@@ -731,9 +611,7 @@
 
         &.is-collapsed .o_eac_sidebar {
             width: 0;
-            padding: 0;
             box-shadow: none;
-            pointer-events: none;
         }
 
         .o_eac_app_grid {

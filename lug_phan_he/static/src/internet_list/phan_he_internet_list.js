@@ -563,9 +563,8 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     customerCodeLabel(rec) {
-        const raw = rec.customer_code || rec.code || String(rec.id);
-        const num = String(raw).replace(/\D/g, "") || String(rec.id);
-        return `Mã KH-${String(num).padStart(6, "0")}`;
+        const code = String(rec.customer_code || "").trim();
+        return code || "—";
     }
 
     contractCode(rec) {
@@ -1708,9 +1707,8 @@ export class PhanHeQuarterCostBoard extends Component {
     }
 
     customerCodeLabel(row) {
-        const raw = row.customer_code || row.code || String(row.id || "");
-        const num = String(raw).replace(/\D/g, "") || String(row.id || "");
-        return `Mã KH-${String(num).padStart(6, "0")}`;
+        const code = String(row.customer_code || "").trim();
+        return code || "—";
     }
 
     providerMark(row) {

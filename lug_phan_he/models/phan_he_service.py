@@ -853,8 +853,8 @@ class PhanHeService(models.Model):
         miens = self.env["phan.he.mien"].search([("active", "=", True)])
         mien_meta = self._dash_mien_meta(miens)
 
-        month_dom = base + self._dash_pay_due_domain(m_start, m_end, soon_days=30)
-        prev_dom = base + self._dash_pay_due_domain(prev_start, prev_end, soon_days=30)
+        month_dom = base + self._dash_cost_domain(m_start, m_end)
+        prev_dom = base + self._dash_cost_domain(prev_start, prev_end)
         month_total = self._dash_sum(month_dom)
         prev_total = self._dash_sum(prev_dom)
         month_delta = self._dash_delta(month_total, prev_total)
@@ -870,7 +870,7 @@ class PhanHeService(models.Model):
                 "label": f"Tuần {w}",
                 "full": f"{day.day:02d}/{day.month:02d}",
                 "amount": self._dash_sum(
-                    base + self._dash_pay_due_domain(day, week_end, soon_days=30)
+                    base + self._dash_cost_domain(day, week_end)
                 ),
             })
             day = week_end + relativedelta(days=1)
@@ -886,7 +886,7 @@ class PhanHeService(models.Model):
                 "label": f"Th{ts.month}",
                 "full": f"{ts.month:02d}/{ts.year}",
                 "amount": self._dash_sum(
-                    base + self._dash_pay_due_domain(ts, te, soon_days=30)
+                    base + self._dash_cost_domain(ts, te)
                 ),
             })
 
@@ -924,13 +924,9 @@ class PhanHeService(models.Model):
         year_bars = []
         for y in range(year - 3, year + 1):
             last_mo = month if y == year else 12
-            y_amt = 0.0
-            for mo in range(1, last_mo + 1):
-                ys = fields.Date.to_date(f"{y}-{mo:02d}-01")
-                ye = ys + relativedelta(months=1, days=-1)
-                y_amt += self._dash_sum(
-                    base + self._dash_pay_due_domain(ys, ye, soon_days=None)
-                )
+            ys = fields.Date.to_date(f"{y}-01-01")
+            ye = fields.Date.to_date(f"{y}-{last_mo:02d}-01") + relativedelta(months=1, days=-1)
+            y_amt = self._dash_sum(base + self._dash_cost_domain(ys, ye))
             year_bars.append({"year": y, "amount": y_amt, "is_current": y == year})
         cur_year = year_bars[-1]["amount"] if year_bars else 0.0
         prev_year = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
@@ -969,16 +965,16 @@ class PhanHeService(models.Model):
                 "month": mo,
                 "label": f"T{mo}",
                 "amount": self._dash_sum(
-                    base + self._dash_pay_due_domain(ys, ye, soon_days=30)
+                    base + self._dash_cost_domain(ys, ye)
                 ),
             })
 
-        month_recs = self.search(month_dom, order="next_payment_amount desc, id desc")
+        month_recs = self.search(month_dom, order="remaining_days asc, id desc")
         by_rows = {}
         for svc in month_recs:
             mid = svc.mien_id.id or 0
             by_rows.setdefault(mid, [])
-            if len(by_rows[mid]) < 40:
+            if len(by_rows[mid]) < 80:
                 by_rows[mid].append({
                     "id": svc.id,
                     "stt": len(by_rows[mid]) + 1,
@@ -986,6 +982,8 @@ class PhanHeService(models.Model):
                     "provider": svc.provider_id.name or "—",
                     "bandwidth": svc.bandwidth or "—",
                     "amount": float(svc.next_payment_amount or 0.0),
+                    "remaining_days": int(svc.remaining_days or 0),
+                    "remaining_time": svc.remaining_time or "",
                 })
 
         detail_tables = []
@@ -1000,7 +998,7 @@ class PhanHeService(models.Model):
                     "key": f"{ts.year}-{ts.month:02d}",
                     "amount": self._dash_sum(
                         self._dash_base_domain(m["id"], store_id)
-                        + self._dash_pay_due_domain(ts, te, soon_days=30)
+                        + self._dash_cost_domain(ts, te)
                     ),
                 })
             spark_max = max((s["amount"] for s in spark), default=1) or 1
@@ -1011,14 +1009,12 @@ class PhanHeService(models.Model):
             year_spark = []
             for y in range(year - 3, year + 1):
                 last_mo = month if y == year else 12
-                tot = 0.0
-                for mo in range(1, last_mo + 1):
-                    ys = fields.Date.to_date(f"{y}-{mo:02d}-01")
-                    ye = ys + relativedelta(months=1, days=-1)
-                    tot += self._dash_sum(
-                        self._dash_base_domain(m["id"], store_id)
-                        + self._dash_pay_due_domain(ys, ye, soon_days=None)
-                    )
+                ys = fields.Date.to_date(f"{y}-01-01")
+                ye = fields.Date.to_date(f"{y}-{last_mo:02d}-01") + relativedelta(months=1, days=-1)
+                tot = self._dash_sum(
+                    self._dash_base_domain(m["id"], store_id)
+                    + self._dash_cost_domain(ys, ye)
+                )
                 year_spark.append({"key": str(y), "amount": tot})
                 if y == year:
                     y_amt = tot
@@ -1195,23 +1191,18 @@ class PhanHeService(models.Model):
         ]
 
     @api.model
-    def _dash_pay_due_domain(self, start, end, soon_days=30):
-        """Tiền TT theo hạn trong tháng; ≤30 ngày tính theo Ngày kết thúc (date_end)."""
+    def _dash_cost_domain(self, start, end):
+        """HĐ Đang sử dụng còn hiệu lực trong kỳ — cộng Số tiền thanh toán."""
         if not start or not end or start > end:
             return [("id", "=", 0)]
-        domain = [
-            ("next_payment_id", "!=", False),
-            ("next_payment_id.date_due", ">=", start),
-            ("next_payment_id.date_due", "<=", end),
-        ]
-        if soon_days not in (None, False):
-            today = fields.Date.context_today(self)
-            soon = today + relativedelta(days=int(soon_days))
-            domain += [
-                ("date_end", ">=", today),
-                ("date_end", "<=", soon),
-            ]
-        return domain
+        return [
+            ("ops_status", "=", "active"),
+        ] + self._dash_overlap(start, end)
+
+    @api.model
+    def _dash_pay_due_domain(self, start, end, soon_days=30):
+        """Giữ API cũ: cùng miền với chi phí tháng (HĐ đang dùng trong kỳ)."""
+        return self._dash_cost_domain(start, end)
 
     @api.model
     def _dash_sum(self, domain):

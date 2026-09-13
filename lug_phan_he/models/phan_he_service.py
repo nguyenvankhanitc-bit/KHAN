@@ -1196,26 +1196,22 @@ class PhanHeService(models.Model):
 
     @api.model
     def _dash_pay_due_domain(self, start, end, soon_days=30):
-        """Hạn thanh toán nằm trong khoảng; mặc định chỉ kỳ còn ≤30 ngày so với hôm nay."""
+        """Tiền TT theo hạn trong tháng; ≤30 ngày tính theo Ngày kết thúc (date_end)."""
         if not start or not end or start > end:
             return [("id", "=", 0)]
-        if soon_days in (None, False):
-            return [
-                ("next_payment_id", "!=", False),
-                ("next_payment_id.date_due", ">=", start),
-                ("next_payment_id.date_due", "<=", end),
-            ]
-        today = fields.Date.context_today(self)
-        soon = today + relativedelta(days=int(soon_days))
-        lo = max(start, today)
-        hi = min(end, soon)
-        if lo > hi:
-            return [("id", "=", 0)]
-        return [
+        domain = [
             ("next_payment_id", "!=", False),
-            ("next_payment_id.date_due", ">=", lo),
-            ("next_payment_id.date_due", "<=", hi),
+            ("next_payment_id.date_due", ">=", start),
+            ("next_payment_id.date_due", "<=", end),
         ]
+        if soon_days not in (None, False):
+            today = fields.Date.context_today(self)
+            soon = today + relativedelta(days=int(soon_days))
+            domain += [
+                ("date_end", ">=", today),
+                ("date_end", "<=", soon),
+            ]
+        return domain
 
     @api.model
     def _dash_sum(self, domain):

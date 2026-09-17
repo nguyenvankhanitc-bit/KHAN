@@ -30,6 +30,7 @@ export class DailyWorkViewer extends Component {
 
     setup() {
         this.orm = useService("orm");
+        this.action = useService("action");
         this.notification = useService("notification");
         const now = new Date();
         const year = now.getFullYear();
@@ -320,6 +321,10 @@ export class DailyWorkViewer extends Component {
                 error: e?.data?.message || _t("Không tải được công việc."),
             };
         }
+    }
+
+    async openTeamChecklist() {
+        await this.action.doAction("daily_work_task.action_daily_work_team_checklist");
     }
 
     async onApplyFilter() {

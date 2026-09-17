@@ -40,6 +40,11 @@
                                 title="Áp dụng tháng cho các NV đang mở">
                             <i class="fa fa-refresh"/> Xem tháng
                         </button>
+                        <button type="button" class="btn btn-outline-primary btn-sm align-self-end"
+                                t-on-click="openTeamChecklist"
+                                title="Checklist công việc team">
+                            <i class="fa fa-check-square-o"/> Checklist CV
+                        </button>
                     </div>
                 </div>
 

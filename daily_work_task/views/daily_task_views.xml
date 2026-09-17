@@ -26,6 +26,7 @@
                          decoration-success="state == 'done'"
                          decoration-info="state == 'in_progress'"
                          decoration-muted="state == 'not_started'"/>
+                <field name="manager_confirmed" string="Xác nhận QL" optional="show"/>
                 <field name="is_overdue" optional="show"/>
                 <field name="note" optional="hide"/>
             </list>
@@ -37,18 +38,12 @@
         <field name="name">daily.task.form</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <form string="Công việc">
-                <header>
-                    <button name="action_set_not_started" type="object" string="Chưa bắt đầu"
-                            invisible="state == 'not_started'" class="btn-secondary"/>
-                    <button name="action_set_in_progress" type="object" string="Đang xử lý"
-                            invisible="state == 'in_progress'" class="btn-primary"/>
-                    <button name="action_set_done" type="object" string="Hoàn thành"
-                            invisible="state == 'done'" class="btn-success"/>
-                    <field name="state" widget="statusbar"
-                           statusbar_visible="not_started,in_progress,done"/>
-                </header>
+            <form string="Công việc" class="o_dwt_task_form">
                 <sheet>
+                    <div class="o_dwt_state_bar">
+                        <label for="state" class="o_dwt_state_bar_lbl">Trạng thái công việc</label>
+                        <field name="state" class="o_dwt_state_dropdown"/>
+                    </div>
                     <div class="oe_button_box" name="button_box"/>
                     <widget name="web_ribbon" title="Quá hạn" bg_color="text-bg-danger"
                             invisible="not is_overdue"/>
@@ -58,8 +53,8 @@
                             <field name="name" placeholder="Nhập tên công việc..."/>
                         </h1>
                     </div>
-                    <group>
-                        <group string="Thông tin giao việc">
+                    <group class="o_dwt_form_sections">
+                        <group string="Thông tin giao việc" class="o_dwt_form_card" colspan="2">
                             <field name="assigned_by_id" widget="many2one_avatar_user"/>
                             <field name="assignee_id"/>
                             <field name="assignee_user_id" widget="many2one_avatar_user"
@@ -68,13 +63,16 @@
                             <field name="assign_date"/>
                             <field name="deadline"/>
                         </group>
-                        <group string="Phân loại &amp; tiến độ">
+                        <group string="Phân loại &amp; tiến độ" class="o_dwt_form_card" colspan="2">
                             <field name="department_id"/>
                             <field name="work_group_id"/>
                             <field name="priority"/>
                             <field name="duration_minutes"/>
                             <field name="duration_hours" readonly="1"/>
-                            <field name="completion_percent" widget="progressbar"/>
+                            <field name="completion_percent"
+                                   class="o_dwt_pct_input"
+                                   widget="integer"
+                                   readonly="state == 'done'"/>
                             <field name="is_overdue" readonly="1"/>
                         </group>
                     </group>
@@ -115,7 +113,10 @@
                     highlight_color="color">
                 <field name="name"/>
                 <field name="deadline"/>
+                <field name="assign_date"/>
+                <field name="date_done"/>
                 <field name="days_to_deadline"/>
+                <field name="assigned_by_id"/>
                 <field name="assignee_id"/>
                 <field name="assignee_user_id"/>
                 <field name="work_group_id"/>
@@ -125,6 +126,8 @@
                 <field name="completion_percent"/>
                 <field name="color"/>
                 <field name="is_overdue"/>
+                <field name="duration_minutes"/>
+                <field name="duration_hours"/>
                 <field name="activity_ids"/>
                 <templates>
                     <t t-name="card">
@@ -135,31 +138,56 @@
                                        class="fa fa-check-circle o_daily_kcard_done_ico"/>
                                     <field name="name" class="o_daily_kcard_title"/>
                                 </div>
-                                <field name="priority" widget="badge"
-                                         decoration-danger="priority == 'high'"
-                                         decoration-warning="priority == 'medium'"
-                                         decoration-info="priority == 'low'"/>
                             </div>
 
                             <div class="o_daily_kcard_meta">
-                                <div class="o_daily_kcard_line">
-                                    <i class="fa fa-calendar o_daily_kcard_ico_cal"/>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Người giao</span>
+                                    <field name="assigned_by_id"/>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Ngày giao việc</span>
+                                    <field name="assign_date"/>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Hạn hoàn thành</span>
                                     <field name="deadline"/>
                                 </div>
-                                <div t-if="record.work_group_id.raw_value" class="o_daily_kcard_line">
-                                    <i class="fa fa-folder o_daily_kcard_ico_folder"/>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Ngày hoàn thành</span>
+                                    <t t-if="record.date_done.raw_value">
+                                        <field name="date_done"/>
+                                    </t>
+                                    <t t-else="">—</t>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Mức ưu tiên</span>
+                                    <field name="priority" widget="badge"
+                                             decoration-danger="priority == 'high'"
+                                             decoration-warning="priority == 'medium'"
+                                             decoration-info="priority == 'low'"/>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Tổng TG (giờ)</span>
+                                    <span t-esc="record.duration_hours.value or '0,00'"/>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Trạng thái công việc</span>
+                                    <field name="state" widget="badge"
+                                             decoration-success="state == 'done'"
+                                             decoration-info="state == 'in_progress'"
+                                             decoration-muted="state == 'not_started'"/>
+                                </div>
+                                <div class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Quá hạn</span>
+                                    <span t-att-class="record.is_overdue.raw_value ? 'o_daily_kcard_overdue_yes' : ''">
+                                        <t t-if="record.is_overdue.raw_value">Có</t>
+                                        <t t-else="">Không</t>
+                                    </span>
+                                </div>
+                                <div t-if="record.work_group_id.raw_value" class="o_daily_kcard_row">
+                                    <span class="o_daily_kcard_lbl">Hạng mục</span>
                                     <field name="work_group_id"/>
-                                </div>
-                            </div>
-
-                            <div t-if="record.kanban_column.raw_value == 'in_progress'"
-                                 class="o_daily_kcard_progress">
-                                <div class="o_daily_kcard_progress_label">
-                                    <t t-esc="record.completion_percent.value or 0"/>%
-                                </div>
-                                <div class="o_daily_kcard_progress_track">
-                                    <div class="o_daily_kcard_progress_bar"
-                                         t-attf-style="width: #{record.completion_percent.raw_value or 0}%"/>
                                 </div>
                             </div>
 
@@ -170,15 +198,13 @@
                                 <t t-else="">Còn <t t-esc="record.days_to_deadline.value"/> ngày</t>
                             </div>
 
-                            <div t-if="record.kanban_column.raw_value == 'overdue'"
-                                 class="o_daily_kcard_overdue_tag">
-                                Quá hạn
-                            </div>
-
                             <footer class="o_daily_kcard_foot">
                                 <div class="o_daily_kcard_assignee">
-                                    <field name="assignee_user_id" widget="many2one_avatar_user"/>
-                                    <field name="assignee_id"/>
+                                    <img t-if="record.assignee_user_id.raw_value"
+                                         class="o_avatar rounded o_dwt_kcard_avatar"
+                                         t-attf-src="/web/image/res.users/#{record.assignee_user_id.raw_value}/avatar_128"
+                                         alt=""/>
+                                    <field name="assignee_id" class="o_dwt_kcard_assignee_name"/>
                                 </div>
                                 <field name="activity_ids" widget="kanban_activity"/>
                             </footer>

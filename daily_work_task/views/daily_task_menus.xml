@@ -46,32 +46,39 @@
               sequence="4"
               groups="daily_work_task.group_daily_work_viewer"/>
 
+    <menuitem id="menu_daily_work_team_checklist"
+              name="Checklist CV team"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_team_checklist"
+              sequence="5"
+              groups="daily_work_task.group_daily_work_viewer"/>
+
     <menuitem id="menu_daily_work_kanban"
               name="Kanban công việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_task_kanban"
-              sequence="5"
+              sequence="6"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_calendar"
               name="Lịch"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_calendar"
-              sequence="6"
+              sequence="7"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_overdue"
               name="Công việc quá hạn"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_task_overdue"
-              sequence="7"
+              sequence="8"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_reminders"
               name="Nhắc việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_reminders"
-              sequence="8"
+              sequence="9"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📊 BÁO CÁO ========== -->

@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkEmployeeWs">
-        <div class="o_daily_work_employee_ws o_action">
-            <div class="o_content o_ews_scroll">
+        <div class="o_daily_work_employee_ws o_action" t-ref="root">
+            <div class="o_ews_pin" t-ref="pin">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
-                        <h2 class="o_ews_page_title">NHẬP CÔNG VIỆC</h2>
+                        <h2 class="o_ews_page_title" t-on-click="openMobileForm">
+                            <t t-if="isActiveTab('board')">CÔNG VIỆC HÔM NAY</t>
+                            <t t-else="">NHẬP CÔNG VIỆC</t>
+                        </h2>
                         <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
                             <button type="button"
                                     t-att-class="'o_ews_tab' + (isActiveTab('tasks') ? ' active' : '')"
-                                    t-on-click="() => this.setActiveTab('tasks')">
+                                    t-on-click="openMyTasksTab">
                                 <i class="fa fa-pencil-square-o o_ews_tab_icon o_ews_tab_icon_tasks"/>
                                 <span>Việc của tôi</span>
                             </button>
@@ -74,7 +77,36 @@
                         </div>
                     </div>
                 </div>
-
+                <div class="o_ews_mchips" t-if="!state.loading &amp;&amp; isActiveTab('board')">
+                    <button type="button" t-att-class="'o_ews_mchip is-all' + (state.boardChip === 'all' ? ' active' : '')" t-on-click="() => this.setBoardChip('all')">
+                        Tất cả <em t-esc="boardChipCounts.all"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip is-todo' + (state.boardChip === 'todo' ? ' active' : '')" t-on-click="() => this.setBoardChip('todo')">
+                        Chưa hoàn thành <em t-esc="boardChipCounts.todo"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip is-doing' + (state.boardChip === 'doing' ? ' active' : '')" t-on-click="() => this.setBoardChip('doing')">
+                        Đang xử lý <em t-esc="boardChipCounts.doing"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip is-done' + (state.boardChip === 'done' ? ' active' : '')" t-on-click="() => this.setBoardChip('done')">
+                        Đã hoàn thành <em t-esc="boardChipCounts.done"/>
+                    </button>
+                </div>
+                <div class="o_ews_mchips" t-if="!state.loading &amp;&amp; isActiveTab('tasks')">
+                    <button type="button" t-att-class="'o_ews_mchip' + (state.listChip === 'all' ? ' active' : '')" t-on-click="() => this.setListChip('all')">
+                        Tất cả <em t-esc="mobileChipCounts.all"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip' + (state.listChip === 'today' ? ' active' : '')" t-on-click="() => this.setListChip('today')">
+                        Hôm nay <em t-esc="mobileChipCounts.today"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip' + (state.listChip === 'overdue' ? ' active' : '')" t-on-click="() => this.setListChip('overdue')">
+                        Quá hạn <em t-esc="mobileChipCounts.overdue"/>
+                    </button>
+                    <button type="button" t-att-class="'o_ews_mchip' + (state.listChip === 'done' ? ' active' : '')" t-on-click="() => this.setListChip('done')">
+                        Hoàn thành <em t-esc="mobileChipCounts.done"/>
+                    </button>
+                </div>
+            </div>
+            <div class="o_content o_ews_scroll">
                 <t t-if="state.loading">
                     <div class="text-center p-5">
                         <i class="fa fa-spinner fa-spin fa-2x"/>
@@ -119,10 +151,14 @@
                         </div>
 
                         <div class="o_ews_layout" t-ref="layout">
-                            <aside class="o_ews_form_panel" t-att-class="{'o_ews_form_editing': state.editingTaskId}">
+                            <aside class="o_ews_form_panel"
+                                   t-att-class="(state.editingTaskId ? 'o_ews_form_editing' : '') + (state.showTaskForm ? ' o_ews_form_open' : '')">
                                 <h3 class="o_ews_form_title">
                                     <t t-if="state.editingTaskId">CHỈNH SỬA CÔNG VIỆC</t>
                                     <t t-else="">THÊM CÔNG VIỆC MỚI</t>
+                                    <button type="button" class="o_ews_form_close" t-on-click="closeMobileForm">
+                                        <i class="fa fa-times"/>
+                                    </button>
                                 </h3>
                                 <form class="o_ews_task_form" t-on-submit="onSubmit">
                                     <div class="o_ews_form_grid">
@@ -393,6 +429,64 @@
                                         </tbody>
                                     </table>
                                 </div>
+                                <div class="o_ews_mobile_board">
+                                    <div class="o_ews_mdate"><i class="fa fa-calendar"/> <t t-esc="todayBarLabel"/></div>
+                                    <t t-if="!mobileTasks.length">
+                                        <div class="o_ews_mempty">Chưa có công việc. Bấm «Nhập công việc» để thêm.</div>
+                                    </t>
+                                    <t t-foreach="mobileTasks" t-as="mtask" t-key="mtask.id">
+                                        <article class="o_ews_mcard" t-on-click="() => this.openMobileDetail(mtask)">
+                                            <div class="o_ews_mcard_body">
+                                                <h4 class="o_ews_mcard_name" t-esc="mtask.name"/>
+                                                <div class="o_ews_mcard_grid">
+                                                    <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="mtask.assign_date_display"/></span>
+                                                    <span><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="mtask.deadline_display"/></span>
+                                                    <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(mtask.duration_minutes || 0) + ' phút'"/></span>
+                                                    <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="mtask.assignee_name"/></span>
+                                                    <span>
+                                                        <i class="fa fa-flag"/> Trạng thái<br/>
+                                                        <b t-att-class="mobileStateClass(mtask)" t-esc="mobileStateLabel(mtask)"/>
+                                                    </span>
+                                                    <span t-att-class="mtask.is_active_overdue ? 'o_ews_moverdue' : ''">
+                                                        <i class="fa fa-exclamation-triangle"/> Quá hạn<br/>
+                                                        <b t-esc="mobileOverdueText(mtask)"/>
+                                                    </span>
+                                                    <span class="o_ews_mcard_note"><i class="fa fa-sticky-note-o"/> Ghi chú<br/><b t-esc="mtask.note || '—'"/></span>
+                                                </div>
+                                                <div class="o_ews_mcard_actions">
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" t-on-click.stop="() => this.openMobileDetail(mtask)">Xem</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click.stop="() => this.openDiscussion(mtask)">Thảo luận</button>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    </t>
+                                </div>
+                                <div class="o_ews_mdetail" t-if="state.detailTask" t-on-click="closeMobileDetail">
+                                    <div class="o_ews_mdetail_box" t-on-click.stop="() => {}">
+                                        <button type="button" class="o_ews_mdetail_close" t-on-click="closeMobileDetail">
+                                            <i class="fa fa-times"/>
+                                        </button>
+                                        <h3 class="o_ews_mcard_name" t-esc="state.detailTask.name"/>
+                                        <div class="o_ews_mcard_grid">
+                                            <span>Trạng thái<br/><b t-att-class="mobileStateClass(state.detailTask)" t-esc="mobileStateLabel(state.detailTask)"/></span>
+                                            <span>Quá hạn<br/><b t-esc="mobileOverdueText(state.detailTask)"/></span>
+                                            <span>Ngày giao<br/><b t-esc="state.detailTask.assign_date_display"/></span>
+                                            <span>Hạn hoàn thành<br/><b t-esc="state.detailTask.deadline_display"/></span>
+                                            <span>Thời gian<br/><b t-esc="(state.detailTask.duration_minutes || 0) + ' phút'"/></span>
+                                            <span>Người thực hiện<br/><b t-esc="state.detailTask.assignee_name"/></span>
+                                            <span>Hạng mục<br/><b t-esc="state.detailTask.work_group_label || '—'"/></span>
+                                            <span>Ưu tiên<br/><b t-esc="state.detailTask.priority_label || '—'"/></span>
+                                            <span class="o_ews_mcard_note">Ghi chú<br/><b t-esc="state.detailTask.note || '—'"/></span>
+                                        </div>
+                                        <div class="o_ews_mcard_actions">
+                                            <button type="button" class="btn btn-sm btn-primary" t-on-click="() => this.onEditTask(state.detailTask)">Chỉnh sửa</button>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="() => this.openDiscussion(state.detailTask)">Thảo luận</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button type="button" class="o_ews_fab" t-on-click="openMobileForm">
+                                    <i class="fa fa-plus"/> Nhập công việc
+                                </button>
                             </section>
                         </div>
 
@@ -977,7 +1071,7 @@
 
                     <!-- TAB 4: status board -->
                     <t t-if="isActiveTab('board')">
-                        <div class="o_ews_tab_section_head">
+                        <div class="o_ews_tab_section_head o_ews_board_desktop_head">
                             <h3>
                                 <i class="fa fa-th-large"/> Danh sách công việc
                                 <span class="o_ews_month_count_badge"
@@ -986,6 +1080,42 @@
                             <p class="o_ews_month_toggle_hint">
                                 Phân theo trạng thái · cột Hôm nay = việc có hạn đúng ngày hôm nay · cuộn để xem thêm
                             </p>
+                        </div>
+                        <div class="o_ews_today_mobile">
+                            <div class="o_ews_mdate"><i class="fa fa-calendar"/> <t t-esc="todayBarLabel"/></div>
+                            <t t-foreach="mobileBoardSections" t-as="sec" t-key="sec.key">
+                                <section t-if="sec.tasks.length" t-att-class="'o_ews_tsec is-' + sec.tone">
+                                    <button type="button" class="o_ews_tsec_head" t-on-click="() => this.toggleBoardGroup(sec.key)">
+                                        <i t-att-class="sec.icon"/>
+                                        <span t-esc="sec.title"/>
+                                        <em t-esc="sec.tasks.length"/>
+                                        <i t-att-class="'fa o_ews_tsec_chevron ' + (state.boardGroups[sec.key] ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                    </button>
+                                    <div class="o_ews_tsec_body" t-if="state.boardGroups[sec.key]">
+                                        <t t-foreach="sec.tasks" t-as="task" t-key="sec.key + '-' + task.id">
+                                            <article t-att-class="todayCardClass(task)" t-on-click="() => this.openMobileDetail(task)">
+                                                <div class="o_ews_tcard_accent"/>
+                                                <div class="o_ews_tcard_main">
+                                                    <div class="o_ews_tcard_top">
+                                                        <h4 class="o_ews_tcard_name" t-esc="task.name"/>
+                                                        <span t-att-class="mobileStateClass(task)" t-esc="mobileStateLabel(task)"/>
+                                                    </div>
+                                                    <div class="o_ews_tcard_meta">
+                                                        <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="task.assign_date_display || '—'"/></span>
+                                                        <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(task.duration_minutes || 0) + ' phút'"/></span>
+                                                        <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="task.assignee_name || '—'"/></span>
+                                                        <i class="fa fa-chevron-right o_ews_tcard_go"/>
+                                                    </div>
+                                                    <div class="o_ews_tcard_note">
+                                                        <i class="fa fa-sticky-note-o"/> Ghi chú
+                                                        <b t-esc="task.note || '—'"/>
+                                                    </div>
+                                                </div>
+                                            </article>
+                                        </t>
+                                    </div>
+                                </section>
+                            </t>
                         </div>
                         <div class="o_ews_status_boards_scroll">
                         <div class="o_ews_status_boards">

@@ -5,6 +5,7 @@ from . import daily_task_work_group
 from . import daily_task_recurring
 from . import daily_task_checklist
 from . import daily_task
+from . import daily_task_team_checklist
 from . import daily_task_dashboard
 from . import daily_task_access
 from . import daily_task_report_access

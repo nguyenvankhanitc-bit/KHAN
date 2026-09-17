@@ -90,8 +90,11 @@ export class DailyWorkEmployeeWs extends Component {
         this.notification = useService("notification");
         this.layoutRef = useRef("layout");
         this.chatBodyRef = useRef("chatBody");
+        this.rootRef = useRef("root");
+        this.pinRef = useRef("pin");
         this._onPointerMove = this._onPointerMove.bind(this);
         this._onPointerUp = this._onPointerUp.bind(this);
+        this._syncPinHeight = this._syncPinHeight.bind(this);
         const focusBoard = Boolean(
             this.props.action?.context?.daily_work_focus_board
             || this.props.action?.context?.daily_work_focus_today
@@ -138,6 +141,18 @@ export class DailyWorkEmployeeWs extends Component {
             totalDurationHours: 0,
             completionPercentAvg: 0,
             showMyList: true,
+            showTaskForm: false,
+            detailTask: false,
+            listChip: "all",
+            boardChip: "all",
+            boardGroups: {
+                today: true,
+                overdue: true,
+                doing: true,
+                done: true,
+            },
+            doneTasks: [],
+            doneCount: 0,
             activeTab: focusBoard ? "board" : "tasks",
             calendarLoading: false,
             calendarTasks: [],
@@ -216,6 +231,12 @@ export class DailyWorkEmployeeWs extends Component {
         onMounted(() => {
             window.addEventListener("pointermove", this._onPointerMove);
             window.addEventListener("pointerup", this._onPointerUp);
+            window.addEventListener("resize", this._syncPinHeight);
+            this._syncPinHeight();
+            if (this.pinRef.el && typeof ResizeObserver !== "undefined") {
+                this._pinRo = new ResizeObserver(this._syncPinHeight);
+                this._pinRo.observe(this.pinRef.el);
+            }
             if (this._focusBoardOnOpen) {
                 this.state.activeTab = "board";
                 requestAnimationFrame(() => {
@@ -232,8 +253,19 @@ export class DailyWorkEmployeeWs extends Component {
         onWillUnmount(() => {
             window.removeEventListener("pointermove", this._onPointerMove);
             window.removeEventListener("pointerup", this._onPointerUp);
+            window.removeEventListener("resize", this._syncPinHeight);
+            this._pinRo?.disconnect();
             document.body.classList.remove("o_ews_resizing");
         });
+    }
+
+    _syncPinHeight() {
+        const root = this.rootRef.el;
+        const pin = this.pinRef.el;
+        if (!root || !pin) {
+            return;
+        }
+        root.style.setProperty("--ews-pin-h", `${pin.offsetHeight}px`);
     }
 
     get layoutStyle() {
@@ -242,6 +274,211 @@ export class DailyWorkEmployeeWs extends Component {
 
     toggleMyList() {
         this.state.showMyList = !this.state.showMyList;
+    }
+
+    openMobileForm() {
+        this.state.activeTab = "tasks";
+        this.state.showTaskForm = true;
+        this.state.detailTask = false;
+        if (!this.state.editingTaskId) {
+            this._setForm(this.emptyForm());
+        }
+    }
+
+    openMyTasksTab() {
+        this.state.activeTab = "tasks";
+        if (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches) {
+            this.openMobileForm();
+        }
+    }
+
+    closeMobileForm() {
+        this.state.showTaskForm = false;
+        this.state.editingTaskId = false;
+        this._setForm(this.emptyForm());
+    }
+
+    async setBoardChip(chip) {
+        this.state.boardChip = chip;
+    }
+
+    toggleBoardGroup(key) {
+        this.state.boardGroups[key] = !this.state.boardGroups[key];
+    }
+
+    get boardChipCounts() {
+        const rows = this.statusBoardRows || [];
+        return {
+            all: rows.length,
+            todo: rows.filter((t) => t.state === "not_started").length,
+            doing: rows.filter((t) => t.state === "in_progress").length,
+            done: rows.filter((t) => t.state === "done").length,
+        };
+    }
+
+    get boardFilteredRows() {
+        const rows = this.statusBoardRows || [];
+        const chip = this.state.boardChip;
+        if (chip === "todo") {
+            return rows.filter((t) => t.state === "not_started");
+        }
+        if (chip === "doing") {
+            return rows.filter((t) => t.state === "in_progress");
+        }
+        if (chip === "done") {
+            return rows.filter((t) => t.state === "done");
+        }
+        return rows;
+    }
+
+    _isMobileBoardToday(task) {
+        if (!task || task.state === "done") {
+            return false;
+        }
+        return Boolean(task.deadline && task.deadline === this._formatIsoDate(new Date()));
+    }
+
+    get mobileBoardToday() {
+        return this.boardFilteredRows.filter((t) => this._isMobileBoardToday(t));
+    }
+
+    get mobileBoardOverdue() {
+        return this.boardFilteredRows.filter(
+            (t) => this._isBoardOverdue(t) && !this._isMobileBoardToday(t)
+        );
+    }
+
+    get mobileBoardDoing() {
+        return this.boardFilteredRows.filter(
+            (t) => t.state === "in_progress" && !this._isMobileBoardToday(t) && !this._isBoardOverdue(t)
+        );
+    }
+
+    get mobileBoardDone() {
+        return this.boardFilteredRows.filter((t) => t.state === "done");
+    }
+
+    get mobileBoardSections() {
+        return [
+            {
+                key: "today",
+                title: "Công việc hôm nay",
+                icon: "fa fa-clock-o",
+                tone: "today",
+                tasks: this.mobileBoardToday,
+            },
+            {
+                key: "overdue",
+                title: "Quá hạn",
+                icon: "fa fa-exclamation-circle",
+                tone: "overdue",
+                tasks: this.mobileBoardOverdue,
+            },
+            {
+                key: "doing",
+                title: "Đang thực hiện",
+                icon: "fa fa-play-circle",
+                tone: "doing",
+                tasks: this.mobileBoardDoing,
+            },
+            {
+                key: "done",
+                title: "Đã hoàn thành",
+                icon: "fa fa-check-circle",
+                tone: "done",
+                tasks: this.mobileBoardDone,
+            },
+        ];
+    }
+
+    todayCardClass(task) {
+        if (task.state === "done") {
+            return "o_ews_tcard is-done";
+        }
+        if (this._isBoardOverdue(task) || task.state === "not_started") {
+            return "o_ews_tcard is-overdue";
+        }
+        if (task.state === "in_progress") {
+            return "o_ews_tcard is-doing";
+        }
+        return "o_ews_tcard is-todo";
+    }
+
+    async setListChip(chip) {
+        this.state.listChip = chip;
+        if (chip === "done" && !this.state.doneTasks.length) {
+            await this.loadDoneTasks();
+        }
+    }
+
+    get todayBarLabel() {
+        const d = new Date();
+        const dd = String(d.getDate()).padStart(2, "0");
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const yyyy = d.getFullYear();
+        return `Hôm nay — ${dd}/${mm}/${yyyy}`;
+    }
+
+    get mobileChipCounts() {
+        const today = this._formatIsoDate(new Date());
+        const open = this.state.tasks || [];
+        return {
+            all: open.length,
+            today: open.filter((t) => t.deadline === today && t.state !== "done").length,
+            overdue: open.filter((t) => t.is_active_overdue).length,
+            done: this.state.doneCount || 0,
+        };
+    }
+
+    get mobileTasks() {
+        const today = this._formatIsoDate(new Date());
+        if (this.state.listChip === "done") {
+            return this.state.doneTasks || [];
+        }
+        const open = this.state.tasks || [];
+        if (this.state.listChip === "today") {
+            return open.filter((t) => t.deadline === today && t.state !== "done");
+        }
+        if (this.state.listChip === "overdue") {
+            return open.filter((t) => t.is_active_overdue);
+        }
+        return open;
+    }
+
+    mobileStateClass(task) {
+        if (task.state === "done") {
+            return "o_ews_mcard_st is-done";
+        }
+        if (task.state === "in_progress") {
+            return "o_ews_mcard_st is-doing";
+        }
+        return "o_ews_mcard_st is-todo";
+    }
+
+    mobileStateLabel(task) {
+        if (task.state === "not_started") {
+            return "Chưa hoàn thành";
+        }
+        return task.state_label || "";
+    }
+
+    mobileOverdueText(task) {
+        if (task.overdue_label) {
+            return task.overdue_label;
+        }
+        if (task.is_active_overdue) {
+            const days = Number(task.overdue_days) || 0;
+            return days ? `Trễ hạn ${days} ngày` : "Quá hạn";
+        }
+        return "Không";
+    }
+
+    openMobileDetail(task) {
+        this.state.detailTask = task;
+    }
+
+    closeMobileDetail() {
+        this.state.detailTask = false;
     }
 
     setActiveTab(tab) {
@@ -1142,6 +1379,8 @@ export class DailyWorkEmployeeWs extends Component {
             return;
         }
         this.state.showMyList = true;
+        this.state.showTaskForm = true;
+        this.state.detailTask = false;
         this.state.editingTaskId = task.id;
         this._setForm({
             name: task.name || "",
@@ -1169,6 +1408,7 @@ export class DailyWorkEmployeeWs extends Component {
 
     onCancelEdit() {
         this.state.editingTaskId = false;
+        this.state.showTaskForm = false;
         this._setForm(this.emptyForm());
     }
 
@@ -1177,6 +1417,7 @@ export class DailyWorkEmployeeWs extends Component {
         this.state.editingTaskId = false;
         this._setForm(this.emptyForm());
         this.state.showMyList = true;
+        this.state.showTaskForm = true;
         requestAnimationFrame(() => {
             const input = this.el?.querySelector?.(".o_ews_task_form input[type='text']");
             if (input) {
@@ -1281,9 +1522,24 @@ export class DailyWorkEmployeeWs extends Component {
             this.state.totalDurationMinutes = data.total_duration_minutes || 0;
             this.state.totalDurationHours = data.total_duration_hours || 0;
             this.state.completionPercentAvg = data.completion_percent_avg || 0;
+            this.state.doneCount = data.done_count || 0;
             this.state.message = data.message || false;
         } finally {
             this.state.loading = false;
+        }
+    }
+
+    async loadDoneTasks() {
+        try {
+            const data = await this.orm.call("daily.task", "get_employee_workspace", [], {
+                filters: { only_done: true },
+            });
+            this.state.doneTasks = data.tasks || [];
+            this.state.doneCount = (data.tasks || []).length;
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không tải được việc đã hoàn thành."), {
+                type: "danger",
+            });
         }
     }
 
@@ -1437,6 +1693,7 @@ export class DailyWorkEmployeeWs extends Component {
                     payload,
                 ]);
                 this.state.editingTaskId = false;
+                this.state.showTaskForm = false;
                 this._setForm(this.emptyForm());
                 await this.load();
                 await this.loadMonthlySummary();
@@ -1444,6 +1701,7 @@ export class DailyWorkEmployeeWs extends Component {
             } else {
                 await this.orm.call("daily.task", "create_from_employee", [payload]);
                 this._setForm(this.emptyForm());
+                this.state.showTaskForm = false;
                 await this.load();
                 await this.loadMonthlySummary();
                 this.notification.add(_t("Đã thêm công việc của bạn."), { type: "success" });

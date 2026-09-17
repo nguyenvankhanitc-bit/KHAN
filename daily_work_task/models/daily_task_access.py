@@ -39,6 +39,11 @@ class DailyTaskAccess(models.Model):
         help="Các nhân viên B (vd: Hùng, Phú, Thành) — việc của họ sẽ hiện cho A.",
     )
     perm_view = fields.Boolean(string="Xem", default=True)
+    perm_checklist = fields.Boolean(
+        string="Checklist CV",
+        default=True,
+        help="Xem Checklist công việc của các nhân viên ở «Xem việc của».",
+    )
     perm_assign = fields.Boolean(string="Giao", default=False)
     perm_edit = fields.Boolean(string="Chỉnh sửa", default=False)
     perm_delete = fields.Boolean(string="Xóa", default=False)
@@ -165,7 +170,11 @@ class DailyTaskAccess(models.Model):
             lines = Access.search([("active", "=", True), ("user_id", "=", user.id)])
             need_assign = any(line.perm_assign for line in lines)
             need_viewer = any(
-                line.perm_view or line.perm_edit or line.perm_delete or line.perm_assign
+                line.perm_view
+                or line.perm_checklist
+                or line.perm_edit
+                or line.perm_delete
+                or line.perm_assign
                 for line in lines
             )
 
@@ -240,6 +249,13 @@ class ResUsers(models.Model):
         "employee_id",
         string="NV được xóa (CVHN)",
     )
+    daily_work_checklist_employee_ids = fields.Many2many(
+        "hr.employee",
+        "daily_work_user_checklist_employee_rel",
+        "user_id",
+        "employee_id",
+        string="NV được xem Checklist CV",
+    )
 
     def _sync_daily_work_employees(self):
         """
@@ -256,6 +272,7 @@ class ResUsers(models.Model):
             assign_ids = set()
             edit_ids = set()
             delete_ids = set()
+            checklist_ids = set()
             for line in lines:
                 targets = line.target_ids.ids
                 if line.perm_view:
@@ -266,11 +283,14 @@ class ResUsers(models.Model):
                     edit_ids.update(targets)
                 if line.perm_delete:
                     delete_ids.update(targets)
+                if line.perm_checklist:
+                    checklist_ids.update(targets)
             user.sudo().write(
                 {
                     "daily_work_view_employee_ids": [(6, 0, list(view_ids))],
                     "daily_work_assign_employee_ids": [(6, 0, list(assign_ids))],
                     "daily_work_edit_employee_ids": [(6, 0, list(edit_ids))],
                     "daily_work_delete_employee_ids": [(6, 0, list(delete_ids))],
+                    "daily_work_checklist_employee_ids": [(6, 0, list(checklist_ids))],
                 }
             )

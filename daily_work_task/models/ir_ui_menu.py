@@ -17,7 +17,17 @@ class IrUiMenu(models.Model):
         # Xem công việc NV — cần có NV trong Phân quyền xem
         if not Task._viewable_employee_ids():
             menu = self.env.ref(
-                "daily_work_task.menu_daily_work_viewer", raise_if_not_found=False
+                "daily_work_task.menu_daily_work_viewer",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+
+        # Checklist CV NV — tick «Checklist CV» trên Phân quyền
+        if not Task._checklist_employee_ids():
+            menu = self.env.ref(
+                "daily_work_task.menu_daily_work_team_checklist",
+                raise_if_not_found=False,
             )
             if menu:
                 res.append(menu.id)

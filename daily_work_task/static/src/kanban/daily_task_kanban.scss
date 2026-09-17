@@ -38,12 +38,14 @@
         flex: 1 1 17.5rem;
     }
 
-    &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
-        display: flex;
-        flex-direction: column;
-        max-height: 100%;
-        height: 100%;
-        overflow: hidden;
+    @media (min-width: 769px) {
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
+            display: flex;
+            flex-direction: column;
+            max-height: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
     }
 
     /* Ẩn tiêu đề bảng kiểu cũ */
@@ -189,35 +191,37 @@
         color: #fff !important;
     }
 
-    /* Vùng cuộn thẻ */
-    &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
-        overflow-y: auto;
-        overflow-x: hidden;
-        overscroll-behavior: contain;
-        scrollbar-width: thin;
-        scrollbar-color: #94a3b8 #e2e8f0;
-        padding-bottom: 0.5rem !important;
+    /* Vùng cuộn thẻ — chỉ máy tính; điện thoại cuộn cả trang để thấy mọi cột */
+    @media (min-width: 769px) {
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
+            overflow-y: auto;
+            overflow-x: hidden;
+            overscroll-behavior: contain;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #e2e8f0;
+            padding-bottom: 0.5rem !important;
 
-        &::-webkit-scrollbar {
-            width: 8px;
-        }
-        &::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 999px;
-        }
-        &::-webkit-scrollbar-track {
-            background: #e2e8f0;
-            border-radius: 999px;
-        }
+            &::-webkit-scrollbar {
+                width: 8px;
+            }
+            &::-webkit-scrollbar-thumb {
+                background: #94a3b8;
+                border-radius: 999px;
+            }
+            &::-webkit-scrollbar-track {
+                background: #e2e8f0;
+                border-radius: 999px;
+            }
 
-        .o_kanban_record {
-            margin: 0 0 0.55rem !important;
-            padding: 0 !important;
-            width: 100% !important;
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            border-radius: 0 !important;
+            .o_kanban_record {
+                margin: 0 0 0.55rem !important;
+                padding: 0 !important;
+                width: 100% !important;
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                border-radius: 0 !important;
+            }
         }
     }
 
@@ -280,6 +284,26 @@
         flex-direction: column;
         gap: 0.28rem;
         margin-bottom: 0.55rem;
+    }
+
+    .o_daily_kcard_row {
+        display: grid;
+        grid-template-columns: 8.4rem minmax(0, 1fr);
+        gap: 0.35rem 0.5rem;
+        align-items: center;
+        font-size: 0.78rem;
+        min-width: 0;
+    }
+
+    .o_daily_kcard_lbl {
+        color: #64748b;
+        font-weight: 600;
+        line-height: 1.25;
+    }
+
+    .o_daily_kcard_overdue_yes {
+        color: #e11d48;
+        font-weight: 700;
     }
 
     .o_daily_kcard_line {
@@ -374,22 +398,410 @@
         gap: 0.4rem;
         min-width: 0;
         flex: 1;
+        overflow: hidden;
         font-size: 0.78rem;
         color: #334155;
 
-        .o_field_many2one_avatar_user,
+        .o_dwt_kcard_avatar,
         .o_avatar {
             flex: 0 0 auto;
+            width: 1.35rem;
+            height: 1.35rem;
+            object-fit: cover;
         }
 
+        .o_dwt_kcard_assignee_name,
         .o_field_many2one {
+            min-width: 0;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
     }
 
+    .o_daily_kcard_done_tag {
+        display: none;
+    }
+
+    .o_daily_kcard_todo_tag {
+        display: inline-flex;
+        align-items: center;
+        margin: 0 0 0.55rem;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        background: #ede9fe;
+        color: #6d28d9;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
     .o_kanban_ghost {
         display: none !important;
+    }
+
+    .o_daily_kcard_ico_clock {
+        color: #64748b;
+        width: 0.95rem;
+        text-align: center;
+    }
+
+    @media (max-width: 768px) {
+        &.o_kanban_renderer.o_kanban_grouped {
+            display: flex !important;
+            flex-direction: column !important;
+            flex-wrap: nowrap !important;
+            gap: 14px;
+            padding: 8px 10px 88px;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            background: #f3f4f8;
+        }
+
+        .o_kanban_group,
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
+            min-width: 0 !important;
+            max-width: none !important;
+            width: 100% !important;
+            flex: none !important;
+            height: auto !important;
+            max-height: none !important;
+            overflow: visible !important;
+            display: grid !important;
+            grid-template-columns: 1fr;
+            gap: 8px;
+            padding: 0 !important;
+            background: transparent;
+        }
+
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) .o_kanban_header,
+        .o_kanban_group .o_kanban_header {
+            grid-column: 1 / -1 !important;
+            position: static !important;
+            margin: 0 0 2px !important;
+            width: 100%;
+        }
+
+        .o_kanban_load_more {
+            grid-column: 1 / -1 !important;
+        }
+
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) > .o_kanban_header .o_kanban_header_title {
+            justify-content: flex-start;
+            min-height: 2.2rem;
+            border: 0;
+            border-radius: 12px;
+            padding: 0.45rem 0.75rem;
+            box-shadow: none;
+
+            .o_column_title {
+                justify-content: flex-start;
+                text-align: left;
+                font-size: 0.88rem !important;
+            }
+        }
+
+        .o_kanban_group.o_daily_kcol_done > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-id="done"] > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-value="done"] > .o_kanban_header .o_kanban_header_title {
+            background: #dcfce7;
+            color: #15803d !important;
+            .o_column_title, .o_column_title span { color: #15803d !important; }
+            .o_column_title > span:last-child { background: #bbf7d0; color: #166534 !important; }
+        }
+
+        .o_kanban_group.o_daily_kcol_overdue > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-id="overdue"] > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-value="overdue"] > .o_kanban_header .o_kanban_header_title {
+            background: #fee2e2;
+            color: #be123c !important;
+            .o_column_title, .o_column_title span { color: #be123c !important; }
+            .o_column_title > span:last-child { background: #fecdd3; color: #9f1239 !important; }
+        }
+
+        .o_kanban_group.o_daily_kcol_upcoming > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-id="upcoming"] > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-value="upcoming"] > .o_kanban_header .o_kanban_header_title {
+            background: #fef3c7;
+            color: #b45309 !important;
+            .o_column_title, .o_column_title span { color: #b45309 !important; }
+            .o_column_title > span:last-child { background: #fde68a; color: #92400e !important; }
+        }
+
+        .o_kanban_group.o_daily_kcol_not_started > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-id="not_started"] > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-value="not_started"] > .o_kanban_header .o_kanban_header_title {
+            background: #ede9fe;
+            color: #6d28d9 !important;
+            .o_column_title, .o_column_title span { color: #6d28d9 !important; }
+            .o_column_title > span:last-child { background: #ddd6fe; color: #5b21b6 !important; }
+        }
+
+        .o_kanban_group.o_daily_kcol_in_progress > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-id="in_progress"] > .o_kanban_header .o_kanban_header_title,
+        .o_kanban_group[data-value="in_progress"] > .o_kanban_header .o_kanban_header_title {
+            background: #ffedd5;
+            color: #c2410c !important;
+            .o_column_title, .o_column_title span { color: #c2410c !important; }
+            .o_column_title > span:last-child { background: #fed7aa; color: #9a3412 !important; }
+        }
+
+        &.o_kanban_grouped .o_kanban_group:not(.o_column_folded) .o_kanban_record {
+            margin: 0 !important;
+            width: auto !important;
+        }
+
+        .o_daily_kcard {
+            padding: 10px 10px 8px;
+            border-radius: 14px;
+            height: 100%;
+        }
+
+        .o_daily_kcard_group,
+        .o_kanban_record .o_kanban_record_bottom,
+        .o_daily_kcard_foot .o_kanban_activity {
+            display: none !important;
+        }
+
+        .o_daily_kcard_title {
+            font-size: 0.8rem !important;
+            font-weight: 800 !important;
+        }
+
+        .o_daily_kcard_top { margin-bottom: 0.35rem; }
+
+        .o_daily_kcard_done_tag {
+            display: inline-flex;
+            margin: 0 0 0.4rem;
+            padding: 0;
+            background: transparent;
+            color: #16a34a;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .o_daily_kcard_todo_tag,
+        .o_daily_kcard_overdue_tag,
+        .o_daily_kcard_countdown {
+            display: block;
+            margin: 0 0 0.4rem;
+            padding: 0;
+            background: transparent;
+            font-size: 0.72rem;
+        }
+
+        .o_daily_kcard_todo_tag { color: #7c3aed; }
+        .o_daily_kcard_overdue_tag { color: #e11d48; }
+        .o_daily_kcard_countdown { color: #d97706; }
+
+        .o_daily_kcard_row {
+            grid-template-columns: 7.2rem minmax(0, 1fr);
+            font-size: 0.72rem;
+        }
+
+        .o_daily_kcard_meta { margin-bottom: 0.35rem; gap: 0.2rem; }
+
+        .o_daily_kcard_foot {
+            border-top: 0;
+            padding-top: 0.15rem;
+        }
+
+        .o_daily_kcard_assignee {
+            font-size: 0.72rem;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .o_action_manager:has(.o_daily_task_kanban) {
+        min-height: 0 !important;
+        overflow: hidden !important;
+    }
+    .o_kanban_view:has(.o_daily_task_kanban) {
+        min-height: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .o_kanban_view:has(.o_daily_task_kanban) .o_control_panel {
+        flex: 0 0 auto;
+    }
+    .o_kanban_view:has(.o_daily_task_kanban) .o_content {
+        flex: 1 1 0 !important;
+        min-height: 0 !important;
+        height: auto !important;
+        max-height: calc(100dvh - 8.5rem) !important;
+        overflow-y: scroll !important;
+        overflow-x: hidden !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        touch-action: pan-y;
+    }
+    .o_kanban_view .o_kanban_renderer.o_kanban_grouped.o_daily_task_kanban,
+    .o_daily_task_kanban.o_kanban_renderer.o_kanban_grouped {
+        display: flex !important;
+        flex-direction: column !important;
+        flex-wrap: nowrap !important;
+        height: auto !important;
+        max-height: none !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        overflow-x: hidden !important;
+        overflow-y: visible !important;
+        scroll-snap-type: none !important;
+        touch-action: pan-y;
+    }
+    .o_kanban_view .o_kanban_renderer.o_daily_task_kanban .o_kanban_group,
+    .o_daily_task_kanban.o_kanban_grouped .o_kanban_group,
+    .o_daily_task_kanban.o_kanban_grouped .o_kanban_group:not(.o_column_folded) {
+        min-width: 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        flex: 0 0 auto !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        max-height: none !important;
+        scroll-snap-align: none !important;
+    }
+    .o_daily_task_kanban .o_kanban_record {
+        touch-action: pan-y;
+    }
+    .o_daily_task_kanban .o_daily_kdrop.is-collapsed > .o_kanban_record,
+    .o_daily_task_kanban .o_daily_kdrop.is-collapsed > .o_kanban_load_more {
+        display: none !important;
+    }
+    .o_daily_task_kanban .o_daily_kdrop .o_kanban_header {
+        cursor: pointer;
+    }
+    .o_daily_task_kanban .o_daily_kdrop .o_kanban_header .o_group_config,
+    .o_daily_task_kanban .o_daily_kdrop .o_kanban_header .o_kanban_quick_add {
+        display: none !important;
+    }
+    .o_daily_task_kanban .o_daily_kdrop .o_column_title {
+        width: 100%;
+    }
+    .o_daily_task_kanban .o_daily_kdrop .o_column_title::after {
+        content: "\f078";
+        font-family: FontAwesome;
+        margin-left: auto;
+        font-size: 0.75rem;
+        opacity: 0.75;
+    }
+    .o_daily_task_kanban .o_daily_kdrop.is-collapsed .o_column_title::after {
+        content: "\f054";
+    }
+}
+
+/* Ô nhập % hoàn thành trên form — to, dễ gõ trên điện thoại */
+.o_form_view .o_dwt_pct_input,
+.o_form_view .o_field_widget.o_dwt_pct_input {
+    max-width: 100%;
+}
+
+.o_form_view .o_dwt_pct_input input,
+.o_form_view .o_dwt_pct_input input.o_input,
+.o_form_view .o_field_integer.o_dwt_pct_input input {
+    min-height: 3.25rem !important;
+    width: 7.5rem !important;
+    max-width: 100%;
+    font-size: 1.85rem !important;
+    font-weight: 700;
+    line-height: 1.2;
+    text-align: center;
+    padding: 0.4rem 0.55rem !important;
+    border: 2px solid #7c3aed;
+    border-radius: 12px;
+}
+
+@media (max-width: 767.98px) {
+    .o_form_view .o_dwt_pct_input input,
+    .o_form_view .o_dwt_pct_input input.o_input,
+    .o_form_view .o_field_integer.o_dwt_pct_input input {
+        min-height: 3.6rem !important;
+        width: 9rem !important;
+        font-size: 2.15rem !important;
+    }
+}
+
+/* Form công việc: 1 cột, 2 khối nội dung xếp dọc như mẫu */
+.o_form_view.o_dwt_task_form .o_dwt_form_sections,
+.o_form_view:has(.o_dwt_form_sections) .o_dwt_form_sections {
+    width: 100%;
+}
+
+.o_form_view:has(.o_dwt_form_card) .o_inner_group.o_dwt_form_card,
+.o_form_view .o_dwt_form_card.o_inner_group,
+.o_form_view .o_group.o_dwt_form_card {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    flex: 0 0 100% !important;
+    background: #f1f5fb;
+    border-radius: 16px;
+    padding: 12px 14px 8px;
+    margin: 0 0 12px !important;
+    box-shadow: none;
+}
+
+.o_form_view:has(.o_dwt_form_card) .o_inner_group.o_dwt_form_card .o_horizontal_separator,
+.o_form_view .o_dwt_form_card .o_horizontal_separator {
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #334155;
+    margin-bottom: 0.65rem;
+}
+
+/* Dropdown trạng thái trên form */
+.o_form_view .o_dwt_state_bar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin: 0 0 1rem;
+}
+
+.o_form_view .o_dwt_state_bar_lbl {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #475569;
+    margin: 0;
+}
+
+.o_form_view .o_dwt_state_dropdown,
+.o_form_view .o_dwt_state_dropdown .o_select_menu,
+.o_form_view .o_dwt_state_dropdown .o_input,
+.o_form_view .o_dwt_state_dropdown select {
+    width: 100%;
+    max-width: 100%;
+}
+
+.o_form_view .o_dwt_state_dropdown .o_select_menu_toggler,
+.o_form_view .o_dwt_state_dropdown select,
+.o_form_view .o_dwt_state_dropdown .o_input {
+    min-height: 2.75rem;
+    border-radius: 12px;
+    border: 1px solid #c4b5fd;
+    background: #5b4bdb;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 0.95rem;
+    padding: 0.45rem 0.85rem;
+}
+
+.o_form_view .o_dwt_state_dropdown .o_select_menu_toggler .o_select_menu_toggler_slot,
+.o_form_view .o_dwt_state_dropdown .o_select_menu_caret {
+    color: #fff !important;
+}
+
+@media (max-width: 767.98px) {
+    .o_form_view .o_dwt_state_dropdown .o_select_menu_toggler,
+    .o_form_view .o_dwt_state_dropdown select,
+    .o_form_view .o_dwt_state_dropdown .o_input {
+        min-height: 3.1rem;
+        font-size: 1.05rem;
     }
 }

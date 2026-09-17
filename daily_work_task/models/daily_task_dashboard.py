@@ -96,6 +96,8 @@ class DailyTaskDashboard(models.AbstractModel):
             "is_manager": Task._is_manager(),
             "can_assign": Task._is_assigner(),
             "can_view_others": Task._is_viewer(),
+            "can_view_checklist": Task._is_manager()
+            or bool(Task._checklist_employee_ids()),
             "can_see_performance": self.env[
                 "daily.task.performance.access"
             ].user_can_view(),

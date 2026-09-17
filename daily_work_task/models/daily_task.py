@@ -86,6 +86,23 @@ class DailyTask(models.Model):
         copy=False,
         help="Ngày bấm hoàn thành công việc. Dùng để tính cột Quá hạn.",
     )
+    manager_confirmed = fields.Boolean(
+        string="Xác nhận QL",
+        default=False,
+        index=True,
+        copy=False,
+        help="Quản lý đã kiểm tra công việc trên Checklist CV.",
+    )
+    manager_confirmed_uid = fields.Many2one(
+        "res.users",
+        string="Người xác nhận QL",
+        copy=False,
+        ondelete="set null",
+    )
+    manager_confirmed_date = fields.Datetime(
+        string="Thời điểm xác nhận QL",
+        copy=False,
+    )
     note = fields.Text(string="Ghi chú")
     work_group_id = fields.Many2one(
         "daily.task.work.group",
@@ -123,17 +140,18 @@ class DailyTask(models.Model):
     )
     kanban_column = fields.Selection(
         [
-            ("not_started", "Chưa bắt đầu"),
-            ("in_progress", "Đang xử lý"),
-            ("upcoming", "Sắp đến hạn"),
-            ("overdue", "Quá hạn"),
             ("done", "Hoàn thành"),
+            ("overdue", "Quá hạn"),
+            ("upcoming", "Sắp đến hạn"),
+            ("in_progress", "Đang xử lý"),
+            ("not_started", "Chưa hoàn thành"),
         ],
         string="Cột Kanban",
         compute="_compute_kanban_column",
         inverse="_inverse_kanban_column",
         store=True,
         index=True,
+        group_expand=True,
         help="Cột Kanban: Chưa bắt đầu / Đang xử lý / Sắp đến hạn / Quá hạn / Hoàn thành.",
     )
     days_to_deadline = fields.Integer(
@@ -167,8 +185,9 @@ class DailyTask(models.Model):
         "res.users",
         string="User người nhận",
         related="assignee_id.employee_id.user_id",
-        store=False,
+        store=True,
         readonly=True,
+        help="User Odoo gắn với người phụ trách của đúng công việc này.",
     )
 
     _recurring_assign_date_uniq = models.Constraint(
@@ -246,17 +265,27 @@ class DailyTask(models.Model):
                 rec.kanban_column = "not_started"
 
     def _inverse_kanban_column(self):
-        """Kéo thẻ: map cột → trạng thái (upcoming/overdue giữ state hiện tại nếu chưa done)."""
+        """Kéo thẻ / chọn cột: map sang state, tránh vòng lặp compute ↔ inverse."""
+        if self.env.context.get("skip_kanban_column_inverse"):
+            return
         for rec in self:
             col = rec.kanban_column
+            vals = {}
             if col == "done":
-                rec.state = "done"
+                if rec.state != "done":
+                    vals["state"] = "done"
+                if int(rec.completion_percent or 0) < 100:
+                    vals["completion_percent"] = 100
             elif col == "in_progress":
-                rec.state = "in_progress"
+                if rec.state != "in_progress":
+                    vals["state"] = "in_progress"
             elif col == "not_started":
-                rec.state = "not_started"
+                if rec.state != "not_started":
+                    vals["state"] = "not_started"
             elif col in ("upcoming", "overdue") and rec.state == "done":
-                rec.state = "in_progress"
+                vals["state"] = "in_progress"
+            if vals:
+                rec.with_context(skip_kanban_column_inverse=True).write(vals)
 
     @api.depends("deadline")
     def _compute_days_to_deadline(self):
@@ -404,21 +433,35 @@ class DailyTask(models.Model):
             else:
                 rec.color = mapping.get(rec.state, 0)
 
+    def _can_update_task_state(self):
+        """Cập nhật trạng thái / % HT: người nhận, người sửa, người giao, hoặc đã giao việc này."""
+        self.ensure_one()
+        if self._can_edit_task():
+            return True
+        if self._is_system_admin():
+            return True
+        if self.assigned_by_id and self.assigned_by_id.id == self.env.uid:
+            return True
+        emp = self.assignee_id.employee_id
+        if emp and emp.id in (self._access_target_ids_sql("perm_assign") or []):
+            return True
+        return False
+
     def action_set_not_started(self):
         for rec in self:
-            if not rec._can_edit_task():
+            if not rec._can_update_task_state():
                 raise AccessError("Bạn không được cập nhật trạng thái công việc này.")
         self.write({"state": "not_started"})
 
     def action_set_in_progress(self):
         for rec in self:
-            if not rec._can_edit_task():
+            if not rec._can_update_task_state():
                 raise AccessError("Bạn không được cập nhật trạng thái công việc này.")
         self.write({"state": "in_progress"})
 
     def action_set_done(self):
         for rec in self:
-            if not rec._can_edit_task():
+            if not rec._can_update_task_state():
                 raise AccessError("Bạn không được cập nhật trạng thái công việc này.")
         self.write({"state": "done", "completion_percent": 100})
 
@@ -435,7 +478,11 @@ class DailyTask(models.Model):
             vals["completion_percent"] = 100
         becoming_done = self.browse()
         if "state" in vals:
-            if vals.get("state") == "done":
+            new_state = vals.get("state")
+            for rec in self:
+                if rec.state != new_state and not rec._can_update_task_state():
+                    raise AccessError("Bạn không được cập nhật trạng thái công việc này.")
+            if new_state == "done":
                 becoming_done = self.filtered(lambda t: t.state != "done")
                 if becoming_done and "date_done" not in vals:
                     vals["date_done"] = fields.Date.context_today(self)
@@ -1157,7 +1204,13 @@ class DailyTask(models.Model):
     @api.model
     def _access_target_ids_sql(self, perm_field):
         """Đọc ID nhân viên mục tiêu từ bảng quan hệ — không qua rule hr.employee."""
-        if perm_field not in ("perm_view", "perm_assign", "perm_edit", "perm_delete"):
+        if perm_field not in (
+            "perm_view",
+            "perm_assign",
+            "perm_edit",
+            "perm_delete",
+            "perm_checklist",
+        ):
             return []
         self.env.cr.execute(
             """
@@ -1198,6 +1251,12 @@ class DailyTask(models.Model):
         if self._is_manager():
             return None
         return self._access_target_ids_sql("perm_delete")
+
+    @api.model
+    def _checklist_employee_ids(self):
+        if self._is_manager():
+            return None
+        return self._access_target_ids_sql("perm_checklist")
 
     @api.model
     def rule_viewable_employee_ids(self):
@@ -1277,6 +1336,17 @@ class DailyTask(models.Model):
             return True
         allowed = self._editable_employee_ids() or []
         return bool(emp and emp.id in allowed)
+
+    def _can_manager_confirm(self):
+        """Tick Xác nhận QL trên Checklist CV team."""
+        self.ensure_one()
+        if self._is_manager():
+            return True
+        allowed = self._checklist_employee_ids()
+        if allowed is None:
+            return True
+        emp = self.assignee_id.employee_id
+        return bool(emp and emp.id in (allowed or []))
 
     def _can_edit_task_details(self):
         """Sửa nội dung phiếu (tên/hạn/ghi chú...). Việc được người khác giao thì khóa."""
@@ -1365,8 +1435,11 @@ class DailyTask(models.Model):
             domain.append(("deadline", ">=", date_from))
         if date_to:
             domain.append(("deadline", "<=", date_to))
-        # Danh sách đang làm: ẩn việc đã hoàn thành (chúng nằm ở bảng tổng tháng)
-        domain.append(("state", "!=", "done"))
+        only_done = bool(filters.get("only_done"))
+        if only_done:
+            domain.append(("state", "=", "done"))
+        else:
+            domain.append(("state", "!=", "done"))
         tasks = self.search(domain, order="deadline asc, id desc")
         self._refresh_overdue_flags(tasks)
         priorities = [
@@ -1395,6 +1468,7 @@ class DailyTask(models.Model):
                 "name": emp.name or "",
                 "department": emp.department_id.display_name if emp.department_id else "",
                 "department_id": dept_id or False,
+                "avatar_url": "/web/image/hr.employee/%s/image_128" % emp.id,
             },
             "tasks": self._enrich_assign_discussion(
                 [t._to_manager_dict() for t in tasks]
@@ -1405,6 +1479,12 @@ class DailyTask(models.Model):
             "total_duration_minutes": total_minutes,
             "total_duration_hours": round(total_minutes / 60.0, 2) if total_minutes else 0.0,
             "completion_percent_avg": avg_pct,
+            "done_count": self.search_count(
+                [
+                    ("assignee_id.employee_id", "=", emp.id),
+                    ("state", "=", "done"),
+                ]
+            ),
             "message": False,
         }
 

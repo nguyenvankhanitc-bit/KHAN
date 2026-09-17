@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.37.130",
+    "version": "19.0.1.37.169",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -66,6 +66,9 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
             "daily_work_task/static/src/viewer/daily_work_viewer.scss",
             "daily_work_task/static/src/viewer/daily_work_viewer.xml",
             "daily_work_task/static/src/viewer/daily_work_viewer.js",
+            "daily_work_task/static/src/team_checklist/daily_work_team_checklist.scss",
+            "daily_work_task/static/src/team_checklist/daily_work_team_checklist.xml",
+            "daily_work_task/static/src/team_checklist/daily_work_team_checklist.js",
             "daily_work_task/static/src/summary_report/daily_work_summary_report.scss",
             "daily_work_task/static/src/summary_report/daily_work_summary_report.xml",
             "daily_work_task/static/src/summary_report/daily_work_summary_report.js",

@@ -29,9 +29,16 @@
                             </button>
                         </t>
                         <t t-if="state.canViewOthers">
-                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
+                                <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
                                 <i class="fa fa-eye"/><span>Xem CV NV</span>
                             </button>
+                        </t>
+                        <t t-if="state.canViewChecklist">
+                            <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('team_checklist')">
+                                <i class="fa fa-check-square-o"/><span>Checklist CV</span>
+                            </button>
+                        </t>
+                        <t t-if="state.canViewOthers">
                             <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
                                 <i class="fa fa-bar-chart"/><span>BC tổng</span>
                             </button>
@@ -102,6 +109,12 @@
                                 <button type="button" class="o_dwd_side_item" title="Xem công việc NV"
                                         t-on-click="() => this.openNav('viewer')">
                                     <i class="fa fa-eye"/><span>Xem công việc NV</span>
+                                </button>
+                            </t>
+                            <t t-if="state.canViewChecklist">
+                                <button type="button" class="o_dwd_side_item" title="Checklist công việc team"
+                                        t-on-click="() => this.openNav('team_checklist')">
+                                    <i class="fa fa-check-square-o"/><span>Checklist CV team</span>
                                 </button>
                             </t>
                             <button type="button" class="o_dwd_side_item" title="Kanban công việc"

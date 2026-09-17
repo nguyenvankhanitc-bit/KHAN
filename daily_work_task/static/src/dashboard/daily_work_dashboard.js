@@ -79,6 +79,7 @@ export class DailyWorkDashboard extends Component {
             isManager: false,
             canAssign: false,
             canViewOthers: false,
+            canViewChecklist: false,
             canSeePerformance: false,
             userName: "",
             companyName: "",
@@ -98,6 +99,7 @@ export class DailyWorkDashboard extends Component {
             this.state.isManager = Boolean(opts.is_manager);
             this.state.canAssign = Boolean(opts.can_assign);
             this.state.canViewOthers = Boolean(opts.can_view_others);
+            this.state.canViewChecklist = Boolean(opts.can_view_checklist);
             this.state.canSeePerformance = Boolean(opts.can_see_performance);
             this.state.userName = opts.user_name || "";
             this.state.companyName = opts.company_name || "";
@@ -546,6 +548,12 @@ export class DailyWorkDashboard extends Component {
             });
             return;
         }
+        if (key === "team_checklist" && !this.state.canViewChecklist) {
+            this.notification.add(_t("Bạn không có quyền xem Checklist CV nhân viên."), {
+                type: "warning",
+            });
+            return;
+        }
         const map = {
             dashboard: "daily_work_dashboard",
             tasks: "daily_work_task_manager",
@@ -563,6 +571,7 @@ export class DailyWorkDashboard extends Component {
             kanban: null,
             kpi: null,
             viewer: "daily_work_viewer",
+            team_checklist: "daily_work_team_checklist",
             send_mail: null,
             config: null,
         };

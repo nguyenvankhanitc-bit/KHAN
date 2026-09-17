@@ -208,20 +208,27 @@ class DailyTask(models.Model):
                     "Nhóm công việc phải thuộc cùng phòng ban với công việc."
                 )
 
-    @api.depends("deadline", "state")
+    def _is_work_completed(self):
+        """Đã hoàn thành: trạng thái Done hoặc % = 100."""
+        self.ensure_one()
+        return self.state == "done" or int(self.completion_percent or 0) >= 100
+
+    @api.depends("deadline", "state", "completion_percent")
     def _compute_is_overdue(self):
         today = fields.Date.context_today(self)
         for rec in self:
             rec.is_overdue = bool(
-                rec.deadline and rec.state != "done" and rec.deadline < today
+                rec.deadline
+                and not rec._is_work_completed()
+                and rec.deadline < today
             )
 
-    @api.depends("state", "is_overdue", "deadline")
+    @api.depends("state", "is_overdue", "deadline", "completion_percent")
     def _compute_kanban_column(self):
         today = fields.Date.context_today(self)
         upcoming_days = 7
         for rec in self:
-            if rec.state == "done":
+            if rec.state == "done" or int(rec.completion_percent or 0) >= 100:
                 rec.kanban_column = "done"
             elif rec.is_overdue:
                 rec.kanban_column = "overdue"
@@ -263,7 +270,7 @@ class DailyTask(models.Model):
     def _is_overdue_today(self):
         """Quá hạn đang mở: đã qua hạn và chưa hoàn thành (cho KPI / nhắc mail)."""
         self.ensure_one()
-        return self.state != "done" and self._days_past_deadline() > 0
+        return (not self._is_work_completed()) and self._days_past_deadline() > 0
 
     def _days_past_deadline(self):
         """Số ngày đã trễ so với hạn theo ngày hôm nay (việc chưa HT)."""
@@ -276,26 +283,28 @@ class DailyTask(models.Model):
         return (today - self.deadline).days
 
     def _completion_reference_date(self):
-        """Mốc so sánh cột Quá hạn: ngày bấm HT nếu đã xong, không thì hôm nay."""
+        """Mốc cột Quá hạn: ngày bấm HT (không chạy tiếp theo hôm nay)."""
         self.ensure_one()
-        if self.state == "done":
-            return self.date_done or False
-        return fields.Date.context_today(self)
+        if not self._is_work_completed():
+            return fields.Date.context_today(self)
+        if self.date_done:
+            return self.date_done
+        # Việc HT cũ chưa có date_done: chốt theo ngày ghi cuối, không lấy hôm nay
+        if self.write_date:
+            return fields.Datetime.context_timestamp(self, self.write_date).date()
+        return False
 
     def _overdue_days(self):
         """
         Số ngày trễ hiển thị cột Quá hạn.
         - Chưa HT: so hạn với hôm nay.
-        - Đã HT: so hạn với ngày bấm hoàn thành (date_done).
-          Nếu date_done <= hạn → 0 (bỏ trống).
-          Nếu hạn < date_done → (date_done - hạn).days.
+        - Đã HT (Done hoặc 100%): so hạn với ngày bấm hoàn thành — dừng, không cộng thêm.
         """
         self.ensure_one()
         if not self.deadline:
             return 0
         ref = self._completion_reference_date()
         if not ref:
-            # Việc đã HT nhưng thiếu mốc cũ: không gắn nhãn trễ theo hôm nay
             return 0
         if self.deadline >= ref:
             return 0
@@ -307,7 +316,7 @@ class DailyTask(models.Model):
         days = self._overdue_days()
         if not days:
             return ""
-        if self.state == "done":
+        if self._is_work_completed():
             return "Hoàn thành trễ %s ngày" % days
         return "Trễ hạn %s ngày" % days
 
@@ -415,6 +424,13 @@ class DailyTask(models.Model):
 
     def write(self, vals):
         vals = dict(vals)
+        if "completion_percent" in vals:
+            try:
+                pct = int(vals.get("completion_percent") or 0)
+            except (TypeError, ValueError):
+                pct = 0
+            if pct >= 100:
+                vals["state"] = "done"
         if vals.get("state") == "done" and "completion_percent" not in vals:
             vals["completion_percent"] = 100
         becoming_done = self.browse()
@@ -943,7 +959,7 @@ class DailyTask(models.Model):
         hours = float(self.duration_hours or 0.0)
         wg = self.sudo().work_group_id
         overdue_days = self._overdue_days()
-        active_overdue = self.state != "done" and overdue_days > 0
+        active_overdue = (not self._is_work_completed()) and overdue_days > 0
         return {
             "id": self.id,
             "name": self.name or "",

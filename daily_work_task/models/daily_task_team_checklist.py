@@ -101,10 +101,9 @@ class DailyTaskTeamChecklist(models.Model):
                 )
 
         domain = [
+            ("manager_confirmed", "=", False),
             "|",
             ("deadline", "=", target),
-            "&",
-            ("deadline", "=", False),
             ("assign_date", "=", target),
         ]
         if allowed is not None:
@@ -179,7 +178,7 @@ class DailyTaskTeamChecklist(models.Model):
             if my:
                 can_edit_ids.add(my.id)
 
-        pending = tasks.filtered(lambda t: not t.manager_confirmed)
+        pending = tasks
 
         v_domain = [("manager_confirmed", "=", True)]
         if allowed is not None:

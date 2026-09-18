@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.37.169",
+    "version": "19.0.1.37.178",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -92,6 +92,8 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
             "daily_work_task/static/src/kanban/daily_task_kanban.scss",
             "daily_work_task/static/src/kanban/daily_task_kanban_header.xml",
             "daily_work_task/static/src/kanban/daily_task_kanban_header.js",
+            "daily_work_task/static/src/form/daily_task_form.xml",
+            "daily_work_task/static/src/form/daily_task_form.js",
             "daily_work_task/static/src/systray/daily_work_reminder_systray.scss",
             "daily_work_task/static/src/systray/daily_work_reminder_systray.xml",
             "daily_work_task/static/src/systray/daily_work_reminder_systray.js",

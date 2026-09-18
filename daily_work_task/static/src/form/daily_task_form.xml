@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyTaskFormView" t-inherit="web.FormView" t-inherit-mode="primary">
+        <xpath expr="//t[@t-set-slot='control-panel-create-button']" position="inside">
+            <button type="button"
+                    class="btn btn-primary o_dwt_cp_save"
+                    t-on-click.stop="() => this.saveButtonClicked()">
+                Lưu
+            </button>
+            <button type="button"
+                    class="btn btn-outline-secondary o_dwt_cp_cancel"
+                    t-on-click.stop="discard">
+                Hủy
+            </button>
+        </xpath>
+    </t>
+</templates>

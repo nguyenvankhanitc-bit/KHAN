@@ -38,13 +38,13 @@
         <field name="name">daily.task.form</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <form string="Công việc" class="o_dwt_task_form">
+            <form string="Công việc" class="o_dwt_task_form" js_class="daily_task_form">
                 <sheet>
                     <div class="o_dwt_state_bar">
                         <label for="state" class="o_dwt_state_bar_lbl">Trạng thái công việc</label>
                         <field name="state" class="o_dwt_state_dropdown"/>
                     </div>
-                    <div class="oe_button_box" name="button_box"/>
+                    <div class="oe_button_box" name="button_box" invisible="1"/>
                     <widget name="web_ribbon" title="Quá hạn" bg_color="text-bg-danger"
                             invisible="not is_overdue"/>
                     <div class="oe_title">

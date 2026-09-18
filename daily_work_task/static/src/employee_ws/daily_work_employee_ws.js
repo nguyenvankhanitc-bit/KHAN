@@ -88,6 +88,7 @@ export class DailyWorkEmployeeWs extends Component {
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
+        this.action = useService("action");
         this.layoutRef = useRef("layout");
         this.chatBodyRef = useRef("chatBody");
         this.rootRef = useRef("root");
@@ -473,8 +474,20 @@ export class DailyWorkEmployeeWs extends Component {
         return "Không";
     }
 
-    openMobileDetail(task) {
-        this.state.detailTask = task;
+    async openMobileDetail(task) {
+        if (!task?.id) {
+            return;
+        }
+        await this.action.doAction({
+            type: "ir.actions.act_window",
+            name: task.name || "Công việc",
+            res_model: "daily.task",
+            res_id: task.id,
+            views: [[false, "form"]],
+            view_mode: "form",
+            target: "current",
+            context: { daily_work_return_today: true },
+        });
     }
 
     closeMobileDetail() {
@@ -774,6 +787,26 @@ export class DailyWorkEmployeeWs extends Component {
 
     get monthTitle() {
         return `Tổng công việc tháng ${String(this.state.monthMonth).padStart(2, "0")}/${this.state.monthYear}`;
+    }
+
+    get monthNavLabel() {
+        return `Tháng ${String(this.state.monthMonth).padStart(2, "0")}/${this.state.monthYear}`;
+    }
+
+    async shiftReportMonth(delta) {
+        let year = Number(this.state.monthYear);
+        let month = Number(this.state.monthMonth) + Number(delta);
+        while (month < 1) {
+            month += 12;
+            year -= 1;
+        }
+        while (month > 12) {
+            month -= 12;
+            year += 1;
+        }
+        this.state.monthYear = year;
+        this.state.monthMonth = month;
+        await this.loadMonthlySummary();
     }
 
     toggleMonthSection() {

@@ -7,6 +7,7 @@
                     <div class="o_ews_header_left">
                         <h2 class="o_ews_page_title" t-on-click="openMobileForm">
                             <t t-if="isActiveTab('board')">CÔNG VIỆC HÔM NAY</t>
+                            <t t-elif="isActiveTab('month')">BÁO CÁO THÁNG</t>
                             <t t-else="">NHẬP CÔNG VIỆC</t>
                         </h2>
                         <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
@@ -923,6 +924,65 @@
                                 </div>
                             </div>
 
+                            <div class="o_ews_month_mobile">
+                                <div class="o_ews_mdate o_ews_month_nav">
+                                    <button type="button" class="o_ews_month_nav_btn"
+                                            title="Tháng trước"
+                                            t-on-click="() => this.shiftReportMonth(-1)">
+                                        <i class="fa fa-chevron-left"/>
+                                    </button>
+                                    <span><i class="fa fa-calendar"/> <t t-esc="monthNavLabel"/></span>
+                                    <button type="button" class="o_ews_month_nav_btn"
+                                            title="Tháng sau"
+                                            t-on-click="() => this.shiftReportMonth(1)">
+                                        <i class="fa fa-chevron-right"/>
+                                    </button>
+                                </div>
+                                <t t-if="state.monthLoading">
+                                    <div class="text-center py-3"><i class="fa fa-spinner fa-spin"/></div>
+                                </t>
+                                <t t-elif="!monthGroups.length">
+                                    <div class="o_ews_mempty">Không có công việc trong tháng này.</div>
+                                </t>
+                                <t t-else="">
+                                    <t t-foreach="monthGroups" t-as="group" t-key="'m-' + group.key">
+                                        <section t-att-class="'o_ews_tsec is-today'">
+                                            <button type="button" class="o_ews_tsec_head"
+                                                    t-on-click="() => this.toggleMonthGroup(group.key)">
+                                                <i class="fa fa-folder-open-o"/>
+                                                <span t-esc="group.label"/>
+                                                <em t-esc="group.count"/>
+                                                <i t-att-class="'fa o_ews_tsec_chevron ' + (isMonthGroupOpen(group.key) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                            </button>
+                                            <div class="o_ews_tsec_body" t-if="isMonthGroupOpen(group.key)">
+                                                <t t-foreach="group.rows" t-as="row" t-key="'mr-' + row.id">
+                                                    <article t-att-class="todayCardClass(row)">
+                                                        <div class="o_ews_tcard_accent"/>
+                                                        <div class="o_ews_tcard_main">
+                                                            <div class="o_ews_tcard_top">
+                                                                <h4 class="o_ews_tcard_name" t-esc="row.name"/>
+                                                                <span t-att-class="mobileStateClass(row)" t-esc="mobileStateLabel(row)"/>
+                                                            </div>
+                                                            <div class="o_ews_tcard_meta">
+                                                                <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="row.assign_date_display || '—'"/></span>
+                                                                <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(row.duration_minutes || 0) + ' phút'"/></span>
+                                                                <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="row.assignee_name || '—'"/></span>
+                                                                <i class="fa fa-eye o_ews_tcard_go"/>
+                                                                <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="row.deadline_display || '—'"/></span>
+                                                            </div>
+                                                            <div class="o_ews_tcard_note">
+                                                                <i class="fa fa-sticky-note-o"/> Ghi chú
+                                                                <b t-esc="row.note || '—'"/>
+                                                            </div>
+                                                        </div>
+                                                    </article>
+                                                </t>
+                                            </div>
+                                        </section>
+                                    </t>
+                                </t>
+                            </div>
+
                             <t t-if="state.monthLoading">
                                 <div class="text-center py-4">
                                     <i class="fa fa-spinner fa-spin"/>
@@ -1105,6 +1165,7 @@
                                                         <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(task.duration_minutes || 0) + ' phút'"/></span>
                                                         <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="task.assignee_name || '—'"/></span>
                                                         <i class="fa fa-chevron-right o_ews_tcard_go"/>
+                                                        <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="task.deadline_display || '—'"/></span>
                                                     </div>
                                                     <div class="o_ews_tcard_note">
                                                         <i class="fa fa-sticky-note-o"/> Ghi chú

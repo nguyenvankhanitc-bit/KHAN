@@ -100,14 +100,19 @@ class DailyTaskTeamChecklist(models.Model):
                     "Vào Cấu hình → Phân quyền, chọn nhân viên và tick Checklist CV."
                 )
 
+        month_start = target.replace(day=1)
         domain = [
             ("manager_confirmed", "=", False),
             "|",
             "&",
+            "&",
             ("deadline", "!=", False),
+            ("deadline", ">=", month_start),
             ("deadline", "<=", target),
             "&",
+            "&",
             ("deadline", "=", False),
+            ("assign_date", ">=", month_start),
             ("assign_date", "<=", target),
         ]
         if allowed is not None:
@@ -184,7 +189,20 @@ class DailyTaskTeamChecklist(models.Model):
 
         pending = tasks
 
-        v_domain = [("manager_confirmed", "=", True)]
+        v_domain = [
+            ("manager_confirmed", "=", True),
+            "|",
+            "&",
+            "&",
+            ("deadline", "!=", False),
+            ("deadline", ">=", month_start),
+            ("deadline", "<=", target),
+            "&",
+            "&",
+            ("deadline", "=", False),
+            ("assign_date", ">=", month_start),
+            ("assign_date", "<=", target),
+        ]
         if allowed is not None:
             if not allowed:
                 verified = self.browse()

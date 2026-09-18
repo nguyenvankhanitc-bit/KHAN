@@ -135,6 +135,43 @@
                                                                 <span class="o_dwv_kpi_value" t-esc="panel.kpi.duration_hours || 0"/>
                                                             </div>
                                                         </div>
+                                                        <div class="o_dwv_mobile_list">
+                                                            <t t-if="!panel.tasks.length">
+                                                                <div class="o_ews_mempty">Không có công việc trong tháng này.</div>
+                                                            </t>
+                                                            <t t-foreach="taskGroupsOf(emp.id)" t-as="group" t-key="'vg-' + emp.id + '-' + group.key">
+                                                                <section class="o_ews_tsec is-today">
+                                                                    <div class="o_ews_tsec_head">
+                                                                        <i class="fa fa-folder-open-o"/>
+                                                                        <span t-esc="group.label"/>
+                                                                        <em t-esc="group.count"/>
+                                                                    </div>
+                                                                    <div class="o_ews_tsec_body">
+                                                                        <t t-foreach="group.rows" t-as="task" t-key="'vt-' + task.id">
+                                                                            <article t-att-class="taskCardClass(task)">
+                                                                                <div class="o_ews_tcard_accent"/>
+                                                                                <div class="o_ews_tcard_main">
+                                                                                    <div class="o_ews_tcard_top">
+                                                                                        <h4 class="o_ews_tcard_name" t-esc="task.name"/>
+                                                                                        <span t-att-class="mobileStateClass(task)" t-esc="mobileStateLabel(task)"/>
+                                                                                    </div>
+                                                                                    <div class="o_ews_tcard_meta">
+                                                                                        <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="task.assign_date_display || '—'"/></span>
+                                                                                        <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(task.duration_minutes || 0) + ' phút'"/></span>
+                                                                                        <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="emp.name || '—'"/></span>
+                                                                                        <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="task.deadline_display || '—'"/></span>
+                                                                                    </div>
+                                                                                    <div class="o_ews_tcard_note">
+                                                                                        <i class="fa fa-sticky-note-o"/> Ghi chú
+                                                                                        <b t-esc="task.note || '—'"/>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </article>
+                                                                        </t>
+                                                                    </div>
+                                                                </section>
+                                                            </t>
+                                                        </div>
                                                         <div class="o_dwv_table_wrap">
                                                             <table class="o_dwv_table">
                                                                 <thead>

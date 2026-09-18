@@ -198,6 +198,36 @@ export class DailyWorkViewer extends Component {
         return "";
     }
 
+    taskCardClass(task) {
+        if (task.state === "done") {
+            return "o_ews_tcard is-done";
+        }
+        if (task.is_overdue || task.state === "not_started") {
+            return "o_ews_tcard is-overdue";
+        }
+        if (task.state === "in_progress") {
+            return "o_ews_tcard is-doing";
+        }
+        return "o_ews_tcard is-todo";
+    }
+
+    mobileStateClass(task) {
+        if (task.state === "done") {
+            return "o_ews_mcard_st is-done";
+        }
+        if (task.state === "in_progress") {
+            return "o_ews_mcard_st is-doing";
+        }
+        return "o_ews_mcard_st is-todo";
+    }
+
+    mobileStateLabel(task) {
+        if (task.state === "not_started") {
+            return "Chưa hoàn thành";
+        }
+        return task.state_label || "";
+    }
+
     empMonthHint(empId) {
         const panel = this.panelOf(empId);
         if (panel.open && !panel.loading) {

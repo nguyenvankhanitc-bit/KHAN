@@ -477,5 +477,24 @@
         .o_dwv_item_header {
             padding: 12px;
         }
+
+        .o_dwv_table_wrap {
+            display: none !important;
+        }
+
+        .o_dwv_mobile_list {
+            display: block;
+            padding: 4px 0 8px;
+        }
+
+        .o_dwv_kpi {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
     }
+}
+
+.o_dwv_mobile_list {
+    display: none;
 }

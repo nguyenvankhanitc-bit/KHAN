@@ -49,6 +49,7 @@ export class DailyWorkTeamChecklist extends Component {
             dateDisplay: "",
             toggling: {},
             confirming: {},
+            confirmingAll: false,
             openVerified: {},
             openCats: {},
             catsOpen: false,
@@ -130,6 +131,33 @@ export class DailyWorkTeamChecklist extends Component {
             });
         } finally {
             this.state.toggling[task.id] = false;
+        }
+    }
+
+    canConfirmAll(emp) {
+        return (emp.tasks || []).some((t) => t.can_confirm && !t.manager_confirmed);
+    }
+
+    async onConfirmAll(emp) {
+        const ids = (emp.tasks || [])
+            .filter((t) => t.can_confirm && !t.manager_confirmed)
+            .map((t) => t.id);
+        if (!ids.length || this.state.confirmingAll) {
+            return;
+        }
+        this.state.confirmingAll = true;
+        try {
+            await this.orm.call("daily.task", "toggle_manager_confirm", [ids, true]);
+            await this.load();
+            if (emp.assignee_id) {
+                this.state.openVerified[emp.assignee_id] = true;
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không xác nhận được việc."), {
+                type: "danger",
+            });
+        } finally {
+            this.state.confirmingAll = false;
         }
     }
 

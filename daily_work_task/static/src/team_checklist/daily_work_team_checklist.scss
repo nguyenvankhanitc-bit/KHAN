@@ -316,7 +316,26 @@
 
 .o_tcl_td_confirm, .o_tcl_th_confirm {
     text-align: center;
-    width: 92px;
+    width: 100px;
+}
+
+.o_tcl_th_confirm {
+    .o_tcl_confirm_all {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        margin: 4px 0 0;
+        font-size: 11px;
+        font-weight: 700;
+        color: #7c3aed;
+        cursor: pointer;
+        text-transform: none;
+    }
+}
+
+.o_tcl_confirm_all_mobile {
+    display: none;
 }
 
 .o_tcl_confirm {
@@ -636,6 +655,16 @@
         padding: 8px 12px 14px;
         max-height: none;
         overflow: visible;
+    }
+    .o_tcl_confirm_all_mobile {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #7c3aed;
+        padding: 4px 2px 8px;
+        cursor: pointer;
     }
     .o_tcl_tcard {
         display: flex;

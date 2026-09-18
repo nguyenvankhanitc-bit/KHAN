@@ -236,7 +236,15 @@
                                         <th>Hạn hoàn thành</th>
                                         <th>Mức ưu tiên</th>
                                         <th>Trạng thái</th>
-                                        <th class="o_tcl_th_confirm">Xác nhận QL</th>
+                                        <th class="o_tcl_th_confirm">
+                                            Xác nhận QL
+                                            <label class="o_tcl_confirm_all" t-on-click.stop="">
+                                                <input type="checkbox" class="form-check-input o_tcl_confirm"
+                                                       t-att-disabled="!canConfirmAll(emp)"
+                                                       t-on-click.stop.prevent="() => this.onConfirmAll(emp)"/>
+                                                All
+                                            </label>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -268,6 +276,11 @@
                             </table>
                             </div>
                             <div class="o_tcl_task_cards">
+                                <label class="o_tcl_confirm_all o_tcl_confirm_all_mobile" t-if="canConfirmAll(emp)">
+                                    <input type="checkbox" class="form-check-input o_tcl_confirm"
+                                           t-on-click.stop.prevent="() => this.onConfirmAll(emp)"/>
+                                    Tick All — Xác nhận QL
+                                </label>
                                 <t t-foreach="emp.tasks" t-as="task" t-key="'m-' + task.id">
                                     <article t-att-class="'o_tcl_tcard' + (task.state === 'done' ? ' is-done' : (task.state === 'in_progress' ? ' is-doing' : ' is-todo'))">
                                         <div class="o_tcl_tcard_accent"/>

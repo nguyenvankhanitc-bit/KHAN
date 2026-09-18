@@ -380,19 +380,19 @@ class DailyTaskTeamChecklist(models.Model):
         return self.update_from_manager({"state": "not_started", "completion_percent": 0})
 
     def toggle_manager_confirm(self, confirmed=True):
-        self.ensure_one()
-        if not self._can_manager_confirm():
-            raise ValidationError("Bạn không có quyền xác nhận công việc này.")
         confirmed = bool(confirmed)
-        self.sudo().with_context(
-            tracking_disable=True,
-            mail_notrack=True,
-            mail_create_nolog=True,
-        ).write(
-            {
-                "manager_confirmed": confirmed,
-                "manager_confirmed_uid": self.env.uid if confirmed else False,
-                "manager_confirmed_date": fields.Datetime.now() if confirmed else False,
-            }
-        )
+        for rec in self:
+            if not rec._can_manager_confirm():
+                raise ValidationError("Bạn không có quyền xác nhận công việc này.")
+            rec.sudo().with_context(
+                tracking_disable=True,
+                mail_notrack=True,
+                mail_create_nolog=True,
+            ).write(
+                {
+                    "manager_confirmed": confirmed,
+                    "manager_confirmed_uid": self.env.uid if confirmed else False,
+                    "manager_confirmed_date": fields.Datetime.now() if confirmed else False,
+                }
+            )
         return True

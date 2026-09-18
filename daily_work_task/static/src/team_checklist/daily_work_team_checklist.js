@@ -50,6 +50,8 @@ export class DailyWorkTeamChecklist extends Component {
             toggling: {},
             confirming: {},
             openVerified: {},
+            openCats: {},
+            catsOpen: false,
         });
         onWillStart(() => this.load());
     }
@@ -211,7 +213,22 @@ export class DailyWorkTeamChecklist extends Component {
         return Boolean(this.state.openVerified[key]);
     }
 
+    toggleCats() {
+        this.state.catsOpen = !this.state.catsOpen;
+    }
+
+    toggleCat(id) {
+        this.state.openCats[id] = !this.state.openCats[id];
+    }
+
+    isCatOpen(id) {
+        return Boolean(this.state.openCats[id]);
+    }
+
     catPct(cat) {
+        if (cat.percent != null) {
+            return cat.percent;
+        }
         if (!cat.total) {
             return 0;
         }

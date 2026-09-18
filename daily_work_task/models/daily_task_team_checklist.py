@@ -4,9 +4,27 @@ from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
 
+_GROUP_COLORS = (
+    "#4f7cff",
+    "#fb923c",
+    "#22c55e",
+    "#06b6d4",
+    "#8b5cf6",
+    "#f43f5e",
+    "#0ea5e9",
+    "#ec4899",
+    "#6366f1",
+    "#14b8a6",
+    "#f59e0b",
+    "#64748b",
+)
+
+
 def _group_icon(name):
     text = (name or "").lower()
     pairs = (
+        ("odoo", "fa-cubes"),
+        ("lark", "fa-cloud"),
         ("camera", "fa-video-camera"),
         ("internet", "fa-globe"),
         ("chấm công", "fa-clock-o"),
@@ -21,11 +39,37 @@ def _group_icon(name):
         ("dien", "fa-bolt"),
         ("nước", "fa-tint"),
         ("nuoc", "fa-tint"),
+        ("lương", "fa-money"),
+        ("hoa hồng", "fa-money"),
+        ("thông báo", "fa-bullhorn"),
+        ("ctkm", "fa-bullhorn"),
+        ("backup", "fa-server"),
+        ("máy chủ", "fa-server"),
+        ("bảo hiểm", "fa-shield"),
+        ("chứng từ", "fa-file-text-o"),
+        ("phát sinh", "fa-cogs"),
+        ("doanh thu", "fa-line-chart"),
+        ("chi phí", "fa-usd"),
+        ("ngân hàng", "fa-university"),
+        ("cháy", "fa-fire"),
+        ("logo", "fa-picture-o"),
+        ("bảng hiệu", "fa-picture-o"),
+        ("thiết kế", "fa-paint-brush"),
+        ("phần mềm", "fa-code"),
+        ("khác", "fa-th-list"),
+        ("huy", "fa-user"),
+        ("dhkd", "fa-file-text-o"),
     )
     for key, icon in pairs:
         if key in text:
             return icon
-    return "fa-circle-o"
+    return "fa-folder-o"
+
+
+def _group_color(key):
+    s = str(key or "")
+    n = sum(ord(c) for c in s)
+    return _GROUP_COLORS[n % len(_GROUP_COLORS)]
 
 
 class DailyTaskTeamChecklist(models.Model):
@@ -58,12 +102,8 @@ class DailyTaskTeamChecklist(models.Model):
 
         domain = [
             "|",
-            "|",
             ("deadline", "=", target),
             ("assign_date", "=", target),
-            "&",
-            ("deadline", "<", target),
-            ("state", "!=", "done"),
         ]
         if allowed is not None:
             if not allowed:
@@ -73,11 +113,6 @@ class DailyTaskTeamChecklist(models.Model):
                 tasks = self.sudo().search(domain, order="assignee_id, deadline, id")
         else:
             tasks = self.sudo().search(domain, order="assignee_id, deadline, id")
-
-        extra_domain = [("state", "!=", "done")]
-        if allowed is not None:
-            extra_domain.append(("assignee_id.employee_id", "in", allowed or [0]))
-        extra = self.sudo().search(extra_domain, order="assignee_id, deadline, id")
 
         def _is_handed_over(task):
             assignee_uid = (
@@ -90,8 +125,6 @@ class DailyTaskTeamChecklist(models.Model):
                 and assignee_uid
                 and task.assigned_by_id.id != assignee_uid
             )
-
-        tasks |= extra.filtered(_is_handed_over)
 
         if emp_id:
             tasks = tasks.filtered(lambda t: t.assignee_id.employee_id.id == emp_id)
@@ -145,7 +178,32 @@ class DailyTaskTeamChecklist(models.Model):
                 can_edit_ids.add(my.id)
 
         pending = tasks.filtered(lambda t: not t.manager_confirmed)
-        verified = tasks.filtered(lambda t: t.manager_confirmed)
+
+        v_domain = [("manager_confirmed", "=", True)]
+        if allowed is not None:
+            if not allowed:
+                verified = self.browse()
+            else:
+                v_domain.append(("assignee_id.employee_id", "in", allowed))
+                verified = self.sudo().search(v_domain, order="assignee_id, deadline, id")
+        else:
+            verified = self.sudo().search(v_domain, order="assignee_id, deadline, id")
+        if emp_id:
+            verified = verified.filtered(lambda t: t.assignee_id.employee_id.id == emp_id)
+        if wg_id:
+            verified = verified.filtered(lambda t: t.work_group_id.id == wg_id)
+        if search:
+            verified = verified.filtered(
+                lambda t: search
+                in " ".join(
+                    [
+                        t.name or "",
+                        t.work_group_id.name or "",
+                        t.department_id.name or "",
+                        t.assignee_id.name or "",
+                    ]
+                ).lower()
+            )
 
         done_n = len(pending.filtered(lambda t: t.state == "done"))
         todo_n = len(pending.filtered(_is_todo))
@@ -229,20 +287,39 @@ class DailyTaskTeamChecklist(models.Model):
 
         categories = {}
         for task in pending:
-            cat = task.work_group_id.name or "Khác"
+            wg = task.work_group_id
+            key = wg.id or 0
+            name = wg.name or "Khác"
             row = categories.setdefault(
-                cat,
+                key,
                 {
-                    "name": cat,
-                    "icon": _group_icon(cat),
+                    "id": key,
+                    "seq": int(wg.sequence or 0) or key or 0,
+                    "name": name,
+                    "icon": _group_icon(name),
+                    "color": _group_color(name or key),
                     "total": 0,
                     "done": 0,
+                    "tasks": [],
                 },
+            )
+            can_edit = can_edit_ids is None or (
+                task.assignee_id.employee_id.id in (can_edit_ids or [])
             )
             row["total"] += 1
             if task.state == "done":
                 row["done"] += 1
-        category_list = sorted(categories.values(), key=lambda c: c["name"])
+            row["tasks"].append(_task_row(task, can_edit))
+        category_list = []
+        for i, row in enumerate(sorted(categories.values(), key=lambda c: (c["name"], c["id"]))):
+            total = row["total"] or 0
+            done = row["done"] or 0
+            pct = round(done / float(total) * 100) if total else 0
+            if not row["seq"]:
+                row["seq"] = i + 1
+            row["percent"] = pct
+            row["complete"] = bool(total and done >= total)
+            category_list.append(row)
 
         work_groups = [
             {"id": g.id, "name": g.name}

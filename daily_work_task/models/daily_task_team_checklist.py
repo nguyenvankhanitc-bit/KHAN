@@ -103,6 +103,8 @@ class DailyTaskTeamChecklist(models.Model):
         domain = [
             "|",
             ("deadline", "=", target),
+            "&",
+            ("deadline", "=", False),
             ("assign_date", "=", target),
         ]
         if allowed is not None:

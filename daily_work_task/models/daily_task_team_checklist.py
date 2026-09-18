@@ -103,8 +103,12 @@ class DailyTaskTeamChecklist(models.Model):
         domain = [
             ("manager_confirmed", "=", False),
             "|",
-            ("deadline", "=", target),
-            ("assign_date", "=", target),
+            "&",
+            ("deadline", "!=", False),
+            ("deadline", "<=", target),
+            "&",
+            ("deadline", "=", False),
+            ("assign_date", "<=", target),
         ]
         if allowed is not None:
             if not allowed:

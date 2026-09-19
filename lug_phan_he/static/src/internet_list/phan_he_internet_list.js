@@ -171,7 +171,7 @@ const FILTER_TITLES = {
     },
     payment_due: {
         title: "Lịch thanh toán",
-        subtitle: "Internet cần thanh toán: còn ≤ 30 ngày, quá hạn hoặc trễ hạn",
+        subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn (cùng Dự kiến thanh toán)",
         activeNav: "payment_schedule",
     },
     payment_forecast: {
@@ -311,13 +311,8 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.selected = {};
                 this.state.loading = true;
                 this.state.sectionOpen = true;
-                if (nextFilter === "payment_forecast" && nextFilter !== curFilter) {
+                if ((nextFilter === "payment_forecast" || nextFilter === "payment_due") && nextFilter !== curFilter) {
                     const n = nextMonthParts(1);
-                    this.state.forecastYear = n.year;
-                    this.state.forecastMonth = n.month;
-                }
-                if (nextFilter === "payment_due" && nextFilter !== curFilter) {
-                    const n = nextMonthParts(0);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                 }
@@ -410,9 +405,14 @@ export class PhanHeInternetListBoard extends Component {
         return this.listFilter === "payment_forecast";
     }
 
-    /** Toolbar / table bar giống Dự kiến TT (Lịch TT + Dự kiến). */
-    get isForecastStyleList() {
+    /** Lịch TT + Dự kiến: cùng bộ lọc tháng/năm + quá hạn. */
+    get isPeriodPaymentList() {
         return this.listFilter === "payment_forecast" || this.listFilter === "payment_due";
+    }
+
+    /** Toolbar / table bar giống Dự kiến TT. */
+    get isForecastStyleList() {
+        return this.isPeriodPaymentList;
     }
 
     get emptyMessage() {
@@ -443,17 +443,17 @@ export class PhanHeInternetListBoard extends Component {
 
     get pageMeta() {
         const base = FILTER_TITLES[this.listFilter] || FILTER_TITLES.all;
-        if (this.isForecastList) {
+        if (this.isPeriodPaymentList) {
             return {
                 ...base,
-                subtitle: `Dự kiến tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+                subtitle: `${this.isForecastList ? "Dự kiến" : "Lịch"} tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
             };
         }
         return base;
     }
 
     get forecastRows() {
-        if (!this.isForecastList) {
+        if (!this.isPeriodPaymentList) {
             return this.state.records;
         }
         const year = Number(this.state.forecastYear);
@@ -570,8 +570,8 @@ export class PhanHeInternetListBoard extends Component {
         const f = listFilter || "active";
         if (f === "active") {
             domain.push(["state", "=", "active"]);
-        } else if (f === "payment_forecast") {
-            // Tháng/năm đang chọn + luôn gồm HĐ quá hạn (chưa thanh lý)
+        } else if (f === "payment_forecast" || f === "payment_due") {
+            // Cùng logic: tháng/năm đang chọn + HĐ quá hạn
             const y = Number(this.state.forecastYear) || new Date().getFullYear();
             const m = Number(this.state.forecastMonth) || (new Date().getMonth() + 1);
             const from = `${y}-${pad2(m)}-01`;
@@ -597,12 +597,6 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
-        } else if (f === "payment_due") {
-            // Lịch TT: còn ≤30 ngày hoặc đã quá hạn
-            domain.push(["ops_status", "=", "active"]);
-            domain.push(["state", "=", "active"]);
-            domain.push(["date_end", "!=", false]);
-            domain.push(["date_end", "<=", soon30]);
         } else if (f === "report_month" || f === "report_quarter" || f === "report_year") {
             const { from, to } = periodBounds(f);
             domain.push("|", ["date_start", "=", false], ["date_start", "<=", to]);
@@ -658,14 +652,14 @@ export class PhanHeInternetListBoard extends Component {
 
     get totalPages() {
         const size = this.state.pageSize || 10;
-        const total = this.isForecastList ? this.forecastRows.length : (this.state.totalCount || 0);
+        const total = this.isPeriodPaymentList ? this.forecastRows.length : (this.state.totalCount || 0);
         return Math.max(1, Math.ceil(total / size));
     }
 
     get pageRecords() {
         const size = this.state.pageSize || 10;
         const start = (this.state.page - 1) * size;
-        const source = this.isForecastList ? this.forecastRows : this.state.records;
+        const source = this.isPeriodPaymentList ? this.forecastRows : this.state.records;
         return source.slice(start, start + size).map((rec, idx) => ({
             ...rec,
             stt: start + idx + 1,
@@ -699,7 +693,7 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     get pageInfo() {
-        const total = this.isForecastList ? this.forecastRows.length : (this.state.totalCount || 0);
+        const total = this.isPeriodPaymentList ? this.forecastRows.length : (this.state.totalCount || 0);
         if (!total) {
             return "Hiển thị 0 trên 0 kết quả";
         }
@@ -1025,11 +1019,11 @@ export class PhanHeInternetListBoard extends Component {
             await this.ensureInternetTypeId();
             const listFilter = filterOverride || this.listFilter;
             const domain = this.buildQueryDomain(listFilter);
-            const isForecast = listFilter === "payment_forecast";
+            const isPeriodPay = listFilter === "payment_forecast" || listFilter === "payment_due";
             const isLightList = listFilter === "suspend" || listFilter === "liquidated" || listFilter === "paused";
-            const pageSize = isForecast ? 2000 : (this.state.pageSize || 10);
+            const pageSize = isPeriodPay ? 2000 : (this.state.pageSize || 10);
             const page = this.state.page || 1;
-            const offset = isForecast ? 0 : (page - 1) * pageSize;
+            const offset = isPeriodPay ? 0 : (page - 1) * pageSize;
             const needProviders = !isLightList && (!this._providersLoaded || !(this.state.providers || []).length);
             const orderBy = (
                 listFilter === "payment_due" || listFilter === "expired" || listFilter === "payment_forecast"
@@ -1060,7 +1054,7 @@ export class PhanHeInternetListBoard extends Component {
                 "next_payment_amount",
                 "invoice_filename",
             ];
-            if (isForecast) {
+            if (isPeriodPay) {
                 listFields.push("next_payment_date");
             }
             const tasks = [

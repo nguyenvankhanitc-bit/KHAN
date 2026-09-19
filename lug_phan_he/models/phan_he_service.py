@@ -880,27 +880,20 @@ class PhanHeService(models.Model):
             ("date_end", "!=", False),
             ("date_end", "<", today),
         ])
-        # Lịch TT: đang dùng, còn ≤30 ngày hoặc đã quá hạn (date_end <= soon30)
-        payment_schedule = self.search_count(inet_base + [
-            ("ops_status", "=", "active"),
-            ("state", "=", "active"),
-            ("date_end", "!=", False),
-            ("date_end", "<=", soon30),
-        ])
-        Payment = self.env["phan.he.payment"]
-        payment_confirm = Payment.search_count([
-            ("active", "=", True),
-            ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
-        ])
-        # Badge dự kiến = HĐ tháng kế tiếp + HĐ quá hạn (không trùng)
+        # Lịch TT + Dự kiến: cùng số — tháng kế tiếp + quá hạn
         next_start = (today.replace(day=1) + relativedelta(months=1))
         next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
-        payment_forecast = self.search_count(inet_base + [
+        payment_period = self.search_count(inet_base + [
             ("state", "=", "active"),
             "|", "|",
             "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
             "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
             "&", ("date_end", "!=", False), ("date_end", "<", today),
+        ])
+        Payment = self.env["phan.he.payment"]
+        payment_confirm = Payment.search_count([
+            ("active", "=", True),
+            ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
         ])
         return {
             "list_active": list_active,
@@ -908,9 +901,9 @@ class PhanHeService(models.Model):
             "list_liquidated": list_liquidated,
             "expire_soon": expire_soon,
             "overdue_contract": overdue,
-            "payment_schedule": payment_schedule,
+            "payment_schedule": payment_period,
             "payment_confirm": payment_confirm,
-            "payment_forecast": payment_forecast,
+            "payment_forecast": payment_period,
             "alert_count": expire_soon + overdue,
         }
 
@@ -1242,12 +1235,16 @@ class PhanHeService(models.Model):
                 ("state", "=", "active"),
                 ("date_end", "<", today),
             ]
-        elif code in ("payment_due", "payment_schedule"):
+        elif code in ("payment_due", "payment_schedule", "payment_forecast"):
+            # Cùng logic UI: tháng kế tiếp + quá hạn (badge / search board)
+            next_start = (today.replace(day=1) + relativedelta(months=1))
+            next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
             domain += [
-                ("ops_status", "=", "active"),
                 ("state", "=", "active"),
-                ("date_end", "!=", False),
-                ("date_end", "<=", soon30),
+                "|", "|",
+                "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
+                "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
+                "&", ("date_end", "!=", False), ("date_end", "<", today),
             ]
         elif code in ("month", "quarter", "year", "report_month", "report_quarter", "report_year"):
             start, end = self._internet_period_bounds(code)

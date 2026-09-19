@@ -264,7 +264,7 @@
                                 <i class="fa fa-map-marker"/>
                                 <b t-esc="regionLabel"/>
                             </t>
-                            <span t-esc="isForecastList ? forecastRows.length : state.totalCount"/> hợp đồng
+                            <span t-esc="isPeriodPaymentList ? forecastRows.length : state.totalCount"/> hợp đồng
                         </div>
                     <div class="lq-table-actions">
                         <t t-if="isForecastStyleList">
@@ -350,7 +350,7 @@
                                         <td class="col-date-end" t-esc="formatDate(rec.date_end)"/>
                                         <td class="col-fee" t-esc="formatMoney(rec.contract_amount)"/>
                                         <td class="col-pay lq-money">
-                                            <t t-if="isForecastList" t-esc="formatMoney(rec.forecast_amount)"/>
+                                            <t t-if="isPeriodPaymentList" t-esc="formatMoney(rec.forecast_amount)"/>
                                             <t t-else="" t-esc="formatMoney(rec.next_payment_amount)"/>
                                         </td>
                                         <td class="col-ops">

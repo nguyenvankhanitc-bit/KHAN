@@ -316,6 +316,11 @@ export class PhanHeInternetListBoard extends Component {
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                 }
+                if (nextFilter === "payment_due" && nextFilter !== curFilter) {
+                    const n = nextMonthParts(0);
+                    this.state.forecastYear = n.year;
+                    this.state.forecastMonth = n.month;
+                }
                 await this.load(nextFilter);
             }
         });
@@ -403,6 +408,11 @@ export class PhanHeInternetListBoard extends Component {
 
     get isForecastList() {
         return this.listFilter === "payment_forecast";
+    }
+
+    /** Toolbar / table bar giống Dự kiến TT (Lịch TT + Dự kiến). */
+    get isForecastStyleList() {
+        return this.listFilter === "payment_forecast" || this.listFilter === "payment_due";
     }
 
     get emptyMessage() {

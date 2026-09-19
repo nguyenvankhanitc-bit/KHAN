@@ -44,7 +44,7 @@
                     </button>
                 </div>
 
-                <div t-if="!isForecastList" class="lq-today-pills">
+                <div t-if="!isForecastStyleList" class="lq-today-pills">
                     <button type="button"
                             t-att-class="state.remainTab === 'all' ? 'is-on' : ''"
                             t-on-click="() => this.setRemainTab('all')">
@@ -191,8 +191,8 @@
                         <p t-esc="pageMeta.subtitle"/>
                     </div>
                 </div>
-                <div t-att-class="isForecastList ? 'lq-board-tools is-forecast' : 'lq-board-tools'">
-                    <t t-if="isForecastList">
+                <div t-att-class="isForecastStyleList ? 'lq-board-tools is-forecast' : 'lq-board-tools'">
+                    <t t-if="isForecastStyleList">
                         <div class="lq-forecast-bar">
                             <select class="lq-period-select"
                                     t-att-value="state.forecastMonth"
@@ -256,7 +256,7 @@
             <div class="lq-table-card">
                 <div class="lq-table-bar">
                         <div class="lq-region-tag">
-                            <t t-if="isForecastList">
+                            <t t-if="isForecastStyleList">
                                 <i class="fa fa-calendar"/>
                                 <b t-esc="'Tháng ' + state.forecastMonth + '/' + state.forecastYear"/>
                             </t>
@@ -267,7 +267,7 @@
                             <span t-esc="isForecastList ? forecastRows.length : state.totalCount"/> hợp đồng
                         </div>
                     <div class="lq-table-actions">
-                        <t t-if="isForecastList">
+                        <t t-if="isForecastStyleList">
                             <label class="lq-chip lq-search">
                                 <i class="fa fa-search"/>
                                 <input type="text"

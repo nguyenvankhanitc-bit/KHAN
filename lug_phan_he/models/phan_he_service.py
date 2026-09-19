@@ -226,6 +226,7 @@ class PhanHeService(models.Model):
         string="Ngày TT tiếp theo",
         compute="_compute_next_payment_fields",
         inverse="_inverse_next_payment_fields",
+        store=True,
         readonly=False,
     )
     payment_info_text = fields.Text(
@@ -850,25 +851,56 @@ class PhanHeService(models.Model):
 
     @api.model
     def get_internet_alert_counts(self):
-        """Số HĐ sidebar: cùng điều kiện danh sách Sắp tới hạn / Quá hạn."""
+        """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet."""
         today = fields.Date.context_today(self)
         soon30 = today + relativedelta(days=30)
-        base = [
+        inet_base = [
             ("active", "=", True),
             ("service_type_id.code", "=", "internet"),
+        ]
+        list_active = self.search_count(inet_base + [("state", "=", "active")])
+        list_suspend = self.search_count(inet_base + [
+            "|",
+            ("state", "=", "suspend"),
+            ("ops_status", "=", "suspend"),
+        ])
+        list_liquidated = self.search_count(inet_base + [
+            "|",
+            ("state", "in", ["liquidated", "cancel"]),
+            ("ops_status", "=", "liquidated"),
+        ])
+        expire_soon = self.search_count(inet_base + [
             ("state", "=", "active"),
             ("date_end", "!=", False),
-        ]
-        expire_soon = self.search_count(base + [
             ("date_end", ">=", today),
             ("date_end", "<=", soon30),
         ])
-        overdue = self.search_count(base + [
+        overdue = self.search_count(inet_base + [
+            ("state", "=", "active"),
+            ("date_end", "!=", False),
             ("date_end", "<", today),
         ])
+        # Lịch TT: đang dùng, còn ≤30 ngày hoặc đã quá hạn (date_end <= soon30)
+        payment_schedule = self.search_count(inet_base + [
+            ("ops_status", "=", "active"),
+            ("state", "=", "active"),
+            ("date_end", "!=", False),
+            ("date_end", "<=", soon30),
+        ])
+        Payment = self.env["phan.he.payment"]
+        payment_confirm = Payment.search_count([
+            ("active", "=", True),
+            ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
+        ])
         return {
+            "list_active": list_active,
+            "list_suspend": list_suspend,
+            "list_liquidated": list_liquidated,
             "expire_soon": expire_soon,
             "overdue_contract": overdue,
+            "payment_schedule": payment_schedule,
+            "payment_confirm": payment_confirm,
+            "payment_forecast": list_active,
             "alert_count": expire_soon + overdue,
         }
 
@@ -903,61 +935,77 @@ class PhanHeService(models.Model):
         miens = self.env["phan.he.mien"].search([("active", "=", True)])
         mien_meta = self._dash_mien_meta(miens)
 
-        month_recs = self.search(
-            base + self._dash_due_soon_domain(m_start, m_end),
-            order="remaining_days asc, id desc",
-        )
+        # Tổng quan tháng = cùng Kỳ/Tổng với Báo cáo → Chi phí tháng
+        month_recs = self.search_month_cost_ky(year, month, extra_domain=base)
         by_rows, due_sum = self._dash_group_due_stores(month_recs)
-        month_total = self._dash_mien_total(due_sum, mien_meta)
+        month_total = sum(self._month_ky_period_amount(r) for r in month_recs)
 
-        prev_recs = self.search(
-            base + self._dash_due_soon_domain(prev_start, prev_end),
-            order="remaining_days asc, id desc",
+        prev_recs = self.search_month_cost_ky(prev_start.year, prev_start.month, extra_domain=base)
+        month_delta = self._dash_delta(
+            month_total,
+            sum(self._month_ky_period_amount(r) for r in prev_recs),
         )
-        _prev_rows, prev_sum = self._dash_group_due_stores(prev_recs)
-        prev_total = self._dash_mien_total(prev_sum, mien_meta)
-        month_delta = self._dash_delta(month_total, prev_total)
 
-        # Sparkline: từng tuần trong tháng đang chọn
+        # Sparkline: phân bổ các kỳ tháng N theo tuần (cùng nguồn Chi phí tháng)
         month_weeks = []
         day = m_start
         w = 1
+        week_slots = []
         while day <= m_end:
             week_end = min(day + relativedelta(days=6), m_end)
-            week_recs = self.search(
-                base + self._dash_due_soon_domain(day, week_end),
-                order="id desc",
-            )
-            _wr, week_sum = self._dash_group_due_stores(week_recs)
-            month_weeks.append({
-                "key": f"W{w}",
-                "label": f"Tuần {w}",
-                "full": f"{day.day:02d}/{day.month:02d}",
-                "amount": self._dash_mien_total(week_sum, mien_meta),
-            })
+            week_slots.append((w, day, week_end))
             day = week_end + relativedelta(days=1)
             w += 1
+        week_amts = [0.0] * len(week_slots)
+        last_i = len(week_slots) - 1
+        for rec in month_recs:
+            amt = self._month_ky_period_amount(rec)
+            de = rec.date_end
+            placed = False
+            if de:
+                for i, (_wn, d0, d1) in enumerate(week_slots):
+                    if d0 <= de <= d1:
+                        week_amts[i] += amt
+                        placed = True
+                        break
+                if not placed and de < m_start and last_i >= 0:
+                    week_amts[0] += amt
+                    placed = True
+            if not placed and last_i >= 0:
+                week_amts[last_i] += amt
+        for i, (wn, d0, _d1) in enumerate(week_slots):
+            month_weeks.append({
+                "key": f"W{wn}",
+                "label": f"Tuần {wn}",
+                "full": f"{d0.day:02d}/{d0.month:02d}",
+                "amount": week_amts[i],
+            })
 
-        # Xu hướng 6 tháng (card 1 phụ)
+        # Xu hướng 6 tháng — mỗi tháng = Tổng chi phí tháng (Báo cáo)
         trend = []
         for i in range(5, -1, -1):
             ts = m_start - relativedelta(months=i)
-            te = ts + relativedelta(months=1, days=-1)
-            tr_recs = self.search(base + self._dash_due_soon_domain(ts, te), order="id desc")
-            _tr, tr_sum = self._dash_group_due_stores(tr_recs)
             trend.append({
                 "key": f"{ts.year}-{ts.month:02d}",
                 "label": f"Th{ts.month}",
                 "full": f"{ts.month:02d}/{ts.year}",
-                "amount": self._dash_mien_total(tr_sum, mien_meta),
+                "amount": self.sum_month_cost_ky(ts.year, ts.month, extra_domain=base),
             })
 
         region_rows = []
+        ky_sum = {}
+        for rec in month_recs:
+            mid = rec.mien_id.id or 0
+            ky_sum[mid] = ky_sum.get(mid, 0.0) + self._month_ky_period_amount(rec)
         for m in mien_meta:
             mid = m["id"]
-            amt = float(due_sum.get(mid, 0.0) or 0.0)
-            prev_amt = float(prev_sum.get(mid, 0.0) or 0.0)
-            cnt = len(by_rows.get(mid, []))
+            amt = float(ky_sum.get(mid, 0.0) or 0.0)
+            prev_amt = sum(
+                self._month_ky_period_amount(r)
+                for r in prev_recs
+                if (r.mien_id.id or 0) == mid
+            )
+            cnt = len([r for r in month_recs if (r.mien_id.id or 0) == mid])
             pct = round((amt / month_total) * 100, 1) if month_total else 0.0
             region_rows.append({
                 **m,
@@ -987,8 +1035,8 @@ class PhanHeService(models.Model):
                 "is_current": y == year,
             })
         cur_year = year_bars[-1]["amount"] if year_bars else 0.0
-        prev_year = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
-        year_delta = self._dash_delta(cur_year, prev_year)
+        prev_year_amt = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
+        year_delta = self._dash_delta(cur_year, prev_year_amt)
         year_by_rows = year_rows_by_year.get(year, {})
         year_sum = year_history.get(year, {})
 
@@ -1016,20 +1064,13 @@ class PhanHeService(models.Model):
             total_cnt = n_active + n_suspend + n_liq
         active_pct = round((n_active / total_cnt) * 100) if total_cnt else 0
 
-        # Widget 6: T1 → tháng đang chọn của năm
+        # Widget 6: T1 → tháng đang chọn — mỗi cột = Chi phí tháng
         month_bars = []
         for mo in range(1, month + 1):
-            ys = fields.Date.to_date(f"{year}-{mo:02d}-01")
-            ye = ys + relativedelta(months=1, days=-1)
             month_bars.append({
                 "month": mo,
                 "label": f"T{mo}",
-                "amount": self._dash_mien_total(
-                    self._dash_group_due_stores(
-                        self.search(base + self._dash_due_soon_domain(ys, ye), order="id desc")
-                    )[1],
-                    mien_meta,
-                ),
+                "amount": self.sum_month_cost_ky(year, mo, extra_domain=base),
             })
 
         detail_tables = []
@@ -1038,12 +1079,12 @@ class PhanHeService(models.Model):
             spark = []
             for i in range(3, -1, -1):
                 ts = m_start - relativedelta(months=i)
-                te = ts + relativedelta(months=1, days=-1)
                 spark.append({
                     "key": f"{ts.year}-{ts.month:02d}",
-                    "amount": self._dash_sum(
-                        self._dash_base_domain(m["id"], store_id)
-                        + self._dash_due_soon_domain(ts, te)
+                    "amount": self.sum_month_cost_ky(
+                        ts.year,
+                        ts.month,
+                        extra_domain=self._dash_base_domain(m["id"], store_id),
                     ),
                 })
             spark_max = max((s["amount"] for s in spark), default=1) or 1
@@ -1062,7 +1103,7 @@ class PhanHeService(models.Model):
                 item["pct"] = max(8, round((item["amount"] / ys_max) * 100)) if item["amount"] else 8
             detail_tables.append({
                 **m,
-                "amount": due_sum.get(m["id"], 0.0),
+                "amount": ky_sum.get(m["id"], 0.0),
                 "delta": 0.0,
                 "count": len(rows),
                 "rows": rows,
@@ -1169,7 +1210,7 @@ class PhanHeService(models.Model):
             ("service_type_id.code", "=", "internet"),
         ]
         code = filter_code or "all"
-        if code == "active":
+        if code == "active" or code == "payment_forecast":
             domain.append(("state", "=", "active"))
         elif code in ("suspend", "paused"):
             domain.append(("state", "=", "suspend"))
@@ -1528,25 +1569,104 @@ class PhanHeService(models.Model):
         ] + self._dash_overlap(start, end)
 
     @api.model
+    def _month_ky_bounds(self, year, month):
+        """Thời điểm lập kỳ tháng N → (start, end, as_of, soon)."""
+        today = fields.Date.context_today(self)
+        year = int(year)
+        month = min(12, max(1, int(month)))
+        start = fields.Date.from_string(f"{year:04d}-{month:02d}-01")
+        end = (start + relativedelta(months=1)) - relativedelta(days=1)
+        if start <= today <= end:
+            as_of = today
+        elif end < today:
+            as_of = end
+        else:
+            as_of = start
+        soon = as_of + relativedelta(days=30)
+        return start, end, as_of, soon
+
+    @api.model
+    def _month_ky_period_amount(self, rec):
+        """Số tiền kỳ = Lịch thanh toán (next_payment_amount)."""
+        return float(rec.next_payment_amount or rec.contract_amount or 0.0)
+
+    @api.model
+    def _month_ky_paid_amount(self, rec, start, end, as_of, soon):
+        """Đã TT = xác nhận thanh toán (paid) gắn kỳ."""
+        paid_pays = rec.payment_ids.filtered(
+            lambda p: p.active and p.payment_state == "paid"
+        )
+        in_month = paid_pays.filtered(
+            lambda p: p.date_paid and start <= p.date_paid <= end
+        )
+        if in_month:
+            return sum(float(p.amount or 0.0) for p in in_month)
+        window_start = as_of - relativedelta(days=365)
+        in_ky = paid_pays.filtered(
+            lambda p: p.date_due and window_start <= p.date_due <= soon
+        )
+        return sum(float(p.amount or 0.0) for p in in_ky)
+
+    @api.model
+    def search_month_cost_ky(self, year, month, extra_domain=None):
+        """Kỳ TT tháng N (cùng Báo cáo / Chi phí tháng):
+
+        - Đến hạn trong vòng 30 ngày kể từ thời điểm lập kỳ
+        - + Quá hạn chưa hoàn tất thanh toán
+        """
+        start, end, as_of, soon = self._month_ky_bounds(year, month)
+        domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+            ("ops_status", "=", "active"),
+            ("date_end", "!=", False),
+            ("date_end", "<=", soon),
+        ]
+        if extra_domain:
+            domain = domain + list(extra_domain)
+        candidates = self.search(domain, order="date_end asc, id asc")
+        result = self.browse()
+        for rec in candidates:
+            amt = self._month_ky_period_amount(rec)
+            paid_sum = self._month_ky_paid_amount(rec, start, end, as_of, soon)
+            remain = max(amt - paid_sum, 0.0)
+            overdue = bool(rec.date_end and rec.date_end < as_of)
+            if overdue and remain <= 0 and amt > 0:
+                continue
+            result |= rec
+        return result
+
+    @api.model
+    def sum_month_cost_ky(self, year, month, extra_domain=None):
+        """Tổng chi phí tháng N = tổng tiền các kỳ đưa vào tháng N."""
+        recs = self.search_month_cost_ky(year, month, extra_domain=extra_domain)
+        return sum(self._month_ky_period_amount(r) for r in recs)
+
+    @api.model
     def _dash_due_soon_domain(self, start, end, soon_days=30):
-        """HĐ đang dùng, thời gian còn lại ≤ 30 ngày (kể cả quá hạn)."""
+        """HĐ đang dùng, thời gian còn lại ≤ 30 ngày (kể cả quá hạn).
+
+        Dùng as_of theo kỳ (giống Chi phí tháng): tháng chứa tại → hôm nay;
+        tháng quá khứ → cuối tháng; tương lai → đầu tháng.
+        """
         if not start or not end or start > end:
             return [("id", "=", 0)]
         today = fields.Date.context_today(self)
-        soon = today + relativedelta(days=int(soon_days or 30))
-        domain = [
+        if start <= today <= end:
+            as_of = today
+        elif end < today:
+            as_of = end
+        else:
+            as_of = start
+        soon = as_of + relativedelta(days=int(soon_days or 30))
+        return [
             ("ops_status", "=", "active"),
             ("state", "=", "active"),
             ("ops_status", "not in", ("suspend", "liquidated")),
             ("state", "not in", ("suspend", "liquidated", "cancel", "expired")),
             ("date_end", "!=", False),
             ("date_end", "<=", soon),
-        ]
-        if start <= today <= end:
-            return domain
-        return domain + [
-            ("date_end", ">=", start),
-            ("date_end", "<=", end),
         ]
 
     @api.model

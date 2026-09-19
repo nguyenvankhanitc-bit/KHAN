@@ -1,0 +1,438 @@
+.lq-pay-board {
+
+    .lq-wifi.is-check {
+
+        background: linear-gradient(135deg, #059669, #10b981);
+
+    }
+
+    .lq-wifi.is-forecast {
+
+        background: linear-gradient(135deg, #2563eb, #7c3aed);
+
+    }
+
+
+
+    .lq-forecast-bar {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        flex-wrap: wrap;
+
+        gap: 8px;
+
+    }
+
+
+
+    .lq-period-select {
+
+        appearance: none;
+
+        -webkit-appearance: none;
+
+        min-width: 110px;
+
+        height: 38px;
+
+        padding: 0 28px 0 12px;
+
+        border: 1px solid #d1d5db;
+
+        border-radius: 6px;
+
+        background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236b7280' d='M1 1l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center;
+
+        color: #111827;
+
+        font-size: 14px;
+
+        font-weight: 600;
+
+        line-height: 38px;
+
+        cursor: pointer;
+
+        &:focus {
+
+            outline: none;
+
+            border-color: #9ca3af;
+
+            box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.25);
+
+        }
+
+    }
+
+
+
+    .lq-btn-refresh {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        height: 38px;
+
+        padding: 0 14px;
+
+        border: 1px solid #d1d5db;
+
+        border-radius: 6px;
+
+        background: #fff;
+
+        color: #111827;
+
+        font-size: 14px;
+
+        font-weight: 600;
+
+        cursor: pointer;
+
+        i { color: #374151; }
+
+        &:hover:not(:disabled) {
+
+            background: #f9fafb;
+
+            border-color: #9ca3af;
+
+        }
+
+        &:disabled {
+
+            opacity: 0.6;
+
+            cursor: not-allowed;
+
+        }
+
+    }
+
+
+
+    .lq-btn-excel {
+
+        display: inline-flex;
+
+        align-items: center;
+
+        gap: 8px;
+
+        height: 38px;
+
+        padding: 0 16px;
+
+        border: 0;
+
+        border-radius: 6px;
+
+        background: #16a34a;
+
+        color: #fff;
+
+        font-size: 14px;
+
+        font-weight: 700;
+
+        cursor: pointer;
+
+        i { color: #fff; }
+
+        &:hover:not(:disabled) {
+
+            background: #15803d;
+
+        }
+
+        &:disabled {
+
+            opacity: 0.65;
+
+            cursor: not-allowed;
+
+        }
+
+    }
+
+
+
+    .lq-ghost.is-primary {
+
+        background: #4f46e5;
+
+        color: #fff;
+
+        border-color: #4f46e5;
+
+        &:hover:not(:disabled) {
+
+            background: #4338ca;
+
+        }
+
+        &:disabled {
+
+            opacity: 0.55;
+
+        }
+
+    }
+
+    .lq-ops-pill.is-ok {
+
+        background: #d1fae5;
+
+        color: #047857;
+
+    }
+
+    .lq-ops-pill.is-danger {
+
+        background: #fee2e2;
+
+        color: #b91c1c;
+
+    }
+
+    .lq-ops-pill.is-warn {
+
+        background: #ffedd5;
+
+        color: #c2410c;
+
+    }
+
+    .lq-ops-pill.is-muted {
+
+        background: #f1f5f9;
+
+        color: #64748b;
+
+    }
+
+
+
+    /* Mobile — cùng dạng card Lịch thanh toán */
+
+    &.is-today {
+
+        .lq-today-title {
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.02em;
+
+        }
+
+        .lq-pay-mobile-bar {
+
+            flex-direction: column;
+
+            align-items: stretch;
+
+            gap: 10px;
+
+            .lq-today-search {
+
+                width: 100%;
+
+            }
+
+        }
+
+        .lq-pay-confirm-btn {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 8px;
+
+            width: 100%;
+
+            height: 44px;
+
+            border: 0;
+
+            border-radius: 12px;
+
+            background: #4f46e5;
+
+            color: #fff;
+
+            font-size: 15px;
+
+            font-weight: 700;
+
+            &:disabled {
+
+                opacity: 0.55;
+
+            }
+
+        }
+
+        .lq-today-section-ico.is-pay {
+
+            background: #059669;
+
+        }
+
+        .lq-pay-card {
+
+            display: block;
+
+            text-align: left;
+
+            width: 100%;
+
+            cursor: default;
+
+        }
+
+        .lq-pay-card-check {
+
+            display: flex;
+
+            align-items: center;
+
+            margin: 0 4px 0 0;
+
+            input {
+
+                width: 18px;
+
+                height: 18px;
+
+                accent-color: #4f46e5;
+
+            }
+
+        }
+
+        .lq-pay-card-act {
+
+            width: 34px;
+
+            height: 34px;
+
+            border: 0;
+
+            border-radius: 10px;
+
+            background: #d1fae5;
+
+            color: #047857;
+
+            flex-shrink: 0;
+
+            i { font-size: 14px; }
+
+        }
+
+        .lq-today-badge.is-ok {
+
+            background: #dcfce7;
+
+            color: #15803d;
+
+        }
+
+        .lq-today-badge.is-danger {
+
+            background: #fee2e2;
+
+            color: #b91c1c;
+
+        }
+
+        .lq-today-badge.is-warn {
+
+            background: #ffedd5;
+
+            color: #c2410c;
+
+        }
+
+        .lq-today-badge.is-muted {
+
+            background: #f1f5f9;
+
+            color: #64748b;
+
+        }
+
+    }
+
+    .lq-table-card {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .lq-table-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .lq-table-scroll {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        height: 0 !important;
+        width: 100%;
+        overflow-x: scroll !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-gutter: stable;
+    }
+
+    .lq-pager {
+        flex-shrink: 0;
+        margin-top: 10px;
+    }
+
+    .lq-inet-table {
+        min-width: 1280px !important;
+        width: max-content !important;
+        max-width: none !important;
+
+        .col-contract {
+            min-width: 160px;
+            width: 180px;
+        }
+
+        .col-period {
+            min-width: 100px;
+            width: 110px;
+        }
+
+        .col-provider,
+        .col-contract,
+        .col-period,
+        .col-date-end,
+        .col-pay,
+        .col-ops,
+        .col-act {
+            position: static;
+            left: auto;
+            box-shadow: none;
+        }
+    }
+
+}
+

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
-        <div t-attf-class="lq-inet-board {{ listFilter === 'payment_due' ? 'is-payment' : '' }}{{ isMobile ? ' is-today' : '' }}">
+        <div t-attf-class="lq-inet-board {{ (listFilter === 'payment_due' or listFilter === 'payment_forecast' or listFilter === 'expired') ? 'is-payment' : '' }}{{ isMobile ? ' is-today' : '' }}">
             <t t-if="isMobile">
                 <div class="lq-today-top">
                     <h1 class="lq-today-title" t-esc="pageMeta.title"/>
                     <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
                 </div>
 
-                <div class="lq-today-quick">
+                <div class="lq-today-quick" t-if="!isPaymentMobile">
                     <button t-if="canCreateNav" type="button" class="lq-today-quick-item" t-on-click="() => this.onAdd()">
                         <span class="lq-today-qico is-violet"><i class="fa fa-plus"/></span>
                         <span>Thêm hợp đồng</span>
@@ -44,7 +44,7 @@
                     </button>
                 </div>
 
-                <div class="lq-today-pills">
+                <div t-if="!isForecastList" class="lq-today-pills">
                     <button type="button"
                             t-att-class="state.remainTab === 'all' ? 'is-on' : ''"
                             t-on-click="() => this.setRemainTab('all')">
@@ -81,7 +81,9 @@
 
                 <div class="lq-today-section">
                     <button type="button" class="lq-today-section-head" t-on-click="toggleTodaySection">
-                        <span class="lq-today-section-ico"><i class="fa fa-globe"/></span>
+                        <span class="lq-today-section-ico" t-att-class="isPaymentMobile ? 'is-pay' : ''">
+                            <i t-att-class="isPaymentMobile ? 'fa fa-check-circle' : 'fa fa-globe'"/>
+                        </span>
                         <b t-esc="pageMeta.title"/>
                         <em t-esc="cardRecords.length"/>
                         <i t-att-class="state.sectionOpen ? 'fa fa-angle-up' : 'fa fa-angle-down'"/>
@@ -92,7 +94,7 @@
                             <div class="lq-today-empty">Đang tải...</div>
                         </t>
                         <t t-elif="!cardRecords.length">
-                            <div class="lq-today-empty">Không có dữ liệu</div>
+                            <div class="lq-today-empty" t-esc="emptyMessage"/>
                         </t>
                         <t t-else="">
                             <div class="lq-today-cards">
@@ -189,45 +191,100 @@
                         <p t-esc="pageMeta.subtitle"/>
                     </div>
                 </div>
-                <div class="lq-board-tools">
-                    <label class="lq-chip">
-                        <i class="fa fa-map-marker"/>
-                        <select t-on-change="(ev) => this.onFilterChange('regionFilter', ev)">
-                            <option value="">Tất cả khu vực</option>
-                            <option value="Nam" t-att-selected="state.regionFilter === 'Nam'">Miền Nam</option>
-                            <option value="Bắc" t-att-selected="state.regionFilter === 'Bắc'">Miền Bắc</option>
-                            <option value="ĐTT" t-att-selected="state.regionFilter === 'ĐTT'">Miền ĐTT</option>
-                        </select>
-                    </label>
-                    <span class="lq-chip">
-                        <i class="fa fa-calendar"/>
-                        <t t-esc="dateRangeLabel"/>
-                    </span>
-                    <label class="lq-chip lq-search">
-                        <i class="fa fa-search"/>
-                        <input type="text"
-                               placeholder="Tìm kiếm khách hàng, mã hợp đồng..."
-                               t-att-value="state.search"
-                               t-on-input="onSearchInput"/>
-                    </label>
+                <div t-att-class="isForecastList ? 'lq-board-tools is-forecast' : 'lq-board-tools'">
+                    <t t-if="isForecastList">
+                        <div class="lq-forecast-bar">
+                            <select class="lq-period-select"
+                                    t-att-value="state.forecastMonth"
+                                    t-on-change="onForecastMonthChange">
+                                <t t-foreach="monthOptions" t-as="m" t-key="m.value">
+                                    <option t-att-value="m.value"
+                                            t-att-selected="state.forecastMonth === m.value"
+                                            t-esc="m.label"/>
+                                </t>
+                            </select>
+                            <select class="lq-period-select is-year"
+                                    t-att-value="state.forecastYear"
+                                    t-on-change="onForecastYearChange">
+                                <t t-foreach="yearOptions" t-as="y" t-key="y.value">
+                                    <option t-att-value="y.value"
+                                            t-att-selected="state.forecastYear === y.value"
+                                            t-esc="y.label"/>
+                                </t>
+                            </select>
+                            <button type="button" class="lq-ghost"
+                                    t-att-disabled="state.loading"
+                                    t-on-click="() => this.load()">
+                                <i t-att-class="state.loading ? 'fa fa-refresh fa-spin' : 'fa fa-refresh'"/>
+                                Làm mới
+                            </button>
+                            <button type="button" class="lq-btn-excel"
+                                    t-att-disabled="state.exporting || state.loading"
+                                    t-on-click="() => this.exportListExcel()">
+                                <i class="fa fa-file-excel-o"/>
+                                <t t-if="state.exporting">Đang xuất...</t>
+                                <t t-else="">Xuất Excel</t>
+                            </button>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <label class="lq-chip">
+                            <i class="fa fa-map-marker"/>
+                            <select t-on-change="(ev) => this.onFilterChange('regionFilter', ev)">
+                                <option value="">Tất cả khu vực</option>
+                                <option value="Nam" t-att-selected="state.regionFilter === 'Nam'">Miền Nam</option>
+                                <option value="ĐTT" t-att-selected="state.regionFilter === 'ĐTT'">Miền ĐTT</option>
+                                <option value="Bắc" t-att-selected="state.regionFilter === 'Bắc'">Miền Bắc</option>
+                                <option value="VP" t-att-selected="state.regionFilter === 'VP'">Văn phòng</option>
+                            </select>
+                        </label>
+                        <span class="lq-chip">
+                            <i class="fa fa-calendar"/>
+                            <t t-esc="dateRangeLabel"/>
+                        </span>
+                        <label class="lq-chip lq-search">
+                            <i class="fa fa-search"/>
+                            <input type="text"
+                                   placeholder="Tìm kiếm khách hàng, mã hợp đồng..."
+                                   t-att-value="state.search"
+                                   t-on-input="onSearchInput"/>
+                        </label>
+                    </t>
                 </div>
             </div>
 
             <div class="lq-table-card">
                 <div class="lq-table-bar">
                         <div class="lq-region-tag">
-                            <i class="fa fa-map-marker"/>
-                            <b t-esc="regionLabel"/>
-                            <span t-esc="state.totalCount"/> hợp đồng
+                            <t t-if="isForecastList">
+                                <i class="fa fa-calendar"/>
+                                <b t-esc="'Tháng ' + state.forecastMonth + '/' + state.forecastYear"/>
+                            </t>
+                            <t t-else="">
+                                <i class="fa fa-map-marker"/>
+                                <b t-esc="regionLabel"/>
+                            </t>
+                            <span t-esc="isForecastList ? forecastRows.length : state.totalCount"/> hợp đồng
                         </div>
                     <div class="lq-table-actions">
-                        <button type="button" class="lq-ghost" t-att-disabled="state.exporting"
-                                t-on-click="() => this.exportListExcel()">
-                            <i class="fa fa-download"/> <t t-if="state.exporting">Đang xuất...</t><t t-else="">Xuất Excel</t>
-                        </button>
-                        <button type="button" class="lq-ghost"><i class="fa fa-sliders"/> Tùy chọn hiển thị</button>
-                        <button type="button" class="lq-ico is-on"><i class="fa fa-th-large"/></button>
-                        <button type="button" class="lq-ico"><i class="fa fa-bars"/></button>
+                        <t t-if="isForecastList">
+                            <label class="lq-chip lq-search">
+                                <i class="fa fa-search"/>
+                                <input type="text"
+                                       placeholder="Tìm kiếm khách hàng, mã hợp đồng..."
+                                       t-att-value="state.search"
+                                       t-on-input="onSearchInput"/>
+                            </label>
+                        </t>
+                        <t t-else="">
+                            <button type="button" class="lq-ghost" t-att-disabled="state.exporting"
+                                    t-on-click="() => this.exportListExcel()">
+                                <i class="fa fa-download"/> <t t-if="state.exporting">Đang xuất...</t><t t-else="">Xuất Excel</t>
+                            </button>
+                            <button type="button" class="lq-ghost"><i class="fa fa-sliders"/> Tùy chọn hiển thị</button>
+                            <button type="button" class="lq-ico is-on"><i class="fa fa-th-large"/></button>
+                            <button type="button" class="lq-ico"><i class="fa fa-bars"/></button>
+                        </t>
                     </div>
                 </div>
 
@@ -236,8 +293,8 @@
                 </t>
                 <t t-else="">
                     <div class="lq-table-body">
-                    <div class="lq-table-scroll">
-                        <table class="lq-inet-table">
+                    <div class="lq-table-scroll" t-ref="tableScroll">
+                        <table class="lq-inet-table is-sticky-store">
                             <thead>
                                 <tr>
                                     <th class="col-check">
@@ -248,7 +305,10 @@
                                     <th class="col-provider">Nhà cung cấp</th>
                                     <th class="col-bw">Băng thông</th>
                                     <th class="col-date-start">Ngày bắt đầu</th>
-                                    <th class="col-date-end">Ngày kết thúc</th>
+                                    <th class="col-date-end">
+                                        <t t-if="isForecastList">Ngày đến hạn</t>
+                                        <t t-else="">Ngày kết thúc</t>
+                                    </th>
                                     <th class="col-fee">Cước tháng</th>
                                     <th class="col-pay">Số tiền thanh toán</th>
                                     <th class="col-ops">Trạng thái</th>
@@ -259,7 +319,7 @@
                             </thead>
                             <tbody>
                                 <t t-if="!pageRecords.length">
-                                    <tr><td colspan="13" class="lq-empty">Không có dữ liệu</td></tr>
+                                    <tr><td colspan="13" class="lq-empty" t-esc="emptyMessage"/></tr>
                                 </t>
                                 <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
                                     <tr>
@@ -288,9 +348,15 @@
                                         </td>
                                         <td class="col-bw" t-esc="rec.bandwidth || '—'"/>
                                         <td class="col-date-start" t-esc="formatDate(rec.date_start)"/>
-                                        <td class="col-date-end" t-esc="formatDate(rec.date_end)"/>
+                                        <td class="col-date-end">
+                                            <t t-if="isForecastList" t-esc="formatDate(rec.forecast_due)"/>
+                                            <t t-else="" t-esc="formatDate(rec.date_end)"/>
+                                        </td>
                                         <td class="col-fee" t-esc="formatMoney(rec.contract_amount)"/>
-                                        <td class="col-pay lq-money" t-esc="formatMoney(rec.next_payment_amount)"/>
+                                        <td class="col-pay lq-money">
+                                            <t t-if="isForecastList" t-esc="formatMoney(rec.forecast_amount)"/>
+                                            <t t-else="" t-esc="formatMoney(rec.next_payment_amount)"/>
+                                        </td>
                                         <td class="col-ops">
                                             <span t-attf-class="lq-ops-pill is-{{opsStatusCode(rec)}}">
                                                 <t t-esc="opsStatusLabel(rec)"/>

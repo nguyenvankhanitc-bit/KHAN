@@ -28,7 +28,14 @@
                     isGroupOpen.bind="isGroupOpen"
                     navChildClass.bind="navChildClass">
                 <t t-if="state.contentMode === 'owl_list'">
-                    <PhanHeInternetListBoard listFilter="state.listFilter" onOpenEntry.bind="openEntryForm"/>
+                    <PhanHeInternetListBoard
+                            listFilter="state.listFilter"
+                            listReloadToken="state.listReloadToken"
+                            internetMenus="state.internetMenus"
+                            onOpenEntry.bind="openEntryForm"/>
+                </t>
+                <t t-if="state.contentMode === 'payment_board'">
+                    <PhanHePaymentBoard mode="state.paymentBoardMode"/>
                 </t>
                 <t t-if="state.contentMode === 'month_cost'">
                     <PhanHeMonthCostBoard onOpenEntry.bind="openEntryForm"/>
@@ -36,7 +43,7 @@
                 <t t-if="state.contentMode === 'quarter_cost'">
                     <PhanHeQuarterCostBoard onOpenEntry.bind="openEntryForm"/>
                 </t>
-                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost'">
+                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost'">
                     <t t-call="lug_phan_he.PhanHeDashboardInner"/>
                 </t>
             </PhanHeInternetShell>

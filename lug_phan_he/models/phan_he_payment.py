@@ -207,6 +207,6 @@ class PhanHePayment(models.Model):
             return []
         code = self.env.context.get("phan_he_internet_menu") or "payment_schedule"
         if operation == "read":
-            return ["payment_schedule", "payment_tracking", code]
+            return ["payment_schedule", "payment_confirm", "payment_overdue", "payment_forecast", code]
         return [code]
 

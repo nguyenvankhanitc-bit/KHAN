@@ -8,6 +8,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
 import { PhanHeInternetShell } from "../internet_shell/phan_he_internet_shell";
 import { PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard } from "../internet_list/phan_he_internet_list";
+import { PhanHePaymentBoard } from "../payment_board/phan_he_payment_board";
 import { PhanHeInternetEntryPopup } from "../internet_entry/phan_he_internet_entry_popup";
 import {
     INTERNET_NAV_TO_CODE,
@@ -23,7 +24,15 @@ const OWL_LIST_NAV = {
     list_liquidated: "liquidated",
     expire_soon: "expire_soon",
     expired: "expired",
+    payment_schedule: "payment_due",
+    payment_overdue: "expired",
+    payment_forecast: "payment_forecast",
     report_year: "report_year",
+};
+
+/** Board danh sách phan.he.payment (Xác nhận TT). */
+const PAYMENT_BOARD_NAV = {
+    payment_confirm: "confirm",
 };
 
 const INTERNET_NAV_SECTIONS = [
@@ -39,6 +48,8 @@ const INTERNET_NAV_SECTIONS = [
                 icon: "fa-globe",
                 statusTone: "active",
                 iconTone: "active",
+                tone: "danger",
+                badgeKey: "list_active",
                 action: "lug_phan_he.action_phan_he_internet_active_master",
             },
             {
@@ -47,6 +58,8 @@ const INTERNET_NAV_SECTIONS = [
                 icon: "fa-globe",
                 statusTone: "suspend",
                 iconTone: "suspend",
+                tone: "danger",
+                badgeKey: "list_suspend",
                 action: "lug_phan_he.action_phan_he_service_internet_suspend",
             },
             {
@@ -55,6 +68,8 @@ const INTERNET_NAV_SECTIONS = [
                 icon: "fa-globe",
                 statusTone: "liquidated",
                 iconTone: "liquidated",
+                tone: "danger",
+                badgeKey: "list_liquidated",
                 action: "lug_phan_he.action_phan_he_service_internet_liquidated",
             },
             {
@@ -77,40 +92,32 @@ const INTERNET_NAV_SECTIONS = [
                 label: "Lịch thanh toán",
                 icon: "fa-calendar",
                 iconTone: "payment",
-                action: "lug_phan_he.action_phan_he_payment",
+                tone: "danger",
+                badgeKey: "payment_schedule",
             },
             {
-                id: "payment_track",
-                label: "Theo dõi thanh toán",
-                icon: "fa-money",
+                id: "payment_confirm",
+                label: "Xác nhận TT",
+                icon: "fa-check-square-o",
                 iconTone: "payment",
-                action: "lug_phan_he.action_phan_he_payment_pending",
-            },
-        ],
-    },
-    {
-        id: "alerts",
-        label: "Cảnh báo",
-        icon: "fa-bell",
-        iconTone: "alert",
-        children: [
-            {
-                id: "expire_soon",
-                label: "Sắp tới hạn thanh toán",
-                icon: "fa-exclamation-triangle",
-                tone: "warn",
-                iconTone: "alert",
-                badgeKey: "expire_soon",
-                action: "lug_phan_he.action_phan_he_service_expire_soon",
+                tone: "danger",
+                badgeKey: "payment_confirm",
             },
             {
-                id: "expired",
+                id: "payment_overdue",
                 label: "Quá hạn",
                 icon: "fa-times-circle",
                 tone: "danger",
                 iconTone: "overdue",
                 badgeKey: "overdue_contract",
-                action: "lug_phan_he.action_phan_he_service_expired",
+            },
+            {
+                id: "payment_forecast",
+                label: "Dự kiến thanh toán",
+                icon: "fa-calendar-plus-o",
+                iconTone: "payment",
+                tone: "danger",
+                badgeKey: "payment_forecast",
             },
         ],
     },
@@ -183,6 +190,7 @@ export class PhanHeDashboard extends Component {
         PhanHeInternetListBoard,
         PhanHeMonthCostBoard,
         PhanHeQuarterCostBoard,
+        PhanHePaymentBoard,
         PhanHeInternetEntryPopup,
     };
 
@@ -203,13 +211,14 @@ export class PhanHeDashboard extends Component {
             openGroups: {
                 manage: true,
                 payment: true,
-                alerts: true,
                 reports: true,
                 settings: false,
                 shifts: true,
             },
             activeNav: "overview",
             listFilter: "active",
+            listReloadToken: 0,
+            paymentBoardMode: "confirm",
             contentMode: "dashboard",
             embeddedViewProps: null,
             viewKey: 0,
@@ -245,6 +254,7 @@ export class PhanHeDashboard extends Component {
                 if (this.serviceTypeCode === "internet") {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                     this.state.internetMenus = rights?.internet_menus || {};
+                    await this.loadNavBadges();
                 }
                 let openNav = this.actionContext.phan_he_open_nav;
                 if (this.serviceTypeCode === "internet") {
@@ -282,6 +292,14 @@ export class PhanHeDashboard extends Component {
                     this.state.loading = false;
                     return;
                 }
+                if (openNav && PAYMENT_BOARD_NAV[openNav]) {
+                    this.state.contentMode = "payment_board";
+                    this.state.paymentBoardMode = PAYMENT_BOARD_NAV[openNav];
+                    this.state.activeNav = openNav;
+                    this._openGroupForNav(openNav);
+                    this.state.loading = false;
+                    return;
+                }
                 if (this.serviceTypeCode === "internet") {
                     await loadBundle("web.chartjs_lib");
                 }
@@ -308,7 +326,7 @@ export class PhanHeDashboard extends Component {
         });
         useEffect(
             () => {
-                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost") {
+                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "payment_board") {
                     return () => {};
                 }
                 this.renderInetCharts();
@@ -687,22 +705,42 @@ export class PhanHeDashboard extends Component {
             this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
             return;
         }
-        if (child.action && !OWL_LIST_NAV[child.id] && !child.reportPeriod) {
-            this._rememberFormReturn();
-        }
-        this.state.activeNav = child.id;
-        this._openGroupForNav(child.id);
+        // Lịch thanh toán / Quá hạn / Dự kiến TT / list Internet → board OWL hợp đồng.
         if (OWL_LIST_NAV[child.id]) {
             const nextFilter = OWL_LIST_NAV[child.id];
-            // Đổi nhanh UI; list board tự load đúng filter (tránh “bấm không ăn”).
+            const same =
+                this.state.contentMode === "owl_list"
+                && this.state.activeNav === child.id
+                && this.state.listFilter === nextFilter;
+            this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
             this.state.contentMode = "owl_list";
             this.state.listFilter = nextFilter;
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.entryPopupOpen = false;
+            // Cùng mục mà đang treo/trống → ép board load lại (không remount cả action).
+            if (same) {
+                this.state.listReloadToken = (this.state.listReloadToken || 0) + 1;
+            }
+            return;
+        }
+        // Xác nhận TT → board OWL phiếu thanh toán.
+        if (PAYMENT_BOARD_NAV[child.id]) {
             this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
+            this.state.contentMode = "payment_board";
+            this.state.paymentBoardMode = PAYMENT_BOARD_NAV[child.id];
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
             this.state.entryPopupOpen = false;
             return;
         }
+        if (child.action && !child.reportPeriod) {
+            this._rememberFormReturn();
+        }
+        this.state.activeNav = child.id;
+        this._openGroupForNav(child.id);
         if (child.id === "store_declare") {
             this.openEntryPopup(false);
             return;
@@ -846,6 +884,25 @@ export class PhanHeDashboard extends Component {
     async openEmbedded(child, extra = {}) {
         const navId = extra.activeNav || child.id;
         const xmlid = extra.action || child.action;
+        // Chặn mọi đường mở list phan.he.payment khi đang ở Lịch thanh toán Internet.
+        const paymentListActions = new Set([
+            "lug_phan_he.action_phan_he_payment",
+            "lug_phan_he.action_phan_he_payment_due_soon",
+        ]);
+        if (
+            this.serviceTypeCode === "internet"
+            && extra.type !== "form"
+            && (OWL_LIST_NAV[navId] || paymentListActions.has(xmlid) || navId === "payment_schedule")
+        ) {
+            this.state.contentMode = "owl_list";
+            this.state.listFilter = OWL_LIST_NAV[navId] || "payment_due";
+            this.state.activeNav = OWL_LIST_NAV[navId] ? navId : "payment_schedule";
+            this._openGroupForNav(this.state.activeNav);
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.viewKey += 1;
+            return;
+        }
         const isEntry =
             navId === "store_declare"
             || xmlid === "lug_phan_he.action_phan_he_service_entry";
@@ -866,6 +923,7 @@ export class PhanHeDashboard extends Component {
             this._openGroupForNav(navId);
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
+            this.state.viewKey += 1;
             return;
         }
         if (!xmlid) {
@@ -913,7 +971,6 @@ export class PhanHeDashboard extends Component {
                 display: this.asViewDisplay({ controlPanel: {} }),
                 loadActionMenus: true,
                 loadIrFilters: false,
-                onDiscard: () => this.closeEmbeddedView(),
                 selectRecord: (resId) => {
                     this.openEmbedded(child, {
                         type: "form",
@@ -935,6 +992,10 @@ export class PhanHeDashboard extends Component {
                     });
                 },
             };
+            if (defaultType === "form") {
+                // onDiscard chỉ hợp lệ với FormController — list (Lịch thanh toán…) sẽ lỗi nếu truyền.
+                viewProps.onDiscard = () => this.closeEmbeddedView();
+            }
             if (typedView && typedView[0]) {
                 viewProps.viewId = typedView[0];
             }
@@ -1050,10 +1111,10 @@ export class PhanHeDashboard extends Component {
             }
             this.state.data = {
                 ...(this.state.data || {}),
-                user_name: data.user_name,
-                updated_at: data.updated_at,
-                expire_soon: 0,
-                overdue_contract: 0,
+                ...(data || {}),
+                expire_soon: data?.expire_soon ?? this.state.data?.expire_soon ?? 0,
+                overdue_contract: data?.overdue_contract ?? this.state.data?.overdue_contract ?? 0,
+                payment_forecast: data?.payment_forecast ?? this.state.data?.payment_forecast ?? 0,
             };
         } catch (error) {
             console.error(error);
@@ -1274,6 +1335,18 @@ export class PhanHeDashboard extends Component {
         this.action.doAction(xml);
     }
 
+    async loadNavBadges() {
+        try {
+            const counts = await this.orm.call("phan.he.service", "get_internet_alert_counts", []);
+            this.state.data = {
+                ...(this.state.data || {}),
+                ...(counts || {}),
+            };
+        } catch (error) {
+            console.warn("loadNavBadges", error);
+        }
+    }
+
     async load() {
         if (this.isLinkqErp) {
             this.state.loading = false;
@@ -1281,6 +1354,10 @@ export class PhanHeDashboard extends Component {
             return;
         }
         if (this.serviceTypeCode === "internet" && this.state.contentMode === "owl_list") {
+            this.state.loading = false;
+            return;
+        }
+        if (this.serviceTypeCode === "internet" && this.state.contentMode === "payment_board") {
             this.state.loading = false;
             return;
         }

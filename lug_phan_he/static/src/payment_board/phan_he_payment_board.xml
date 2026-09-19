@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHePaymentBoard">
+        <div t-attf-class="lq-inet-board lq-pay-board {{ isConfirm ? 'is-confirm' : 'is-forecast' }}{{ isMobile ? ' is-today' : '' }}">
+            <t t-if="isMobile">
+                <div class="lq-today-top">
+                    <h1 class="lq-today-title" t-esc="pageMeta.title"/>
+                    <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
+                </div>
+
+                <div class="lq-today-pills">
+                    <button type="button"
+                            t-att-class="state.statusTab === 'all' ? 'is-on' : ''"
+                            t-on-click="() => this.setStatusTab('all')">
+                        Tất cả <b t-esc="tabCounts.all"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.statusTab === 'pending' ? 'is-on' : ''"
+                            t-on-click="() => this.setStatusTab('pending')">
+                        Chờ TT <b class="is-warn" t-esc="tabCounts.pending"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.statusTab === 'due_soon' ? 'is-on' : ''"
+                            t-on-click="() => this.setStatusTab('due_soon')">
+                        Sắp đến hạn <b class="is-warn" t-esc="tabCounts.due_soon"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.statusTab === 'overdue' ? 'is-on' : ''"
+                            t-on-click="() => this.setStatusTab('overdue')">
+                        Quá hạn <b class="is-danger" t-esc="tabCounts.overdue"/>
+                    </button>
+                </div>
+
+                <div class="lq-today-datebar lq-pay-mobile-bar">
+                    <label class="lq-today-search">
+                        <i class="fa fa-search"/>
+                        <input type="text"
+                               t-att-placeholder="isForecast ? 'Tìm cửa hàng, mã KH...' : 'Tìm cửa hàng, mã phiếu...'"
+                               t-att-value="state.search"
+                               t-on-input="onSearchInput"/>
+                    </label>
+                    <t t-if="isConfirm">
+                        <button type="button" class="lq-pay-confirm-btn"
+                                t-att-disabled="state.confirming || !selectedIds.length"
+                                t-on-click="() => this.confirmSelected()">
+                            <i class="fa fa-check"/>
+                            <t t-if="state.confirming">Đang xác nhận...</t>
+                            <t t-else="">Xác nhận đã TT (<t t-esc="selectedIds.length"/>)</t>
+                        </button>
+                    </t>
+                </div>
+
+                <div class="lq-today-section">
+                    <button type="button" class="lq-today-section-head" t-on-click="toggleTodaySection">
+                        <span class="lq-today-section-ico is-pay"><i class="fa fa-check-square-o"/></span>
+                        <b t-esc="pageMeta.title"/>
+                        <em t-esc="filteredRecords.length"/>
+                        <i t-att-class="state.sectionOpen ? 'fa fa-angle-up' : 'fa fa-angle-down'"/>
+                    </button>
+
+                    <t t-if="state.sectionOpen">
+                        <t t-if="state.loading">
+                            <div class="lq-today-empty">Đang tải...</div>
+                        </t>
+                        <t t-elif="!cardRecords.length">
+                            <div class="lq-today-empty">Không có dữ liệu</div>
+                        </t>
+                        <t t-else="">
+                            <div class="lq-today-cards">
+                                <t t-foreach="cardRecords" t-as="rec" t-key="rec.id">
+                                    <div t-attf-class="lq-today-card lq-pay-card is-{{ cardAccent(rec) }}">
+                                        <div class="lq-today-card-top">
+                                            <label t-if="isConfirm" class="lq-pay-card-check" t-on-click.stop="">
+                                                <input type="checkbox"
+                                                       t-att-checked="!!state.selected[rec.id]"
+                                                       t-on-change="(ev) => this.onCardCheck(rec, ev)"/>
+                                            </label>
+                                            <div class="lq-today-card-title">
+                                                <strong t-esc="storeName(rec)"/>
+                                                <small t-esc="rec.code || '—'"/>
+                                            </div>
+                                            <span t-attf-class="lq-today-badge {{ stateClass(rec) }}"
+                                                  t-esc="stateLabel(rec)"/>
+                                            <button t-if="isConfirm" type="button" class="lq-pay-card-act"
+                                                    title="Xác nhận"
+                                                    t-on-click="() => this.confirmOne(rec)">
+                                                <i class="fa fa-check"/>
+                                            </button>
+                                        </div>
+                                        <div class="lq-today-card-grid">
+                                            <div>
+                                                <span>Kỳ TT</span>
+                                                <b t-esc="rec.period || '—'"/>
+                                            </div>
+                                            <div>
+                                                <span>Ngày đến hạn</span>
+                                                <b t-esc="formatDate(rec.date_due)"/>
+                                            </div>
+                                            <div>
+                                                <span>Số tiền</span>
+                                                <b t-att-class="'is-' + cardAccent(rec)" t-esc="formatMoney(rec.amount)"/>
+                                            </div>
+                                            <div>
+                                                <span>Hợp đồng</span>
+                                                <b t-esc="serviceName(rec)"/>
+                                            </div>
+                                        </div>
+                                        <div class="lq-today-card-foot">
+                                            <span>
+                                                <i class="fa fa-building-o"/>
+                                                <t t-esc="providerName(rec)"/>
+                                            </span>
+                                            <span>
+                                                <i class="fa fa-file-text-o"/>
+                                                <t t-esc="rec.code || 'Phiếu TT'"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                            <div class="lq-pager lq-today-pager" t-if="filteredRecords.length">
+                                <span>
+                                    Hiển thị
+                                    <t t-esc="(state.page - 1) * state.pageSize + (pageRecords.length ? 1 : 0)"/>
+                                    -
+                                    <t t-esc="Math.min(state.page * state.pageSize, filteredRecords.length)"/>
+                                    trên <t t-esc="filteredRecords.length"/> kết quả
+                                </span>
+                                <div class="lq-pager-right">
+                                    <button type="button" t-att-disabled="state.page &lt;= 1"
+                                            t-on-click="() => this.setPage(state.page - 1)">
+                                        <i class="fa fa-chevron-left"/>
+                                    </button>
+                                    <button type="button" class="is-on" t-esc="state.page"/>
+                                    <button type="button" t-att-disabled="state.page &gt;= totalPages"
+                                            t-on-click="() => this.setPage(state.page + 1)">
+                                        <i class="fa fa-chevron-right"/>
+                                    </button>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </t>
+
+            <t t-else="">
+            <div class="lq-board-crumb">
+                <span>Quản lý dịch vụ</span>
+                <i class="fa fa-angle-right"/>
+                <span>Internet</span>
+                <i class="fa fa-angle-right"/>
+                <b t-esc="pageMeta.title"/>
+            </div>
+
+            <div class="lq-board-head">
+                <div class="lq-board-title">
+                    <span class="lq-wifi" t-att-class="isConfirm ? 'is-check' : 'is-forecast'">
+                        <i t-att-class="isConfirm ? 'fa fa-check-square-o' : 'fa fa-calendar-plus-o'"/>
+                    </span>
+                    <div>
+                        <h1 t-esc="pageMeta.title"/>
+                        <p t-esc="pageMeta.subtitle"/>
+                    </div>
+                </div>
+                <div class="lq-board-tools">
+                    <t t-if="isForecast">
+                        <div class="lq-forecast-bar">
+                            <select class="lq-period-select"
+                                    t-att-value="state.month"
+                                    t-on-change="onMonthChange">
+                                <t t-foreach="monthOptions" t-as="m" t-key="m.value">
+                                    <option t-att-value="m.value"
+                                            t-att-selected="state.month === m.value"
+                                            t-esc="m.label"/>
+                                </t>
+                            </select>
+                            <select class="lq-period-select"
+                                    t-att-value="state.year"
+                                    t-on-change="onYearChange">
+                                <t t-foreach="yearOptions" t-as="y" t-key="y">
+                                    <option t-att-value="y"
+                                            t-att-selected="state.year === y"
+                                            t-esc="y"/>
+                                </t>
+                            </select>
+                            <button type="button" class="lq-btn-refresh"
+                                    t-att-disabled="state.loading"
+                                    t-on-click="() => this.refresh()">
+                                <i t-att-class="state.loading ? 'fa fa-refresh fa-spin' : 'fa fa-refresh'"/>
+                                Làm mới
+                            </button>
+                            <button type="button" class="lq-btn-excel"
+                                    t-att-disabled="state.exporting || state.loading"
+                                    t-on-click="() => this.exportExcel()">
+                                <i class="fa fa-file-excel-o"/>
+                                <t t-if="state.exporting">Đang xuất...</t>
+                                <t t-else="">Xuất Excel</t>
+                            </button>
+                        </div>
+                    </t>
+                    <label class="lq-chip lq-search">
+                        <i class="fa fa-search"/>
+                        <input type="text"
+                               t-att-placeholder="isForecast ? 'Tìm cửa hàng, mã KH...' : 'Tìm cửa hàng, mã phiếu...'"
+                               t-att-value="state.search"
+                               t-on-input="onSearchInput"/>
+                    </label>
+                    <t t-if="isConfirm">
+                        <button type="button" class="lq-ghost is-primary"
+                                t-att-disabled="state.confirming || !selectedIds.length"
+                                t-on-click="() => this.confirmSelected()">
+                            <i class="fa fa-check"/>
+                            <t t-if="state.confirming">Đang xác nhận...</t>
+                            <t t-else="">Xác nhận đã TT (<t t-esc="selectedIds.length"/>)</t>
+                        </button>
+                    </t>
+                </div>
+            </div>
+
+            <div class="lq-table-card">
+                <div class="lq-table-bar">
+                    <div class="lq-region-tag">
+                        <i class="fa fa-list"/>
+                        <b t-esc="pageMeta.title"/>
+                        <span t-esc="state.totalCount"/> <t t-esc="countLabel"/>
+                    </div>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="lq-empty">Đang tải...</div>
+                </t>
+                <t t-else="">
+                    <div class="lq-table-body">
+                    <div class="lq-table-scroll" t-ref="tableScroll">
+                        <table class="lq-inet-table is-sticky-store">
+                            <thead>
+                                <tr>
+                                    <th class="col-check" t-if="isConfirm">
+                                        <input type="checkbox"
+                                               t-att-checked="allSelectedOnPage"
+                                               t-on-change="toggleSelectAll"/>
+                                    </th>
+                                    <th class="col-stt">STT</th>
+                                    <th class="col-store">Cửa hàng</th>
+                                    <th class="col-contract">Hợp đồng</th>
+                                    <th class="col-provider">Nhà cung cấp</th>
+                                    <th class="col-period">Kỳ TT</th>
+                                    <th class="col-date-end">Ngày đến hạn</th>
+                                    <th class="col-pay">Số tiền</th>
+                                    <th class="col-ops">Trạng thái</th>
+                                    <th class="col-act" t-if="isConfirm">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-if="!pageRecords.length">
+                                    <tr>
+                                        <td t-att-colspan="isConfirm ? 10 : 8" class="lq-empty">Không có dữ liệu</td>
+                                    </tr>
+                                </t>
+                                <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
+                                    <tr>
+                                        <td class="col-check" t-if="isConfirm">
+                                            <input type="checkbox"
+                                                   t-att-checked="!!state.selected[rec.id]"
+                                                   t-on-change="(ev) => this.toggleSelect(rec.id, ev)"/>
+                                        </td>
+                                        <td class="col-stt" t-esc="rec.stt"/>
+                                        <td class="col-store">
+                                            <span class="lq-name" t-esc="storeName(rec)"/>
+                                            <small t-esc="rec.code || '—'"/>
+                                        </td>
+                                        <td class="col-contract" t-esc="serviceName(rec)"/>
+                                        <td class="col-provider" t-esc="providerName(rec)"/>
+                                        <td class="col-period" t-esc="rec.period || '—'"/>
+                                        <td class="col-date-end" t-esc="formatDate(rec.date_due)"/>
+                                        <td class="col-pay lq-money" t-esc="formatMoney(rec.amount)"/>
+                                        <td class="col-ops">
+                                            <span t-attf-class="lq-ops-pill {{ stateClass(rec) }}">
+                                                <t t-esc="stateLabel(rec)"/>
+                                            </span>
+                                        </td>
+                                        <td class="col-act" t-if="isConfirm">
+                                            <button type="button" class="lq-act is-edit"
+                                                    title="Xác nhận đã thanh toán"
+                                                    t-on-click="() => this.confirmOne(rec)">
+                                                <i class="fa fa-check"/>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="lq-pager" t-if="state.totalCount">
+                        <span>
+                            Hiển thị
+                            <t t-esc="(state.page - 1) * state.pageSize + (pageRecords.length ? 1 : 0)"/>
+                            -
+                            <t t-esc="Math.min(state.page * state.pageSize, state.totalCount)"/>
+                            trên <t t-esc="state.totalCount"/> kết quả
+                        </span>
+                        <div class="lq-pager-right">
+                            <button type="button" t-att-disabled="state.page &lt;= 1"
+                                    t-on-click="() => this.setPage(state.page - 1)">
+                                <i class="fa fa-chevron-left"/>
+                            </button>
+                            <button type="button" class="is-on" t-esc="state.page"/>
+                            <button type="button" t-att-disabled="state.page &gt;= totalPages"
+                                    t-on-click="() => this.setPage(state.page + 1)">
+                                <i class="fa fa-chevron-right"/>
+                            </button>
+                            <select t-on-change="onPageSizeChange">
+                                <option value="10" t-att-selected="state.pageSize === 10">10 / trang</option>
+                                <option value="15" t-att-selected="state.pageSize === 15">15 / trang</option>
+                                <option value="20" t-att-selected="state.pageSize === 20">20 / trang</option>
+                            </select>
+                        </div>
+                    </div>
+                    </div>
+                </t>
+            </div>
+            </t>
+        </div>
+    </t>
+</templates>

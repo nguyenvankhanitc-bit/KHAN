@@ -106,7 +106,7 @@
               sequence="40"/>
 
     <menuitem id="menu_phan_he_payment_root"
-              name="Thanh toán"
+              name="Chi phí &amp; thanh toán"
               parent="menu_phan_he_internet_root"
               sequence="30"
               groups="base.group_user"/>
@@ -114,32 +114,41 @@
     <menuitem id="menu_phan_he_payment"
               name="Lịch thanh toán"
               parent="menu_phan_he_payment_root"
-              action="action_phan_he_internet_payment_master"
+              action="action_phan_he_payment"
               sequence="10"/>
 
-    <menuitem id="menu_phan_he_payment_file"
-              name="File thanh toán"
-              parent="menu_phan_he_payment_root"
-              action="action_phan_he_payment_file"
-              sequence="15"/>
-
     <menuitem id="menu_phan_he_payment_pending"
-              name="Chờ thanh toán"
+              name="Xác nhận TT"
               parent="menu_phan_he_payment_root"
-              action="action_phan_he_payment_pending"
+              action="action_phan_he_payment_confirm"
               sequence="20"/>
 
     <menuitem id="menu_phan_he_payment_overdue"
               name="Quá hạn"
               parent="menu_phan_he_payment_root"
-              action="action_phan_he_payment_overdue"
+              action="action_phan_he_payment_overdue_board"
               sequence="30"/>
+
+    <menuitem id="menu_phan_he_payment_forecast"
+              name="Dự kiến thanh toán"
+              parent="menu_phan_he_payment_root"
+              action="action_phan_he_payment_forecast"
+              sequence="40"/>
+
+    <!-- Ẩn list Odoo cũ — chỉ dùng nội bộ nếu cần -->
+    <menuitem id="menu_phan_he_payment_file"
+              name="File thanh toán"
+              parent="menu_phan_he_payment_root"
+              action="action_phan_he_payment_file"
+              sequence="90"
+              active="False"/>
 
     <menuitem id="menu_phan_he_payment_paid"
               name="Đã thanh toán"
               parent="menu_phan_he_payment_root"
               action="action_phan_he_payment_paid"
-              sequence="40"/>
+              sequence="91"
+              active="False"/>
 
     <menuitem id="menu_phan_he_doc_root"
               name="Chứng từ"

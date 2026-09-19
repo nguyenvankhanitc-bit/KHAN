@@ -368,7 +368,12 @@ html.o_internet_resizing * {
 
         .o_phan_he_nav_badge.is-danger {
             background: #fee2e2 !important;
-            color: #b91c1c !important;
+            color: #dc2626 !important;
+        }
+
+        .o_phan_he_nav_sub.is-active .o_phan_he_nav_badge.is-danger {
+            background: #fee2e2 !important;
+            color: #dc2626 !important;
         }
 
         .o_phan_he_nav_badge.is-muted {

@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, onWillUnmount, onWillUpdateProps, useEffect, useRef, useState } from "@odoo/owl";
+import { Component, onMounted, onPatched, onWillStart, onWillUnmount, onWillUpdateProps, useEffect, useRef, useState } from "@odoo/owl";
 import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { formView } from "@web/views/form/form_view";
@@ -21,19 +21,6 @@ const OPS_STATUS_META = {
 };
 
 const INTERNET_NAV_SECTIONS = [
-    {
-        id: "declare",
-        label: "Khai báo & nhập liệu",
-        icon: "fa-download",
-        children: [
-            {
-                id: "store_declare",
-                label: "Khai báo cửa hàng",
-                icon: "fa-plus-circle",
-                action: "lug_phan_he.action_phan_he_internet_entry_master",
-            },
-        ],
-    },
     {
         id: "manage",
         label: "Quản lý Internet",
@@ -67,34 +54,13 @@ const INTERNET_NAV_SECTIONS = [
     },
     {
         id: "payment",
-        label: "Khách hàng & Thanh toán",
-        icon: "fa-users",
+        label: "Chi phí & thanh toán",
+        icon: "fa-credit-card",
         children: [
-            {
-                id: "payment_schedule",
-                label: "Lịch thanh toán",
-                icon: "fa-calendar",
-                action: "lug_phan_he.action_phan_he_internet_payment_master",
-            },
-        ],
-    },
-    {
-        id: "alerts",
-        label: "Cảnh báo",
-        icon: "fa-bell",
-        children: [
-            {
-                id: "expire_soon",
-                label: "Sắp hết hạn",
-                icon: "fa-exclamation-triangle",
-                action: "lug_phan_he.action_phan_he_service_expire_soon",
-            },
-            {
-                id: "expired",
-                label: "Quá hạn",
-                icon: "fa-times-circle",
-                action: "lug_phan_he.action_phan_he_service_expired",
-            },
+            { id: "payment_schedule", label: "Lịch thanh toán", icon: "fa-calendar" },
+            { id: "payment_confirm", label: "Xác nhận TT", icon: "fa-check-square-o" },
+            { id: "payment_overdue", label: "Quá hạn", icon: "fa-times-circle" },
+            { id: "payment_forecast", label: "Dự kiến thanh toán", icon: "fa-calendar-plus-o" },
         ],
     },
     {
@@ -102,24 +68,9 @@ const INTERNET_NAV_SECTIONS = [
         label: "Báo cáo",
         icon: "fa-bar-chart",
         children: [
-            {
-                id: "report_month",
-                label: "Chi phí tháng",
-                icon: "fa-calendar-o",
-                reportPeriod: "month",
-            },
-            {
-                id: "report_quarter",
-                label: "Chi phí quý",
-                icon: "fa-calendar",
-                reportPeriod: "quarter",
-            },
-            {
-                id: "report_year",
-                label: "Chi phí năm",
-                icon: "fa-calendar-check-o",
-                reportPeriod: "year",
-            },
+            { id: "report_month", label: "Chi phí tháng", icon: "fa-calendar-o", reportPeriod: "month" },
+            { id: "report_quarter", label: "Chi phí quý", icon: "fa-calendar", reportPeriod: "quarter" },
+            { id: "report_year", label: "Chi phí năm", icon: "fa-calendar-check-o", reportPeriod: "year" },
         ],
     },
 ];
@@ -162,6 +113,28 @@ function formatDateVn(value) {
     return raw;
 }
 
+function lastDayOfMonth(year, month) {
+    return new Date(year, month, 0).getDate();
+}
+
+/** Chiếu ngày neo (date_end / next_payment) vào tháng chọn. */
+function projectDueInMonth(anchorYmd, year, month) {
+    const last = lastDayOfMonth(year, month);
+    let day = 1;
+    const m = String(anchorYmd || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+        day = Math.min(Number(m[3]), last);
+    }
+    return `${year}-${pad2(month)}-${pad2(day)}`;
+}
+
+function nextMonthParts(offset = 1) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + offset);
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
 function clampWidth(value) {
     const n = Number.parseInt(value, 10);
     if (!Number.isFinite(n)) {
@@ -196,10 +169,20 @@ const FILTER_TITLES = {
         subtitle: "Hợp đồng đang dùng, còn từ 0 đến 30 ngày",
         activeNav: "expire_soon",
     },
+    payment_due: {
+        title: "Lịch thanh toán",
+        subtitle: "Internet cần thanh toán: còn ≤ 30 ngày, quá hạn hoặc trễ hạn",
+        activeNav: "payment_schedule",
+    },
+    payment_forecast: {
+        title: "Dự kiến thanh toán",
+        subtitle: "Internet đang sử dụng — dự kiến theo tháng",
+        activeNav: "payment_forecast",
+    },
     expired: {
         title: "Quá hạn",
-        subtitle: "Hợp đồng đang dùng đã quá ngày kết thúc",
-        activeNav: "expired",
+        subtitle: "Hợp đồng Internet đang dùng đã quá ngày kết thúc",
+        activeNav: "payment_overdue",
     },
     report_month: {
         title: "Chi phí tháng",
@@ -221,14 +204,17 @@ const FILTER_TITLES = {
 const REGION_LABELS = {
     "": "Tất cả khu vực",
     Nam: "Miền Nam",
-    Bắc: "Miền Bắc",
     ĐTT: "Miền ĐTT",
+    Bắc: "Miền Bắc",
+    VP: "Văn phòng",
 };
 
 export class PhanHeInternetListBoard extends Component {
     static template = "lug_phan_he.PhanHeInternetListBoard";
     static props = {
         listFilter: { type: String, optional: true },
+        listReloadToken: { type: Number, optional: true },
+        internetMenus: { type: Object, optional: true },
         onOpenEntry: { type: Function, optional: true },
         "*": true,
     };
@@ -264,29 +250,72 @@ export class PhanHeInternetListBoard extends Component {
             detailRecord: null,
             detailForm: {},
             detailInvoicePending: null,
-            internetMenus: {},
+            internetMenus: this.props.internetMenus || {},
             exporting: false,
+            forecastYear: nextMonthParts(1).year,
+            forecastMonth: nextMonthParts(1).month,
+            forecastGroupOpen: {},
         });
         this._loadSeq = 0;
         this._searchTimer = null;
         this._providersLoaded = false;
+        this._internetTypeId = null;
+        this._stickyRaf = null;
+        this.tableScrollRef = useRef("tableScroll");
+        this.monthOptions = Array.from({ length: 12 }, (_, i) => ({
+            value: i + 1,
+            label: `Tháng ${i + 1}`,
+        }));
+        this.yearOptions = (() => {
+            const y = new Date().getFullYear();
+            const years = [];
+            for (let i = y - 1; i <= y + 2; i++) {
+                years.push({ value: i, label: `Năm ${i}` });
+            }
+            return years;
+        })();
+        onMounted(() => this.syncStickyColumns());
+        onPatched(() => this.syncStickyColumns());
         onWillStart(async () => {
-            try {
-                const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
-                this.state.internetMenus = rights?.internet_menus || {};
-            } catch {
-                this.state.internetMenus = {};
+            if (this.props.internetMenus && Object.keys(this.props.internetMenus).length) {
+                this.state.internetMenus = this.props.internetMenus;
+            } else {
+                try {
+                    const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
+                    this.state.internetMenus = rights?.internet_menus || {};
+                } catch {
+                    this.state.internetMenus = {};
+                }
             }
             await this.load();
         });
         onWillUpdateProps(async (next) => {
+            if (next.internetMenus && next.internetMenus !== this.props.internetMenus) {
+                this.state.internetMenus = next.internetMenus;
+            }
             const nextFilter = next.listFilter || "active";
             const curFilter = this.props.listFilter || "active";
-            if (nextFilter !== curFilter) {
+            const tokenChanged = (next.listReloadToken || 0) !== (this.props.listReloadToken || 0);
+            if (nextFilter !== curFilter || tokenChanged) {
+                // Reset ngay — tránh hiện data mục trước / loading treo khi bấm nhanh.
                 this.state.page = 1;
                 this.state.currentPage = 1;
                 this.state.remainTab = "all";
-                // Quan trọng: props chưa đổi lúc này — phải truyền filter mới vào load().
+                if (nextFilter !== curFilter) {
+                    this.state.regionFilter = "";
+                    this.state.search = "";
+                    this.state.providerFilter = "";
+                }
+                this.state.records = [];
+                this.state.totalCount = 0;
+                this.state.selected = {};
+                this.state.loading = true;
+                this.state.sectionOpen = true;
+                if (nextFilter === "payment_forecast" && nextFilter !== curFilter) {
+                    const n = nextMonthParts(1);
+                    this.state.forecastYear = n.year;
+                    this.state.forecastMonth = n.month;
+                }
                 await this.load(nextFilter);
             }
         });
@@ -294,6 +323,55 @@ export class PhanHeInternetListBoard extends Component {
             if (this._searchTimer) {
                 clearTimeout(this._searchTimer);
                 this._searchTimer = null;
+            }
+            if (this._stickyRaf) {
+                cancelAnimationFrame(this._stickyRaf);
+                this._stickyRaf = null;
+            }
+            if (this._stickyRo) {
+                this._stickyRo.disconnect();
+                this._stickyRo = null;
+            }
+        });
+    }
+
+    /** Căn left sticky đúng mép cột Cửa hàng / Mã KH (đo width thật). */
+    syncStickyColumns() {
+        if (this._stickyRaf) {
+            cancelAnimationFrame(this._stickyRaf);
+        }
+        this._stickyRaf = requestAnimationFrame(() => {
+            this._stickyRaf = null;
+            const root = this.tableScrollRef?.el;
+            if (!root) {
+                return;
+            }
+            const table = root.querySelector("table.lq-inet-table");
+            if (!table) {
+                return;
+            }
+            const check = table.querySelector("thead th.col-check");
+            const stt = table.querySelector("thead th.col-stt");
+            const store = table.querySelector("thead th.col-store");
+            if (!check || !stt || !store) {
+                return;
+            }
+            const wCheck = Math.ceil(check.getBoundingClientRect().width);
+            const wStt = Math.ceil(stt.getBoundingClientRect().width);
+            const leftStt = `${wCheck}px`;
+            const leftStore = `${wCheck + wStt}px`;
+            // Đóng băng dừng đúng sau cột Cửa hàng (không kéo sang Nhà cung cấp).
+            if (table.style.getPropertyValue("--lq-left-stt") !== leftStt
+                || table.style.getPropertyValue("--lq-left-store") !== leftStore) {
+                table.style.setProperty("--lq-left-check", "0px");
+                table.style.setProperty("--lq-left-stt", leftStt);
+                table.style.setProperty("--lq-left-store", leftStore);
+            }
+            if (!this._stickyRo && typeof ResizeObserver !== "undefined") {
+                this._stickyRo = new ResizeObserver(() => this.syncStickyColumns());
+                this._stickyRo.observe(check);
+                this._stickyRo.observe(stt);
+                this._stickyRo.observe(store);
             }
         });
     }
@@ -313,12 +391,31 @@ export class PhanHeInternetListBoard extends Component {
             suspend: "list_suspend",
             liquidated: "list_liquidated",
             expire_soon: "expire_soon",
-            expired: "expired",
+            expired: "payment_overdue",
+            payment_due: "payment_schedule",
+            payment_forecast: "payment_forecast",
             report_month: "report_month",
             report_quarter: "report_quarter",
             report_year: "report_year",
         };
         return map[this.listFilter] || "list_active";
+    }
+
+    get isForecastList() {
+        return this.listFilter === "payment_forecast";
+    }
+
+    get emptyMessage() {
+        const map = {
+            suspend: "Không có hợp đồng tạm ngưng",
+            paused: "Không có hợp đồng tạm ngưng",
+            liquidated: "Không có hợp đồng thanh lý",
+            active: "Không có hợp đồng đang sử dụng",
+            payment_due: "Không có lịch thanh toán trong kỳ",
+            payment_forecast: "Không có dự kiến thanh toán",
+            expired: "Không có hợp đồng quá hạn",
+        };
+        return map[this.listFilter] || "Không có dữ liệu";
     }
 
     get canWriteNav() {
@@ -335,11 +432,61 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     get pageMeta() {
-        return FILTER_TITLES[this.listFilter] || FILTER_TITLES.all;
+        const base = FILTER_TITLES[this.listFilter] || FILTER_TITLES.all;
+        if (this.isForecastList) {
+            return {
+                ...base,
+                subtitle: `Dự kiến tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+            };
+        }
+        return base;
+    }
+
+    get forecastRows() {
+        if (!this.isForecastList) {
+            return this.state.records;
+        }
+        const year = Number(this.state.forecastYear);
+        const month = Number(this.state.forecastMonth);
+        return (this.state.records || []).map((rec) => {
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
+            let due;
+            if (nextDue && nextDue.startsWith(`${year}-${pad2(month)}`)) {
+                due = nextDue;
+            } else {
+                due = projectDueInMonth(rec.date_end || rec.date_start || nextDue, year, month);
+            }
+            return {
+                ...rec,
+                forecast_due: due,
+                forecast_amount: Number(rec.next_payment_amount || 0) > 0
+                    ? Number(rec.next_payment_amount)
+                    : Number(rec.contract_amount || 0),
+            };
+        }).sort((a, b) => String(a.forecast_due).localeCompare(String(b.forecast_due)) || a.id - b.id);
+    }
+
+    get forecastGroups() {
+        // Một nhóm tháng đang chọn (dùng cho header bảng).
+        const rows = this.forecastRows;
+        return [{
+            key: `${this.state.forecastYear}-${this.state.forecastMonth}`,
+            label: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+            count: rows.length,
+            records: rows,
+        }];
     }
 
     get isMobile() {
         return Boolean(this.ui?.isSmall);
+    }
+
+    get isPaymentMobile() {
+        return this.isMobile && (
+            this.listFilter === "payment_due"
+            || this.listFilter === "payment_forecast"
+            || this.listFilter === "expired"
+        );
     }
 
     get navSections() {
@@ -374,19 +521,26 @@ export class PhanHeInternetListBoard extends Component {
     buildBaseDomain(listFilter) {
         const domain = [
             ["active", "=", true],
-            ["service_type_id.code", "=", "internet"],
         ];
+        if (this._internetTypeId) {
+            domain.push(["service_type_id", "=", this._internetTypeId]);
+        } else {
+            domain.push(["service_type_id.code", "=", "internet"]);
+        }
         const today = ymd(new Date());
         const soon = new Date();
         soon.setDate(soon.getDate() + 30);
         const soon30 = ymd(soon);
         const f = listFilter || "active";
-        if (f === "active") {
+        if (f === "active" || f === "payment_forecast") {
             domain.push(["state", "=", "active"]);
         } else if (f === "suspend" || f === "paused") {
-            domain.push(["state", "=", "suspend"]);
+            // Đồng bộ state / ops_status (action cũ lọc ops_status)
+            domain.push("|", ["state", "=", "suspend"], ["ops_status", "=", "suspend"]);
         } else if (f === "liquidated") {
-            domain.push(["state", "in", ["liquidated", "cancel"]]);
+            domain.push("|",
+                ["state", "in", ["liquidated", "cancel"]],
+                ["ops_status", "=", "liquidated"]);
         } else if (f === "expire_soon") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", ">=", today]);
@@ -394,12 +548,36 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
+        } else if (f === "payment_due") {
+            // Giống mẫu workspace: đang dùng, còn ≤30 ngày hoặc đã trễ hạn
+            domain.push(["ops_status", "=", "active"]);
+            domain.push(["state", "=", "active"]);
+            domain.push(["date_end", "!=", false]);
+            domain.push(["date_end", "<=", soon30]);
         } else if (f === "report_month" || f === "report_quarter" || f === "report_year") {
             const { from, to } = periodBounds(f);
             domain.push("|", ["date_start", "=", false], ["date_start", "<=", to]);
             domain.push("|", ["date_end", "=", false], ["date_end", ">=", from]);
         }
         return domain;
+    }
+
+    async ensureInternetTypeId() {
+        if (this._internetTypeId) {
+            return this._internetTypeId;
+        }
+        try {
+            const rows = await this.orm.searchRead(
+                "phan.he.service.type",
+                [["code", "=", "internet"]],
+                ["id"],
+                { limit: 1 }
+            );
+            this._internetTypeId = rows?.[0]?.id || null;
+        } catch {
+            this._internetTypeId = null;
+        }
+        return this._internetTypeId;
     }
 
     get queryDomain() {
@@ -431,12 +609,15 @@ export class PhanHeInternetListBoard extends Component {
 
     get totalPages() {
         const size = this.state.pageSize || 10;
-        return Math.max(1, Math.ceil((this.state.totalCount || 0) / size));
+        const total = this.isForecastList ? this.forecastRows.length : (this.state.totalCount || 0);
+        return Math.max(1, Math.ceil(total / size));
     }
 
     get pageRecords() {
-        const start = (this.state.page - 1) * (this.state.pageSize || 10);
-        return this.state.records.slice(0, this.state.pageSize || 10).map((rec, idx) => ({
+        const size = this.state.pageSize || 10;
+        const start = (this.state.page - 1) * size;
+        const source = this.isForecastList ? this.forecastRows : this.state.records;
+        return source.slice(start, start + size).map((rec, idx) => ({
             ...rec,
             stt: start + idx + 1,
         }));
@@ -469,7 +650,7 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     get pageInfo() {
-        const total = this.state.totalCount || 0;
+        const total = this.isForecastList ? this.forecastRows.length : (this.state.totalCount || 0);
         if (!total) {
             return "Hiển thị 0 trên 0 kết quả";
         }
@@ -593,6 +774,21 @@ export class PhanHeInternetListBoard extends Component {
         this.state.remainTab = tab || "all";
     }
 
+    setForecastMonth(year, month) {
+        this.state.forecastYear = Number(year);
+        this.state.forecastMonth = Number(month);
+        this.state.page = 1;
+        this.state.currentPage = 1;
+    }
+
+    onForecastMonthChange(ev) {
+        this.setForecastMonth(this.state.forecastYear, Number(ev.target.value) || 1);
+    }
+
+    onForecastYearChange(ev) {
+        this.setForecastMonth(Number(ev.target.value) || new Date().getFullYear(), this.state.forecastMonth);
+    }
+
     setRegionFilter(value) {
         this.state.regionFilter = value || "";
         this.state.page = 1;
@@ -652,9 +848,9 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     customerCodeLabel(rec) {
-        const raw = rec.customer_code || rec.code || String(rec.id);
-        const num = String(raw).replace(/\D/g, "") || String(rec.id);
-        return `Mã KH-${String(num).padStart(6, "0")}`;
+        // Giống workspace: hiện mã khách hàng thật, không sinh "Mã KH-000xxx"
+        const code = String(rec.customer_code || "").trim();
+        return code || "—";
     }
 
     contractCode(rec) {
@@ -776,40 +972,58 @@ export class PhanHeInternetListBoard extends Component {
         const seq = ++this._loadSeq;
         this.state.loading = true;
         try {
+            await this.ensureInternetTypeId();
             const listFilter = filterOverride || this.listFilter;
             const domain = this.buildQueryDomain(listFilter);
-            const pageSize = this.state.pageSize || 10;
+            const isForecast = listFilter === "payment_forecast";
+            const isLightList = listFilter === "suspend" || listFilter === "liquidated" || listFilter === "paused";
+            const pageSize = isForecast ? 500 : (this.state.pageSize || 10);
             const page = this.state.page || 1;
-            const offset = (page - 1) * pageSize;
-            const needProviders = !this._providersLoaded || !(this.state.providers || []).length;
+            const offset = isForecast ? 0 : (page - 1) * pageSize;
+            const needProviders = !isLightList && (!this._providersLoaded || !(this.state.providers || []).length);
+            const orderBy = (
+                listFilter === "payment_due" || listFilter === "expired" || listFilter === "payment_forecast"
+            )
+                ? "date_end asc, id desc"
+                : isLightList
+                    ? "id desc"
+                    : "store_mien_rank asc, store_name_sort asc, id asc";
+            const listFields = [
+                "name",
+                "code",
+                "customer_code",
+                "store_id",
+                "provider_id",
+                "date_start",
+                "date_end",
+                "bandwidth",
+                "contract_amount",
+                "ops_status",
+                "state",
+                "remaining_days",
+                "remaining_time",
+                "alert_level",
+                "store_mien",
+                "usage_address",
+                "note",
+                "package_name",
+                "next_payment_amount",
+                "invoice_filename",
+            ];
+            if (isForecast) {
+                listFields.push("next_payment_date");
+            }
             const tasks = [
                 this.orm.searchCount("phan.he.service", domain),
                 this.orm.searchRead(
                     "phan.he.service",
                     domain,
-                    [
-                        "name",
-                        "code",
-                        "customer_code",
-                        "store_id",
-                        "provider_id",
-                        "date_start",
-                        "date_end",
-                        "bandwidth",
-                        "contract_amount",
-                        "ops_status",
-                        "state",
-                        "remaining_days",
-                        "remaining_time",
-                        "alert_level",
-                        "store_mien",
-                        "usage_address",
-                        "note",
-                        "package_name",
-                        "next_payment_amount",
-                        "invoice_filename",
-                    ],
-                    { order: "store_mien_rank asc, store_name_sort asc, id asc", limit: pageSize, offset }
+                    listFields,
+                    {
+                        order: orderBy,
+                        limit: pageSize,
+                        offset,
+                    }
                 ),
             ];
             if (needProviders) {
@@ -833,9 +1047,9 @@ export class PhanHeInternetListBoard extends Component {
                 this._providersLoaded = true;
             }
             const providers = this.state.providers || [];
-            this.state.totalCount = totalCount;
+            this.state.totalCount = isForecast ? (records || []).length : totalCount;
             const providerMap = Object.fromEntries((providers || []).map((p) => [String(p.id), p.name]));
-            const pageRows = (records || []).slice(0, pageSize);
+            const pageRows = isForecast ? (records || []) : (records || []).slice(0, pageSize);
             this.state.records = pageRows.map((rec) => {
                 const p = rec.provider_id;
                 let pid = false;
@@ -882,12 +1096,17 @@ export class PhanHeInternetListBoard extends Component {
             this.state.stats = stats;
             this.state.selected = {};
             this.state.openMenuId = null;
-            const maxPage = Math.max(1, Math.ceil((totalCount || 0) / pageSize) || 1);
+            const clientPageSize = this.state.pageSize || 10;
+            const maxPage = isForecast
+                ? Math.max(1, Math.ceil((this.state.records.length || 0) / clientPageSize))
+                : Math.max(1, Math.ceil((totalCount || 0) / (pageSize || 10)) || 1);
             if (this.state.page > maxPage) {
                 this.state.page = 1;
                 this.state.currentPage = 1;
                 this.state.loading = false;
-                return this.load(listFilter);
+                if (!isForecast) {
+                    return this.load(listFilter);
+                }
             }
             if (this.state.detailRecord) {
                 const fresh = this.state.records.find((r) => r.id === this.state.detailRecord.id);
@@ -1228,6 +1447,11 @@ export class PhanHeInternetListBoard extends Component {
             return;
         }
         if (child.id === "list_all" && this.listFilter === "all") {
+            return;
+        }
+        // Đồng bộ filter qua props dashboard — không doAction (tránh reload cả client action).
+        if (["list_active", "list_suspend", "list_liquidated", "list_all", "payment_schedule", "payment_overdue", "payment_forecast", "expire_soon", "expired"].includes(child.id)) {
+            this.notification.add("Dùng menu bên trái để chuyển mục.", { type: "info" });
             return;
         }
         if (child.action) {
@@ -1913,9 +2137,8 @@ export class PhanHeQuarterCostBoard extends Component {
     }
 
     customerCodeLabel(row) {
-        const raw = row.customer_code || row.code || String(row.id || "");
-        const num = String(raw).replace(/\D/g, "") || String(row.id || "");
-        return `Mã KH-${String(num).padStart(6, "0")}`;
+        const code = String(row.customer_code || "").trim();
+        return code || "—";
     }
 
     providerMark(row) {

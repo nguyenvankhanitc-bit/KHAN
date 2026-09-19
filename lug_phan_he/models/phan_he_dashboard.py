@@ -338,6 +338,11 @@ class PhanHeDashboard(models.AbstractModel):
             ),
             "expire_soon": len(expire_soon_svcs),
             "overdue_contract": len(expired_svcs),
+            "payment_forecast": self.env["phan.he.service"].search_count([
+                ("active", "=", True),
+                ("service_type_id.code", "=", "internet"),
+                ("state", "=", "active"),
+            ]),
             "trend_months": trend_months,
             "trend_series": trend_series,
             "max_trend": max_trend,
@@ -585,7 +590,17 @@ class PhanHeDashboard(models.AbstractModel):
 
     @api.model
     def get_month_cost_board(self, params=None):
-        """Bảng điều khiển Chi phí tháng — hợp đồng Internet."""
+        """Chi phí tháng N — khớp nghiệp vụ:
+
+        Kỳ thanh toán tháng N =
+          - HĐ có ngày đến hạn trong vòng 30 ngày kể từ thời điểm lập kỳ
+          - + HĐ đã quá hạn và chưa hoàn tất thanh toán
+        (cùng tập với Lịch thanh toán / Tổng quan khi xem tháng hiện tại)
+
+        Tổng chi phí = tổng số tiền kỳ (next_payment_amount / cước) từ Lịch TT
+        Đã thanh toán = tiền đã xác nhận (phan.he.payment state=paid) cho các kỳ đó
+        Chưa thanh toán = Tổng − Đã thanh toán
+        """
         params = params or {}
         today = fields.Date.context_today(self)
         year = int(params.get("year") or today.year)
@@ -595,29 +610,25 @@ class PhanHeDashboard(models.AbstractModel):
         provider_id = int(params["provider_id"]) if params.get("provider_id") else False
         pay_filter = (params.get("pay_status") or "all") or "all"
 
-        start = fields.Date.from_string(f"{year:04d}-{month:02d}-01")
-        end = (start + relativedelta(months=1)) - relativedelta(days=1)
         Service = self.env["phan.he.service"]
-        domain = Service.internet_board_domain("report_month") if hasattr(Service, "internet_board_domain") else [
-            ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
-        ]
-        # internet_board_domain("report_month") already overlaps current month — override to selected month
-        domain = [
-            ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
-            ("state", "not in", ("cancel", "draft")),
-            "|", ("date_start", "=", False), ("date_start", "<=", end),
-            "|", ("date_end", "=", False), ("date_end", ">=", start),
-        ]
-        if region and region != "all":
-            domain.append(("store_mien", "=", region))
-        if provider_id:
-            domain.append(("provider_id", "=", provider_id))
+        start, end, as_of, soon = Service._month_ky_bounds(year, month)
 
-        services = Service.search(domain, order="date_end asc, id asc")
+        extra = []
+        if region and region != "all":
+            extra.append(("store_mien", "=", region))
+        if provider_id:
+            extra.append(("provider_id", "=", provider_id))
+
+        services = Service.search_month_cost_ky(year, month, extra_domain=extra or None)
+
+        def period_amount(rec):
+            return Service._month_ky_period_amount(rec)
+
+        def paid_amount_for(rec):
+            return Service._month_ky_paid_amount(rec, start, end, as_of, soon)
+
         rows = []
-        due_buckets = {"lt7": 0, "d7_15": 0, "d16_30": 0}
+        due_buckets = {"lt7": 0, "d7_15": 0, "d16_30": 0, "overdue": 0}
         status_counts = {"paid": 0, "partial": 0, "unpaid": 0, "none": 0}
         kpi = {
             "total_amount": 0.0,
@@ -659,18 +670,17 @@ class PhanHeDashboard(models.AbstractModel):
             return None
 
         for rec in services:
-            monthly = float(rec.contract_amount or 0.0)
-            paid_sum = sum(
-                float(p.amount or 0.0)
-                for p in rec.payment_ids
-                if p.payment_state == "paid"
-            )
-            remain_amt = max(monthly - paid_sum, 0.0)
-            if monthly <= 0 and paid_sum <= 0:
+            monthly = period_amount(rec)
+            paid_sum = paid_amount_for(rec)
+            # Gắn paid vào kỳ: không vượt số tiền kỳ
+            paid_cap = min(paid_sum, monthly) if monthly > 0 else paid_sum
+            remain_amt = max(monthly - paid_cap, 0.0)
+
+            if monthly <= 0 and paid_cap <= 0:
                 pay_status = "none"
-            elif remain_amt <= 0 and (monthly > 0 or paid_sum > 0):
+            elif remain_amt <= 0 and (monthly > 0 or paid_cap > 0):
                 pay_status = "paid"
-            elif paid_sum > 0:
+            elif paid_cap > 0:
                 pay_status = "partial"
             else:
                 pay_status = "unpaid"
@@ -678,42 +688,41 @@ class PhanHeDashboard(models.AbstractModel):
             if pay_filter not in ("all", "", False) and pay_status != pay_filter:
                 continue
 
-            days = rec.remaining_days
-            if rec.date_end:
-                days = (rec.date_end - today).days
+            days = (rec.date_end - as_of).days if rec.date_end else 0
             due_key = ""
-            if rec.state == "active" and days is not False and days is not None:
-                if 0 <= days < 7:
-                    due_key = "lt7"
-                    due_buckets["lt7"] += 1
-                elif 7 <= days <= 15:
-                    due_key = "d7_15"
-                    due_buckets["d7_15"] += 1
-                elif 16 <= days <= 30:
-                    due_key = "d16_30"
-                    due_buckets["d16_30"] += 1
+            if days < 0:
+                due_key = "overdue"
+                due_buckets["overdue"] += 1
+                # Gom quá hạn vào tab "< 7 ngày" để vẫn lọc được trên UI cũ
+                due_buckets["lt7"] += 1
+            elif 0 <= days < 7:
+                due_key = "lt7"
+                due_buckets["lt7"] += 1
+            elif 7 <= days <= 15:
+                due_key = "d7_15"
+                due_buckets["d7_15"] += 1
+            elif 16 <= days <= 30:
+                due_key = "d16_30"
+                due_buckets["d16_30"] += 1
 
             status_counts[pay_status] = status_counts.get(pay_status, 0) + 1
             kpi["total_amount"] += monthly
             kpi["total_count"] += 1
+            kpi["paid_amount"] += paid_cap
             if pay_status == "paid":
-                kpi["paid_amount"] += monthly or paid_sum
                 kpi["paid_count"] += 1
-            else:
-                kpi["unpaid_amount"] += remain_amt
-                if pay_status in ("unpaid", "partial"):
-                    kpi["unpaid_count"] += 1
-                    if pay_status == "partial":
-                        kpi["paid_amount"] += paid_sum
-                        kpi["paid_count"] += 0
+            elif pay_status in ("unpaid", "partial"):
+                kpi["unpaid_count"] += 1
 
             wi = week_index(rec.date_end) if rec.date_end and start <= rec.date_end <= end else None
+            if wi is None and rec.date_end and rec.date_end < start:
+                wi = 0  # quá hạn trước tháng → tuần 1
             if wi is None:
                 wi = week_index(rec.next_payment_date) if rec.next_payment_date else len(weeks) - 1
             if wi is None:
                 wi = len(weeks) - 1
             week_total[wi] += monthly
-            week_paid[wi] += min(paid_sum, monthly)
+            week_paid[wi] += paid_cap
             week_remain[wi] += remain_amt
 
             store = rec.store_id
@@ -727,15 +736,16 @@ class PhanHeDashboard(models.AbstractModel):
                 "region": rec.store_mien or "",
                 "date_start": fields.Date.to_string(rec.date_start) if rec.date_start else False,
                 "date_end": fields.Date.to_string(rec.date_end) if rec.date_end else False,
-                "remaining_days": days if days is not False else 0,
-                "due_key": due_key,
+                "remaining_days": days,
+                "due_key": "lt7" if due_key == "overdue" else due_key,
                 "monthly": monthly,
-                "paid": paid_sum,
+                "paid": paid_cap,
                 "remain": remain_amt,
                 "pay_status": pay_status,
             })
 
-        # paid_count: contracts fully paid; unpaid_count: unpaid + partial
+        # Chưa thanh toán = Tổng − Đã thanh toán (công thức chốt)
+        kpi["unpaid_amount"] = max(kpi["total_amount"] - kpi["paid_amount"], 0.0)
         kpi["paid_count"] = status_counts["paid"]
         kpi["unpaid_count"] = status_counts["unpaid"] + status_counts["partial"]
 
@@ -758,6 +768,7 @@ class PhanHeDashboard(models.AbstractModel):
             "year": year,
             "month": month,
             "month_label": f"Tháng {month:02d}/{year}",
+            "as_of": fields.Date.to_string(as_of),
             "kpi": kpi,
             "weeks": [
                 {

@@ -13,10 +13,9 @@ INTERNET_MENU_TREE = [
     ("internet_entry", "Nhập thông tin", False, "group_manage_internet"),
     ("group_cost_payment", "CHI PHÍ & THANH TOÁN", True, False),
     ("payment_schedule", "Lịch thanh toán", False, "group_cost_payment"),
-    ("payment_tracking", "Theo dõi thanh toán", False, "group_cost_payment"),
-    ("group_alerts", "CẢNH BÁO", True, False),
-    ("alert_due_soon", "Sắp tới hạn thanh toán", False, "group_alerts"),
-    ("alert_overdue", "Quá hạn", False, "group_alerts"),
+    ("payment_confirm", "Xác nhận TT", False, "group_cost_payment"),
+    ("payment_overdue", "Quá hạn", False, "group_cost_payment"),
+    ("payment_forecast", "Dự kiến thanh toán", False, "group_cost_payment"),
     ("group_reports", "BÁO CÁO", True, False),
     ("report_month", "Chi phí tháng", False, "group_reports"),
     ("report_quarter", "Chi phí quý", False, "group_reports"),
@@ -40,6 +39,27 @@ for code, _name, _is_folder, parent in INTERNET_MENU_TREE:
         PARENT_CHILD.setdefault(parent, []).append(code)
 PARENT_CHILD = {k: tuple(v) for k, v in PARENT_CHILD.items()}
 
+# Menu cũ → menu mới (giữ quyền khi gom sidebar Chi phí & thanh toán).
+LEGACY_INTERNET_MENU_MAP = {
+    "payment_tracking": "payment_confirm",
+    "payment_track": "payment_confirm",
+    "alert_overdue": "payment_overdue",
+    "alert_due_soon": "payment_schedule",
+    "expire_soon": "payment_schedule",
+    "expired": "payment_overdue",
+}
+OBSOLETE_INTERNET_MENU_CODES = frozenset(
+    {
+        "group_alerts",
+        "payment_tracking",
+        "payment_track",
+        "alert_overdue",
+        "alert_due_soon",
+        "expire_soon",
+        "expired",
+    }
+)
+
 PERM_BOOLS = ("can_read", "can_create", "can_write", "can_unlink")
 OP_TO_MENU_FLAG = {
     "read": "read",
@@ -60,10 +80,10 @@ SERVICE_READ_MENUS = (
     "report_month",
     "report_quarter",
     "report_year",
-    "alert_due_soon",
-    "alert_overdue",
     "payment_schedule",
-    "payment_tracking",
+    "payment_confirm",
+    "payment_overdue",
+    "payment_forecast",
     "overview_dashboard",
 )
 
@@ -116,7 +136,7 @@ class SecurityInternetMenuPermission(models.Model):
         index=True,
     )
     sequence = fields.Integer(default=10)
-    menu_name = fields.Char(string="Tên menu", compute="_compute_menu_name", store=True)
+    menu_name = fields.Char(string="Tên menu", compute="_compute_menu_name", store=True, readonly=False)
     menu_code = fields.Char(string="Mã menu", required=True, index=True)
     parent_id = fields.Many2one(
         "security.internet.menu.permission",
@@ -227,8 +247,49 @@ class PhanHeModuleAccessInternetMenu(models.Model):
         result["internet_menus"] = self.get_user_internet_menu_rights(user_id)
         return result
 
+    def _migrate_legacy_internet_menu_lines(self):
+        """Gộp quyền menu cũ (Theo dõi / Cảnh báo) sang 4 mục thanh toán mới."""
+        Line = self.env["security.internet.menu.permission"].sudo()
+        for rec in self:
+            if not rec.id:
+                continue
+            by_code = {line.menu_code: line for line in rec.internet_menu_permission_ids}
+            for old_code, new_code in LEGACY_INTERNET_MENU_MAP.items():
+                old = by_code.get(old_code)
+                if not old or not new_code:
+                    continue
+                target = by_code.get(new_code)
+                flags = {
+                    "can_read": bool(old.can_read),
+                    "can_create": bool(old.can_create),
+                    "can_write": bool(old.can_write),
+                    "can_unlink": bool(old.can_unlink),
+                    "can_admin": bool(old.can_admin),
+                }
+                if target:
+                    updates = {}
+                    for fname, val in flags.items():
+                        if val and not target[fname]:
+                            updates[fname] = True
+                    if updates:
+                        target.with_context(skip_internet_menu_cascade=True).write(updates)
+                    old.with_context(skip_internet_menu_cascade=True).unlink()
+                else:
+                    old.with_context(skip_internet_menu_cascade=True).write(
+                        {"menu_code": new_code}
+                    )
+                    by_code[new_code] = old
+                by_code.pop(old_code, None)
+            obsolete = rec.internet_menu_permission_ids.filtered(
+                lambda l: l.menu_code in OBSOLETE_INTERNET_MENU_CODES
+                or l.menu_code not in INTERNET_MENU_CODES
+            )
+            if obsolete:
+                obsolete.with_context(skip_internet_menu_cascade=True).unlink()
+
     def _ensure_internet_menu_lines(self):
         Line = self.env["security.internet.menu.permission"]
+        self._migrate_legacy_internet_menu_lines()
         for rec in self:
             if not rec.id:
                 continue
@@ -253,6 +314,12 @@ class PhanHeModuleAccessInternetMenu(models.Model):
                 ))
             if to_create:
                 Line.create(to_create)
+            # Đổi tên hiển thị theo cây menu mới (stored compute).
+            for line in rec.internet_menu_permission_ids:
+                label = INTERNET_MENU_LABEL.get(line.menu_code) or line.menu_code or ""
+                expected = ("📁  %s" % label) if line.is_folder else ("    └─  %s" % label)
+                if line.menu_name != expected:
+                    line.with_context(skip_internet_menu_cascade=True).write({"menu_name": expected})
             rec._link_internet_menu_parents()
 
     def _link_internet_menu_parents(self):
@@ -288,7 +355,7 @@ class PhanHeModuleAccessInternetMenu(models.Model):
         if not groups:
             return result
         for line in groups.mapped("internet_menu_permission_ids"):
-            code = line.menu_code
+            code = LEGACY_INTERNET_MENU_MAP.get(line.menu_code, line.menu_code)
             if code not in result:
                 continue
             result[code]["read"] = result[code]["read"] or bool(line.can_read)

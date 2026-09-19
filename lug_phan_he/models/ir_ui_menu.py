@@ -18,9 +18,11 @@ INTERNET_CHILD_XMLIDS = {
     "lug_phan_he.menu_phan_he_internet_suspend": "internet_suspend",
     "lug_phan_he.menu_phan_he_internet_liquidated": "internet_liquidation",
     "lug_phan_he.menu_phan_he_payment": "payment_schedule",
-    "lug_phan_he.menu_phan_he_payment_pending": "payment_tracking",
-    "lug_phan_he.menu_phan_he_service_expire_soon": "alert_due_soon",
-    "lug_phan_he.menu_phan_he_service_expired": "alert_overdue",
+    "lug_phan_he.menu_phan_he_payment_pending": "payment_confirm",
+    "lug_phan_he.menu_phan_he_payment_overdue": "payment_overdue",
+    "lug_phan_he.menu_phan_he_payment_forecast": "payment_forecast",
+    "lug_phan_he.menu_phan_he_service_expire_soon": "payment_schedule",
+    "lug_phan_he.menu_phan_he_service_expired": "payment_overdue",
 }
 
 LINKQ_CHILD_XMLIDS = {

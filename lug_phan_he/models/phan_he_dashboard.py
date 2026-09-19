@@ -341,10 +341,8 @@ class PhanHeDashboard(models.AbstractModel):
             "payment_forecast": self.env["phan.he.service"].search_count([
                 ("active", "=", True),
                 ("service_type_id.code", "=", "internet"),
-                ("ops_status", "=", "active"),
                 ("state", "=", "active"),
                 ("date_end", "!=", False),
-                ("date_end", "<=", fields.Date.context_today(self) + relativedelta(days=30)),
             ]),
             "trend_months": trend_months,
             "trend_series": trend_series,

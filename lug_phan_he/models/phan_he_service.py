@@ -900,7 +900,11 @@ class PhanHeService(models.Model):
             "overdue_contract": overdue,
             "payment_schedule": payment_schedule,
             "payment_confirm": payment_confirm,
-            "payment_forecast": payment_schedule,
+            # Badge dự kiến = HĐ đang dùng có ngày kết thúc (lọc tháng trên UI)
+            "payment_forecast": self.search_count(inet_base + [
+                ("state", "=", "active"),
+                ("date_end", "!=", False),
+            ]),
             "alert_count": expire_soon + overdue,
         }
 
@@ -1212,6 +1216,11 @@ class PhanHeService(models.Model):
         code = filter_code or "all"
         if code == "active":
             domain.append(("state", "=", "active"))
+        elif code == "payment_forecast":
+            domain += [
+                ("state", "=", "active"),
+                ("date_end", "!=", False),
+            ]
         elif code in ("suspend", "paused"):
             domain.append(("state", "=", "suspend"))
         elif code == "liquidated":
@@ -1227,7 +1236,7 @@ class PhanHeService(models.Model):
                 ("state", "=", "active"),
                 ("date_end", "<", today),
             ]
-        elif code in ("payment_due", "payment_schedule", "payment_forecast"):
+        elif code in ("payment_due", "payment_schedule"):
             domain += [
                 ("ops_status", "=", "active"),
                 ("state", "=", "active"),

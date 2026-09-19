@@ -176,7 +176,7 @@ const FILTER_TITLES = {
     },
     payment_forecast: {
         title: "Dự kiến thanh toán",
-        subtitle: "Thời gian còn lại ≤ 30 ngày hoặc đã quá hạn",
+        subtitle: "HĐ có kỳ thanh toán / ngày kết thúc thuộc tháng đang chọn",
         activeNav: "payment_forecast",
     },
     expired: {
@@ -412,7 +412,7 @@ export class PhanHeInternetListBoard extends Component {
             liquidated: "Không có hợp đồng thanh lý",
             active: "Không có hợp đồng đang sử dụng",
             payment_due: "Không có lịch thanh toán trong kỳ",
-            payment_forecast: "Không có HĐ còn ≤ 30 ngày hoặc quá hạn",
+            payment_forecast: "Không có HĐ có kỳ TT / ngày kết thúc trong tháng này",
             expired: "Không có hợp đồng quá hạn",
         };
         return map[this.listFilter] || "Không có dữ liệu";
@@ -448,10 +448,11 @@ export class PhanHeInternetListBoard extends Component {
         }
         const year = Number(this.state.forecastYear);
         const month = Number(this.state.forecastMonth);
+        const ymPrefix = `${year}-${pad2(month)}`;
         return (this.state.records || []).map((rec) => {
             const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             let due;
-            if (nextDue && nextDue.startsWith(`${year}-${pad2(month)}`)) {
+            if (nextDue && nextDue.startsWith(ymPrefix)) {
                 due = nextDue;
             } else {
                 due = projectDueInMonth(rec.date_end || rec.date_start || nextDue, year, month);
@@ -463,6 +464,15 @@ export class PhanHeInternetListBoard extends Component {
                     ? Number(rec.next_payment_amount)
                     : Number(rec.contract_amount || 0),
             };
+        }).filter((rec) => {
+            // Tháng N: ngày TT tiếp theo trong tháng N, hoặc tháng của Ngày kết thúc = N
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
+            if (nextDue && nextDue.startsWith(ymPrefix)) {
+                return true;
+            }
+            const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+            const m = end.match(/^\d{4}-(\d{2})-/);
+            return Boolean(m && Number(m[1]) === month);
         }).sort((a, b) => String(a.forecast_due).localeCompare(String(b.forecast_due)) || a.id - b.id);
     }
 
@@ -532,8 +542,10 @@ export class PhanHeInternetListBoard extends Component {
         soon.setDate(soon.getDate() + 30);
         const soon30 = ymd(soon);
         const f = listFilter || "active";
-        if (f === "active") {
+        if (f === "active" || f === "payment_forecast") {
+            // Dự kiến TT: lấy HĐ đang dùng, lọc theo tháng chọn ở forecastRows
             domain.push(["state", "=", "active"]);
+            domain.push(["date_end", "!=", false]);
         } else if (f === "suspend" || f === "paused") {
             // Đồng bộ state / ops_status (action cũ lọc ops_status)
             domain.push("|", ["state", "=", "suspend"], ["ops_status", "=", "suspend"]);
@@ -548,8 +560,8 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
-        } else if (f === "payment_due" || f === "payment_forecast") {
-            // Còn ≤30 ngày hoặc đã quá hạn (theo Ngày kết thúc / Thời gian còn lại)
+        } else if (f === "payment_due") {
+            // Lịch TT: còn ≤30 ngày hoặc đã quá hạn
             domain.push(["ops_status", "=", "active"]);
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "!=", false]);
@@ -977,7 +989,7 @@ export class PhanHeInternetListBoard extends Component {
             const domain = this.buildQueryDomain(listFilter);
             const isForecast = listFilter === "payment_forecast";
             const isLightList = listFilter === "suspend" || listFilter === "liquidated" || listFilter === "paused";
-            const pageSize = isForecast ? 500 : (this.state.pageSize || 10);
+            const pageSize = isForecast ? 2000 : (this.state.pageSize || 10);
             const page = this.state.page || 1;
             const offset = isForecast ? 0 : (page - 1) * pageSize;
             const needProviders = !isLightList && (!this._providersLoaded || !(this.state.providers || []).length);

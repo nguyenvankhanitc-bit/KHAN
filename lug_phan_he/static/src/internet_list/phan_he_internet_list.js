@@ -176,7 +176,7 @@ const FILTER_TITLES = {
     },
     payment_forecast: {
         title: "Dự kiến thanh toán",
-        subtitle: "HĐ có kỳ thanh toán / ngày kết thúc thuộc tháng đang chọn",
+        subtitle: "HĐ có Ngày kết thúc hoặc ngày TT thuộc đúng tháng/năm đang chọn",
         activeNav: "payment_forecast",
     },
     expired: {
@@ -454,6 +454,8 @@ export class PhanHeInternetListBoard extends Component {
             let due;
             if (nextDue && nextDue.startsWith(ymPrefix)) {
                 due = nextDue;
+            } else if (rec.date_end && String(rec.date_end).slice(0, 10).startsWith(ymPrefix)) {
+                due = String(rec.date_end).slice(0, 10);
             } else {
                 due = projectDueInMonth(rec.date_end || rec.date_start || nextDue, year, month);
             }
@@ -465,14 +467,13 @@ export class PhanHeInternetListBoard extends Component {
                     : Number(rec.contract_amount || 0),
             };
         }).filter((rec) => {
-            // Tháng N: ngày TT tiếp theo trong tháng N, hoặc tháng của Ngày kết thúc = N
+            // Đúng tháng/năm đang chọn (VD 10/2026), không lấy cùng tháng năm khác (10/2027)
             const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             if (nextDue && nextDue.startsWith(ymPrefix)) {
                 return true;
             }
             const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
-            const m = end.match(/^\d{4}-(\d{2})-/);
-            return Boolean(m && Number(m[1]) === month);
+            return Boolean(end && end.startsWith(ymPrefix));
         }).sort((a, b) => String(a.forecast_due).localeCompare(String(b.forecast_due)) || a.id - b.id);
     }
 
@@ -542,10 +543,20 @@ export class PhanHeInternetListBoard extends Component {
         soon.setDate(soon.getDate() + 30);
         const soon30 = ymd(soon);
         const f = listFilter || "active";
-        if (f === "active" || f === "payment_forecast") {
-            // Dự kiến TT: lấy HĐ đang dùng, lọc theo tháng chọn ở forecastRows
+        if (f === "active") {
             domain.push(["state", "=", "active"]);
-            domain.push(["date_end", "!=", false]);
+        } else if (f === "payment_forecast") {
+            // Chỉ HĐ đúng tháng/năm đang chọn (date_end hoặc next_payment_date)
+            const y = Number(this.state.forecastYear) || new Date().getFullYear();
+            const m = Number(this.state.forecastMonth) || (new Date().getMonth() + 1);
+            const from = `${y}-${pad2(m)}-01`;
+            const last = new Date(y, m, 0).getDate();
+            const to = `${y}-${pad2(m)}-${pad2(last)}`;
+            domain.push(["state", "=", "active"]);
+            domain.push("|",
+                "&", ["date_end", ">=", from], ["date_end", "<=", to],
+                "&", ["next_payment_date", ">=", from], ["next_payment_date", "<=", to]
+            );
         } else if (f === "suspend" || f === "paused") {
             // Đồng bộ state / ops_status (action cũ lọc ops_status)
             domain.push("|", ["state", "=", "suspend"], ["ops_status", "=", "suspend"]);
@@ -791,6 +802,7 @@ export class PhanHeInternetListBoard extends Component {
         this.state.forecastMonth = Number(month);
         this.state.page = 1;
         this.state.currentPage = 1;
+        this.load();
     }
 
     onForecastMonthChange(ev) {

@@ -892,14 +892,15 @@ class PhanHeService(models.Model):
             ("active", "=", True),
             ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
         ])
-        # Badge dự kiến = số HĐ tháng kế tiếp (cùng logic bộ lọc Tháng/Năm trên UI)
+        # Badge dự kiến = HĐ tháng kế tiếp + HĐ quá hạn (không trùng)
         next_start = (today.replace(day=1) + relativedelta(months=1))
         next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
         payment_forecast = self.search_count(inet_base + [
             ("state", "=", "active"),
-            "|",
+            "|", "|",
             "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
             "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
+            "&", ("date_end", "!=", False), ("date_end", "<", today),
         ])
         return {
             "list_active": list_active,

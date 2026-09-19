@@ -176,7 +176,7 @@ const FILTER_TITLES = {
     },
     payment_forecast: {
         title: "Dự kiến thanh toán",
-        subtitle: "HĐ có Ngày kết thúc hoặc ngày TT thuộc đúng tháng/năm đang chọn",
+        subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn",
         activeNav: "payment_forecast",
     },
     expired: {
@@ -467,14 +467,29 @@ export class PhanHeInternetListBoard extends Component {
                     : Number(rec.contract_amount || 0),
             };
         }).filter((rec) => {
-            // Đúng tháng/năm đang chọn (VD 10/2026), không lấy cùng tháng năm khác (10/2027)
+            // Đúng tháng/năm đang chọn, hoặc đã quá hạn
+            const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+            const todayStr = ymd(new Date());
+            if (end && end < todayStr) {
+                return true;
+            }
             const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             if (nextDue && nextDue.startsWith(ymPrefix)) {
                 return true;
             }
-            const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
             return Boolean(end && end.startsWith(ymPrefix));
-        }).sort((a, b) => String(a.forecast_due).localeCompare(String(b.forecast_due)) || a.id - b.id);
+        }).sort((a, b) => {
+            // Quá hạn lên trước, rồi theo ngày kết thúc
+            const ae = a.date_end ? String(a.date_end).slice(0, 10) : "";
+            const be = b.date_end ? String(b.date_end).slice(0, 10) : "";
+            const todayStr = ymd(new Date());
+            const ao = ae && ae < todayStr ? 0 : 1;
+            const bo = be && be < todayStr ? 0 : 1;
+            if (ao !== bo) {
+                return ao - bo;
+            }
+            return String(a.forecast_due).localeCompare(String(b.forecast_due)) || a.id - b.id;
+        });
     }
 
     get forecastGroups() {
@@ -546,16 +561,17 @@ export class PhanHeInternetListBoard extends Component {
         if (f === "active") {
             domain.push(["state", "=", "active"]);
         } else if (f === "payment_forecast") {
-            // Chỉ HĐ đúng tháng/năm đang chọn (date_end hoặc next_payment_date)
+            // Tháng/năm đang chọn + luôn gồm HĐ quá hạn (chưa thanh lý)
             const y = Number(this.state.forecastYear) || new Date().getFullYear();
             const m = Number(this.state.forecastMonth) || (new Date().getMonth() + 1);
             const from = `${y}-${pad2(m)}-01`;
             const last = new Date(y, m, 0).getDate();
             const to = `${y}-${pad2(m)}-${pad2(last)}`;
             domain.push(["state", "=", "active"]);
-            domain.push("|",
+            domain.push("|", "|",
                 "&", ["date_end", ">=", from], ["date_end", "<=", to],
-                "&", ["next_payment_date", ">=", from], ["next_payment_date", "<=", to]
+                "&", ["next_payment_date", ">=", from], ["next_payment_date", "<=", to],
+                "&", ["date_end", "!=", false], ["date_end", "<", today]
             );
         } else if (f === "suspend" || f === "paused") {
             // Đồng bộ state / ops_status (action cũ lọc ops_status)

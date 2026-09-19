@@ -310,7 +310,7 @@ class DailyTaskTeamChecklist(models.Model):
         employees.sort(key=lambda e: e["name"])
 
         categories = {}
-        for task in pending:
+        for task in pending | verified:
             wg = task.work_group_id
             key = wg.id or 0
             name = wg.name or "Khác"

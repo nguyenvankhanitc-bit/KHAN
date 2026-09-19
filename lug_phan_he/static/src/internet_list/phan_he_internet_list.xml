@@ -306,8 +306,7 @@
                                     <th class="col-bw">Băng thông</th>
                                     <th class="col-date-start">Ngày bắt đầu</th>
                                     <th class="col-date-end">
-                                        <t t-if="isForecastList">Ngày đến hạn</t>
-                                        <t t-else="">Ngày kết thúc</t>
+                                        Ngày kết thúc
                                     </th>
                                     <th class="col-fee">Cước tháng</th>
                                     <th class="col-pay">Số tiền thanh toán</th>

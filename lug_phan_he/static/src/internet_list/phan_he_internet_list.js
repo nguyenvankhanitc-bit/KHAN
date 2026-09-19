@@ -290,7 +290,7 @@ export class PhanHeInternetListBoard extends Component {
             }
             await this.load();
         });
-        onWillUpdateProps(async (next) => {
+        onWillUpdateProps((next) => {
             if (next.internetMenus && next.internetMenus !== this.props.internetMenus) {
                 this.state.internetMenus = next.internetMenus;
             }
@@ -298,7 +298,7 @@ export class PhanHeInternetListBoard extends Component {
             const curFilter = this.props.listFilter || "active";
             const tokenChanged = (next.listReloadToken || 0) !== (this.props.listReloadToken || 0);
             if (nextFilter !== curFilter || tokenChanged) {
-                // Reset ngay — tránh hiện data mục trước / loading treo khi bấm nhanh.
+                // Reset ngay — không await load (tránh race / treo khi bấm nhanh).
                 this.state.page = 1;
                 this.state.currentPage = 1;
                 this.state.remainTab = "all";
@@ -317,7 +317,7 @@ export class PhanHeInternetListBoard extends Component {
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                 }
-                await this.load(nextFilter);
+                this.load(nextFilter);
             }
         });
         onWillUnmount(() => {
@@ -1037,16 +1037,54 @@ export class PhanHeInternetListBoard extends Component {
         return "is-ok";
     }
 
+    /** Tính remaining_* trên client — tránh RPC compute chậm. */
+    _enrichRemaining(rec) {
+        const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+        if (!end) {
+            return {
+                ...rec,
+                remaining_days: 0,
+                remaining_time: false,
+                alert_level: "ok",
+            };
+        }
+        const today = ymd(new Date());
+        const t0 = Date.parse(`${today}T00:00:00`);
+        const t1 = Date.parse(`${end}T00:00:00`);
+        const days = Number.isFinite(t0) && Number.isFinite(t1)
+            ? Math.round((t1 - t0) / 86400000)
+            : 0;
+        let remaining_time;
+        let alert_level;
+        if (days >= 0) {
+            remaining_time = `Còn ${days} ngày`;
+            if (days <= 7) {
+                alert_level = "danger";
+            } else if (days <= 30) {
+                alert_level = "warn";
+            } else {
+                alert_level = "ok";
+            }
+        } else {
+            remaining_time = `Quá hạn ${Math.abs(days)} ngày`;
+            alert_level = "expired";
+        }
+        return { ...rec, remaining_days: days, remaining_time, alert_level };
+    }
+
     async load(filterOverride) {
         const seq = ++this._loadSeq;
         this.state.loading = true;
         try {
             await this.ensureInternetTypeId();
+            if (seq !== this._loadSeq) {
+                return;
+            }
             const listFilter = filterOverride || this.listFilter;
             const domain = this.buildQueryDomain(listFilter);
             const isPeriodPay = listFilter === "payment_forecast" || listFilter === "payment_due";
             const isLightList = listFilter === "suspend" || listFilter === "liquidated" || listFilter === "paused";
-            const pageSize = isPeriodPay ? 2000 : (this.state.pageSize || 10);
+            const pageSize = isPeriodPay ? 500 : (this.state.pageSize || 10);
             const page = this.state.page || 1;
             const offset = isPeriodPay ? 0 : (page - 1) * pageSize;
             const needProviders = !isLightList && (!this._providersLoaded || !(this.state.providers || []).length);
@@ -1057,6 +1095,7 @@ export class PhanHeInternetListBoard extends Component {
                 : isLightList
                     ? "id desc"
                     : "store_mien_rank asc, store_name_sort asc, id asc";
+            // Không lấy remaining_* / chi tiết form — tính client hoặc load khi mở form.
             const listFields = [
                 "name",
                 "code",
@@ -1069,21 +1108,13 @@ export class PhanHeInternetListBoard extends Component {
                 "contract_amount",
                 "ops_status",
                 "state",
-                "remaining_days",
-                "remaining_time",
-                "alert_level",
                 "store_mien",
-                "usage_address",
-                "note",
-                "package_name",
                 "next_payment_amount",
-                "invoice_filename",
             ];
             if (isPeriodPay) {
                 listFields.push("next_payment_date");
             }
             const tasks = [
-                this.orm.searchCount("phan.he.service", domain),
                 this.orm.searchRead(
                     "phan.he.service",
                     domain,
@@ -1095,6 +1126,10 @@ export class PhanHeInternetListBoard extends Component {
                     }
                 ),
             ];
+            // searchCount chỉ khi phân trang (không cần cho Lịch/Dự kiến).
+            if (!isPeriodPay) {
+                tasks.unshift(this.orm.searchCount("phan.he.service", domain));
+            }
             if (needProviders) {
                 tasks.push(
                     this.orm.searchRead(
@@ -1109,10 +1144,20 @@ export class PhanHeInternetListBoard extends Component {
             if (seq !== this._loadSeq) {
                 return;
             }
-            const totalCount = results[0];
-            const records = results[1];
-            if (needProviders) {
-                this.state.providers = results[2] || [];
+            let totalCount;
+            let records;
+            let providerRows;
+            if (isPeriodPay) {
+                records = results[0];
+                totalCount = (records || []).length;
+                providerRows = needProviders ? results[1] : null;
+            } else {
+                totalCount = results[0];
+                records = results[1];
+                providerRows = needProviders ? results[2] : null;
+            }
+            if (needProviders && providerRows) {
+                this.state.providers = providerRows || [];
                 this._providersLoaded = true;
             }
             const providers = this.state.providers || [];
@@ -1120,6 +1165,7 @@ export class PhanHeInternetListBoard extends Component {
             const providerMap = Object.fromEntries((providers || []).map((p) => [String(p.id), p.name]));
             const pageRows = isPeriodPay ? (records || []) : (records || []).slice(0, pageSize);
             this.state.records = pageRows.map((rec) => {
+                rec = this._enrichRemaining(rec);
                 const p = rec.provider_id;
                 let pid = false;
                 let pname = "";

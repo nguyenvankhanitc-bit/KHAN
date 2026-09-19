@@ -219,6 +219,7 @@ export class PhanHeDashboard extends Component {
             listFilter: "active",
             listReloadToken: 0,
             paymentBoardMode: "confirm",
+            paymentBoardToken: 0,
             contentMode: "dashboard",
             embeddedViewProps: null,
             viewKey: 0,
@@ -708,10 +709,6 @@ export class PhanHeDashboard extends Component {
         // Lịch thanh toán / Quá hạn / Dự kiến TT / list Internet → board OWL hợp đồng.
         if (OWL_LIST_NAV[child.id]) {
             const nextFilter = OWL_LIST_NAV[child.id];
-            const same =
-                this.state.contentMode === "owl_list"
-                && this.state.activeNav === child.id
-                && this.state.listFilter === nextFilter;
             this.state.activeNav = child.id;
             this._openGroupForNav(child.id);
             this.state.contentMode = "owl_list";
@@ -719,10 +716,8 @@ export class PhanHeDashboard extends Component {
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
             this.state.entryPopupOpen = false;
-            // Cùng mục mà đang treo/trống → ép board load lại (không remount cả action).
-            if (same) {
-                this.state.listReloadToken = (this.state.listReloadToken || 0) + 1;
-            }
+            // Luôn tăng token → ép load lại (tránh treo/trống khi bấm nhanh).
+            this.state.listReloadToken = (this.state.listReloadToken || 0) + 1;
             return;
         }
         // Xác nhận TT → board OWL phiếu thanh toán.
@@ -731,6 +726,7 @@ export class PhanHeDashboard extends Component {
             this._openGroupForNav(child.id);
             this.state.contentMode = "payment_board";
             this.state.paymentBoardMode = PAYMENT_BOARD_NAV[child.id];
+            this.state.paymentBoardToken = (this.state.paymentBoardToken || 0) + 1;
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
             this.state.entryPopupOpen = false;

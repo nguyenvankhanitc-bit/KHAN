@@ -85,6 +85,7 @@ export class PhanHePaymentBoard extends Component {
     static template = "lug_phan_he.PhanHePaymentBoard";
     static props = {
         mode: { type: String, optional: true },
+        reloadToken: { type: Number, optional: true },
         monthOffset: { type: Number, optional: true },
         onMonthOffsetChange: { type: Function, optional: true },
         "*": true,
@@ -112,22 +113,27 @@ export class PhanHePaymentBoard extends Component {
         });
         this.monthOptions = MONTH_OPTIONS;
         this.yearOptions = this.buildYearOptions(next.year);
+        this._loadSeq = 0;
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
         onMounted(() => this.syncStickyColumns());
         onPatched(() => this.syncStickyColumns());
         onWillStart(() => this.load());
         onWillUpdateProps((nextProps) => {
-            if (nextProps.mode !== this.props.mode) {
+            const modeChanged = nextProps.mode !== this.props.mode;
+            const tokenChanged = (nextProps.reloadToken || 0) !== (this.props.reloadToken || 0);
+            if (modeChanged || tokenChanged) {
                 this.state.page = 1;
                 this.state.selected = {};
                 this.state.statusTab = "all";
-                if (nextProps.mode === "forecast") {
+                this.state.records = [];
+                this.state.loading = true;
+                if (modeChanged && nextProps.mode === "forecast") {
                     const n = nextMonthParts();
                     this.state.year = n.year;
                     this.state.month = n.month;
                 }
-                return this.load(nextProps);
+                this.load(nextProps);
             }
         });
         onWillUnmount(() => {
@@ -361,6 +367,7 @@ export class PhanHePaymentBoard extends Component {
     }
 
     async load(props) {
+        const seq = ++this._loadSeq;
         const mode = (props && props.mode) || this.mode;
         this.state.loading = true;
         try {
@@ -369,10 +376,16 @@ export class PhanHePaymentBoard extends Component {
             } else {
                 await this.loadConfirmPayments();
             }
+            if (seq !== this._loadSeq) {
+                return;
+            }
             if (this.state.page > this.totalPages) {
                 this.state.page = 1;
             }
         } catch (err) {
+            if (seq !== this._loadSeq) {
+                return;
+            }
             console.error(err);
             this.notification.add(err?.data?.message || err?.message || "Không tải được danh sách thanh toán.", {
                 type: "danger",
@@ -380,7 +393,9 @@ export class PhanHePaymentBoard extends Component {
             this.state.records = [];
             this.state.totalCount = 0;
         } finally {
-            this.state.loading = false;
+            if (seq === this._loadSeq) {
+                this.state.loading = false;
+            }
         }
     }
 
@@ -467,15 +482,14 @@ export class PhanHePaymentBoard extends Component {
             "code", "service_id", "store_id", "store_name", "provider_id",
             "period", "date_due", "date_paid", "amount", "payment_state",
         ];
-        const [records, totalCount] = await Promise.all([
+        const [records] = await Promise.all([
             this.orm.searchRead("phan.he.payment", domain, fields, {
                 order: "date_due asc, id desc",
                 limit: 500,
             }),
-            this.orm.searchCount("phan.he.payment", domain),
         ]);
         this.state.records = records || [];
-        this.state.totalCount = totalCount || 0;
+        this.state.totalCount = (records || []).length;
     }
 
     onSearchInput(ev) {

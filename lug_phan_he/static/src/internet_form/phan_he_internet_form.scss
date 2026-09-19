@@ -31,6 +31,23 @@
         border-radius: 0 !important;
     }
 
+    @media (max-width: 575.98px) {
+        .o_form_sheet_bg {
+            padding: 0 !important;
+        }
+        .o_form_sheet {
+            max-width: none !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 8px 10px 20px !important;
+            border-radius: 0 !important;
+        }
+        .o_control_panel {
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+        }
+    }
+
     .o-mail-Form-chatter,
     .o-mail-Chatter,
     .o_form_view_container .o-mail-ChatterContainer,
@@ -162,6 +179,15 @@ button.ph-inet-btn-ghost {
     padding: 18px 20px 12px;
     margin-bottom: 14px;
     box-shadow: 0 8px 20px rgba(31, 41, 55, 0.05);
+    @media (max-width: 575.98px) {
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+        margin-left: -10px;
+        margin-right: -10px;
+        padding: 14px 12px 10px;
+        box-shadow: none;
+    }
 }
 
 .ph-inet-section-head {

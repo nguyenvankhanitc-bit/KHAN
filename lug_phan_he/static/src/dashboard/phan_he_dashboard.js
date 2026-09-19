@@ -8,6 +8,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
 import { PhanHeInternetShell } from "../internet_shell/phan_he_internet_shell";
 import { PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard } from "../internet_list/phan_he_internet_list";
+import { PhanHeInternetEntryPopup } from "../internet_entry/phan_he_internet_entry_popup";
 import {
     INTERNET_NAV_TO_CODE,
     filterInternetNavSections,
@@ -22,7 +23,6 @@ const OWL_LIST_NAV = {
     list_liquidated: "liquidated",
     expire_soon: "expire_soon",
     expired: "expired",
-    payment_schedule: "payment_due",
     report_year: "report_year",
 };
 
@@ -98,7 +98,7 @@ const INTERNET_NAV_SECTIONS = [
                 id: "expire_soon",
                 label: "Sắp tới hạn thanh toán",
                 icon: "fa-exclamation-triangle",
-                tone: "danger",
+                tone: "warn",
                 iconTone: "alert",
                 badgeKey: "expire_soon",
                 action: "lug_phan_he.action_phan_he_service_expire_soon",
@@ -177,7 +177,14 @@ function isoToDisplay(value) {
 export class PhanHeDashboard extends Component {
     static template = "lug_phan_he.PhanHeDashboard";
     static props = { ...standardActionServiceProps, "*": true };
-    static components = { PhanHeAppSidebar, PhanHeInternetShell, PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard };
+    static components = {
+        PhanHeAppSidebar,
+        PhanHeInternetShell,
+        PhanHeInternetListBoard,
+        PhanHeMonthCostBoard,
+        PhanHeQuarterCostBoard,
+        PhanHeInternetEntryPopup,
+    };
 
     setup() {
         this.orm = useService("orm");
@@ -214,6 +221,8 @@ export class PhanHeDashboard extends Component {
             inet: {},
             internetMenus: {},
             paymentReport: { tables: [] },
+            entryPopupOpen: false,
+            entryPopupResId: false,
             selectedMonth: `${year}-${pad2(new Date().getMonth() + 1)}`,
             selectedRegion: "all",
             selectedStore: "all",
@@ -231,22 +240,11 @@ export class PhanHeDashboard extends Component {
         this.inetYearRef = useRef("inetYear");
         this.inetMonthTrendRef = useRef("inetMonthTrend");
         this.inetCharts = {};
-        this._applyInternetAlertCounts = (counts) => {
-            const c = counts || {};
-            this.state.data = {
-                ...(this.state.data || {}),
-                expire_soon: Number(c.expire_soon || 0),
-                overdue_contract: Number(c.overdue_contract || 0),
-                alert_count: Number(c.alert_count || 0),
-            };
-        };
         onWillStart(async () => {
             try {
                 if (this.serviceTypeCode === "internet") {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                     this.state.internetMenus = rights?.internet_menus || {};
-                    const counts = await this.orm.call("phan.he.service", "get_internet_alert_counts", []);
-                    this._applyInternetAlertCounts(counts);
                 }
                 let openNav = this.actionContext.phan_he_open_nav;
                 if (this.serviceTypeCode === "internet") {
@@ -295,7 +293,11 @@ export class PhanHeDashboard extends Component {
                 if (openNav && openNav !== "overview") {
                     const child = this.findNavChild(openNav);
                     if (child) {
-                        await this.openEmbedded(child);
+                        if (child.id === "store_declare") {
+                            this.openEntryPopup(false);
+                        } else {
+                            await this.openEmbedded(child);
+                        }
                     }
                     this._openGroupForNav(openNav);
                 }
@@ -691,10 +693,18 @@ export class PhanHeDashboard extends Component {
         this.state.activeNav = child.id;
         this._openGroupForNav(child.id);
         if (OWL_LIST_NAV[child.id]) {
+            const nextFilter = OWL_LIST_NAV[child.id];
+            // Đổi nhanh UI; list board tự load đúng filter (tránh “bấm không ăn”).
             this.state.contentMode = "owl_list";
-            this.state.listFilter = OWL_LIST_NAV[child.id];
+            this.state.listFilter = nextFilter;
+            this.state.activeNav = child.id;
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
+            this.state.entryPopupOpen = false;
+            return;
+        }
+        if (child.id === "store_declare") {
+            this.openEntryPopup(false);
             return;
         }
         if (child.reportPeriod) {
@@ -776,24 +786,78 @@ export class PhanHeDashboard extends Component {
     }
 
     async openEntryForm(resId = false) {
+        if (!resId) {
+            this.openEntryPopup(false);
+            return;
+        }
         this._rememberFormReturn();
         this.state.openGroups.manage = true;
         const nav =
             (this.state.activeNav && OWL_LIST_NAV[this.state.activeNav] && this.state.activeNav) ||
-            (resId ? "list_active" : "store_declare");
+            "list_active";
         await this.openEmbedded(
             { id: nav, action: "lug_phan_he.action_phan_he_service_entry" },
             {
                 type: "form",
-                resId: resId || false,
+                resId,
                 action: "lug_phan_he.action_phan_he_service_entry",
                 activeNav: nav,
             }
         );
     }
 
+    openEntryPopup(resId = false) {
+        // Cho phép mở nếu có quyền create/write, hoặc chưa có bảng quyền (admin / chưa load).
+        const menus = this.state.internetMenus || {};
+        const hasMenuAcl = Object.keys(menus).length > 0;
+        const canCreate = !hasMenuAcl
+            || internetNavCan(menus, "store_declare", "create")
+            || internetNavCan(menus, this.state.activeNav || "list_active", "create");
+        const canWrite = !hasMenuAcl
+            || internetNavCan(menus, "store_declare", "write")
+            || internetNavCan(menus, this.state.activeNav || "list_active", "write");
+        if (resId ? !canWrite : !canCreate) {
+            this.notification.add(resId ? "Bạn không có quyền Sửa." : "Bạn không có quyền Thêm.", {
+                type: "warning",
+            });
+            return;
+        }
+        this.state.activeNav = "store_declare";
+        this.state.openGroups.manage = true;
+        this.state.entryPopupResId = resId || false;
+        this.state.entryPopupOpen = true;
+    }
+
+    closeEntryPopup() {
+        this.state.entryPopupOpen = false;
+        this.state.entryPopupResId = false;
+    }
+
+    onEntryPopupSaved() {
+        this.closeEntryPopup();
+        this.state.contentMode = "owl_list";
+        this.state.listFilter = "active";
+        this.state.activeNav = "list_active";
+        this.state.embeddedViewProps = null;
+        this.state.listActionXml = null;
+        this.state.viewKey += 1;
+    }
+
     async openEmbedded(child, extra = {}) {
         const navId = extra.activeNav || child.id;
+        const xmlid = extra.action || child.action;
+        const isEntry =
+            navId === "store_declare"
+            || xmlid === "lug_phan_he.action_phan_he_service_entry";
+        if (isEntry && (extra.resId === false || extra.resId === undefined) && extra.type !== "form") {
+            // Mở form mới → popup, không embed trang form rộng hẹp.
+            this.openEntryPopup(false);
+            return;
+        }
+        if (isEntry && !extra.resId && extra.type === "form") {
+            this.openEntryPopup(false);
+            return;
+        }
         // Chỉ chuyển sang board OWL khi không phải mở form chi tiết.
         if (OWL_LIST_NAV[navId] && extra.type !== "form") {
             this.state.contentMode = "owl_list";
@@ -804,7 +868,6 @@ export class PhanHeDashboard extends Component {
             this.state.listActionXml = null;
             return;
         }
-        const xmlid = extra.action || child.action;
         if (!xmlid) {
             return;
         }
@@ -985,7 +1048,13 @@ export class PhanHeDashboard extends Component {
             if (data?.selected_month) {
                 this.state.selectedMonth = data.selected_month;
             }
-            this._applyInternetAlertCounts(data);
+            this.state.data = {
+                ...(this.state.data || {}),
+                user_name: data.user_name,
+                updated_at: data.updated_at,
+                expire_soon: 0,
+                overdue_contract: 0,
+            };
         } catch (error) {
             console.error(error);
             this.notification.add(
@@ -1045,7 +1114,7 @@ export class PhanHeDashboard extends Component {
         this.destroyInetCharts();
         const inet = this.state.inet || {};
         const money = (v) => this.formatMoney(v);
-        const spark = inet.month_weeks && inet.month_weeks.length ? inet.month_weeks : inet.trend || [];
+        const spark = inet.trend && inet.trend.length ? inet.trend : inet.month_weeks || [];
         const sparkCtx = this._inetChartOrNull(this.inetSparkRef);
         if (sparkCtx) {
             this.inetCharts.spark = new Chart(sparkCtx, {

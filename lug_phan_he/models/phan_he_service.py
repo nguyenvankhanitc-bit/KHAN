@@ -27,6 +27,18 @@ class PhanHeService(models.Model):
     mien_id = fields.Many2one(related="store_id.mien_id", store=True, string="Miền")
     area_id = fields.Many2one(related="store_id.area_id", store=True, string="Khu vực")
     store_mien = fields.Selection(related="store_id.mien", store=True, string="Miền (cũ)")
+    store_name_sort = fields.Char(
+        string="Tên cửa hàng (sắp xếp)",
+        related="store_id.name",
+        store=True,
+        index=True,
+    )
+    store_mien_rank = fields.Integer(
+        string="Thứ tự miền",
+        compute="_compute_store_mien_rank",
+        store=True,
+        index=True,
+    )
     customer_code = fields.Char(string="Mã khách hàng", tracking=True)
     service_type_id = fields.Many2one(
         "phan.he.service.type", string="Loại dịch vụ", required=True,
@@ -236,6 +248,20 @@ class PhanHeService(models.Model):
         compute="_compute_tracking_cards",
         sanitize=False,
     )
+
+    MIEN_LIST_RANK = {
+        "Nam": 1,
+        "ĐTT": 2,
+        "Bắc": 3,
+        "VP": 4,
+    }
+    INTERNET_LIST_ORDER = "store_mien_rank asc, store_name_sort asc, id asc"
+
+    @api.depends("store_mien")
+    def _compute_store_mien_rank(self):
+        """Nam → ĐTT → Bắc → Văn phòng; trong miền sắp A→Z theo tên CH."""
+        for rec in self:
+            rec.store_mien_rank = self.MIEN_LIST_RANK.get(rec.store_mien, 99)
 
     @api.depends(
         "store_id", "store_id.name", "customer_code", "code",
@@ -1181,7 +1207,13 @@ class PhanHeService(models.Model):
             "next_payment_amount", "ops_status", "state",
             "remaining_days", "remaining_time", "alert_level", "store_mien",
         ]
-        return self.search_read(domain, fields_list, offset=offset, limit=limit, order="date_end desc, id desc")
+        return self.search_read(
+            domain,
+            fields_list,
+            offset=offset,
+            limit=limit,
+            order=self.INTERNET_LIST_ORDER,
+        )
 
     @api.model
     def _excel_dmy(self, val):

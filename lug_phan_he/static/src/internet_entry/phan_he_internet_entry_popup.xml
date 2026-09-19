@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeInternetEntryPopup" owl="1">
+        <div class="lq-entry-overlay" t-on-click="onOverlayClick">
+            <div class="lq-entry-modal" t-on-click.stop="">
+                <header class="lq-entry-head">
+                    <h2 t-esc="title"/>
+                    <button type="button" class="lq-entry-close" title="Đóng"
+                            t-att-disabled="state.saving"
+                            t-on-click="onCancel">
+                        <i class="fa fa-times"/>
+                    </button>
+                </header>
+
+                <t t-if="state.loading">
+                    <div class="lq-entry-loading">Đang tải...</div>
+                </t>
+                <t t-else="">
+                    <div class="lq-entry-body">
+                        <div class="lq-entry-field">
+                            <label>Cửa hàng <span class="lq-req">*</span></label>
+                            <select t-att-value="state.form.store_id" t-on-change="onStoreChange">
+                                <option value="">Chọn cửa hàng</option>
+                                <t t-foreach="state.stores" t-as="s" t-key="s.id">
+                                    <option t-att-value="s.id" t-esc="s.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Miền</label>
+                            <input type="text" readonly="readonly"
+                                   t-att-value="state.mienLabel || 'Tự lấy theo cửa hàng'"
+                                   class="is-ro"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Nhà cung cấp <span class="lq-req">*</span></label>
+                            <select t-att-value="state.form.provider_id"
+                                    t-on-change="(ev) => this.onField('provider_id', ev)">
+                                <option value="">Chọn nhà cung cấp</option>
+                                <t t-foreach="state.providers" t-as="p" t-key="p.id">
+                                    <option t-att-value="p.id" t-esc="p.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Mã hợp đồng</label>
+                            <input type="text" readonly="readonly" class="is-ro"
+                                   t-att-value="state.nextCode || 'Tự sinh khi lưu'"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Mã khách hàng</label>
+                            <input type="text" placeholder="VD: SGH414537"
+                                   t-att-value="state.form.customer_code"
+                                   t-on-input="(ev) => this.onField('customer_code', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Băng thông</label>
+                            <input type="text" placeholder="100 Mbps"
+                                   t-att-value="state.form.bandwidth"
+                                   t-on-input="(ev) => this.onField('bandwidth', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Cước tháng <span class="lq-req">*</span></label>
+                            <input type="number" min="0" step="1000" placeholder="0 VNĐ"
+                                   t-att-value="state.form.contract_amount"
+                                   t-on-input="(ev) => this.onField('contract_amount', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Loại thanh toán</label>
+                            <select t-att-value="state.form.payment_type"
+                                    t-on-change="(ev) => this.onField('payment_type', ev)">
+                                <t t-foreach="paymentTypes" t-as="pt" t-key="pt.value">
+                                    <option t-att-value="pt.value" t-esc="pt.label"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Ngày bắt đầu <span class="lq-req">*</span></label>
+                            <input type="date"
+                                   t-att-value="state.form.date_start"
+                                   t-on-change="(ev) => this.onField('date_start', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Ngày kết thúc <span class="lq-req">*</span></label>
+                            <input type="date"
+                                   t-att-value="state.form.date_end"
+                                   t-on-change="(ev) => this.onField('date_end', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Trạng thái</label>
+                            <select t-att-value="state.form.ops_status"
+                                    t-on-change="(ev) => this.onField('ops_status', ev)">
+                                <t t-foreach="opsStatuses" t-as="st" t-key="st.value">
+                                    <option t-att-value="st.value" t-esc="st.label"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Địa chỉ lắp đặt <span class="lq-req">*</span></label>
+                            <textarea rows="2"
+                                      placeholder="Số nhà, đường, phường, quận, thành phố..."
+                                      t-att-value="state.form.usage_address"
+                                      t-on-input="(ev) => this.onField('usage_address', ev)"/>
+                        </div>
+
+                        <div class="lq-entry-section">Thông tin thanh toán</div>
+                        <div class="lq-entry-field">
+                            <label>Tên tài khoản <span class="lq-req">*</span></label>
+                            <input type="text" placeholder="Tên chủ tài khoản"
+                                   t-att-value="state.form.bank_account_holder"
+                                   t-on-input="(ev) => this.onField('bank_account_holder', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Số tài khoản <span class="lq-req">*</span></label>
+                            <input type="text" placeholder="Số tài khoản"
+                                   t-att-value="state.form.bank_account_number"
+                                   t-on-input="(ev) => this.onField('bank_account_number', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Ngân hàng <span class="lq-req">*</span></label>
+                            <input type="text" placeholder="VD: Vietcombank - Chi nhánh..."
+                                   t-att-value="state.form.bank_display"
+                                   t-on-input="(ev) => this.onField('bank_display', ev)"/>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>File hóa đơn đính kèm</label>
+                            <div class="lq-entry-invoice">
+                                <t t-if="state.form.invoice_filename">
+                                    <div class="lq-entry-invoice-row">
+                                        <i class="fa fa-file-text-o"/>
+                                        <span t-esc="state.form.invoice_filename"/>
+                                        <button type="button" t-on-click="clearInvoice">Xóa</button>
+                                    </div>
+                                </t>
+                                <label class="lq-entry-upload">
+                                    <i class="fa fa-cloud-upload"/>
+                                    <span t-if="state.form.invoice_filename">Đổi file hóa đơn</span>
+                                    <span t-else="">Tải file hóa đơn</span>
+                                    <input type="file" class="d-none"
+                                           accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                                           t-on-change="onInvoiceChange"/>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="lq-entry-field">
+                            <label>Ghi chú</label>
+                            <textarea rows="2" placeholder="Ghi chú thêm..."
+                                      t-att-value="state.form.note"
+                                      t-on-input="(ev) => this.onField('note', ev)"/>
+                        </div>
+                    </div>
+
+                    <footer class="lq-entry-actions">
+                        <button type="button" class="lq-entry-save"
+                                t-att-disabled="state.saving"
+                                t-on-click="onSave">
+                            <i class="fa fa-save"/>
+                            <t t-if="state.saving"> Đang lưu...</t>
+                            <t t-elif="isEdit"> LƯU THAY ĐỔI</t>
+                            <t t-else=""> LƯU HỢP ĐỒNG</t>
+                        </button>
+                        <button type="button" class="lq-entry-cancel"
+                                t-att-disabled="state.saving"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/> Hủy
+                        </button>
+                    </footer>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

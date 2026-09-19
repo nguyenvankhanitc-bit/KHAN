@@ -658,12 +658,6 @@
                                 <field name="contract_amount" nolabel="1" widget="monetary" required="1"/>
                             </div>
                             <div class="ph-inet-field">
-                                <label for="next_payment_amount">
-                                    <i class="fa fa-money"/> Số tiền thanh toán
-                                </label>
-                                <field name="next_payment_amount" nolabel="1" widget="monetary"/>
-                            </div>
-                            <div class="ph-inet-field">
                                 <label for="payment_type">
                                     <i class="fa fa-credit-card"/> Loại thanh toán
                                 </label>
@@ -1244,7 +1238,7 @@
         <field name="name">Lịch thanh toán Internet</field>
         <field name="res_model">phan.he.payment</field>
         <field name="view_mode">list,form</field>
-        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_internet')), ('service_id.ops_status', '=', 'active'), ('service_id.state', '=', 'active'), ('service_id.date_end', '!=', False)]"/>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_internet'))]"/>
     </record>
 
     <!-- Calendar: hạn thanh toán theo tháng -->

@@ -1,7 +1,178 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
-        <div t-attf-class="lq-inet-board {{ listFilter === 'payment_due' ? 'is-payment' : '' }}">
+        <div t-attf-class="lq-inet-board {{ listFilter === 'payment_due' ? 'is-payment' : '' }}{{ isMobile ? ' is-today' : '' }}">
+            <t t-if="isMobile">
+                <div class="lq-today-top">
+                    <h1 class="lq-today-title" t-esc="pageMeta.title"/>
+                    <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
+                </div>
+
+                <div class="lq-today-quick">
+                    <button t-if="canCreateNav" type="button" class="lq-today-quick-item" t-on-click="() => this.onAdd()">
+                        <span class="lq-today-qico is-violet"><i class="fa fa-plus"/></span>
+                        <span>Thêm hợp đồng</span>
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                    <button type="button" class="lq-today-quick-item"
+                            t-att-class="!state.regionFilter ? 'is-on' : ''"
+                            t-on-click="() => this.setRegionFilter('')">
+                        <span class="lq-today-qico is-blue"><i class="fa fa-map-marker"/></span>
+                        <span>Tất cả khu vực</span>
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                    <button type="button" class="lq-today-quick-item"
+                            t-att-class="state.regionFilter === 'Nam' ? 'is-on' : ''"
+                            t-on-click="() => this.setRegionFilter('Nam')">
+                        <span class="lq-today-qico is-orange"><i class="fa fa-globe"/></span>
+                        <span>Miền Nam</span>
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                    <button type="button" class="lq-today-quick-item"
+                            t-att-class="state.regionFilter === 'Bắc' ? 'is-on' : ''"
+                            t-on-click="() => this.setRegionFilter('Bắc')">
+                        <span class="lq-today-qico is-green"><i class="fa fa-globe"/></span>
+                        <span>Miền Bắc</span>
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                    <button type="button" class="lq-today-quick-item"
+                            t-att-class="state.regionFilter === 'ĐTT' ? 'is-on' : ''"
+                            t-on-click="() => this.setRegionFilter('ĐTT')">
+                        <span class="lq-today-qico is-cyan"><i class="fa fa-globe"/></span>
+                        <span>Miền ĐTT</span>
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                </div>
+
+                <div class="lq-today-pills">
+                    <button type="button"
+                            t-att-class="state.remainTab === 'all' ? 'is-on' : ''"
+                            t-on-click="() => this.setRemainTab('all')">
+                        Tất cả <b t-esc="tabCounts.all"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.remainTab === 'ok' ? 'is-on' : ''"
+                            t-on-click="() => this.setRemainTab('ok')">
+                        Còn hạn <b class="is-ok" t-esc="tabCounts.ok"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.remainTab === 'warn' ? 'is-on' : ''"
+                            t-on-click="() => this.setRemainTab('warn')">
+                        Sắp hết hạn <b class="is-warn" t-esc="tabCounts.warn"/>
+                    </button>
+                    <button type="button"
+                            t-att-class="state.remainTab === 'danger' ? 'is-on' : ''"
+                            t-on-click="() => this.setRemainTab('danger')">
+                        Quá hạn <b class="is-danger" t-esc="tabCounts.danger"/>
+                    </button>
+                </div>
+
+                <div class="lq-today-datebar">
+                    <i class="fa fa-calendar"/>
+                    <span t-esc="dateRangeLabel"/>
+                    <label class="lq-today-search">
+                        <i class="fa fa-search"/>
+                        <input type="text"
+                               placeholder="Tìm cửa hàng, mã KH..."
+                               t-att-value="state.search"
+                               t-on-input="onSearchInput"/>
+                    </label>
+                </div>
+
+                <div class="lq-today-section">
+                    <button type="button" class="lq-today-section-head" t-on-click="toggleTodaySection">
+                        <span class="lq-today-section-ico"><i class="fa fa-globe"/></span>
+                        <b t-esc="pageMeta.title"/>
+                        <em t-esc="cardRecords.length"/>
+                        <i t-att-class="state.sectionOpen ? 'fa fa-angle-up' : 'fa fa-angle-down'"/>
+                    </button>
+
+                    <t t-if="state.sectionOpen">
+                        <t t-if="state.loading">
+                            <div class="lq-today-empty">Đang tải...</div>
+                        </t>
+                        <t t-elif="!cardRecords.length">
+                            <div class="lq-today-empty">Không có dữ liệu</div>
+                        </t>
+                        <t t-else="">
+                            <div class="lq-today-cards">
+                                <t t-foreach="cardRecords" t-as="rec" t-key="rec.id">
+                                    <button type="button" class="lq-today-card"
+                                            t-att-class="'is-' + cardAccent(rec)"
+                                            t-on-click="() => this.openLineDetail(rec)">
+                                        <div class="lq-today-card-top">
+                                            <div class="lq-today-card-title">
+                                                <strong t-esc="storeName(rec)"/>
+                                                <small t-esc="customerCodeLabel(rec)"/>
+                                            </div>
+                                            <span t-attf-class="lq-today-badge is-{{opsStatusCode(rec)}}"
+                                                  t-esc="opsStatusLabel(rec)"/>
+                                            <i class="fa fa-angle-right lq-today-chevron"/>
+                                        </div>
+                                        <div class="lq-today-card-grid">
+                                            <div>
+                                                <span>Ngày bắt đầu</span>
+                                                <b t-esc="formatDate(rec.date_start)"/>
+                                            </div>
+                                            <div>
+                                                <span>Ngày kết thúc</span>
+                                                <b t-esc="formatDate(rec.date_end)"/>
+                                            </div>
+                                            <div>
+                                                <span>Cước tháng</span>
+                                                <b t-esc="formatMoney(rec.contract_amount)"/>
+                                            </div>
+                                            <div>
+                                                <span>Thời gian còn lại</span>
+                                                <b t-att-class="'is-' + remainTone(rec)" t-esc="remainLabel(rec)"/>
+                                            </div>
+                                        </div>
+                                        <div class="lq-today-card-foot">
+                                            <span>
+                                                <i class="fa fa-building-o"/>
+                                                <t t-esc="providerName(rec)"/>
+                                            </span>
+                                            <span>
+                                                <i class="fa fa-wifi"/>
+                                                <t t-esc="rec.bandwidth || '—'"/>
+                                            </span>
+                                            <span t-if="hasInvoice(rec)" class="lq-today-invoice is-on">
+                                                <i class="fa fa-file-text-o"/>
+                                                Hóa đơn
+                                            </span>
+                                            <span t-else="" class="lq-today-invoice">
+                                                <i class="fa fa-file-o"/>
+                                                Chưa có HĐ
+                                            </span>
+                                        </div>
+                                    </button>
+                                </t>
+                            </div>
+                            <div class="lq-pager lq-today-pager">
+                                <span t-esc="pageInfo"/>
+                                <div class="lq-pages">
+                                    <button type="button" t-att-disabled="state.page &lt;= 1" t-on-click="() => this.setPage(state.page - 1)">
+                                        <i class="fa fa-chevron-left"/>
+                                    </button>
+                                    <t t-foreach="pageNumbers" t-as="p" t-key="p">
+                                        <button type="button" t-att-class="state.page === p ? 'is-on' : ''" t-on-click="() => this.setPage(p)" t-esc="p"/>
+                                    </t>
+                                    <button type="button" t-att-disabled="state.page &gt;= totalPages" t-on-click="() => this.setPage(state.page + 1)">
+                                        <i class="fa fa-chevron-right"/>
+                                    </button>
+                                    <select t-on-change="onPageSizeChange">
+                                        <option value="10" t-att-selected="state.pageSize === 10">10 / trang</option>
+                                        <option value="15" t-att-selected="state.pageSize === 15">15 / trang</option>
+                                        <option value="20" t-att-selected="state.pageSize === 20">20 / trang</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </t>
+
+            <t t-else="">
             <div class="lq-board-crumb">
                 <span>Quản lý dịch vụ</span>
                 <i class="fa fa-angle-right"/>
@@ -193,6 +364,8 @@
                 </t>
             </div>
 
+            </t>
+
             <t t-if="state.detailOpen and detailRec">
                 <div class="lq-detail-overlay" t-on-click="() => this.closeLineDetail()">
                     <aside class="lq-detail-panel" t-on-click.stop="">
@@ -327,6 +500,49 @@
                                                   t-on-input="(ev) => this.onDetailField('note', ev)"/>
                                     </t>
                                     <t t-else=""><b t-esc="state.detailForm.note || '—'"/></t>
+                                </label>
+                                <label class="is-full lq-detail-invoice">
+                                    <span>Hóa đơn</span>
+                                    <div class="lq-invoice-box">
+                                        <t t-if="detailInvoiceName">
+                                            <div class="lq-invoice-row">
+                                                <span class="lq-invoice-ico"><i class="fa fa-file-text-o"/></span>
+                                                <span class="lq-invoice-name" t-esc="detailInvoiceName"/>
+                                                <button t-if="hasInvoice(detailRec) and !state.detailInvoicePending"
+                                                        type="button"
+                                                        class="lq-invoice-btn"
+                                                        t-on-click="() => this.viewInvoice(detailRec)">
+                                                    <i class="fa fa-eye"/> Xem
+                                                </button>
+                                                <button t-if="state.detailEditing and state.detailInvoicePending"
+                                                        type="button"
+                                                        class="lq-invoice-btn is-clear"
+                                                        t-on-click="() => this.clearDetailInvoicePending()">
+                                                    Hủy chọn
+                                                </button>
+                                            </div>
+                                        </t>
+                                        <t t-else="">
+                                            <div class="lq-invoice-empty-msg">Chưa có file hóa đơn</div>
+                                        </t>
+                                        <t t-if="state.detailEditing">
+                                            <label class="lq-invoice-upload">
+                                                <i class="fa fa-cloud-upload"/>
+                                                <span t-if="detailInvoiceName">Đổi file hóa đơn</span>
+                                                <span t-else="">Tải file hóa đơn</span>
+                                                <input type="file" class="d-none"
+                                                       accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx"
+                                                       t-on-change="onDetailInvoiceChange"/>
+                                            </label>
+                                        </t>
+                                        <t t-elif="hasInvoice(detailRec)">
+                                            <button type="button" class="lq-invoice-upload is-view"
+                                                    t-on-click="() => this.viewInvoice(detailRec)">
+                                                <i class="fa fa-eye"/>
+                                                <span>Xem hóa đơn</span>
+                                            </button>
+                                        </t>
+                                    </div>
                                 </label>
                             </div>
                         </div>

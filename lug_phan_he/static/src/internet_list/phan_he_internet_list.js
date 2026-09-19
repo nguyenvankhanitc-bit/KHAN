@@ -201,11 +201,6 @@ const FILTER_TITLES = {
         subtitle: "Hợp đồng đang dùng đã quá ngày kết thúc",
         activeNav: "expired",
     },
-    payment_due: {
-        title: "Lịch thanh toán",
-        subtitle: "Internet đang sử dụng: còn ≤ 30 ngày hoặc đã trễ hạn",
-        activeNav: "payment_schedule",
-    },
     report_month: {
         title: "Chi phí tháng",
         subtitle: "Hợp đồng giao thoa tháng hiện tại",
@@ -242,6 +237,7 @@ export class PhanHeInternetListBoard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.ui = useService("ui");
         this.state = useState({
             loading: true,
             records: [],
@@ -259,15 +255,21 @@ export class PhanHeInternetListBoard extends Component {
             providerFilter: "",
             bandwidthFilter: "",
             regionFilter: "",
+            remainTab: "all",
+            sectionOpen: true,
             openMenuId: null,
             detailOpen: false,
             detailEditing: false,
             detailSaving: false,
             detailRecord: null,
             detailForm: {},
+            detailInvoicePending: null,
             internetMenus: {},
             exporting: false,
         });
+        this._loadSeq = 0;
+        this._searchTimer = null;
+        this._providersLoaded = false;
         onWillStart(async () => {
             try {
                 const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
@@ -278,10 +280,20 @@ export class PhanHeInternetListBoard extends Component {
             await this.load();
         });
         onWillUpdateProps(async (next) => {
-            if ((next.listFilter || "active") !== (this.props.listFilter || "active")) {
+            const nextFilter = next.listFilter || "active";
+            const curFilter = this.props.listFilter || "active";
+            if (nextFilter !== curFilter) {
                 this.state.page = 1;
                 this.state.currentPage = 1;
-                await this.load(next.listFilter);
+                this.state.remainTab = "all";
+                // Quan trọng: props chưa đổi lúc này — phải truyền filter mới vào load().
+                await this.load(nextFilter);
+            }
+        });
+        onWillUnmount(() => {
+            if (this._searchTimer) {
+                clearTimeout(this._searchTimer);
+                this._searchTimer = null;
             }
         });
     }
@@ -302,7 +314,6 @@ export class PhanHeInternetListBoard extends Component {
             liquidated: "list_liquidated",
             expire_soon: "expire_soon",
             expired: "expired",
-            payment_due: "payment_schedule",
             report_month: "report_month",
             report_quarter: "report_quarter",
             report_year: "report_year",
@@ -325,6 +336,10 @@ export class PhanHeInternetListBoard extends Component {
 
     get pageMeta() {
         return FILTER_TITLES[this.listFilter] || FILTER_TITLES.all;
+    }
+
+    get isMobile() {
+        return Boolean(this.ui?.isSmall);
     }
 
     get navSections() {
@@ -353,6 +368,10 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     get baseDomain() {
+        return this.buildBaseDomain(this.listFilter);
+    }
+
+    buildBaseDomain(listFilter) {
         const domain = [
             ["active", "=", true],
             ["service_type_id.code", "=", "internet"],
@@ -361,7 +380,7 @@ export class PhanHeInternetListBoard extends Component {
         const soon = new Date();
         soon.setDate(soon.getDate() + 30);
         const soon30 = ymd(soon);
-        const f = this.listFilter;
+        const f = listFilter || "active";
         if (f === "active") {
             domain.push(["state", "=", "active"]);
         } else if (f === "suspend" || f === "paused") {
@@ -375,11 +394,6 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
-        } else if (f === "payment_due") {
-            domain.push(["ops_status", "=", "active"]);
-            domain.push(["state", "=", "active"]);
-            domain.push(["date_end", "!=", false]);
-            domain.push(["date_end", "<=", soon30]);
         } else if (f === "report_month" || f === "report_quarter" || f === "report_year") {
             const { from, to } = periodBounds(f);
             domain.push("|", ["date_start", "=", false], ["date_start", "<=", to]);
@@ -389,7 +403,11 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     get queryDomain() {
-        const domain = [...this.baseDomain];
+        return this.buildQueryDomain(this.listFilter);
+    }
+
+    buildQueryDomain(listFilter) {
+        const domain = [...this.buildBaseDomain(listFilter)];
         if (this.state.regionFilter) {
             domain.push(["store_mien", "=", this.state.regionFilter]);
         }
@@ -422,6 +440,32 @@ export class PhanHeInternetListBoard extends Component {
             ...rec,
             stt: start + idx + 1,
         }));
+    }
+
+    get tabCounts() {
+        const rows = this.pageRecords;
+        const counts = { all: rows.length, ok: 0, warn: 0, danger: 0 };
+        for (const rec of rows) {
+            const tone = this.remainTone(rec);
+            if (tone === "danger") {
+                counts.danger += 1;
+            } else if (tone === "warning") {
+                counts.warn += 1;
+            } else {
+                counts.ok += 1;
+            }
+        }
+        return counts;
+    }
+
+    get cardRecords() {
+        const tab = this.state.remainTab || "all";
+        if (tab === "all") {
+            return this.pageRecords;
+        }
+        const map = { ok: "ok", warn: "warning", danger: "danger" };
+        const want = map[tab] || tab;
+        return this.pageRecords.filter((rec) => this.remainTone(rec) === want);
     }
 
     get pageInfo() {
@@ -527,6 +571,39 @@ export class PhanHeInternetListBoard extends Component {
         return "ok";
     }
 
+    cardAccent(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "suspend") {
+            return "suspend";
+        }
+        if (ops === "liquidated" || ops === "cancel") {
+            return "liquidated";
+        }
+        const tone = this.remainTone(rec);
+        if (tone === "danger") {
+            return "danger";
+        }
+        if (tone === "warning") {
+            return "warn";
+        }
+        return "ok";
+    }
+
+    setRemainTab(tab) {
+        this.state.remainTab = tab || "all";
+    }
+
+    setRegionFilter(value) {
+        this.state.regionFilter = value || "";
+        this.state.page = 1;
+        this.state.currentPage = 1;
+        this.load();
+    }
+
+    toggleTodaySection() {
+        this.state.sectionOpen = !this.state.sectionOpen;
+    }
+
     statusCode(rec) {
         return this.remainTone(rec) === "ok" ? "active" : this.remainTone(rec);
     }
@@ -575,8 +652,9 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     customerCodeLabel(rec) {
-        const code = String(rec.customer_code || "").trim();
-        return code || "—";
+        const raw = rec.customer_code || rec.code || String(rec.id);
+        const num = String(raw).replace(/\D/g, "") || String(rec.id);
+        return `Mã KH-${String(num).padStart(6, "0")}`;
     }
 
     contractCode(rec) {
@@ -694,14 +772,17 @@ export class PhanHeInternetListBoard extends Component {
         return "is-ok";
     }
 
-    async load() {
+    async load(filterOverride) {
+        const seq = ++this._loadSeq;
         this.state.loading = true;
         try {
-            const domain = this.queryDomain;
+            const listFilter = filterOverride || this.listFilter;
+            const domain = this.buildQueryDomain(listFilter);
             const pageSize = this.state.pageSize || 10;
             const page = this.state.page || 1;
             const offset = (page - 1) * pageSize;
-            const [totalCount, records, providers] = await Promise.all([
+            const needProviders = !this._providersLoaded || !(this.state.providers || []).length;
+            const tasks = [
                 this.orm.searchCount("phan.he.service", domain),
                 this.orm.searchRead(
                     "phan.he.service",
@@ -727,14 +808,32 @@ export class PhanHeInternetListBoard extends Component {
                         "package_name",
                         "next_payment_amount",
                         "invoice_filename",
-                        "invoice_file",
                     ],
-                    { order: this.listFilter === "payment_due" ? "remaining_days asc, date_end asc, id desc" : "date_end desc, id desc", limit: pageSize, offset }
+                    { order: "store_mien_rank asc, store_name_sort asc, id asc", limit: pageSize, offset }
                 ),
-                this.orm.searchRead("phan.he.provider", [["active", "=", true]], ["name"], { order: "name asc" }),
-            ]);
+            ];
+            if (needProviders) {
+                tasks.push(
+                    this.orm.searchRead(
+                        "phan.he.provider",
+                        [["active", "=", true]],
+                        ["name"],
+                        { order: "name asc", limit: 300 }
+                    )
+                );
+            }
+            const results = await Promise.all(tasks);
+            if (seq !== this._loadSeq) {
+                return;
+            }
+            const totalCount = results[0];
+            const records = results[1];
+            if (needProviders) {
+                this.state.providers = results[2] || [];
+                this._providersLoaded = true;
+            }
+            const providers = this.state.providers || [];
             this.state.totalCount = totalCount;
-            this.state.providers = providers;
             const providerMap = Object.fromEntries((providers || []).map((p) => [String(p.id), p.name]));
             const pageRows = (records || []).slice(0, pageSize);
             this.state.records = pageRows.map((rec) => {
@@ -788,7 +887,7 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.page = 1;
                 this.state.currentPage = 1;
                 this.state.loading = false;
-                return this.load();
+                return this.load(listFilter);
             }
             if (this.state.detailRecord) {
                 const fresh = this.state.records.find((r) => r.id === this.state.detailRecord.id);
@@ -800,13 +899,18 @@ export class PhanHeInternetListBoard extends Component {
                 }
             }
         } catch (error) {
+            if (seq !== this._loadSeq) {
+                return;
+            }
             console.error(error);
             this.notification.add(
                 error?.data?.message || error?.message || "Không tải được danh sách Internet.",
                 { type: "danger" }
             );
         } finally {
-            this.state.loading = false;
+            if (seq === this._loadSeq) {
+                this.state.loading = false;
+            }
         }
     }
 
@@ -835,7 +939,7 @@ export class PhanHeInternetListBoard extends Component {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = result.filename || "Lich_thanh_toan.xlsx";
+            a.download = result.filename || "Danh_sach_Internet.xlsx";
             a.click();
             URL.revokeObjectURL(url);
             this.notification.add("Đã xuất file Excel.", { type: "success" });
@@ -853,7 +957,13 @@ export class PhanHeInternetListBoard extends Component {
         this.state.search = ev.target.value;
         this.state.page = 1;
         this.state.currentPage = 1;
-        this.load();
+        if (this._searchTimer) {
+            clearTimeout(this._searchTimer);
+        }
+        this._searchTimer = setTimeout(() => {
+            this._searchTimer = null;
+            this.load();
+        }, 320);
     }
 
     onFilterChange(field, ev) {
@@ -945,10 +1055,18 @@ export class PhanHeInternetListBoard extends Component {
         return this.state.detailRecord;
     }
 
+    get detailInvoiceName() {
+        if (this.state.detailInvoicePending?.filename) {
+            return this.state.detailInvoicePending.filename;
+        }
+        return this.state.detailRecord?.invoice_filename || "";
+    }
+
     openLineDetail(rec) {
         this.state.openMenuId = null;
         this.state.detailRecord = rec;
         this.state.detailForm = this._formFromRecord(rec);
+        this.state.detailInvoicePending = null;
         this.state.detailEditing = false;
         this.state.detailOpen = true;
     }
@@ -959,6 +1077,7 @@ export class PhanHeInternetListBoard extends Component {
         this.state.detailSaving = false;
         this.state.detailRecord = null;
         this.state.detailForm = {};
+        this.state.detailInvoicePending = null;
     }
 
     startEditDetail() {
@@ -966,12 +1085,14 @@ export class PhanHeInternetListBoard extends Component {
             return;
         }
         this.state.detailForm = this._formFromRecord(this.state.detailRecord);
+        this.state.detailInvoicePending = null;
         this.state.detailEditing = true;
     }
 
     cancelDetail() {
         if (this.state.detailEditing) {
             this.state.detailForm = this._formFromRecord(this.state.detailRecord);
+            this.state.detailInvoicePending = null;
             this.state.detailEditing = false;
             return;
         }
@@ -980,6 +1101,35 @@ export class PhanHeInternetListBoard extends Component {
 
     onDetailField(field, ev) {
         this.state.detailForm[field] = ev.target.value;
+    }
+
+    clearDetailInvoicePending() {
+        this.state.detailInvoicePending = null;
+    }
+
+    async onDetailInvoiceChange(ev) {
+        const file = ev.target.files?.[0];
+        ev.target.value = "";
+        if (!file) {
+            return;
+        }
+        try {
+            const data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = String(reader.result || "");
+                    resolve(result.includes(",") ? result.split(",")[1] : result);
+                };
+                reader.onerror = () => reject(reader.error);
+                reader.readAsDataURL(file);
+            });
+            this.state.detailInvoicePending = { filename: file.name, data };
+        } catch (error) {
+            this.notification.add(
+                error?.message || "Không đọc được file hóa đơn.",
+                { type: "danger" }
+            );
+        }
     }
 
     async saveLineDetail() {
@@ -1000,11 +1150,16 @@ export class PhanHeInternetListBoard extends Component {
             note: form.note || false,
             package_name: form.package_name || false,
         };
+        if (this.state.detailInvoicePending?.data) {
+            vals.invoice_file = this.state.detailInvoicePending.data;
+            vals.invoice_filename = this.state.detailInvoicePending.filename || "hoa_don";
+        }
         this.state.detailSaving = true;
         try {
             await this.orm.write("phan.he.service", [rec.id], vals);
             this.notification.add("Đã lưu thông tin đường truyền.", { type: "success" });
             this.state.detailEditing = false;
+            this.state.detailInvoicePending = null;
             await this.load();
         } catch (error) {
             this.notification.add(
@@ -1758,8 +1913,9 @@ export class PhanHeQuarterCostBoard extends Component {
     }
 
     customerCodeLabel(row) {
-        const code = String(row.customer_code || "").trim();
-        return code || "—";
+        const raw = row.customer_code || row.code || String(row.id || "");
+        const num = String(raw).replace(/\D/g, "") || String(row.id || "");
+        return `Mã KH-${String(num).padStart(6, "0")}`;
     }
 
     providerMark(row) {

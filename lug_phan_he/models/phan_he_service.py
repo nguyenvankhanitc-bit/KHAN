@@ -850,8 +850,12 @@ class PhanHeService(models.Model):
     REGION_ORDER = ("NAM", "DTT", "BAC", "VP", "TRUNG")
 
     @api.model
-    def get_internet_alert_counts(self):
-        """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet."""
+    def get_internet_alert_counts(self, year=None, month=None):
+        """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet.
+
+        year/month: tháng đang chọn trên Lịch TT / Dự kiến.
+        Không truyền → tháng kế tiếp (mặc định mở danh sách).
+        """
         today = fields.Date.context_today(self)
         soon30 = today + relativedelta(days=30)
         inet_base = [
@@ -880,14 +884,22 @@ class PhanHeService(models.Model):
             ("date_end", "!=", False),
             ("date_end", "<", today),
         ])
-        # Lịch TT + Dự kiến: cùng số — tháng kế tiếp + quá hạn
-        next_start = (today.replace(day=1) + relativedelta(months=1))
-        next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
+        # Lịch TT + Dự kiến: tháng chọn (hoặc tháng kế) + quá hạn — cùng UI danh sách
+        try:
+            y = int(year) if year not in (None, False, "") else 0
+            m = int(month) if month not in (None, False, "") else 0
+        except (TypeError, ValueError):
+            y, m = 0, 0
+        if y and 1 <= m <= 12:
+            period_start = fields.Date.to_date(f"{y}-{m:02d}-01")
+        else:
+            period_start = today.replace(day=1) + relativedelta(months=1)
+        period_end = (period_start + relativedelta(months=1)) - relativedelta(days=1)
         payment_period = self.search_count(inet_base + [
             ("state", "=", "active"),
             "|", "|",
-            "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
-            "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
+            "&", ("date_end", ">=", period_start), ("date_end", "<=", period_end),
+            "&", ("next_payment_date", ">=", period_start), ("next_payment_date", "<=", period_end),
             "&", ("date_end", "!=", False), ("date_end", "<", today),
         ])
         Payment = self.env["phan.he.payment"]
@@ -905,6 +917,8 @@ class PhanHeService(models.Model):
             "payment_confirm": payment_confirm,
             "payment_forecast": payment_period,
             "alert_count": expire_soon + overdue,
+            "payment_period_year": period_start.year,
+            "payment_period_month": period_start.month,
         }
 
     @api.model

@@ -1335,9 +1335,13 @@ export class PhanHeDashboard extends Component {
         this.action.doAction(xml);
     }
 
-    async loadNavBadges() {
+    async loadNavBadges(year = null, month = null) {
         try {
-            const counts = await this.orm.call("phan.he.service", "get_internet_alert_counts", []);
+            const args = [];
+            if (year && month) {
+                args.push(Number(year), Number(month));
+            }
+            const counts = await this.orm.call("phan.he.service", "get_internet_alert_counts", args);
             this.state.data = {
                 ...(this.state.data || {}),
                 ...(counts || {}),
@@ -1348,9 +1352,15 @@ export class PhanHeDashboard extends Component {
     }
 
     /** Badge Lịch TT / Dự kiến theo đúng tháng đang chọn trên danh sách. */
-    onPeriodPaymentCountChange({ count, filter }) {
+    onPeriodPaymentCountChange({ count, filter, year, month }) {
         const n = Number(count) || 0;
         const patch = {};
+        if (year) {
+            patch.payment_period_year = Number(year);
+        }
+        if (month) {
+            patch.payment_period_month = Number(month);
+        }
         if (filter === "payment_due") {
             patch.payment_schedule = n;
         } else if (filter === "payment_forecast") {

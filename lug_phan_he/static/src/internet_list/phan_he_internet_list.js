@@ -828,15 +828,26 @@ export class PhanHeInternetListBoard extends Component {
 
     /** Cập nhật badge sidebar theo số HĐ tháng đang chọn. */
     emitPeriodCount() {
-        if (!this.isPeriodPaymentList || typeof this.props.onPeriodCountChange !== "function") {
+        if (!this.isPeriodPaymentList) {
             return;
         }
-        this.props.onPeriodCountChange({
+        const payload = {
             count: this.forecastRows.length,
             year: this.state.forecastYear,
             month: this.state.forecastMonth,
             filter: this.listFilter,
-        });
+        };
+        const notify = () => {
+            try {
+                if (typeof this.props.onPeriodCountChange === "function") {
+                    this.props.onPeriodCountChange(payload);
+                }
+            } catch (err) {
+                console.warn("emitPeriodCount", err);
+            }
+        };
+        // Tránh cập nhật parent giữa chu kỳ render OWL
+        Promise.resolve().then(notify);
     }
 
     onForecastMonthChange(ev) {

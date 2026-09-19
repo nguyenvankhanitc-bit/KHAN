@@ -1091,9 +1091,9 @@ export class PhanHeInternetListBoard extends Component {
                 this._providersLoaded = true;
             }
             const providers = this.state.providers || [];
-            this.state.totalCount = isForecast ? (records || []).length : totalCount;
+            this.state.totalCount = isPeriodPay ? (records || []).length : totalCount;
             const providerMap = Object.fromEntries((providers || []).map((p) => [String(p.id), p.name]));
-            const pageRows = isForecast ? (records || []) : (records || []).slice(0, pageSize);
+            const pageRows = isPeriodPay ? (records || []) : (records || []).slice(0, pageSize);
             this.state.records = pageRows.map((rec) => {
                 const p = rec.provider_id;
                 let pid = false;
@@ -1141,14 +1141,14 @@ export class PhanHeInternetListBoard extends Component {
             this.state.selected = {};
             this.state.openMenuId = null;
             const clientPageSize = this.state.pageSize || 10;
-            const maxPage = isForecast
+            const maxPage = isPeriodPay
                 ? Math.max(1, Math.ceil((this.state.records.length || 0) / clientPageSize))
                 : Math.max(1, Math.ceil((totalCount || 0) / (pageSize || 10)) || 1);
             if (this.state.page > maxPage) {
                 this.state.page = 1;
                 this.state.currentPage = 1;
                 this.state.loading = false;
-                if (!isForecast) {
+                if (!isPeriodPay) {
                     return this.load(listFilter);
                 }
             }

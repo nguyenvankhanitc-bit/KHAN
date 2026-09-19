@@ -338,12 +338,9 @@ class PhanHeDashboard(models.AbstractModel):
             ),
             "expire_soon": len(expire_soon_svcs),
             "overdue_contract": len(expired_svcs),
-            "payment_forecast": self.env["phan.he.service"].search_count([
-                ("active", "=", True),
-                ("service_type_id.code", "=", "internet"),
-                ("state", "=", "active"),
-                ("date_end", "!=", False),
-            ]),
+            "payment_forecast": self.env["phan.he.service"].get_internet_alert_counts().get(
+                "payment_forecast", 0
+            ),
             "trend_months": trend_months,
             "trend_series": trend_series,
             "max_trend": max_trend,

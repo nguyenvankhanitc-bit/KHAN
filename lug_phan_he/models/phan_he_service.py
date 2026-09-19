@@ -892,6 +892,15 @@ class PhanHeService(models.Model):
             ("active", "=", True),
             ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
         ])
+        # Badge dự kiến = số HĐ tháng kế tiếp (cùng logic bộ lọc Tháng/Năm trên UI)
+        next_start = (today.replace(day=1) + relativedelta(months=1))
+        next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
+        payment_forecast = self.search_count(inet_base + [
+            ("state", "=", "active"),
+            "|",
+            "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
+            "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
+        ])
         return {
             "list_active": list_active,
             "list_suspend": list_suspend,
@@ -900,11 +909,7 @@ class PhanHeService(models.Model):
             "overdue_contract": overdue,
             "payment_schedule": payment_schedule,
             "payment_confirm": payment_confirm,
-            # Badge dự kiến = HĐ đang dùng có ngày kết thúc (lọc tháng trên UI)
-            "payment_forecast": self.search_count(inet_base + [
-                ("state", "=", "active"),
-                ("date_end", "!=", False),
-            ]),
+            "payment_forecast": payment_forecast,
             "alert_count": expire_soon + overdue,
         }
 

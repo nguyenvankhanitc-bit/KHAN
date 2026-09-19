@@ -176,7 +176,7 @@ const FILTER_TITLES = {
     },
     payment_forecast: {
         title: "Dự kiến thanh toán",
-        subtitle: "Internet đang sử dụng — dự kiến theo tháng",
+        subtitle: "Thời gian còn lại ≤ 30 ngày hoặc đã quá hạn",
         activeNav: "payment_forecast",
     },
     expired: {
@@ -412,7 +412,7 @@ export class PhanHeInternetListBoard extends Component {
             liquidated: "Không có hợp đồng thanh lý",
             active: "Không có hợp đồng đang sử dụng",
             payment_due: "Không có lịch thanh toán trong kỳ",
-            payment_forecast: "Không có dự kiến thanh toán",
+            payment_forecast: "Không có HĐ còn ≤ 30 ngày hoặc quá hạn",
             expired: "Không có hợp đồng quá hạn",
         };
         return map[this.listFilter] || "Không có dữ liệu";
@@ -532,7 +532,7 @@ export class PhanHeInternetListBoard extends Component {
         soon.setDate(soon.getDate() + 30);
         const soon30 = ymd(soon);
         const f = listFilter || "active";
-        if (f === "active" || f === "payment_forecast") {
+        if (f === "active") {
             domain.push(["state", "=", "active"]);
         } else if (f === "suspend" || f === "paused") {
             // Đồng bộ state / ops_status (action cũ lọc ops_status)
@@ -548,8 +548,8 @@ export class PhanHeInternetListBoard extends Component {
         } else if (f === "expired") {
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "<", today]);
-        } else if (f === "payment_due") {
-            // Giống mẫu workspace: đang dùng, còn ≤30 ngày hoặc đã trễ hạn
+        } else if (f === "payment_due" || f === "payment_forecast") {
+            // Còn ≤30 ngày hoặc đã quá hạn (theo Ngày kết thúc / Thời gian còn lại)
             domain.push(["ops_status", "=", "active"]);
             domain.push(["state", "=", "active"]);
             domain.push(["date_end", "!=", false]);

@@ -900,7 +900,7 @@ class PhanHeService(models.Model):
             "overdue_contract": overdue,
             "payment_schedule": payment_schedule,
             "payment_confirm": payment_confirm,
-            "payment_forecast": list_active,
+            "payment_forecast": payment_schedule,
             "alert_count": expire_soon + overdue,
         }
 
@@ -1210,7 +1210,7 @@ class PhanHeService(models.Model):
             ("service_type_id.code", "=", "internet"),
         ]
         code = filter_code or "all"
-        if code == "active" or code == "payment_forecast":
+        if code == "active":
             domain.append(("state", "=", "active"))
         elif code in ("suspend", "paused"):
             domain.append(("state", "=", "suspend"))
@@ -1227,7 +1227,7 @@ class PhanHeService(models.Model):
                 ("state", "=", "active"),
                 ("date_end", "<", today),
             ]
-        elif code in ("payment_due", "payment_schedule"):
+        elif code in ("payment_due", "payment_schedule", "payment_forecast"):
             domain += [
                 ("ops_status", "=", "active"),
                 ("state", "=", "active"),

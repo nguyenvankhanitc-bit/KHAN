@@ -244,6 +244,7 @@ class DailyTaskTeamChecklist(models.Model):
                 "assignee_id": t.assignee_id.id,
                 "assignee_name": t.assignee_id.name or "",
                 "category": t.work_group_id.name or "Khác",
+                "work_group_id": t.work_group_id.id or 0,
                 "category_icon": _group_icon(t.work_group_id.name),
                 "store": t.department_id.name or "",
                 "deadline": t.deadline.strftime("%d/%m/%Y") if t.deadline else "",

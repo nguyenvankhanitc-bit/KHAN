@@ -196,10 +196,26 @@
 }
 
 .o_tcl_card_head {
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
     align-items: center;
+    gap: 8px;
     padding: 14px 14px 6px;
+}
+
+.o_tcl_btn_save {
+    background: transparent;
+    border: 0;
+    color: #ef4444;
+    font-weight: 800;
+    font-size: 16px;
+    padding: 0 8px;
+    cursor: pointer;
+    line-height: 1;
+    &:disabled {
+        opacity: 0.28;
+        cursor: default;
+    }
 }
 
 .o_tcl_who {
@@ -225,6 +241,49 @@
 }
 
 .o_tcl_pct { color: #16a34a; font-size: 18px; }
+
+.o_tcl_group td {
+    padding: 0 !important;
+    border-top: 1px solid #e5e7eb;
+    background: #ffffff;
+}
+
+.o_tcl_group_btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    border: 0;
+    background: transparent;
+    text-align: left;
+    padding: 10px 12px;
+    cursor: pointer;
+    color: #0f172a;
+    .fa-chevron-right, .fa-chevron-down { width: 14px; color: #64748b; }
+}
+
+.o_tcl_group_name {
+    font-weight: 800;
+    font-size: 13px;
+    text-transform: uppercase;
+}
+
+.o_tcl_group_meta {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475569;
+    strong { font-weight: 800; color: #0f172a; }
+}
+
+.o_tcl_mgroup {
+    .o_tcl_group_btn {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        margin-bottom: 8px;
+    }
+}
 
 .o_tcl_progress {
     height: 7px;

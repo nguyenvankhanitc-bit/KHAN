@@ -50,9 +50,12 @@ export class DailyWorkTeamChecklist extends Component {
             toggling: {},
             confirming: {},
             confirmingAll: false,
+            selectedConfirm: {},
+            saving: false,
             openVerified: {},
             openCats: {},
             catsOpen: false,
+            openEmpGroups: {},
         });
         onWillStart(() => this.load());
     }
@@ -81,6 +84,7 @@ export class DailyWorkTeamChecklist extends Component {
             if (data.date) {
                 this.state.date = data.date;
             }
+            this.state.selectedConfirm = {};
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không tải được checklist team."), {
                 type: "danger",
@@ -138,26 +142,55 @@ export class DailyWorkTeamChecklist extends Component {
         return (emp.tasks || []).some((t) => t.can_confirm && !t.manager_confirmed);
     }
 
-    async onConfirmAll(emp) {
-        const ids = (emp.tasks || [])
-            .filter((t) => t.can_confirm && !t.manager_confirmed)
-            .map((t) => t.id);
-        if (!ids.length || this.state.confirmingAll) {
+    isDraft(task) {
+        return Boolean(this.state.selectedConfirm[task.id]);
+    }
+
+    hasDraft(emp) {
+        return (emp.tasks || []).some((t) => this.state.selectedConfirm[t.id]);
+    }
+
+    isAllDraft(emp) {
+        const tasks = (emp.tasks || []).filter((t) => t.can_confirm && !t.manager_confirmed);
+        return tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
+    }
+
+    toggleDraft(task) {
+        if (!task.can_confirm) {
             return;
         }
-        this.state.confirmingAll = true;
+        this.state.selectedConfirm[task.id] = !this.state.selectedConfirm[task.id];
+    }
+
+    toggleDraftAll(emp) {
+        const tasks = (emp.tasks || []).filter((t) => t.can_confirm && !t.manager_confirmed);
+        const allOn = tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
+        for (const t of tasks) {
+            this.state.selectedConfirm[t.id] = !allOn;
+        }
+    }
+
+    async onSaveConfirm(emp) {
+        const ids = (emp.tasks || [])
+            .filter((t) => t.can_confirm && this.state.selectedConfirm[t.id])
+            .map((t) => t.id);
+        if (!ids.length || this.state.saving) {
+            return;
+        }
+        this.state.saving = true;
         try {
             await this.orm.call("daily.task", "toggle_manager_confirm", [ids, true]);
             await this.load();
             if (emp.assignee_id) {
                 this.state.openVerified[emp.assignee_id] = true;
             }
+            this.notification.add(_t("Đã lưu xác nhận QL."), { type: "success" });
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không xác nhận được việc."), {
                 type: "danger",
             });
         } finally {
-            this.state.confirmingAll = false;
+            this.state.saving = false;
         }
     }
 
@@ -231,6 +264,57 @@ export class DailyWorkTeamChecklist extends Component {
         }
         groups.sort((a, b) => a.name.localeCompare(b.name, "vi"));
         return groups;
+    }
+
+    empGroups(emp) {
+        const groups = [];
+        const index = {};
+        for (const task of emp.tasks || []) {
+            const key = task.work_group_id || task.category || 0;
+            if (!index[key]) {
+                index[key] = {
+                    key,
+                    name: task.category || "Khác",
+                    icon: task.category_icon || "fa-folder-open-o",
+                    tasks: [],
+                    minutes: 0,
+                    done: 0,
+                };
+                groups.push(index[key]);
+            }
+            const g = index[key];
+            g.tasks.push(task);
+            g.minutes += Number(task.duration_minutes) || 0;
+            if (task.is_done || task.state === "done") {
+                g.done += 1;
+            }
+        }
+        for (const g of groups) {
+            g.count = g.tasks.length;
+            const h = g.minutes / 60;
+            g.hours = Number.isInteger(h) ? String(h) : String(Math.round(h * 10) / 10);
+            g.percent = g.count ? Math.round((g.done / g.count) * 100) : 0;
+        }
+        groups.sort((a, b) => String(a.name).localeCompare(String(b.name), "vi"));
+        return groups;
+    }
+
+    groupKey(emp, group) {
+        return `${emp.assignee_id}:${group.key}`;
+    }
+
+    toggleEmpGroup(emp, group) {
+        const key = this.groupKey(emp, group);
+        this.state.openEmpGroups[key] = !this.state.openEmpGroups[key];
+    }
+
+    isEmpGroupOpen(emp, group) {
+        return Boolean(this.state.openEmpGroups[this.groupKey(emp, group)]);
+    }
+
+    romanIndex(i) {
+        const nums = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+        return nums[i] || String(i + 1);
     }
 
     toggleVerified(key) {

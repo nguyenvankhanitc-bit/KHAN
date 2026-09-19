@@ -219,6 +219,11 @@
                                         <small t-esc="emp.total + ' công việc'"/>
                                     </div>
                                 </div>
+                                <button type="button" class="o_tcl_btn_save"
+                                        t-att-disabled="!hasDraft(emp) || state.saving"
+                                        t-on-click="() => this.onSaveConfirm(emp)">
+                                    Lưu
+                                </button>
                                 <b class="o_tcl_pct" t-esc="emp.percent + '%'"/>
                             </div>
                             <div class="o_tcl_progress"><span t-att-style="'width:' + emp.percent + '%'"/></div>
@@ -240,37 +245,59 @@
                                             Xác nhận QL
                                             <label class="o_tcl_confirm_all" t-on-click.stop="">
                                                 <input type="checkbox" class="form-check-input o_tcl_confirm"
+                                                       t-att-checked="isAllDraft(emp)"
                                                        t-att-disabled="!canConfirmAll(emp)"
-                                                       t-on-click.stop.prevent="() => this.onConfirmAll(emp)"/>
-                                                All
+                                                       t-on-click.stop.prevent="() => this.toggleDraftAll(emp)"/>
+                                                Tất cả
                                             </label>
                                         </th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <t t-foreach="emp.tasks" t-as="task" t-key="task.id">
-                                        <tr t-att-class="task.is_overdue and !task.is_done ? 'is-late' : ''">
-                                            <td class="o_tcl_stt" t-esc="task_index + 1"/>
-                                            <td>
-                                                <div class="o_tcl_task_name">
-                                                    <i t-att-class="'fa o_tcl_task_ico ' + (task.category_icon or 'fa-circle-o')"/>
-                                                    <span t-esc="task.name"/>
-                                                    <em class="o_tcl_assigned" t-if="task.is_assigned"
-                                                        t-att-title="'Giao bởi ' + (task.assigned_by_name or '')">Đã giao</em>
-                                                </div>
-                                            </td>
-                                            <td t-att-class="task.is_overdue ? 'text-danger fw-bold' : ''" t-esc="task.deadline"/>
-                                            <td>
-                                                <span t-att-class="priorityClass(task.priority)" t-esc="task.priority_label"/>
-                                            </td>
-                                            <td><span t-att-class="stateClass(task)" t-esc="stateLabel(task)"/></td>
-                                            <td class="o_tcl_td_confirm">
-                                                <input type="checkbox" class="form-check-input o_tcl_confirm"
-                                                       t-att-checked="task.manager_confirmed"
-                                                       t-att-disabled="!task.can_confirm"
-                                                       t-on-click.stop.prevent="() => this.onConfirm(task)"/>
+                                    <t t-foreach="empGroups(emp)" t-as="group" t-key="group.key">
+                                        <tr class="o_tcl_group">
+                                            <td colspan="6">
+                                                <button type="button" class="o_tcl_group_btn"
+                                                        t-on-click="() => this.toggleEmpGroup(emp, group)">
+                                                    <i t-att-class="'fa ' + (isEmpGroupOpen(emp, group) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                    <span class="o_tcl_group_name">
+                                                        <t t-esc="romanIndex(group_index) + '. ' + group.name"/>
+                                                    </span>
+                                                    <span class="o_tcl_group_meta">
+                                                        <t t-esc="group.count"/> việc ·
+                                                        <t t-esc="group.hours"/> giờ ·
+                                                        % Hoàn thành CV TB hạng mục (AVERAGE):
+                                                        <strong t-esc="group.percent + '%'"/>
+                                                    </span>
+                                                </button>
                                             </td>
                                         </tr>
+                                        <t t-if="isEmpGroupOpen(emp, group)">
+                                            <t t-foreach="group.tasks" t-as="task" t-key="task.id">
+                                                <tr t-att-class="task.is_overdue and !task.is_done ? 'is-late' : ''">
+                                                    <td class="o_tcl_stt" t-esc="task_index + 1"/>
+                                                    <td>
+                                                        <div class="o_tcl_task_name">
+                                                            <i t-att-class="'fa o_tcl_task_ico ' + (task.category_icon or 'fa-circle-o')"/>
+                                                            <span t-esc="task.name"/>
+                                                            <em class="o_tcl_assigned" t-if="task.is_assigned"
+                                                                t-att-title="'Giao bởi ' + (task.assigned_by_name or '')">Đã giao</em>
+                                                        </div>
+                                                    </td>
+                                                    <td t-att-class="task.is_overdue ? 'text-danger fw-bold' : ''" t-esc="task.deadline"/>
+                                                    <td>
+                                                        <span t-att-class="priorityClass(task.priority)" t-esc="task.priority_label"/>
+                                                    </td>
+                                                    <td><span t-att-class="stateClass(task)" t-esc="stateLabel(task)"/></td>
+                                                    <td class="o_tcl_td_confirm">
+                                                        <input type="checkbox" class="form-check-input o_tcl_confirm"
+                                                               t-att-checked="isDraft(task)"
+                                                               t-att-disabled="!task.can_confirm"
+                                                               t-on-click.stop.prevent="() => this.toggleDraft(task)"/>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </t>
                                     </t>
                                 </tbody>
                             </table>
@@ -278,10 +305,22 @@
                             <div class="o_tcl_task_cards">
                                 <label class="o_tcl_confirm_all o_tcl_confirm_all_mobile" t-if="canConfirmAll(emp)">
                                     <input type="checkbox" class="form-check-input o_tcl_confirm"
-                                           t-on-click.stop.prevent="() => this.onConfirmAll(emp)"/>
-                                    Tick All — Xác nhận QL
+                                           t-att-checked="isAllDraft(emp)"
+                                           t-on-click.stop.prevent="() => this.toggleDraftAll(emp)"/>
+                                    Tick tất cả
                                 </label>
-                                <t t-foreach="emp.tasks" t-as="task" t-key="'m-' + task.id">
+                                <t t-foreach="empGroups(emp)" t-as="group" t-key="'mg-' + group.key">
+                                    <div class="o_tcl_mgroup">
+                                        <button type="button" class="o_tcl_group_btn"
+                                                t-on-click="() => this.toggleEmpGroup(emp, group)">
+                                            <i t-att-class="'fa ' + (isEmpGroupOpen(emp, group) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                            <span class="o_tcl_group_name">
+                                                <t t-esc="romanIndex(group_index) + '. ' + group.name"/>
+                                            </span>
+                                            <em t-esc="group.count + ' việc · ' + group.percent + '%'"/>
+                                        </button>
+                                        <t t-if="isEmpGroupOpen(emp, group)">
+                                <t t-foreach="group.tasks" t-as="task" t-key="'m-' + task.id">
                                     <article t-att-class="'o_tcl_tcard' + (task.state === 'done' ? ' is-done' : (task.state === 'in_progress' ? ' is-doing' : ' is-todo'))">
                                         <div class="o_tcl_tcard_accent"/>
                                         <div class="o_tcl_tcard_main">
@@ -300,13 +339,16 @@
                                             </div>
                                             <label class="o_tcl_tcard_confirm">
                                                 <input type="checkbox" class="form-check-input o_tcl_confirm"
-                                                       t-att-checked="task.manager_confirmed"
+                                                       t-att-checked="isDraft(task)"
                                                        t-att-disabled="!task.can_confirm"
-                                                       t-on-click.stop.prevent="() => this.onConfirm(task)"/>
+                                                       t-on-click.stop.prevent="() => this.toggleDraft(task)"/>
                                                 Xác nhận QL
                                             </label>
                                         </div>
                                     </article>
+                                </t>
+                                        </t>
+                                    </div>
                                 </t>
                             </div>
                             <t t-if="emp.todo_count or emp.overdue_count">

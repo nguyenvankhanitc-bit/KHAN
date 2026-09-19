@@ -347,10 +347,7 @@
                                         </td>
                                         <td class="col-bw" t-esc="rec.bandwidth || '—'"/>
                                         <td class="col-date-start" t-esc="formatDate(rec.date_start)"/>
-                                        <td class="col-date-end">
-                                            <t t-if="isForecastList" t-esc="formatDate(rec.forecast_due)"/>
-                                            <t t-else="" t-esc="formatDate(rec.date_end)"/>
-                                        </td>
+                                        <td class="col-date-end" t-esc="formatDate(rec.date_end)"/>
                                         <td class="col-fee" t-esc="formatMoney(rec.contract_amount)"/>
                                         <td class="col-pay lq-money">
                                             <t t-if="isForecastList" t-esc="formatMoney(rec.forecast_amount)"/>

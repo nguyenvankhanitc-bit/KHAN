@@ -309,9 +309,40 @@ class DailyTaskTeamChecklist(models.Model):
             )
         employees.sort(key=lambda e: e["name"])
 
+        cat_domain = [
+            "|",
+            "&",
+            "&",
+            ("deadline", "!=", False),
+            ("deadline", ">=", month_start),
+            ("deadline", "<=", target),
+            "&",
+            "&",
+            ("deadline", "=", False),
+            ("assign_date", ">=", month_start),
+            ("assign_date", "<=", target),
+        ]
+        cat_tasks = self.sudo().search(cat_domain)
+        if emp_id:
+            cat_tasks = cat_tasks.filtered(lambda t: t.assignee_id.employee_id.id == emp_id)
+        if wg_id:
+            cat_tasks = cat_tasks.filtered(lambda t: t.work_group_id.id == wg_id)
+        if search:
+            cat_tasks = cat_tasks.filtered(
+                lambda t: search
+                in " ".join(
+                    [
+                        t.name or "",
+                        t.work_group_id.name or "",
+                        t.department_id.name or "",
+                        t.assignee_id.name or "",
+                    ]
+                ).lower()
+            )
+
         categories = {}
-        for task in pending | verified:
-            wg = task.work_group_id
+        for task in cat_tasks:
+            wg = task.sudo().work_group_id.sudo()
             key = wg.id or 0
             name = wg.name or "Khác"
             row = categories.setdefault(

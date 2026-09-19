@@ -1347,6 +1347,24 @@ export class PhanHeDashboard extends Component {
         }
     }
 
+    /** Badge Lịch TT / Dự kiến theo đúng tháng đang chọn trên danh sách. */
+    onPeriodPaymentCountChange({ count, filter }) {
+        const n = Number(count) || 0;
+        const patch = {};
+        if (filter === "payment_due") {
+            patch.payment_schedule = n;
+        } else if (filter === "payment_forecast") {
+            patch.payment_forecast = n;
+        } else {
+            patch.payment_schedule = n;
+            patch.payment_forecast = n;
+        }
+        this.state.data = {
+            ...(this.state.data || {}),
+            ...patch,
+        };
+    }
+
     async load() {
         if (this.isLinkqErp) {
             this.state.loading = false;

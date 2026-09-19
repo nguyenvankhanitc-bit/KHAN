@@ -216,6 +216,7 @@ export class PhanHeInternetListBoard extends Component {
         listReloadToken: { type: Number, optional: true },
         internetMenus: { type: Object, optional: true },
         onOpenEntry: { type: Function, optional: true },
+        onPeriodCountChange: { type: Function, optional: true },
         "*": true,
     };
 
@@ -825,6 +826,19 @@ export class PhanHeInternetListBoard extends Component {
         this.load();
     }
 
+    /** Cập nhật badge sidebar theo số HĐ tháng đang chọn. */
+    emitPeriodCount() {
+        if (!this.isPeriodPaymentList || typeof this.props.onPeriodCountChange !== "function") {
+            return;
+        }
+        this.props.onPeriodCountChange({
+            count: this.forecastRows.length,
+            year: this.state.forecastYear,
+            month: this.state.forecastMonth,
+            filter: this.listFilter,
+        });
+    }
+
     onForecastMonthChange(ev) {
         this.setForecastMonth(this.state.forecastYear, Number(ev.target.value) || 1);
     }
@@ -1173,6 +1187,7 @@ export class PhanHeInternetListBoard extends Component {
         } finally {
             if (seq === this._loadSeq) {
                 this.state.loading = false;
+                this.emitPeriodCount();
             }
         }
     }

@@ -32,7 +32,8 @@
                             listFilter="state.listFilter"
                             listReloadToken="state.listReloadToken"
                             internetMenus="state.internetMenus"
-                            onOpenEntry.bind="openEntryForm"/>
+                            onOpenEntry.bind="openEntryForm"
+                            onPeriodCountChange.bind="onPeriodPaymentCountChange"/>
                 </t>
                 <t t-if="state.contentMode === 'payment_board'">
                     <PhanHePaymentBoard mode="state.paymentBoardMode"/>

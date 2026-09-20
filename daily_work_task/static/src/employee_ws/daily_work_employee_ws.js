@@ -143,6 +143,7 @@ export class DailyWorkEmployeeWs extends Component {
             completionPercentAvg: 0,
             showMyList: true,
             showTaskForm: false,
+            isPhone: false,
             detailTask: false,
             listChip: "all",
             boardChip: "all",
@@ -229,11 +230,13 @@ export class DailyWorkEmployeeWs extends Component {
             await this.loadRecurring();
             await this.loadMonthlySummary();
         });
+        this._syncPhoneMode = this._syncPhoneMode.bind(this);
         onMounted(() => {
             window.addEventListener("pointermove", this._onPointerMove);
             window.addEventListener("pointerup", this._onPointerUp);
-            window.addEventListener("resize", this._syncPinHeight);
-            this._syncPinHeight();
+            window.addEventListener("resize", this._syncPhoneMode);
+            window.visualViewport?.addEventListener("resize", this._syncPhoneMode);
+            this._syncPhoneMode();
             if (this.pinRef.el && typeof ResizeObserver !== "undefined") {
                 this._pinRo = new ResizeObserver(this._syncPinHeight);
                 this._pinRo.observe(this.pinRef.el);
@@ -254,10 +257,25 @@ export class DailyWorkEmployeeWs extends Component {
         onWillUnmount(() => {
             window.removeEventListener("pointermove", this._onPointerMove);
             window.removeEventListener("pointerup", this._onPointerUp);
-            window.removeEventListener("resize", this._syncPinHeight);
+            window.removeEventListener("resize", this._syncPhoneMode);
+            window.visualViewport?.removeEventListener("resize", this._syncPhoneMode);
             this._pinRo?.disconnect();
             document.body.classList.remove("o_ews_resizing");
         });
+    }
+
+    _syncPhoneMode() {
+        const w = typeof window === "undefined"
+            ? 1200
+            : (window.visualViewport?.width || window.innerWidth || 1200);
+        this.state.isPhone = w <= 768;
+        this._syncPinHeight();
+    }
+
+    onFormPanelClick(ev) {
+        if (this.state.isPhone && this.state.showTaskForm && ev.target === ev.currentTarget) {
+            this.closeMobileForm();
+        }
     }
 
     _syncPinHeight() {
@@ -288,9 +306,6 @@ export class DailyWorkEmployeeWs extends Component {
 
     openMyTasksTab() {
         this.state.activeTab = "tasks";
-        if (typeof window !== "undefined" && window.matchMedia("(max-width: 768px)").matches) {
-            this.openMobileForm();
-        }
     }
 
     closeMobileForm() {

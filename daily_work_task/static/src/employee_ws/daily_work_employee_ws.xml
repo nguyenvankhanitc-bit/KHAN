@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkEmployeeWs">
-        <div class="o_daily_work_employee_ws o_action" t-ref="root">
+        <div t-att-class="'o_daily_work_employee_ws o_action' + (state.isPhone ? ' o_ews_phone' : '')" t-ref="root">
             <div class="o_ews_pin" t-ref="pin">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
@@ -153,15 +153,16 @@
 
                         <div class="o_ews_layout" t-ref="layout">
                             <aside class="o_ews_form_panel"
-                                   t-att-class="(state.editingTaskId ? 'o_ews_form_editing' : '') + (state.showTaskForm ? ' o_ews_form_open' : '')">
-                                <h3 class="o_ews_form_title">
+                                   t-att-class="(state.editingTaskId ? 'o_ews_form_editing' : '') + (state.showTaskForm ? ' o_ews_form_open' : '')"
+                                   t-on-click="onFormPanelClick">
+                                <h3 class="o_ews_form_title" t-on-click.stop="">
                                     <t t-if="state.editingTaskId">CHỈNH SỬA CÔNG VIỆC</t>
                                     <t t-else="">THÊM CÔNG VIỆC MỚI</t>
-                                    <button type="button" class="o_ews_form_close" t-on-click="closeMobileForm">
+                                    <button type="button" class="o_ews_form_close" t-on-click.stop="closeMobileForm">
                                         <i class="fa fa-times"/>
                                     </button>
                                 </h3>
-                                <form class="o_ews_task_form" t-on-submit="onSubmit">
+                                <form class="o_ews_task_form" t-on-submit="onSubmit" t-on-click.stop="">
                                     <div class="o_ews_form_grid">
                                         <div class="o_ews_field">
                                             <label>Tên công việc <span class="text-danger">*</span></label>

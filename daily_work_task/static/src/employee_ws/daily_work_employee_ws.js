@@ -268,7 +268,7 @@ export class DailyWorkEmployeeWs extends Component {
         const w = typeof window === "undefined"
             ? 1200
             : (window.visualViewport?.width || window.innerWidth || 1200);
-        this.state.isPhone = w <= 768;
+        this.state.isPhone = w <= 1024;
         this._syncPinHeight();
     }
 

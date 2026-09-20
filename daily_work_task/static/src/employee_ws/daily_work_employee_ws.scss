@@ -2784,7 +2784,7 @@
     display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
     .o_daily_work_employee_ws.o_action {
         min-height: 0;
         max-height: 100%;
@@ -3215,7 +3215,7 @@
     }
 }
 
-.o_daily_work_employee_ws.o_ews_phone {
+@mixin ews-phone-overlay {
     .o_ews_form_close {
         display: inline-flex !important;
         margin-left: auto;
@@ -3295,6 +3295,16 @@
     }
     .o_ews_fab {
         z-index: 3500;
+    }
+}
+
+.o_daily_work_employee_ws.o_ews_phone {
+    @include ews-phone-overlay;
+}
+
+@media (max-width: 1024px) {
+    .o_daily_work_employee_ws {
+        @include ews-phone-overlay;
     }
 }
 

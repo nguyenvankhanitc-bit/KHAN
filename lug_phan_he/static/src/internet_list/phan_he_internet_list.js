@@ -783,6 +783,10 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     remainTone(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "ok";
+        }
         const days = Number(rec.remaining_days);
         if (!Number.isFinite(days) && !rec.date_end) {
             return "ok";
@@ -977,6 +981,11 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     remainLabel(rec) {
+        // Đã thanh lý / hủy — không tính thời gian còn lại
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "—";
+        }
         if (rec.remaining_time) {
             return rec.remaining_time;
         }
@@ -991,6 +1000,10 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     remainIcon(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "fa fa-minus";
+        }
         const code = this.statusCode(rec);
         if (code === "danger") {
             return "fa fa-exclamation-circle";
@@ -1027,6 +1040,10 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     remainingClass(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "is-muted";
+        }
         const days = Number(rec.remaining_days || 0);
         if (days < 0 || rec.alert_level === "danger" || rec.alert_level === "expired") {
             return "is-danger";
@@ -1039,6 +1056,15 @@ export class PhanHeInternetListBoard extends Component {
 
     /** Tính remaining_* trên client — tránh RPC compute chậm. */
     _enrichRemaining(rec) {
+        const ops = rec.ops_status || rec.state || "active";
+        if (ops === "liquidated" || ops === "cancel") {
+            return {
+                ...rec,
+                remaining_days: false,
+                remaining_time: false,
+                alert_level: "ok",
+            };
+        }
         const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
         if (!end) {
             return {

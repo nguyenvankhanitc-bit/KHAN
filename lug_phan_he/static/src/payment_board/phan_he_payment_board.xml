@@ -170,7 +170,6 @@
                                     t-on-change="onMonthChange">
                                 <t t-foreach="monthOptions" t-as="m" t-key="m.value">
                                     <option t-att-value="m.value"
-                                            t-att-selected="state.month === m.value"
                                             t-esc="m.label"/>
                                 </t>
                             </select>
@@ -179,7 +178,6 @@
                                     t-on-change="onYearChange">
                                 <t t-foreach="yearOptions" t-as="y" t-key="y">
                                     <option t-att-value="y"
-                                            t-att-selected="state.year === y"
                                             t-esc="y"/>
                                 </t>
                             </select>

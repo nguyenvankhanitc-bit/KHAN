@@ -199,7 +199,6 @@
                                     t-on-change="onForecastMonthChange">
                                 <t t-foreach="monthOptions" t-as="m" t-key="m.value">
                                     <option t-att-value="m.value"
-                                            t-att-selected="state.forecastMonth === m.value"
                                             t-esc="m.label"/>
                                 </t>
                             </select>
@@ -208,7 +207,6 @@
                                     t-on-change="onForecastYearChange">
                                 <t t-foreach="yearOptions" t-as="y" t-key="y.value">
                                     <option t-att-value="y.value"
-                                            t-att-selected="state.forecastYear === y.value"
                                             t-esc="y.label"/>
                                 </t>
                             </select>
@@ -310,15 +308,16 @@
                                     </th>
                                     <th class="col-fee">Cước tháng</th>
                                     <th class="col-pay">Số tiền thanh toán</th>
-                                    <th class="col-ops">Trạng thái</th>
-                                    <th class="col-status">Thời gian còn lại</th>
+                                    <th class="col-note">Ghi chú</th>
                                     <th class="col-invoice">Hóa đơn</th>
+                                    <th class="col-status">Thời gian còn lại</th>
+                                    <th class="col-ops">Trạng thái</th>
                                     <th class="col-act">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <t t-if="!pageRecords.length">
-                                    <tr><td colspan="13" class="lq-empty" t-esc="emptyMessage"/></tr>
+                                    <tr><td colspan="14" class="lq-empty" t-esc="emptyMessage"/></tr>
                                 </t>
                                 <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
                                     <tr>
@@ -353,16 +352,10 @@
                                             <t t-if="isPeriodPaymentList" t-esc="formatMoney(rec.forecast_amount)"/>
                                             <t t-else="" t-esc="formatMoney(rec.next_payment_amount)"/>
                                         </td>
-                                        <td class="col-ops">
-                                            <span t-attf-class="lq-ops-pill is-{{opsStatusCode(rec)}}">
-                                                <t t-esc="opsStatusLabel(rec)"/>
-                                            </span>
-                                        </td>
-                                        <td class="col-status">
-                                            <span t-attf-class="lq-remain-pill is-{{statusCode(rec)}}">
-                                                <i t-att-class="remainIcon(rec)"/>
-                                                <t t-esc="remainLabel(rec)"/>
-                                            </span>
+                                        <td class="col-note">
+                                            <span class="lq-note-cell"
+                                                  t-att-title="rec.note || ''"
+                                                  t-esc="noteLabel(rec)"/>
                                         </td>
                                         <td class="col-invoice">
                                             <button t-if="hasInvoice(rec)"
@@ -373,6 +366,17 @@
                                                 <i class="fa fa-eye"/>
                                             </button>
                                             <span t-else="" class="lq-invoice-empty">—</span>
+                                        </td>
+                                        <td class="col-status">
+                                            <span t-attf-class="lq-remain-pill is-{{statusCode(rec)}}">
+                                                <i t-att-class="remainIcon(rec)"/>
+                                                <t t-esc="remainLabel(rec)"/>
+                                            </span>
+                                        </td>
+                                        <td class="col-ops">
+                                            <span t-attf-class="lq-ops-pill is-{{opsStatusCode(rec)}}">
+                                                <t t-esc="opsStatusLabel(rec)"/>
+                                            </span>
                                         </td>
                                         <td class="col-act">
                                             <div class="lq-row-acts">

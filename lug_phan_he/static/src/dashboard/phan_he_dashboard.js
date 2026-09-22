@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState, useSubEnv } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, onWillUpdateProps, useEffect, useRef, useState, useSubEnv } from "@odoo/owl";
 import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
@@ -336,6 +336,19 @@ export class PhanHeDashboard extends Component {
             () => [this.state.inet, this.state.loading, this.state.activeNav]
         );
         onWillUnmount(() => this.destroyInetCharts());
+        onWillUpdateProps((next) => {
+            // Đổi action client (menu Odoo xếp chồng) → mở đúng nav + load API mới.
+            const prevCtx = this.props.action?.context || {};
+            const nextCtx = next.action?.context || {};
+            const prevNav = prevCtx.phan_he_open_nav || "";
+            const nextNav = nextCtx.phan_he_open_nav || "";
+            if (nextNav && nextNav !== prevNav && nextNav !== this.state.activeNav) {
+                const child = this.findNavChild(nextNav);
+                if (child) {
+                    this.onNavChild(child);
+                }
+            }
+        });
     }
 
     get yearOptions() {
@@ -716,11 +729,11 @@ export class PhanHeDashboard extends Component {
             this.state.embeddedViewProps = null;
             this.state.listActionXml = null;
             this.state.entryPopupOpen = false;
-            // Luôn tăng token → ép load lại (tránh treo/trống khi bấm nhanh).
+            // Luôn tăng token → ép ListBoard load lại qua onWillUpdateProps.
             this.state.listReloadToken = (this.state.listReloadToken || 0) + 1;
             return;
         }
-        // Xác nhận TT → board OWL phiếu thanh toán.
+        // Xác nhận TT → board OWL phiếu thanh toán (get_payment_confirm_board).
         if (PAYMENT_BOARD_NAV[child.id]) {
             this.state.activeNav = child.id;
             this._openGroupForNav(child.id);
@@ -1350,12 +1363,26 @@ export class PhanHeDashboard extends Component {
     /** Badge Lịch TT / Dự kiến theo đúng tháng đang chọn trên danh sách. */
     onPeriodPaymentCountChange({ count, filter, year, month }) {
         const n = Number(count) || 0;
-        const patch = {};
-        if (year) {
-            patch.payment_period_year = Number(year);
+        const y = year ? Number(year) : 0;
+        const m = month ? Number(month) : 0;
+        const data = this.state.data || {};
+        const same =
+            Number(data.payment_period_year || 0) === y
+            && Number(data.payment_period_month || 0) === m
+            && (
+                (filter === "payment_due" && Number(data.payment_schedule) === n && Number(data.payment_confirm) === n)
+                || (filter === "payment_forecast" && Number(data.payment_forecast) === n && Number(data.payment_confirm) === n)
+                || (!filter && Number(data.payment_schedule) === n)
+            );
+        if (same) {
+            return;
         }
-        if (month) {
-            patch.payment_period_month = Number(month);
+        const patch = {};
+        if (y) {
+            patch.payment_period_year = y;
+        }
+        if (m) {
+            patch.payment_period_month = m;
         }
         if (filter === "payment_due") {
             patch.payment_schedule = n;

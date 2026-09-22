@@ -490,13 +490,21 @@ export class PhanHePaymentBoard extends Component {
     }
 
     onMonthChange(ev) {
-        this.state.month = Number(ev.target.value) || 1;
+        const month = Number(ev.target.value) || 1;
+        if (month === Number(this.state.month)) {
+            return;
+        }
+        this.state.month = month;
         this.state.page = 1;
         this.load();
     }
 
     onYearChange(ev) {
-        this.state.year = Number(ev.target.value) || new Date().getFullYear();
+        const year = Number(ev.target.value) || new Date().getFullYear();
+        if (year === Number(this.state.year)) {
+            return;
+        }
+        this.state.year = year;
         this.state.page = 1;
         this.load();
     }

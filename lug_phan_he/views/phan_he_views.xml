@@ -636,7 +636,7 @@
                                 <label for="code">
                                     <i class="fa fa-barcode"/> Mã hợp đồng
                                 </label>
-                                <field name="code" nolabel="1" readonly="1"/>
+                                <field name="code" nolabel="1" placeholder="VD: HD-VCPNT-001"/>
                             </div>
 
                             <div class="ph-inet-field">
@@ -822,7 +822,7 @@
                                        decoration-success="alert_level == 'ok'"
                                        decoration-warning="alert_level == 'warn'"
                                        decoration-danger="alert_level in ('danger', 'expired')"/>
-                                <field name="code" readonly="1"/>
+                                <field name="code" placeholder="VD: HD-VCPNT-001"/>
                             </group>
                         </group>
                     </div>

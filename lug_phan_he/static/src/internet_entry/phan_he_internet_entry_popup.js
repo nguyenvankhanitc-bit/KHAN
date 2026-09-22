@@ -24,6 +24,7 @@ function emptyForm() {
     return {
         store_id: "",
         provider_id: "",
+        code: "",
         customer_code: "",
         bandwidth: "",
         contract_amount: "",
@@ -72,7 +73,6 @@ export class PhanHeInternetEntryPopup extends Component {
             stores: [],
             providers: [],
             serviceTypeId: false,
-            nextCode: "",
             form: emptyForm(),
             mienLabel: "",
         });
@@ -117,7 +117,6 @@ export class PhanHeInternetEntryPopup extends Component {
         this.state.stores = stores || [];
         this.state.providers = providers || [];
         this.state.serviceTypeId = types?.[0]?.id || false;
-        this.state.nextCode = this.isEdit ? "" : "Tự sinh khi lưu";
     }
 
     async loadRecord(resId) {
@@ -148,10 +147,10 @@ export class PhanHeInternetEntryPopup extends Component {
         if (!rec) {
             return;
         }
-        this.state.nextCode = rec.code || "";
         this.state.form = {
             store_id: rec.store_id?.[0] ? String(rec.store_id[0]) : "",
             provider_id: rec.provider_id?.[0] ? String(rec.provider_id[0]) : "",
+            code: rec.code || "",
             customer_code: rec.customer_code || "",
             bandwidth: rec.bandwidth || "",
             contract_amount: rec.contract_amount != null ? String(rec.contract_amount) : "",
@@ -239,23 +238,46 @@ export class PhanHeInternetEntryPopup extends Component {
 
     buildVals() {
         const f = this.state.form;
+        const ops = f.ops_status || "active";
+        const closing = ops === "liquidated" || ops === "cancel";
         const vals = {
             store_id: Number(f.store_id),
             provider_id: Number(f.provider_id),
+            code: (f.code || "").trim() || false,
             customer_code: f.customer_code || false,
             bandwidth: f.bandwidth || false,
             contract_amount: Number(f.contract_amount || 0),
             payment_type: f.payment_type || "prepaid_12",
             date_start: f.date_start || false,
             date_end: f.date_end || false,
-            ops_status: f.ops_status || "active",
-            state: f.ops_status || "active",
+            ops_status: ops,
+            state: ops,
             usage_address: f.usage_address || false,
             bank_account_holder: f.bank_account_holder || false,
             bank_account_number: f.bank_account_number || false,
             bank_display: f.bank_display || false,
             note: f.note || false,
         };
+        // Sửa → Thanh lý: bỏ field trống khỏi vals để không xóa NCC / ngày bắt đầu / kết thúc.
+        if (closing && this.isEdit) {
+            for (const key of [
+                "provider_id",
+                "date_start",
+                "date_end",
+                "bandwidth",
+                "customer_code",
+                "usage_address",
+                "package_name",
+                "code",
+            ]) {
+                if (!vals[key]) {
+                    delete vals[key];
+                }
+            }
+            if (!Number(f.contract_amount || 0)) {
+                delete vals.contract_amount;
+            }
+        }
         if (!this.isEdit && this.state.serviceTypeId) {
             vals.service_type_id = this.state.serviceTypeId;
         }

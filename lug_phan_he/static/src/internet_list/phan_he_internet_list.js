@@ -258,6 +258,7 @@ export class PhanHeInternetListBoard extends Component {
             forecastGroupOpen: {},
         });
         this._loadSeq = 0;
+        this._lastPeriodEmitSig = "";
         this._searchTimer = null;
         this._providersLoaded = false;
         this._internetTypeId = null;
@@ -294,8 +295,12 @@ export class PhanHeInternetListBoard extends Component {
             if (next.internetMenus && next.internetMenus !== this.props.internetMenus) {
                 this.state.internetMenus = next.internetMenus;
             }
-            const nextFilter = next.listFilter || "active";
-            const curFilter = this.props.listFilter || "active";
+            // Bỏ qua khi prop listFilter chưa có (tránh flicker active ↔ payment_* gây loop API).
+            if (next.listFilter == null || next.listFilter === undefined) {
+                return;
+            }
+            const nextFilter = next.listFilter;
+            const curFilter = this.props.listFilter;
             const tokenChanged = (next.listReloadToken || 0) !== (this.props.listReloadToken || 0);
             if (nextFilter !== curFilter || tokenChanged) {
                 // Reset ngay — không await load (tránh race / treo khi bấm nhanh).
@@ -306,16 +311,21 @@ export class PhanHeInternetListBoard extends Component {
                     this.state.regionFilter = "";
                     this.state.search = "";
                     this.state.providerFilter = "";
+                    this._lastPeriodEmitSig = "";
                 }
                 this.state.records = [];
                 this.state.totalCount = 0;
                 this.state.selected = {};
                 this.state.loading = true;
                 this.state.sectionOpen = true;
-                if ((nextFilter === "payment_forecast" || nextFilter === "payment_due") && nextFilter !== curFilter) {
+                // Chỉ set tháng mặc định khi vào kỳ TT từ mục khác — giữ tháng khi Lịch ↔ Dự kiến.
+                const wasPeriod = curFilter === "payment_forecast" || curFilter === "payment_due";
+                const nextPeriod = nextFilter === "payment_forecast" || nextFilter === "payment_due";
+                if (nextPeriod && !wasPeriod) {
                     const n = nextMonthParts(1);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
+                    this._lastPeriodEmitSig = "";
                 }
                 this.load(nextFilter);
             }
@@ -841,6 +851,11 @@ export class PhanHeInternetListBoard extends Component {
             month: this.state.forecastMonth,
             filter: this.listFilter,
         };
+        const sig = `${payload.filter}|${payload.year}|${payload.month}|${payload.count}`;
+        if (sig === this._lastPeriodEmitSig) {
+            return;
+        }
+        this._lastPeriodEmitSig = sig;
         const notify = () => {
             try {
                 if (typeof this.props.onPeriodCountChange === "function") {
@@ -855,11 +870,19 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     onForecastMonthChange(ev) {
-        this.setForecastMonth(this.state.forecastYear, Number(ev.target.value) || 1);
+        const month = Number(ev.target.value) || 1;
+        if (month === Number(this.state.forecastMonth)) {
+            return;
+        }
+        this.setForecastMonth(this.state.forecastYear, month);
     }
 
     onForecastYearChange(ev) {
-        this.setForecastMonth(Number(ev.target.value) || new Date().getFullYear(), this.state.forecastMonth);
+        const year = Number(ev.target.value) || new Date().getFullYear();
+        if (year === Number(this.state.forecastYear)) {
+            return;
+        }
+        this.setForecastMonth(year, this.state.forecastMonth);
     }
 
     setRegionFilter(value) {
@@ -950,6 +973,11 @@ export class PhanHeInternetListBoard extends Component {
 
     providerName(rec) {
         return this.providerRecord(rec).name || "—";
+    }
+
+    noteLabel(rec) {
+        const text = (rec?.note || "").toString().trim();
+        return text || "—";
     }
 
     providerMark(rec) {
@@ -1099,6 +1127,22 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     async load(filterOverride) {
+        const listFilter = filterOverride || this.listFilter;
+        const loadKey = [
+            listFilter,
+            this.state.forecastYear,
+            this.state.forecastMonth,
+            this.state.search || "",
+            this.state.regionFilter || "",
+            this.state.page || 1,
+        ].join("|");
+        const now = Date.now();
+        // Chặn storm/loop: cùng key trong <800ms → bỏ qua.
+        if (this._lastLoadKey === loadKey && now - (this._lastLoadAt || 0) < 800) {
+            return;
+        }
+        this._lastLoadKey = loadKey;
+        this._lastLoadAt = now;
         const seq = ++this._loadSeq;
         this.state.loading = true;
         try {
@@ -1106,14 +1150,13 @@ export class PhanHeInternetListBoard extends Component {
             if (seq !== this._loadSeq) {
                 return;
             }
-            const listFilter = filterOverride || this.listFilter;
-            const domain = this.buildQueryDomain(listFilter);
             const isPeriodPay = listFilter === "payment_forecast" || listFilter === "payment_due";
             const isLightList = listFilter === "suspend" || listFilter === "liquidated" || listFilter === "paused";
             const pageSize = isPeriodPay ? 500 : (this.state.pageSize || 10);
             const page = this.state.page || 1;
             const offset = isPeriodPay ? 0 : (page - 1) * pageSize;
-            const needProviders = !isLightList && (!this._providersLoaded || !(this.state.providers || []).length);
+            // Chỉ load NCC 1 lần / instance — tránh loop khi providers rỗng tạm thời.
+            const needProviders = !this._providersLoaded;
             const orderBy = (
                 listFilter === "payment_due" || listFilter === "expired" || listFilter === "payment_forecast"
             )
@@ -1136,48 +1179,82 @@ export class PhanHeInternetListBoard extends Component {
                 "state",
                 "store_mien",
                 "next_payment_amount",
+                "note",
+                "invoice_filename",
             ];
             if (isPeriodPay) {
                 listFields.push("next_payment_date");
             }
-            const tasks = [
-                this.orm.searchRead(
-                    "phan.he.service",
-                    domain,
-                    listFields,
-                    {
-                        order: orderBy,
-                        limit: pageSize,
-                        offset,
-                    }
-                ),
-            ];
-            // searchCount chỉ khi phân trang (không cần cho Lịch/Dự kiến).
-            if (!isPeriodPay) {
-                tasks.unshift(this.orm.searchCount("phan.he.service", domain));
-            }
-            if (needProviders) {
-                tasks.push(
-                    this.orm.searchRead(
-                        "phan.he.provider",
-                        [["active", "=", true]],
-                        ["name"],
-                        { order: "name asc", limit: 300 }
-                    )
-                );
-            }
-            const results = await Promise.all(tasks);
-            if (seq !== this._loadSeq) {
-                return;
-            }
+
             let totalCount;
             let records;
             let providerRows;
+
             if (isPeriodPay) {
-                records = results[0];
-                totalCount = (records || []).length;
-                providerRows = needProviders ? results[1] : null;
+                // API server — cùng domain badge Lịch TT / Dự kiến / Xác nhận.
+                const periodTasks = [
+                    this.orm.call("phan.he.service", "search_internet_payment_period", [
+                        Number(this.state.forecastYear) || false,
+                        Number(this.state.forecastMonth) || false,
+                        this.state.search || "",
+                        this.state.regionFilter || false,
+                    ]),
+                ];
+                if (needProviders) {
+                    periodTasks.push(
+                        this.orm.searchRead(
+                            "phan.he.provider",
+                            [["active", "=", true]],
+                            ["name"],
+                            { order: "name asc", limit: 300 }
+                        )
+                    );
+                }
+                const periodResults = await Promise.all(periodTasks);
+                if (seq !== this._loadSeq) {
+                    return;
+                }
+                const payload = periodResults[0] || {};
+                records = payload.records || [];
+                totalCount = payload.total ?? records.length;
+                const py = Number(payload.year);
+                const pm = Number(payload.month);
+                if (py && py !== Number(this.state.forecastYear)) {
+                    this.state.forecastYear = py;
+                }
+                if (pm && pm !== Number(this.state.forecastMonth)) {
+                    this.state.forecastMonth = pm;
+                }
+                providerRows = needProviders ? periodResults[1] : null;
             } else {
+                const domain = this.buildQueryDomain(listFilter);
+                const tasks = [
+                    this.orm.searchCount("phan.he.service", domain),
+                    this.orm.searchRead(
+                        "phan.he.service",
+                        domain,
+                        listFields,
+                        {
+                            order: orderBy,
+                            limit: pageSize,
+                            offset,
+                        }
+                    ),
+                ];
+                if (needProviders) {
+                    tasks.push(
+                        this.orm.searchRead(
+                            "phan.he.provider",
+                            [["active", "=", true]],
+                            ["name"],
+                            { order: "name asc", limit: 300 }
+                        )
+                    );
+                }
+                const results = await Promise.all(tasks);
+                if (seq !== this._loadSeq) {
+                    return;
+                }
                 totalCount = results[0];
                 records = results[1];
                 providerRows = needProviders ? results[2] : null;
@@ -1499,18 +1576,32 @@ export class PhanHeInternetListBoard extends Component {
             return;
         }
         const form = this.state.detailForm;
+        const ops = form.ops_status || "active";
         const vals = {
-            customer_code: form.customer_code || false,
-            bandwidth: form.bandwidth || false,
-            date_start: form.date_start || false,
-            date_end: form.date_end || false,
-            contract_amount: Number(form.contract_amount || 0),
-            ops_status: form.ops_status || "active",
-            provider_id: form.provider_id ? Number(form.provider_id) : false,
-            usage_address: form.usage_address || false,
+            ops_status: ops,
             note: form.note || false,
-            package_name: form.package_name || false,
         };
+        // Thanh lý / hủy: chỉ gửi field còn giá trị — không ghi false làm mất NCC / ngày HĐ.
+        const closing = ops === "liquidated" || ops === "cancel";
+        const put = (key, value) => {
+            if (closing) {
+                if (value) {
+                    vals[key] = value;
+                }
+            } else {
+                vals[key] = value;
+            }
+        };
+        put("customer_code", form.customer_code || false);
+        put("bandwidth", form.bandwidth || false);
+        put("date_start", form.date_start || false);
+        put("date_end", form.date_end || false);
+        put("package_name", form.package_name || false);
+        put("usage_address", form.usage_address || false);
+        put("provider_id", form.provider_id ? Number(form.provider_id) : false);
+        if (!closing || Number(form.contract_amount || 0)) {
+            vals.contract_amount = Number(form.contract_amount || 0);
+        }
         if (this.state.detailInvoicePending?.data) {
             vals.invoice_file = this.state.detailInvoicePending.data;
             vals.invoice_filename = this.state.detailInvoicePending.filename || "hoa_don";

@@ -17,7 +17,6 @@ class PhanHeService(models.Model):
         required=True,
         copy=False,
         tracking=True,
-        default=lambda self: self.env["ir.sequence"].next_by_code("phan.he.service") or "New",
     )
     name = fields.Char(string="Tiêu đề", compute="_compute_name", store=True)
     store_id = fields.Many2one(
@@ -527,10 +526,16 @@ class PhanHeService(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         next_stt = self._next_stt()
+        Seq = self.env["ir.sequence"]
         for vals in vals_list:
             if not vals.get("stt"):
                 vals["stt"] = next_stt
                 next_stt += 1
+            code = (vals.get("code") or "").strip() if vals.get("code") else ""
+            if code:
+                vals["code"] = code
+            else:
+                vals["code"] = Seq.next_by_code("phan.he.service") or "New"
             if "bandwidth" in vals:
                 vals["bandwidth"] = self._normalize_bandwidth(vals.get("bandwidth"))
             if vals.get("ops_status") and not vals.get("state"):
@@ -552,6 +557,27 @@ class PhanHeService(models.Model):
             vals["state"] = vals["ops_status"]
         elif "state" in vals and "ops_status" not in vals:
             vals["ops_status"] = self._map_state_to_ops(vals["state"])
+        # Thanh lý / hủy (hoặc HĐ đã đóng): không cho ghi đè trống NCC / ngày / băng thông.
+        _keep = (
+            "provider_id",
+            "date_start",
+            "date_end",
+            "bandwidth",
+            "contract_amount",
+            "package_name",
+            "customer_code",
+            "usage_address",
+        )
+        new_ops = vals.get("ops_status") or vals.get("state")
+        closing = new_ops in ("liquidated", "cancel", "expired")
+        already_closed = any(
+            (r.ops_status in ("liquidated", "cancel") or r.state in ("liquidated", "cancel", "expired"))
+            for r in self
+        )
+        if closing or (already_closed and new_ops not in ("active", "suspend", "waiting", "draft")):
+            for fname in _keep:
+                if fname in vals and not vals.get(fname):
+                    vals.pop(fname)
         res = super().write(vals)
         if "invoice_attachment_ids" in vals:
             self._bind_invoice_attachments()
@@ -685,10 +711,11 @@ class PhanHeService(models.Model):
         self.write({"state": "active"})
 
     def action_expire(self):
-        """Giữ tương thích: đánh dấu Thanh lý."""
+        """Giữ tương thích: đánh dấu Thanh lý (không xóa nội dung HĐ)."""
         self.write({"state": "liquidated"})
 
     def action_liquidate(self):
+        """Chỉ đánh dấu thanh lý — giữ NCC / ngày bắt đầu / ngày kết thúc."""
         self.write({"state": "liquidated"})
 
     def action_cancel(self):
@@ -1309,11 +1336,6 @@ class PhanHeService(models.Model):
         code = filter_code or "all"
         if code == "active":
             domain.append(("state", "=", "active"))
-        elif code == "payment_forecast":
-            domain += [
-                ("state", "=", "active"),
-                ("date_end", "!=", False),
-            ]
         elif code in ("suspend", "paused"):
             domain.append(("state", "=", "suspend"))
         elif code == "liquidated":
@@ -1330,20 +1352,52 @@ class PhanHeService(models.Model):
                 ("date_end", "<", today),
             ]
         elif code in ("payment_due", "payment_schedule", "payment_forecast"):
-            # Cùng logic UI: tháng kế tiếp + quá hạn (badge / search board)
-            next_start = (today.replace(day=1) + relativedelta(months=1))
-            next_end = (next_start + relativedelta(months=1)) - relativedelta(days=1)
-            domain += [
-                ("state", "=", "active"),
-                "|", "|",
-                "&", ("date_end", ">=", next_start), ("date_end", "<=", next_end),
-                "&", ("next_payment_date", ">=", next_start), ("next_payment_date", "<=", next_end),
-                "&", ("date_end", "!=", False), ("date_end", "<", today),
-            ]
+            # Cùng domain Lịch TT / Dự kiến / Xác nhận (tháng + quá hạn)
+            pay_domain, _ps, _pe, _td = self._internet_payment_schedule_domain()
+            # _internet_payment_schedule_domain đã có active + type + state
+            return pay_domain
         elif code in ("month", "quarter", "year", "report_month", "report_quarter", "report_year"):
             start, end = self._internet_period_bounds(code)
             domain += self._dash_overlap(start, end)
         return domain
+
+    @api.model
+    def search_internet_payment_period(self, year=None, month=None, search="", region=False):
+        """API danh sách Lịch TT / Dự kiến — cùng domain badge sidebar."""
+        domain, period_start, period_end, _today = self._internet_payment_schedule_domain(
+            year, month
+        )
+        if region:
+            domain = list(domain) + [("store_mien", "=", region)]
+        q = (search or "").strip()
+        if q:
+            domain = list(domain) + [
+                "|", "|", "|",
+                ("name", "ilike", q),
+                ("code", "ilike", q),
+                ("customer_code", "ilike", q),
+                ("store_id.name", "ilike", q),
+            ]
+        fields_list = [
+            "name", "code", "customer_code", "store_id", "provider_id",
+            "date_start", "date_end", "bandwidth", "contract_amount",
+            "ops_status", "state", "store_mien", "next_payment_amount",
+            "next_payment_date", "note", "invoice_filename",
+        ]
+        rows = self.search_read(
+            domain,
+            fields_list,
+            order="date_end asc, id desc",
+            limit=2000,
+        )
+        return {
+            "records": rows,
+            "total": len(rows),
+            "year": period_start.year,
+            "month": period_start.month,
+            "period_start": str(period_start),
+            "period_end": str(period_end),
+        }
 
     @api.model
     def search_internet_board(self, filter_code="all", limit=300, offset=0):

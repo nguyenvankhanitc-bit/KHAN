@@ -1359,11 +1359,14 @@ export class PhanHeDashboard extends Component {
         }
         if (filter === "payment_due") {
             patch.payment_schedule = n;
+            patch.payment_confirm = n;
         } else if (filter === "payment_forecast") {
             patch.payment_forecast = n;
+            patch.payment_confirm = n;
         } else {
             patch.payment_schedule = n;
             patch.payment_forecast = n;
+            patch.payment_confirm = n;
         }
         this.state.data = {
             ...(this.state.data || {}),

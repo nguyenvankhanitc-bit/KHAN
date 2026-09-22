@@ -224,7 +224,7 @@ export class PhanHePaymentBoard extends Component {
         }
         return {
             title: "Xác nhận thanh toán",
-            subtitle: "Chọn phiếu và bấm xác nhận để đánh dấu đã thanh toán",
+            subtitle: `Map từ Lịch TT · tháng ${this.state.month}/${this.state.year} + quá hạn`,
         };
     }
 
@@ -465,31 +465,21 @@ export class PhanHePaymentBoard extends Component {
     }
 
     async loadConfirmPayments() {
-        const domain = [
-            ["active", "=", true],
-            ["payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]],
-        ];
-        const q = (this.state.search || "").trim();
-        if (q) {
-            domain.push("|", "|", "|",
-                ["store_name", "ilike", q],
-                ["code", "ilike", q],
-                ["period", "ilike", q],
-                ["service_id.name", "ilike", q]
-            );
-        }
-        const fields = [
-            "code", "service_id", "store_id", "store_name", "provider_id",
-            "period", "date_due", "date_paid", "amount", "payment_state",
-        ];
-        const [records] = await Promise.all([
-            this.orm.searchRead("phan.he.payment", domain, fields, {
-                order: "date_due asc, id desc",
-                limit: 500,
-            }),
+        // Map 1:1 từ Lịch thanh toán (tháng + quá hạn) — không lấy toàn bộ phiếu cũ.
+        const result = await this.orm.call("phan.he.service", "get_payment_confirm_board", [
+            this.state.year,
+            this.state.month,
+            this.state.search || "",
         ]);
-        this.state.records = records || [];
-        this.state.totalCount = (records || []).length;
+        const records = result?.records || [];
+        if (result?.year) {
+            this.state.year = result.year;
+        }
+        if (result?.month) {
+            this.state.month = result.month;
+        }
+        this.state.records = records;
+        this.state.totalCount = result?.total ?? records.length;
     }
 
     onSearchInput(ev) {

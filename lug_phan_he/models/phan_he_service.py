@@ -850,6 +850,104 @@ class PhanHeService(models.Model):
     REGION_ORDER = ("NAM", "DTT", "BAC", "VP", "TRUNG")
 
     @api.model
+    def _internet_payment_period_bounds(self, year=None, month=None):
+        """Tháng Lịch TT / Xác nhận TT. Không truyền → tháng kế tiếp."""
+        today = fields.Date.context_today(self)
+        try:
+            y = int(year) if year not in (None, False, "") else 0
+            m = int(month) if month not in (None, False, "") else 0
+        except (TypeError, ValueError):
+            y, m = 0, 0
+        if y and 1 <= m <= 12:
+            period_start = fields.Date.to_date(f"{y}-{m:02d}-01")
+        else:
+            period_start = today.replace(day=1) + relativedelta(months=1)
+        period_end = (period_start + relativedelta(months=1)) - relativedelta(days=1)
+        return period_start, period_end, today
+
+    @api.model
+    def _internet_payment_schedule_domain(self, year=None, month=None):
+        """Cùng domain Lịch TT: HĐ active trong tháng + quá hạn."""
+        period_start, period_end, today = self._internet_payment_period_bounds(year, month)
+        return [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+            "|", "|",
+            "&", ("date_end", ">=", period_start), ("date_end", "<=", period_end),
+            "&", ("next_payment_date", ">=", period_start), ("next_payment_date", "<=", period_end),
+            "&", ("date_end", "!=", False), ("date_end", "<", today),
+        ], period_start, period_end, today
+
+    @api.model
+    def _ensure_open_payment_for_service(self, service, period_start, period_end, today):
+        """Lấy / tạo 1 phiếu chưa TT cho HĐ thuộc Lịch TT (không đụng state HĐ)."""
+        Payment = self.env["phan.he.payment"]
+        unpaid = service.payment_ids.filtered(
+            lambda p: p.active and p.payment_state not in ("paid", "cancel")
+        ).sorted(key=lambda p: (p.date_due or today, p.id))
+        if unpaid:
+            return unpaid[0]
+        due = service.next_payment_date or service.date_end or period_end or today
+        if due < today:
+            pay_state = "overdue"
+        elif due <= today + relativedelta(days=7):
+            pay_state = "due_soon"
+        else:
+            pay_state = "pending"
+        amount = service.next_payment_amount or service.contract_amount or 0.0
+        period_label = (
+            (service.package_name or "").strip()
+            or f"{period_start.month:02d}/{period_start.year}"
+        )
+        return Payment.create({
+            "service_id": service.id,
+            "provider_id": service.provider_id.id if service.provider_id else False,
+            "date_due": due,
+            "amount": amount,
+            "payment_state": pay_state,
+            "period": period_label,
+        })
+
+    @api.model
+    def get_payment_confirm_board(self, year=None, month=None, search=""):
+        """Xác nhận TT = map 1:1 từ Lịch thanh toán (tháng + quá hạn).
+
+        Mỗi HĐ trên Lịch TT → đúng 1 phiếu chưa TT (tạo nếu thiếu).
+        Không đổi state/ops_status hợp đồng.
+        """
+        domain, period_start, period_end, today = self._internet_payment_schedule_domain(
+            year, month
+        )
+        q = (search or "").strip()
+        if q:
+            domain = domain + [
+                "|", "|", "|",
+                ("name", "ilike", q),
+                ("code", "ilike", q),
+                ("customer_code", "ilike", q),
+                ("store_id.name", "ilike", q),
+            ]
+        services = self.search(domain, order="date_end asc, id desc")
+        payments = self.env["phan.he.payment"]
+        for svc in services:
+            payments |= self._ensure_open_payment_for_service(
+                svc, period_start, period_end, today
+            )
+        fields_list = [
+            "code", "service_id", "store_id", "store_name", "provider_id",
+            "period", "date_due", "date_paid", "amount", "payment_state",
+        ]
+        rows = payments.read(fields_list)
+        rows.sort(key=lambda r: (str(r.get("date_due") or ""), r.get("id") or 0))
+        return {
+            "records": rows,
+            "total": len(rows),
+            "year": period_start.year,
+            "month": period_start.month,
+        }
+
+    @api.model
     def get_internet_alert_counts(self, year=None, month=None):
         """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet.
 
@@ -884,29 +982,11 @@ class PhanHeService(models.Model):
             ("date_end", "!=", False),
             ("date_end", "<", today),
         ])
-        # Lịch TT + Dự kiến: tháng chọn (hoặc tháng kế) + quá hạn — cùng UI danh sách
-        try:
-            y = int(year) if year not in (None, False, "") else 0
-            m = int(month) if month not in (None, False, "") else 0
-        except (TypeError, ValueError):
-            y, m = 0, 0
-        if y and 1 <= m <= 12:
-            period_start = fields.Date.to_date(f"{y}-{m:02d}-01")
-        else:
-            period_start = today.replace(day=1) + relativedelta(months=1)
-        period_end = (period_start + relativedelta(months=1)) - relativedelta(days=1)
-        payment_period = self.search_count(inet_base + [
-            ("state", "=", "active"),
-            "|", "|",
-            "&", ("date_end", ">=", period_start), ("date_end", "<=", period_end),
-            "&", ("next_payment_date", ">=", period_start), ("next_payment_date", "<=", period_end),
-            "&", ("date_end", "!=", False), ("date_end", "<", today),
-        ])
-        Payment = self.env["phan.he.payment"]
-        payment_confirm = Payment.search_count([
-            ("active", "=", True),
-            ("payment_state", "in", ["pending", "due_soon", "overdue", "not_due"]),
-        ])
+        domain, period_start, _period_end, _today = self._internet_payment_schedule_domain(
+            year, month
+        )
+        payment_period = self.search_count(domain)
+        # Xác nhận TT map cùng Lịch TT — cùng số HĐ tháng + quá hạn
         return {
             "list_active": list_active,
             "list_suspend": list_suspend,
@@ -914,7 +994,7 @@ class PhanHeService(models.Model):
             "expire_soon": expire_soon,
             "overdue_contract": overdue,
             "payment_schedule": payment_period,
-            "payment_confirm": payment_confirm,
+            "payment_confirm": payment_period,
             "payment_forecast": payment_period,
             "alert_count": expire_soon + overdue,
             "payment_period_year": period_start.year,

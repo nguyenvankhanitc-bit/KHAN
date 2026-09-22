@@ -125,11 +125,19 @@ class PhanHePayment(models.Model):
         return super().create(vals_list)
 
     def action_mark_paid(self):
+        """Xác nhận đã thanh toán (map từ Lịch TT).
+
+        Chỉ cập nhật phiếu `phan.he.payment` → paid.
+        Không đụng `state` / `ops_status` của hợp đồng — cửa hàng vẫn ở
+        danh sách Đang sử dụng như cũ, không bị tạm ngưng/thanh lý.
+        """
+        today = fields.Date.context_today(self)
         for rec in self:
             rec.write({
                 "payment_state": "paid",
-                "date_paid": rec.date_paid or fields.Date.context_today(rec),
+                "date_paid": rec.date_paid or today,
             })
+        return True
 
     def action_open_invoices(self):
         self.ensure_one()

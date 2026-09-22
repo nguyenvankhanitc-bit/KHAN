@@ -605,8 +605,12 @@ export class PhanHePaymentBoard extends Component {
         }
         this.state.confirming = true;
         try {
+            // Chỉ đánh dấu phiếu đã TT — HĐ vẫn giữ Đang sử dụng (không đổi state).
             await this.orm.call("phan.he.payment", "action_mark_paid", [ids]);
-            this.notification.add(`Đã xác nhận ${ids.length} phiếu thanh toán.`, { type: "success" });
+            this.notification.add(
+                `Đã xác nhận ${ids.length} phiếu. Hợp đồng vẫn ở Đang sử dụng.`,
+                { type: "success" }
+            );
             this.state.selected = {};
             await this.load();
         } catch (err) {

@@ -296,37 +296,25 @@
                             </t>
                         </div>
 
-                        <div class="lq-sec-head">
-                            <h2>Chi phí theo tháng</h2>
-                            <div class="lq-inet-filters">
-                                <label class="lq-inet-pill">
-                                    <i class="fa fa-calendar"/>
-                                    <select t-att-value="state.selectedMonth" t-on-change="onInetMonthChange">
-                                        <t t-foreach="inet.month_options or []" t-as="mo2" t-key="mo2.value">
-                                            <option t-att-value="mo2.value" t-esc="mo2.label"/>
-                                        </t>
-                                    </select>
-                                </label>
-                                <label class="lq-inet-pill">
-                                    <i class="fa fa-map-marker"/>
-                                    <select t-att-value="state.selectedRegion" t-on-change="onInetRegionChange">
-                                        <t t-foreach="inet.region_options or []" t-as="rg2" t-key="rg2.id">
-                                            <option t-att-value="rg2.id" t-esc="rg2.name"/>
-                                        </t>
-                                    </select>
-                                </label>
-                                <label class="lq-inet-pill">
-                                    <i class="fa fa-building"/>
-                                    <select t-att-value="state.selectedStore" t-on-change="onInetStoreChange">
-                                        <t t-foreach="inet.store_options or []" t-as="st2" t-key="st2.id">
-                                            <option t-att-value="st2.id" t-esc="st2.name"/>
-                                        </t>
-                                    </select>
-                                </label>
+                        <article class="lq-card lq-month-day-chart">
+                            <header class="lq-month-day-toolbar">
+                                <h2>Biểu đồ dự tính chi phí trong tháng</h2>
+                                <div class="lq-chart-mode">
+                                    <button type="button"
+                                            t-att-class="{'is-active': state.monthChartMode === 'bar'}"
+                                            t-on-click="() => this.setMonthChartMode('bar')">
+                                        Biểu đồ cột
+                                    </button>
+                                    <button type="button"
+                                            t-att-class="{'is-active': state.monthChartMode === 'line'}"
+                                            t-on-click="() => this.setMonthChartMode('line')">
+                                        Biểu đồ đường
+                                    </button>
+                                </div>
+                            </header>
+                            <div class="lq-month-day-canvas">
+                                <canvas t-ref="inetMonthTrend"/>
                             </div>
-                        </div>
-                        <article class="lq-card lq-month-trend">
-                            <canvas t-ref="inetMonthTrend"/>
                         </article>
                         <div class="lq-tables">
                             <t t-foreach="inet.detail_tables or []" t-as="tb" t-key="tb.id">

@@ -236,6 +236,7 @@ export class PhanHeDashboard extends Component {
             selectedMonth: `${year}-${pad2(new Date().getMonth() + 1)}`,
             selectedRegion: "all",
             selectedStore: "all",
+            monthChartMode: "bar",
             filters: {
                 year: year,
                 date_from: yearStartDisplay(year),
@@ -333,7 +334,7 @@ export class PhanHeDashboard extends Component {
                 this.renderInetCharts();
                 return () => this.destroyInetCharts();
             },
-            () => [this.state.inet, this.state.loading, this.state.activeNav]
+            () => [this.state.inet, this.state.loading, this.state.activeNav, this.state.monthChartMode]
         );
         onWillUnmount(() => this.destroyInetCharts());
         onWillUpdateProps((next) => {
@@ -1263,41 +1264,172 @@ export class PhanHeDashboard extends Component {
         }
         const trendCtx = this._inetChartOrNull(this.inetMonthTrendRef);
         if (trendCtx) {
-            const mb = inet.month_bars || [];
-            this.inetCharts.monthTrend = new Chart(trendCtx, {
-                type: "bar",
-                data: {
-                    labels: mb.map((b) => b.label),
-                    datasets: [{
-                        label: "Chi phí",
-                        data: mb.map((b) => Number(b.amount || 0)),
-                        backgroundColor: "#7c6ff7",
-                        borderRadius: 8,
-                        barPercentage: 0.6,
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: { label: (ctx) => money(ctx.parsed.y) },
-                        },
-                    },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: "#64748b" } },
-                        y: {
-                            grid: { color: "#eef2f7" },
-                            ticks: {
-                                callback: (v) => this.formatTrieu(v),
-                                color: "#94a3b8",
-                            },
-                        },
-                    },
-                },
-            });
+            this.inetCharts.monthTrend = this._buildMonthDayChart(trendCtx, inet);
         }
+    }
+
+    setMonthChartMode(mode) {
+        const next = mode === "line" ? "line" : "bar";
+        if (this.state.monthChartMode === next) {
+            return;
+        }
+        this.state.monthChartMode = next;
+    }
+
+    _formatAxisVnd(v) {
+        const n = Number(v || 0);
+        if (n >= 1e6) {
+            return `${formatNumber(Math.round(n))} đ`;
+        }
+        return `${formatNumber(n)} đ`;
+    }
+
+    _buildMonthDayChart(ctx, inet) {
+        const chart = inet.month_day_chart || {};
+        const labels = chart.days || [];
+        const regions = chart.regions || [];
+        const totals = (chart.totals || []).map((v) => Number(v || 0));
+        const mode = this.state.monthChartMode === "line" ? "line" : "bar";
+        const money = (v) => this.formatMoney(v);
+        const peak = Math.max(...totals, 0);
+        const yMax = peak > 0 ? peak * 1.15 : 1000000;
+        const sampleColors = {
+            NAM: "#3b82f6",
+            DTT: "#22c55e",
+            BAC: "#f59e0b",
+            VP: "#8b5cf6",
+            TRUNG: "#f59e0b",
+        };
+        const regionDatasets = regions.map((r, idx) => {
+            const code = String(r.code || "").toUpperCase();
+            const color = sampleColors[code] || r.color || "#94a3b8";
+            const base = {
+                label: r.name || r.short || r.code,
+                data: (r.amounts || []).map((v) => Number(v || 0)),
+                backgroundColor: color,
+                borderColor: color,
+                borderWidth: mode === "line" ? 2.5 : 0,
+                fill: false,
+                tension: 0.35,
+                pointRadius: mode === "line" ? 3.5 : 0,
+                pointHoverRadius: 5,
+                order: 2 + idx,
+                yAxisID: "y",
+            };
+            if (mode === "bar") {
+                return {
+                    ...base,
+                    type: "bar",
+                    stack: "regions",
+                    borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                    borderSkipped: false,
+                    barPercentage: 0.78,
+                    categoryPercentage: 0.9,
+                    maxBarThickness: 28,
+                };
+            }
+            return { ...base, type: "line" };
+        });
+        const totalDataset = {
+            type: "line",
+            label: "Tổng chi phí",
+            data: totals,
+            borderColor: "#7c3aed",
+            backgroundColor: "#7c3aed",
+            borderWidth: 2.75,
+            pointRadius: 4.5,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#7c3aed",
+            pointBorderColor: "#fff",
+            pointBorderWidth: 2,
+            fill: false,
+            tension: 0.35,
+            order: 0,
+            yAxisID: mode === "bar" ? "y1" : "y",
+        };
+        return new Chart(ctx, {
+            type: mode,
+            data: {
+                labels,
+                datasets: [...regionDatasets, totalDataset],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 8, right: 8, bottom: 0, left: 4 } },
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    legend: {
+                        display: true,
+                        position: "bottom",
+                        align: "center",
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: "circle",
+                            boxWidth: 9,
+                            boxHeight: 9,
+                            padding: 18,
+                            color: "#64748b",
+                            font: { size: 12, weight: "600" },
+                        },
+                    },
+                    tooltip: {
+                        backgroundColor: "rgba(15, 23, 42, 0.92)",
+                        titleFont: { size: 12, weight: "700" },
+                        bodyFont: { size: 12 },
+                        padding: 10,
+                        cornerRadius: 10,
+                        callbacks: {
+                            title: (items) => {
+                                const day = items?.[0]?.label || "";
+                                return `Ngày ${day}/${chart.month || ""}/${chart.year || ""}`;
+                            },
+                            label: (c) => ` ${c.dataset.label}: ${money(c.parsed.y)}`,
+                        },
+                    },
+                },
+                scales: {
+                    x: {
+                        stacked: mode === "bar",
+                        grid: { display: false, drawBorder: false },
+                        border: { display: false },
+                        ticks: {
+                            color: "#94a3b8",
+                            font: { size: 11, weight: "600" },
+                            maxRotation: 0,
+                            autoSkip: true,
+                            maxTicksLimit: 31,
+                        },
+                        title: {
+                            display: true,
+                            text: chart.label || "",
+                            color: "#475569",
+                            font: { size: 13, weight: "700" },
+                            padding: { top: 10, bottom: 2 },
+                        },
+                    },
+                    y: {
+                        stacked: mode === "bar",
+                        beginAtZero: true,
+                        suggestedMax: yMax,
+                        grid: { color: "#eef2f7", drawBorder: false },
+                        border: { display: false },
+                        ticks: {
+                            color: "#94a3b8",
+                            font: { size: 11 },
+                            padding: 8,
+                            callback: (v) => this._formatAxisVnd(v),
+                        },
+                    },
+                    y1: {
+                        display: false,
+                        beginAtZero: true,
+                        suggestedMax: yMax,
+                        grid: { drawOnChartArea: false },
+                    },
+                },
+            },
+        });
     }
 
     formatDelta(delta) {

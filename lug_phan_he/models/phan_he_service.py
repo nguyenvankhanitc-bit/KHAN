@@ -1214,8 +1214,18 @@ class PhanHeService(models.Model):
 
         # Tổng quan tháng = cùng Kỳ/Tổng với Báo cáo → Chi phí tháng
         month_recs = self.search_month_cost_ky(year, month, extra_domain=base)
-        by_rows, due_sum = self._dash_group_due_stores(month_recs)
         month_total = sum(self._month_ky_period_amount(r) for r in month_recs)
+
+        # Bảng miền (Nam/ĐTT/Bắc/VP): Chi phí = Danh sách TT theo tháng lịch hiện tại.
+        # Tập số liệu cố định trong tháng — chỉ đổi khi sang tháng mới (vd T9 → T10).
+        cal_year, cal_month = today.year, today.month
+        pay_month_recs = self._dash_payment_month_records(
+            cal_year, cal_month, store_id=store_id, region_id=region_id
+        )
+        by_rows, due_sum = self._dash_group_payment_list_rows(pay_month_recs)
+        month_day_chart = self._dash_build_month_day_chart(
+            pay_month_recs, cal_year, cal_month, mien_meta
+        )
 
         prev_recs = self.search_month_cost_ky(prev_start.year, prev_start.month, extra_domain=base)
         month_delta = self._dash_delta(
@@ -1380,7 +1390,7 @@ class PhanHeService(models.Model):
                 item["pct"] = max(8, round((item["amount"] / ys_max) * 100)) if item["amount"] else 8
             detail_tables.append({
                 **m,
-                "amount": ky_sum.get(m["id"], 0.0),
+                "amount": float(due_sum.get(m["id"], 0.0) or 0.0),
                 "delta": 0.0,
                 "count": len(rows),
                 "rows": rows,
@@ -1431,6 +1441,7 @@ class PhanHeService(models.Model):
             "year_delta": year_delta,
             "year_bars": year_bars,
             "month_bars": month_bars,
+            "month_day_chart": month_day_chart,
             "usage": {
                 "active_pct": active_pct,
                 "active": n_active,
@@ -1839,6 +1850,115 @@ class PhanHeService(models.Model):
         ]
 
     @api.model
+    def _dash_payment_list_amount(self, rec):
+        """Số tiền TT — cùng công thức Danh sách thanh toán / biểu đồ miền."""
+        amt = float(rec.next_payment_amount or 0.0)
+        if amt > 0:
+            return amt
+        return float(rec.contract_amount or 0.0)
+
+    @api.model
+    def _dash_payment_month_records(self, year, month, store_id=None, region_id=None):
+        """HĐ thuộc tháng lịch (date_end / next_payment_date trong tháng).
+
+        Không dùng cửa sổ today+30 — danh sách ổn định suốt tháng, chỉ đổi khi sang tháng mới.
+        """
+        year = int(year)
+        month = min(12, max(1, int(month)))
+        start = fields.Date.to_date(f"{year:04d}-{month:02d}-01")
+        end = (start + relativedelta(months=1)) - relativedelta(days=1)
+        domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+            "|",
+            "&", ("date_end", ">=", start), ("date_end", "<=", end),
+            "&", ("next_payment_date", ">=", start), ("next_payment_date", "<=", end),
+        ]
+        if store_id:
+            domain.append(("store_id", "=", store_id))
+        elif region_id:
+            domain.append(("mien_id", "=", region_id))
+        return self.search(domain, order="date_end asc, id asc")
+
+    @api.model
+    def _dash_build_month_day_chart(self, recs, year, month, mien_meta):
+        """Biểu đồ dự tính chi phí trong tháng: chi phí từng ngày theo miền + tổng.
+
+        Nguồn = Danh sách TT thuộc tháng lịch; ổn định đến khi sang tháng mới.
+        """
+        year = int(year)
+        month = min(12, max(1, int(month)))
+        start = fields.Date.to_date(f"{year:04d}-{month:02d}-01")
+        end = (start + relativedelta(months=1)) - relativedelta(days=1)
+        n_days = end.day
+        days = [f"{d:02d}" for d in range(1, n_days + 1)]
+        by_mien = {m["id"]: [0.0] * n_days for m in mien_meta}
+        for rec in recs:
+            amt = self._dash_payment_list_amount(rec)
+            if amt <= 0:
+                continue
+            day = None
+            if rec.date_end and start <= rec.date_end <= end:
+                day = rec.date_end.day
+            elif rec.next_payment_date and start <= rec.next_payment_date <= end:
+                day = rec.next_payment_date.day
+            if not day:
+                continue
+            mid = rec.mien_id.id or 0
+            if mid not in by_mien:
+                by_mien[mid] = [0.0] * n_days
+            by_mien[mid][day - 1] += amt
+        regions = []
+        for m in mien_meta:
+            amounts = [float(x) for x in by_mien.get(m["id"], [0.0] * n_days)]
+            regions.append({
+                "id": m["id"],
+                "code": m["code"],
+                "name": m["name"],
+                "short": m.get("short") or m["name"],
+                "color": m.get("color") or "#94a3b8",
+                "amounts": amounts,
+            })
+        totals = [
+            float(sum(r["amounts"][i] for r in regions))
+            for i in range(n_days)
+        ]
+        return {
+            "year": year,
+            "month": month,
+            "label": f"Tháng {month}/{year}",
+            "days": days,
+            "regions": regions,
+            "totals": totals,
+        }
+
+    @api.model
+    def _dash_group_payment_list_rows(self, recs):
+        """Bảng miền: từng HĐ như Danh sách thanh toán, nhóm theo miền."""
+        by_rows = {}
+        due_sum = {}
+        for svc in recs:
+            mid = svc.mien_id.id or 0
+            amt = self._dash_payment_list_amount(svc)
+            pkg = (svc.package_name or "").strip() or (svc.provider_id.name or "—")
+            by_rows.setdefault(mid, []).append({
+                "id": svc.id,
+                "store": svc.store_id.name or svc.name or "—",
+                "provider": pkg,
+                "bandwidth": svc.bandwidth or "—",
+                "amount": amt,
+                "remaining_days": int(svc.remaining_days or 0),
+                "remaining_time": svc.remaining_time or "",
+            })
+            due_sum[mid] = due_sum.get(mid, 0.0) + amt
+        for mid, rows in by_rows.items():
+            rows.sort(key=lambda r: (r["remaining_days"], r["store"]))
+            for i, row in enumerate(rows, 1):
+                row["stt"] = i
+        return by_rows, due_sum
+
+    @api.model
     def _dash_group_due_stores(self, recs):
         """Gộp 1 cửa hàng / miền; bỏ Tạm ngưng / Thanh lý."""
         blocked_dom = [
@@ -1863,7 +1983,7 @@ class PhanHeService(models.Model):
             mid = svc.mien_id.id or 0
             store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
             key = (mid, store_key)
-            amt = float(svc.next_payment_amount or 0.0)
+            amt = self._dash_payment_list_amount(svc)
             days = int(svc.remaining_days or 0)
             row = by_best.get(key)
             if not row:

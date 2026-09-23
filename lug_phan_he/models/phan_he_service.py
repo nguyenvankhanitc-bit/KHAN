@@ -1216,13 +1216,19 @@ class PhanHeService(models.Model):
         month_recs = self.search_month_cost_ky(year, month, extra_domain=base)
         month_total = sum(self._month_ky_period_amount(r) for r in month_recs)
 
-        # Bảng miền (Nam/ĐTT/Bắc/VP): Chi phí = Danh sách TT theo tháng lịch hiện tại.
-        # Tập số liệu cố định trong tháng — chỉ đổi khi sang tháng mới (vd T9 → T10).
+        # Bảng miền (Nam/ĐTT/Bắc/VP): cùng tập Danh sách thanh toán
+        # (date_end ≤ today+30 hoặc quá hạn) — không chỉ HĐ có date_end trong tháng.
         cal_year, cal_month = today.year, today.month
-        pay_month_recs = self._dash_payment_month_records(
-            cal_year, cal_month, store_id=store_id, region_id=region_id
+        pay_domain, _ps, _pe, _td = self._internet_payment_need_domain(cal_year, cal_month)
+        pay_extra = []
+        if store_id:
+            pay_extra.append(("store_id", "=", store_id))
+        elif region_id:
+            pay_extra.append(("mien_id", "=", region_id))
+        pay_list_recs = self.search(
+            list(pay_domain) + pay_extra, order="date_end asc, id asc"
         )
-        by_rows, due_sum = self._dash_group_payment_list_rows(pay_month_recs)
+        by_rows, due_sum = self._dash_group_payment_list_rows(pay_list_recs)
         # Biểu đồ: T1→T12 năm lịch; chỉ có số liệu đến tháng hiện tại
         # (vd đang T9/2026 thì T10–T12 = 0). Nguồn = Danh sách thanh toán.
         month_day_chart = self._dash_build_year_month_chart(

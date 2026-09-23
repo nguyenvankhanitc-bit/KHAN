@@ -264,6 +264,7 @@ export class PhanHeInternetListBoard extends Component {
             forecastGroupOpen: {},
             forecastPrevAmount: 0,
             forecastChartReady: false,
+            chartRecords: [],
         });
         this._loadSeq = 0;
         this._lastPeriodEmitSig = "";
@@ -294,6 +295,7 @@ export class PhanHeInternetListBoard extends Component {
                 this.props.listFilter,
                 this.state.loading,
                 this.state.records,
+                this.state.chartRecords,
                 this.state.forecastYear,
                 this.state.forecastMonth,
                 this.state.forecastPrevAmount,
@@ -583,9 +585,37 @@ export class PhanHeInternetListBoard extends Component {
         }];
     }
 
-    /** KPI + chart Lịch dự kiến TT — sum từ đúng danh sách bảng (mẫu dashboard). */
+    /**
+     * Hàng dùng cho KPI/biểu đồ = toàn bộ HĐ thuộc đúng tháng đang chọn
+     * (date_end hoặc next_payment_date trong tháng) — không dùng bộ lọc ≤30 ngày.
+     */
+    get paymentChartRows() {
+        const year = Number(this.state.forecastYear);
+        const month = Number(this.state.forecastMonth);
+        const ymPrefix = `${year}-${pad2(month)}`;
+        return (this.state.chartRecords || []).map((rec) => {
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
+            let due;
+            if (nextDue && nextDue.startsWith(ymPrefix)) {
+                due = nextDue;
+            } else if (rec.date_end && String(rec.date_end).slice(0, 10).startsWith(ymPrefix)) {
+                due = String(rec.date_end).slice(0, 10);
+            } else {
+                due = projectDueInMonth(rec.date_end || rec.date_start || nextDue, year, month);
+            }
+            return {
+                ...rec,
+                forecast_due: due,
+                forecast_amount: Number(rec.next_payment_amount || 0) > 0
+                    ? Number(rec.next_payment_amount)
+                    : Number(rec.contract_amount || 0),
+            };
+        });
+    }
+
+    /** KPI + chart — sum từ danh sách đúng tháng đang chọn. */
     get forecastKpi() {
-        const rows = this.forecastRows || [];
+        const rows = this.paymentChartRows || [];
         const todayStr = ymd(new Date());
         const regionMeta = [
             { key: "Nam", label: "Miền Nam", colorKey: "blue", color: "#3b82f6" },
@@ -676,6 +706,53 @@ export class PhanHeInternetListBoard extends Component {
         };
     }
 
+    _filterRecordsInYearMonth(records, year, month) {
+        const ymPrefix = `${Number(year)}-${pad2(Number(month))}`;
+        return (records || []).filter((rec) => {
+            const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
+            return (end && end.startsWith(ymPrefix)) || (nextDue && nextDue.startsWith(ymPrefix));
+        });
+    }
+
+    _sumMonthChartAmount(records, year, month) {
+        const ymPrefix = `${Number(year)}-${pad2(Number(month))}`;
+        let sum = 0;
+        for (const rec of records || []) {
+            const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
+            if (!((end && end.startsWith(ymPrefix)) || (nextDue && nextDue.startsWith(ymPrefix)))) {
+                continue;
+            }
+            sum += Number(rec.next_payment_amount || 0) > 0
+                ? Number(rec.next_payment_amount)
+                : Number(rec.contract_amount || 0);
+        }
+        return sum;
+    }
+
+    async loadPaymentMonthChartRecords() {
+        if (!this.isPeriodPaymentList) {
+            this.state.chartRecords = [];
+            return;
+        }
+        const year = Number(this.state.forecastYear);
+        const month = Number(this.state.forecastMonth);
+        try {
+            const payload = await this.orm.call("phan.he.service", "search_internet_payment_period", [
+                year,
+                month,
+                "",
+                this.state.regionFilter || false,
+                "forecast",
+            ]);
+            this.state.chartRecords = this._filterRecordsInYearMonth(payload?.records || [], year, month);
+        } catch (err) {
+            console.warn("loadPaymentMonthChartRecords", err);
+            this.state.chartRecords = [];
+        }
+    }
+
     async ensureForecastChartLib() {
         if (this.state.forecastChartReady) {
             return;
@@ -699,41 +776,15 @@ export class PhanHeInternetListBoard extends Component {
             m = 12;
             y -= 1;
         }
-        const mode = this.isForecastList ? "forecast" : "schedule";
         try {
             const prev = await this.orm.call("phan.he.service", "search_internet_payment_period", [
                 y,
                 m,
                 "",
                 this.state.regionFilter || false,
-                mode,
+                "forecast",
             ]);
-            const todayStr = ymd(new Date());
-            const ymPrefix = `${y}-${pad2(m)}`;
-            let sum = 0;
-            for (const rec of prev?.records || []) {
-                const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
-                const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
-                if (mode === "schedule") {
-                    const soon = new Date();
-                    soon.setDate(soon.getDate() + 30);
-                    const soonStr = ymd(soon);
-                    if (!(end && end <= soonStr)) {
-                        continue;
-                    }
-                } else {
-                    const inMonth = (nextDue && nextDue.startsWith(ymPrefix))
-                        || (end && end.startsWith(ymPrefix));
-                    const overdue = Boolean(end && end < todayStr);
-                    if (!inMonth && !overdue) {
-                        continue;
-                    }
-                }
-                sum += Number(rec.next_payment_amount || 0) > 0
-                    ? Number(rec.next_payment_amount)
-                    : Number(rec.contract_amount || 0);
-            }
-            this.state.forecastPrevAmount = sum;
+            this.state.forecastPrevAmount = this._sumMonthChartAmount(prev?.records || [], y, m);
         } catch (err) {
             console.warn("forecastPrevAmount", err);
             this.state.forecastPrevAmount = 0;
@@ -1785,9 +1836,11 @@ export class PhanHeInternetListBoard extends Component {
             if (listFilter === "payment_forecast" || listFilter === "payment_due") {
                 await this.ensureForecastChartLib();
                 if (seq === this._loadSeq) {
+                    await this.loadPaymentMonthChartRecords();
                     await this.refreshForecastPrevAmount();
                 }
             } else {
+                this.state.chartRecords = [];
                 this.state.forecastPrevAmount = 0;
             }
         } catch (error) {

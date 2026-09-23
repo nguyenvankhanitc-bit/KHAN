@@ -1284,6 +1284,74 @@ export class PhanHeDashboard extends Component {
         return `${formatNumber(n)} đ`;
     }
 
+    _formatBarTopAmount(v) {
+        const n = Number(v || 0);
+        if (n <= 0) {
+            return "";
+        }
+        if (n >= 1e6) {
+            const tr = n / 1e6;
+            const text = tr >= 10 ? tr.toFixed(1) : tr.toFixed(2);
+            return `${text.replace(".", ",")} Tr`;
+        }
+        if (n >= 1e3) {
+            return `${formatNumber(Math.round(n / 1000))} N`;
+        }
+        return formatNumber(n);
+    }
+
+    _monthChartValueLabelsPlugin(totals) {
+        const formatTop = (v) => this._formatBarTopAmount(v);
+        return {
+            id: "lqMonthValueLabels",
+            afterDatasetsDraw(chart) {
+                const { ctx } = chart;
+                const metaBars = chart.data.datasets
+                    .map((ds, i) => ({ ds, i, meta: chart.getDatasetMeta(i) }))
+                    .filter((x) => x.ds.type === "bar" || (!x.ds.type && chart.config.type === "bar"));
+                const metaLine = chart.data.datasets
+                    .map((ds, i) => ({ ds, i, meta: chart.getDatasetMeta(i) }))
+                    .find((x) => x.ds.label === "Tổng chi phí");
+
+                ctx.save();
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillStyle = "#334155";
+                ctx.font = "700 11px system-ui, -apple-system, Segoe UI, sans-serif";
+
+                const n = (totals || []).length;
+                for (let i = 0; i < n; i++) {
+                    const value = Number(totals[i] || 0);
+                    if (value <= 0) {
+                        continue;
+                    }
+                    let x = null;
+                    let y = null;
+                    if (metaLine && metaLine.meta?.data?.[i] && !metaLine.meta.hidden) {
+                        const pt = metaLine.meta.data[i];
+                        x = pt.x;
+                        y = pt.y;
+                    } else if (metaBars.length) {
+                        // đỉnh cột xếp chồng = dataset bar trên cùng có giá trị
+                        for (let b = metaBars.length - 1; b >= 0; b--) {
+                            const bar = metaBars[b].meta?.data?.[i];
+                            if (bar && Number(metaBars[b].ds.data?.[i] || 0) > 0) {
+                                x = bar.x;
+                                y = bar.y;
+                                break;
+                            }
+                        }
+                    }
+                    if (x == null || y == null) {
+                        continue;
+                    }
+                    ctx.fillText(formatTop(value), x, y - 6);
+                }
+                ctx.restore();
+            },
+        };
+    }
+
     _buildMonthDayChart(ctx, inet) {
         const chart = inet.month_day_chart || {};
         const labels = chart.days || [];
@@ -1292,7 +1360,7 @@ export class PhanHeDashboard extends Component {
         const mode = this.state.monthChartMode === "line" ? "line" : "bar";
         const money = (v) => this.formatMoney(v);
         const peak = Math.max(...totals, 0);
-        const yMax = peak > 0 ? peak * 1.15 : 1000000;
+        const yMax = peak > 0 ? peak * 1.22 : 1000000;
         const sampleColors = {
             NAM: "#3b82f6",
             DTT: "#22c55e",
@@ -1353,10 +1421,11 @@ export class PhanHeDashboard extends Component {
                 labels,
                 datasets: [...regionDatasets, totalDataset],
             },
+            plugins: [this._monthChartValueLabelsPlugin(totals)],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                layout: { padding: { top: 8, right: 8, bottom: 0, left: 4 } },
+                layout: { padding: { top: 22, right: 8, bottom: 0, left: 4 } },
                 interaction: { mode: "index", intersect: false },
                 plugins: {
                     legend: {

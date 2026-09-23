@@ -588,16 +588,12 @@ class PhanHeDashboard(models.AbstractModel):
 
     @api.model
     def get_month_cost_board(self, params=None):
-        """Chi phí tháng N — khớp nghiệp vụ:
+        """Chi phí tháng N — cùng tập Danh sách thanh toán:
 
-        Kỳ thanh toán tháng N =
-          - HĐ có ngày đến hạn trong vòng 30 ngày kể từ thời điểm lập kỳ
-          - + HĐ đã quá hạn và chưa hoàn tất thanh toán
-        (cùng tập với Lịch thanh toán / Tổng quan khi xem tháng hiện tại)
-
-        Tổng chi phí = tổng số tiền kỳ (next_payment_amount / cước) từ Lịch TT
-        Đã thanh toán = tiền đã xác nhận (phan.he.payment state=paid) cho các kỳ đó
-        Chưa thanh toán = Tổng − Đã thanh toán
+        - HĐ cần TT: date_end còn ≤ 30 ngày hoặc quá hạn (need domain)
+        - Tổng chi phí = next_payment_amount / cước tháng
+        - Đã thanh toán = xác nhận paid gắn kỳ
+        - Chưa thanh toán = Tổng − Đã thanh toán
         """
         params = params or {}
         today = fields.Date.context_today(self)

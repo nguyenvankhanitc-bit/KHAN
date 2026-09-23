@@ -2112,33 +2112,17 @@ class PhanHeService(models.Model):
 
     @api.model
     def search_month_cost_ky(self, year, month, extra_domain=None):
-        """Kỳ TT tháng N (cùng Báo cáo / Chi phí tháng):
+        """Kỳ Chi phí tháng = cùng tập Danh sách thanh toán.
 
-        - Đến hạn trong vòng 30 ngày kể từ thời điểm lập kỳ
-        - + Quá hạn chưa hoàn tất thanh toán
+        - HĐ Đang sử dụng (state=active), có date_end
+        - date_end còn ≤ 30 ngày kể từ hôm nay hoặc đã quá hạn
+        - Số tiền kỳ = next_payment_amount / contract_amount (Lịch TT)
         """
-        start, end, as_of, soon = self._month_ky_bounds(year, month)
-        domain = [
-            ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
-            ("state", "=", "active"),
-            ("ops_status", "=", "active"),
-            ("date_end", "!=", False),
-            ("date_end", "<=", soon),
-        ]
+        domain, _ps, _pe, _today = self._internet_payment_need_domain(year, month)
+        domain = list(domain)
         if extra_domain:
             domain = domain + list(extra_domain)
-        candidates = self.search(domain, order="date_end asc, id asc")
-        result = self.browse()
-        for rec in candidates:
-            amt = self._month_ky_period_amount(rec)
-            paid_sum = self._month_ky_paid_amount(rec, start, end, as_of, soon)
-            remain = max(amt - paid_sum, 0.0)
-            overdue = bool(rec.date_end and rec.date_end < as_of)
-            if overdue and remain <= 0 and amt > 0:
-                continue
-            result |= rec
-        return result
+        return self.search(domain, order="date_end asc, id asc")
 
     @api.model
     def sum_month_cost_ky(self, year, month, extra_domain=None):

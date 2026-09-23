@@ -79,6 +79,36 @@
                     </label>
                 </div>
 
+                <t t-if="isForecastList and !state.loading">
+                    <div class="lq-fc-kpis is-mobile">
+                        <article class="is-cost">
+                            <span class="lq-fc-ico"><i class="fa fa-briefcase"/></span>
+                            <div>
+                                <small>Tổng chi phí tháng</small>
+                                <b t-esc="formatMoney(forecastKpi.totalAmount)"/>
+                                <em t-att-class="forecastKpi.pctUp ? 'is-up' : 'is-down'"
+                                    t-esc="forecastKpi.pctLabel"/>
+                            </div>
+                        </article>
+                        <article class="is-stores">
+                            <span class="lq-fc-ico"><i class="fa fa-shopping-bag"/></span>
+                            <div>
+                                <small>Cửa hàng dự kiến</small>
+                                <b t-esc="forecastKpi.storeCount"/>
+                                <em>cửa hàng</em>
+                            </div>
+                        </article>
+                        <article class="is-overdue">
+                            <span class="lq-fc-ico"><i class="fa fa-exclamation-triangle"/></span>
+                            <div>
+                                <small>Cửa hàng quá hạn</small>
+                                <b t-esc="forecastKpi.overdueCount"/>
+                                <em>cửa hàng</em>
+                            </div>
+                        </article>
+                    </div>
+                </t>
+
                 <div class="lq-today-section">
                     <button type="button" class="lq-today-section-head" t-on-click="toggleTodaySection">
                         <span class="lq-today-section-ico" t-att-class="isPaymentMobile ? 'is-pay' : ''">
@@ -250,6 +280,60 @@
                     </t>
                 </div>
             </div>
+
+            <t t-if="isForecastList and !state.loading">
+                <div class="lq-fc-kpis">
+                    <article class="is-cost">
+                        <span class="lq-fc-ico"><i class="fa fa-briefcase"/></span>
+                        <div>
+                            <small>Tổng chi phí tháng</small>
+                            <b t-esc="formatMoney(forecastKpi.totalAmount)"/>
+                            <em t-att-class="forecastKpi.pctUp ? 'is-up' : 'is-down'"
+                                t-esc="forecastKpi.pctLabel"/>
+                        </div>
+                    </article>
+                    <article class="is-stores">
+                        <span class="lq-fc-ico"><i class="fa fa-shopping-bag"/></span>
+                        <div>
+                            <small>Số lượng cửa hàng dự kiến</small>
+                            <b t-esc="forecastKpi.storeCount"/>
+                            <em>cửa hàng</em>
+                        </div>
+                    </article>
+                    <article class="is-overdue">
+                        <span class="lq-fc-ico"><i class="fa fa-exclamation-triangle"/></span>
+                        <div>
+                            <small>Số lượng cửa hàng quá hạn</small>
+                            <b t-esc="forecastKpi.overdueCount"/>
+                            <em>cửa hàng</em>
+                        </div>
+                    </article>
+                </div>
+                <div class="lq-fc-charts">
+                    <section class="lq-fc-card">
+                        <header>
+                            <strong>Chi phí dự kiến theo miền</strong>
+                            <span>Đơn vị: triệu đồng / số CH quá hạn</span>
+                        </header>
+                        <div class="lq-fc-canvas"><canvas t-ref="forecastBar"/></div>
+                    </section>
+                    <section class="lq-fc-card is-donut">
+                        <header>
+                            <strong>Cơ cấu chi phí</strong>
+                            <span>Trong tháng vs quá hạn</span>
+                        </header>
+                        <div class="lq-fc-donut-wrap">
+                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastDonut"/></div>
+                            <ul class="lq-fc-donut-legend">
+                                <li><i class="is-green"/> Trong tháng
+                                    <b t-esc="formatMoney(forecastKpi.inMonthAmount)"/></li>
+                                <li><i class="is-red"/> Quá hạn
+                                    <b t-esc="formatMoney(forecastKpi.overdueAmount)"/></li>
+                            </ul>
+                        </div>
+                    </section>
+                </div>
+            </t>
 
             <div class="lq-table-card">
                 <div class="lq-table-bar">

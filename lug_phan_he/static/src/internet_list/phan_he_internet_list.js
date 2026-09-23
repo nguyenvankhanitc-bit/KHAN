@@ -285,7 +285,7 @@ export class PhanHeInternetListBoard extends Component {
         onPatched(() => this.syncStickyColumns());
         useEffect(
             () => {
-                if (this.isForecastList && !this.state.loading) {
+                if (this.isPeriodPaymentList && !this.state.loading) {
                     this.renderForecastCharts();
                 }
                 return () => this.destroyForecastCharts();
@@ -300,6 +300,7 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.forecastChartReady,
             ]
         );
+        // charts render when isPeriodPaymentList — see renderForecastCharts
         onWillStart(async () => {
             if (this.props.internetMenus && Object.keys(this.props.internetMenus).length) {
                 this.state.internetMenus = this.props.internetMenus;
@@ -688,7 +689,7 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     async refreshForecastPrevAmount() {
-        if (!this.isForecastList) {
+        if (!this.isPeriodPaymentList) {
             this.state.forecastPrevAmount = 0;
             return;
         }
@@ -698,13 +699,14 @@ export class PhanHeInternetListBoard extends Component {
             m = 12;
             y -= 1;
         }
+        const mode = this.isForecastList ? "forecast" : "schedule";
         try {
             const prev = await this.orm.call("phan.he.service", "search_internet_payment_period", [
                 y,
                 m,
                 "",
                 this.state.regionFilter || false,
-                "forecast",
+                mode,
             ]);
             const todayStr = ymd(new Date());
             const ymPrefix = `${y}-${pad2(m)}`;
@@ -712,11 +714,20 @@ export class PhanHeInternetListBoard extends Component {
             for (const rec of prev?.records || []) {
                 const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
                 const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
-                const inMonth = (nextDue && nextDue.startsWith(ymPrefix))
-                    || (end && end.startsWith(ymPrefix));
-                const overdue = Boolean(end && end < todayStr);
-                if (!inMonth && !overdue) {
-                    continue;
+                if (mode === "schedule") {
+                    const soon = new Date();
+                    soon.setDate(soon.getDate() + 30);
+                    const soonStr = ymd(soon);
+                    if (!(end && end <= soonStr)) {
+                        continue;
+                    }
+                } else {
+                    const inMonth = (nextDue && nextDue.startsWith(ymPrefix))
+                        || (end && end.startsWith(ymPrefix));
+                    const overdue = Boolean(end && end < todayStr);
+                    if (!inMonth && !overdue) {
+                        continue;
+                    }
                 }
                 sum += Number(rec.next_payment_amount || 0) > 0
                     ? Number(rec.next_payment_amount)
@@ -741,8 +752,8 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     async renderForecastCharts() {
-        if (!this.isForecastList || typeof Chart === "undefined") {
-            if (this.isForecastList) {
+        if (!this.isPeriodPaymentList || typeof Chart === "undefined") {
+            if (this.isPeriodPaymentList) {
                 await this.ensureForecastChartLib();
             }
             if (typeof Chart === "undefined") {
@@ -1771,7 +1782,7 @@ export class PhanHeInternetListBoard extends Component {
                     }
                 }
             }
-            if (listFilter === "payment_forecast") {
+            if (listFilter === "payment_forecast" || listFilter === "payment_due") {
                 await this.ensureForecastChartLib();
                 if (seq === this._loadSeq) {
                     await this.refreshForecastPrevAmount();

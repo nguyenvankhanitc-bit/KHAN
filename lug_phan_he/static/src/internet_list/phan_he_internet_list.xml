@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
-        <div t-attf-class="lq-inet-board {{ (listFilter === 'payment_due' or listFilter === 'payment_forecast' or listFilter === 'expired') ? 'is-payment' : '' }}{{ isForecastList ? ' is-forecast-dash' : '' }}{{ isMobile ? ' is-today' : '' }}">
+        <div t-attf-class="lq-inet-board {{ (listFilter === 'payment_due' or listFilter === 'payment_forecast' or listFilter === 'expired') ? 'is-payment' : '' }}{{ isPeriodPaymentList ? ' is-forecast-dash' : '' }}{{ isMobile ? ' is-today' : '' }}">
             <t t-if="isMobile">
                 <div class="lq-today-top">
                     <h1 class="lq-today-title" t-esc="pageMeta.title"/>
@@ -79,7 +79,7 @@
                     </label>
                 </div>
 
-                <t t-if="isForecastList and !state.loading">
+                <t t-if="isPeriodPaymentList and !state.loading">
                     <div class="lq-fc-kpis is-mobile">
                         <article class="is-cost">
                             <span class="lq-fc-ico"><i class="fa fa-briefcase"/></span>
@@ -281,7 +281,7 @@
                 </div>
             </div>
 
-            <t t-if="isForecastList and !state.loading">
+            <t t-if="isPeriodPaymentList and !state.loading">
                 <div class="lq-fc-kpis">
                     <article class="is-cost">
                         <span class="lq-fc-ico"><i class="fa fa-briefcase"/></span>

@@ -1703,3 +1703,33 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Forecast dash: KPI + chart o tren, bang van hien du rows (scroll ca trang) */
+.lq-inet-board.is-forecast-dash {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+.lq-inet-board.is-forecast-dash .lq-fc-kpis,
+.lq-inet-board.is-forecast-dash .lq-fc-charts {
+    flex-shrink: 0;
+}
+.lq-inet-board.is-forecast-dash .lq-table-card {
+    flex: 0 0 auto;
+    min-height: 520px;
+    overflow: visible;
+}
+.lq-inet-board.is-forecast-dash .lq-table-body {
+    flex: 0 0 auto;
+    min-height: 420px;
+    overflow: visible;
+}
+.lq-inet-board.is-forecast-dash .lq-table-scroll {
+    flex: 0 0 auto !important;
+    height: auto !important;
+    min-height: 420px !important;
+    max-height: none !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+}

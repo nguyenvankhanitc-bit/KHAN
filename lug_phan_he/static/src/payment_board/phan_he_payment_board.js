@@ -94,6 +94,8 @@ export class PhanHePaymentBoard extends Component {
         reloadToken: { type: Number, optional: true },
         monthOffset: { type: Number, optional: true },
         onMonthOffsetChange: { type: Function, optional: true },
+        onConfirmCountChange: { type: Function, optional: true },
+        onAfterConfirm: { type: Function, optional: true },
         "*": true,
     };
 
@@ -248,7 +250,7 @@ export class PhanHePaymentBoard extends Component {
         }
         return {
             title: "Xác nhận thanh toán",
-            subtitle: `Lịch TT tháng ${this.state.month}/${this.state.year} · còn ≤30 ngày + quá hạn chưa TT`,
+            subtitle: `Cùng tháng Lịch TT ${this.state.month}/${this.state.year} · chưa xác nhận TT`,
         };
     }
 
@@ -665,6 +667,14 @@ export class PhanHePaymentBoard extends Component {
         }
         this.state.records = records;
         this.state.totalCount = result?.total ?? records.length;
+        if (this.props.onConfirmCountChange) {
+            this.props.onConfirmCountChange({
+                count: this.state.totalCount,
+                filter: "payment_confirm",
+                year: this.state.year,
+                month: this.state.month,
+            });
+        }
     }
 
     onSearchInput(ev) {
@@ -801,6 +811,9 @@ export class PhanHePaymentBoard extends Component {
             );
             this.state.selected = {};
             await this.load();
+            if (this.props.onAfterConfirm) {
+                await this.props.onAfterConfirm(this.state.year, this.state.month);
+            }
         } catch (err) {
             console.error(err);
             this.notification.add(err?.data?.message || err?.message || "Không xác nhận được.", {

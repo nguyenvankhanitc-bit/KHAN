@@ -38,7 +38,9 @@
                 <t t-if="state.contentMode === 'payment_board'">
                     <PhanHePaymentBoard
                             mode="state.paymentBoardMode"
-                            reloadToken="state.paymentBoardToken"/>
+                            reloadToken="state.paymentBoardToken"
+                            onConfirmCountChange.bind="onPeriodPaymentCountChange"
+                            onAfterConfirm.bind="loadNavBadges"/>
                 </t>
                 <t t-if="state.contentMode === 'month_cost'">
                     <PhanHeMonthCostBoard onOpenEntry.bind="openEntryForm"/>

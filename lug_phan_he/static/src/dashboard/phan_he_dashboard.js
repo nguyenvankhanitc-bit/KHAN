@@ -1370,8 +1370,9 @@ export class PhanHeDashboard extends Component {
             Number(data.payment_period_year || 0) === y
             && Number(data.payment_period_month || 0) === m
             && (
-                (filter === "payment_due" && Number(data.payment_schedule) === n && Number(data.payment_confirm) === n)
-                || (filter === "payment_forecast" && Number(data.payment_forecast) === n && Number(data.payment_confirm) === n)
+                (filter === "payment_due" && Number(data.payment_schedule) === n)
+                || (filter === "payment_forecast" && Number(data.payment_forecast) === n)
+                || (filter === "payment_confirm" && Number(data.payment_confirm) === n)
                 || (!filter && Number(data.payment_schedule) === n)
             );
         if (same) {
@@ -1386,14 +1387,13 @@ export class PhanHeDashboard extends Component {
         }
         if (filter === "payment_due") {
             patch.payment_schedule = n;
-            patch.payment_confirm = n;
         } else if (filter === "payment_forecast") {
             patch.payment_forecast = n;
+        } else if (filter === "payment_confirm") {
             patch.payment_confirm = n;
         } else {
             patch.payment_schedule = n;
             patch.payment_forecast = n;
-            patch.payment_confirm = n;
         }
         this.state.data = {
             ...(this.state.data || {}),

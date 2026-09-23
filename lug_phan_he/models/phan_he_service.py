@@ -977,10 +977,12 @@ class PhanHeService(models.Model):
         }
 
     @api.model
-    def _ensure_open_payment_for_service(self, service, period_start, period_end, today):
-        """Lấy / tạo 1 phiếu chưa TT cho HĐ thuộc Lịch TT (không đụng state HĐ).
+    def _ensure_open_payment_for_service(self, service, period_start, period_end, today, create_missing=True):
+        """Lấy phiếu chưa TT cho HĐ Lịch TT (không đụng state HĐ).
 
-        Đồng bộ hạn / NCC / số tiền / kỳ từ HĐ để khớp Lịch TT.
+        - Có phiếu unpaid → sync + trả về.
+        - Đã có phiếu paid đúng hạn kỳ → không tạo lại (để Xác nhận TT ẩn cửa hàng).
+        - Chưa có phiếu → tạo mới nếu create_missing.
         """
         Payment = self.env["phan.he.payment"]
         schedule = self._schedule_payment_vals(service, period_start, period_end, today)
@@ -1004,14 +1006,63 @@ class PhanHeService(models.Model):
             if vals:
                 pay.write(vals)
             return pay
+
+        if self._payment_confirm_already_paid(service, period_start, period_end, schedule):
+            return Payment.browse()
+        if not create_missing:
+            return Payment.browse()
         return Payment.create({
             "service_id": service.id,
             **schedule,
         })
 
     @api.model
+    def _payment_confirm_already_paid(self, service, period_start, period_end, schedule=None):
+        """True nếu cửa hàng đã xác nhận TT kỳ hiện tại (ẩn khỏi bảng Xác nhận)."""
+        today = fields.Date.context_today(self)
+        if schedule is None:
+            schedule = self._schedule_payment_vals(service, period_start, period_end, today)
+        due = schedule.get("date_due")
+        end = service.date_end
+        paid = service.payment_ids.filtered(
+            lambda p: p.active and p.payment_state == "paid"
+        )
+        if not paid:
+            return False
+        same_cycle = paid.filtered(
+            lambda p: (due and p.date_due == due)
+            or (end and p.date_due == end)
+            or (p.date_due and period_start <= p.date_due <= period_end)
+            or (p.date_paid and period_start <= p.date_paid <= period_end)
+        )
+        if same_cycle:
+            return True
+        latest_due = max((p.date_due for p in paid if p.date_due), default=None)
+        if latest_due and due and due <= latest_due:
+            return True
+        if latest_due and end and latest_due >= end:
+            return True
+        return False
+
+    @api.model
+    def _service_needs_payment_confirm(self, service, period_start, period_end, today):
+        """Cần hiện trên Xác nhận TT: thuộc Lịch TT và chưa paid kỳ này."""
+        unpaid = service.payment_ids.filtered(
+            lambda p: p.active and p.payment_state not in ("paid", "cancel")
+        )
+        if unpaid:
+            return True
+        schedule = self._schedule_payment_vals(service, period_start, period_end, today)
+        if self._payment_confirm_already_paid(service, period_start, period_end, schedule):
+            return False
+        return True
+
+    @api.model
     def get_payment_confirm_board(self, year=None, month=None, search=""):
-        """Xác nhận TT = đúng nội dung Lịch thanh toán (cần TT ≤30 ngày / quá hạn)."""
+        """Xác nhận TT = cùng tháng / cùng bộ HĐ Lịch TT, chỉ HĐ chưa xác nhận TT.
+
+        Sau khi bấm xác nhận (phiếu → paid) cửa hàng biến mất khỏi bảng này.
+        """
         payload = self.search_internet_payment_period(
             year, month, search, mode="schedule"
         )
@@ -1023,19 +1074,23 @@ class PhanHeService(models.Model):
             svc = self.browse(svc_row["id"])
             if not svc.exists():
                 continue
+            if not self._service_needs_payment_confirm(svc, period_start, period_end, today):
+                continue
             pay = self._ensure_open_payment_for_service(
-                svc, period_start, period_end, today
+                svc, period_start, period_end, today, create_missing=True
             )
+            if not pay:
+                continue
             amount = svc_row.get("next_payment_amount") or svc_row.get("contract_amount") or 0.0
-            due = self._schedule_due_date(svc, period_start, period_end, today)
+            due = pay.date_due or self._schedule_due_date(svc, period_start, period_end, today)
             row = dict(svc_row)
             row.update({
                 "payment_id": pay.id,
                 "forecast_amount": amount,
                 "date_due": fields.Date.to_string(due) if due else False,
-                "payment_state": self._payment_state_from_due(due, today),
-                "period": self._schedule_period_label(svc, period_start),
-                "amount": amount,
+                "payment_state": pay.payment_state or self._payment_state_from_due(due, today),
+                "period": pay.period or self._schedule_period_label(svc, period_start),
+                "amount": pay.amount or amount,
             })
             rows.append(row)
 
@@ -1091,8 +1146,16 @@ class PhanHeService(models.Model):
             ("date_end", "!=", False),
             ("date_end", "<", today),
         ])
-        need_domain, period_start, _pe, _td = self._internet_payment_need_domain(year, month)
+        need_domain, period_start, period_end, today = self._internet_payment_need_domain(
+            year, month
+        )
         payment_need = self.search_count(need_domain)
+        # Xác nhận = subset Lịch TT chưa đánh dấu paid kỳ hiện tại
+        confirm_pending = sum(
+            1
+            for svc in self.search(need_domain)
+            if self._service_needs_payment_confirm(svc, period_start, period_end, today)
+        )
         forecast_domain, _ps2, _pe2, _td2 = self._internet_payment_schedule_domain(year, month)
         payment_forecast = self.search_count(forecast_domain)
         return {
@@ -1102,7 +1165,7 @@ class PhanHeService(models.Model):
             "expire_soon": expire_soon,
             "overdue_contract": overdue,
             "payment_schedule": payment_need,
-            "payment_confirm": payment_need,
+            "payment_confirm": confirm_pending,
             "payment_forecast": payment_forecast,
             "alert_count": expire_soon + overdue,
             "payment_period_year": period_start.year,

@@ -112,7 +112,7 @@
               groups="base.group_user"/>
 
     <menuitem id="menu_phan_he_payment"
-              name="Lịch thanh toán"
+              name="Danh sách thanh toán"
               parent="menu_phan_he_payment_root"
               action="action_phan_he_payment"
               sequence="10"/>

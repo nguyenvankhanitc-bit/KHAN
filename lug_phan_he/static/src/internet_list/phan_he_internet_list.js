@@ -57,7 +57,7 @@ const INTERNET_NAV_SECTIONS = [
         label: "Chi phí & thanh toán",
         icon: "fa-credit-card",
         children: [
-            { id: "payment_schedule", label: "Lịch thanh toán", icon: "fa-calendar" },
+            { id: "payment_schedule", label: "Danh sách thanh toán", icon: "fa-calendar" },
             { id: "payment_confirm", label: "Xác nhận TT", icon: "fa-check-square-o" },
             { id: "payment_overdue", label: "Quá hạn", icon: "fa-times-circle" },
             { id: "payment_forecast", label: "Dự kiến thanh toán", icon: "fa-calendar-plus-o" },
@@ -170,7 +170,7 @@ const FILTER_TITLES = {
         activeNav: "expire_soon",
     },
     payment_due: {
-        title: "Lịch thanh toán",
+        title: "Danh sách thanh toán",
         subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn (cùng Dự kiến thanh toán)",
         activeNav: "payment_schedule",
     },

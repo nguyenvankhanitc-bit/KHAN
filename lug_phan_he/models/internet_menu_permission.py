@@ -12,7 +12,7 @@ INTERNET_MENU_TREE = [
     ("internet_liquidation", "Thanh lý", False, "group_manage_internet"),
     ("internet_entry", "Nhập thông tin", False, "group_manage_internet"),
     ("group_cost_payment", "CHI PHÍ & THANH TOÁN", True, False),
-    ("payment_schedule", "Lịch thanh toán", False, "group_cost_payment"),
+    ("payment_schedule", "Danh sách thanh toán", False, "group_cost_payment"),
     ("payment_confirm", "Xác nhận TT", False, "group_cost_payment"),
     ("payment_overdue", "Quá hạn", False, "group_cost_payment"),
     ("payment_forecast", "Dự kiến thanh toán", False, "group_cost_payment"),

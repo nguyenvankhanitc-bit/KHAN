@@ -89,7 +89,7 @@ const INTERNET_NAV_SECTIONS = [
         children: [
             {
                 id: "payment_schedule",
-                label: "Lịch thanh toán",
+                label: "Danh sách thanh toán",
                 icon: "fa-calendar",
                 iconTone: "payment",
                 tone: "danger",

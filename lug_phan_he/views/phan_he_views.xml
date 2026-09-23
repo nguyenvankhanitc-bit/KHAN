@@ -38,7 +38,7 @@
         <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'list_liquidated'}</field>
     </record>
     <record id="action_phan_he_internet_payment_master" model="ir.actions.client">
-        <field name="name">Lịch thanh toán</field>
+        <field name="name">Danh sách thanh toán</field>
         <field name="tag">phan_he_dashboard</field>
         <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'payment_schedule'}</field>
     </record>
@@ -846,7 +846,7 @@
 
                         <page string="Thanh toán" name="payments">
                             <field name="payment_ids">
-                                <list string="Lịch thanh toán"
+                                <list string="Danh sách thanh toán"
                                       decoration-danger="payment_state == 'overdue'"
                                       decoration-success="payment_state == 'paid'"
                                       decoration-warning="payment_state == 'due_soon'">
@@ -1100,7 +1100,7 @@
         <field name="name">phan.he.payment.list</field>
         <field name="model">phan.he.payment</field>
         <field name="arch" type="xml">
-            <list string="Lịch thanh toán"
+            <list string="Danh sách thanh toán"
                   decoration-danger="payment_state == 'overdue'"
                   decoration-success="payment_state == 'paid'"
                   decoration-warning="payment_state == 'due_soon'">
@@ -1235,7 +1235,7 @@
     </record>
 
     <record id="action_phan_he_payment" model="ir.actions.client">
-        <field name="name">Lịch thanh toán</field>
+        <field name="name">Danh sách thanh toán</field>
         <field name="tag">phan_he_dashboard</field>
         <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'payment_schedule'}</field>
     </record>

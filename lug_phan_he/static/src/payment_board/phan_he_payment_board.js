@@ -248,7 +248,7 @@ export class PhanHePaymentBoard extends Component {
         }
         return {
             title: "Xác nhận thanh toán",
-            subtitle: `Cùng tháng Lịch TT ${this.state.month}/${this.state.year} · chưa xác nhận TT`,
+            subtitle: `Cùng tháng Danh sách TT ${this.state.month}/${this.state.year} · chưa xác nhận TT`,
         };
     }
 

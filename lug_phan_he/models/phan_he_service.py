@@ -185,7 +185,7 @@ class PhanHeService(models.Model):
         tracking=True, ondelete="set null", index=True,
     )
     company_id = fields.Many2one(related="store_id.company_id", store=True, readonly=True)
-    payment_ids = fields.One2many("phan.he.payment", "service_id", string="Lịch thanh toán")
+    payment_ids = fields.One2many("phan.he.payment", "service_id", string="Danh sách thanh toán")
     payment_count = fields.Integer(compute="_compute_counts")
     invoice_ids = fields.One2many("phan.he.invoice", "service_id", string="Hóa đơn")
     invoice_count = fields.Integer(compute="_compute_counts")
@@ -742,7 +742,7 @@ class PhanHeService(models.Model):
         self.ensure_one()
         return {
             "type": "ir.actions.act_window",
-            "name": "Lịch thanh toán",
+            "name": "Danh sách thanh toán",
             "res_model": "phan.he.payment",
             "view_mode": "list,form",
             "domain": [("service_id", "=", self.id)],

@@ -253,19 +253,14 @@ html.o_internet_resizing * {
         padding: 8px 10px 4px;
         margin-top: 0;
         border-radius: 0;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.05em;
+        font-size: 11.5px;
+        font-weight: 800;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #94a3b8 !important;
+        color: #64748b !important;
 
         > i:first-child {
             font-size: 13px;
-            color: #94a3b8 !important;
-        }
-
-        &:hover {
-            background: transparent !important;
             color: #64748b !important;
         }
 
@@ -275,6 +270,28 @@ html.o_internet_resizing * {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            font-weight: 800;
+        }
+
+        /* 3 mục lớn: tô màu + in đậm */
+        &.is-icon-manage {
+            color: #6d28d9 !important;
+            > i:first-child { color: #6d28d9 !important; }
+            &:hover { color: #5b21b6 !important; > i:first-child { color: #5b21b6 !important; } }
+        }
+        &.is-icon-payment {
+            color: #0f766e !important;
+            > i:first-child { color: #0d9488 !important; }
+            &:hover { color: #115e59 !important; > i:first-child { color: #0f766e !important; } }
+        }
+        &.is-icon-report {
+            color: #7c3aed !important;
+            > i:first-child { color: #7c3aed !important; }
+            &:hover { color: #6d28d9 !important; > i:first-child { color: #6d28d9 !important; } }
+        }
+
+        &:hover {
+            background: transparent !important;
         }
     }
 

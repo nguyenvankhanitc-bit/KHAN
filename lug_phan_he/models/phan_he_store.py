@@ -7,7 +7,7 @@ class PhanHeStore(models.Model):
     _name = "phan.he.store"
     _description = "Cửa hàng"
     _inherit = ["mail.thread", "mail.activity.mixin", "phan.he.access.mixin"]
-    _order = "code, name"
+    _order = "mien_id, code, name"
     _rec_names_search = ["code", "name"]
 
     code = fields.Char(string="Mã cửa hàng", required=True, tracking=True, copy=False)

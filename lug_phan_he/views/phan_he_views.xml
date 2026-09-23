@@ -214,7 +214,7 @@
         <field name="name">phan.he.store.list</field>
         <field name="model">phan.he.store</field>
         <field name="arch" type="xml">
-            <list string="Cửa hàng">
+            <list string="Cửa hàng" default_order="mien_id, code, name">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="mien_id"/>
@@ -298,11 +298,10 @@
                 <field name="responsible_id"/>
                 <filter name="filter_active" string="Đang hoạt động" domain="[('state', '=', 'active')]"/>
                 <filter name="filter_inactive" string="Ngừng hoạt động" domain="[('state', '=', 'inactive')]"/>
-                
-                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
-                    <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
-                    <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
-                
+                <separator/>
+                <filter name="group_mien" string="Miền" context="{'group_by': 'mien_id'}"/>
+                <filter name="group_area" string="Khu vực" context="{'group_by': 'area_id'}"/>
+                <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
             </search>
         </field>
     </record>
@@ -311,7 +310,10 @@
         <field name="name">Cửa hàng</field>
         <field name="res_model">phan.he.store</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{'search_default_filter_active': 1}</field>
+        <field name="context">{
+            'search_default_filter_active': 1,
+            'search_default_group_mien': 1,
+        }</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Chưa có cửa hàng</p>
         </field>

@@ -877,8 +877,12 @@ class PhanHeService(models.Model):
     REGION_ORDER = ("NAM", "DTT", "BAC", "VP", "TRUNG")
 
     @api.model
-    def _internet_payment_period_bounds(self, year=None, month=None):
-        """Tháng Lịch TT / Xác nhận TT. Không truyền → tháng hiện tại."""
+    def _internet_payment_period_bounds(self, year=None, month=None, month_offset=0):
+        """Bounds tháng UI. Không truyền year/month → tháng hiện tại + month_offset.
+
+        month_offset=0: Danh sách TT / Xác nhận (tháng hiện tại)
+        month_offset=1: Lịch dự kiến TT (N+1)
+        """
         today = fields.Date.context_today(self)
         try:
             y = int(year) if year not in (None, False, "") else 0
@@ -888,18 +892,18 @@ class PhanHeService(models.Model):
         if y and 1 <= m <= 12:
             period_start = fields.Date.to_date(f"{y}-{m:02d}-01")
         else:
-            period_start = today.replace(day=1)
+            period_start = today.replace(day=1) + relativedelta(months=int(month_offset or 0))
         period_end = (period_start + relativedelta(months=1)) - relativedelta(days=1)
         return period_start, period_end, today
 
     @api.model
     def _internet_payment_need_domain(self, year=None, month=None):
-        """Lịch TT / Xác nhận — cửa hàng cần thanh toán từ Đang sử dụng.
+        """Danh sách TT / Xác nhận — cửa hàng cần thanh toán từ Đang sử dụng.
 
         - Tháng hiển thị mặc định: tháng hiện tại (vd hôm nay 9/2026 → T9/2026)
         - Số lượng: date_end còn ≤ 30 ngày hoặc đã quá hạn (chưa TT / vẫn Đang SD)
         """
-        period_start, period_end, today = self._internet_payment_period_bounds(year, month)
+        period_start, period_end, today = self._internet_payment_period_bounds(year, month, month_offset=0)
         soon30 = today + relativedelta(days=30)
         return [
             ("active", "=", True),
@@ -911,8 +915,13 @@ class PhanHeService(models.Model):
 
     @api.model
     def _internet_payment_schedule_domain(self, year=None, month=None):
-        """Dự kiến TT — HĐ Đang sử dụng có kỳ / date_end trong tháng chọn + quá hạn."""
-        period_start, period_end, today = self._internet_payment_period_bounds(year, month)
+        """Lịch dự kiến TT — HĐ Đang sử dụng có kỳ / date_end trong tháng chọn + quá hạn.
+
+        Mặc định tháng N+1 khi không truyền year/month.
+        """
+        period_start, period_end, today = self._internet_payment_period_bounds(
+            year, month, month_offset=1
+        )
         return [
             ("active", "=", True),
             ("service_type_id.code", "=", "internet"),
@@ -1114,9 +1123,9 @@ class PhanHeService(models.Model):
     def get_internet_alert_counts(self, year=None, month=None):
         """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet.
 
-        year/month: tháng đang chọn (mặc định tháng hiện tại).
-        Lịch TT / Xác nhận: cửa hàng cần TT (≤30 ngày hoặc quá hạn).
-        Dự kiến: theo tháng chọn + quá hạn.
+        year/month: tháng đang chọn.
+        Danh sách TT / Xác nhận: mặc định tháng hiện tại; cửa hàng cần TT (≤30 ngày hoặc quá hạn).
+        Lịch dự kiến TT: mặc định N+1; theo tháng chọn + quá hạn.
         """
         today = fields.Date.context_today(self)
         soon30 = today + relativedelta(days=30)
@@ -1156,7 +1165,7 @@ class PhanHeService(models.Model):
             for svc in self.search(need_domain)
             if self._service_needs_payment_confirm(svc, period_start, period_end, today)
         )
-        forecast_domain, _ps2, _pe2, _td2 = self._internet_payment_schedule_domain(year, month)
+        forecast_domain, _ps2, _pe2, _td2 = self._internet_payment_schedule_domain()
         payment_forecast = self.search_count(forecast_domain)
         return {
             "list_active": list_active,
@@ -1524,10 +1533,10 @@ class PhanHeService(models.Model):
 
     @api.model
     def search_internet_payment_period(self, year=None, month=None, search="", region=False, mode="schedule"):
-        """API Lịch TT (mode=schedule) / Dự kiến (mode=forecast).
+        """API Danh sách TT (mode=schedule) / Lịch dự kiến TT (mode=forecast).
 
         schedule: cần TT = date_end còn ≤30 ngày hoặc quá hạn; tháng UI = tháng hiện tại.
-        forecast: HĐ có kỳ/date_end trong tháng chọn + quá hạn.
+        forecast: HĐ có kỳ/date_end trong tháng chọn + quá hạn; mặc định tháng N+1.
         """
         if mode == "forecast":
             domain, period_start, period_end, _today = self._internet_payment_schedule_domain(

@@ -311,11 +311,13 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.selected = {};
                 this.state.loading = true;
                 this.state.sectionOpen = true;
-                // Chỉ set tháng mặc định khi vào kỳ TT từ mục khác — giữ tháng khi Lịch ↔ Dự kiến.
-                const wasPeriod = curFilter === "payment_forecast" || curFilter === "payment_due";
-                const nextPeriod = nextFilter === "payment_forecast" || nextFilter === "payment_due";
-                if (nextPeriod && !wasPeriod) {
-                    // Lịch TT / Dự kiến: mặc định tháng hiện tại
+                // Danh sách TT = tháng hiện tại; Lịch dự kiến TT = N+1
+                if (nextFilter === "payment_forecast" && curFilter !== "payment_forecast") {
+                    const n = nextMonthParts(1);
+                    this.state.forecastYear = n.year;
+                    this.state.forecastMonth = n.month;
+                    this._lastPeriodEmitSig = "";
+                } else if (nextFilter === "payment_due" && curFilter !== "payment_due") {
                     const n = nextMonthParts(0);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;

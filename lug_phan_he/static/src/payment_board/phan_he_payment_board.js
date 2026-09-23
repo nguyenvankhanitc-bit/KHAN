@@ -24,6 +24,13 @@ function formatDateVn(raw) {
     return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
+function nextMonthParts() {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() + 1);
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
 function currentMonthParts() {
     const d = new Date();
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
@@ -101,7 +108,8 @@ export class PhanHePaymentBoard extends Component {
         this.orm = useService("orm");
         this.notification = useService("notification");
         this.ui = useService("ui");
-        const cur = currentMonthParts();
+        const isForecast = (this.props.mode || "confirm") === "forecast";
+        const init = isForecast ? nextMonthParts() : currentMonthParts();
         this.state = useState({
             loading: true,
             exporting: false,
@@ -112,13 +120,13 @@ export class PhanHePaymentBoard extends Component {
             search: "",
             page: 1,
             pageSize: 15,
-            year: cur.year,
-            month: cur.month,
+            year: init.year,
+            month: init.month,
             statusTab: "all",
             sectionOpen: true,
         });
         this.monthOptions = MONTH_OPTIONS;
-        this.yearOptions = this.buildYearOptions(cur.year);
+        this.yearOptions = this.buildYearOptions(init.year);
         this._loadSeq = 0;
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
@@ -135,6 +143,11 @@ export class PhanHePaymentBoard extends Component {
                 this.state.records = [];
                 this.state.loading = true;
                 if (modeChanged && nextProps.mode === "forecast") {
+                    const n = nextMonthParts();
+                    this.state.year = n.year;
+                    this.state.month = n.month;
+                    this.yearOptions = this.buildYearOptions(n.year);
+                } else if (modeChanged && nextProps.mode !== "forecast") {
                     const n = currentMonthParts();
                     this.state.year = n.year;
                     this.state.month = n.month;

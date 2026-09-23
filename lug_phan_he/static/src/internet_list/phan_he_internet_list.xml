@@ -310,13 +310,6 @@
                     </article>
                 </div>
                 <div class="lq-fc-charts">
-                    <section class="lq-fc-card">
-                        <header>
-                            <strong>Chi phí dự kiến theo miền</strong>
-                            <span>Đơn vị: triệu đồng / số CH quá hạn</span>
-                        </header>
-                        <div class="lq-fc-canvas"><canvas t-ref="forecastBar"/></div>
-                    </section>
                     <section class="lq-fc-card is-donut">
                         <header>
                             <strong>Cơ cấu chi phí</strong>

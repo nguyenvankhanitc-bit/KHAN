@@ -272,7 +272,6 @@ export class PhanHeInternetListBoard extends Component {
         this._internetTypeId = null;
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
-        this.forecastBarRef = useRef("forecastBar");
         this.forecastDonutRef = useRef("forecastDonut");
         this._forecastCharts = {};
         this.monthOptions = Array.from({ length: 12 }, (_, i) => ({
@@ -717,65 +716,7 @@ export class PhanHeInternetListBoard extends Component {
         }
         this.destroyForecastCharts();
         const kpi = this.forecastKpi;
-        const barEl = this.forecastBarRef.el;
         const donutEl = this.forecastDonutRef.el;
-        if (barEl && kpi.byRegion.length) {
-            this._forecastCharts.bar = new Chart(barEl, {
-                type: "bar",
-                data: {
-                    labels: kpi.byRegion.map((r) => r.region),
-                    datasets: [
-                        {
-                            label: "Chi phí dự kiến",
-                            data: kpi.byRegion.map((r) => Math.round(r.amount / 1e6 * 10) / 10),
-                            backgroundColor: "#3b82f6",
-                            borderRadius: 8,
-                            maxBarThickness: 42,
-                        },
-                        {
-                            label: "Quá hạn",
-                            data: kpi.byRegion.map((r) => Math.round(r.overdue)),
-                            backgroundColor: "#ef4444",
-                            borderRadius: 8,
-                            maxBarThickness: 42,
-                            yAxisID: "y1",
-                        },
-                    ],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { position: "bottom", labels: { boxWidth: 10, font: { size: 11 } } },
-                        tooltip: {
-                            callbacks: {
-                                label(ctx) {
-                                    if (ctx.dataset.yAxisID === "y1") {
-                                        return ` ${ctx.dataset.label}: ${ctx.raw} CH`;
-                                    }
-                                    return ` ${ctx.dataset.label}: ${ctx.raw} triệu`;
-                                },
-                            },
-                        },
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: { display: true, text: "Triệu đồng", font: { size: 11 } },
-                            grid: { color: "#f1f5f9" },
-                        },
-                        y1: {
-                            beginAtZero: true,
-                            position: "right",
-                            title: { display: true, text: "Số CH quá hạn", font: { size: 11 } },
-                            grid: { drawOnChartArea: false },
-                            ticks: { stepSize: 1 },
-                        },
-                        x: { grid: { display: false } },
-                    },
-                },
-            });
-        }
         if (donutEl) {
             const inAmt = Math.max(0, Number(kpi.inMonthAmount || 0));
             const ovAmt = Math.max(0, Number(kpi.overdueAmount || 0));

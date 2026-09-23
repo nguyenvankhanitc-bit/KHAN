@@ -273,6 +273,9 @@ export class PhanHeInternetListBoard extends Component {
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
         this.forecastDonutRef = useRef("forecastDonut");
+        this.forecastCountRef = useRef("forecastCount");
+        this.forecastProviderRef = useRef("forecastProvider");
+        this.forecastStoreRef = useRef("forecastStore");
         this._forecastCharts = {};
         this.monthOptions = Array.from({ length: 12 }, (_, i) => ({
             value: i + 1,
@@ -588,7 +591,10 @@ export class PhanHeInternetListBoard extends Component {
         let overdueCount = 0;
         let overdueAmount = 0;
         let inMonthAmount = 0;
+        let inMonthCount = 0;
         const byRegion = {};
+        const byProvider = {};
+        const byStore = {};
         for (const r of rows) {
             const amt = Number(r.forecast_amount || 0);
             totalAmount += amt;
@@ -598,6 +604,7 @@ export class PhanHeInternetListBoard extends Component {
                 overdueCount += 1;
                 overdueAmount += amt;
             } else {
+                inMonthCount += 1;
                 inMonthAmount += amt;
             }
             const region = (r.store_mien || "").trim() || "Khác";
@@ -609,6 +616,27 @@ export class PhanHeInternetListBoard extends Component {
             if (overdue) {
                 byRegion[region].overdue += 1;
             }
+            let provider = "Khác";
+            if (Array.isArray(r.provider_id) && r.provider_id[1]) {
+                provider = String(r.provider_id[1]);
+            } else if (typeof r.provider_id === "string" && r.provider_id) {
+                provider = r.provider_id;
+            }
+            if (!byProvider[provider]) {
+                byProvider[provider] = { name: provider, count: 0, amount: 0 };
+            }
+            byProvider[provider].count += 1;
+            byProvider[provider].amount += amt;
+            const storeName = Array.isArray(r.store_id) && r.store_id[1]
+                ? String(r.store_id[1])
+                : (r.name || `HĐ #${r.id}`);
+            const storeKey = Array.isArray(r.store_id) && r.store_id[0]
+                ? `s${r.store_id[0]}`
+                : `r${r.id}`;
+            if (!byStore[storeKey]) {
+                byStore[storeKey] = { name: storeName, amount: 0 };
+            }
+            byStore[storeKey].amount += amt;
         }
         const prev = Number(this.state.forecastPrevAmount || 0);
         let pctChange = null;
@@ -632,11 +660,14 @@ export class PhanHeInternetListBoard extends Component {
             overdueCount,
             overdueAmount,
             inMonthAmount,
+            inMonthCount,
             prevAmount: prev,
             pctChange,
             pctUp,
             pctLabel,
             byRegion: Object.values(byRegion).sort((a, b) => b.amount - a.amount),
+            byProvider: Object.values(byProvider).sort((a, b) => b.amount - a.amount).slice(0, 6),
+            topStores: Object.values(byStore).sort((a, b) => b.amount - a.amount).slice(0, 6),
         };
     }
 
@@ -716,6 +747,15 @@ export class PhanHeInternetListBoard extends Component {
         }
         this.destroyForecastCharts();
         const kpi = this.forecastKpi;
+        const moneyTip = {
+            callbacks: {
+                label(ctx) {
+                    const v = Number(ctx.raw || 0);
+                    return ` ${ctx.dataset.label || ctx.label}: ${formatMoneyVn(v)}`;
+                },
+            },
+        };
+
         const donutEl = this.forecastDonutRef.el;
         if (donutEl) {
             const inAmt = Math.max(0, Number(kpi.inMonthAmount || 0));
@@ -764,11 +804,139 @@ export class PhanHeInternetListBoard extends Component {
                         ctx.font = "600 11px sans-serif";
                         ctx.fillText("Tổng", x, y - 10);
                         ctx.fillStyle = "#0f172a";
-                        ctx.font = "700 13px sans-serif";
+                        ctx.font = "700 12px sans-serif";
                         ctx.fillText(formatMoneyVn(total), x, y + 10);
                         ctx.restore();
                     },
                 }],
+            });
+        }
+
+        const countEl = this.forecastCountRef.el;
+        if (countEl) {
+            const inC = Math.max(0, Number(kpi.inMonthCount || 0));
+            const ovC = Math.max(0, Number(kpi.overdueCount || 0));
+            const totalC = inC + ovC;
+            this._forecastCharts.count = new Chart(countEl, {
+                type: "doughnut",
+                data: {
+                    labels: ["Trong tháng", "Quá hạn"],
+                    datasets: [{
+                        data: totalC > 0 ? [inC, ovC] : [1, 0],
+                        backgroundColor: ["#3b82f6", "#f59e0b"],
+                        borderWidth: 0,
+                        hoverOffset: 4,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "68%",
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label(ctx) {
+                                    const v = Number(ctx.raw || 0);
+                                    const pct = totalC > 0 ? Math.round((v / totalC) * 100) : 0;
+                                    return ` ${ctx.label}: ${v} CH (${pct}%)`;
+                                },
+                            },
+                        },
+                    },
+                },
+                plugins: [{
+                    id: "forecastCountCenter",
+                    afterDraw(chart) {
+                        const { ctx, chartArea } = chart;
+                        if (!chartArea) {
+                            return;
+                        }
+                        const x = (chartArea.left + chartArea.right) / 2;
+                        const y = (chartArea.top + chartArea.bottom) / 2;
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.fillStyle = "#64748b";
+                        ctx.font = "600 11px sans-serif";
+                        ctx.fillText("Cửa hàng", x, y - 10);
+                        ctx.fillStyle = "#0f172a";
+                        ctx.font = "700 18px sans-serif";
+                        ctx.fillText(String(totalC), x, y + 12);
+                        ctx.restore();
+                    },
+                }],
+            });
+        }
+
+        const providerEl = this.forecastProviderRef.el;
+        if (providerEl) {
+            const rows = kpi.byProvider || [];
+            this._forecastCharts.provider = new Chart(providerEl, {
+                type: "bar",
+                data: {
+                    labels: rows.map((r) => r.name),
+                    datasets: [{
+                        label: "Chi phí",
+                        data: rows.map((r) => r.amount),
+                        backgroundColor: "#6366f1",
+                        borderRadius: 8,
+                        maxBarThickness: 28,
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback(v) {
+                                    return `${Math.round(Number(v) / 1e6)}tr`;
+                                },
+                            },
+                            grid: { color: "#f1f5f9" },
+                        },
+                        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    },
+                },
+            });
+        }
+
+        const storeEl = this.forecastStoreRef.el;
+        if (storeEl) {
+            const rows = kpi.topStores || [];
+            this._forecastCharts.store = new Chart(storeEl, {
+                type: "bar",
+                data: {
+                    labels: rows.map((r) => (r.name.length > 18 ? `${r.name.slice(0, 16)}…` : r.name)),
+                    datasets: [{
+                        label: "Chi phí",
+                        data: rows.map((r) => r.amount),
+                        backgroundColor: "#0ea5e9",
+                        borderRadius: 8,
+                        maxBarThickness: 28,
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback(v) {
+                                    return `${Math.round(Number(v) / 1e6)}tr`;
+                                },
+                            },
+                            grid: { color: "#f1f5f9" },
+                        },
+                        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
+                    },
+                },
             });
         }
     }

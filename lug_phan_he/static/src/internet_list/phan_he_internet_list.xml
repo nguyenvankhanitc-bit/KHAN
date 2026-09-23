@@ -309,7 +309,7 @@
                         </div>
                     </article>
                 </div>
-                <div class="lq-fc-charts">
+                <div class="lq-fc-charts is-grid-2x2">
                     <section class="lq-fc-card is-donut">
                         <header>
                             <strong>Cơ cấu chi phí</strong>
@@ -324,6 +324,35 @@
                                     <b t-esc="formatMoney(forecastKpi.overdueAmount)"/></li>
                             </ul>
                         </div>
+                    </section>
+                    <section class="lq-fc-card is-donut">
+                        <header>
+                            <strong>Cơ cấu cửa hàng</strong>
+                            <span>Số lượng trong tháng vs quá hạn</span>
+                        </header>
+                        <div class="lq-fc-donut-wrap">
+                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastCount"/></div>
+                            <ul class="lq-fc-donut-legend">
+                                <li><i class="is-blue"/> Trong tháng
+                                    <b t-esc="forecastKpi.inMonthCount + ' CH'"/></li>
+                                <li><i class="is-orange"/> Quá hạn
+                                    <b t-esc="forecastKpi.overdueCount + ' CH'"/></li>
+                            </ul>
+                        </div>
+                    </section>
+                    <section class="lq-fc-card">
+                        <header>
+                            <strong>Chi phí theo nhà cung cấp</strong>
+                            <span>Top NCC trong danh sách</span>
+                        </header>
+                        <div class="lq-fc-canvas is-bar"><canvas t-ref="forecastProvider"/></div>
+                    </section>
+                    <section class="lq-fc-card">
+                        <header>
+                            <strong>Top cửa hàng theo số tiền</strong>
+                            <span>Từ danh sách dự kiến TT</span>
+                        </header>
+                        <div class="lq-fc-canvas is-bar"><canvas t-ref="forecastStore"/></div>
                     </section>
                 </div>
             </t>

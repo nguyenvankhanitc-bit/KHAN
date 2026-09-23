@@ -76,6 +76,12 @@ const STATE_LABEL = {
     cancel: "Đã hủy",
 };
 
+const OPS_STATUS_META = {
+    active: { label: "Đang sử dụng", className: "is-active" },
+    suspend: { label: "Tạm ngưng", className: "is-suspend" },
+    liquidated: { label: "Thanh lý", className: "is-liquidated" },
+};
+
 const MONTH_OPTIONS = Array.from({ length: 12 }, (_, i) => ({
     value: i + 1,
     label: `Tháng ${i + 1}`,
@@ -132,6 +138,7 @@ export class PhanHePaymentBoard extends Component {
                     const n = nextMonthParts();
                     this.state.year = n.year;
                     this.state.month = n.month;
+                    this.yearOptions = this.buildYearOptions(n.year);
                 }
                 this.load(nextProps);
             }
@@ -146,6 +153,23 @@ export class PhanHePaymentBoard extends Component {
                 this._stickyRo = null;
             }
         });
+    }
+
+    /** OWL template không có global String — dùng helper này. */
+    toStr(v) {
+        return v == null ? "" : String(v);
+    }
+
+    isMonthSelected(v) {
+        return Number(this.state.month) === Number(v);
+    }
+
+    isYearSelected(v) {
+        return Number(this.state.year) === Number(v);
+    }
+
+    get periodSelectKey() {
+        return `${this.state.year}-${this.state.month}`;
     }
 
     /** Căn sticky đúng mép cột Cửa hàng. */
@@ -194,7 +218,7 @@ export class PhanHePaymentBoard extends Component {
         const y = Number(centerYear) || new Date().getFullYear();
         const years = [];
         for (let i = y - 2; i <= y + 3; i++) {
-            years.push(i);
+            years.push({ value: i, label: `Năm ${i}` });
         }
         return years;
     }
@@ -224,12 +248,12 @@ export class PhanHePaymentBoard extends Component {
         }
         return {
             title: "Xác nhận thanh toán",
-            subtitle: `Map từ Lịch TT · tháng ${this.state.month}/${this.state.year} + quá hạn`,
+            subtitle: `Lịch TT tháng ${this.state.month}/${this.state.year} · còn ≤30 ngày + quá hạn chưa TT`,
         };
     }
 
     get countLabel() {
-        return this.isForecast ? "hợp đồng" : "phiếu";
+        return "hợp đồng";
     }
 
     get tabCounts() {
@@ -277,6 +301,10 @@ export class PhanHePaymentBoard extends Component {
         return Math.max(1, Math.ceil(total / this.state.pageSize));
     }
 
+    payKey(rec) {
+        return Number(rec?.payment_id || rec?.id || 0);
+    }
+
     get selectedIds() {
         return Object.keys(this.state.selected)
             .filter((id) => this.state.selected[id])
@@ -285,7 +313,7 @@ export class PhanHePaymentBoard extends Component {
 
     get allSelectedOnPage() {
         const rows = this.pageRecords;
-        return rows.length > 0 && rows.every((r) => this.state.selected[r.id]);
+        return rows.length > 0 && rows.every((r) => this.state.selected[this.payKey(r)]);
     }
 
     formatMoney(v) {
@@ -294,6 +322,14 @@ export class PhanHePaymentBoard extends Component {
 
     formatDate(v) {
         return formatDateVn(v);
+    }
+
+    payAmount(rec) {
+        const n = Number(rec.forecast_amount || rec.amount || rec.next_payment_amount || 0);
+        if (n > 0) {
+            return n;
+        }
+        return Number(rec.contract_amount || 0);
     }
 
     stateLabel(rec) {
@@ -315,6 +351,16 @@ export class PhanHePaymentBoard extends Component {
     }
 
     cardAccent(rec) {
+        if (this.isConfirm) {
+            const tone = this.remainTone(rec);
+            if (tone === "danger") {
+                return "danger";
+            }
+            if (tone === "warning") {
+                return "warn";
+            }
+            return "ok";
+        }
         const s = rec.payment_state;
         if (s === "overdue") {
             return "danger";
@@ -329,10 +375,13 @@ export class PhanHePaymentBoard extends Component {
         if (Array.isArray(rec.store_id)) {
             return rec.store_id[1] || "—";
         }
-        return rec.store_name || "—";
+        return rec.store_name || rec.name || "—";
     }
 
     serviceName(rec) {
+        if (rec.name) {
+            return rec.name;
+        }
         if (rec.contract_name) {
             return rec.contract_name;
         }
@@ -342,11 +391,144 @@ export class PhanHePaymentBoard extends Component {
         return "—";
     }
 
+    customerCodeLabel(rec) {
+        const code = String(rec.customer_code || "").trim();
+        return code || "—";
+    }
+
     providerName(rec) {
         if (Array.isArray(rec.provider_id)) {
             return rec.provider_id[1] || "—";
         }
         return "—";
+    }
+
+    providerMark(rec) {
+        const name = this.providerName(rec).toUpperCase();
+        if (name.includes("FPT")) {
+            return "F";
+        }
+        if (name.includes("VNPT")) {
+            return "V";
+        }
+        if (name.includes("VIETTEL")) {
+            return "VT";
+        }
+        return name[0] || "•";
+    }
+
+    providerClass(rec) {
+        const name = this.providerName(rec).toUpperCase();
+        if (name.includes("FPT")) {
+            return "is-fpt";
+        }
+        if (name.includes("VNPT")) {
+            return "is-vnpt";
+        }
+        if (name.includes("VIETTEL")) {
+            return "is-viettel";
+        }
+        return "";
+    }
+
+    noteLabel(rec) {
+        const text = (rec?.note || "").toString().trim();
+        return text || "—";
+    }
+
+    hasInvoice(rec) {
+        return Boolean(rec?.invoice_filename);
+    }
+
+    opsStatusCode(rec) {
+        return rec.ops_status || rec.state || "active";
+    }
+
+    opsStatusLabel(rec) {
+        const code = this.opsStatusCode(rec);
+        if (code === "liquidated" || rec.state === "cancel") {
+            return "Đã thanh lý";
+        }
+        return (OPS_STATUS_META[code] || OPS_STATUS_META.active).label;
+    }
+
+    remainTone(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "ok";
+        }
+        const days = Number(rec.remaining_days);
+        if (!Number.isFinite(days) && !rec.date_end) {
+            return "ok";
+        }
+        if (days < 0 || rec.alert_level === "expired") {
+            return "danger";
+        }
+        if (days <= 30 || rec.alert_level === "warn" || rec.alert_level === "danger") {
+            return "warning";
+        }
+        return "ok";
+    }
+
+    statusCode(rec) {
+        return this.remainTone(rec) === "ok" ? "active" : this.remainTone(rec);
+    }
+
+    remainLabel(rec) {
+        const ops = this.opsStatusCode(rec);
+        if (ops === "liquidated" || ops === "cancel" || rec.state === "cancel") {
+            return "—";
+        }
+        if (rec.remaining_time) {
+            return rec.remaining_time;
+        }
+        const days = Number(rec.remaining_days);
+        if (!Number.isFinite(days)) {
+            return "—";
+        }
+        if (days < 0) {
+            return `Quá hạn ${Math.abs(days)} ngày`;
+        }
+        return `Còn ${days} ngày`;
+    }
+
+    remainIcon(rec) {
+        const code = this.statusCode(rec);
+        if (code === "danger") {
+            return "fa fa-exclamation-circle";
+        }
+        if (code === "warning") {
+            return "fa fa-clock-o";
+        }
+        return "fa fa-calendar";
+    }
+
+    /** Giống Lịch TT — tính remaining từ date_end. */
+    enrichRemaining(rec) {
+        const ops = rec.ops_status || rec.state || "active";
+        if (ops === "liquidated" || ops === "cancel") {
+            return { ...rec, remaining_days: false, remaining_time: false, alert_level: "ok" };
+        }
+        const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+        if (!end) {
+            return { ...rec, remaining_days: 0, remaining_time: false, alert_level: "ok" };
+        }
+        const today = ymd(new Date());
+        const t0 = Date.parse(`${today}T00:00:00`);
+        const t1 = Date.parse(`${end}T00:00:00`);
+        const days = Number.isFinite(t0) && Number.isFinite(t1)
+            ? Math.round((t1 - t0) / 86400000)
+            : 0;
+        let remaining_time;
+        let alert_level;
+        if (days >= 0) {
+            remaining_time = `Còn ${days} ngày`;
+            alert_level = days <= 7 ? "danger" : days <= 30 ? "warn" : "ok";
+        } else {
+            remaining_time = `Quá hạn ${Math.abs(days)} ngày`;
+            alert_level = "expired";
+        }
+        return { ...rec, remaining_days: days, remaining_time, alert_level };
     }
 
     setStatusTab(tab) {
@@ -360,9 +542,10 @@ export class PhanHePaymentBoard extends Component {
 
     onCardCheck(rec, ev) {
         ev.stopPropagation();
+        const key = this.payKey(rec);
         this.state.selected = {
             ...this.state.selected,
-            [rec.id]: Boolean(ev.target.checked),
+            [key]: Boolean(ev.target.checked),
         };
     }
 
@@ -465,18 +648,20 @@ export class PhanHePaymentBoard extends Component {
     }
 
     async loadConfirmPayments() {
-        // Map 1:1 từ Lịch thanh toán (tháng + quá hạn) — không lấy toàn bộ phiếu cũ.
+        // Cùng API / cùng nội dung bảng Lịch thanh toán.
         const result = await this.orm.call("phan.he.service", "get_payment_confirm_board", [
             this.state.year,
             this.state.month,
             this.state.search || "",
         ]);
-        const records = result?.records || [];
+        let records = result?.records || [];
+        records = records.map((r) => this.enrichRemaining(r));
         if (result?.year) {
-            this.state.year = result.year;
+            this.state.year = Number(result.year);
+            this.yearOptions = this.buildYearOptions(this.state.year);
         }
         if (result?.month) {
-            this.state.month = result.month;
+            this.state.month = Number(result.month);
         }
         this.state.records = records;
         this.state.totalCount = result?.total ?? records.length;
@@ -505,6 +690,7 @@ export class PhanHePaymentBoard extends Component {
             return;
         }
         this.state.year = year;
+        this.yearOptions = this.buildYearOptions(year);
         this.state.page = 1;
         this.load();
     }
@@ -530,21 +716,25 @@ export class PhanHePaymentBoard extends Component {
                 return;
             }
             const header = [
-                "STT", "Mã KH", "Cửa hàng", "Hợp đồng", "Nhà cung cấp",
-                "Kỳ TT", "Ngày đến hạn", "Số tiền", "Trạng thái",
+                "STT", "Cửa hàng", "Mã KH", "Nhà cung cấp", "Băng thông",
+                "Ngày bắt đầu", "Ngày kết thúc", "Cước tháng", "Số tiền thanh toán",
+                "Ghi chú", "Thời gian còn lại", "Trạng thái",
             ];
             const lines = [header.map((h) => this.csvCell(h)).join(",")];
             this.state.records.forEach((rec, idx) => {
                 lines.push([
                     idx + 1,
-                    rec.code || "",
                     this.storeName(rec),
-                    this.serviceName(rec),
+                    this.customerCodeLabel(rec),
                     this.providerName(rec),
-                    rec.period || "",
-                    this.formatDate(rec.date_due),
-                    Math.round(Number(rec.amount || 0)),
-                    this.stateLabel(rec),
+                    rec.bandwidth || "",
+                    this.formatDate(rec.date_start),
+                    this.formatDate(rec.date_end),
+                    Math.round(Number(rec.contract_amount || 0)),
+                    Math.round(this.payAmount(rec)),
+                    this.noteLabel(rec),
+                    this.remainLabel(rec),
+                    this.opsStatusLabel(rec),
                 ].map((v) => this.csvCell(v)).join(","));
             });
             const blob = new Blob(["\ufeff" + lines.join("\r\n")], {
@@ -553,7 +743,7 @@ export class PhanHePaymentBoard extends Component {
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
             a.href = url;
-            a.download = `Du_kien_thanh_toan_T${this.state.month}_${this.state.year}.csv`;
+            a.download = `Xac_nhan_TT_T${this.state.month}_${this.state.year}.csv`;
             a.click();
             URL.revokeObjectURL(url);
             this.notification.add("Đã xuất Excel.", { type: "success" });
@@ -576,10 +766,11 @@ export class PhanHePaymentBoard extends Component {
         this.state.page = 1;
     }
 
-    toggleSelect(id, ev) {
+    toggleSelect(rec, ev) {
+        const key = this.payKey(rec);
         this.state.selected = {
             ...this.state.selected,
-            [id]: Boolean(ev.target.checked),
+            [key]: Boolean(ev.target.checked),
         };
     }
 
@@ -587,7 +778,7 @@ export class PhanHePaymentBoard extends Component {
         const on = Boolean(ev.target.checked);
         const next = { ...this.state.selected };
         for (const r of this.pageRecords) {
-            next[r.id] = on;
+            next[this.payKey(r)] = on;
         }
         this.state.selected = next;
     }
@@ -603,7 +794,6 @@ export class PhanHePaymentBoard extends Component {
         }
         this.state.confirming = true;
         try {
-            // Chỉ đánh dấu phiếu đã TT — HĐ vẫn giữ Đang sử dụng (không đổi state).
             await this.orm.call("phan.he.payment", "action_mark_paid", [ids]);
             this.notification.add(
                 `Đã xác nhận ${ids.length} phiếu. Hợp đồng vẫn ở Đang sử dụng.`,
@@ -622,7 +812,7 @@ export class PhanHePaymentBoard extends Component {
     }
 
     async confirmOne(rec) {
-        this.state.selected = { [rec.id]: true };
+        this.state.selected = { [this.payKey(rec)]: true };
         await this.confirmSelected();
     }
 }

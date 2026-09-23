@@ -268,14 +268,7 @@ export class PhanHeInternetListBoard extends Component {
             value: i + 1,
             label: `Tháng ${i + 1}`,
         }));
-        this.yearOptions = (() => {
-            const y = new Date().getFullYear();
-            const years = [];
-            for (let i = y - 1; i <= y + 2; i++) {
-                years.push({ value: i, label: `Năm ${i}` });
-            }
-            return years;
-        })();
+        this.yearOptions = this.buildForecastYearOptions(new Date().getFullYear());
         onMounted(() => this.syncStickyColumns());
         onPatched(() => this.syncStickyColumns());
         onWillStart(async () => {
@@ -455,9 +448,15 @@ export class PhanHeInternetListBoard extends Component {
     get pageMeta() {
         const base = FILTER_TITLES[this.listFilter] || FILTER_TITLES.all;
         if (this.isPeriodPaymentList) {
+            if (this.isForecastList) {
+                return {
+                    ...base,
+                    subtitle: `Dự kiến tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+                };
+            }
             return {
                 ...base,
-                subtitle: `${this.isForecastList ? "Dự kiến" : "Lịch"} tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+                subtitle: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear} · còn ≤30 ngày + quá hạn chưa TT`,
             };
         }
         return base;
@@ -470,6 +469,10 @@ export class PhanHeInternetListBoard extends Component {
         const year = Number(this.state.forecastYear);
         const month = Number(this.state.forecastMonth);
         const ymPrefix = `${year}-${pad2(month)}`;
+        const todayStr = ymd(new Date());
+        const soon = new Date();
+        soon.setDate(soon.getDate() + 30);
+        const soonStr = ymd(soon);
         return (this.state.records || []).map((rec) => {
             const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             let due;
@@ -488,9 +491,12 @@ export class PhanHeInternetListBoard extends Component {
                     : Number(rec.contract_amount || 0),
             };
         }).filter((rec) => {
-            // Đúng tháng/năm đang chọn, hoặc đã quá hạn
             const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
-            const todayStr = ymd(new Date());
+            if (!this.isForecastList) {
+                // Lịch TT: còn ≤30 ngày hoặc quá hạn
+                return Boolean(end && end <= soonStr);
+            }
+            // Dự kiến: đúng tháng/năm đang chọn, hoặc đã quá hạn
             if (end && end < todayStr) {
                 return true;
             }
@@ -500,10 +506,8 @@ export class PhanHeInternetListBoard extends Component {
             }
             return Boolean(end && end.startsWith(ymPrefix));
         }).sort((a, b) => {
-            // Quá hạn lên trước, rồi theo ngày kết thúc
             const ae = a.date_end ? String(a.date_end).slice(0, 10) : "";
             const be = b.date_end ? String(b.date_end).slice(0, 10) : "";
-            const todayStr = ymd(new Date());
             const ao = ae && ae < todayStr ? 0 : 1;
             const bo = be && be < todayStr ? 0 : 1;
             if (ao !== bo) {
@@ -581,8 +585,13 @@ export class PhanHeInternetListBoard extends Component {
         const f = listFilter || "active";
         if (f === "active") {
             domain.push(["state", "=", "active"]);
-        } else if (f === "payment_forecast" || f === "payment_due") {
-            // Cùng logic: tháng/năm đang chọn + HĐ quá hạn
+        } else if (f === "payment_due") {
+            // Lịch TT: cần TT = còn ≤30 ngày hoặc quá hạn (từ Đang sử dụng)
+            domain.push(["state", "=", "active"]);
+            domain.push(["date_end", "!=", false]);
+            domain.push(["date_end", "<=", soon30]);
+        } else if (f === "payment_forecast") {
+            // Dự kiến: tháng/năm đang chọn + HĐ quá hạn
             const y = Number(this.state.forecastYear) || new Date().getFullYear();
             const m = Number(this.state.forecastMonth) || (new Date().getMonth() + 1);
             const from = `${y}-${pad2(m)}-01`;
@@ -835,9 +844,36 @@ export class PhanHeInternetListBoard extends Component {
     setForecastMonth(year, month) {
         this.state.forecastYear = Number(year);
         this.state.forecastMonth = Number(month);
+        this.yearOptions = this.buildForecastYearOptions(this.state.forecastYear);
         this.state.page = 1;
         this.state.currentPage = 1;
         this.load();
+    }
+
+    buildForecastYearOptions(centerYear) {
+        const y = Number(centerYear) || new Date().getFullYear();
+        const years = [];
+        for (let i = y - 2; i <= y + 3; i++) {
+            years.push({ value: i, label: `Năm ${i}` });
+        }
+        return years;
+    }
+
+    /** OWL template không có global String. */
+    toStr(v) {
+        return v == null ? "" : String(v);
+    }
+
+    isForecastMonthSelected(v) {
+        return Number(this.state.forecastMonth) === Number(v);
+    }
+
+    isForecastYearSelected(v) {
+        return Number(this.state.forecastYear) === Number(v);
+    }
+
+    get forecastPeriodKey() {
+        return `${this.state.forecastYear}-${this.state.forecastMonth}`;
     }
 
     /** Cập nhật badge sidebar theo số HĐ tháng đang chọn. */
@@ -1198,6 +1234,7 @@ export class PhanHeInternetListBoard extends Component {
                         Number(this.state.forecastMonth) || false,
                         this.state.search || "",
                         this.state.regionFilter || false,
+                        this.isForecastList ? "forecast" : "schedule",
                     ]),
                 ];
                 if (needProviders) {
@@ -1221,6 +1258,7 @@ export class PhanHeInternetListBoard extends Component {
                 const pm = Number(payload.month);
                 if (py && py !== Number(this.state.forecastYear)) {
                     this.state.forecastYear = py;
+                    this.yearOptions = this.buildForecastYearOptions(py);
                 }
                 if (pm && pm !== Number(this.state.forecastMonth)) {
                     this.state.forecastMonth = pm;

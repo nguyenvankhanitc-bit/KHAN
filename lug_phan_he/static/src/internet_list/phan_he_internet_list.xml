@@ -195,18 +195,18 @@
                     <t t-if="isForecastStyleList">
                         <div class="lq-forecast-bar">
                             <select class="lq-period-select"
-                                    t-att-value="state.forecastMonth"
                                     t-on-change="onForecastMonthChange">
                                 <t t-foreach="monthOptions" t-as="m" t-key="m.value">
-                                    <option t-att-value="m.value"
+                                    <option t-att-value="toStr(m.value)"
+                                            t-att-selected="isForecastMonthSelected(m.value)"
                                             t-esc="m.label"/>
                                 </t>
                             </select>
                             <select class="lq-period-select is-year"
-                                    t-att-value="state.forecastYear"
                                     t-on-change="onForecastYearChange">
                                 <t t-foreach="yearOptions" t-as="y" t-key="y.value">
-                                    <option t-att-value="y.value"
+                                    <option t-att-value="toStr(y.value)"
+                                            t-att-selected="isForecastYearSelected(y.value)"
                                             t-esc="y.label"/>
                                 </t>
                             </select>

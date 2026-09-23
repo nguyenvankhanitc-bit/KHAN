@@ -35,7 +35,7 @@
                     <label class="lq-today-search">
                         <i class="fa fa-search"/>
                         <input type="text"
-                               t-att-placeholder="isForecast ? 'Tìm cửa hàng, mã KH...' : 'Tìm cửa hàng, mã phiếu...'"
+                               t-att-placeholder="'Tìm cửa hàng, mã KH...'"
                                t-att-value="state.search"
                                t-on-input="onSearchInput"/>
                     </label>
@@ -72,15 +72,15 @@
                                         <div class="lq-today-card-top">
                                             <label t-if="isConfirm" class="lq-pay-card-check" t-on-click.stop="">
                                                 <input type="checkbox"
-                                                       t-att-checked="!!state.selected[rec.id]"
+                                                       t-att-checked="!!state.selected[payKey(rec)]"
                                                        t-on-change="(ev) => this.onCardCheck(rec, ev)"/>
                                             </label>
                                             <div class="lq-today-card-title">
                                                 <strong t-esc="storeName(rec)"/>
-                                                <small t-esc="rec.code || '—'"/>
+                                                <small t-esc="customerCodeLabel(rec)"/>
                                             </div>
-                                            <span t-attf-class="lq-today-badge {{ stateClass(rec) }}"
-                                                  t-esc="stateLabel(rec)"/>
+                                            <span t-attf-class="lq-today-badge is-{{ statusCode(rec) }}"
+                                                  t-esc="remainLabel(rec)"/>
                                             <button t-if="isConfirm" type="button" class="lq-pay-card-act"
                                                     title="Xác nhận"
                                                     t-on-click="() => this.confirmOne(rec)">
@@ -89,20 +89,20 @@
                                         </div>
                                         <div class="lq-today-card-grid">
                                             <div>
-                                                <span>Kỳ TT</span>
-                                                <b t-esc="rec.period || '—'"/>
+                                                <span>Ngày bắt đầu</span>
+                                                <b t-esc="formatDate(rec.date_start)"/>
                                             </div>
                                             <div>
-                                                <span>Ngày đến hạn</span>
-                                                <b t-esc="formatDate(rec.date_due)"/>
+                                                <span>Ngày kết thúc</span>
+                                                <b t-esc="formatDate(rec.date_end)"/>
                                             </div>
                                             <div>
-                                                <span>Số tiền</span>
-                                                <b t-att-class="'is-' + cardAccent(rec)" t-esc="formatMoney(rec.amount)"/>
+                                                <span>Số tiền TT</span>
+                                                <b t-att-class="'is-' + cardAccent(rec)" t-esc="formatMoney(payAmount(rec))"/>
                                             </div>
                                             <div>
-                                                <span>Hợp đồng</span>
-                                                <b t-esc="serviceName(rec)"/>
+                                                <span>Cước tháng</span>
+                                                <b t-esc="formatMoney(rec.contract_amount)"/>
                                             </div>
                                         </div>
                                         <div class="lq-today-card-foot">
@@ -111,8 +111,8 @@
                                                 <t t-esc="providerName(rec)"/>
                                             </span>
                                             <span>
-                                                <i class="fa fa-file-text-o"/>
-                                                <t t-esc="rec.code || 'Phiếu TT'"/>
+                                                <i class="fa fa-info-circle"/>
+                                                <t t-esc="opsStatusLabel(rec)"/>
                                             </span>
                                         </div>
                                     </div>
@@ -166,19 +166,19 @@
                     <t t-if="isForecast or isConfirm">
                         <div class="lq-forecast-bar">
                             <select class="lq-period-select"
-                                    t-att-value="state.month"
                                     t-on-change="onMonthChange">
                                 <t t-foreach="monthOptions" t-as="m" t-key="m.value">
-                                    <option t-att-value="m.value"
+                                    <option t-att-value="toStr(m.value)"
+                                            t-att-selected="isMonthSelected(m.value)"
                                             t-esc="m.label"/>
                                 </t>
                             </select>
-                            <select class="lq-period-select"
-                                    t-att-value="state.year"
+                            <select class="lq-period-select is-year"
                                     t-on-change="onYearChange">
-                                <t t-foreach="yearOptions" t-as="y" t-key="y">
-                                    <option t-att-value="y"
-                                            t-esc="y"/>
+                                <t t-foreach="yearOptions" t-as="y" t-key="y.value">
+                                    <option t-att-value="toStr(y.value)"
+                                            t-att-selected="isYearSelected(y.value)"
+                                            t-esc="y.label"/>
                                 </t>
                             </select>
                             <button type="button" class="lq-btn-refresh"
@@ -199,7 +199,7 @@
                     <label class="lq-chip lq-search">
                         <i class="fa fa-search"/>
                         <input type="text"
-                               t-att-placeholder="isForecast ? 'Tìm cửa hàng, mã KH...' : 'Tìm cửa hàng, mã phiếu...'"
+                               t-att-placeholder="'Tìm cửa hàng, mã KH...'"
                                t-att-value="state.search"
                                t-on-input="onSearchInput"/>
                     </label>
@@ -218,8 +218,8 @@
             <div class="lq-table-card">
                 <div class="lq-table-bar">
                     <div class="lq-region-tag">
-                        <i class="fa fa-list"/>
-                        <b t-esc="pageMeta.title"/>
+                        <i class="fa fa-calendar"/>
+                        <b t-esc="'Tháng ' + state.month + '/' + state.year"/>
                         <span t-esc="state.totalCount"/> <t t-esc="countLabel"/>
                     </div>
                 </div>
@@ -239,51 +239,100 @@
                                                t-on-change="toggleSelectAll"/>
                                     </th>
                                     <th class="col-stt">STT</th>
-                                    <th class="col-store">Cửa hàng</th>
-                                    <th class="col-contract">Hợp đồng</th>
+                                    <th class="col-store">Cửa hàng / Mã KH</th>
                                     <th class="col-provider">Nhà cung cấp</th>
-                                    <th class="col-period">Kỳ TT</th>
-                                    <th class="col-date-end">Ngày đến hạn</th>
-                                    <th class="col-pay">Số tiền</th>
-                                    <th class="col-ops">Trạng thái</th>
-                                    <th class="col-act" t-if="isConfirm">Thao tác</th>
+                                    <t t-if="isConfirm">
+                                        <th class="col-bw">Băng thông</th>
+                                        <th class="col-date-start">Ngày bắt đầu</th>
+                                        <th class="col-date-end">Ngày kết thúc</th>
+                                        <th class="col-fee">Cước tháng</th>
+                                        <th class="col-pay">Số tiền thanh toán</th>
+                                        <th class="col-note">Ghi chú</th>
+                                        <th class="col-invoice">Hóa đơn</th>
+                                        <th class="col-status">Thời gian còn lại</th>
+                                        <th class="col-ops">Trạng thái</th>
+                                        <th class="col-act">Thao tác</th>
+                                    </t>
+                                    <t t-else="">
+                                        <th class="col-contract">Hợp đồng</th>
+                                        <th class="col-period">Kỳ TT</th>
+                                        <th class="col-date-end">Ngày đến hạn</th>
+                                        <th class="col-pay">Số tiền</th>
+                                        <th class="col-ops">Trạng thái</th>
+                                    </t>
                                 </tr>
                             </thead>
                             <tbody>
                                 <t t-if="!pageRecords.length">
                                     <tr>
-                                        <td t-att-colspan="isConfirm ? 10 : 8" class="lq-empty">Không có dữ liệu</td>
+                                        <td t-att-colspan="isConfirm ? 14 : 8" class="lq-empty">Không có dữ liệu</td>
                                     </tr>
                                 </t>
                                 <t t-foreach="pageRecords" t-as="rec" t-key="rec.id">
                                     <tr>
                                         <td class="col-check" t-if="isConfirm">
                                             <input type="checkbox"
-                                                   t-att-checked="!!state.selected[rec.id]"
-                                                   t-on-change="(ev) => this.toggleSelect(rec.id, ev)"/>
+                                                   t-att-checked="!!state.selected[payKey(rec)]"
+                                                   t-on-change="(ev) => this.toggleSelect(rec, ev)"/>
                                         </td>
                                         <td class="col-stt" t-esc="rec.stt"/>
                                         <td class="col-store">
                                             <span class="lq-name" t-esc="storeName(rec)"/>
-                                            <small t-esc="rec.code || '—'"/>
+                                            <small t-esc="customerCodeLabel(rec)"/>
                                         </td>
-                                        <td class="col-contract" t-esc="serviceName(rec)"/>
-                                        <td class="col-provider" t-esc="providerName(rec)"/>
-                                        <td class="col-period" t-esc="rec.period || '—'"/>
-                                        <td class="col-date-end" t-esc="formatDate(rec.date_due)"/>
-                                        <td class="col-pay lq-money" t-esc="formatMoney(rec.amount)"/>
-                                        <td class="col-ops">
-                                            <span t-attf-class="lq-ops-pill {{ stateClass(rec) }}">
-                                                <t t-esc="stateLabel(rec)"/>
+                                        <td class="col-provider">
+                                            <span t-att-class="'lq-isp ' + providerClass(rec)">
+                                                <b t-esc="providerMark(rec)"/>
+                                                <t t-esc="providerName(rec)"/>
                                             </span>
                                         </td>
-                                        <td class="col-act" t-if="isConfirm">
-                                            <button type="button" class="lq-act is-edit"
-                                                    title="Xác nhận đã thanh toán"
-                                                    t-on-click="() => this.confirmOne(rec)">
-                                                <i class="fa fa-check"/>
-                                            </button>
-                                        </td>
+                                        <t t-if="isConfirm">
+                                            <td class="col-bw" t-esc="rec.bandwidth || '—'"/>
+                                            <td class="col-date-start" t-esc="formatDate(rec.date_start)"/>
+                                            <td class="col-date-end" t-esc="formatDate(rec.date_end)"/>
+                                            <td class="col-fee" t-esc="formatMoney(rec.contract_amount)"/>
+                                            <td class="col-pay lq-money" t-esc="formatMoney(payAmount(rec))"/>
+                                            <td class="col-note">
+                                                <span class="lq-note-cell"
+                                                      t-att-title="rec.note || ''"
+                                                      t-esc="noteLabel(rec)"/>
+                                            </td>
+                                            <td class="col-invoice">
+                                                <span t-if="hasInvoice(rec)" class="lq-invoice-ok">
+                                                    <i class="fa fa-file-text-o"/>
+                                                </span>
+                                                <span t-else="" class="lq-invoice-empty">—</span>
+                                            </td>
+                                            <td class="col-status">
+                                                <span t-attf-class="lq-remain-pill is-{{ statusCode(rec) }}">
+                                                    <i t-att-class="remainIcon(rec)"/>
+                                                    <t t-esc="remainLabel(rec)"/>
+                                                </span>
+                                            </td>
+                                            <td class="col-ops">
+                                                <span t-attf-class="lq-ops-pill is-{{ opsStatusCode(rec) }}">
+                                                    <t t-esc="opsStatusLabel(rec)"/>
+                                                </span>
+                                            </td>
+                                            <td class="col-act">
+                                                <button type="button" class="lq-act is-edit"
+                                                        title="Xác nhận đã thanh toán"
+                                                        t-on-click="() => this.confirmOne(rec)">
+                                                    <i class="fa fa-check"/>
+                                                </button>
+                                            </td>
+                                        </t>
+                                        <t t-else="">
+                                            <td class="col-contract" t-esc="serviceName(rec)"/>
+                                            <td class="col-period" t-esc="rec.period || '—'"/>
+                                            <td class="col-date-end" t-esc="formatDate(rec.date_due)"/>
+                                            <td class="col-pay lq-money" t-esc="formatMoney(payAmount(rec))"/>
+                                            <td class="col-ops">
+                                                <span t-attf-class="lq-ops-pill {{ stateClass(rec) }}">
+                                                    <t t-esc="stateLabel(rec)"/>
+                                                </span>
+                                            </td>
+                                        </t>
                                     </tr>
                                 </t>
                             </tbody>

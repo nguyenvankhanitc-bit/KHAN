@@ -1323,9 +1323,9 @@ export class PhanHeDashboard extends Component {
                     stack: "regions",
                     borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
                     borderSkipped: false,
-                    barPercentage: 0.78,
-                    categoryPercentage: 0.9,
-                    maxBarThickness: 28,
+                    barPercentage: 0.65,
+                    categoryPercentage: 0.75,
+                    maxBarThickness: 42,
                 };
             }
             return { ...base, type: "line" };
@@ -1381,8 +1381,9 @@ export class PhanHeDashboard extends Component {
                         cornerRadius: 10,
                         callbacks: {
                             title: (items) => {
-                                const day = items?.[0]?.label || "";
-                                return `Ngày ${day}/${chart.month || ""}/${chart.year || ""}`;
+                                const idx = items?.[0]?.dataIndex;
+                                const monthNo = Number(idx) + 1;
+                                return `Tháng ${monthNo}/${chart.year || ""}`;
                             },
                             label: (c) => ` ${c.dataset.label}: ${money(c.parsed.y)}`,
                         },
@@ -1397,8 +1398,7 @@ export class PhanHeDashboard extends Component {
                             color: "#94a3b8",
                             font: { size: 11, weight: "600" },
                             maxRotation: 0,
-                            autoSkip: true,
-                            maxTicksLimit: 31,
+                            autoSkip: false,
                         },
                         title: {
                             display: true,

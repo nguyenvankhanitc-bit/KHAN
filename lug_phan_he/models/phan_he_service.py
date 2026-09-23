@@ -1223,8 +1223,9 @@ class PhanHeService(models.Model):
             cal_year, cal_month, store_id=store_id, region_id=region_id
         )
         by_rows, due_sum = self._dash_group_payment_list_rows(pay_month_recs)
-        month_day_chart = self._dash_build_month_day_chart(
-            pay_month_recs, cal_year, cal_month, mien_meta
+        # Biểu đồ: T1→T12 trong năm lịch (vd 2026); sang năm mới mới đổi năm
+        month_day_chart = self._dash_build_year_month_chart(
+            cal_year, mien_meta, store_id=store_id, region_id=region_id
         )
 
         prev_recs = self.search_month_cost_ky(prev_start.year, prev_start.month, extra_domain=base)
@@ -1882,36 +1883,50 @@ class PhanHeService(models.Model):
         return self.search(domain, order="date_end asc, id asc")
 
     @api.model
-    def _dash_build_month_day_chart(self, recs, year, month, mien_meta):
-        """Biểu đồ dự tính chi phí trong tháng: chi phí từng ngày theo miền + tổng.
+    def _dash_build_year_month_chart(self, year, mien_meta, store_id=None, region_id=None):
+        """Biểu đồ dự tính chi phí: 12 tháng (T1→T12) trong năm lịch.
 
-        Nguồn = Danh sách TT thuộc tháng lịch; ổn định đến khi sang tháng mới.
+        Nguồn = Danh sách TT (next_payment / contract_amount) theo date_end hoặc
+        next_payment_date trong từng tháng. Sang năm mới (vd 2027) mới đổi năm.
         """
         year = int(year)
-        month = min(12, max(1, int(month)))
-        start = fields.Date.to_date(f"{year:04d}-{month:02d}-01")
-        end = (start + relativedelta(months=1)) - relativedelta(days=1)
-        n_days = end.day
-        days = [f"{d:02d}" for d in range(1, n_days + 1)]
-        by_mien = {m["id"]: [0.0] * n_days for m in mien_meta}
+        y_start = fields.Date.to_date(f"{year:04d}-01-01")
+        y_end = fields.Date.to_date(f"{year:04d}-12-31")
+        domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+            "|",
+            "&", ("date_end", ">=", y_start), ("date_end", "<=", y_end),
+            "&", ("next_payment_date", ">=", y_start), ("next_payment_date", "<=", y_end),
+        ]
+        if store_id:
+            domain.append(("store_id", "=", store_id))
+        elif region_id:
+            domain.append(("mien_id", "=", region_id))
+        recs = self.search(domain, order="date_end asc, id asc")
+
+        labels = [f"T{m}" for m in range(1, 13)]
+        by_mien = {m["id"]: [0.0] * 12 for m in mien_meta}
         for rec in recs:
             amt = self._dash_payment_list_amount(rec)
             if amt <= 0:
                 continue
-            day = None
-            if rec.date_end and start <= rec.date_end <= end:
-                day = rec.date_end.day
-            elif rec.next_payment_date and start <= rec.next_payment_date <= end:
-                day = rec.next_payment_date.day
-            if not day:
+            mo = None
+            if rec.date_end and y_start <= rec.date_end <= y_end:
+                mo = rec.date_end.month
+            elif rec.next_payment_date and y_start <= rec.next_payment_date <= y_end:
+                mo = rec.next_payment_date.month
+            if not mo:
                 continue
             mid = rec.mien_id.id or 0
             if mid not in by_mien:
-                by_mien[mid] = [0.0] * n_days
-            by_mien[mid][day - 1] += amt
+                by_mien[mid] = [0.0] * 12
+            by_mien[mid][mo - 1] += amt
+
         regions = []
         for m in mien_meta:
-            amounts = [float(x) for x in by_mien.get(m["id"], [0.0] * n_days)]
+            amounts = [float(x) for x in by_mien.get(m["id"], [0.0] * 12)]
             regions.append({
                 "id": m["id"],
                 "code": m["code"],
@@ -1922,16 +1937,22 @@ class PhanHeService(models.Model):
             })
         totals = [
             float(sum(r["amounts"][i] for r in regions))
-            for i in range(n_days)
+            for i in range(12)
         ]
         return {
             "year": year,
-            "month": month,
-            "label": f"Tháng {month}/{year}",
-            "days": days,
+            "month": None,
+            "label": f"Năm {year}",
+            "days": labels,
+            "months": labels,
             "regions": regions,
             "totals": totals,
         }
+
+    @api.model
+    def _dash_build_month_day_chart(self, recs, year, month, mien_meta):
+        """API cũ — chuyển sang biểu đồ 12 tháng trong năm."""
+        return self._dash_build_year_month_chart(year, mien_meta)
 
     @api.model
     def _dash_group_payment_list_rows(self, recs):

@@ -272,10 +272,9 @@ export class PhanHeInternetListBoard extends Component {
         this._internetTypeId = null;
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
-        this.forecastDonutRef = useRef("forecastDonut");
-        this.forecastCountRef = useRef("forecastCount");
-        this.forecastProviderRef = useRef("forecastProvider");
-        this.forecastStoreRef = useRef("forecastStore");
+        this.forecastRegionBarRef = useRef("forecastRegionBar");
+        this.forecastRegionDonutRef = useRef("forecastRegionDonut");
+        this.forecastStatusDonutRef = useRef("forecastStatusDonut");
         this._forecastCharts = {};
         this.monthOptions = Array.from({ length: 12 }, (_, i) => ({
             value: i + 1,
@@ -583,61 +582,68 @@ export class PhanHeInternetListBoard extends Component {
         }];
     }
 
-    /** KPI + chart Lịch dự kiến TT — sum từ đúng danh sách bảng. */
+    /** KPI + chart Lịch dự kiến TT — sum từ đúng danh sách bảng (mẫu dashboard). */
     get forecastKpi() {
         const rows = this.forecastRows || [];
         const todayStr = ymd(new Date());
+        const regionMeta = [
+            { key: "Nam", label: "Miền Nam", colorKey: "blue", color: "#3b82f6" },
+            { key: "ĐTT", label: "Miền ĐTT", colorKey: "green", color: "#22c55e" },
+            { key: "Bắc", label: "Miền Bắc", colorKey: "orange", color: "#f59e0b" },
+            { key: "VP", label: "Văn phòng", colorKey: "purple", color: "#a855f7" },
+        ];
+        const regionMap = Object.fromEntries(regionMeta.map((r) => [r.key, { ...r, amount: 0, count: 0 }]));
+        const statusMeta = [
+            { key: "active", label: "Đang sử dụng", colorKey: "green", color: "#22c55e" },
+            { key: "suspend", label: "Tạm ngưng", colorKey: "orange", color: "#f59e0b" },
+            { key: "liquidated", label: "Thanh lý", colorKey: "red", color: "#ef4444" },
+        ];
+        const statusMap = Object.fromEntries(statusMeta.map((s) => [s.key, { ...s, count: 0 }]));
+
         let totalAmount = 0;
         let overdueCount = 0;
-        let overdueAmount = 0;
-        let inMonthAmount = 0;
-        let inMonthCount = 0;
-        const byRegion = {};
-        const byProvider = {};
-        const byStore = {};
         for (const r of rows) {
             const amt = Number(r.forecast_amount || 0);
             totalAmount += amt;
             const end = r.date_end ? String(r.date_end).slice(0, 10) : "";
-            const overdue = Boolean(end && end < todayStr);
-            if (overdue) {
+            if (end && end < todayStr) {
                 overdueCount += 1;
-                overdueAmount += amt;
-            } else {
-                inMonthCount += 1;
-                inMonthAmount += amt;
             }
-            const region = (r.store_mien || "").trim() || "Khác";
-            if (!byRegion[region]) {
-                byRegion[region] = { region, count: 0, amount: 0, overdue: 0 };
+            let mien = (r.store_mien || "").trim();
+            if (mien === "DTT") {
+                mien = "ĐTT";
             }
-            byRegion[region].count += 1;
-            byRegion[region].amount += amt;
-            if (overdue) {
-                byRegion[region].overdue += 1;
+            if (!regionMap[mien]) {
+                mien = "VP";
             }
-            let provider = "Khác";
-            if (Array.isArray(r.provider_id) && r.provider_id[1]) {
-                provider = String(r.provider_id[1]);
-            } else if (typeof r.provider_id === "string" && r.provider_id) {
-                provider = r.provider_id;
+            regionMap[mien].amount += amt;
+            regionMap[mien].count += 1;
+
+            let st = (r.ops_status || r.state || "active").toString();
+            if (st === "cancel" || st === "expired") {
+                st = "liquidated";
+            } else if (st === "paused") {
+                st = "suspend";
+            } else if (!statusMap[st]) {
+                st = "active";
             }
-            if (!byProvider[provider]) {
-                byProvider[provider] = { name: provider, count: 0, amount: 0 };
-            }
-            byProvider[provider].count += 1;
-            byProvider[provider].amount += amt;
-            const storeName = Array.isArray(r.store_id) && r.store_id[1]
-                ? String(r.store_id[1])
-                : (r.name || `HĐ #${r.id}`);
-            const storeKey = Array.isArray(r.store_id) && r.store_id[0]
-                ? `s${r.store_id[0]}`
-                : `r${r.id}`;
-            if (!byStore[storeKey]) {
-                byStore[storeKey] = { name: storeName, amount: 0 };
-            }
-            byStore[storeKey].amount += amt;
+            statusMap[st].count += 1;
         }
+
+        const regionRows = regionMeta.map((m) => regionMap[m.key]);
+        const regionLegend = regionRows.map((r) => ({
+            ...r,
+            pct: totalAmount > 0 ? Math.round((r.amount / totalAmount) * 1000) / 10 : 0,
+            pctLabel: `${totalAmount > 0 ? Math.round((r.amount / totalAmount) * 1000) / 10 : 0}%`,
+        }));
+        const statusRows = statusMeta.map((s) => statusMap[s.key]);
+        const statusTotal = rows.length || 1;
+        const statusLegend = statusRows.map((s) => ({
+            ...s,
+            pct: Math.round((s.count / statusTotal) * 1000) / 10,
+            countLabel: `${s.count} (${Math.round((s.count / statusTotal) * 1000) / 10}%)`,
+        }));
+
         const prev = Number(this.state.forecastPrevAmount || 0);
         let pctChange = null;
         let pctUp = true;
@@ -658,16 +664,14 @@ export class PhanHeInternetListBoard extends Component {
             totalAmount,
             storeCount: rows.length,
             overdueCount,
-            overdueAmount,
-            inMonthAmount,
-            inMonthCount,
             prevAmount: prev,
             pctChange,
             pctUp,
             pctLabel,
-            byRegion: Object.values(byRegion).sort((a, b) => b.amount - a.amount),
-            byProvider: Object.values(byProvider).sort((a, b) => b.amount - a.amount).slice(0, 6),
-            topStores: Object.values(byStore).sort((a, b) => b.amount - a.amount).slice(0, 6),
+            regionRows,
+            regionLegend,
+            statusRows,
+            statusLegend,
         };
     }
 
@@ -747,27 +751,81 @@ export class PhanHeInternetListBoard extends Component {
         }
         this.destroyForecastCharts();
         const kpi = this.forecastKpi;
-        const moneyTip = {
-            callbacks: {
-                label(ctx) {
-                    const v = Number(ctx.raw || 0);
-                    return ` ${ctx.dataset.label || ctx.label}: ${formatMoneyVn(v)}`;
-                },
-            },
-        };
+        const regionRows = kpi.regionRows || [];
+        const statusRows = kpi.statusRows || [];
 
-        const donutEl = this.forecastDonutRef.el;
-        if (donutEl) {
-            const inAmt = Math.max(0, Number(kpi.inMonthAmount || 0));
-            const ovAmt = Math.max(0, Number(kpi.overdueAmount || 0));
-            const total = inAmt + ovAmt;
-            this._forecastCharts.donut = new Chart(donutEl, {
+        const barEl = this.forecastRegionBarRef.el;
+        if (barEl) {
+            this._forecastCharts.regionBar = new Chart(barEl, {
+                type: "bar",
+                data: {
+                    labels: regionRows.map((r) => r.label.replace("Miền ", "").replace("Văn phòng", "VP")),
+                    datasets: [{
+                        data: regionRows.map((r) => r.amount),
+                        backgroundColor: regionRows.map((r) => r.color),
+                        borderRadius: 10,
+                        maxBarThickness: 48,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label(ctx) {
+                                    return ` ${formatMoneyVn(ctx.raw)}`;
+                                },
+                            },
+                        },
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback(v) {
+                                    const n = Number(v) / 1e6;
+                                    return `${n}tr`;
+                                },
+                            },
+                            grid: { color: "#f1f5f9" },
+                        },
+                        x: { grid: { display: false } },
+                    },
+                },
+                plugins: [{
+                    id: "forecastRegionBarLabels",
+                    afterDatasetsDraw(chart) {
+                        const meta = chart.getDatasetMeta(0);
+                        const { ctx } = chart;
+                        ctx.save();
+                        ctx.textAlign = "center";
+                        ctx.fillStyle = "#334155";
+                        ctx.font = "600 10px sans-serif";
+                        meta.data.forEach((el, i) => {
+                            const v = chart.data.datasets[0].data[i];
+                            if (v == null) {
+                                return;
+                            }
+                            ctx.fillText(formatMoneyVn(v), el.x, el.y - 8);
+                        });
+                        ctx.restore();
+                    },
+                }],
+            });
+        }
+
+        const regionDonutEl = this.forecastRegionDonutRef.el;
+        if (regionDonutEl) {
+            const total = Number(kpi.totalAmount || 0);
+            this._forecastCharts.regionDonut = new Chart(regionDonutEl, {
                 type: "doughnut",
                 data: {
-                    labels: ["Trong tháng", "Quá hạn"],
+                    labels: regionRows.map((r) => r.label),
                     datasets: [{
-                        data: total > 0 ? [inAmt, ovAmt] : [1, 0],
-                        backgroundColor: ["#22c55e", "#ef4444"],
+                        data: total > 0 ? regionRows.map((r) => r.amount) : [1],
+                        backgroundColor: total > 0 ? regionRows.map((r) => r.color) : ["#e2e8f0"],
                         borderWidth: 0,
                         hoverOffset: 4,
                     }],
@@ -775,14 +833,14 @@ export class PhanHeInternetListBoard extends Component {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: "68%",
+                    cutout: "70%",
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label(ctx) {
                                     const v = Number(ctx.raw || 0);
-                                    const pct = total > 0 ? Math.round((v / total) * 100) : 0;
+                                    const pct = total > 0 ? Math.round((v / total) * 1000) / 10 : 0;
                                     return ` ${ctx.label}: ${formatMoneyVn(v)} (${pct}%)`;
                                 },
                             },
@@ -790,7 +848,7 @@ export class PhanHeInternetListBoard extends Component {
                     },
                 },
                 plugins: [{
-                    id: "forecastDonutCenter",
+                    id: "forecastRegionDonutCenter",
                     afterDraw(chart) {
                         const { ctx, chartArea } = chart;
                         if (!chartArea) {
@@ -800,30 +858,28 @@ export class PhanHeInternetListBoard extends Component {
                         const y = (chartArea.top + chartArea.bottom) / 2;
                         ctx.save();
                         ctx.textAlign = "center";
-                        ctx.fillStyle = "#64748b";
-                        ctx.font = "600 11px sans-serif";
-                        ctx.fillText("Tổng", x, y - 10);
                         ctx.fillStyle = "#0f172a";
                         ctx.font = "700 12px sans-serif";
-                        ctx.fillText(formatMoneyVn(total), x, y + 10);
+                        ctx.fillText(formatMoneyVn(total), x, y - 4);
+                        ctx.fillStyle = "#94a3b8";
+                        ctx.font = "600 10px sans-serif";
+                        ctx.fillText("Tổng chi phí", x, y + 12);
                         ctx.restore();
                     },
                 }],
             });
         }
 
-        const countEl = this.forecastCountRef.el;
-        if (countEl) {
-            const inC = Math.max(0, Number(kpi.inMonthCount || 0));
-            const ovC = Math.max(0, Number(kpi.overdueCount || 0));
-            const totalC = inC + ovC;
-            this._forecastCharts.count = new Chart(countEl, {
+        const statusEl = this.forecastStatusDonutRef.el;
+        if (statusEl) {
+            const total = Number(kpi.storeCount || 0);
+            this._forecastCharts.statusDonut = new Chart(statusEl, {
                 type: "doughnut",
                 data: {
-                    labels: ["Trong tháng", "Quá hạn"],
+                    labels: statusRows.map((r) => r.label),
                     datasets: [{
-                        data: totalC > 0 ? [inC, ovC] : [1, 0],
-                        backgroundColor: ["#3b82f6", "#f59e0b"],
+                        data: total > 0 ? statusRows.map((r) => r.count) : [1],
+                        backgroundColor: total > 0 ? statusRows.map((r) => r.color) : ["#e2e8f0"],
                         borderWidth: 0,
                         hoverOffset: 4,
                     }],
@@ -831,22 +887,22 @@ export class PhanHeInternetListBoard extends Component {
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: "68%",
+                    cutout: "70%",
                     plugins: {
                         legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label(ctx) {
                                     const v = Number(ctx.raw || 0);
-                                    const pct = totalC > 0 ? Math.round((v / totalC) * 100) : 0;
-                                    return ` ${ctx.label}: ${v} CH (${pct}%)`;
+                                    const pct = total > 0 ? Math.round((v / total) * 1000) / 10 : 0;
+                                    return ` ${ctx.label}: ${v} (${pct}%)`;
                                 },
                             },
                         },
                     },
                 },
                 plugins: [{
-                    id: "forecastCountCenter",
+                    id: "forecastStatusDonutCenter",
                     afterDraw(chart) {
                         const { ctx, chartArea } = chart;
                         if (!chartArea) {
@@ -856,87 +912,15 @@ export class PhanHeInternetListBoard extends Component {
                         const y = (chartArea.top + chartArea.bottom) / 2;
                         ctx.save();
                         ctx.textAlign = "center";
-                        ctx.fillStyle = "#64748b";
-                        ctx.font = "600 11px sans-serif";
-                        ctx.fillText("Cửa hàng", x, y - 10);
                         ctx.fillStyle = "#0f172a";
                         ctx.font = "700 18px sans-serif";
-                        ctx.fillText(String(totalC), x, y + 12);
+                        ctx.fillText(String(total), x, y - 2);
+                        ctx.fillStyle = "#94a3b8";
+                        ctx.font = "600 10px sans-serif";
+                        ctx.fillText("cửa hàng", x, y + 14);
                         ctx.restore();
                     },
                 }],
-            });
-        }
-
-        const providerEl = this.forecastProviderRef.el;
-        if (providerEl) {
-            const rows = kpi.byProvider || [];
-            this._forecastCharts.provider = new Chart(providerEl, {
-                type: "bar",
-                data: {
-                    labels: rows.map((r) => r.name),
-                    datasets: [{
-                        label: "Chi phí",
-                        data: rows.map((r) => r.amount),
-                        backgroundColor: "#6366f1",
-                        borderRadius: 8,
-                        maxBarThickness: 28,
-                    }],
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: moneyTip },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback(v) {
-                                    return `${Math.round(Number(v) / 1e6)}tr`;
-                                },
-                            },
-                            grid: { color: "#f1f5f9" },
-                        },
-                        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                    },
-                },
-            });
-        }
-
-        const storeEl = this.forecastStoreRef.el;
-        if (storeEl) {
-            const rows = kpi.topStores || [];
-            this._forecastCharts.store = new Chart(storeEl, {
-                type: "bar",
-                data: {
-                    labels: rows.map((r) => (r.name.length > 18 ? `${r.name.slice(0, 16)}…` : r.name)),
-                    datasets: [{
-                        label: "Chi phí",
-                        data: rows.map((r) => r.amount),
-                        backgroundColor: "#0ea5e9",
-                        borderRadius: 8,
-                        maxBarThickness: 28,
-                    }],
-                },
-                options: {
-                    indexAxis: "y",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: moneyTip },
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: {
-                                callback(v) {
-                                    return `${Math.round(Number(v) / 1e6)}tr`;
-                                },
-                            },
-                            grid: { color: "#f1f5f9" },
-                        },
-                        y: { grid: { display: false }, ticks: { font: { size: 11 } } },
-                    },
-                },
             });
         }
     }

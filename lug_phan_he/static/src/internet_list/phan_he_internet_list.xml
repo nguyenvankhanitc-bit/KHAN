@@ -309,50 +309,46 @@
                         </div>
                     </article>
                 </div>
-                <div class="lq-fc-charts is-grid-2x2">
+                <div class="lq-fc-charts is-sample">
+                    <section class="lq-fc-card">
+                        <header>
+                            <strong>Tổng chi phí theo miền</strong>
+                        </header>
+                        <div class="lq-fc-canvas is-bar"><canvas t-ref="forecastRegionBar"/></div>
+                    </section>
                     <section class="lq-fc-card is-donut">
                         <header>
-                            <strong>Cơ cấu chi phí</strong>
-                            <span>Trong tháng vs quá hạn</span>
+                            <strong>Tỷ trọng chi phí theo miền</strong>
                         </header>
                         <div class="lq-fc-donut-wrap">
-                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastDonut"/></div>
+                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastRegionDonut"/></div>
                             <ul class="lq-fc-donut-legend">
-                                <li><i class="is-green"/> Trong tháng
-                                    <b t-esc="formatMoney(forecastKpi.inMonthAmount)"/></li>
-                                <li><i class="is-red"/> Quá hạn
-                                    <b t-esc="formatMoney(forecastKpi.overdueAmount)"/></li>
+                                <t t-foreach="forecastKpi.regionLegend" t-as="rg" t-key="rg.key">
+                                    <li>
+                                        <i t-att-class="'is-' + rg.colorKey"/>
+                                        <span t-esc="rg.label"/>
+                                        <b t-esc="rg.pctLabel"/>
+                                    </li>
+                                </t>
                             </ul>
                         </div>
                     </section>
                     <section class="lq-fc-card is-donut">
                         <header>
-                            <strong>Cơ cấu cửa hàng</strong>
-                            <span>Số lượng trong tháng vs quá hạn</span>
+                            <strong>Trạng thái cửa hàng</strong>
                         </header>
                         <div class="lq-fc-donut-wrap">
-                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastCount"/></div>
+                            <div class="lq-fc-canvas is-donut"><canvas t-ref="forecastStatusDonut"/></div>
                             <ul class="lq-fc-donut-legend">
-                                <li><i class="is-blue"/> Trong tháng
-                                    <b t-esc="forecastKpi.inMonthCount + ' CH'"/></li>
-                                <li><i class="is-orange"/> Quá hạn
-                                    <b t-esc="forecastKpi.overdueCount + ' CH'"/></li>
+                                <t t-foreach="forecastKpi.statusLegend" t-as="st" t-key="st.key">
+                                    <li>
+                                        <i t-att-class="'is-' + st.colorKey"/>
+                                        <span t-esc="st.label"/>
+                                        <b t-esc="st.countLabel"/>
+                                    </li>
+                                </t>
                             </ul>
                         </div>
-                    </section>
-                    <section class="lq-fc-card">
-                        <header>
-                            <strong>Chi phí theo nhà cung cấp</strong>
-                            <span>Top NCC trong danh sách</span>
-                        </header>
-                        <div class="lq-fc-canvas is-bar"><canvas t-ref="forecastProvider"/></div>
-                    </section>
-                    <section class="lq-fc-card">
-                        <header>
-                            <strong>Top cửa hàng theo số tiền</strong>
-                            <span>Từ danh sách dự kiến TT</span>
-                        </header>
-                        <div class="lq-fc-canvas is-bar"><canvas t-ref="forecastStore"/></div>
                     </section>
                 </div>
             </t>
@@ -362,7 +358,7 @@
                         <div class="lq-region-tag">
                             <t t-if="isForecastStyleList">
                                 <i class="fa fa-calendar"/>
-                                <b t-esc="'Tháng ' + state.forecastMonth + '/' + state.forecastYear"/>
+                                <b t-esc="'Danh sách cửa hàng (chi phí tháng ' + state.forecastMonth + '/' + state.forecastYear + ')'"/>
                             </t>
                             <t t-else="">
                                 <i class="fa fa-map-marker"/>

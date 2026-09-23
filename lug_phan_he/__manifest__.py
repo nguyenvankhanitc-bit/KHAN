@@ -1,16 +1,16 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 {
-    "name": "Quáº£n lÃ½ dá»‹ch vá»¥",
+    "name": "Quản lý dịch vụ",
     "version": "19.0.2.435.0",
     "category": "Operations",
-    "summary": "Quáº£n lÃ½ dá»‹ch vá»¥: Internet, Camera, MÃ¡y cháº¥m cÃ´ng, LinkQ ERP, MÃ¡y chá»§",
+    "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
-Quáº£n lÃ½ dá»‹ch vá»¥
+Quản lý dịch vụ
 ===============
-* 1 app trÃªn App Center: Quáº£n lÃ½ dá»‹ch vá»¥
-* BÃªn trong gá»“m 5 phÃ¢n há»‡: Internet, Camera, MÃ¡y cháº¥m cÃ´ng, LinkQ ERP, MÃ¡y chá»§
-* Hub chá»n dá»‹ch vá»¥ + dashboard / há»£p Ä‘á»“ng / thanh toÃ¡n theo tá»«ng phÃ¢n há»‡
-* PhÃ¢n quyá»n theo nhÃ³m (giá»‘ng NhÃ³m quyá»n LUG): Users + Xem/ThÃªm/Sá»­a/XÃ³aâ€¦
+* 1 app trên App Center: Quản lý dịch vụ
+* Bên trong gồm 5 phân hệ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ
+* Hub chọn dịch vụ + dashboard / hợp đồng / thanh toán theo từng phân hệ
+* Phân quyền theo nhóm (giống Nhóm quyền LUG): Users + Xem/Thêm/Sửa/Xóa…
     """,
     "author": "Custom",
     "license": "LGPL-3",

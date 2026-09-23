@@ -253,8 +253,8 @@ export class PhanHeInternetListBoard extends Component {
             detailInvoicePending: null,
             internetMenus: this.props.internetMenus || {},
             exporting: false,
-            forecastYear: nextMonthParts(1).year,
-            forecastMonth: nextMonthParts(1).month,
+            forecastYear: nextMonthParts(0).year,
+            forecastMonth: nextMonthParts(0).month,
             forecastGroupOpen: {},
         });
         this._loadSeq = 0;
@@ -315,7 +315,8 @@ export class PhanHeInternetListBoard extends Component {
                 const wasPeriod = curFilter === "payment_forecast" || curFilter === "payment_due";
                 const nextPeriod = nextFilter === "payment_forecast" || nextFilter === "payment_due";
                 if (nextPeriod && !wasPeriod) {
-                    const n = nextMonthParts(1);
+                    // Lịch TT / Dự kiến: mặc định tháng hiện tại
+                    const n = nextMonthParts(0);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                     this._lastPeriodEmitSig = "";

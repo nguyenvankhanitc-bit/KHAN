@@ -878,7 +878,7 @@ class PhanHeService(models.Model):
 
     @api.model
     def _internet_payment_period_bounds(self, year=None, month=None):
-        """Tháng Lịch TT / Xác nhận TT. Không truyền → tháng kế tiếp."""
+        """Tháng Lịch TT / Xác nhận TT. Không truyền → tháng hiện tại."""
         today = fields.Date.context_today(self)
         try:
             y = int(year) if year not in (None, False, "") else 0
@@ -888,7 +888,7 @@ class PhanHeService(models.Model):
         if y and 1 <= m <= 12:
             period_start = fields.Date.to_date(f"{y}-{m:02d}-01")
         else:
-            period_start = today.replace(day=1) + relativedelta(months=1)
+            period_start = today.replace(day=1)
         period_end = (period_start + relativedelta(months=1)) - relativedelta(days=1)
         return period_start, period_end, today
 
@@ -896,7 +896,7 @@ class PhanHeService(models.Model):
     def _internet_payment_need_domain(self, year=None, month=None):
         """Lịch TT / Xác nhận — cửa hàng cần thanh toán từ Đang sử dụng.
 
-        - Tháng hiển thị mặc định: n+1 (vd hôm nay 9/2026 → T10/2026)
+        - Tháng hiển thị mặc định: tháng hiện tại (vd hôm nay 9/2026 → T9/2026)
         - Số lượng: date_end còn ≤ 30 ngày hoặc đã quá hạn (chưa TT / vẫn Đang SD)
         """
         period_start, period_end, today = self._internet_payment_period_bounds(year, month)
@@ -1114,7 +1114,7 @@ class PhanHeService(models.Model):
     def get_internet_alert_counts(self, year=None, month=None):
         """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet.
 
-        year/month: tháng đang chọn (mặc định n+1).
+        year/month: tháng đang chọn (mặc định tháng hiện tại).
         Lịch TT / Xác nhận: cửa hàng cần TT (≤30 ngày hoặc quá hạn).
         Dự kiến: theo tháng chọn + quá hạn.
         """
@@ -1526,7 +1526,7 @@ class PhanHeService(models.Model):
     def search_internet_payment_period(self, year=None, month=None, search="", region=False, mode="schedule"):
         """API Lịch TT (mode=schedule) / Dự kiến (mode=forecast).
 
-        schedule: cần TT = date_end còn ≤30 ngày hoặc quá hạn; tháng UI = n+1.
+        schedule: cần TT = date_end còn ≤30 ngày hoặc quá hạn; tháng UI = tháng hiện tại.
         forecast: HĐ có kỳ/date_end trong tháng chọn + quá hạn.
         """
         if mode == "forecast":

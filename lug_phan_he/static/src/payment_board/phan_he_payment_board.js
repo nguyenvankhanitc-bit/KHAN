@@ -24,10 +24,8 @@ function formatDateVn(raw) {
     return `${m[3]}/${m[2]}/${m[1]}`;
 }
 
-function nextMonthParts() {
+function currentMonthParts() {
     const d = new Date();
-    d.setDate(1);
-    d.setMonth(d.getMonth() + 1);
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
@@ -103,7 +101,7 @@ export class PhanHePaymentBoard extends Component {
         this.orm = useService("orm");
         this.notification = useService("notification");
         this.ui = useService("ui");
-        const next = nextMonthParts();
+        const cur = currentMonthParts();
         this.state = useState({
             loading: true,
             exporting: false,
@@ -114,13 +112,13 @@ export class PhanHePaymentBoard extends Component {
             search: "",
             page: 1,
             pageSize: 15,
-            year: next.year,
-            month: next.month,
+            year: cur.year,
+            month: cur.month,
             statusTab: "all",
             sectionOpen: true,
         });
         this.monthOptions = MONTH_OPTIONS;
-        this.yearOptions = this.buildYearOptions(next.year);
+        this.yearOptions = this.buildYearOptions(cur.year);
         this._loadSeq = 0;
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
@@ -137,7 +135,7 @@ export class PhanHePaymentBoard extends Component {
                 this.state.records = [];
                 this.state.loading = true;
                 if (modeChanged && nextProps.mode === "forecast") {
-                    const n = nextMonthParts();
+                    const n = currentMonthParts();
                     this.state.year = n.year;
                     this.state.month = n.month;
                     this.yearOptions = this.buildYearOptions(n.year);

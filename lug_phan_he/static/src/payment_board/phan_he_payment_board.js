@@ -242,7 +242,7 @@ export class PhanHePaymentBoard extends Component {
     get pageMeta() {
         if (this.isForecast) {
             return {
-                title: "Dự kiến thanh toán",
+                title: "Lịch dự kiến TT",
                 subtitle: `Internet đang sử dụng · dự kiến tháng ${this.state.month}/${this.state.year}`,
             };
         }

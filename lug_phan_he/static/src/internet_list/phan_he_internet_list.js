@@ -60,7 +60,7 @@ const INTERNET_NAV_SECTIONS = [
             { id: "payment_schedule", label: "Danh sách thanh toán", icon: "fa-calendar" },
             { id: "payment_confirm", label: "Xác nhận TT", icon: "fa-check-square-o" },
             { id: "payment_overdue", label: "Quá hạn", icon: "fa-times-circle" },
-            { id: "payment_forecast", label: "Dự kiến thanh toán", icon: "fa-calendar-plus-o" },
+            { id: "payment_forecast", label: "Lịch dự kiến TT", icon: "fa-calendar-plus-o" },
         ],
     },
     {
@@ -171,11 +171,11 @@ const FILTER_TITLES = {
     },
     payment_due: {
         title: "Danh sách thanh toán",
-        subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn (cùng Dự kiến thanh toán)",
+        subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn (cùng Lịch dự kiến TT)",
         activeNav: "payment_schedule",
     },
     payment_forecast: {
-        title: "Dự kiến thanh toán",
+        title: "Lịch dự kiến TT",
         subtitle: "HĐ đúng tháng/năm chọn + HĐ quá hạn",
         activeNav: "payment_forecast",
     },
@@ -452,7 +452,7 @@ export class PhanHeInternetListBoard extends Component {
             if (this.isForecastList) {
                 return {
                     ...base,
-                    subtitle: `Dự kiến tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
+                    subtitle: `Lịch dự kiến tháng ${this.state.forecastMonth}/${this.state.forecastYear}`,
                 };
             }
             return {

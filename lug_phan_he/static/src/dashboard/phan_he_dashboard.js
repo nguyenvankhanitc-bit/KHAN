@@ -113,7 +113,7 @@ const INTERNET_NAV_SECTIONS = [
             },
             {
                 id: "payment_forecast",
-                label: "Dự kiến thanh toán",
+                label: "Lịch dự kiến TT",
                 icon: "fa-calendar-plus-o",
                 iconTone: "payment",
                 tone: "danger",

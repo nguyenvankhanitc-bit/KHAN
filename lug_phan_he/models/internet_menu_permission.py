@@ -15,7 +15,7 @@ INTERNET_MENU_TREE = [
     ("payment_schedule", "Danh sách thanh toán", False, "group_cost_payment"),
     ("payment_confirm", "Xác nhận TT", False, "group_cost_payment"),
     ("payment_overdue", "Quá hạn", False, "group_cost_payment"),
-    ("payment_forecast", "Dự kiến thanh toán", False, "group_cost_payment"),
+    ("payment_forecast", "Lịch dự kiến TT", False, "group_cost_payment"),
     ("group_reports", "BÁO CÁO", True, False),
     ("report_month", "Chi phí tháng", False, "group_reports"),
     ("report_quarter", "Chi phí quý", False, "group_reports"),

@@ -130,7 +130,7 @@
               sequence="30"/>
 
     <menuitem id="menu_phan_he_payment_forecast"
-              name="Dự kiến thanh toán"
+              name="Lịch dự kiến TT"
               parent="menu_phan_he_payment_root"
               action="action_phan_he_payment_forecast"
               sequence="40"/>

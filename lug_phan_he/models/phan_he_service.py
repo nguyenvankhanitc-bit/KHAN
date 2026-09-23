@@ -1223,7 +1223,8 @@ class PhanHeService(models.Model):
             cal_year, cal_month, store_id=store_id, region_id=region_id
         )
         by_rows, due_sum = self._dash_group_payment_list_rows(pay_month_recs)
-        # Biểu đồ: T1→T12 trong năm lịch (vd 2026); sang năm mới mới đổi năm
+        # Biểu đồ: T1→T12 năm lịch; chỉ có số liệu đến tháng hiện tại
+        # (vd đang T9/2026 thì T10–T12 = 0). Nguồn = Danh sách thanh toán.
         month_day_chart = self._dash_build_year_month_chart(
             cal_year, mien_meta, store_id=store_id, region_id=region_id
         )
@@ -1884,45 +1885,59 @@ class PhanHeService(models.Model):
 
     @api.model
     def _dash_build_year_month_chart(self, year, mien_meta, store_id=None, region_id=None):
-        """Biểu đồ dự tính chi phí: 12 tháng (T1→T12) trong năm lịch.
+        """Biểu đồ dự tính chi phí: T1→T12, nguồn Danh sách thanh toán.
 
-        Nguồn = Danh sách TT (next_payment / contract_amount) theo date_end hoặc
-        next_payment_date trong từng tháng. Sang năm mới (vd 2027) mới đổi năm.
+        - Mỗi tháng = tổng HĐ có date_end / next_payment_date trong tháng đó
+          (cùng công thức số tiền Danh sách TT).
+        - Chỉ điền đến tháng lịch hiện tại; tháng tương lai = 0
+          (vd đang 9/2026 → T10–T12 trống, sang T10 mới có số liệu T10).
         """
+        today = fields.Date.context_today(self)
         year = int(year)
-        y_start = fields.Date.to_date(f"{year:04d}-01-01")
-        y_end = fields.Date.to_date(f"{year:04d}-12-31")
-        domain = [
-            ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
-            ("state", "=", "active"),
-            "|",
-            "&", ("date_end", ">=", y_start), ("date_end", "<=", y_end),
-            "&", ("next_payment_date", ">=", y_start), ("next_payment_date", "<=", y_end),
-        ]
-        if store_id:
-            domain.append(("store_id", "=", store_id))
-        elif region_id:
-            domain.append(("mien_id", "=", region_id))
-        recs = self.search(domain, order="date_end asc, id asc")
+        if year < today.year:
+            last_month = 12
+        elif year > today.year:
+            last_month = 0
+        else:
+            last_month = int(today.month)
 
         labels = [f"T{m}" for m in range(1, 13)]
         by_mien = {m["id"]: [0.0] * 12 for m in mien_meta}
-        for rec in recs:
-            amt = self._dash_payment_list_amount(rec)
-            if amt <= 0:
-                continue
-            mo = None
-            if rec.date_end and y_start <= rec.date_end <= y_end:
-                mo = rec.date_end.month
-            elif rec.next_payment_date and y_start <= rec.next_payment_date <= y_end:
-                mo = rec.next_payment_date.month
-            if not mo:
-                continue
-            mid = rec.mien_id.id or 0
-            if mid not in by_mien:
-                by_mien[mid] = [0.0] * 12
-            by_mien[mid][mo - 1] += amt
+
+        if last_month >= 1:
+            y_start = fields.Date.to_date(f"{year:04d}-01-01")
+            y_end = (
+                fields.Date.to_date(f"{year:04d}-{last_month:02d}-01")
+                + relativedelta(months=1)
+            ) - relativedelta(days=1)
+            domain = [
+                ("active", "=", True),
+                ("service_type_id.code", "=", "internet"),
+                ("state", "=", "active"),
+                "|",
+                "&", ("date_end", ">=", y_start), ("date_end", "<=", y_end),
+                "&", ("next_payment_date", ">=", y_start), ("next_payment_date", "<=", y_end),
+            ]
+            if store_id:
+                domain.append(("store_id", "=", store_id))
+            elif region_id:
+                domain.append(("mien_id", "=", region_id))
+            recs = self.search(domain, order="date_end asc, id asc")
+            for rec in recs:
+                amt = self._dash_payment_list_amount(rec)
+                if amt <= 0:
+                    continue
+                mo = None
+                if rec.date_end and y_start <= rec.date_end <= y_end:
+                    mo = rec.date_end.month
+                elif rec.next_payment_date and y_start <= rec.next_payment_date <= y_end:
+                    mo = rec.next_payment_date.month
+                if not mo or mo > last_month:
+                    continue
+                mid = rec.mien_id.id or 0
+                if mid not in by_mien:
+                    by_mien[mid] = [0.0] * 12
+                by_mien[mid][mo - 1] += amt
 
         regions = []
         for m in mien_meta:
@@ -1941,7 +1956,8 @@ class PhanHeService(models.Model):
         ]
         return {
             "year": year,
-            "month": None,
+            "month": last_month or None,
+            "through_month": last_month,
             "label": f"Năm {year}",
             "days": labels,
             "months": labels,

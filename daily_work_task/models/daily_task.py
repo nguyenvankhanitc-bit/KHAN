@@ -3328,24 +3328,51 @@ class DailyTask(models.Model):
 
     @api.model
     def get_reminder_systray(self):
-        """Số việc quá hạn + sắp tới hạn (7 ngày) — chuông header."""
+        """Số việc quá hạn + sắp tới hạn (7 ngày) — chuông header.
+
+        Dùng search_count nhẹ — KHÔNG gọi get_report_overview (rất chậm).
+        """
+        from datetime import timedelta
+
         today = fields.Date.context_today(self)
+        soon = today + timedelta(days=7)
         try:
-            data = self.get_report_overview(
-                year=today.year,
-                month=today.month,
-                filters={},
+            overdue = self.search_count([("is_overdue", "=", True)])
+            upcoming = self.search_count(
+                [
+                    ("state", "!=", "done"),
+                    ("is_overdue", "=", False),
+                    ("deadline", "!=", False),
+                    ("deadline", ">=", today),
+                    ("deadline", "<=", soon),
+                ]
             )
+            # Ghi chú cá nhân (nếu có module)
+            note_ov = note_up = 0
+            try:
+                self.env.cr.execute("SELECT to_regclass('public.daily_work_note')")
+                if self.env.cr.fetchone()[0] and "daily.work.note" in self.env:
+                    rows_ov, rows_up = (
+                        self.env["daily.work.note"]
+                        .sudo()
+                        .get_reminder_rows_for_user(
+                            self.env.user.id, today=today, upcoming_days=7
+                        )
+                    )
+                    note_ov = len(rows_ov or [])
+                    note_up = len(rows_up or [])
+            except Exception:
+                self.env.cr.rollback()
+                note_ov = note_up = 0
+            overdue += note_ov
+            upcoming += note_up
+            return {
+                "overdue": overdue,
+                "upcoming": upcoming,
+                "total": overdue + upcoming,
+            }
         except Exception:
             return {"overdue": 0, "upcoming": 0, "total": 0}
-        rem = data.get("reminders") or {}
-        overdue = int(rem.get("overdue") or 0)
-        upcoming = int(rem.get("upcoming") or 0)
-        return {
-            "overdue": overdue,
-            "upcoming": upcoming,
-            "total": overdue + upcoming,
-        }
 
     @api.model
     def get_report_overview(self, year=None, month=None, filters=None):

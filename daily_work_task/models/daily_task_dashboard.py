@@ -112,8 +112,22 @@ class DailyTaskDashboard(models.AbstractModel):
         today = fields.Date.context_today(self)
 
         domain = self._build_domain(filters)
+        # Chỉ sync cờ quá hạn cho bản ghi có thể lệch (deadline đã qua nhưng chưa cờ).
+        # Tránh _refresh_overdue_flags trên toàn bộ kỳ lọc (chậm khi vài trăm HĐ).
+        stale = Task.search(
+            domain
+            + [
+                ("state", "!=", "done"),
+                ("deadline", "!=", False),
+                ("deadline", "<", today),
+                ("is_overdue", "=", False),
+            ],
+            limit=300,
+        )
+        if stale:
+            Task._refresh_overdue_flags(stale)
+
         tasks = Task.search(domain, order="deadline asc, id desc")
-        Task._refresh_overdue_flags(tasks)
 
         total = len(tasks)
         done = len(tasks.filtered(lambda t: t.state == "done"))

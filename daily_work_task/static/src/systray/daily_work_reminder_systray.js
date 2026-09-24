@@ -25,7 +25,7 @@ export class DailyWorkReminderSystray extends Component {
         onWillStart(async () => {
             await this.refresh();
             // Làm mới định kỳ (2 phút)
-            this._timer = setInterval(() => this.refresh(), 120000);
+            this._timer = setInterval(() => this.refresh(), 300000);
         });
         onWillUnmount(() => {
             if (this._timer) {

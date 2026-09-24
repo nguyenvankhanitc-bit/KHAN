@@ -110,8 +110,10 @@ export class DailyWorkDashboard extends Component {
             this.env.bus.trigger("daily_work_task:DASHBOARD_SHELL", { active: true });
         });
         onWillStart(async () => {
-            await loadBundle("web.chartjs_lib");
-            const opts = await this.orm.call("daily.task.dashboard", "get_filter_options", []);
+            // Song song: chart lib + filter options; dashboard không chờ reminder RPC.
+            const chartProm = loadBundle("web.chartjs_lib").catch(() => null);
+            const optsProm = this.orm.call("daily.task.dashboard", "get_filter_options", []);
+            const [opts] = await Promise.all([optsProm, chartProm]);
             this.state.employees = opts.employees || [];
             this.state.departments = opts.departments || [];
             this.state.dateFrom = opts.default_date_from || "";
@@ -382,14 +384,10 @@ export class DailyWorkDashboard extends Component {
                 [],
                 { filters: this.filtersPayload }
             );
-            try {
-                const rem = await this.orm.call("daily.task", "get_reminder_systray", []);
-                this.state.reminderTotal = Number(rem?.total) || 0;
-            } catch (_e) {
-                this.state.reminderTotal =
-                    (Number(this.state.data?.kpi?.overdue) || 0) +
-                    (Number(this.state.data?.kpi?.upcoming) || 0);
-            }
+            // Dùng KPI dashboard — không gọi thêm get_reminder_systray (trước đây rất chậm).
+            this.state.reminderTotal =
+                (Number(this.state.data?.kpi?.overdue) || 0) +
+                (Number(this.state.data?.kpi?.upcoming) || 0);
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không tải được dashboard."), {
                 type: "danger",
@@ -741,7 +739,7 @@ export class DailyWorkDashboard extends Component {
                     await this.action.doAction({ ...loaded, target: "new" });
                     return;
                 } catch (_e) {
-                    /* fallback: mở thường */
+                    /* fallback */
                 }
             }
             await this.action.doAction(action);

@@ -544,7 +544,7 @@ body.o_internet_mobile_nav_lock {
         bottom: 0 !important;
         z-index: 1055 !important;
         flex: none !important;
-        width: min(320px, 88vw) !important;
+        width: #{'min(320px, 88vw)'} !important;
         min-width: 0 !important;
         max-width: 320px !important;
         height: 100% !important;

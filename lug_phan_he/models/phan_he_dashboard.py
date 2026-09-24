@@ -1141,3 +1141,289 @@ class PhanHeDashboard(models.AbstractModel):
             "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         }
 
+    @api.model
+    def get_cost_estimate_board(self, params=None):
+        """Dự toán chi phí T1→T12 — cùng nguồn Danh sách thanh toán từng tháng.
+
+        Mỗi tháng = search_month_cost_ky(year, month) + số tiền kỳ
+        (_month_ky_period_amount), giống khi lọc tháng trên Danh sách TT.
+        """
+        params = params or {}
+        today = fields.Date.context_today(self)
+        year = int(params.get("year") or today.year)
+        region = (params.get("region") or "all") or "all"
+
+        Service = self.env["phan.he.service"]
+        extra = []
+        if region and region != "all":
+            extra.append(("store_mien", "=", region))
+
+        month_amounts = [0.0] * 12
+        month_counts = [0] * 12
+        store_map = {}
+        all_regions = set()
+
+        for m in range(1, 13):
+            recs = Service.search_month_cost_ky(
+                year, m, extra_domain=extra or None
+            )
+            month_counts[m - 1] = len(recs)
+            for rec in recs:
+                amt = float(Service._month_ky_period_amount(rec) or 0.0)
+                if amt <= 0:
+                    continue
+                store = rec.store_id
+                # Key theo HĐ để khớp từng dòng Danh sách thanh toán
+                sid = rec.id
+                if sid not in store_map:
+                    store_map[sid] = {
+                        "id": rec.id,
+                        "store": store.name or rec.name or "—",
+                        "code": rec.customer_code or rec.code or "",
+                        "provider": (rec.provider_id.name if rec.provider_id else "") or "—",
+                        "region": rec.store_mien or "",
+                        "bandwidth": rec.bandwidth or "—",
+                        "monthly": 0.0,
+                        "amounts": [0.0] * 12,
+                        "total": 0.0,
+                    }
+                row = store_map[sid]
+                row["amounts"][m - 1] += amt
+                row["total"] += amt
+                if amt > row["monthly"]:
+                    row["monthly"] = amt
+                month_amounts[m - 1] += amt
+                if row["region"]:
+                    all_regions.add(row["region"])
+
+        months = []
+        for m in range(1, 13):
+            months.append({
+                "month": m,
+                "label": f"Tháng {m}",
+                "short": f"T{m}",
+                "count": int(month_counts[m - 1]),
+                "amount": float(month_amounts[m - 1]),
+            })
+
+        stores = sorted(
+            store_map.values(),
+            key=lambda r: (r.get("region") or "", r.get("store") or ""),
+        )
+        for i, row in enumerate(stores, 1):
+            row["stt"] = i
+            row["amounts"] = [float(x) for x in row["amounts"]]
+            row["total"] = float(row["total"])
+            row["monthly"] = float(row["monthly"])
+
+        year_total = float(sum(month_amounts))
+        peak = max(months, key=lambda x: x["amount"]) if months else None
+
+        # KPI Số cửa hàng = Internet Đang sử dụng (cùng badge sidebar)
+        active_domain = [
+            ("active", "=", True),
+            ("service_type_id.code", "=", "internet"),
+            ("state", "=", "active"),
+        ]
+        if region and region != "all":
+            active_domain.append(("store_mien", "=", region))
+        active_count = Service.search_count(active_domain)
+
+        return {
+            "year": year,
+            "months": months,
+            "stores": stores,
+            "regions": sorted(all_regions),
+            "kpi": {
+                "year_total": year_total,
+                "avg_month": year_total / 12.0 if year_total else 0.0,
+                "store_count": int(active_count),
+                "store_count_unique": len(stores),
+                "peak_month": peak["month"] if peak and peak["amount"] else 0,
+                "peak_amount": float(peak["amount"]) if peak else 0.0,
+                "peak_label": peak["label"] if peak and peak["amount"] else "—",
+            },
+        }
+
+    @api.model
+    def export_cost_estimate_excel(self, params=None):
+        """Xuất Excel dự toán chi phí T1–T12 (tóm tắt tháng + ma trận cửa hàng)."""
+        import base64
+        import io
+
+        try:
+            import openpyxl
+            from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+            from openpyxl.utils import get_column_letter
+        except ImportError as exc:
+            from odoo.exceptions import UserError
+
+            raise UserError("Thiếu thư viện openpyxl trên server.") from exc
+
+        params = params or {}
+        data = self.get_cost_estimate_board(params)
+        year = data.get("year")
+        months = data.get("months") or []
+        stores = data.get("stores") or []
+        kpi = data.get("kpi") or {}
+
+        search = (params.get("search") or "").strip().lower()
+        table_region = params.get("table_region") or "all"
+        if search or (table_region not in ("all", "", None)):
+            filtered = []
+            for row in stores:
+                if table_region not in ("all", "", None) and row.get("region") != table_region:
+                    continue
+                if search:
+                    blob = " ".join([
+                        str(row.get("store") or ""),
+                        str(row.get("code") or ""),
+                        str(row.get("provider") or ""),
+                        str(row.get("region") or ""),
+                    ]).lower()
+                    if search not in blob:
+                        continue
+                filtered.append(row)
+            stores = filtered
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = f"Du toan {year}"[:31]
+
+        font_title = Font(name="Times New Roman", size=16, bold=True)
+        font_header = Font(name="Times New Roman", size=10, bold=True, color="FFFFFF")
+        font_cell = Font(name="Times New Roman", size=10)
+        font_bold = Font(name="Times New Roman", size=10, bold=True)
+        fill_header = PatternFill("solid", fgColor="059669")
+        fill_total = PatternFill("solid", fgColor="D1FAE5")
+        fill_peach = PatternFill("solid", fgColor="FBE4D5")
+        thin = Border(
+            left=Side(style="thin", color="CBD5E1"),
+            right=Side(style="thin", color="CBD5E1"),
+            top=Side(style="thin", color="CBD5E1"),
+            bottom=Side(style="thin", color="CBD5E1"),
+        )
+        money_fmt = '#,##0'
+        align_c = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        align_l = Alignment(horizontal="left", vertical="center", wrap_text=True)
+        align_r = Alignment(horizontal="right", vertical="center")
+
+        ws.merge_cells("A1:D1")
+        ws["A1"].value = f"DỰ TOÁN CHI PHÍ INTERNET NĂM {year}"
+        ws["A1"].font = font_title
+        ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+        ws.row_dimensions[1].height = 28
+
+        ws["A2"].value = (
+            f"Tổng năm: {int(kpi.get('year_total') or 0):,} đ  |  "
+            f"TB/tháng: {int(kpi.get('avg_month') or 0):,} đ  |  "
+            f"{int(kpi.get('store_count') or 0)} cửa hàng"
+        ).replace(",", ".")
+        ws.merge_cells("A2:D2")
+
+        # --- Bảng tóm tắt T1–T12 ---
+        ws["A4"].value = "TÓM TẮT THEO THÁNG"
+        ws["A4"].font = font_bold
+        sum_headers = ["STT", "Tháng", "Số cửa hàng", "Tổng dự toán (đ)"]
+        for col, h in enumerate(sum_headers, 1):
+            c = ws.cell(5, col, h)
+            c.font = font_header
+            c.fill = fill_header
+            c.border = thin
+            c.alignment = align_c
+
+        for idx, mo in enumerate(months, 1):
+            r = 5 + idx
+            vals = [idx, mo.get("label"), int(mo.get("count") or 0), float(mo.get("amount") or 0)]
+            for col, val in enumerate(vals, 1):
+                cell = ws.cell(r, col, val)
+                cell.font = font_cell
+                cell.border = thin
+                cell.alignment = align_c if col <= 3 else align_r
+                if col == 4:
+                    cell.number_format = money_fmt
+
+        foot = 5 + len(months) + 1
+        for col, val in enumerate(
+            ["", "TỔNG NĂM", int(kpi.get("store_count") or 0), float(kpi.get("year_total") or 0)],
+            1,
+        ):
+            cell = ws.cell(foot, col, val)
+            cell.font = font_bold
+            cell.fill = fill_total
+            cell.border = thin
+            if col == 4:
+                cell.number_format = money_fmt
+                cell.alignment = align_r
+
+        # --- Sheet ma trận cửa hàng × tháng ---
+        ws2 = wb.create_sheet(f"Cua hang {year}"[:31])
+        headers2 = ["STT", "Cửa hàng", "Mã KH", "Nhà cung cấp", "Miền"] + [
+            f"T{m}" for m in range(1, 13)
+        ] + ["Tổng năm"]
+        ws2.merge_cells(start_row=1, start_column=1, end_row=1, end_column=len(headers2))
+        ws2["A1"].value = f"DỰ TOÁN CHI PHÍ THEO CỬA HÀNG — NĂM {year}"
+        ws2["A1"].font = font_title
+        ws2["A1"].alignment = Alignment(horizontal="center", vertical="center")
+        ws2.row_dimensions[1].height = 28
+
+        for col, h in enumerate(headers2, 1):
+            c = ws2.cell(3, col, h)
+            c.font = font_header
+            c.fill = fill_header
+            c.border = thin
+            c.alignment = align_c
+
+        for idx, row in enumerate(stores, 1):
+            ridx = 3 + idx
+            values = [
+                idx,
+                row.get("store") or "",
+                row.get("code") or "",
+                row.get("provider") or "",
+                row.get("region") or "",
+            ] + [float(x) for x in (row.get("amounts") or [0.0] * 12)] + [float(row.get("total") or 0)]
+            for col, val in enumerate(values, 1):
+                cell = ws2.cell(ridx, col, val)
+                cell.font = font_cell
+                cell.border = thin
+                if col <= 5:
+                    cell.alignment = align_c if col == 1 else align_l
+                else:
+                    cell.alignment = align_r
+                    cell.number_format = money_fmt
+
+        tot_row = 4 + len(stores)
+        month_totals = [0.0] * 12
+        year_sum = 0.0
+        for row in stores:
+            amts = row.get("amounts") or [0.0] * 12
+            for i in range(12):
+                month_totals[i] += float(amts[i] or 0)
+            year_sum += float(row.get("total") or 0)
+        foot_vals = ["", "TỔNG CỘNG", "", "", ""] + month_totals + [year_sum]
+        for col, val in enumerate(foot_vals, 1):
+            cell = ws2.cell(tot_row, col, val)
+            cell.font = font_bold
+            cell.fill = fill_peach
+            cell.border = thin
+            if col >= 6:
+                cell.number_format = money_fmt
+                cell.alignment = align_r
+
+        for sheet in (ws, ws2):
+            max_col = sheet.max_column or 1
+            for col in range(1, max_col + 1):
+                maxlen = 8
+                for r in range(1, min(sheet.max_row or 1, 80) + 1):
+                    maxlen = max(maxlen, len(str(sheet.cell(r, col).value or "")))
+                sheet.column_dimensions[get_column_letter(col)].width = min(28, max(10, maxlen + 2))
+
+        buf = io.BytesIO()
+        wb.save(buf)
+        return {
+            "file_base64": base64.b64encode(buf.getvalue()).decode("ascii"),
+            "filename": f"Du_toan_chi_phi_{year}.xlsx",
+            "mimetype": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        }
+

@@ -48,7 +48,10 @@
                 <t t-if="state.contentMode === 'quarter_cost'">
                     <PhanHeQuarterCostBoard onOpenEntry.bind="openEntryForm"/>
                 </t>
-                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost'">
+                <t t-if="state.contentMode === 'cost_estimate'">
+                    <PhanHeCostEstimateBoard/>
+                </t>
+                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost' and state.contentMode !== 'cost_estimate'">
                     <t t-call="lug_phan_he.PhanHeDashboardInner"/>
                 </t>
             </PhanHeInternetShell>

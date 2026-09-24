@@ -135,6 +135,12 @@
               action="action_phan_he_payment_forecast"
               sequence="40"/>
 
+    <menuitem id="menu_phan_he_cost_estimate"
+              name="Dự toán chi phí"
+              parent="menu_phan_he_payment_root"
+              action="action_phan_he_cost_estimate"
+              sequence="50"/>
+
     <!-- Ẩn list Odoo cũ — chỉ dùng nội bộ nếu cần -->
     <menuitem id="menu_phan_he_payment_file"
               name="File thanh toán"

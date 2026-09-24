@@ -61,6 +61,12 @@ const INTERNET_NAV_SECTIONS = [
             { id: "payment_confirm", label: "Xác nhận TT", icon: "fa-check-square-o" },
             { id: "payment_overdue", label: "Quá hạn", icon: "fa-times-circle" },
             { id: "payment_forecast", label: "Lịch dự kiến TT", icon: "fa-calendar-plus-o" },
+            {
+                id: "cost_estimate",
+                label: "Dự toán chi phí",
+                icon: "fa-calculator",
+                action: "lug_phan_he.action_phan_he_cost_estimate",
+            },
         ],
     },
     {

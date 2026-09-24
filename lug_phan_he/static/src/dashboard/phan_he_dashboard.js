@@ -9,6 +9,7 @@ import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
 import { PhanHeInternetShell } from "../internet_shell/phan_he_internet_shell";
 import { PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard } from "../internet_list/phan_he_internet_list";
 import { PhanHePaymentBoard } from "../payment_board/phan_he_payment_board";
+import { PhanHeCostEstimateBoard } from "../cost_estimate/phan_he_cost_estimate";
 import { PhanHeInternetEntryPopup } from "../internet_entry/phan_he_internet_entry_popup";
 import {
     INTERNET_NAV_TO_CODE,
@@ -119,6 +120,12 @@ const INTERNET_NAV_SECTIONS = [
                 tone: "danger",
                 badgeKey: "payment_forecast",
             },
+            {
+                id: "cost_estimate",
+                label: "Dự toán chi phí",
+                icon: "fa-calculator",
+                iconTone: "payment",
+            },
         ],
     },
     {
@@ -190,6 +197,7 @@ export class PhanHeDashboard extends Component {
         PhanHeInternetListBoard,
         PhanHeMonthCostBoard,
         PhanHeQuarterCostBoard,
+        PhanHeCostEstimateBoard,
         PhanHePaymentBoard,
         PhanHeInternetEntryPopup,
     };
@@ -286,6 +294,13 @@ export class PhanHeDashboard extends Component {
                     this.state.loading = false;
                     return;
                 }
+                if (openNav === "cost_estimate") {
+                    this.state.contentMode = "cost_estimate";
+                    this.state.activeNav = "cost_estimate";
+                    this._openGroupForNav("cost_estimate");
+                    this.state.loading = false;
+                    return;
+                }
                 const openList = Boolean(openNav && OWL_LIST_NAV[openNav]);
                 if (openList) {
                     this.state.contentMode = "owl_list";
@@ -329,7 +344,7 @@ export class PhanHeDashboard extends Component {
         });
         useEffect(
             () => {
-                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "payment_board") {
+                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "cost_estimate" || this.state.contentMode === "payment_board") {
                     return () => {};
                 }
                 this.renderInetCharts();
@@ -393,6 +408,7 @@ export class PhanHeDashboard extends Component {
             && this.state.contentMode !== "view"
             && this.state.contentMode !== "month_cost"
             && this.state.contentMode !== "quarter_cost"
+            && this.state.contentMode !== "cost_estimate"
         );
     }
 
@@ -747,6 +763,17 @@ export class PhanHeDashboard extends Component {
             this.state.entryPopupOpen = false;
             return;
         }
+        // Dự toán chi phí T1–T12
+        if (child.id === "cost_estimate") {
+            this.state.activeNav = "cost_estimate";
+            this._openGroupForNav("cost_estimate");
+            this.state.contentMode = "cost_estimate";
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.entryPopupOpen = false;
+            this.state.loading = false;
+            return;
+        }
         if (child.action && !child.reportPeriod) {
             this._rememberFormReturn();
         }
@@ -829,6 +856,11 @@ export class PhanHeDashboard extends Component {
         if (ret.contentMode === "quarter_cost" || ret.activeNav === "report_quarter") {
             this.state.contentMode = "quarter_cost";
             this.state.activeNav = "report_quarter";
+            return;
+        }
+        if (ret.contentMode === "cost_estimate" || ret.activeNav === "cost_estimate") {
+            this.state.contentMode = "cost_estimate";
+            this.state.activeNav = "cost_estimate";
             return;
         }
         this.onOverview();
@@ -1617,7 +1649,7 @@ export class PhanHeDashboard extends Component {
             this.state.loading = false;
             return;
         }
-        if (this.serviceTypeCode === "internet" && (this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost")) {
+        if (this.serviceTypeCode === "internet" && (this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "cost_estimate")) {
             this.state.loading = false;
             return;
         }

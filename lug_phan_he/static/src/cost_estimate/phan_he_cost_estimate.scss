@@ -1,0 +1,192 @@
+.lq-cost-estimate {
+    .lq-ce-export {
+        margin-left: auto;
+        background: #16a34a;
+        color: #fff;
+        border: 0;
+        border-radius: 12px;
+        padding: 10px 16px;
+        font-weight: 700;
+        i { margin-right: 6px; }
+        &:disabled { opacity: 0.65; }
+    }
+
+    .lq-ce-refresh {
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        border-radius: 10px;
+        padding: 8px 12px;
+        font-weight: 600;
+        color: #334155;
+        i { margin-right: 4px; }
+    }
+
+    .lq-ce-kpis {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .lq-ce-kpi {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        span {
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+        strong {
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+        }
+        em {
+            font-style: normal;
+            font-size: 13px;
+            color: #059669;
+            font-weight: 700;
+        }
+        &.is-total strong { color: #059669; }
+        &.is-avg strong { color: #2563eb; }
+        &.is-peak strong { color: #d97706; }
+    }
+
+    .lq-ce-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 12px;
+        button {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            border-radius: 10px;
+            padding: 8px 14px;
+            font-weight: 700;
+            color: #475569;
+            i { margin-right: 6px; }
+            &.is-on {
+                background: #ecfdf5;
+                border-color: #6ee7b7;
+                color: #047857;
+            }
+        }
+    }
+
+    .lq-ce-table {
+        min-width: 0 !important;
+        width: 100%;
+        table-layout: fixed;
+
+        th:nth-child(1),
+        td:nth-child(1) {
+            width: 64px;
+            text-align: center;
+        }
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 28%;
+        }
+        th:nth-child(3),
+        td:nth-child(3) {
+            width: 22%;
+            text-align: center;
+            white-space: nowrap !important;
+            min-width: 0 !important;
+        }
+        th:nth-child(4),
+        td:nth-child(4) {
+            width: 36%;
+            text-align: right;
+        }
+
+        tbody tr {
+            cursor: pointer;
+            &:hover { background: #fef9c3; }
+            &.is-current {
+                background: #fef9c3;
+            }
+            &.is-on {
+                background: #fde68a;
+                box-shadow: inset 3px 0 0 #f59e0b;
+            }
+            &.is-current.is-on {
+                background: #fde68a;
+            }
+            &.is-empty td { color: #94a3b8; }
+        }
+    }
+
+    .lq-mc-table-wrap:has(.lq-ce-table) table {
+        min-width: 0;
+    }
+
+    .lq-ce-hint {
+        margin: 10px 14px 4px;
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .lq-ce-code {
+        font-size: 12px;
+        color: #64748b;
+    }
+
+    .lq-ce-empty {
+        text-align: center;
+        color: #94a3b8;
+        padding: 24px !important;
+    }
+
+    td.is-money {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .lq-ce-matrix-wrap {
+        overflow-x: auto;
+    }
+
+    .lq-ce-matrix {
+        min-width: 1100px;
+        th, td {
+            white-space: nowrap;
+            font-size: 12px;
+        }
+        td.is-store {
+            font-weight: 700;
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        td.is-sm {
+            font-size: 11px;
+            font-weight: 600;
+            color: #334155;
+        }
+        td.is-total {
+            background: #ecfdf5;
+            color: #047857;
+        }
+    }
+
+    .lq-ce-detail {
+        margin-top: 12px;
+    }
+
+    h1 i { color: #059669 !important; }
+}
+
+@media (max-width: 900px) {
+    .lq-cost-estimate .lq-ce-kpis {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}

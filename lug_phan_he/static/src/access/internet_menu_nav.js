@@ -13,6 +13,7 @@ export const INTERNET_NAV_TO_CODE = {
     payment_confirm: "payment_confirm",
     payment_overdue: "payment_overdue",
     payment_forecast: "payment_forecast",
+    cost_estimate: "cost_estimate",
     // Legacy aliases (menu cũ)
     payment_track: "payment_confirm",
     payment_tracking: "payment_confirm",

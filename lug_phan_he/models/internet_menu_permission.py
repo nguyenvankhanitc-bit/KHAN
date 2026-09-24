@@ -16,6 +16,7 @@ INTERNET_MENU_TREE = [
     ("payment_confirm", "Xác nhận TT", False, "group_cost_payment"),
     ("payment_overdue", "Quá hạn", False, "group_cost_payment"),
     ("payment_forecast", "Lịch dự kiến TT", False, "group_cost_payment"),
+    ("cost_estimate", "Dự toán chi phí", False, "group_cost_payment"),
     ("group_reports", "BÁO CÁO", True, False),
     ("report_month", "Chi phí tháng", False, "group_reports"),
     ("report_quarter", "Chi phí quý", False, "group_reports"),
@@ -84,6 +85,7 @@ SERVICE_READ_MENUS = (
     "payment_confirm",
     "payment_overdue",
     "payment_forecast",
+    "cost_estimate",
     "overview_dashboard",
 )
 
@@ -307,11 +309,23 @@ class PhanHeModuleAccessInternetMenu(models.Model):
                     if updates:
                         line.with_context(skip_internet_menu_cascade=True).write(updates)
                     continue
-                to_create.append(dict(
+                vals = dict(
                     meta,
                     role_id=rec.id,
                     menu_code=code,
-                ))
+                )
+                # Menu mới: kế thừa quyền từ Lịch dự kiến TT (cùng nhóm Chi phí)
+                if code == "cost_estimate":
+                    src = existing.get("payment_forecast")
+                    if src:
+                        vals.update({
+                            "can_read": bool(src.can_read),
+                            "can_create": bool(src.can_create),
+                            "can_write": bool(src.can_write),
+                            "can_unlink": bool(src.can_unlink),
+                            "can_admin": bool(src.can_admin),
+                        })
+                to_create.append(vals)
             if to_create:
                 Line.create(to_create)
             # Đổi tên hiển thị theo cây menu mới (stored compute).

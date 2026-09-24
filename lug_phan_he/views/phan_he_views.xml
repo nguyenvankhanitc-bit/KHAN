@@ -1260,6 +1260,12 @@
         <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'payment_forecast'}</field>
     </record>
 
+    <record id="action_phan_he_cost_estimate" model="ir.actions.client">
+        <field name="name">Dự toán chi phí</field>
+        <field name="tag">phan_he_dashboard</field>
+        <field name="context">{'phan_he_service_type_code': 'internet', 'phan_he_app_title': 'Internet', 'phan_he_open_nav': 'cost_estimate'}</field>
+    </record>
+
     <!-- List thô phan.he.payment — chỉ dùng nội bộ, không phải menu Lịch thanh toán -->
     <record id="action_phan_he_payment_list_raw" model="ir.actions.act_window">
         <field name="name">Danh sách thanh toán Internet</field>

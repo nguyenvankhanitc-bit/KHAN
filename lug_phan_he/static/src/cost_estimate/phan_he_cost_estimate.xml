@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeCostEstimateBoard">
+        <div class="lq-month-cost lq-cost-estimate">
+            <header class="lq-mc-top">
+                <h1><i class="fa fa-calculator"/> Dự toán chi phí</h1>
+                <div class="lq-mc-nav">
+                    <button type="button" t-on-click="() => this.shiftYear(-1)" title="Năm trước">
+                        <i class="fa fa-chevron-left"/>
+                    </button>
+                    <span t-esc="yearLabel"/>
+                    <button type="button" t-on-click="() => this.shiftYear(1)" title="Năm sau">
+                        <i class="fa fa-chevron-right"/>
+                    </button>
+                </div>
+                <div class="lq-mc-filters">
+                    <select t-att-value="state.region" t-on-change="onRegionChange">
+                        <option value="all">Tất cả miền</option>
+                        <t t-foreach="regions" t-as="rg" t-key="rg">
+                            <option t-att-value="rg" t-esc="rg"/>
+                        </t>
+                    </select>
+                    <button type="button" class="lq-ce-refresh" t-on-click="() => this.load()" t-att-disabled="state.loading">
+                        <i class="fa fa-refresh"/> Làm mới
+                    </button>
+                </div>
+                <button type="button" class="lq-ce-export" t-att-disabled="state.exporting" t-on-click="exportExcel">
+                    <i class="fa fa-file-excel-o"/>
+                    <t t-if="state.exporting">Đang xuất...</t>
+                    <t t-else="">Xuất Excel</t>
+                </button>
+            </header>
+
+            <t t-if="state.loading">
+                <div class="lq-mc-loading">Đang tải dự toán...</div>
+            </t>
+            <t t-else="">
+                <div class="lq-ce-kpis">
+                    <article class="lq-ce-kpi is-total">
+                        <span>Tổng dự toán năm</span>
+                        <strong t-esc="formatMoney(kpi.year_total)"/>
+                    </article>
+                    <article class="lq-ce-kpi is-avg">
+                        <span>Trung bình / tháng</span>
+                        <strong t-esc="formatMoney(kpi.avg_month)"/>
+                    </article>
+                    <article class="lq-ce-kpi is-stores">
+                        <span>Số cửa hàng</span>
+                        <strong><t t-esc="kpi.store_count or 0"/> CH</strong>
+                    </article>
+                    <article class="lq-ce-kpi is-peak">
+                        <span>Tháng cao nhất</span>
+                        <strong t-esc="kpi.peak_label or '—'"/>
+                        <em t-esc="formatMoney(kpi.peak_amount)"/>
+                    </article>
+                </div>
+
+                <div class="lq-ce-tabs">
+                    <button type="button"
+                            t-att-class="state.viewMode === 'months' ? 'is-on' : ''"
+                            t-on-click="() => this.setViewMode('months')">
+                        <i class="fa fa-calendar"/> Tháng 1 → 12
+                    </button>
+                    <button type="button"
+                            t-att-class="state.viewMode === 'stores' ? 'is-on' : ''"
+                            t-on-click="() => this.setViewMode('stores')">
+                        <i class="fa fa-th"/> Theo cửa hàng (T1–T12)
+                    </button>
+                </div>
+
+                <t t-if="state.viewMode === 'months'">
+                    <section class="lq-mc-table-card">
+                        <div class="lq-mc-toolbar">
+                            <h2><i class="fa fa-list"/> Danh sách dự toán theo tháng — <t t-esc="yearLabel"/></h2>
+                        </div>
+                        <div class="lq-mc-table-wrap">
+                            <table class="lq-ce-table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tháng</th>
+                                        <th>Số cửa hàng</th>
+                                        <th>Tổng dự toán</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="months" t-as="mo" t-key="mo.month">
+                                        <tr t-att-class="monthRowClass(mo)"
+                                            t-on-click="() => this.selectMonth(mo.month)">
+                                            <td t-esc="mo.month"/>
+                                            <td><strong t-esc="mo.label"/></td>
+                                            <td t-esc="mo.count"/>
+                                            <td class="is-money" t-esc="formatMoney(mo.amount)"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td/>
+                                        <td><strong>TỔNG NĂM</strong></td>
+                                        <td/>
+                                        <td class="is-money"><strong t-esc="formatMoney(kpi.year_total)"/></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        <p class="lq-ce-hint">
+                            Mỗi tháng lấy đúng tập HĐ như Danh sách thanh toán đã lọc tháng đó.
+                            Bấm một tháng để xem chi tiết cửa hàng. Xuất Excel gồm tóm tắt T1–T12 và ma trận cửa hàng.
+                        </p>
+                    </section>
+
+                    <t t-if="state.selectedMonth">
+                        <section class="lq-mc-table-card lq-ce-detail">
+                            <div class="lq-mc-toolbar">
+                                <h2>
+                                    <i class="fa fa-building"/> Cửa hàng — Tháng <t t-esc="state.selectedMonth"/>/<t t-esc="state.year"/>
+                                </h2>
+                                <label class="lq-mc-search">
+                                    <i class="fa fa-search"/>
+                                    <input type="text"
+                                           placeholder="Tìm cửa hàng, mã KH..."
+                                           t-att-value="state.search"
+                                           t-on-input="onSearch"/>
+                                </label>
+                                <select t-att-value="state.tableRegion" t-on-change="onTableRegion">
+                                    <option value="all">Tất cả miền</option>
+                                    <t t-foreach="regions" t-as="rg" t-key="'d-'+rg">
+                                        <option t-att-value="rg" t-esc="rg"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="lq-mc-table-wrap">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>STT</th>
+                                            <th>Cửa hàng / Mã KH</th>
+                                            <th>Nhà cung cấp</th>
+                                            <th>Miền</th>
+                                            <th>Dự toán</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-if="!monthDetailRows.length">
+                                            <tr><td colspan="5" class="lq-ce-empty">Không có cửa hàng trong tháng này.</td></tr>
+                                        </t>
+                                        <t t-foreach="monthDetailRows" t-as="row" t-key="row.stt + '-' + row.code">
+                                            <tr>
+                                                <td t-esc="row.stt"/>
+                                                <td>
+                                                    <strong t-esc="row.store"/>
+                                                    <div class="lq-ce-code" t-esc="row.code or '—'"/>
+                                                </td>
+                                                <td t-esc="row.provider"/>
+                                                <td t-esc="row.region or '—'"/>
+                                                <td class="is-money" t-esc="formatMoney(row.amount)"/>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </t>
+                </t>
+
+                <t t-if="state.viewMode === 'stores'">
+                    <section class="lq-mc-table-card">
+                        <div class="lq-mc-toolbar">
+                            <h2><i class="fa fa-th"/> Dự toán theo cửa hàng (T1–T12)</h2>
+                            <label class="lq-mc-search">
+                                <i class="fa fa-search"/>
+                                <input type="text"
+                                       placeholder="Tìm cửa hàng, mã KH..."
+                                       t-att-value="state.search"
+                                       t-on-input="onSearch"/>
+                            </label>
+                            <select t-att-value="state.tableRegion" t-on-change="onTableRegion">
+                                <option value="all">Tất cả miền</option>
+                                <t t-foreach="regions" t-as="rg" t-key="'s-'+rg">
+                                    <option t-att-value="rg" t-esc="rg"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="lq-mc-table-wrap lq-ce-matrix-wrap">
+                            <table class="lq-ce-matrix">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Cửa hàng</th>
+                                        <th>Mã KH</th>
+                                        <th>NCC</th>
+                                        <th>Miền</th>
+                                        <t t-foreach="[1,2,3,4,5,6,7,8,9,10,11,12]" t-as="m" t-key="'h'+m">
+                                            <th t-esc="'T' + m"/>
+                                        </t>
+                                        <th>Tổng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-if="!storePageRows.length">
+                                        <tr><td colspan="18" class="lq-ce-empty">Không có dữ liệu.</td></tr>
+                                    </t>
+                                    <t t-foreach="storePageRows" t-as="row" t-key="row.id or row.stt">
+                                        <tr>
+                                            <td t-esc="row.stt"/>
+                                            <td class="is-store" t-esc="row.store"/>
+                                            <td t-esc="row.code or '—'"/>
+                                            <td t-esc="row.provider"/>
+                                            <td t-esc="row.region or '—'"/>
+                                            <t t-foreach="[0,1,2,3,4,5,6,7,8,9,10,11]" t-as="mi" t-key="row.stt + '-m' + mi">
+                                                <td class="is-money is-sm" t-esc="monthCell(row, mi)"/>
+                                            </t>
+                                            <td class="is-money is-total" t-esc="formatMoney(row.total)"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

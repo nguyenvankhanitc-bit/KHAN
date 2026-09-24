@@ -1242,10 +1242,31 @@
 /* Today-style internet list cards */
 .lq-inet-board.is-today {
     background: #f1f5f9;
-    padding: 16px 14px 24px;
-    max-width: 720px;
-    margin: 0 auto;
+    padding: 10px 8px 20px;
+    max-width: none;
+    margin: 0;
     width: 100%;
+    box-sizing: border-box;
+}
+@media (max-width: 991.98px) {
+    .o_internet_master .o_internet_content:has(.lq-inet-board),
+    .o_internet_master .o_internet_content .lq-inet-board,
+    .o_internet_master .o_internet_content .lq-inet-board.is-today {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+        box-sizing: border-box !important;
+    }
+}
+@media (min-width: 900px) {
+    .lq-inet-board.is-today {
+        max-width: none;
+        padding: 12px 16px 24px;
+    }
+    .lq-today-title { font-size: 30px; }
 }
 .lq-today-top { margin-bottom: 14px; }
 .lq-today-title {
@@ -1547,13 +1568,6 @@
     background: #fff;
     border-radius: 14px;
     padding: 10px 12px;
-}
-@media (min-width: 900px) {
-    .lq-inet-board.is-today {
-        max-width: none;
-        padding: 12px 16px 24px;
-    }
-    .lq-today-title { font-size: 30px; }
 }
 
 /* Lich du kien TT: KPI + charts */

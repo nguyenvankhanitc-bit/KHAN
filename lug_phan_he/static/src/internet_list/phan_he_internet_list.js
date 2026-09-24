@@ -1088,6 +1088,10 @@ export class PhanHeInternetListBoard extends Component {
         if (this._internetTypeId) {
             return this._internetTypeId;
         }
+        if (PhanHeInternetListBoard._cachedInternetTypeId) {
+            this._internetTypeId = PhanHeInternetListBoard._cachedInternetTypeId;
+            return this._internetTypeId;
+        }
         try {
             const rows = await this.orm.searchRead(
                 "phan.he.service.type",
@@ -1096,6 +1100,7 @@ export class PhanHeInternetListBoard extends Component {
                 { limit: 1 }
             );
             this._internetTypeId = rows?.[0]?.id || null;
+            PhanHeInternetListBoard._cachedInternetTypeId = this._internetTypeId;
         } catch {
             this._internetTypeId = null;
         }
@@ -1727,17 +1732,13 @@ export class PhanHeInternetListBoard extends Component {
             } else {
                 const domain = this.buildQueryDomain(listFilter);
                 const tasks = [
-                    this.orm.searchCount("phan.he.service", domain),
-                    this.orm.searchRead(
-                        "phan.he.service",
+                    this.orm.call("phan.he.service", "search_internet_list_page", [
                         domain,
                         listFields,
-                        {
-                            order: orderBy,
-                            limit: pageSize,
-                            offset,
-                        }
-                    ),
+                        offset,
+                        pageSize,
+                        orderBy,
+                    ]),
                 ];
                 if (needProviders) {
                     tasks.push(
@@ -1753,9 +1754,10 @@ export class PhanHeInternetListBoard extends Component {
                 if (seq !== this._loadSeq) {
                     return;
                 }
-                totalCount = results[0];
-                records = results[1];
-                providerRows = needProviders ? results[2] : null;
+                const pagePayload = results[0] || {};
+                totalCount = pagePayload.total ?? 0;
+                records = pagePayload.records || [];
+                providerRows = needProviders ? results[1] : null;
             }
             if (needProviders && providerRows) {
                 this.state.providers = providerRows || [];

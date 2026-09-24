@@ -256,7 +256,8 @@ export class PhanHeDashboard extends Component {
                 if (this.serviceTypeCode === "internet") {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                     this.state.internetMenus = rights?.internet_menus || {};
-                    await this.loadNavBadges();
+                    // Badge sidebar không chặn mở list — chạy nền.
+                    this.loadNavBadges();
                 }
                 let openNav = this.actionContext.phan_he_open_nav;
                 if (this.serviceTypeCode === "internet") {

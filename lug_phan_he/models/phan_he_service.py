@@ -1599,6 +1599,27 @@ class PhanHeService(models.Model):
         }
 
     @api.model
+    def search_internet_list_page(self, domain=None, fields_list=None, offset=0, limit=10, order=None):
+        """Một RPC: total + records (tránh search_count + search_read 2 round-trip)."""
+        domain = list(domain or [])
+        fields_list = list(fields_list or [
+            "name", "code", "customer_code", "store_id", "provider_id",
+            "date_start", "date_end", "bandwidth", "contract_amount",
+            "ops_status", "state", "store_mien", "next_payment_amount",
+            "note", "invoice_filename",
+        ])
+        order = order or self.INTERNET_LIST_ORDER
+        total = self.search_count(domain)
+        records = self.search_read(
+            domain,
+            fields_list,
+            offset=offset or 0,
+            limit=limit or 10,
+            order=order,
+        )
+        return {"records": records, "total": total}
+
+    @api.model
     def search_internet_board(self, filter_code="all", limit=300, offset=0):
         domain = self.internet_board_domain(filter_code)
         fields_list = [

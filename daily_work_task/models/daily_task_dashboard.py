@@ -4,8 +4,6 @@ from calendar import monthrange
 from collections import Counter, defaultdict
 from datetime import timedelta
 
-from dateutil.relativedelta import relativedelta
-
 from odoo import api, fields, models
 
 

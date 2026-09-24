@@ -491,7 +491,7 @@
 
         .o_eac_greet_title {
             margin: 0 0 0.35rem;
-            font-size: clamp(1.2rem, 2.1vw, 1.55rem);
+            font-size: #{"clamp(1.2rem, 2.1vw, 1.55rem)"};
             font-weight: 800;
             color: var(--eac-purple-deep);
             line-height: 1.3;
@@ -765,7 +765,7 @@
             height: calc(100% - var(--eac-topbar-h));
             top: var(--eac-topbar-h);
             left: 0;
-            width: min(280px, 82vw);
+            width: #{"min(280px, 82vw)"};
             box-shadow: 8px 0 24px rgba(15, 23, 42, 0.2);
             transform: translateX(0);
             transition: transform 0.22s ease, width 0.22s ease;

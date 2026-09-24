@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "LUG Enterprise Application Center",
-    "version": "19.0.1.3.15",
+    "version": "19.0.1.3.16",
     "category": "Productivity",
     "summary": "Cổng truy cập tập trung toàn bộ ứng dụng doanh nghiệp",
     "description": """

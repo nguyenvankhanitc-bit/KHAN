@@ -1,6 +1,7 @@
 /** @odoo-module **/
 
 import { Component, onMounted, onPatched, onWillUnmount, useRef, useState } from "@odoo/owl";
+import { useBus } from "@web/core/utils/hooks";
 import { View } from "@web/views/view";
 
 const WIDTH_KEY = "o_internet_sidebar_width_v3";
@@ -84,6 +85,11 @@ export class PhanHeInternetShell extends Component {
         this._onMove = this._onMove.bind(this);
         this._onUp = this._onUp.bind(this);
         this._onMqChange = this._onMqChange.bind(this);
+        useBus(this.env.bus, "lug_phan_he:OPEN_INTERNET_NAV", () => {
+            if (this.state.isMobile) {
+                this.openMobileNav();
+            }
+        });
         onMounted(() => {
             this._mq = window.matchMedia("(max-width: 991.98px)");
             this._onMqChange();
@@ -93,6 +99,7 @@ export class PhanHeInternetShell extends Component {
                 this._mq.addListener(this._onMqChange);
             }
             this._autofitSidebarWidth();
+            this.env.bus.trigger("lug_phan_he:INTERNET_SHELL", { active: true });
         });
         onPatched(() => {
             const fp = navFingerprint(this.props.navSections);
@@ -111,6 +118,7 @@ export class PhanHeInternetShell extends Component {
                 }
             }
             document.body.classList.remove("o_internet_mobile_nav_lock");
+            this.env.bus.trigger("lug_phan_he:INTERNET_SHELL", { active: false });
         });
     }
 

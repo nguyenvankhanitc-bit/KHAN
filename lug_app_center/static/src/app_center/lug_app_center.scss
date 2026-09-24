@@ -13,6 +13,7 @@
     --eac-radius: 14px;
     --eac-topbar-h: 64px;
     --eac-sidebar-w: 248px;
+    --eac-sidebar-w-collapsed: 72px;
 
     display: flex;
     flex-direction: column;
@@ -292,7 +293,43 @@
     }
 
     &.is-collapsed .o_eac_sidebar {
-        width: 0;
+        width: var(--eac-sidebar-w-collapsed);
+
+        .o_eac_nav {
+            padding: 0.85rem 0.45rem;
+            align-items: center;
+        }
+
+        .o_eac_nav_item {
+            justify-content: center;
+            padding: 0.7rem 0.4rem;
+            gap: 0;
+
+            span,
+            .o_eac_nav_new {
+                display: none;
+            }
+
+            .o_eac_nav_badge {
+                position: absolute;
+                top: 0.28rem;
+                right: 0.28rem;
+                display: inline-flex;
+                min-width: 1.05rem;
+                height: 1.05rem;
+                padding: 0 0.28rem;
+                font-size: 0.62rem;
+            }
+
+            i {
+                width: auto;
+                font-size: 1.05rem;
+            }
+        }
+
+        .o_eac_sidebar_foot {
+            display: none;
+        }
     }
 
     .o_eac_nav {
@@ -348,17 +385,40 @@
     .o_eac_nav_badge,
     .o_eac_nav_new {
         font-style: normal;
-        font-size: 0.68rem;
+        font-size: 0.72rem;
         font-weight: 700;
         border-radius: 999px;
-        padding: 0.1rem 0.4rem;
-        background: var(--eac-purple-2);
+        margin-left: auto;
+        flex-shrink: 0;
+        min-width: 1.35rem;
+        height: 1.35rem;
+        padding: 0 0.38rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+        background: #ef4444;
         color: #fff;
+        box-shadow: 0 1px 3px rgba(185, 28, 28, 0.35);
+    }
+
+    .o_eac_nav_badge + .o_eac_nav_badge {
+        margin-left: 0.28rem;
+    }
+
+    .o_eac_nav_badge_overdue {
+        background: #ef4444;
+    }
+
+    .o_eac_nav_badge_today {
+        background: #f97316;
+        box-shadow: 0 1px 3px rgba(194, 65, 12, 0.35);
     }
 
     .o_eac_nav_new {
         background: #c084fc;
         color: #3b0764;
+        box-shadow: none;
     }
 
     .o_eac_sidebar_foot {
@@ -391,6 +451,10 @@
         }
     }
 
+    .o_eac_sidebar_backdrop {
+        display: none;
+    }
+
     /* ===== MAIN ===== */
     .o_eac_main {
         flex: 1;
@@ -421,13 +485,77 @@
     }
 
     .o_eac_welcome_text {
-        p {
-            margin: 0;
-            font-size: clamp(1.15rem, 2vw, 1.45rem);
-            font-weight: 750;
+        flex: 1;
+        min-width: 0;
+        max-width: 42rem;
+
+        .o_eac_greet_title {
+            margin: 0 0 0.35rem;
+            font-size: clamp(1.2rem, 2.1vw, 1.55rem);
+            font-weight: 800;
             color: var(--eac-purple-deep);
-            max-width: 40rem;
-            line-height: 1.35;
+            line-height: 1.3;
+        }
+
+        .o_eac_greet_date {
+            margin: 0 0 0.65rem;
+            font-size: 0.92rem;
+            font-weight: 550;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .o_eac_greet_primary {
+            margin: 0 0 0.35rem;
+            font-size: 1rem;
+            font-weight: 650;
+            color: #334155;
+            line-height: 1.45;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem;
+
+            &.is-overdue {
+                color: #7f1d1d;
+            }
+        }
+
+        .o_eac_status_dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex: 0 0 8px;
+            display: inline-block;
+
+            &.is-danger { background: #ef4444; box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18); }
+            &.is-warn { background: #f59e0b; box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.18); }
+            &.is-ok { background: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.18); }
+        }
+
+        .o_eac_greet_count {
+            font-style: normal;
+            font-size: 1.35rem;
+            font-weight: 850;
+            color: #dc2626;
+            line-height: 1;
+            padding: 0 0.1rem;
+        }
+
+        .o_eac_greet_tip {
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: 550;
+            color: #6366f1;
+            line-height: 1.45;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.35rem;
+
+            &.is-warn {
+                color: #c2410c;
+            }
         }
     }
 
@@ -558,6 +686,21 @@
             display: block;
         }
 
+        &--lg {
+            width: 72px;
+            height: 72px;
+            border-radius: 14px;
+            background: #fff;
+
+            img {
+                width: 118%;
+                height: 118%;
+                max-width: none;
+                object-fit: contain;
+                transform: scale(1.12);
+            }
+        }
+
         &--fa {
             font-size: 1.35rem;
 
@@ -565,6 +708,11 @@
                 line-height: 1;
             }
         }
+    }
+
+    .o_eac_app_card--phan-he .o_eac_app_icon--img {
+        width: 72px;
+        height: 72px;
     }
 
     .o_eac_app_meta {
@@ -600,30 +748,115 @@
     }
 
     @media (max-width: 900px) {
+        .o_eac_shell {
+            position: relative;
+        }
+
+        .o_eac_sidebar_backdrop {
+            position: absolute;
+            inset: 0;
+            z-index: 25;
+            background: rgba(15, 23, 42, 0.4);
+        }
+
         .o_eac_sidebar {
             position: absolute;
             z-index: 30;
             height: calc(100% - var(--eac-topbar-h));
             top: var(--eac-topbar-h);
             left: 0;
+            width: min(280px, 82vw);
             box-shadow: 8px 0 24px rgba(15, 23, 42, 0.2);
+            transform: translateX(0);
+            transition: transform 0.22s ease, width 0.22s ease;
         }
 
         &.is-collapsed .o_eac_sidebar {
             width: 0;
+            padding: 0;
             box-shadow: none;
+            pointer-events: none;
+            transform: translateX(-100%);
+        }
+
+        &.is-collapsed .o_eac_sidebar_backdrop {
+            display: none;
+        }
+
+        .o_eac_main {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin-left: 0 !important;
+            padding: 0.85rem 0.85rem 1.25rem !important;
+        }
+
+        .o_eac_top_search,
+        .o_eac_top_actions {
+            display: none !important;
+        }
+
+        .o_eac_topbar {
+            gap: 0.55rem;
+            padding: 0 0.65rem;
+        }
+
+        .o_eac_brand_inline {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .o_eac_brand_name {
+            max-width: none;
+            font-size: 0.78rem;
+        }
+
+        .o_eac_brand_address {
+            max-width: none;
+            font-size: 0.62rem;
+        }
+
+        .o_eac_logo_img {
+            height: 34px;
+            max-width: 120px;
+            padding: 1px 4px;
         }
 
         .o_eac_app_grid {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem;
+        }
+
+        .o_eac_section_head {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.2rem;
+            margin-bottom: 0.75rem;
+
+            h2 {
+                font-size: 1.05rem;
+            }
+        }
+
+        .o_eac_section_sub {
+            font-size: 0.72rem;
+        }
+
+        .o_eac_welcome {
+            padding: 0.95rem 1rem;
+            margin-bottom: 0.95rem;
         }
 
         .o_eac_welcome_art {
             display: none;
         }
 
-        .o_eac_top_search {
-            max-width: none;
+        .o_eac_welcome_text .o_eac_greet_title {
+            font-size: 1.15rem;
+        }
+
+        .o_eac_app_card {
+            padding: 0.85rem 0.7rem;
+            min-height: 118px;
         }
     }
 
@@ -635,6 +868,9 @@
 }
 
 body:has(.o_lug_app_center) {
+    --phan-he-sidebar-width: 0px !important;
+    --o-internet-sidebar-width: 0px !important;
+
     .o_main_navbar,
     .o_menu_brand,
     .o_control_panel {
@@ -643,10 +879,17 @@ body:has(.o_lug_app_center) {
 
     .o_action_manager {
         height: 100vh;
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .o_lug_app_center {
         min-height: 100vh;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
     }
 }
 

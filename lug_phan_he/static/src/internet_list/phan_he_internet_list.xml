@@ -9,39 +9,36 @@
                 </div>
 
                 <div class="lq-today-quick" t-if="!isPaymentMobile">
-                    <button t-if="canCreateNav" type="button" class="lq-today-quick-item" t-on-click="() => this.onAdd()">
-                        <span class="lq-today-qico is-violet"><i class="fa fa-plus"/></span>
-                        <span>Thêm hợp đồng</span>
-                        <i class="fa fa-angle-right"/>
-                    </button>
-                    <button type="button" class="lq-today-quick-item"
-                            t-att-class="!state.regionFilter ? 'is-on' : ''"
-                            t-on-click="() => this.setRegionFilter('')">
-                        <span class="lq-today-qico is-blue"><i class="fa fa-map-marker"/></span>
-                        <span>Tất cả khu vực</span>
-                        <i class="fa fa-angle-right"/>
-                    </button>
-                    <button type="button" class="lq-today-quick-item"
-                            t-att-class="state.regionFilter === 'Nam' ? 'is-on' : ''"
-                            t-on-click="() => this.setRegionFilter('Nam')">
-                        <span class="lq-today-qico is-orange"><i class="fa fa-globe"/></span>
-                        <span>Miền Nam</span>
-                        <i class="fa fa-angle-right"/>
-                    </button>
-                    <button type="button" class="lq-today-quick-item"
-                            t-att-class="state.regionFilter === 'Bắc' ? 'is-on' : ''"
-                            t-on-click="() => this.setRegionFilter('Bắc')">
-                        <span class="lq-today-qico is-green"><i class="fa fa-globe"/></span>
-                        <span>Miền Bắc</span>
-                        <i class="fa fa-angle-right"/>
-                    </button>
-                    <button type="button" class="lq-today-quick-item"
-                            t-att-class="state.regionFilter === 'ĐTT' ? 'is-on' : ''"
-                            t-on-click="() => this.setRegionFilter('ĐTT')">
-                        <span class="lq-today-qico is-cyan"><i class="fa fa-globe"/></span>
-                        <span>Miền ĐTT</span>
-                        <i class="fa fa-angle-right"/>
-                    </button>
+                    <div class="lq-today-quick-grid">
+                        <button type="button"
+                                class="lq-today-quick-item"
+                                t-att-class="!state.regionFilter ? 'is-on' : ''"
+                                t-on-click="() => this.setRegionFilter('')">
+                            <span class="lq-today-qico is-blue"><i class="fa fa-map-marker"/></span>
+                            <span>Tất cả khu vực</span>
+                        </button>
+                        <button type="button"
+                                class="lq-today-quick-item"
+                                t-att-class="state.regionFilter === 'Nam' ? 'is-on' : ''"
+                                t-on-click="() => this.setRegionFilter('Nam')">
+                            <span class="lq-today-qico is-orange"><i class="fa fa-globe"/></span>
+                            <span>Miền Nam</span>
+                        </button>
+                        <button type="button"
+                                class="lq-today-quick-item"
+                                t-att-class="state.regionFilter === 'Bắc' ? 'is-on' : ''"
+                                t-on-click="() => this.setRegionFilter('Bắc')">
+                            <span class="lq-today-qico is-green"><i class="fa fa-globe"/></span>
+                            <span>Miền Bắc</span>
+                        </button>
+                        <button type="button"
+                                class="lq-today-quick-item"
+                                t-att-class="state.regionFilter === 'ĐTT' ? 'is-on' : ''"
+                                t-on-click="() => this.setRegionFilter('ĐTT')">
+                            <span class="lq-today-qico is-cyan"><i class="fa fa-globe"/></span>
+                            <span>Miền ĐTT</span>
+                        </button>
+                    </div>
                 </div>
 
                 <div t-if="!isForecastStyleList" class="lq-today-pills">

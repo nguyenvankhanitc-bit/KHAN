@@ -3141,17 +3141,29 @@
 
     .o_ews_mcard_grid {
         display: grid;
-        grid-template-columns: 1fr;
-        gap: 8px 10px;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px 12px;
         font-size: 12px;
         color: #64748b;
-        b { display: block; color: #0f172a; font-weight: 700; }
+        b { display: block; color: #0f172a; font-weight: 700; margin-top: 2px; }
         i { margin-right: 4px; }
     }
 
     .o_ews_mcard_note { grid-column: 1 / -1; }
 
     .o_ews_moverdue b { color: #dc2626; }
+
+    .o_ews_mcard_actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #f1f5f9;
+
+        .btn {
+            flex: 1;
+        }
+    }
 
     .o_ews_mdetail {
         display: flex;

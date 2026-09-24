@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.InternetNavTocButton">
+        <button t-if="state.shellActive"
+                type="button"
+                class="o_internet_nav_toc_btn btn btn-sm btn-outline-light text-white d-flex align-items-center gap-1 d-lg-none me-2"
+                title="Mục lục"
+                aria-label="Mở danh mục Internet"
+                t-on-click="onClick">
+            <i class="fa fa-list-ul" aria-hidden="true"/>
+            <span class="o_internet_nav_toc_label">Mục lục</span>
+        </button>
+    </t>
+</templates>

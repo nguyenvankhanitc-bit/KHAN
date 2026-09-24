@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.454.0",
+    "version": "19.0.2.462.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -114,6 +114,8 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/access/linkq_permission_matrix.js",
             "lug_phan_he/static/src/access/linkq_permission_matrix.xml",
             "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.scss",
+            "lug_phan_he/static/src/internet_shell/internet_nav_toc_button.js",
+            "lug_phan_he/static/src/internet_shell/internet_nav_toc_button.xml",
             "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.js",
             "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.xml",
             "lug_phan_he/static/src/internet_list/phan_he_internet_list.scss",

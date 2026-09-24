@@ -221,3 +221,59 @@ html.o_phan_he_sidebar_is_collapsed .o_phan_he_sidebar {
         color: #fff;
     }
 }
+
+/* —— Mobile: full-bleed content, không thụt lề theo sidebar —— */
+@media (max-width: 991.98px) {
+    :root,
+    html,
+    body,
+    .o_web_client,
+    .o_action_manager,
+    .o_phan_he_shell,
+    .o_phan_he_app_shell,
+    .o_internet_master {
+        --phan-he-sidebar-width: 0px !important;
+        --o-internet-sidebar-width: 0px !important;
+    }
+
+    .o_action_manager,
+    .o_content,
+    .o_main_content,
+    #o_main_content,
+    .o_phan_he_shell,
+    .o_phan_he_app_shell,
+    .o_internet_master.o_phan_he_shell,
+    .o_internet_master .o_internet_content,
+    .o_phan_he_app_shell > .o_content,
+    .o_phan_he_app_shell > .o_control_panel,
+    .o_phan_he_app_shell > .o_form_view_container {
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .o_phan_he_app_shell,
+    .o_action.o_phan_he_app_shell,
+    .o_phan_he_app_shell.o_action {
+        display: flex !important;
+        flex-direction: column !important;
+        grid-template-columns: none !important;
+    }
+
+    .o_phan_he_app_shell > .o_phan_he_app_sidebar,
+    .o_phan_he_shell > .o_phan_he_app_sidebar:not(.o_internet_sidebar) {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        flex: 0 0 0 !important;
+    }
+
+    .o_phan_he_sidebar:not(.o_internet_sidebar),
+    .o_phan_he_app_sidebar:not(.o_internet_sidebar) {
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+    }
+}

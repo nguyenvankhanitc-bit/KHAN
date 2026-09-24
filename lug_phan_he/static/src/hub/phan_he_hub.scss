@@ -61,9 +61,42 @@
     height: 34px;
     border: 0;
     border-radius: 10px;
-    background: rgba(255, 255, 255, 0.12);
+    background: #f3e8ff;
+    color: #6d28d9;
+    cursor: pointer;
+    display: none;
+    place-items: center;
+    flex: 0 0 auto;
+}
+
+.o_phan_he_hub_mobile_bar {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.o_phan_he_hub_mobile_title {
+    font-size: 15px;
+    font-weight: 800;
+    color: #4c1d95;
+}
+
+.o_phan_he_hub_side_close {
+    display: none;
+    margin-left: auto;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.14);
     color: #fff;
     cursor: pointer;
+    place-items: center;
+}
+
+.o_phan_he_hub_backdrop {
+    display: none;
 }
 
 .o_phan_he_hub_back {
@@ -246,16 +279,80 @@
 }
 
 @media (max-width: 900px) {
-    .o_phan_he_hub_sidebar {
+    :root,
+    html,
+    body,
+    .o_phan_he_hub {
+        --phan-he-sidebar-width: 0px !important;
+        --o-internet-sidebar-width: 0px !important;
+        --ph-side-w: 0px;
+    }
+
+    .o_phan_he_hub {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+    }
+
+    .o_phan_he_hub_backdrop {
+        display: block;
         position: absolute;
-        z-index: 20;
-        height: 100%;
-        box-shadow: 8px 0 24px rgba(15, 23, 42, 0.2);
+        inset: 0;
+        z-index: 25;
+        background: rgba(15, 23, 42, 0.42);
+    }
+
+    .o_phan_he_hub.is-collapsed .o_phan_he_hub_backdrop {
+        display: none;
+    }
+
+    .o_phan_he_hub_sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        z-index: 30 !important;
+        width: #{'min(280px, 82vw)'} !important;
+        flex: none !important;
+        margin: 0 !important;
+        height: 100% !important;
+        max-height: 100% !important;
+        box-shadow: 8px 0 28px rgba(15, 23, 42, 0.22);
+        transform: translateX(0);
+        transition: transform 0.22s ease, visibility 0.22s ease;
+        visibility: visible;
     }
 
     .o_phan_he_hub.is-collapsed .o_phan_he_hub_sidebar {
-        width: 0;
+        width: #{'min(280px, 82vw)'} !important;
+        transform: translateX(-105%);
+        visibility: hidden;
         box-shadow: none;
+        pointer-events: none;
+    }
+
+    .o_phan_he_hub_side_close {
+        display: inline-grid;
+    }
+
+    .o_phan_he_hub_main {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 12px 14px 20px !important;
+        min-height: 100%;
+    }
+
+    .o_phan_he_hub_mobile_bar {
+        display: flex;
+    }
+
+    .o_phan_he_hub_burger {
+        display: inline-grid;
     }
 
     .o_phan_he_hub_top_search {
@@ -265,31 +362,41 @@
     }
 
     .o_phan_he_hub_grid {
-        grid-template-columns: #{"repeat(auto-fill, minmax(140px, 1fr))"};
+        grid-template-columns: #{"repeat(2, minmax(0, 1fr))"};
+        gap: 12px;
     }
 }
 
 @media (max-width: 640px) {
     .o_phan_he_hub_main {
-        padding: 14px;
+        padding: 12px 12px 18px !important;
     }
 
     .o_phan_he_hub_grid {
-        grid-template-columns: #{"repeat(auto-fill, minmax(120px, 1fr))"};
+        grid-template-columns: #{"repeat(2, minmax(0, 1fr))"};
     }
 }
 
 /* Fill đúng vùng action — tránh icon bị đẩy xuống đáy trang */
 body:has(.o_phan_he_hub) {
+    --phan-he-sidebar-width: 0px !important;
+
     .o_action_manager {
         height: calc(100vh - 46px);
+        margin-left: 0 !important;
+        padding-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .o_action:has(.o_phan_he_hub) {
         height: 100%;
         max-height: 100%;
         padding: 0 !important;
+        margin: 0 !important;
         overflow: hidden;
+        width: 100% !important;
+        max-width: 100% !important;
     }
 
     .o_control_panel:has(+ .o_content .o_phan_he_hub),

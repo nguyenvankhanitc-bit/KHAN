@@ -16,7 +16,6 @@ Một cổng truy cập — toàn bộ ứng dụng doanh nghiệp.
     "depends": [
         "web",
         "mail",
-        "lug_permission",
     ],
     "data": [
         "security/ir.model.access.csv",

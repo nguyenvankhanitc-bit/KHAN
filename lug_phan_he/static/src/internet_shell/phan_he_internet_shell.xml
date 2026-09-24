@@ -15,16 +15,7 @@
                 </button>
             </div>
 
-            <!-- Mobile: nút mở menu (chỉ &lt; 992px) -->
-            <button type="button"
-                    class="o_internet_mobile_menu_btn d-lg-none"
-                    t-on-click="openMobileNav"
-                    title="Menu"
-                    aria-label="Mở menu">
-                <i class="fa fa-bars"/>
-            </button>
-
-            <!-- Backdrop offcanvas mobile -->
+            <!-- Backdrop offcanvas mobile (trigger nằm trên navbar tím) -->
             <div t-if="state.mobileNavOpen"
                  class="o_internet_offcanvas_backdrop d-lg-none"
                  t-on-click="closeMobileNav"/>

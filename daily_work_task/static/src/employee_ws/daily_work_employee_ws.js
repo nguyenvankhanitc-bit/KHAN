@@ -306,6 +306,7 @@ export class DailyWorkEmployeeWs extends Component {
 
     openMyTasksTab() {
         this.state.activeTab = "tasks";
+        this.openMobileForm();
     }
 
     closeMobileForm() {

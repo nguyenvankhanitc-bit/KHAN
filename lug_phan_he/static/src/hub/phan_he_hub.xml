@@ -2,12 +2,22 @@
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeHub">
         <div class="o_phan_he_hub" t-att-class="state.sidebarCollapsed ? 'is-collapsed' : ''">
+            <div t-if="!state.sidebarCollapsed"
+                 class="o_phan_he_hub_backdrop"
+                 t-on-click="closeMobileSidebar"/>
             <aside class="o_phan_he_hub_sidebar">
                 <div class="o_phan_he_hub_side_brand">
                     <button type="button" class="o_phan_he_hub_back" t-on-click="goToAppCenter" title="Về giao diện chính">
                         <i class="fa fa-arrow-left"/>
                     </button>
                     <span class="o_phan_he_hub_side_title">Quản lý dịch vụ</span>
+                    <button type="button"
+                            class="o_phan_he_hub_side_close"
+                            t-on-click="closeMobileSidebar"
+                            title="Đóng menu"
+                            aria-label="Đóng menu">
+                        <i class="fa fa-times"/>
+                    </button>
                 </div>
                 <nav class="o_phan_he_hub_nav">
                     <button type="button"
@@ -43,6 +53,16 @@
                 </nav>
             </aside>
             <div class="o_phan_he_hub_main">
+                <div class="o_phan_he_hub_mobile_bar">
+                    <button type="button"
+                            class="o_phan_he_hub_burger"
+                            t-on-click="toggleSidebar"
+                            title="Mở menu"
+                            aria-label="Mở menu">
+                        <i class="fa fa-bars"/>
+                    </button>
+                    <span class="o_phan_he_hub_mobile_title">Quản lý dịch vụ</span>
+                </div>
                 <div class="o_phan_he_hub_top_search">
                     <i class="fa fa-search"/>
                     <input type="search"
@@ -62,6 +82,9 @@
                         </button>
                     </t>
                 </div>
+                <t t-if="!filteredApps.length">
+                    <div class="o_phan_he_hub_empty">Không tìm thấy dịch vụ phù hợp.</div>
+                </t>
             </div>
         </div>
     </t>

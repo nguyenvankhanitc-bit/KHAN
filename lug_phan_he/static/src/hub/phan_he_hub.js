@@ -78,10 +78,12 @@ export class PhanHeHub extends Component {
         this.action = useService("action");
         this.notification = useService("notification");
         this.configItems = CONFIG_ITEMS;
+        const isMobile = typeof window !== "undefined"
+            && window.matchMedia("(max-width: 900px)").matches;
         this.state = useState({
             query: "",
             activeNav: "home",
-            sidebarCollapsed: false,
+            sidebarCollapsed: isMobile,
             apps: SERVICE_APPS.filter((app) => app.enabled),
             cards: SERVICE_APPS.filter((app) => app.enabled),
             rights: {},
@@ -135,6 +137,12 @@ export class PhanHeHub extends Component {
         this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
     }
 
+    closeMobileSidebar() {
+        if (window.matchMedia("(max-width: 900px)").matches) {
+            this.state.sidebarCollapsed = true;
+        }
+    }
+
     async goToAppCenter() {
         try {
             await this.action.doAction("lug_app_center.action_lug_app_center", {
@@ -142,19 +150,20 @@ export class PhanHeHub extends Component {
             });
         } catch (error) {
             console.error(error);
-            // Fallback: về home Odoo
             window.location.href = "/odoo";
         }
     }
 
     setHome() {
         this.state.activeNav = "home";
+        this.closeMobileSidebar();
     }
 
     onNavService(ev) {
         const code = ev.currentTarget.dataset.code;
         const app = (this.state.apps || []).find((item) => item.code === code);
         if (app) {
+            this.closeMobileSidebar();
             this.openService(app);
         }
     }
@@ -163,6 +172,7 @@ export class PhanHeHub extends Component {
         const code = ev.currentTarget.dataset.code;
         const item = this.configItems.find((cfg) => cfg.code === code);
         if (item) {
+            this.closeMobileSidebar();
             this.openConfig(item);
         }
     }

@@ -3,7 +3,11 @@
     <t t-name="lug_app_center.LugAppCenter">
         <div class="o_lug_app_center" t-att-class="{'is-collapsed': state.sidebarCollapsed}">
             <header class="o_eac_topbar">
-                <button type="button" class="o_eac_burger" t-on-click="toggleSidebar" title="Menu">
+                <button type="button"
+                        class="o_eac_burger"
+                        t-on-click="toggleSidebar"
+                        t-att-title="state.sidebarCollapsed ? 'Mở menu' : 'Đóng menu'"
+                        t-att-aria-expanded="(!state.sidebarCollapsed).toString()">
                     <i class="fa fa-bars"/>
                 </button>
                 <div class="o_eac_brand_inline">
@@ -80,11 +84,15 @@
             </header>
 
             <div class="o_eac_shell">
+                <div t-if="!state.sidebarCollapsed"
+                     class="o_eac_sidebar_backdrop"
+                     t-on-click="closeMobileSidebar"/>
                 <aside class="o_eac_sidebar">
                     <nav class="o_eac_nav">
                         <button type="button"
                                 class="o_eac_nav_item"
                                 t-att-class="{'active': state.activeNav === 'home'}"
+                                t-att-title="'Trang chủ'"
                                 t-on-click="setHome">
                             <i class="fa fa-home"/>
                             <span>Trang chủ</span>
@@ -92,10 +100,29 @@
                         <t t-foreach="filteredApps" t-as="nav" t-key="'side_' + nav.key">
                             <button type="button"
                                     class="o_eac_nav_item"
-                                    t-att-class="{'active': state.activeNav === nav.key}"
+                                    t-att-class="{
+                                        'active': state.activeNav === nav.key,
+                                        'o_eac_nav_item_discuss': nav.xmlid === 'mail.menu_root_discuss',
+                                    }"
+                                    t-att-title="nav.sidebar_label"
                                     t-on-click="() => this.onNavClick(nav)">
                                 <i t-att-class="'fa ' + nav.icon"/>
                                 <span t-esc="nav.sidebar_label"/>
+                                <t t-if="nav.xmlid === 'daily_work_task.menu_daily_work_root'">
+                                    <em t-if="dailyWorkOverdueBadge"
+                                        class="o_eac_nav_badge o_eac_nav_badge_overdue"
+                                        t-att-title="'Quá hạn: ' + dailyWorkOverdueBadge"
+                                        t-esc="dailyWorkOverdueBadge"/>
+                                    <em t-if="dailyWorkTodayBadge"
+                                        class="o_eac_nav_badge o_eac_nav_badge_today"
+                                        t-att-title="'Hôm nay: ' + dailyWorkTodayBadge"
+                                        t-esc="dailyWorkTodayBadge"/>
+                                </t>
+                                <t t-else="">
+                                    <em t-if="navBadge(nav)"
+                                        class="o_eac_nav_badge"
+                                        t-esc="navBadge(nav)"/>
+                                </t>
                             </button>
                         </t>
                     </nav>
@@ -108,7 +135,55 @@
                     <t t-else="">
                         <section class="o_eac_welcome">
                             <div class="o_eac_welcome_text">
-                                <p t-esc="state.welcome"/>
+                                <h2 class="o_eac_greet_title">
+                                    <t t-esc="state.greeting.headline || state.welcome"/>
+                                </h2>
+                                <p class="o_eac_greet_date"
+                                   t-esc="state.greeting.today_label_full || state.greeting.today_label"/>
+                                <t t-if="state.greeting.has_task_module">
+                                    <p class="o_eac_greet_primary" t-att-class="{'is-overdue': state.greeting.show_overdue}">
+                                        <t t-if="state.greeting.show_overdue">
+                                            <span class="o_eac_status_dot is-danger"/>
+                                            Bạn có
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.overdue_count"/>
+                                            việc đã quá hạn.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count === 0">
+                                            <span class="o_eac_status_dot is-ok"/>
+                                            Tuyệt vời! Bạn đã hoàn thành toàn bộ công việc hôm nay.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count === 1">
+                                            <span class="o_eac_status_dot is-warn"/>
+                                            Bạn còn
+                                            <em class="o_eac_greet_count">1</em>
+                                            việc cần hoàn thành hôm nay.
+                                        </t>
+                                        <t t-elif="state.greeting.today_count &lt;= 5">
+                                            <span class="o_eac_status_dot is-warn"/>
+                                            Bạn còn
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.today_count"/>
+                                            việc cần xử lý hôm nay.
+                                        </t>
+                                        <t t-else="">
+                                            <span class="o_eac_status_dot is-warn"/>
+                                            Hôm nay bạn có
+                                            <em class="o_eac_greet_count" t-esc="state.greeting.today_count"/>
+                                            việc cần xử lý.
+                                        </t>
+                                    </p>
+                                    <p t-if="state.greeting.tip_line"
+                                       class="o_eac_greet_tip"
+                                       t-att-class="{'is-warn': state.greeting.show_overdue || state.greeting.today_count > 0}">
+                                        <span t-if="state.greeting.show_overdue || state.greeting.today_count > 0"
+                                              class="o_eac_status_dot is-warn"/>
+                                        <t t-esc="state.greeting.tip_line"/>
+                                    </p>
+                                </t>
+                                <t t-else="">
+                                    <p class="o_eac_greet_tip">
+                                        Chúc bạn một ngày mới vui vẻ, hiệu quả và hoàn thành tốt công việc!
+                                    </p>
+                                </t>
                             </div>
                             <div class="o_eac_welcome_art" aria-hidden="true">
                                 <div class="o_eac_building">
@@ -131,6 +206,7 @@
                                 <t t-foreach="filteredApps" t-as="app" t-key="app.key">
                                     <button type="button"
                                             class="o_eac_app_card"
+                                            t-att-class="app.xmlid === 'lug_phan_he.menu_phan_he_root' ? 'o_eac_app_card--phan-he' : ''"
                                             t-on-click="() => this.openApp(app)">
                                         <t t-if="app.iconType === 'fa' and app.faIcon">
                                             <span class="o_eac_app_icon o_eac_app_icon--fa"
@@ -140,7 +216,8 @@
                                             </span>
                                         </t>
                                         <t t-else="">
-                                            <span class="o_eac_app_icon o_eac_app_icon--img">
+                                            <span class="o_eac_app_icon o_eac_app_icon--img"
+                                                  t-att-class="app.xmlid === 'lug_phan_he.menu_phan_he_root' ? 'o_eac_app_icon--lg' : ''">
                                                 <img t-att-src="app.webIconData" t-att-alt="app.name"/>
                                             </span>
                                         </t>

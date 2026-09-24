@@ -36,22 +36,37 @@ const SIDEBAR_ICONS = {
     "crm.crm_menu_root": "fa-handshake-o",
     "point_of_sale.menu_point_root": "fa-shopping-basket",
     "lug_email_account.menu_lug_email_root": "fa-envelope",
+    "lug_phan_he.menu_phan_he_root": "fa-th-large",
 };
 
 export class LugAppCenter extends Component {
     static template = "lug_app_center.LugAppCenter";
     static components = { Dropdown, DropdownItem };
-    static props = { ...standardActionServiceProps };
+    static props = { ...standardActionServiceProps, "*": true };
 
     setup() {
         this.orm = useService("orm");
         this.menu = useService("menu");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.mailStore = useService("mail.store");
+        let sidebarCollapsed = false;
+        const isMobile = typeof window !== "undefined"
+            && window.matchMedia("(max-width: 900px)").matches;
+        try {
+            // Mobile: drawer đóng mặc định (giống màn hình chính mẫu)
+            if (isMobile) {
+                sidebarCollapsed = true;
+            } else {
+                sidebarCollapsed = window.localStorage.getItem("lug_app_center_sidebar_collapsed") === "1";
+            }
+        } catch (_e) {
+            sidebarCollapsed = isMobile;
+        }
         this.state = useState({
             loading: true,
             query: "",
-            sidebarCollapsed: false,
+            sidebarCollapsed,
             activeNav: "home",
             companyName: "",
             companySlogan: "",
@@ -66,6 +81,17 @@ export class LugAppCenter extends Component {
             userInitial: "U",
             avatarUrl: false,
             welcome: "",
+            greeting: {
+                headline: "",
+                today_label: "",
+                today_label_full: "",
+                today_count: 0,
+                overdue_count: 0,
+                has_task_module: false,
+                primary_line: "",
+                tip_line: "",
+                show_overdue: false,
+            },
             apps: [],
         });
         onWillStart(async () => {
@@ -73,37 +99,109 @@ export class LugAppCenter extends Component {
         });
     }
 
+    _applyPortalData(data) {
+        this.state.companyName = data.company_name || "";
+        this.state.companySlogan = data.company_slogan || "";
+        this.state.companyWebsite = data.company_website || "";
+        this.state.companyAddress = data.company_address || "";
+        this.state.companyLogoUrl =
+            data.company_logo_url || "/lug_app_center/static/src/img/sataco_logo.png";
+        this.state.userName = data.user_name || "";
+        this.state.userLogin = data.user_login || "";
+        this.state.userEmail = data.user_email || "";
+        this.state.userPhone = data.user_phone || "";
+        this.state.userRole = data.user_role || "";
+        this.state.userInitial = data.user_initial || "U";
+        this.state.avatarUrl = data.avatar_url || false;
+        this.state.welcome = data.welcome || "";
+        const g = data.greeting || {};
+        this.state.greeting = {
+            headline: g.headline || data.welcome || "",
+            today_label: g.today_label || "",
+            today_label_full: g.today_label_full || g.today_label || "",
+            today_count: Number(g.today_count) || 0,
+            overdue_count: Number(g.overdue_count) || 0,
+            has_task_module: Boolean(g.has_task_module),
+            primary_line: g.primary_line || "",
+            tip_line: g.tip_line || "",
+            show_overdue: Boolean(g.show_overdue),
+        };
+    }
+
     async loadPortal() {
         this.state.loading = true;
         try {
             const data = await this.orm.call("lug.app.center", "get_portal_data", []);
-            this.state.companyName = data.company_name || "";
-            this.state.companySlogan = data.company_slogan || "";
-            this.state.companyWebsite = data.company_website || "";
-            this.state.companyAddress = data.company_address || "";
-            this.state.companyLogoUrl =
-                data.company_logo_url || "/lug_app_center/static/src/img/sataco_logo.png";
-            this.state.userName = data.user_name || "";
-            this.state.userLogin = data.user_login || "";
-            this.state.userEmail = data.user_email || "";
-            this.state.userPhone = data.user_phone || "";
-            this.state.userRole = data.user_role || "";
-            this.state.userInitial = data.user_initial || "U";
-            this.state.avatarUrl = data.avatar_url || false;
-            this.state.welcome = data.welcome || "";
+            this._applyPortalData(data);
             this.state.apps = this._collectInstalledApps();
+            await this._ensureDiscussChannels();
         } finally {
             this.state.loading = false;
         }
     }
 
+    /** Nạp kênh/chat Discuss để đếm đúng tin chưa đọc (gồm mọi bot). */
+    async _ensureDiscussChannels() {
+        try {
+            await this.mailStore?.channels?.fetch?.();
+        } catch (_e) {
+            /* ignore — badge dùng dữ liệu đã có */
+        }
+    }
+
+    async refreshGreeting() {
+        try {
+            const data = await this.orm.call("lug.app.center", "get_portal_data", []);
+            this._applyPortalData(data);
+            await this._ensureDiscussChannels();
+        } catch (_e) {
+            /* ignore — giữ greeting cũ */
+        }
+    }
+
     /**
      * Resolve app icon for the grid.
-     * Odoo falls back to default_icon_app.png when ir.ui.menu.web_icon_data
-     * is missing, even if webIcon is still "module,static/.../icon.png".
-     * On some servers attachments are empty → purple box icons; resolve path.
+     * Prefer known static icons (bypass stale webIconData session cache).
      */
     _resolveAppIcon(app) {
+        const STATIC_APP_ICONS = {
+            "lug_phan_he.menu_phan_he_root":
+                "/lug_phan_he/static/description/icon.png?v=phanhe63",
+        };
+        if (app.xmlid && STATIC_APP_ICONS[app.xmlid]) {
+            return { type: "img", src: STATIC_APP_ICONS[app.xmlid] };
+        }
+
+        const webIcon = app.webIcon;
+        if (typeof webIcon === "string" && webIcon.includes(",")) {
+            const parts = webIcon.split(",").map((p) => p.trim());
+            if (parts.length === 2) {
+                const [moduleName, iconPath] = parts;
+                if (moduleName && iconPath && !moduleName.startsWith("fa") && !iconPath.startsWith("#")) {
+                    return {
+                        type: "img",
+                        src: `/${moduleName}/${iconPath}`,
+                    };
+                }
+            }
+            if (parts.length >= 3) {
+                return {
+                    type: "fa",
+                    iconClass: parts[0] || "fa fa-th-large",
+                    color: parts[1] || "#FFFFFF",
+                    backgroundColor: parts[2] || "#714B67",
+                };
+            }
+        }
+        if (webIcon && typeof webIcon === "object") {
+            return {
+                type: "fa",
+                iconClass: webIcon.iconClass || "fa fa-th-large",
+                color: webIcon.color || "#FFFFFF",
+                backgroundColor: webIcon.backgroundColor || "#714B67",
+            };
+        }
+
         const rawData = app.webIconData || "";
         const hasRealImage =
             rawData &&
@@ -119,36 +217,6 @@ export class LugAppCenter extends Component {
                 type: "img",
                 src: `data:${mime};base64,${String(rawData).replace(/\s/g, "")}`,
             };
-        }
-
-        const webIcon = app.webIcon;
-        if (webIcon && typeof webIcon === "object") {
-            return {
-                type: "fa",
-                iconClass: webIcon.iconClass || "fa fa-th-large",
-                color: webIcon.color || "#FFFFFF",
-                backgroundColor: webIcon.backgroundColor || "#714B67",
-            };
-        }
-
-        if (typeof webIcon === "string" && webIcon.includes(",")) {
-            const parts = webIcon.split(",").map((p) => p.trim());
-            if (parts.length === 2) {
-                const [moduleName, iconPath] = parts;
-                // Image path: "mail,static/description/icon.png"
-                if (moduleName && iconPath && !moduleName.startsWith("fa")) {
-                    return { type: "img", src: `/${moduleName}/${iconPath}` };
-                }
-            }
-            if (parts.length >= 3) {
-                // Font Awesome: "fa fa-users,#fff,#714B67"
-                return {
-                    type: "fa",
-                    iconClass: parts[0] || "fa fa-th-large",
-                    color: parts[1] || "#FFFFFF",
-                    backgroundColor: parts[2] || "#714B67",
-                };
-            }
         }
 
         return { type: "img", src: DEFAULT_APP_ICON };
@@ -187,20 +255,98 @@ export class LugAppCenter extends Component {
         return this.state.apps.filter((app) => (app.name || "").toLowerCase().includes(q));
     }
 
+    /** Badge đỏ: Thảo luận = tổng tin chưa đọc mọi kênh/bot. */
+    navBadge(nav) {
+        if (!nav) {
+            return 0;
+        }
+        if (nav.xmlid === "mail.menu_root_discuss") {
+            return this.discussUnreadTotal;
+        }
+        return 0;
+    }
+
+    get dailyWorkOverdueBadge() {
+        if (!this.state.greeting?.has_task_module) {
+            return 0;
+        }
+        return Number(this.state.greeting.overdue_count) || 0;
+    }
+
+    get dailyWorkTodayBadge() {
+        if (!this.state.greeting?.has_task_module) {
+            return 0;
+        }
+        return Number(this.state.greeting.today_count) || 0;
+    }
+
+    /**
+     * Tổng số tin nhắn chưa xem trên mọi kênh / chat (kể cả bot),
+     * không chỉ đếm số cuộc hội thoại như globalCounter.
+     */
+    get discussUnreadTotal() {
+        const store = this.mailStore;
+        if (!store) {
+            return 0;
+        }
+        const records = store.Thread?.records;
+        if (!records) {
+            return Number(store.globalCounter) || 0;
+        }
+        let total = 0;
+        for (const thread of Object.values(records)) {
+            if (!thread || thread.model !== "discuss.channel") {
+                continue;
+            }
+            if (thread.self_member_id?.mute_until_dt) {
+                continue;
+            }
+            const unread =
+                Number(thread.self_member_id?.message_unread_counter_ui) ||
+                Number(thread.self_member_id?.message_unread_counter) ||
+                0;
+            if (unread > 0) {
+                total += unread;
+            }
+        }
+        return total;
+    }
+
     onSearch(ev) {
         this.state.query = ev.target.value;
     }
 
     toggleSidebar() {
         this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
+        const isMobile = window.matchMedia("(max-width: 900px)").matches;
+        if (isMobile) {
+            return;
+        }
+        try {
+            window.localStorage.setItem(
+                "lug_app_center_sidebar_collapsed",
+                this.state.sidebarCollapsed ? "1" : "0"
+            );
+        } catch (_e) {
+            /* ignore */
+        }
+    }
+
+    closeMobileSidebar() {
+        if (window.matchMedia("(max-width: 900px)").matches) {
+            this.state.sidebarCollapsed = true;
+        }
     }
 
     setHome() {
         this.state.activeNav = "home";
+        this.closeMobileSidebar();
+        this.refreshGreeting();
     }
 
     async onNavClick(app) {
         this.state.activeNav = app.key;
+        this.closeMobileSidebar();
         await this.openApp(app);
     }
 

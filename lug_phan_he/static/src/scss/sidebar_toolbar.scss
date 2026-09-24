@@ -276,4 +276,10 @@ html.o_phan_he_sidebar_is_collapsed .o_phan_he_sidebar {
         min-width: 0 !important;
         max-width: 0 !important;
     }
+
+    /* Internet: đừng để rail icon 65px lộ khi asset/JS cũ còn collapsed */
+    .o_internet_master.is-sidebar-collapsed .o_internet_sidebar,
+    .o_internet_master .o_internet_sidebar.o_phan_he_sidebar {
+        min-width: 0 !important;
+    }
 }

@@ -556,31 +556,45 @@ body.o_internet_mobile_nav_lock {
         padding-top: 0;
     }
 
-    /* Drawer nội bộ: dưới App Menu Odoo (~1060+) để không đè menu tổng */
-    .o_internet_master .o_internet_sidebar.o_phan_he_sidebar {
+    /* Drawer: ẩn hẳn rail icon cũ (kể cả is-sidebar-collapsed 65px) */
+    .o_internet_master .o_internet_sidebar.o_phan_he_sidebar,
+    .o_internet_master.is-sidebar-collapsed .o_internet_sidebar.o_phan_he_sidebar,
+    .o_internet_master.is-mobile-layout .o_internet_sidebar.o_phan_he_sidebar {
         position: fixed !important;
         top: 0 !important;
         left: 0 !important;
         bottom: 0 !important;
         z-index: 1045 !important;
-        flex: none !important;
+        flex: 0 0 auto !important;
         width: #{'min(320px, 88vw)'} !important;
         min-width: 0 !important;
         max-width: 320px !important;
         height: 100% !important;
         padding: 8px 10px 16px !important;
         margin: 0 !important;
-        transform: translateX(-105%);
-        visibility: hidden;
+        transform: translateX(-105%) !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        opacity: 1 !important;
         transition: transform 0.28s ease, visibility 0.28s ease;
         box-shadow: 8px 0 28px rgba(15, 23, 42, 0.18) !important;
         overflow-y: auto !important;
         background: #fff !important;
+        border-right: 1px solid #e8eaef !important;
     }
 
-    .o_internet_master.is-mobile-nav-open .o_internet_sidebar.o_phan_he_sidebar {
-        transform: translateX(0);
-        visibility: visible;
+    .o_internet_master.is-mobile-nav-open .o_internet_sidebar.o_phan_he_sidebar,
+    .o_internet_master.is-mobile-nav-open.is-sidebar-collapsed .o_internet_sidebar.o_phan_he_sidebar {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+
+    /* Không chừa chỗ flex cho sidebar trên mobile */
+    .o_internet_master > .o_sidebar_resizer {
+        display: none !important;
+        width: 0 !important;
+        flex: 0 0 0 !important;
     }
 
     /* Mobile drawer luôn hiện chữ (không dùng mode icon-only) */

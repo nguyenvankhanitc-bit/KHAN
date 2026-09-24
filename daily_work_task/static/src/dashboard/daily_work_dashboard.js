@@ -110,22 +110,48 @@ export class DailyWorkDashboard extends Component {
             this.env.bus.trigger("daily_work_task:DASHBOARD_SHELL", { active: true });
         });
         onWillStart(async () => {
-            // Song song: chart lib + filter options; dashboard không chờ reminder RPC.
-            const chartProm = loadBundle("web.chartjs_lib").catch(() => null);
-            const optsProm = this.orm.call("daily.task.dashboard", "get_filter_options", []);
-            const [opts] = await Promise.all([optsProm, chartProm]);
-            this.state.employees = opts.employees || [];
-            this.state.departments = opts.departments || [];
-            this.state.dateFrom = opts.default_date_from || "";
-            this.state.dateTo = opts.default_date_to || "";
-            this.state.isManager = Boolean(opts.is_manager);
-            this.state.canAssign = Boolean(opts.can_assign);
-            this.state.canViewOthers = Boolean(opts.can_view_others);
-            this.state.canViewChecklist = Boolean(opts.can_view_checklist);
-            this.state.canSeePerformance = Boolean(opts.can_see_performance);
-            this.state.userName = opts.user_name || "";
-            this.state.companyName = opts.company_name || "";
-            await this.loadDashboard();
+            // Chart.js nền — không chặn hiện nội dung (trước đây chờ bundle ~vài giây).
+            loadBundle("web.chartjs_lib")
+                .then(() => {
+                    this._chartsReady = true;
+                    if (!this.state.loading && this.state.data) {
+                        this.renderCharts();
+                    }
+                })
+                .catch(() => null);
+
+            try {
+                const boot = await this.orm.call(
+                    "daily.task.dashboard",
+                    "get_dashboard_bootstrap",
+                    [],
+                    { filters: {} }
+                );
+                const opts = boot?.options || {};
+                this.state.employees = opts.employees || [];
+                this.state.departments = opts.departments || [];
+                this.state.dateFrom =
+                    boot?.filters?.date_from || opts.default_date_from || "";
+                this.state.dateTo = boot?.filters?.date_to || opts.default_date_to || "";
+                this.state.isManager = Boolean(opts.is_manager);
+                this.state.canAssign = Boolean(opts.can_assign);
+                this.state.canViewOthers = Boolean(opts.can_view_others);
+                this.state.canViewChecklist = Boolean(opts.can_view_checklist);
+                this.state.canSeePerformance = Boolean(opts.can_see_performance);
+                this.state.userName = opts.user_name || "";
+                this.state.companyName = opts.company_name || "";
+                this.state.data = boot?.data || this.state.data;
+                this.state.reminderTotal =
+                    (Number(boot?.data?.kpi?.overdue) || 0) +
+                    (Number(boot?.data?.kpi?.upcoming) || 0);
+            } catch (e) {
+                this.notification.add(
+                    e?.data?.message || _t("Không tải được dashboard."),
+                    { type: "danger" }
+                );
+            } finally {
+                this.state.loading = false;
+            }
         });
         useEffect(
             () => {

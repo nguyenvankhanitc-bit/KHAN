@@ -106,15 +106,26 @@ class DailyTaskDashboard(models.AbstractModel):
         }
 
     @api.model
+    def get_dashboard_bootstrap(self, filters=None):
+        """1 RPC: filter options + dashboard data (giảm round-trip mở phân hệ)."""
+        opts = self.get_filter_options()
+        payload = dict(filters or {})
+        if not payload.get("date_from"):
+            payload["date_from"] = opts.get("default_date_from") or False
+        if not payload.get("date_to"):
+            payload["date_to"] = opts.get("default_date_to") or False
+        data = self.get_dashboard_data(payload)
+        return {"options": opts, "data": data, "filters": payload}
+
+    @api.model
     def get_dashboard_data(self, filters=None):
         filters = filters or {}
         Task = self.env["daily.task"]
         today = fields.Date.context_today(self)
 
         domain = self._build_domain(filters)
-        # Chỉ sync cờ quá hạn cho bản ghi có thể lệch (deadline đã qua nhưng chưa cờ).
-        # Tránh _refresh_overdue_flags trên toàn bộ kỳ lọc (chậm khi vài trăm HĐ).
-        stale = Task.search(
+        # Sync nhẹ vài bản ghi lệch cờ — không đụng toàn bộ kỳ.
+        stale_ids = Task.search(
             domain
             + [
                 ("state", "!=", "done"),
@@ -122,76 +133,108 @@ class DailyTaskDashboard(models.AbstractModel):
                 ("deadline", "<", today),
                 ("is_overdue", "=", False),
             ],
-            limit=300,
+            limit=100,
+        ).ids
+        if stale_ids:
+            Task._refresh_overdue_flags(Task.browse(stale_ids))
+
+        # search_read: tránh N+1 ORM khi duyệt recordset lớn.
+        rows = Task.search_read(
+            domain,
+            [
+                "name",
+                "deadline",
+                "assign_date",
+                "state",
+                "priority",
+                "is_overdue",
+                "duration_minutes",
+                "duration_hours",
+                "completion_percent",
+                "assignee_id",
+                "department_id",
+            ],
+            order="deadline asc, id desc",
+            limit=5000,
         )
-        if stale:
-            Task._refresh_overdue_flags(stale)
 
-        tasks = Task.search(domain, order="deadline asc, id desc")
+        def _m2o_name(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[1] or ""
+            return ""
 
-        total = len(tasks)
-        done = len(tasks.filtered(lambda t: t.state == "done"))
-        in_progress = len(tasks.filtered(lambda t: t.state == "in_progress"))
-        not_started = len(tasks.filtered(lambda t: t.state == "not_started"))
-        overdue = tasks.filtered(lambda t: t.is_overdue)
-        overdue_count = len(overdue)
+        def _m2o_id(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[0]
+            return val or False
+
+        total = len(rows)
+        done = sum(1 for r in rows if r.get("state") == "done")
+        in_progress = sum(1 for r in rows if r.get("state") == "in_progress")
+        not_started = sum(1 for r in rows if r.get("state") == "not_started")
+        overdue_rows = [r for r in rows if r.get("is_overdue")]
+        overdue_count = len(overdue_rows)
 
         def pct(n):
             return round(100.0 * n / float(total), 1) if total else 0.0
 
-        hours = round(sum(float(t.duration_hours or 0.0) for t in tasks), 1)
+        hours = round(sum(float(r.get("duration_hours") or 0.0) for r in rows), 1)
         efficiency = pct(done)
 
         upcoming_end = today + timedelta(days=7)
-        upcoming = tasks.filtered(
-            lambda t: t.state != "done"
-            and not t.is_overdue
-            and t.deadline
-            and today <= t.deadline <= upcoming_end
-        )
-        upcoming_count = len(upcoming)
-        assigned_count = len(tasks.filtered(lambda t: bool(t.assignee_id)))
+        upcoming_rows = []
+        for r in rows:
+            dl = r.get("deadline")
+            if not dl or r.get("state") == "done" or r.get("is_overdue"):
+                continue
+            try:
+                d = fields.Date.to_date(dl)
+            except Exception:
+                continue
+            if today <= d <= upcoming_end:
+                upcoming_rows.append(r)
+        upcoming_count = len(upcoming_rows)
+        assigned_count = sum(1 for r in rows if r.get("assignee_id"))
 
-        # Ghi chú cá nhân (ngày ghi chú) → cộng vào chuông nhắc việc
-        note_ov, note_up = [], []
+        note_ov = note_up = 0
         try:
-            self.env.cr.execute(
-                "SELECT to_regclass('public.daily_work_note')"
-            )
+            self.env.cr.execute("SELECT to_regclass('public.daily_work_note')")
             has_table = bool(self.env.cr.fetchone()[0])
             if has_table and "daily.work.note" in self.env:
-                note_ov, note_up = (
+                rows_ov, rows_up = (
                     self.env["daily.work.note"]
                     .sudo()
                     .get_reminder_rows_for_user(
                         self.env.user.id, today=today, upcoming_days=7
                     )
                 )
+                note_ov = len(rows_ov or [])
+                note_up = len(rows_up or [])
         except Exception:
             self.env.cr.rollback()
-            note_ov, note_up = [], []
-        overdue_count += len(note_ov)
-        upcoming_count += len(note_up)
+            note_ov = note_up = 0
+        overdue_count += note_ov
+        upcoming_count += note_up
 
-        # Employees with active tasks / total visible employees
-        emp_ids = set(
-            tasks.mapped("assignee_id.employee_id").ids
-            if tasks
-            else []
-        )
-        all_emp = len(self.env["daily.task.employee"].search([("active", "=", True)]))
+        emp_ids = set()
+        for r in rows:
+            # employee_hr stored on task via related — fallback assignee only for count
+            aid = _m2o_id(r.get("assignee_id"))
+            if aid:
+                emp_ids.add(aid)
+        all_emp = self.env["daily.task.employee"].search_count([("active", "=", True)])
         if not Task._is_manager():
             allowed = set(Task._viewable_employee_ids() or [])
             my = Task._my_hr_employee()
             if my:
                 allowed.add(my.id)
             all_emp = len(allowed) or 1
-        emp_active = len([i for i in emp_ids if i]) or 0
+        emp_active = len(emp_ids)
 
-        # Growth vs previous period (same length before date_from)
         growth = self._period_growth(filters, total)
-
-        today_count = Task.count_today_tasks()
+        today_count = Task.search_count(
+            self._build_domain(filters) + [("deadline", "=", today)]
+        )
 
         kpi = {
             "total": total,
@@ -213,7 +256,7 @@ class DailyTaskDashboard(models.AbstractModel):
             "growth_pct": growth,
         }
 
-        priority_counter = Counter(tasks.mapped("priority"))
+        priority_counter = Counter((r.get("priority") or "medium") for r in rows)
         priority_chart = {
             "labels": ["Cao", "Trung bình", "Thấp"],
             "values": [
@@ -223,7 +266,6 @@ class DailyTaskDashboard(models.AbstractModel):
             ],
             "colors": ["#ef4444", "#f59e0b", "#22c55e"],
         }
-
         state_chart = {
             "labels": ["Hoàn thành", "Đang xử lý", "Chưa bắt đầu"],
             "values": [done, in_progress, not_started],
@@ -232,42 +274,19 @@ class DailyTaskDashboard(models.AbstractModel):
             "center_total": total,
         }
 
-        # Weekly completion trend within filter window
-        weekly = self._weekly_trend(tasks, filters, today)
+        weekly = self._weekly_trend_rows(rows, filters, today)
+        dept_chart, dept_perf = self._department_stats_rows(rows)
+        top_employees = self._top_employees_rows(rows, limit=5)
 
-        # Department donut
-        dept_chart, dept_perf = self._department_stats(tasks)
-
-        # Bảng xếp hạng KPI — NV trong phòng ban của mình, 3 tháng gần nhất
         kpi_rank = []
         kpi_rank_dept = ""
+        # Bỏ search thêm 3 tháng + refresh flags (rất chậm). Dùng luôn data kỳ lọc.
         if not Task._is_manager():
-            from_3m = today - relativedelta(months=3)
             my = Task._my_hr_employee()
-            domain_rank = [
-                ("deadline", ">=", from_3m),
-                ("deadline", "<=", today),
-            ]
             if my and my.department_id:
-                dept = my.department_id
-                kpi_rank_dept = dept.display_name or dept.name or ""
-                domain_rank += [
-                    "|",
-                    ("department_id", "=", dept.id),
-                    ("assignee_id.employee_id.department_id", "=", dept.id),
-                ]
-            elif my:
-                domain_rank.append(("assignee_id.employee_id", "=", my.id))
-            else:
-                domain_rank.append(("id", "=", 0))
-            rank_tasks = Task.sudo().search(domain_rank)
-            Task.sudo()._refresh_overdue_flags(rank_tasks)
-            kpi_rank = self._employee_kpi_rank(rank_tasks, limit=20)
+                kpi_rank_dept = my.department_id.display_name or ""
+            kpi_rank = self._employee_kpi_rank_rows(rows, limit=20)
 
-        # Top 5 employees by efficiency
-        top_employees = self._top_employees(tasks, limit=5)
-
-        # Alerts
         alerts = []
         if overdue_count:
             alerts.append(
@@ -298,57 +317,59 @@ class DailyTaskDashboard(models.AbstractModel):
                 }
             )
 
+        pri_sel = dict(Task._fields["priority"].selection)
+        state_sel = dict(Task._fields["state"].selection)
+
         def serialize(recs, limit=50):
-            rows = []
-            for t in recs[:limit]:
+            out = []
+            for r in recs[:limit]:
+                dl = r.get("deadline")
+                try:
+                    d = fields.Date.to_date(dl) if dl else None
+                except Exception:
+                    d = None
                 overdue_days = 0
-                if t.deadline and t.is_overdue:
-                    overdue_days = max(0, (today - t.deadline).days)
-                dept = ""
-                if t.department_id:
-                    dept = t.department_id.display_name or ""
-                elif t.assignee_id.employee_id and t.assignee_id.employee_id.department_id:
-                    dept = t.assignee_id.employee_id.department_id.display_name or ""
-                rows.append(
+                if d and r.get("is_overdue"):
+                    overdue_days = max(0, (today - d).days)
+                st = r.get("state") or ""
+                pr = r.get("priority") or ""
+                out.append(
                     {
-                        "id": t.id,
-                        "name": t.name or "",
-                        "deadline": t.deadline.strftime("%d/%m/%Y") if t.deadline else "",
-                        "assignee": t.assignee_id.name or "",
-                        "department": dept,
-                        "priority": t.priority or "",
-                        "priority_label": dict(t._fields["priority"].selection).get(
-                            t.priority, ""
-                        ),
-                        "state": t.state or "",
-                        "state_label": dict(t._fields["state"].selection).get(
-                            t.state, ""
-                        ),
-                        "is_overdue": bool(t.is_overdue),
+                        "id": r["id"],
+                        "name": r.get("name") or "",
+                        "deadline": d.strftime("%d/%m/%Y") if d else "",
+                        "assignee": _m2o_name(r.get("assignee_id")),
+                        "department": _m2o_name(r.get("department_id")),
+                        "priority": pr,
+                        "priority_label": pri_sel.get(pr, ""),
+                        "state": st,
+                        "state_label": state_sel.get(st, ""),
+                        "is_overdue": bool(r.get("is_overdue")),
                         "overdue_days": overdue_days,
-                        "progress": int(t.completion_percent or 0)
-                        if t.state != "done"
-                        else max(int(t.completion_percent or 0), 100),
-                        "duration_hours": float(t.duration_hours or 0.0),
+                        "progress": int(r.get("completion_percent") or 0)
+                        if st != "done"
+                        else max(int(r.get("completion_percent") or 0), 100),
+                        "duration_hours": float(r.get("duration_hours") or 0.0),
                     }
                 )
-            return rows
+            return out
 
-        # Today schedule
-        today_tasks = tasks.filtered(
-            lambda t: t.deadline == today and t.state != "done"
-        )
+        today_rows = [
+            r
+            for r in rows
+            if r.get("deadline") == fields.Date.to_string(today) and r.get("state") != "done"
+        ]
         today_schedule = []
-        for i, t in enumerate(today_tasks[:12]):
+        for i, r in enumerate(today_rows[:12]):
             hour = 8 + (i % 8)
             today_schedule.append(
                 {
-                    "id": t.id,
+                    "id": r["id"],
                     "time": "%02d:00" % hour,
-                    "name": t.name or "",
-                    "assignee": t.assignee_id.name or "",
-                    "state": t.state,
-                    "priority": t.priority,
+                    "name": r.get("name") or "",
+                    "assignee": _m2o_name(r.get("assignee_id")),
+                    "state": r.get("state"),
+                    "priority": r.get("priority"),
                 }
             )
 
@@ -363,30 +384,220 @@ class DailyTaskDashboard(models.AbstractModel):
             "kpi_rank_dept": kpi_rank_dept,
             "top_employees": top_employees,
             "alerts": alerts,
-            "overdue_list": serialize(overdue, 20),
-            "done_list": serialize(
-                tasks.filtered(lambda t: t.state == "done"),
-                20,
-            ),
+            "overdue_list": serialize(overdue_rows, 20),
+            "done_list": serialize([r for r in rows if r.get("state") == "done"], 20),
             "in_progress_list": serialize(
-                tasks.filtered(
-                    lambda t: t.state == "in_progress" and not t.is_overdue
-                ),
+                [
+                    r
+                    for r in rows
+                    if r.get("state") == "in_progress" and not r.get("is_overdue")
+                ],
                 20,
             ),
             "not_started_list": serialize(
-                tasks.filtered(
-                    lambda t: t.state == "not_started" and not t.is_overdue
-                ),
+                [
+                    r
+                    for r in rows
+                    if r.get("state") == "not_started" and not r.get("is_overdue")
+                ],
                 20,
             ),
-            "recent_tasks": serialize(tasks[:15], 15),
-            "upcoming_list": serialize(upcoming, 10),
+            "recent_tasks": serialize(rows[:15], 15),
+            "upcoming_list": serialize(upcoming_rows, 10),
             "today_schedule": today_schedule,
             "today_label": today.strftime("%d/%m/%Y"),
             "overdue_count": overdue_count,
             "is_manager": Task._is_manager(),
         }
+
+    @api.model
+    def _weekly_trend_rows(self, rows, filters, today):
+        date_from = filters.get("date_from")
+        try:
+            base = fields.Date.to_date(date_from) if date_from else today.replace(day=1)
+        except Exception:
+            base = today.replace(day=1)
+        buckets = defaultdict(list)
+        for r in rows:
+            raw = r.get("deadline") or r.get("assign_date")
+            if not raw:
+                continue
+            try:
+                d = fields.Date.to_date(raw)
+            except Exception:
+                continue
+            week_idx = min(5, max(1, ((d.day - 1) // 7) + 1))
+            buckets[week_idx].append(
+                100
+                if r.get("state") == "done"
+                else int(r.get("completion_percent") or 0)
+            )
+        labels = ["Tuần %s" % w for w in range(1, 6)]
+        values = []
+        for w in range(1, 6):
+            vals = buckets.get(w) or []
+            values.append(round(sum(vals) / float(len(vals)), 1) if vals else 0.0)
+        return {"labels": labels, "values": values}
+
+    @api.model
+    def _department_stats_rows(self, rows):
+        by_dept = defaultdict(
+            lambda: {"total": 0, "done": 0, "overdue": 0, "name": "Khác"}
+        )
+
+        def _m2o_name(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[1] or "Khác"
+            return "Khác"
+
+        def _m2o_id(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[0]
+            return val or 0
+
+        for r in rows:
+            dept = r.get("department_id")
+            key = _m2o_id(dept) or 0
+            by_dept[key]["name"] = _m2o_name(dept) if key else "Khác"
+            by_dept[key]["total"] += 1
+            if r.get("state") == "done":
+                by_dept[key]["done"] += 1
+            if r.get("is_overdue"):
+                by_dept[key]["overdue"] += 1
+
+        colors = ["#3b82f6", "#22c55e", "#f59e0b", "#06b6d4", "#94a3b8", "#a855f7", "#ef4444"]
+        items = sorted(by_dept.items(), key=lambda x: -x[1]["total"])
+        total_all = sum(v["total"] for _, v in items) or 1
+        labels, values, legend, perf = [], [], [], []
+        for idx, (key, data) in enumerate(items[:8]):
+            color = colors[idx % len(colors)]
+            labels.append(data["name"])
+            values.append(data["total"])
+            share = round(100.0 * data["total"] / float(total_all), 1)
+            legend.append(
+                {"name": data["name"], "count": data["total"], "pct": share, "color": color}
+            )
+            eff = (
+                round(100.0 * data["done"] / float(data["total"]), 1)
+                if data["total"]
+                else 0.0
+            )
+            perf.append(
+                {
+                    "id": key,
+                    "name": data["name"],
+                    "total": data["total"],
+                    "done": data["done"],
+                    "overdue": data["overdue"],
+                    "efficiency": eff,
+                }
+            )
+        perf.sort(
+            key=lambda r: (-r["efficiency"], -r["done"], -r["total"], r["name"] or "")
+        )
+        return (
+            {
+                "labels": labels,
+                "values": values,
+                "colors": [colors[i % len(colors)] for i in range(len(labels))],
+                "legend": legend,
+            },
+            perf,
+        )
+
+    @api.model
+    def _employee_kpi_rank_rows(self, rows, limit=20):
+        by_emp = defaultdict(
+            lambda: {
+                "total": 0,
+                "done": 0,
+                "overdue": 0,
+                "duration_minutes": 0,
+                "name": "",
+            }
+        )
+
+        def _m2o_name(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[1] or ""
+            return ""
+
+        def _m2o_id(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[0]
+            return val or False
+
+        for r in rows:
+            eid = _m2o_id(r.get("assignee_id"))
+            if not eid:
+                continue
+            by_emp[eid]["name"] = _m2o_name(r.get("assignee_id"))
+            by_emp[eid]["total"] += 1
+            by_emp[eid]["duration_minutes"] += int(r.get("duration_minutes") or 0)
+            if r.get("state") == "done":
+                by_emp[eid]["done"] += 1
+            if r.get("is_overdue"):
+                by_emp[eid]["overdue"] += 1
+        out = []
+        for eid, data in by_emp.items():
+            if not data["total"]:
+                continue
+            eff = round(100.0 * data["done"] / float(data["total"]), 1)
+            minutes = data["duration_minutes"] or 0
+            out.append(
+                {
+                    "id": eid,
+                    "name": data["name"],
+                    "done": data["done"],
+                    "total": data["total"],
+                    "overdue": data["overdue"],
+                    "duration_hours": round(minutes / 60.0, 2) if minutes else 0.0,
+                    "efficiency": eff,
+                }
+            )
+        out.sort(
+            key=lambda r: (-r["efficiency"], -r["done"], -r["total"], r["name"] or "")
+        )
+        return out[:limit]
+
+    @api.model
+    def _top_employees_rows(self, rows, limit=5):
+        by_emp = defaultdict(lambda: {"total": 0, "done": 0, "name": ""})
+
+        def _m2o_name(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[1] or ""
+            return ""
+
+        def _m2o_id(val):
+            if isinstance(val, (list, tuple)) and val:
+                return val[0]
+            return val or False
+
+        for r in rows:
+            eid = _m2o_id(r.get("assignee_id"))
+            if not eid:
+                continue
+            by_emp[eid]["name"] = _m2o_name(r.get("assignee_id"))
+            by_emp[eid]["total"] += 1
+            if r.get("state") == "done":
+                by_emp[eid]["done"] += 1
+        out = []
+        for eid, data in by_emp.items():
+            if not data["total"]:
+                continue
+            eff = round(100.0 * data["done"] / float(data["total"]), 1)
+            out.append(
+                {
+                    "id": eid,
+                    "name": data["name"],
+                    "done": data["done"],
+                    "total": data["total"],
+                    "efficiency": eff,
+                }
+            )
+        out.sort(key=lambda r: (-r["efficiency"], -r["done"], r["name"]))
+        return out[:limit]
 
     @api.model
     def _period_growth(self, filters, current_total):

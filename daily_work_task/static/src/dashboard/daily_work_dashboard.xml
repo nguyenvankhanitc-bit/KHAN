@@ -92,7 +92,7 @@
                     <aside t-att-class="sidebarClass"
                            t-att-style="sidebarStyle">
                         <div class="o_dwd_offcanvas_header d-flex d-lg-none align-items-center justify-content-between">
-                            <strong class="o_dwd_offcanvas_title">Mục lục Công việc</strong>
+                            <strong class="o_dwd_offcanvas_title">Menu Công việc</strong>
                             <button type="button" class="btn btn-sm btn-light" t-on-click="closeMobileNav" aria-label="Đóng">
                                 <i class="fa fa-times"/>
                             </button>

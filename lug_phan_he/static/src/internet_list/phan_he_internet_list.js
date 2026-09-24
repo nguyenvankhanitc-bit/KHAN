@@ -513,7 +513,7 @@ export class PhanHeInternetListBoard extends Component {
             }
             return {
                 ...base,
-                subtitle: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear} · còn ≤30 ngày + quá hạn chưa TT`,
+                subtitle: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear} · trong tháng + còn ≤30 ngày / quá hạn`,
             };
         }
         return base;
@@ -549,15 +549,21 @@ export class PhanHeInternetListBoard extends Component {
             };
         }).filter((rec) => {
             const end = rec.date_end ? String(rec.date_end).slice(0, 10) : "";
+            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             if (!this.isForecastList) {
-                // Lịch TT: còn ≤30 ngày hoặc quá hạn
-                return Boolean(end && end <= soonStr);
+                // Danh sách TT: ≤30 ngày/quá hạn HOẶC đúng tháng đang chọn
+                if (end && end <= soonStr) {
+                    return true;
+                }
+                if (end && end.startsWith(ymPrefix)) {
+                    return true;
+                }
+                return Boolean(nextDue && nextDue.startsWith(ymPrefix));
             }
             // Dự kiến: đúng tháng/năm đang chọn, hoặc đã quá hạn
             if (end && end < todayStr) {
                 return true;
             }
-            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
             if (nextDue && nextDue.startsWith(ymPrefix)) {
                 return true;
             }
@@ -586,31 +592,10 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     /**
-     * Hàng dùng cho KPI/biểu đồ = toàn bộ HĐ thuộc đúng tháng đang chọn
-     * (date_end hoặc next_payment_date trong tháng) — không dùng bộ lọc ≤30 ngày.
+     * KPI/biểu đồ dùng cùng nguồn với bảng danh sách — tránh lệch số cửa hàng vs hợp đồng.
      */
     get paymentChartRows() {
-        const year = Number(this.state.forecastYear);
-        const month = Number(this.state.forecastMonth);
-        const ymPrefix = `${year}-${pad2(month)}`;
-        return (this.state.chartRecords || []).map((rec) => {
-            const nextDue = rec.next_payment_date ? String(rec.next_payment_date).slice(0, 10) : "";
-            let due;
-            if (nextDue && nextDue.startsWith(ymPrefix)) {
-                due = nextDue;
-            } else if (rec.date_end && String(rec.date_end).slice(0, 10).startsWith(ymPrefix)) {
-                due = String(rec.date_end).slice(0, 10);
-            } else {
-                due = projectDueInMonth(rec.date_end || rec.date_start || nextDue, year, month);
-            }
-            return {
-                ...rec,
-                forecast_due: due,
-                forecast_amount: Number(rec.next_payment_amount || 0) > 0
-                    ? Number(rec.next_payment_amount)
-                    : Number(rec.contract_amount || 0),
-            };
-        });
+        return this.forecastRows || [];
     }
 
     /** KPI + chart — sum từ danh sách đúng tháng đang chọn. */
@@ -732,25 +717,8 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     async loadPaymentMonthChartRecords() {
-        if (!this.isPeriodPaymentList) {
-            this.state.chartRecords = [];
-            return;
-        }
-        const year = Number(this.state.forecastYear);
-        const month = Number(this.state.forecastMonth);
-        try {
-            const payload = await this.orm.call("phan.he.service", "search_internet_payment_period", [
-                year,
-                month,
-                "",
-                this.state.regionFilter || false,
-                "forecast",
-            ]);
-            this.state.chartRecords = this._filterRecordsInYearMonth(payload?.records || [], year, month);
-        } catch (err) {
-            console.warn("loadPaymentMonthChartRecords", err);
-            this.state.chartRecords = [];
-        }
+        // KPI lấy từ forecastRows (cùng API list) — không gọi thêm forecast lệch nguồn.
+        this.state.chartRecords = [];
     }
 
     async ensureForecastChartLib() {
@@ -777,13 +745,15 @@ export class PhanHeInternetListBoard extends Component {
             y -= 1;
         }
         try {
+            const mode = this.isForecastList ? "forecast" : "schedule";
             const prev = await this.orm.call("phan.he.service", "search_internet_payment_period", [
                 y,
                 m,
                 "",
                 this.state.regionFilter || false,
-                "forecast",
+                mode,
             ]);
+            // Sum theo đúng tháng trước (date_end / next_payment trong tháng đó)
             this.state.forecastPrevAmount = this._sumMonthChartAmount(prev?.records || [], y, m);
         } catch (err) {
             console.warn("forecastPrevAmount", err);

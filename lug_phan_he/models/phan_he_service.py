@@ -900,17 +900,31 @@ class PhanHeService(models.Model):
     def _internet_payment_need_domain(self, year=None, month=None):
         """Danh sách TT / Xác nhận — cửa hàng cần thanh toán từ Đang sử dụng.
 
-        - Tháng hiển thị mặc định: tháng hiện tại (vd hôm nay 9/2026 → T9/2026)
-        - Số lượng: date_end còn ≤ 30 ngày hoặc đã quá hạn (chưa TT / vẫn Đang SD)
+        - Tháng UI: tháng chọn (mặc định tháng hiện tại)
+        - Gồm:
+          1) date_end còn ≤ 30 ngày hoặc đã quá hạn (cần TT ngay)
+          2) date_end trong tháng chọn
+          3) next_payment_date trong tháng chọn
+        → Chọn T11/T12 vẫn thấy HĐ đến hạn trong tháng đó (không chỉ ≤30 ngày).
         """
-        period_start, period_end, today = self._internet_payment_period_bounds(year, month, month_offset=0)
+        period_start, period_end, today = self._internet_payment_period_bounds(
+            year, month, month_offset=0
+        )
         soon30 = today + relativedelta(days=30)
         return [
             ("active", "=", True),
             ("service_type_id.code", "=", "internet"),
             ("state", "=", "active"),
             ("date_end", "!=", False),
+            "|",
+            "|",
             ("date_end", "<=", soon30),
+            "&",
+            ("date_end", ">=", period_start),
+            ("date_end", "<=", period_end),
+            "&",
+            ("next_payment_date", ">=", period_start),
+            ("next_payment_date", "<=", period_end),
         ], period_start, period_end, today
 
     @api.model

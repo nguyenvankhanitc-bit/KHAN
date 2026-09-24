@@ -48,6 +48,8 @@
         border-radius: 8px;
         cursor: pointer;
         flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
 
         &:hover {
             background: rgba(255, 255, 255, 0.22);
@@ -1530,21 +1532,136 @@
     }
 
     @media (max-width: 992px) {
-        .o_dwd_topnav span {
-            display: none;
+        .o_dwd_topnav,
+        .o_dwd_topbar_right {
+            display: none !important;
+        }
+        .o_dwd_topbar {
+            padding: 0.45rem 0.75rem;
         }
         .o_dwd_kpi_grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
-        .o_dwd_sidebar {
-            display: none;
-        }
         .o_dwd_sidebar_resizer {
-            display: none;
+            display: none !important;
         }
         .o_dwd_status_boards {
             grid-template-columns: 1fr;
         }
+        .o_dwd_body {
+            position: relative;
+            width: 100%;
+        }
+        .o_dwd_main {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding-left: 8px;
+            padding-right: 8px;
+            box-sizing: border-box;
+        }
+        .o_dwd_filters {
+            width: 100%;
+            max-width: 100%;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .o_dwd_sidebar {
+            display: block !important;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            bottom: 0 !important;
+            z-index: 1045 !important;
+            width: #{'min(320px, 88vw)'} !important;
+            max-width: 320px !important;
+            min-width: 0 !important;
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 8px 10px 16px !important;
+            transform: translateX(-105%);
+            visibility: hidden;
+            pointer-events: none;
+            transition: transform 0.28s ease, visibility 0.28s ease;
+            box-shadow: 8px 0 28px rgba(15, 23, 42, 0.18);
+            overflow-y: auto !important;
+            background: #fff !important;
+            border-right: 1px solid var(--dwd-border);
+
+            &.collapsed {
+                width: #{'min(320px, 88vw)'} !important;
+                padding: 8px 10px 16px !important;
+
+                .o_dwd_side_label,
+                .o_dwd_side_item span,
+                .o_dwd_side_count {
+                    display: initial !important;
+                }
+                .o_dwd_side_item {
+                    justify-content: flex-start !important;
+                }
+            }
+        }
+        &.is-mobile-nav-open .o_dwd_sidebar {
+            transform: translateX(0);
+            visibility: visible;
+            pointer-events: auto;
+        }
+        .o_dwd_offcanvas_header {
+            padding: 10px 4px 12px;
+            margin-bottom: 6px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .o_dwd_offcanvas_title {
+            font-size: 0.95rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+    }
+}
+
+.o_dwd_offcanvas_backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+body.o_dwd_mobile_nav_lock {
+    overflow: hidden;
+}
+
+/* Nút Mục lục trên navbar tím */
+.o_main_navbar .o_menu_systray .o_dwd_nav_toc_btn,
+.o_main_navbar .o_dwd_nav_toc_btn {
+    border-color: rgba(255, 255, 255, 0.55) !important;
+    background: rgba(255, 255, 255, 0.12) !important;
+    color: #fff !important;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 0.25rem 0.55rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: center;
+
+    &:hover,
+    &:focus {
+        background: rgba(255, 255, 255, 0.22) !important;
+        border-color: #fff !important;
+        color: #fff !important;
+    }
+
+    .o_dwd_nav_toc_label {
+        font-size: 12px;
+    }
+}
+
+@media (min-width: 992px) {
+    .o_dwd_nav_toc_btn,
+    .o_dwd_offcanvas_backdrop,
+    .o_dwd_offcanvas_header {
+        display: none !important;
     }
 }
 

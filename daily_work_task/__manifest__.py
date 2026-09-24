@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.37.209",
+    "version": "19.0.1.37.210",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -96,6 +96,8 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
             "daily_work_task/static/src/systray/daily_work_reminder_systray.scss",
             "daily_work_task/static/src/systray/daily_work_reminder_systray.xml",
             "daily_work_task/static/src/systray/daily_work_reminder_systray.js",
+            "daily_work_task/static/src/systray/daily_work_nav_toc_button.xml",
+            "daily_work_task/static/src/systray/daily_work_nav_toc_button.js",
         ],
     },
     "post_init_hook": "post_init_hook",

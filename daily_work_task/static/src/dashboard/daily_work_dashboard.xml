@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkDashboard">
-        <div class="o_daily_work_dashboard o_action">
+        <div t-attf-class="o_daily_work_dashboard o_action {{ shellClassName }}">
             <div class="o_dwd_shell">
                 <!-- Top bar -->
                 <header class="o_dwd_topbar">
                     <div class="o_dwd_topbar_left">
                         <button type="button"
-                                class="o_dwd_burger"
+                                class="o_dwd_burger d-none d-lg-inline-flex"
                                 t-on-click="toggleSidebar"
                                 t-att-title="state.sidebarCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'"
                                 t-att-aria-expanded="(!state.sidebarCollapsed).toString()">
@@ -85,9 +85,18 @@
                 </header>
 
                 <div class="o_dwd_body">
+                    <div t-if="state.mobileNavOpen"
+                         class="o_dwd_offcanvas_backdrop d-lg-none"
+                         t-on-click="closeMobileNav"/>
                     <!-- Sidebar -->
                     <aside t-att-class="sidebarClass"
                            t-att-style="sidebarStyle">
+                        <div class="o_dwd_offcanvas_header d-flex d-lg-none align-items-center justify-content-between">
+                            <strong class="o_dwd_offcanvas_title">Mục lục Công việc</strong>
+                            <button type="button" class="btn btn-sm btn-light" t-on-click="closeMobileNav" aria-label="Đóng">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
                         <div class="o_dwd_side_section">
                             <div class="o_dwd_side_label">📌 CÔNG VIỆC</div>
                             <button type="button" class="o_dwd_side_item" title="Nhập công việc"

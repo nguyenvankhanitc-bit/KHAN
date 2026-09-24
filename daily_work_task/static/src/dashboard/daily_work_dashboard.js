@@ -2,8 +2,8 @@
 
 import { loadBundle } from "@web/core/assets";
 import { registry } from "@web/core/registry";
-import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
+import { useBus, useService } from "@web/core/utils/hooks";
+import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
@@ -86,8 +86,28 @@ export class DailyWorkDashboard extends Component {
             sidebarCollapsed: readStoredSidebarCollapsed(),
             sidebarWidth: readStoredSidebarWidth(),
             sidebarResizing: false,
+            mobileNavOpen: false,
+            isMobile: false,
             configOpen: true,
             reminderTotal: 0,
+        });
+        this._onMqChange = this._onMqChange.bind(this);
+        useBus(this.env.bus, "daily_work_task:OPEN_WORK_NAV", () => {
+            if (this.state.isMobile) {
+                this.openMobileNav();
+            } else {
+                this.state.sidebarCollapsed = false;
+            }
+        });
+        onMounted(() => {
+            this._mq = window.matchMedia("(max-width: 991.98px)");
+            this._onMqChange();
+            if (this._mq.addEventListener) {
+                this._mq.addEventListener("change", this._onMqChange);
+            } else if (this._mq.addListener) {
+                this._mq.addListener(this._onMqChange);
+            }
+            this.env.bus.trigger("daily_work_task:DASHBOARD_SHELL", { active: true });
         });
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -114,7 +134,48 @@ export class DailyWorkDashboard extends Component {
             },
             () => [this.state.loading, this.state.data]
         );
-        onWillUnmount(() => this._stopSidebarResize());
+        onWillUnmount(() => {
+            this._stopSidebarResize();
+            if (this._mq) {
+                if (this._mq.removeEventListener) {
+                    this._mq.removeEventListener("change", this._onMqChange);
+                } else if (this._mq.removeListener) {
+                    this._mq.removeListener(this._onMqChange);
+                }
+            }
+            document.body.classList.remove("o_dwd_mobile_nav_lock");
+            this.env.bus.trigger("daily_work_task:DASHBOARD_SHELL", { active: false });
+        });
+    }
+
+    _onMqChange() {
+        const isMobile = !!(this._mq && this._mq.matches);
+        this.state.isMobile = isMobile;
+        if (!isMobile) {
+            this.closeMobileNav();
+        }
+    }
+
+    get shellClassName() {
+        const parts = [];
+        if (this.state.isMobile) {
+            parts.push("is-mobile-layout");
+        }
+        if (this.state.mobileNavOpen) {
+            parts.push("is-mobile-nav-open");
+        }
+        return parts.join(" ");
+    }
+
+    openMobileNav() {
+        this.state.mobileNavOpen = true;
+        this.state.sidebarCollapsed = false;
+        document.body.classList.add("o_dwd_mobile_nav_lock");
+    }
+
+    closeMobileNav() {
+        this.state.mobileNavOpen = false;
+        document.body.classList.remove("o_dwd_mobile_nav_lock");
     }
 
     get filtersPayload() {
@@ -129,7 +190,7 @@ export class DailyWorkDashboard extends Component {
 
     get sidebarClass() {
         let cls = "o_dwd_sidebar";
-        if (this.state.sidebarCollapsed) {
+        if (this.state.sidebarCollapsed && !this.state.isMobile) {
             cls += " collapsed";
         }
         if (this.state.sidebarResizing) {
@@ -139,6 +200,9 @@ export class DailyWorkDashboard extends Component {
     }
 
     get sidebarStyle() {
+        if (this.state.isMobile) {
+            return "";
+        }
         const width = this.state.sidebarCollapsed
             ? SIDEBAR_WIDTH_COLLAPSED
             : this.state.sidebarWidth;
@@ -146,6 +210,14 @@ export class DailyWorkDashboard extends Component {
     }
 
     toggleSidebar() {
+        if (this.state.isMobile) {
+            if (this.state.mobileNavOpen) {
+                this.closeMobileNav();
+            } else {
+                this.openMobileNav();
+            }
+            return;
+        }
         this.state.sidebarCollapsed = !this.state.sidebarCollapsed;
         try {
             window.localStorage.setItem(
@@ -554,6 +626,8 @@ export class DailyWorkDashboard extends Component {
             });
             return;
         }
+        this.closeMobileNav();
+        const asPopup = this.state.isMobile;
         const map = {
             dashboard: "daily_work_dashboard",
             tasks: "daily_work_task_manager",
@@ -585,64 +659,95 @@ export class DailyWorkDashboard extends Component {
             return;
         }
         if (key === "kanban") {
-            await this.action.doAction("daily_work_task.action_daily_task_kanban");
+            await this._doNavAction("daily_work_task.action_daily_task_kanban", asPopup);
             return;
         }
         if (key === "today") {
-            await this.action.doAction("daily_work_task.action_daily_work_today");
+            await this._doNavAction("daily_work_task.action_daily_work_today", asPopup);
             return;
         }
         if (key === "reminders") {
-            await this.action.doAction("daily_work_task.action_daily_work_reminders");
+            await this._doNavAction("daily_work_task.action_daily_work_reminders", asPopup);
             return;
         }
         if (key === "overdue") {
-            await this.action.doAction({
-                type: "ir.actions.act_window",
-                name: "Công việc quá hạn",
-                res_model: "daily.task",
-                views: [
-                    [false, "list"],
-                    [false, "form"],
-                ],
-                domain: [["is_overdue", "=", true]],
-            });
+            await this._doNavAction(
+                {
+                    type: "ir.actions.act_window",
+                    name: "Công việc quá hạn",
+                    res_model: "daily.task",
+                    views: [
+                        [false, "list"],
+                        [false, "form"],
+                    ],
+                    domain: [["is_overdue", "=", true]],
+                    target: asPopup ? "new" : "current",
+                },
+                asPopup
+            );
             return;
         }
         if (key === "send_mail") {
-            await this.action.doAction("daily_work_task.action_daily_task_send_overdue");
+            await this._doNavAction("daily_work_task.action_daily_task_send_overdue", asPopup);
             return;
         }
         if (key === "config") {
-            await this.action.doAction("daily_work_task.action_daily_task_work_group");
+            await this._doNavAction("daily_work_task.action_daily_task_work_group", asPopup);
             return;
         }
         if (key === "recurring") {
-            await this.action.doAction("daily_work_task.action_daily_task_recurring");
+            await this._doNavAction("daily_work_task.action_daily_task_recurring", asPopup);
             return;
         }
         if (key === "employees") {
-            await this.action.doAction("daily_work_task.action_daily_task_employee");
+            await this._doNavAction("daily_work_task.action_daily_task_employee", asPopup);
             return;
         }
         if (key === "access") {
-            await this.action.doAction("daily_work_task.action_daily_task_access");
+            await this._doNavAction("daily_work_task.action_daily_task_access", asPopup);
             return;
         }
         if (key === "report_access") {
-            await this.action.doAction("daily_work_task.action_daily_task_report_access");
+            await this._doNavAction("daily_work_task.action_daily_task_report_access", asPopup);
             return;
         }
         if (key === "performance_access") {
-            await this.action.doAction("daily_work_task.action_daily_task_performance_access");
+            await this._doNavAction(
+                "daily_work_task.action_daily_task_performance_access",
+                asPopup
+            );
             return;
         }
         const tag = map[key];
         if (tag) {
-            await this.action.doAction({ type: "ir.actions.client", tag });
+            await this._doNavAction(
+                {
+                    type: "ir.actions.client",
+                    tag,
+                    target: asPopup ? "new" : "current",
+                },
+                asPopup
+            );
         } else {
             this.notification.add(_t("Mục này sẽ bổ sung sau."), { type: "info" });
         }
+    }
+
+    async _doNavAction(action, asPopup) {
+        if (typeof action === "string") {
+            if (asPopup) {
+                try {
+                    const loaded = await this.action.loadAction(action);
+                    await this.action.doAction({ ...loaded, target: "new" });
+                    return;
+                } catch (_e) {
+                    /* fallback: mở thường */
+                }
+            }
+            await this.action.doAction(action);
+            return;
+        }
+        await this.action.doAction(action);
     }
 
     async onExportExcel() {

@@ -465,3 +465,138 @@ html.o_internet_resizing * {
         }
     }
 }
+
+/* —— Mobile (< 992px): sidebar → offcanvas drawer —— */
+body.o_internet_mobile_nav_lock {
+    overflow: hidden;
+}
+
+.o_internet_mobile_menu_btn {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    z-index: 30;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    color: #5b21b6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+    cursor: pointer;
+
+    &:hover {
+        background: #f5f3ff;
+        border-color: #ddd6fe;
+    }
+}
+
+.o_internet_offcanvas_backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1040;
+    background: rgba(15, 23, 42, 0.45);
+}
+
+.o_internet_offcanvas_header {
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 4px;
+}
+
+.o_internet_offcanvas_title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: 0.02em;
+}
+
+@media (max-width: 991.98px) {
+    .o_internet_master.o_phan_he_shell {
+        --o-internet-sidebar-width: 0px;
+    }
+
+    .o_internet_master .sidebar-top-actions,
+    .o_internet_master .o_sidebar_resizer {
+        display: none !important;
+    }
+
+    .o_internet_master .o_internet_content {
+        flex: 1 1 100% !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        max-width: 100% !important;
+    }
+
+    /* Chừa chỗ nút hamburger trên đầu nội dung */
+    .o_internet_master.is-mobile-layout .o_internet_content {
+        padding-top: 52px;
+    }
+
+    .o_internet_master .o_internet_sidebar.o_phan_he_sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        z-index: 1055 !important;
+        flex: none !important;
+        width: min(320px, 88vw) !important;
+        min-width: 0 !important;
+        max-width: 320px !important;
+        height: 100% !important;
+        padding: 8px 10px 16px !important;
+        transform: translateX(-105%);
+        visibility: hidden;
+        transition: transform 0.28s ease, visibility 0.28s ease;
+        box-shadow: 8px 0 28px rgba(15, 23, 42, 0.18) !important;
+        overflow-y: auto !important;
+        background: #fff !important;
+    }
+
+    .o_internet_master.is-mobile-nav-open .o_internet_sidebar.o_phan_he_sidebar {
+        transform: translateX(0);
+        visibility: visible;
+    }
+
+    /* Mobile drawer luôn hiện chữ (không dùng mode icon-only) */
+    .o_internet_master.is-mobile-layout {
+        .o_phan_he_sidebar_brand,
+        .o_phan_he_brand_text,
+        .brand-text,
+        .o_phan_he_nav_item span,
+        .o_phan_he_nav_section span,
+        .o_phan_he_nav_sub span,
+        .o_phan_he_nav_caret,
+        .o_phan_he_nav_badge {
+            display: initial !important;
+        }
+
+        .o_phan_he_nav_item,
+        .o_phan_he_nav_section,
+        .o_phan_he_nav_sub {
+            justify-content: flex-start !important;
+            padding: 10px 12px !important;
+            text-align: left;
+            width: 100%;
+        }
+    }
+}
+
+@media (min-width: 992px) {
+    .o_internet_mobile_menu_btn,
+    .o_internet_offcanvas_backdrop,
+    .o_internet_offcanvas_header {
+        display: none !important;
+    }
+
+    .o_internet_master .o_internet_sidebar.o_phan_he_sidebar {
+        position: relative !important;
+        transform: none !important;
+        visibility: visible !important;
+        height: auto !important;
+    }
+}

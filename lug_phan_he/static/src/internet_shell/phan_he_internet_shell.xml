@@ -3,9 +3,10 @@
     <t t-name="lug_phan_he.PhanHeInternetShell">
         <div class="o_phan_he_shell o_action o_internet_master"
              t-ref="shellRoot"
-             t-att-class="(state.collapsed ? 'is-sidebar-collapsed ' : '') + (props.contentMode === 'view' ? 'is-detail' : 'is-overview') + (props.moduleCode === 'internet' ? ' is-internet-nav' : '')"
+             t-att-class="shellClassName"
              t-att-style="sidebarStyle">
-            <div class="sidebar-top-actions d-flex align-items-center gap-2 mb-3">
+            <!-- Desktop toolbar: back + collapse -->
+            <div class="sidebar-top-actions d-none d-lg-flex align-items-center gap-2 mb-3">
                 <button type="button" class="btn-circle-action" t-on-click="onBackToDashboard" title="Quay lại Tổng quan">
                     <i class="fa fa-arrow-left"/>
                 </button>
@@ -13,8 +14,41 @@
                     <i class="fa fa-bars"/>
                 </button>
             </div>
-            <aside class="o_internet_sidebar o_phan_he_sidebar linkq-sidebar">
-                <div class="o_phan_he_sidebar_brand" t-on-click="() => this.props.onOverview()" role="button" title="Tổng quan">
+
+            <!-- Mobile: nút mở menu (chỉ &lt; 992px) -->
+            <button type="button"
+                    class="o_internet_mobile_menu_btn d-lg-none"
+                    t-on-click="openMobileNav"
+                    title="Menu"
+                    aria-label="Mở menu">
+                <i class="fa fa-bars"/>
+            </button>
+
+            <!-- Backdrop offcanvas mobile -->
+            <div t-if="state.mobileNavOpen"
+                 class="o_internet_offcanvas_backdrop d-lg-none"
+                 t-on-click="closeMobileNav"/>
+
+            <!-- Sidebar: desktop cố định; mobile = offcanvas-start -->
+            <aside class="o_internet_sidebar o_phan_he_sidebar linkq-sidebar offcanvas-lg offcanvas-start"
+                   t-att-class="state.mobileNavOpen ? 'show' : ''"
+                   tabindex="-1"
+                   id="o_internet_sidebar_offcanvas"
+                   aria-labelledby="o_internet_sidebar_title">
+                <div class="o_internet_offcanvas_header d-flex d-lg-none align-items-center justify-content-between">
+                    <strong id="o_internet_sidebar_title" class="o_internet_offcanvas_title" t-esc="props.brand"/>
+                    <button type="button"
+                            class="btn-circle-action"
+                            t-on-click="closeMobileNav"
+                            title="Đóng"
+                            aria-label="Đóng menu">
+                        <i class="fa fa-times"/>
+                    </button>
+                </div>
+                <div class="o_phan_he_sidebar_brand d-none d-lg-block"
+                     t-on-click="() => this.onOverviewClick()"
+                     role="button"
+                     title="Tổng quan">
                     <span class="o_phan_he_brand_text brand-text" t-esc="props.brand"/>
                 </div>
                 <nav class="o_phan_he_sidebar_nav">
@@ -23,7 +57,7 @@
                             title="Tổng quan"
                             t-if="showOverview"
                             t-att-class="(props.activeNav === 'overview' ? 'is-active' : '') + ' is-icon-overview'"
-                            t-on-click="() => this.props.onOverview()">
+                            t-on-click="() => this.onOverviewClick()">
                         <i class="fa fa-bar-chart" title="Tổng quan"/>
                         <span>Tổng quan</span>
                     </button>
@@ -45,7 +79,7 @@
                                             class="o_phan_he_nav_sub"
                                             t-att-class="props.navChildClass(child)"
                                             t-att-title="child.label"
-                                            t-on-click="() => this.props.onNavChild(child)">
+                                            t-on-click="() => this.onNavChildClick(child)">
                                         <i t-att-class="'fa ' + (child.icon || 'fa-circle-o')"
                                            t-att-title="child.label"/>
                                         <span t-esc="child.label"/>
@@ -60,12 +94,14 @@
                     </t>
                 </nav>
             </aside>
-            <div class="o_sidebar_resizer"
+
+            <div class="o_sidebar_resizer d-none d-lg-block"
                  t-att-class="(state.dragging ? 'is-dragging ' : '') + (state.collapsed ? 'is-disabled' : '')"
                  t-on-mousedown="onResizeStart"
                  title="Kéo để đổi độ rộng sidebar">
                 <span class="o_sidebar_resizer_grip"/>
             </div>
+
             <div class="o_internet_content o_phan_he_dashboard">
                 <t t-if="props.contentMode === 'view' and props.embeddedViewProps">
                     <View t-props="props.embeddedViewProps" t-key="props.viewKey"/>

@@ -77,11 +77,21 @@ export class PhanHeInternetShell extends Component {
             sidebarWidth: loadWidth(),
             collapsed: loadCollapsed(),
             dragging: false,
+            mobileNavOpen: false,
+            isMobile: false,
         });
         this._navFp = "";
         this._onMove = this._onMove.bind(this);
         this._onUp = this._onUp.bind(this);
+        this._onMqChange = this._onMqChange.bind(this);
         onMounted(() => {
+            this._mq = window.matchMedia("(max-width: 991.98px)");
+            this._onMqChange();
+            if (this._mq.addEventListener) {
+                this._mq.addEventListener("change", this._onMqChange);
+            } else if (this._mq.addListener) {
+                this._mq.addListener(this._onMqChange);
+            }
             this._autofitSidebarWidth();
         });
         onPatched(() => {
@@ -91,7 +101,43 @@ export class PhanHeInternetShell extends Component {
                 this._autofitSidebarWidth();
             }
         });
-        onWillUnmount(() => this._stopResize());
+        onWillUnmount(() => {
+            this._stopResize();
+            if (this._mq) {
+                if (this._mq.removeEventListener) {
+                    this._mq.removeEventListener("change", this._onMqChange);
+                } else if (this._mq.removeListener) {
+                    this._mq.removeListener(this._onMqChange);
+                }
+            }
+            document.body.classList.remove("o_internet_mobile_nav_lock");
+        });
+    }
+
+    _onMqChange() {
+        const isMobile = !!(this._mq && this._mq.matches);
+        this.state.isMobile = isMobile;
+        if (!isMobile) {
+            this.closeMobileNav();
+        }
+    }
+
+    get shellClassName() {
+        const parts = [];
+        if (this.state.collapsed && !this.state.isMobile) {
+            parts.push("is-sidebar-collapsed");
+        }
+        parts.push(this.props.contentMode === "view" ? "is-detail" : "is-overview");
+        if (this.props.moduleCode === "internet") {
+            parts.push("is-internet-nav");
+        }
+        if (this.state.isMobile) {
+            parts.push("is-mobile-layout");
+        }
+        if (this.state.mobileNavOpen) {
+            parts.push("is-mobile-nav-open");
+        }
+        return parts.join(" ");
     }
 
     get showOverview() {
@@ -103,15 +149,39 @@ export class PhanHeInternetShell extends Component {
     }
 
     get sidebarStyle() {
+        if (this.state.isMobile) {
+            return "--o-internet-sidebar-width: 0px";
+        }
         const w = this.state.collapsed ? COLLAPSED_W : this.state.sidebarWidth;
         return `--o-internet-sidebar-width: ${w}px`;
+    }
+
+    openMobileNav() {
+        this.state.mobileNavOpen = true;
+        this.state.collapsed = false;
+        document.body.classList.add("o_internet_mobile_nav_lock");
+    }
+
+    closeMobileNav() {
+        this.state.mobileNavOpen = false;
+        document.body.classList.remove("o_internet_mobile_nav_lock");
+    }
+
+    onOverviewClick() {
+        this.props.onOverview();
+        this.closeMobileNav();
+    }
+
+    onNavChildClick(child) {
+        this.props.onNavChild(child);
+        this.closeMobileNav();
     }
 
     /**
      * Đo theo nội dung chữ (không dùng width 100% của hàng — sẽ bị ảo rộng).
      */
     _autofitSidebarWidth() {
-        if (this.state.collapsed || this.state.dragging) {
+        if (this.state.isMobile || this.state.collapsed || this.state.dragging) {
             return;
         }
         const root = this.rootRef.el;
@@ -169,6 +239,9 @@ export class PhanHeInternetShell extends Component {
     }
 
     showSectionChildren(section) {
+        if (this.state.isMobile || this.state.mobileNavOpen) {
+            return this.props.isGroupOpen(section.id);
+        }
         return this.state.collapsed || this.props.isGroupOpen(section.id);
     }
 

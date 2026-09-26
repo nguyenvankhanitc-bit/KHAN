@@ -898,33 +898,24 @@ class PhanHeService(models.Model):
 
     @api.model
     def _internet_payment_need_domain(self, year=None, month=None):
-        """Danh sách TT / Xác nhận — cửa hàng cần thanh toán từ Đang sử dụng.
+        """Danh sách TT — đúng tháng chọn + quá hạn các tháng trước.
 
-        - Tháng UI: tháng chọn (mặc định tháng hiện tại)
-        - Gồm:
-          1) date_end còn ≤ 30 ngày hoặc đã quá hạn (cần TT ngay)
-          2) date_end trong tháng chọn
-          3) next_payment_date trong tháng chọn
-        → Chọn T11/T12 vẫn thấy HĐ đến hạn trong tháng đó (không chỉ ≤30 ngày).
+        Không lấy HĐ tháng sau chỉ vì còn ≤ 30 ngày
+        (vd đang xem T9 thì HĐ hết hạn T10 không hiện).
+        Chọn T10/T11/T12 vẫn thấy HĐ đến hạn trong đúng tháng đó.
         """
         period_start, period_end, today = self._internet_payment_period_bounds(
             year, month, month_offset=0
         )
-        soon30 = today + relativedelta(days=30)
         return [
             ("active", "=", True),
             ("service_type_id.code", "=", "internet"),
             ("state", "=", "active"),
-            ("date_end", "!=", False),
             "|",
             "|",
-            ("date_end", "<=", soon30),
-            "&",
-            ("date_end", ">=", period_start),
-            ("date_end", "<=", period_end),
-            "&",
-            ("next_payment_date", ">=", period_start),
-            ("next_payment_date", "<=", period_end),
+            "&", ("date_end", ">=", period_start), ("date_end", "<=", period_end),
+            "&", ("next_payment_date", ">=", period_start), ("next_payment_date", "<=", period_end),
+            "&", ("date_end", "!=", False), ("date_end", "<", period_start),
         ], period_start, period_end, today
 
     @api.model
@@ -1561,7 +1552,7 @@ class PhanHeService(models.Model):
                 ("date_end", "<", today),
             ]
         elif code in ("payment_due", "payment_schedule"):
-            # Lịch TT: cần TT = còn ≤30 ngày hoặc quá hạn (từ Đang sử dụng)
+            # Danh sách TT: đúng tháng hiện tại + quá hạn các tháng trước
             need_domain, _ps, _pe, _td = self._internet_payment_need_domain()
             return need_domain
         elif code == "payment_forecast":

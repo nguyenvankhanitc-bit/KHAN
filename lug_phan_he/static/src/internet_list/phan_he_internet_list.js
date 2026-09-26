@@ -521,7 +521,7 @@ export class PhanHeInternetListBoard extends Component {
             }
             return {
                 ...base,
-                subtitle: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear} · trong tháng + còn ≤30 ngày / quá hạn`,
+                    subtitle: `Tháng ${this.state.forecastMonth}/${this.state.forecastYear} · trong tháng + quá hạn các tháng trước`,
             };
         }
         return base;
@@ -1023,10 +1023,16 @@ export class PhanHeInternetListBoard extends Component {
         if (f === "active") {
             domain.push(["state", "=", "active"]);
         } else if (f === "payment_due") {
-            // Lịch TT: cần TT = còn ≤30 ngày hoặc quá hạn (từ Đang sử dụng)
+            // Danh sách TT: đúng tháng chọn + quá hạn các tháng trước (không lôi tháng sau)
+            const y = Number(this.state.forecastYear) || new Date().getFullYear();
+            const m = Number(this.state.forecastMonth) || (new Date().getMonth() + 1);
+            const from = `${y}-${pad2(m)}-01`;
             domain.push(["state", "=", "active"]);
-            domain.push(["date_end", "!=", false]);
-            domain.push(["date_end", "<=", soon30]);
+            domain.push("|", "|",
+                "&", ["date_end", ">=", from], ["date_end", "<=", `${y}-${pad2(m)}-${pad2(new Date(y, m, 0).getDate())}`],
+                "&", ["next_payment_date", ">=", from], ["next_payment_date", "<=", `${y}-${pad2(m)}-${pad2(new Date(y, m, 0).getDate())}`],
+                "&", ["date_end", "!=", false], ["date_end", "<", from]
+            );
         } else if (f === "payment_forecast") {
             // Dự kiến: tháng/năm đang chọn + HĐ quá hạn
             const y = Number(this.state.forecastYear) || new Date().getFullYear();

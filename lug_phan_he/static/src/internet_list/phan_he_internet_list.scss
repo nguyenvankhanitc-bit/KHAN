@@ -209,6 +209,7 @@
     box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
     width: 100%;
     max-width: 100%;
     display: flex;
@@ -219,6 +220,7 @@
 .lq-table-body {
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -227,15 +229,28 @@
 .lq-table-scroll {
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    height: 0 !important; // Ã©p flex co láº¡i â†’ scrollbar náº±m trong viewport
+    min-width: 0 !important;
+    height: 0 !important;
     max-height: none !important;
     width: 100% !important;
     max-width: 100% !important;
-    overflow-x: scroll !important;
-    overflow-y: auto !important;
+    overflow-x: auto !important;
+    overflow-y: scroll !important;
     position: relative;
     -webkit-overflow-scrolling: touch;
     scrollbar-gutter: stable;
+}
+
+.lq-table-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+.lq-table-scroll::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 999px;
+}
+.lq-table-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
 }
 
 .lq-table-bar {
@@ -1259,6 +1274,17 @@
         padding-left: 8px !important;
         padding-right: 8px !important;
         box-sizing: border-box !important;
+    }
+    /* Mobile card list: cuộn cả trang, không khóa overflow */
+    .o_internet_master .o_internet_content:has(.lq-inet-board.is-today) {
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+    .o_internet_master .o_internet_content .lq-inet-board.is-today {
+        height: auto !important;
+        min-height: 100%;
+        overflow: visible !important;
     }
 }
 @media (min-width: 900px) {

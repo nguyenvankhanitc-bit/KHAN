@@ -1331,20 +1331,29 @@ class PhanHeService(models.Model):
         year_history = {}
         year_rows_by_year = {}
         year_bars = []
-        for y in range(year - 3, year + 1):
-            ys = fields.Date.to_date(f"{y}-01-01")
-            ye = fields.Date.to_date(f"{y}-12-31")
-            y_recs = self.search(base + self._dash_cost_domain(ys, ye), order="id desc")
-            y_rows, y_sum = self._dash_group_due_stores(y_recs)
-            year_history[y] = y_sum
-            year_rows_by_year[y] = y_rows
-            year_bars.append({
-                "year": y,
-                "amount": self._dash_mien_total(y_sum, mien_meta),
-                "is_current": y == year,
-            })
+        # Biểu đồ Chi phí theo năm: bắt đầu từ năm hiện tại (không lùi 2023, 2024, 2025)
+        ys = fields.Date.to_date(f"{year}-01-01")
+        ye = fields.Date.to_date(f"{year}-12-31")
+        y_recs = self.search(base + self._dash_cost_domain(ys, ye), order="id desc")
+        y_rows, y_sum = self._dash_group_due_stores(y_recs)
+        year_history[year] = y_sum
+        year_rows_by_year[year] = y_rows
+        year_bars.append({
+            "year": year,
+            "amount": self._dash_mien_total(y_sum, mien_meta),
+            "is_current": True,
+        })
+        prev_y = year - 1
+        prev_recs_y = self.search(
+            base + self._dash_cost_domain(
+                fields.Date.to_date(f"{prev_y}-01-01"),
+                fields.Date.to_date(f"{prev_y}-12-31"),
+            ),
+            order="id desc",
+        )
+        _prev_rows, prev_sum = self._dash_group_due_stores(prev_recs_y)
         cur_year = year_bars[-1]["amount"] if year_bars else 0.0
-        prev_year_amt = year_bars[-2]["amount"] if len(year_bars) > 1 else 0.0
+        prev_year_amt = self._dash_mien_total(prev_sum, mien_meta)
         year_delta = self._dash_delta(cur_year, prev_year_amt)
         year_by_rows = year_rows_by_year.get(year, {})
         year_sum = year_history.get(year, {})

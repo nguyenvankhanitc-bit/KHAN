@@ -814,25 +814,18 @@ class PhanHeDashboard(models.AbstractModel):
             "Khác": "#94a3b8",
         }
 
-        def quarter_bounds(y, q):
-            start_m = (q - 1) * 3 + 1
-            start = fields.Date.from_string(f"{y:04d}-{start_m:02d}-01")
-            end = (start + relativedelta(months=3)) - relativedelta(days=1)
-            return start, end
+        extra = []
+        if region and region != "all":
+            extra.append(("store_mien", "=", region))
+        if provider_id:
+            extra.append(("provider_id", "=", provider_id))
 
-        def overlap_domain(start, end):
-            domain = [
-                ("active", "=", True),
-                ("service_type_id.code", "=", "internet"),
-                ("state", "not in", ("cancel", "draft")),
-                "|", ("date_start", "=", False), ("date_start", "<=", end),
-                "|", ("date_end", "=", False), ("date_end", ">=", start),
-            ]
-            if region and region != "all":
-                domain.append(("store_mien", "=", region))
-            if provider_id:
-                domain.append(("provider_id", "=", provider_id))
-            return domain
+        def month_payment_recs(y, m):
+            """Cùng tập HĐ Danh sách thanh toán đã lọc theo tháng."""
+            return Service.search_month_cost_ky(y, m, extra_domain=extra or None)
+
+        def period_amt(rec):
+            return float(Service._month_ky_period_amount(rec) or 0.0)
 
         def pay_of(rec):
             monthly = float(rec.contract_amount or 0.0)
@@ -862,19 +855,30 @@ class PhanHeDashboard(models.AbstractModel):
                 return "#22c55e"
             return "#f59e0b"
 
+        def quarter_months(q):
+            sm = (q - 1) * 3 + 1
+            return (sm, sm + 1, sm + 2)
+
+        def iter_quarter_payments(q):
+            """Mỗi tháng = danh sách TT tháng đó; 1 HĐ có thể vào nhiều tháng."""
+            for m in quarter_months(q):
+                for rec in month_payment_recs(year, m):
+                    amt = period_amt(rec)
+                    if amt <= 0:
+                        continue
+                    yield m, rec, amt
+
         quarter_kpis = []
         for q in (1, 2, 3, 4):
-            q_start, q_end = quarter_bounds(year, q)
-            recs = Service.search(overlap_domain(q_start, q_end))
             providers = set()
+            seen = set()
             total = 0.0
-            count = 0
-            for rec in recs:
-                monthly, paid_sum, remain_amt, status = pay_of(rec)
+            for _m, rec, amt in iter_quarter_payments(q):
+                _monthly, _paid, _remain, status = pay_of(rec)
                 if pay_filter not in ("all", "", False) and status != pay_filter:
                     continue
-                total += monthly
-                count += 1
+                total += amt
+                seen.add(rec.id)
                 if rec.provider_id:
                     providers.add(rec.provider_id.id)
             sm = (q - 1) * 3 + 1
@@ -883,14 +887,12 @@ class PhanHeDashboard(models.AbstractModel):
                 "year": year,
                 "month_range": f"Tháng {month_names[sm]} – {month_names[sm + 2]}/{year}",
                 "total_amount": total,
-                "contract_count": count,
+                "contract_count": len(seen),
                 "provider_count": len(providers),
             })
 
-        q_start, q_end = quarter_bounds(year, quarter)
-        services = Service.search(overlap_domain(q_start, q_end), order="date_end asc, id asc")
-        rows = []
-        monthly_map = {}
+        rows_by_id = {}
+        monthly_map = {m: 0.0 for m in quarter_months(quarter)}
         provider_map = {}
         region_map = {}
         kpi = {
@@ -899,48 +901,53 @@ class PhanHeDashboard(models.AbstractModel):
             "unpaid_amount": 0.0,
             "total_count": 0,
         }
-        for rec in services:
+        paid_once = set()
+        for m, rec, amt in iter_quarter_payments(quarter):
             monthly, paid_sum, remain_amt, status = pay_of(rec)
             if pay_filter not in ("all", "", False) and status != pay_filter:
                 continue
-            kpi["total_amount"] += monthly
-            kpi["paid_amount"] += min(paid_sum, monthly) if monthly else paid_sum
-            kpi["unpaid_amount"] += remain_amt
-            kpi["total_count"] += 1
-
-            bucket_month = rec.date_start.month if rec.date_start and q_start <= rec.date_start <= q_end else (
-                rec.date_end.month if rec.date_end and q_start <= rec.date_end <= q_end else q_start.month
-            )
-            monthly_map[bucket_month] = monthly_map.get(bucket_month, 0.0) + monthly
+            kpi["total_amount"] += amt
+            monthly_map[m] = monthly_map.get(m, 0.0) + amt
             pname = rec.provider_id.name or "Khác"
-            provider_map[pname] = provider_map.get(pname, 0.0) + monthly
+            provider_map[pname] = provider_map.get(pname, 0.0) + amt
             rkey = region_label.get(rec.store_mien or "", "Khác")
-            region_map[rkey] = region_map.get(rkey, 0.0) + monthly
-
-            store = rec.store_id
-            provider = rec.provider_id
-            rows.append({
-                "id": rec.id,
-                "store": store.name or rec.name or "—",
-                "code": rec.customer_code or rec.code or "",
-                "customer_code": rec.customer_code or "",
-                "contract_code": rec.code or "",
-                "provider": provider.name or "—",
-                "provider_id": provider.id or False,
-                "bandwidth": rec.bandwidth or "—",
-                "region": rec.store_mien or "",
-                "date_start": fields.Date.to_string(rec.date_start) if rec.date_start else False,
-                "date_end": fields.Date.to_string(rec.date_end) if rec.date_end else False,
-                "monthly": monthly,
-                "paid": float(rec.next_payment_amount or 0.0),
-                "next_payment_amount": float(rec.next_payment_amount or 0.0),
-                "remain": remain_amt,
-                "pay_status": status,
-                "ops_status": rec.ops_status or rec.state or "active",
-                "remaining_days": rec.remaining_days if rec.remaining_days is not False else 0,
-                "remaining_time": rec.remaining_time or "",
-                "alert_level": rec.alert_level or "ok",
-            })
+            region_map[rkey] = region_map.get(rkey, 0.0) + amt
+            if rec.id not in paid_once:
+                paid_cap = min(paid_sum, amt) if amt else paid_sum
+                kpi["paid_amount"] += paid_cap
+                paid_once.add(rec.id)
+            row = rows_by_id.get(rec.id)
+            if not row:
+                store = rec.store_id
+                provider = rec.provider_id
+                row = {
+                    "id": rec.id,
+                    "store": store.name or rec.name or "—",
+                    "code": rec.customer_code or rec.code or "",
+                    "customer_code": rec.customer_code or "",
+                    "contract_code": rec.code or "",
+                    "provider": provider.name or "—",
+                    "provider_id": provider.id or False,
+                    "bandwidth": rec.bandwidth or "—",
+                    "region": rec.store_mien or "",
+                    "date_start": fields.Date.to_string(rec.date_start) if rec.date_start else False,
+                    "date_end": fields.Date.to_string(rec.date_end) if rec.date_end else False,
+                    "monthly": 0.0,
+                    "paid": float(rec.next_payment_amount or 0.0),
+                    "next_payment_amount": float(rec.next_payment_amount or 0.0),
+                    "remain": 0.0,
+                    "pay_status": status,
+                    "ops_status": rec.ops_status or rec.state or "active",
+                    "remaining_days": rec.remaining_days if rec.remaining_days is not False else 0,
+                    "remaining_time": rec.remaining_time or "",
+                    "alert_level": rec.alert_level or "ok",
+                }
+                rows_by_id[rec.id] = row
+            row["monthly"] += amt
+            row["remain"] = max(row["monthly"] - min(paid_sum, row["monthly"]), 0.0)
+        rows = list(rows_by_id.values())
+        kpi["total_count"] = len(rows)
+        kpi["unpaid_amount"] = max(kpi["total_amount"] - kpi["paid_amount"], 0.0)
 
         months_in_q = [(quarter - 1) * 3 + i for i in (1, 2, 3)]
         monthly_trend = [

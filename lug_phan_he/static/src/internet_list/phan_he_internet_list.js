@@ -244,6 +244,7 @@ export class PhanHeInternetListBoard extends Component {
             limit: 10,
             totalCount: 0,
             search: "",
+            searchDraft: "",
             statusFilter: "",
             providerFilter: "",
             bandwidthFilter: "",
@@ -351,9 +352,10 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.currentPage = 1;
                 this.state.remainTab = "all";
                 if (nextFilter !== curFilter) {
-                    this.state.regionFilter = "";
-                    this.state.search = "";
-                    this.state.providerFilter = "";
+                this.state.regionFilter = "";
+                this.state.search = "";
+                this.state.searchDraft = "";
+                this.state.providerFilter = "";
                     this._lastPeriodEmitSig = "";
                 }
                 this.state.records = [];
@@ -1877,6 +1879,24 @@ export class PhanHeInternetListBoard extends Component {
         }
     }
 
+    onSearchDraft(ev) {
+        this.state.searchDraft = ev.target.value;
+    }
+
+    onMobileSearchKey(ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            this.applyMobileSearch();
+        }
+    }
+
+    applyMobileSearch() {
+        this.state.search = (this.state.searchDraft || "").trim();
+        this.state.page = 1;
+        this.state.currentPage = 1;
+        this.load();
+    }
+
     onSearchInput(ev) {
         this.state.search = ev.target.value;
         this.state.page = 1;
@@ -1908,6 +1928,7 @@ export class PhanHeInternetListBoard extends Component {
 
     resetFilters() {
         this.state.search = "";
+        this.state.searchDraft = "";
         this.state.statusFilter = "";
         this.state.providerFilter = "";
         this.state.bandwidthFilter = "";

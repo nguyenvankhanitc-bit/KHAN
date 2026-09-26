@@ -64,16 +64,17 @@
                     </button>
                 </div>
 
-                <div class="lq-today-datebar">
-                    <i class="fa fa-calendar"/>
-                    <span t-esc="dateRangeLabel"/>
+                <div class="lq-today-datebar lq-today-find">
+                    <span class="lq-today-find-label">Tìm kiếm</span>
                     <label class="lq-today-search">
                         <i class="fa fa-search"/>
                         <input type="text"
-                               placeholder="Tìm cửa hàng, mã KH..."
-                               t-att-value="state.search"
-                               t-on-input="onSearchInput"/>
+                               placeholder="Cửa hàng, mã khách hàng"
+                               t-att-value="state.searchDraft"
+                               t-on-input="onSearchDraft"
+                               t-on-keydown="onMobileSearchKey"/>
                     </label>
+                    <button type="button" class="lq-today-find-btn" t-on-click="applyMobileSearch">Tìm</button>
                 </div>
 
                 <t t-if="isPeriodPaymentList and !state.loading">

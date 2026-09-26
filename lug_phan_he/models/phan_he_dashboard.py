@@ -1150,11 +1150,7 @@ class PhanHeDashboard(models.AbstractModel):
 
     @api.model
     def get_cost_estimate_board(self, params=None):
-        """Dự toán chi phí T1→T12 — cùng nguồn Danh sách thanh toán từng tháng.
-
-        Mỗi tháng = search_month_cost_ky(year, month) + số tiền kỳ
-        (_month_ky_period_amount), giống khi lọc tháng trên Danh sách TT.
-        """
+        """Dự toán chi phí T1→T12 — cùng dòng đang hiện trên Danh sách thanh toán từng tháng."""
         params = params or {}
         today = fields.Date.context_today(self)
         year = int(params.get("year") or today.year)
@@ -1164,6 +1160,17 @@ class PhanHeDashboard(models.AbstractModel):
         extra = []
         if region and region != "all":
             extra.append(("store_mien", "=", region))
+        soon30 = today + relativedelta(days=30)
+
+        def list_visible(rec, start, end):
+            """Cùng bộ lọc client của Danh sách thanh toán (forecastRows)."""
+            end_d = rec.date_end
+            next_d = rec.next_payment_date
+            if end_d and end_d <= soon30:
+                return True
+            if end_d and start <= end_d <= end:
+                return True
+            return bool(next_d and start <= next_d <= end)
 
         month_amounts = [0.0] * 12
         month_counts = [0] * 12
@@ -1171,11 +1178,14 @@ class PhanHeDashboard(models.AbstractModel):
         all_regions = set()
 
         for m in range(1, 13):
+            start = fields.Date.to_date(f"{year:04d}-{m:02d}-01")
+            end = (start + relativedelta(months=1)) - relativedelta(days=1)
             recs = Service.search_month_cost_ky(
                 year, m, extra_domain=extra or None
             )
-            month_counts[m - 1] = len(recs)
-            for rec in recs:
+            visible = recs.filtered(lambda rec, s=start, e=end: list_visible(rec, s, e))
+            month_counts[m - 1] = len(visible)
+            for rec in visible:
                 amt = float(Service._month_ky_period_amount(rec) or 0.0)
                 if amt <= 0:
                     continue

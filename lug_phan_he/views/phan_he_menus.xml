@@ -419,22 +419,46 @@
               sequence="1"/>
 
     <menuitem id="menu_phan_he_server_list"
-              name="Danh sách Server &amp; VPS"
+              name="Đang hoạt động"
               parent="menu_phan_he_server_root"
               action="action_phan_he_service_tracking_server"
               sequence="2"/>
 
+    <menuitem id="menu_phan_he_server_suspend"
+              name="Tạm ngưng"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_server_suspend"
+              sequence="3"/>
+
+    <menuitem id="menu_phan_he_server_liquidated"
+              name="Thanh lý"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_server_liquidated"
+              sequence="4"/>
+
     <menuitem id="menu_phan_he_server_entry"
-              name="Nhập liệu"
+              name="Nhập máy chủ"
               parent="menu_phan_he_server_root"
               action="action_phan_he_service_entry_server"
-              sequence="3"/>
+              sequence="5"/>
 
     <menuitem id="menu_phan_he_server_payment"
               name="Thanh toán"
               parent="menu_phan_he_server_root"
               action="action_phan_he_payment_server"
-              sequence="4"/>
+              sequence="6"/>
+
+    <menuitem id="menu_phan_he_server_expire"
+              name="Sắp hết hạn"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_server_expire_soon"
+              sequence="7"/>
+
+    <menuitem id="menu_phan_he_server_expired"
+              name="Quá hạn"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_server_expired"
+              sequence="8"/>
 
     <!-- ========== CẤU HÌNH CHUNG ========== -->
     <menuitem id="menu_phan_he_config_root"

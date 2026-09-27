@@ -182,11 +182,80 @@
         margin-top: 12px;
     }
 
+    .lq-ce-short { display: none; }
+
     h1 i { color: #059669 !important; }
 }
 
-@media (max-width: 900px) {
-    .lq-cost-estimate .lq-ce-kpis {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+@media (max-width: 991.98px) {
+    .lq-cost-estimate {
+        padding: 10px 8px 96px !important;
+
+        .lq-mc-top {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .lq-mc-nav,
+        .lq-mc-filters,
+        .lq-ce-export {
+            width: 100%;
+            margin-left: 0;
+            justify-content: center;
+        }
+        .lq-mc-filters {
+            display: flex;
+            gap: 8px;
+            select, .lq-ce-refresh { flex: 1; }
+        }
+        .lq-ce-kpis {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+        }
+        .lq-ce-kpi {
+            padding: 12px;
+            min-width: 0;
+            strong {
+                font-size: 16px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+        .lq-ce-tabs {
+            flex-direction: column;
+            button { width: 100%; text-align: left; }
+        }
+        .lq-mc-toolbar h2 {
+            flex: 1 1 100%;
+            font-size: 14px;
+        }
+        .lq-mc-table-wrap {
+            overflow-x: auto;
+        }
+        .lq-mc-table-wrap table.lq-ce-table {
+            min-width: 0 !important;
+            width: 100% !important;
+        }
+        .lq-ce-table {
+            th, td {
+                padding: 8px 6px !important;
+                font-size: 12px;
+                white-space: normal !important;
+                min-width: 0 !important;
+            }
+            th:nth-child(1),
+            td:nth-child(1) { width: 34px; }
+            th:nth-child(2),
+            td:nth-child(2) { width: 26%; }
+            th:nth-child(3),
+            td:nth-child(3) { width: 18%; }
+            th:nth-child(4),
+            td:nth-child(4) {
+                width: 42%;
+                white-space: nowrap !important;
+            }
+        }
+        .lq-ce-long { display: none; }
+        .lq-ce-short { display: inline; }
     }
 }

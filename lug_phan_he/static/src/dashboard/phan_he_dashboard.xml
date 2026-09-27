@@ -399,6 +399,100 @@
                     </div>
                     </t>
                     <t t-else="">
+                    <t t-if="isServerDash">
+                    <section class="o_phan_he_section o_srv_infra">
+                        <div class="o_srv_head">
+                            <h2 class="o_phan_he_section_title">
+                                <span class="o_phan_he_section_num">0</span>
+                                Hạ tầng máy chủ &amp; cloud
+                            </h2>
+                            <button type="button" class="btn btn-primary o_srv_add" t-on-click="() => this.openServerNav('srv_entry')">
+                                <i class="fa fa-plus"/> Nhập máy chủ
+                            </button>
+                        </div>
+                        <div class="o_srv_kpi_row">
+                            <button type="button" class="o_srv_kpi" t-on-click="() => this.openServerNav('srv_active')">
+                                <i class="fa fa-server"/>
+                                <div>
+                                    <small>Đang chạy</small>
+                                    <b t-esc="serverInventory.running"/>
+                                    <em>trên <t t-esc="serverInventory.total"/> máy</em>
+                                </div>
+                            </button>
+                            <article class="o_srv_kpi is-cost">
+                                <i class="fa fa-money"/>
+                                <div>
+                                    <small>Cước tháng đang chạy</small>
+                                    <b t-esc="formatMoneyVnd(serverInventory.month_cost)"/>
+                                    <em>theo hợp đồng hiệu lực</em>
+                                </div>
+                            </article>
+                            <article class="o_srv_kpi is-spec">
+                                <i class="fa fa-cogs"/>
+                                <div>
+                                    <small>Tổng cấu hình</small>
+                                    <b><t t-esc="serverInventory.cpu"/>C · <t t-esc="serverInventory.ram"/>GB</b>
+                                    <em><t t-esc="serverInventory.storage"/> GB ổ đĩa</em>
+                                </div>
+                            </article>
+                            <button type="button" class="o_srv_kpi is-pause" t-on-click="() => this.openServerNav('srv_suspend')">
+                                <i class="fa fa-pause-circle"/>
+                                <div>
+                                    <small>Tạm ngưng</small>
+                                    <b t-esc="serverInventory.suspend"/>
+                                    <em><t t-esc="serverInventory.liquidated"/> đã thanh lý</em>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="o_srv_kinds">
+                            <t t-foreach="serverInventory.kinds or []" t-as="kind" t-key="kind.id">
+                                <article class="o_srv_kind" t-att-style="'--accent:' + kind.color">
+                                    <span t-esc="kind.name"/>
+                                    <strong t-esc="kind.count"/>
+                                    <small t-esc="formatMoneyVnd(kind.amount)"/>
+                                </article>
+                            </t>
+                        </div>
+                        <div class="o_phan_he_panel o_srv_top">
+                            <div class="o_phan_he_chart_head">
+                                <h3><i class="fa fa-list"/> Máy chủ chi phí cao</h3>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="o_srv_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Hostname</th>
+                                            <th>Loại</th>
+                                            <th>Đơn vị</th>
+                                            <th>IP</th>
+                                            <th>Cấu hình</th>
+                                            <th>Nhà cung cấp</th>
+                                            <th class="num">Cước tháng</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-if="!(serverInventory.top_servers or []).length">
+                                            <td colspan="7" class="o_phan_he_empty">Chưa có máy chủ. Bấm Nhập máy chủ để khai báo VPS, Cloud hoặc Dedicated.</td>
+                                        </tr>
+                                        <tr t-foreach="serverInventory.top_servers or []" t-as="row" t-key="row.id"
+                                            class="is-clickable" t-on-click="() => this.openServerRecord(row)">
+                                            <td>
+                                                <b t-esc="row.name"/>
+                                                <small t-esc="row.datacenter"/>
+                                            </td>
+                                            <td t-esc="row.kind"/>
+                                            <td t-esc="row.store"/>
+                                            <td t-esc="row.ip"/>
+                                            <td t-esc="row.spec"/>
+                                            <td t-esc="row.provider"/>
+                                            <td class="num" t-esc="formatMoneyVnd(row.amount)"/>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                    </t>
                     <section class="o_phan_he_section">
                         <h2 class="o_phan_he_section_title">
                             <span class="o_phan_he_section_num">1</span>
@@ -460,7 +554,7 @@
                             <div class="o_phan_he_chart_head">
                                 <h3>
                                     <i class="fa fa-line-chart"/>
-                                    Xu hướng chi phí Internet — 12 tháng
+                                    <t t-esc="trendChartTitle"/>
                                 </h3>
                                 <span class="o_phan_he_chart_unit">Đơn vị: Triệu VNĐ</span>
                             </div>
@@ -811,6 +905,36 @@
                             <input type="text" placeholder="Tìm cửa hàng / Mã KH..." t-att-value="state.search"
                                    t-on-input="(ev) => this.onTableFilter('search', ev)"/>
                         </label>
+                    </div>
+                    <div class="lq-mc-mobile-cards">
+                        <t t-if="!pageRows.length">
+                            <div class="lq-empty">Không có dữ liệu</div>
+                        </t>
+                        <t t-foreach="pageRows" t-as="row" t-key="'m-'+row.id">
+                            <button type="button" class="lq-mc-mcard" t-on-click="() => this.openRow(row)">
+                                <div class="lq-mc-mcard-top">
+                                    <div>
+                                        <strong t-esc="row.store"/>
+                                        <small t-esc="row.code"/>
+                                    </div>
+                                    <span t-att-class="'lq-mc-remain ' + remainClass(row)" t-esc="remainLabel(row)"/>
+                                </div>
+                                <div class="lq-mc-mcard-fee">
+                                    <div>
+                                        <span>Cước tháng</span>
+                                        <b t-esc="formatMoney(row.monthly)"/>
+                                    </div>
+                                    <div>
+                                        <span>Còn phải trả</span>
+                                        <b t-esc="formatMoney(row.remain)"/>
+                                    </div>
+                                </div>
+                                <div class="lq-mc-mcard-foot">
+                                    <span t-esc="row.provider"/>
+                                    <span t-att-class="payClass(row)" t-esc="payLabel(row)"/>
+                                </div>
+                            </button>
+                        </t>
                     </div>
                     <div class="lq-mc-table-wrap">
                         <table>

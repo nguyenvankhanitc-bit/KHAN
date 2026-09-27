@@ -224,6 +224,16 @@
 
     &.is-today {
 
+        .lq-pay-sticky-head {
+            position: sticky;
+            top: 0;
+            z-index: 30;
+            background: #f1f5f9;
+            margin: -10px -8px 8px;
+            padding: 10px 8px 8px;
+            box-shadow: 0 8px 16px rgba(241, 245, 249, 0.96);
+        }
+
         .lq-today-title {
 
             text-transform: uppercase;

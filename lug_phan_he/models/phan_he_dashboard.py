@@ -5,6 +5,13 @@ from dateutil.relativedelta import relativedelta
 from odoo import api, fields, models
 
 
+SERVER_KINDS = (
+    ("vps", "VPS", "#0d9488"),
+    ("cloud", "Cloud", "#2563eb"),
+    ("dedicated", "Dedicated", "#7c3aed"),
+    ("colocation", "Colocation", "#f97316"),
+)
+
 MIEN_COLORS = {
     "BAC": "#2563eb",
     "TRUNG": "#f97316",
@@ -19,6 +26,48 @@ TOTAL_SERIES_COLOR = "#7c3aed"
 class PhanHeDashboard(models.AbstractModel):
     _name = "phan.he.dashboard"
     _description = "Dashboard quản lý dịch vụ"
+
+    @api.model
+    def _server_inventory(self, services):
+        kinds = []
+        for code, label, color in SERVER_KINDS:
+            recs = services.filtered(lambda s, c=code: s.server_kind == c)
+            kinds.append({
+                "id": code,
+                "name": label,
+                "count": len(recs),
+                "amount": sum(recs.mapped("contract_amount")),
+                "color": color,
+            })
+        running = services.filtered(lambda s: s.ops_status == "active")
+        top = services.sorted(key=lambda s: s.contract_amount or 0.0, reverse=True)[:8]
+        kind_label = {code: label for code, label, _color in SERVER_KINDS}
+        return {
+            "total": len(services),
+            "running": len(running),
+            "suspend": len(services.filtered(lambda s: s.ops_status == "suspend")),
+            "liquidated": len(services.filtered(lambda s: s.ops_status == "liquidated")),
+            "month_cost": sum(running.mapped("contract_amount")),
+            "cpu": sum(services.mapped("cpu_cores")),
+            "ram": sum(services.mapped("ram_gb")),
+            "storage": sum(services.mapped("storage_gb")),
+            "unset": len(services.filtered(lambda s: not s.server_kind)),
+            "kinds": kinds,
+            "top_servers": [
+                {
+                    "id": svc.id,
+                    "name": svc.hostname or svc.name or svc.code or "—",
+                    "store": svc.store_id.name or "—",
+                    "kind": kind_label.get(svc.server_kind) or "Chưa phân loại",
+                    "ip": svc.ip_address or "—",
+                    "spec": svc.server_spec or "—",
+                    "provider": svc.provider_id.name or "—",
+                    "amount": svc.contract_amount or 0.0,
+                    "datacenter": svc.datacenter or "—",
+                }
+                for svc in top
+            ],
+        }
 
     @api.model
     def get_dashboard_data(self, filters=None):
@@ -178,6 +227,13 @@ class PhanHeDashboard(models.AbstractModel):
                 "action": "lug_phan_he.action_phan_he_payment_due_soon",
             },
         ]
+        if service_type_code == "server":
+            alert_cards[0]["action"] = "lug_phan_he.action_phan_he_server_expire_soon"
+            alert_cards[1]["action"] = "lug_phan_he.action_phan_he_server_expired"
+            alert_cards[2]["action"] = "lug_phan_he.action_phan_he_server_payment_due"
+            alert_cards[0]["unit"] = "Máy chủ"
+            alert_cards[1]["unit"] = "Máy chủ"
+            alert_cards[2]["unit"] = "Kỳ thanh toán"
 
         # --- Biểu đồ 12 tháng (theo năm filter) ---
         trend_months = []
@@ -352,6 +408,21 @@ class PhanHeDashboard(models.AbstractModel):
                 for m in mien_meta
             ],
             "year_grand_total": grand_total,
+            "server_inventory": (
+                self._server_inventory(services) if service_type_code == "server" else {}
+            ),
+            "srv_active": (
+                len(services.filtered(lambda s: s.ops_status == "active"))
+                if service_type_code == "server" else 0
+            ),
+            "srv_suspend": (
+                len(services.filtered(lambda s: s.ops_status == "suspend"))
+                if service_type_code == "server" else 0
+            ),
+            "srv_liquidated": (
+                len(services.filtered(lambda s: s.ops_status == "liquidated"))
+                if service_type_code == "server" else 0
+            ),
             "currency_symbol": (
                 self.env.ref("base.VND", raise_if_not_found=False)
                 or self.env["res.currency"].search([("name", "=", "VND")], limit=1)

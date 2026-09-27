@@ -3,6 +3,7 @@
     <t t-name="lug_phan_he.PhanHePaymentBoard">
         <div t-attf-class="lq-inet-board lq-pay-board {{ isConfirm ? 'is-confirm' : 'is-forecast' }}{{ isMobile ? ' is-today' : '' }}">
             <t t-if="isMobile">
+                <div class="lq-pay-sticky-head lq-inet-sticky-head">
                 <div class="lq-today-top">
                     <h1 class="lq-today-title" t-esc="pageMeta.title"/>
                     <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
@@ -48,6 +49,7 @@
                             <t t-else="">Xác nhận đã TT (<t t-esc="selectedIds.length"/>)</t>
                         </button>
                     </t>
+                </div>
                 </div>
 
                 <div class="lq-today-section">

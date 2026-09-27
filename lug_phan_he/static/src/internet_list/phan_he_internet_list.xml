@@ -3,6 +3,7 @@
     <t t-name="lug_phan_he.PhanHeInternetListBoard" owl="1">
         <div t-attf-class="lq-inet-board {{ (listFilter === 'payment_due' or listFilter === 'payment_forecast' or listFilter === 'expired') ? 'is-payment' : '' }}{{ isPeriodPaymentList ? ' is-forecast-dash' : '' }}{{ isMobile ? ' is-today' : '' }}">
             <t t-if="isMobile">
+                <div class="lq-inet-sticky-head">
                 <div class="lq-today-top">
                     <h1 class="lq-today-title" t-esc="pageMeta.title"/>
                     <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
@@ -65,7 +66,6 @@
                 </div>
 
                 <div class="lq-today-datebar lq-today-find">
-                    <span class="lq-today-find-label">Tìm kiếm</span>
                     <label class="lq-today-search">
                         <i class="fa fa-search"/>
                         <input type="text"
@@ -75,6 +75,7 @@
                                t-on-keydown="onMobileSearchKey"/>
                     </label>
                     <button type="button" class="lq-today-find-btn" t-on-click="applyMobileSearch">Tìm</button>
+                </div>
                 </div>
 
                 <t t-if="isPeriodPaymentList and !state.loading">
@@ -148,6 +149,8 @@
                                                 <span>Ngày kết thúc</span>
                                                 <b t-esc="formatDate(rec.date_end)"/>
                                             </div>
+                                        </div>
+                                        <div class="lq-today-fee-row">
                                             <div>
                                                 <span>Cước tháng</span>
                                                 <b t-esc="formatMoney(rec.contract_amount)"/>

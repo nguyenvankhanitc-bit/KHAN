@@ -66,6 +66,27 @@ class PhanHeService(models.Model):
         tracking=True,
         help="VD: 100Mbps, 200Mbps, Fiber 1Gbps",
     )
+    server_kind = fields.Selection(
+        selection=[
+            ("vps", "VPS"),
+            ("cloud", "Cloud"),
+            ("dedicated", "Dedicated"),
+            ("colocation", "Colocation"),
+        ],
+        string="Loại máy chủ",
+        tracking=True,
+    )
+    hostname = fields.Char(string="Hostname", tracking=True)
+    ip_address = fields.Char(string="Địa chỉ IP", tracking=True)
+    cpu_cores = fields.Integer(string="CPU (core)")
+    ram_gb = fields.Integer(string="RAM (GB)")
+    storage_gb = fields.Integer(string="Ổ đĩa (GB)")
+    os_name = fields.Char(string="Hệ điều hành")
+    datacenter = fields.Char(string="Datacenter / Region", tracking=True)
+    server_spec = fields.Char(
+        string="Cấu hình",
+        compute="_compute_server_spec",
+    )
     bandwidth_display = fields.Char(
         string="Băng thông",
         compute="_compute_bandwidth_display",
@@ -347,11 +368,29 @@ class PhanHeService(models.Model):
         return [STATUS_TO_MENU.get(status, "internet_active")]
 
 
-    @api.depends("service_type_id", "store_id")
+    @api.depends("cpu_cores", "ram_gb", "storage_gb")
+    def _compute_server_spec(self):
+        for rec in self:
+            parts = []
+            if rec.cpu_cores:
+                parts.append(f"{rec.cpu_cores}C")
+            if rec.ram_gb:
+                parts.append(f"{rec.ram_gb}GB RAM")
+            if rec.storage_gb:
+                parts.append(f"{rec.storage_gb}GB")
+            rec.server_spec = " / ".join(parts)
+
+    @api.depends("service_type_id", "store_id", "hostname", "server_kind")
     def _compute_name(self):
+        kind_label = dict(self._fields["server_kind"].selection)
         for rec in self:
             stype = rec.service_type_id.name or ""
             store = rec.store_id.name or ""
+            if (rec.service_type_id.code or "").lower() == "server":
+                host = rec.hostname or store
+                kind = kind_label.get(rec.server_kind) or stype or "Máy chủ"
+                rec.name = f"{kind} - {host}" if host else (kind or rec.code or "")
+                continue
             rec.name = f"{stype} - {store}" if stype and store else (stype or store or rec.code or "")
 
     @api.depends("service_type_id", "service_type_id.code")

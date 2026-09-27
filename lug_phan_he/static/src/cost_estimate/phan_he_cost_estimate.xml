@@ -79,8 +79,14 @@
                                     <tr>
                                         <th>STT</th>
                                         <th>Tháng</th>
-                                        <th>Số cửa hàng</th>
-                                        <th>Tổng dự toán</th>
+                                        <th>
+                                            <span class="lq-ce-long">Số cửa hàng</span>
+                                            <span class="lq-ce-short">CH</span>
+                                        </th>
+                                        <th>
+                                            <span class="lq-ce-long">Tổng dự toán</span>
+                                            <span class="lq-ce-short">Dự toán</span>
+                                        </th>
                                     </tr>
                                 </thead>
                                 <tbody>

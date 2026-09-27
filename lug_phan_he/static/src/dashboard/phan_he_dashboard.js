@@ -36,6 +36,93 @@ const PAYMENT_BOARD_NAV = {
     payment_confirm: "confirm",
 };
 
+const SERVER_NAV_SECTIONS = [
+    {
+        id: "manage",
+        label: "Quản lý",
+        icon: "fa-server",
+        iconTone: "manage",
+        children: [
+            {
+                id: "srv_active",
+                label: "Đang hoạt động",
+                icon: "fa-server",
+                iconTone: "active",
+                badgeKey: "srv_active",
+                action: "lug_phan_he.action_phan_he_service_tracking_server",
+            },
+            {
+                id: "srv_suspend",
+                label: "Tạm ngưng",
+                icon: "fa-pause-circle",
+                iconTone: "suspend",
+                badgeKey: "srv_suspend",
+                action: "lug_phan_he.action_phan_he_server_suspend",
+            },
+            {
+                id: "srv_liquidated",
+                label: "Thanh lý",
+                icon: "fa-archive",
+                iconTone: "liquidated",
+                badgeKey: "srv_liquidated",
+                action: "lug_phan_he.action_phan_he_server_liquidated",
+            },
+            {
+                id: "srv_entry",
+                label: "Nhập máy chủ",
+                icon: "fa-plus-circle",
+                iconTone: "store",
+                action: "lug_phan_he.action_phan_he_service_entry_server",
+            },
+        ],
+    },
+    {
+        id: "payment",
+        label: "Chi phí & thanh toán",
+        icon: "fa-credit-card",
+        iconTone: "payment",
+        children: [
+            {
+                id: "srv_payment",
+                label: "Danh sách thanh toán",
+                icon: "fa-calendar",
+                iconTone: "payment",
+                action: "lug_phan_he.action_phan_he_payment_server",
+            },
+        ],
+    },
+    {
+        id: "alerts",
+        label: "Cảnh báo",
+        icon: "fa-bell",
+        children: [
+            {
+                id: "srv_expire",
+                label: "Sắp hết hạn",
+                icon: "fa-exclamation-triangle",
+                badgeKey: "expire_soon",
+                tone: "warn",
+                action: "lug_phan_he.action_phan_he_server_expire_soon",
+            },
+            {
+                id: "srv_expired",
+                label: "Quá hạn",
+                icon: "fa-times-circle",
+                badgeKey: "overdue_contract",
+                tone: "danger",
+                action: "lug_phan_he.action_phan_he_server_expired",
+            },
+            {
+                id: "srv_due",
+                label: "Sắp đến hạn thanh toán",
+                icon: "fa-bell",
+                tone: "info",
+                action: "lug_phan_he.action_phan_he_server_payment_due",
+            },
+        ],
+    },
+];
+
 const INTERNET_NAV_SECTIONS = [
     {
         id: "manage",
@@ -222,6 +309,7 @@ export class PhanHeDashboard extends Component {
                 reports: true,
                 settings: false,
                 shifts: true,
+                alerts: true,
             },
             activeNav: "overview",
             listFilter: "active",
@@ -416,6 +504,36 @@ export class PhanHeDashboard extends Component {
         return this.serviceTypeCode === "internet";
     }
 
+    get isServerDash() {
+        return this.serviceTypeCode === "server";
+    }
+
+    get serverInventory() {
+        return this.state.data.server_inventory || {
+            total: 0,
+            running: 0,
+            suspend: 0,
+            liquidated: 0,
+            month_cost: 0,
+            cpu: 0,
+            ram: 0,
+            storage: 0,
+            unset: 0,
+            kinds: [],
+            top_servers: [],
+        };
+    }
+
+    get trendChartTitle() {
+        const titles = {
+            internet: "Xu hướng chi phí Internet — 12 tháng",
+            server: "Xu hướng chi phí máy chủ — 12 tháng",
+            camera: "Xu hướng chi phí camera — 12 tháng",
+            attendance: "Xu hướng chi phí máy chấm công — 12 tháng",
+        };
+        return titles[this.serviceTypeCode] || `Xu hướng chi phí — 12 tháng`;
+    }
+
     get embeddedViewProps() {
         return this.state.embeddedViewProps;
     }
@@ -567,6 +685,9 @@ export class PhanHeDashboard extends Component {
         const code = this.serviceTypeCode;
         if (code === "internet") {
             return filterInternetNavSections(INTERNET_NAV_SECTIONS, this.state.internetMenus);
+        }
+        if (code === "server") {
+            return SERVER_NAV_SECTIONS;
         }
         if (code === "linkq_nb") {
             return [
@@ -991,25 +1112,33 @@ export class PhanHeDashboard extends Component {
             this.state.contentMode = "view";
             const menuKey = this.state.activeNav || navId;
             const menuCode = INTERNET_NAV_TO_CODE[menuKey] || false;
-            const canWrite = internetNavCan(this.state.internetMenus, menuKey, "write")
-                || (menuKey === "store_declare" && internetNavCan(this.state.internetMenus, "store_declare", "write"));
-            const canCreate = internetNavCan(this.state.internetMenus, menuKey, "create")
-                || internetNavCan(this.state.internetMenus, "store_declare", "create");
+            const isInternetAcl = this.serviceTypeCode === "internet";
+            const canWrite = isInternetAcl
+                ? (internetNavCan(this.state.internetMenus, menuKey, "write")
+                    || (menuKey === "store_declare" && internetNavCan(this.state.internetMenus, "store_declare", "write")))
+                : true;
+            const canCreate = isInternetAcl
+                ? (internetNavCan(this.state.internetMenus, menuKey, "create")
+                    || internetNavCan(this.state.internetMenus, "store_declare", "create"))
+                : true;
+            const viewContext = {
+                ...this.parseActionContext(act.context),
+                phan_he_service_type_code: this.serviceTypeCode,
+                form_view_initial_mode:
+                    (extra.resId === false || extra.resId === undefined
+                        ? canCreate
+                        : canWrite)
+                        ? "edit"
+                        : "readonly",
+            };
+            if (isInternetAcl) {
+                viewContext.phan_he_internet_menu = menuCode || (extra.resId ? "internet_active" : "internet_entry");
+            }
             const viewProps = {
                 resModel: act.res_model,
                 type: defaultType,
                 domain: act.domain || [],
-                context: {
-                    ...this.parseActionContext(act.context),
-                    phan_he_service_type_code: "internet",
-                    phan_he_internet_menu: menuCode || (extra.resId ? "internet_active" : "internet_entry"),
-                    form_view_initial_mode:
-                        (extra.resId === false || extra.resId === undefined
-                            ? canCreate
-                            : canWrite)
-                            ? "edit"
-                            : "readonly",
-                },
+                context: viewContext,
                 views,
                 display: this.asViewDisplay({ controlPanel: {} }),
                 loadActionMenus: true,
@@ -1122,7 +1251,41 @@ export class PhanHeDashboard extends Component {
         this.openAction(item.action);
     }
 
+    openServerNav(navId) {
+        const child = this.findNavChild(navId);
+        if (child) {
+            this.onNavChild(child);
+        }
+    }
+
+    openServerRecord(row) {
+        if (!row?.id) {
+            return;
+        }
+        this.openEmbedded(
+            { id: "srv_active", action: "lug_phan_he.action_phan_he_service_tracking_server" },
+            {
+                type: "form",
+                resId: row.id,
+                action: "lug_phan_he.action_phan_he_service_tracking_server",
+                activeNav: "srv_active",
+            }
+        );
+    }
+
     onAlertClick(alert) {
+        if (this.serviceTypeCode === "server" && alert?.action) {
+            const navByCard = {
+                expire_soon: "srv_expire",
+                expired: "srv_expired",
+                pay_due_soon: "srv_due",
+            };
+            this.openEmbedded({
+                id: navByCard[alert.id] || "srv_expire",
+                action: alert.action,
+            });
+            return;
+        }
         if (alert && alert.action) {
             this.openAction(alert.action);
         }

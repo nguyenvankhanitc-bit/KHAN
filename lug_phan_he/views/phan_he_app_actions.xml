@@ -105,9 +105,9 @@
     </record>
 
     <record id="action_phan_he_dashboard_server" model="ir.actions.client">
-        <field name="name">Dashboard Máy chủ</field>
+        <field name="name">Dashboard Máy chủ &amp; Cloud</field>
         <field name="tag">phan_he_dashboard</field>
-        <field name="context">{'phan_he_service_type_code': 'server', 'phan_he_app_title': 'Máy chủ'}</field>
+        <field name="context">{'phan_he_service_type_code': 'server', 'phan_he_app_title': 'Máy chủ &amp; Cloud'}</field>
     </record>
 
     <!-- Camera -->
@@ -260,10 +260,10 @@
 
     <!-- Máy chủ -->
     <record id="action_phan_he_service_tracking_server" model="ir.actions.act_window">
-        <field name="name">Danh sách Server &amp; cước VPS</field>
+        <field name="name">Máy chủ đang hoạt động</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">list,form</field>
-        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server'))]"/>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server')), ('ops_status', '=', 'active')]"/>
         <field name="limit">200</field>
         <field name="context" eval="{
             'default_service_type_id': ref('service_type_server'),
@@ -274,15 +274,71 @@
         }"/>
         <field name="search_view_id" ref="view_phan_he_service_search"/>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_service_tracking_list')}),
-            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_service_entry_form')})]"/>
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_server_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_server_entry_form')})]"/>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Chưa có Server / VPS</p>
+            <p class="o_view_nocontent_smiling_face">Chưa có máy chủ đang hoạt động</p>
         </field>
     </record>
 
+    <record id="action_phan_he_server_suspend" model="ir.actions.act_window">
+        <field name="name">Máy chủ tạm ngưng</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server')), ('ops_status', '=', 'suspend')]"/>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_server'),
+            'default_ops_status': 'suspend',
+            'phan_he_service_type_code': 'server',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_server_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_server_entry_form')})]"/>
+    </record>
+
+    <record id="action_phan_he_server_liquidated" model="ir.actions.act_window">
+        <field name="name">Máy chủ thanh lý</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server')), ('ops_status', '=', 'liquidated')]"/>
+        <field name="context" eval="{
+            'default_service_type_id': ref('service_type_server'),
+            'default_ops_status': 'liquidated',
+            'phan_he_service_type_code': 'server',
+        }"/>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_server_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_server_entry_form')})]"/>
+    </record>
+
+    <record id="action_phan_he_server_expire_soon" model="ir.actions.act_window">
+        <field name="name">Máy chủ sắp hết hạn</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server'))]"/>
+        <field name="context">{'search_default_filter_expire_soon': 1, 'phan_he_service_type_code': 'server'}</field>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_server_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_server_entry_form')})]"/>
+    </record>
+
+    <record id="action_phan_he_server_expired" model="ir.actions.act_window">
+        <field name="name">Máy chủ quá hạn</field>
+        <field name="res_model">phan.he.service</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_type_id', '=', ref('service_type_server'))]"/>
+        <field name="context">{'search_default_filter_expired': 1, 'phan_he_service_type_code': 'server'}</field>
+        <field name="search_view_id" ref="view_phan_he_service_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_phan_he_server_tracking_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_phan_he_server_entry_form')})]"/>
+    </record>
+
     <record id="action_phan_he_service_entry_server" model="ir.actions.act_window">
-        <field name="name">Nhập liệu Máy chủ</field>
+        <field name="name">Nhập máy chủ</field>
         <field name="res_model">phan.he.service</field>
         <field name="view_mode">form</field>
         <field name="target">current</field>
@@ -290,9 +346,11 @@
             'default_service_type_id': ref('service_type_server'),
             'default_state': 'active',
             'default_ops_status': 'active',
+            'default_server_kind': 'vps',
             'form_view_initial_mode': 'edit',
+            'phan_he_service_type_code': 'server',
         }"/>
-        <field name="view_id" ref="view_phan_he_service_entry_form"/>
+        <field name="view_id" ref="view_phan_he_server_entry_form"/>
     </record>
 
     <!-- Thanh toán theo app -->
@@ -329,5 +387,13 @@
         <field name="res_model">phan.he.payment</field>
         <field name="view_mode">list,form</field>
         <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_server'))]"/>
+    </record>
+
+    <record id="action_phan_he_server_payment_due" model="ir.actions.act_window">
+        <field name="name">Máy chủ sắp đến hạn thanh toán</field>
+        <field name="res_model">phan.he.payment</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('service_id.service_type_id', '=', ref('service_type_server')), ('payment_state', 'in', ('due_soon', 'pending', 'not_due'))]"/>
+        <field name="context">{'search_default_filter_due_soon': 1, 'phan_he_service_type_code': 'server'}</field>
     </record>
 </odoo>

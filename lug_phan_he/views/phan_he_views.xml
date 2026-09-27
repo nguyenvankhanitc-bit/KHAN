@@ -745,6 +745,219 @@
         </field>
     </record>
 
+    <record id="view_phan_he_server_tracking_list" model="ir.ui.view">
+        <field name="name">phan.he.service.server.list</field>
+        <field name="model">phan.he.service</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list string="Máy chủ &amp; Cloud"
+                  js_class="phan_he_tracking_list"
+                  class="o_phan_he_tracking_list"
+                  create="1"
+                  multi_edit="1"
+                  default_order="mien_id, stt asc, id asc"
+                  decoration-danger="date_end and remaining_days &lt;= 0"
+                  decoration-warning="date_end and remaining_days &gt; 0 and remaining_days &lt;= 30">
+                <field name="stt" string="STT" widget="phan_he_stt" readonly="1"/>
+                <field name="hostname" string="HOSTNAME"/>
+                <field name="store_card_html" string="CỬA HÀNG" widget="html" readonly="1"/>
+                <field name="server_kind" string="LOẠI"/>
+                <field name="ip_address" string="IP"/>
+                <field name="server_spec" string="CẤU HÌNH"/>
+                <field name="datacenter" string="DATACENTER" optional="show"/>
+                <field name="provider_id" string="NHÀ CUNG CẤP"/>
+                <field name="contract_amount" string="CƯỚC THÁNG (VNĐ)" sum="Tổng" widget="monetary"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="ops_status" string="TRẠNG THÁI" widget="phan_he_ops_status"/>
+                <field name="remaining_card_html" string="THỜI GIAN CÒN LẠI" widget="html" readonly="1"/>
+                <field name="id" string="THAO TÁC" widget="phan_he_expand_toggle" readonly="1"/>
+                <field name="mien_id" column_invisible="1"/>
+                <field name="store_id" column_invisible="1"/>
+                <field name="name" column_invisible="1"/>
+                <field name="code" column_invisible="1"/>
+                <field name="os_name" column_invisible="1"/>
+                <field name="cpu_cores" column_invisible="1"/>
+                <field name="ram_gb" column_invisible="1"/>
+                <field name="storage_gb" column_invisible="1"/>
+                <field name="customer_code" column_invisible="1"/>
+                <field name="state" column_invisible="1"/>
+                <field name="remaining_days" column_invisible="1"/>
+                <field name="alert_level" column_invisible="1"/>
+                <field name="usage_address" column_invisible="1"/>
+                <field name="store_address" column_invisible="1"/>
+                <field name="payment_info_text" column_invisible="1"/>
+                <field name="next_invoice_number" column_invisible="1"/>
+                <field name="next_payment_date" column_invisible="1"/>
+                <field name="package_name" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_server_entry_form" model="ir.ui.view">
+        <field name="name">phan.he.service.server.form</field>
+        <field name="model">phan.he.service</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <form string="Máy chủ &amp; Cloud" class="o_phan_he_entry_form">
+                <sheet>
+                    <field name="name" invisible="1" force_save="1"/>
+                    <field name="stt" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="service_type_id" invisible="1" force_save="1"/>
+                    <field name="state" invisible="1"/>
+                    <field name="remaining_time" invisible="1"/>
+                    <field name="remaining_days" invisible="1"/>
+                    <field name="alert_level" invisible="1"/>
+                    <field name="note" invisible="1"/>
+                    <field name="server_spec" invisible="1"/>
+
+                    <div class="ph-inet-section">
+                        <div class="ph-inet-section-head">
+                            <span class="ph-inet-num">1</span>
+                            MÁY CHỦ &amp; CLOUD
+                        </div>
+                        <div class="ph-inet-grid-4">
+                            <div class="ph-inet-field">
+                                <label for="hostname">
+                                    <i class="fa fa-server"/> Hostname <span class="ph-req">*</span>
+                                </label>
+                                <field name="hostname" nolabel="1" required="1" placeholder="vd: vps-erp-01"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="server_kind">
+                                    <i class="fa fa-cloud"/> Loại <span class="ph-req">*</span>
+                                </label>
+                                <field name="server_kind" nolabel="1" required="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="ip_address">
+                                    <i class="fa fa-globe"/> Địa chỉ IP
+                                </label>
+                                <field name="ip_address" nolabel="1" placeholder="103.x.x.x"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="os_name">
+                                    <i class="fa fa-desktop"/> Hệ điều hành
+                                </label>
+                                <field name="os_name" nolabel="1" placeholder="Ubuntu 24.04 / Windows Server"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="cpu_cores"><i class="fa fa-cogs"/> CPU (core)</label>
+                                <field name="cpu_cores" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="ram_gb"><i class="fa fa-database"/> RAM (GB)</label>
+                                <field name="ram_gb" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="storage_gb"><i class="fa fa-hdd-o"/> Ổ đĩa (GB)</label>
+                                <field name="storage_gb" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="datacenter">
+                                    <i class="fa fa-map-marker"/> Datacenter / Region
+                                </label>
+                                <field name="datacenter" nolabel="1" placeholder="HN-DC1 / ap-southeast-1"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ph-inet-section">
+                        <div class="ph-inet-section-head">
+                            <span class="ph-inet-num">2</span>
+                            ĐƠN VỊ SỬ DỤNG &amp; HỢP ĐỒNG
+                        </div>
+                        <div class="ph-inet-grid-4">
+                            <div class="ph-inet-field">
+                                <label for="store_id">
+                                    <i class="fa fa-home"/> Cửa hàng / đơn vị <span class="ph-req">*</span>
+                                </label>
+                                <field name="store_id" nolabel="1" required="1" placeholder="Chọn đơn vị sử dụng"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="mien_id"><i class="fa fa-map-marker"/> Miền</label>
+                                <field name="mien_id" nolabel="1" readonly="1" force_save="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="provider_id">
+                                    <i class="fa fa-building-o"/> Nhà cung cấp <span class="ph-req">*</span>
+                                </label>
+                                <field name="provider_id" nolabel="1" placeholder="Viettel IDC, VNPT, AWS..."/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="code"><i class="fa fa-barcode"/> Mã hợp đồng</label>
+                                <field name="code" nolabel="1" placeholder="VD: SV-VPS-001"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="customer_code"><i class="fa fa-id-card-o"/> Mã khách hàng</label>
+                                <field name="customer_code" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="contract_amount"><i class="fa fa-money"/> Cước tháng</label>
+                                <field name="contract_amount" nolabel="1" widget="monetary" required="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="payment_type"><i class="fa fa-credit-card"/> Loại thanh toán</label>
+                                <field name="payment_type" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="ops_status"><i class="fa fa-circle-o"/> Trạng thái</label>
+                                <field name="ops_status" nolabel="1" required="1" widget="phan_he_ops_status"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="date_start">
+                                    <i class="fa fa-calendar"/> Ngày bắt đầu <span class="ph-req">*</span>
+                                </label>
+                                <field name="date_start" nolabel="1" widget="date" options="{'numeric': True}"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="date_end">
+                                    <i class="fa fa-calendar"/> Ngày kết thúc <span class="ph-req">*</span>
+                                </label>
+                                <field name="date_end" nolabel="1" widget="date" options="{'numeric': True}"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="remaining_alert"><i class="fa fa-clock-o"/> Còn lại</label>
+                                <field name="remaining_alert" nolabel="1" readonly="1" widget="html"/>
+                            </div>
+                            <div class="ph-inet-field ph-inet-span-4">
+                                <label for="usage_address"><i class="fa fa-map-marker"/> Vị trí lắp đặt / ghi chú địa điểm</label>
+                                <field name="usage_address" nolabel="1" placeholder="Phòng server, tầng, chi nhánh..."/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="ph-inet-section">
+                        <div class="ph-inet-section-head">
+                            <span class="ph-inet-num">3</span>
+                            THANH TOÁN
+                        </div>
+                        <div class="ph-inet-grid-4">
+                            <div class="ph-inet-field">
+                                <label for="bank_account_holder"><i class="fa fa-user"/> Tên tài khoản</label>
+                                <field name="bank_account_holder" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field">
+                                <label for="bank_account_number"><i class="fa fa-credit-card"/> Số tài khoản</label>
+                                <field name="bank_account_number" nolabel="1"/>
+                            </div>
+                            <div class="ph-inet-field ph-inet-span-2">
+                                <label for="bank_display"><i class="fa fa-university"/> Ngân hàng</label>
+                                <field name="bank_display" nolabel="1" placeholder="VD: Vietcombank - Chi nhánh Hà Nội"/>
+                            </div>
+                            <div class="ph-inet-field ph-inet-span-4">
+                                <label for="invoice_file"><i class="fa fa-paperclip"/> File hóa đơn đính kèm</label>
+                                <field name="invoice_filename" invisible="1"/>
+                                <field name="invoice_file" nolabel="1" filename="invoice_filename"
+                                       widget="phan_he_dropzone" class="ph-inet-dropzone"/>
+                            </div>
+                        </div>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
     <record id="view_phan_he_service_form" model="ir.ui.view">
         <field name="name">phan.he.service.form</field>
         <field name="model">phan.he.service</field>
@@ -932,10 +1145,16 @@
             <search string="Tìm hợp đồng">
                 <field name="name"/>
                 <field name="code"/>
+                <field name="hostname"/>
+                <field name="ip_address"/>
                 <field name="store_id"/>
                 <field name="customer_code"/>
                 <field name="provider_id"/>
                 <field name="service_type_id"/>
+                <filter name="filter_kind_vps" string="VPS" domain="[('server_kind', '=', 'vps')]"/>
+                <filter name="filter_kind_cloud" string="Cloud" domain="[('server_kind', '=', 'cloud')]"/>
+                <filter name="filter_kind_dedicated" string="Dedicated" domain="[('server_kind', '=', 'dedicated')]"/>
+                <filter name="filter_kind_colo" string="Colocation" domain="[('server_kind', '=', 'colocation')]"/>
                 <separator/>
                 <filter name="filter_active" string="Đang hoạt động"
                         domain="[('state', '=', 'active')]"/>

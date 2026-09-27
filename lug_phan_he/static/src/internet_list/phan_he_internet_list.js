@@ -1126,11 +1126,17 @@ export class PhanHeInternetListBoard extends Component {
 
     get pageRecords() {
         const size = this.state.pageSize || 10;
-        const start = (this.state.page - 1) * size;
+        const page = this.state.page || 1;
         const source = this.isPeriodPaymentList ? this.forecastRows : this.state.records;
-        return source.slice(start, start + size).map((rec, idx) => ({
+        // Danh sách TT tải hết rồi cắt trang ở client.
+        // Đang sử dụng / Tạm ngưng / … server đã trả đúng trang, không cắt lần nữa.
+        const rows = this.isPeriodPaymentList
+            ? source.slice((page - 1) * size, page * size)
+            : source;
+        const sttBase = (page - 1) * size;
+        return rows.map((rec, idx) => ({
             ...rec,
-            stt: start + idx + 1,
+            stt: sttBase + idx + 1,
         }));
     }
 

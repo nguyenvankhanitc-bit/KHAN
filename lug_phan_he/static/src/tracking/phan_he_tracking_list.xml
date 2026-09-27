@@ -59,6 +59,16 @@
                     <td t-att-colspan="hasSelectors ? nbCols - 1 : nbCols"
                         class="o_phan_he_expand_cell">
                         <div class="o_phan_he_expand_body">
+                            <div t-if="record.data.hostname || record.data.ip_address" class="o_phan_he_expand_line">
+                                <span class="o_phan_he_expand_label">Hostname:</span>
+                                <span t-esc="record.data.hostname || '—'"/>
+                                <span class="o_phan_he_expand_sep">·</span>
+                                <span class="o_phan_he_expand_label">IP:</span>
+                                <span t-esc="record.data.ip_address || '—'"/>
+                                <span class="o_phan_he_expand_sep">·</span>
+                                <span class="o_phan_he_expand_label">OS:</span>
+                                <span t-esc="record.data.os_name || '—'"/>
+                            </div>
                             <div class="o_phan_he_expand_line">
                                 <span class="o_phan_he_expand_label">Địa chỉ:</span>
                                 <span t-esc="record.data.usage_address || record.data.store_address || '—'"/>

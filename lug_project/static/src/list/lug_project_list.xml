@@ -165,12 +165,21 @@
                                           t-att-class="'o_lug_dash_type is-' + row.type_tone"
                                           t-esc="row.type_label"/>
                                 </div>
-                                <span t-att-class="'o_lug_dash_status is-' + row.status_tone"
-                                      t-esc="row.status_badge"/>
+                                <div class="o_lug_dash_head_side">
+                                    <button t-if="state.canDelete and !props.archived"
+                                            type="button"
+                                            class="o_lug_plist_del"
+                                            title="Xóa dự án"
+                                            t-on-click.stop="(ev) => this.deleteProject(row.id, ev)">
+                                        <i class="fa fa-trash-o"/> Xóa
+                                    </button>
+                                    <span t-att-class="'o_lug_dash_status is-' + row.status_tone"
+                                          t-esc="row.status_badge"/>
+                                </div>
                             </header>
                             <div class="o_lug_dash_body">
                                 <section class="o_lug_dash_col o_lug_dash_col--people">
-                                    <h4>NHÂN SỰ &amp; QUẢN TRỊ</h4>
+                                    <h4>NHÂN SỰ</h4>
                                     <p>
                                         <span>Trưởng DA:</span>
                                         <b t-esc="row.manager_name"/>

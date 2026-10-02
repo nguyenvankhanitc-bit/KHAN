@@ -1297,9 +1297,9 @@
 
     .o_lps_gantt_board {
         display: grid;
-        grid-template-columns: 220px minmax(0, 1fr);
+        grid-template-columns: 220px 156px 148px 148px calc(var(--lps-gantt-days, 1) * var(--lps-gantt-px, 32px));
         grid-template-rows: minmax(0, 1fr);
-        width: 100%;
+        width: max-content;
         min-width: 100%;
         height: 100%;
         min-height: 100%;
@@ -1333,6 +1333,75 @@
         color: #334155;
         background: #fff;
         border-bottom: 1px solid #e2e8f0;
+    }
+
+    .o_lps_gantt_staff {
+        position: sticky;
+        left: 220px;
+        z-index: 4;
+
+        &.is-pic {
+            left: 376px;
+        }
+
+        &.is-super {
+            left: 524px;
+        }
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 0;
+        min-width: 0;
+        background: #fff;
+        border-right: 1px solid #e2e8f0;
+    }
+
+    .o_lps_gantt_staff_head {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        flex-shrink: 0;
+        height: 50px;
+        display: flex;
+        align-items: flex-end;
+        padding: 0 0.5rem 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 800;
+        color: #334155;
+        background: #fff;
+        border-bottom: 1px solid #e2e8f0;
+        white-space: nowrap;
+    }
+
+    .o_lps_gantt_staff_body {
+        flex: 0 0 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .o_lps_gantt_staff_row {
+        display: flex;
+        align-items: center;
+        padding: 0 0.5rem;
+        box-sizing: border-box;
+        overflow: hidden;
+        color: #334155;
+        border-bottom: 1px solid #f1f5f9;
+
+        span {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        &.is-project span {
+            font-weight: 700;
+        }
     }
 
     .o_lps_gantt_name_row {
@@ -1500,8 +1569,10 @@
         border-bottom: 1px solid #e2e8f0;
 
         em {
-            flex: 1 0 0;
-            min-width: 28px;
+            flex: 0 0 var(--lps-gantt-px, 32px);
+            width: var(--lps-gantt-px, 32px);
+            min-width: var(--lps-gantt-px, 32px);
+            max-width: var(--lps-gantt-px, 32px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1566,8 +1637,10 @@
         z-index: 0;
 
         i {
-            flex: 1 0 0;
-            min-width: 28px;
+            flex: 0 0 var(--lps-gantt-px, 32px);
+            width: var(--lps-gantt-px, 32px);
+            min-width: var(--lps-gantt-px, 32px);
+            max-width: var(--lps-gantt-px, 32px);
             border-right: 1px solid #94a3b8;
             box-sizing: border-box;
             display: block;

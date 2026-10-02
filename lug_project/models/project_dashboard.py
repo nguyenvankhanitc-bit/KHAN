@@ -140,6 +140,7 @@ class ProjectProjectDashboard(models.Model):
             project_id = int(project_id) if project_id else False
         except (TypeError, ValueError):
             project_id = False
+        requested_project_id = project_id
         try:
             type_id = int(type_id) if type_id else False
         except (TypeError, ValueError):
@@ -172,7 +173,11 @@ class ProjectProjectDashboard(models.Model):
                 ("date", "<=", date_to),
             ]
         all_projects = Project.search(domain)
-        filter_projects = [{"id": rec.id, "name": rec.name} for rec in all_projects[:80]]
+        gantt_domain = list(_PROJECT_DOMAIN)
+        if type_id:
+            gantt_domain.append(("lug_type_id", "=", type_id))
+        gantt_all = Project.search(gantt_domain, order="lug_stt, id")
+        filter_projects = [{"id": rec.id, "name": rec._lug_project_title()} for rec in gantt_all[:500]]
         if project_id:
             projects = all_projects.filtered(lambda rec: rec.id == project_id)
             if not projects:
@@ -232,7 +237,7 @@ class ProjectProjectDashboard(models.Model):
             upcoming.append(
                 {
                     "id": project.id,
-                    "name": project.name,
+                    "name": project._lug_project_title(),
                     "code": project.lug_code or "",
                     "deadline": due.strftime("%d/%m/%Y"),
                     "overdue": due < today,
@@ -310,7 +315,7 @@ class ProjectProjectDashboard(models.Model):
             cost_rows.append(
                 {
                     "id": project.id,
-                    "name": (project.name or project.lug_code or "Dự án")[:28],
+                    "name": (project._lug_project_title() or project.lug_code or "Dự án")[:28],
                     "value": round(total_cost / 1000000.0, 1),
                 }
             )
@@ -411,7 +416,7 @@ class ProjectProjectDashboard(models.Model):
                         ),
                         "initial": (author.name or "H")[:1].upper(),
                         "text": body,
-                        "project": project.name,
+                        "project": project._lug_project_title(),
                         "project_id": project.id,
                         "ago": ago,
                     }
@@ -420,7 +425,12 @@ class ProjectProjectDashboard(models.Model):
             self.env.cr.rollback()
             activities = []
 
-        gantt_rows, gantt_axis, gantt_today, gantt_cal = self._lug_gantt_data(projects, today)
+        gantt_projects = gantt_all
+        if requested_project_id:
+            chosen = gantt_all.filtered(lambda rec: rec.id == requested_project_id)
+            if chosen:
+                gantt_projects = chosen
+        gantt_rows, gantt_axis, gantt_today, gantt_cal = self._lug_gantt_data(gantt_projects, today)
         at_risk_tasks = self._lug_at_risk_tasks(today, project_id=project_id)
         heatmap = self._lug_heatmap(today, project_id=project_id)
 
@@ -562,28 +572,44 @@ class ProjectProjectDashboard(models.Model):
         return (start - win_start).days, (end - start).days + 1
 
     @api.model
+    def _lug_gantt_staff(self, users):
+        names = []
+        seen = set()
+        for user in users:
+            name = (user.name or "").strip()
+            if not name or user.id in seen:
+                continue
+            seen.add(user.id)
+            names.append(name)
+        if not names:
+            return "—", ""
+        full = ", ".join(names)
+        if len(names) <= 2:
+            return full, full
+        short = "%s, %s +%s" % (names[0], names[1], len(names) - 2)
+        return short, full
+
+    @api.model
     def _lug_gantt_data(self, projects, today):
         empty_cal = {"months": [], "days": [], "count": 0, "today": 0, "day_px": 22}
         single = len(projects) == 1
-        picked = projects[:1] if single else projects[:5]
+        picked = projects[:200]
         if not picked:
             return [], [], 0, empty_cal
 
-        def _project_span(project):
+        def _project_bounds(project):
             start = self._lug_as_date(project.date_start)
-            if not start:
-                start = self._lug_as_date(project.create_date) or today
-            end = self._lug_as_date(project.lug_deadline) or self._lug_as_date(project.date)
-            if not end:
-                end = start + timedelta(days=30)
-            if end < start:
-                end = start + timedelta(days=7)
-            return start, end
+            ends = [
+                day
+                for day in (
+                    self._lug_as_date(project.lug_deadline),
+                    self._lug_as_date(project.date),
+                )
+                if day
+            ]
+            return start, (max(ends) if ends else None)
 
-        spans = {project.id: _project_span(project) for project in picked}
-        all_dates = [today]
-        for start, end in spans.values():
-            all_dates.extend((start, end))
+        bounds = {project.id: _project_bounds(project) for project in picked}
 
         tasks_by_project = defaultdict(list)
         if "project.task" in self.env:
@@ -598,26 +624,34 @@ class ProjectProjectDashboard(models.Model):
                     order="priority desc, date_deadline, id",
                 )
                 for task in tasks:
+                    proj_start, proj_end = bounds.get(task.project_id.id, (None, None))
                     t_start = (
                         self._lug_as_date(task.date_assign)
+                        or proj_start
                         or self._lug_as_date(task.create_date)
-                        or spans.get(task.project_id.id, (today, today))[0]
+                        or today
                     )
-                    t_end = (
-                        self._lug_as_date(task.date_end)
-                        or self._lug_as_date(task.date_deadline)
-                        or (t_start + timedelta(days=7))
-                    )
+                    real_end = self._lug_as_date(task.date_deadline) or self._lug_as_date(task.date_end)
+                    t_end = real_end or proj_end or t_start
                     if t_end < t_start:
-                        t_end = t_start + timedelta(days=3)
-                    all_dates.extend((t_start, t_end))
+                        t_end = t_start
+                    staff, staff_full = self._lug_gantt_staff(task.user_ids or task.lug_pic_id)
+                    pic, pic_full = self._lug_gantt_staff(task.lug_pic_id)
+                    supervisor, supervisor_full = self._lug_gantt_staff(task.lug_supervisor_id)
                     tasks_by_project[task.project_id.id].append(
                         {
                             "id": task.id,
                             "name": task.name,
                             "start": t_start,
                             "end": t_end,
+                            "has_end": bool(real_end),
                             "state": task.state or "01_in_progress",
+                            "staff": staff,
+                            "staff_full": staff_full,
+                            "pic": pic,
+                            "pic_full": pic_full,
+                            "supervisor": supervisor,
+                            "supervisor_full": supervisor_full,
                         }
                     )
             except Exception:
@@ -639,7 +673,6 @@ class ProjectProjectDashboard(models.Model):
                     due = self._lug_as_date(milestone.deadline)
                     if not due:
                         continue
-                    all_dates.append(due)
                     milestones_by_project[milestone.project_id.id].append(
                         {"id": milestone.id, "name": milestone.name, "deadline": due}
                     )
@@ -647,21 +680,61 @@ class ProjectProjectDashboard(models.Model):
                 self.env.cr.rollback()
                 milestones_by_project = defaultdict(list)
 
-        min_d = min(all_dates)
-        max_d = max(all_dates)
-        win_start = min_d.replace(day=1)
-        win_end = (max_d.replace(day=1) + relativedelta(months=1)) - timedelta(days=1)
-        max_span = 120
-        if (win_end - win_start).days + 1 > max_span:
-            win_start = today.replace(day=1) - relativedelta(months=1)
-            win_end = win_start + timedelta(days=max_span - 1)
+        spans = {}
+        axis_dates = []
+        for project in picked:
+            start, end = bounds[project.id]
+            child = tasks_by_project.get(project.id, [])
+            task_starts = [task["start"] for task in child if task.get("start")]
+            task_ends = [task["end"] for task in child if task.get("has_end") and task.get("end")]
+            if not start:
+                start = (
+                    min(task_starts)
+                    if task_starts
+                    else (self._lug_as_date(project.create_date) or today)
+                )
+            if not end:
+                end = max(task_ends) if task_ends else start
+            if end < start:
+                end = start
+            spans[project.id] = (start, end)
+            axis_dates.extend((start, end))
+            for task in child:
+                if task.get("start") and task.get("end"):
+                    axis_dates.extend((task["start"], task["end"]))
+            for milestone in milestones_by_project.get(project.id, []):
+                axis_dates.append(milestone["deadline"])
+
+        if single:
+            dates = []
+            for start, end in spans.values():
+                if start:
+                    dates.append(start)
+                if end:
+                    dates.append(end)
+            if not dates:
+                dates = [day for day in axis_dates if day] or [today]
+            win_start = min(dates)
+            win_end = max(dates)
+        else:
+            near = [today]
+            near.extend(day for day in axis_dates if day and abs((day - today).days) <= 400)
+            min_d = min(near)
+            max_d = max(near)
+            win_start = min_d.replace(day=1)
+            win_end = (max_d.replace(day=1) + relativedelta(months=1)) - timedelta(days=1)
+            max_span = 366
+            if (win_end - win_start).days + 1 > max_span:
+                win_end = max(max_d, today)
+                win_end = (win_end.replace(day=1) + relativedelta(months=1)) - timedelta(days=1)
+                win_start = win_end.replace(day=1) - relativedelta(months=11)
 
         count = (win_end - win_start).days + 1
         months = []
         cursor = win_start
         while cursor <= win_end:
             month_end = min(
-                (cursor + relativedelta(months=1)) - timedelta(days=1),
+                (cursor.replace(day=1) + relativedelta(months=1)) - timedelta(days=1),
                 win_end,
             )
             months.append(
@@ -670,7 +743,7 @@ class ProjectProjectDashboard(models.Model):
                     "days": (month_end - cursor).days + 1,
                 }
             )
-            cursor = cursor + relativedelta(months=1)
+            cursor = month_end + timedelta(days=1)
 
         days = []
         for offset in range(count):
@@ -684,7 +757,8 @@ class ProjectProjectDashboard(models.Model):
                 }
             )
 
-        today_idx = max(0, min(count - 1, (today - win_start).days))
+        raw_today = (today - win_start).days
+        today_idx = raw_today if 0 <= raw_today < count else -1
         today_pct = round(today_idx * 100.0 / max(count - 1, 1), 2)
         axis = [month["label"] for month in months]
         cal = {
@@ -692,7 +766,7 @@ class ProjectProjectDashboard(models.Model):
             "days": days,
             "count": count,
             "today": today_idx,
-            "day_px": 22,
+            "day_px": 32,
         }
 
         status_label = {
@@ -722,11 +796,22 @@ class ProjectProjectDashboard(models.Model):
             for milestone in child_ms:
                 if win_start <= milestone["deadline"] <= win_end:
                     ms_idx.append((milestone["deadline"] - win_start).days)
+            staff, staff_full = self._lug_gantt_staff(
+                project.lug_assignee_ids or project.task_ids.user_ids
+            )
+            pic, pic_full = self._lug_gantt_staff(project.lug_pic_id)
+            supervisor, supervisor_full = self._lug_gantt_staff(project.task_ids.lug_supervisor_id)
             rows.append(
                 {
                     "id": "p-%s" % project.id,
                     "kind": "project",
-                    "name": project.name,
+                    "name": project._lug_project_title(),
+                    "staff": staff,
+                    "staff_full": staff_full,
+                    "pic": pic,
+                    "pic_full": pic_full,
+                    "supervisor": supervisor,
+                    "supervisor_full": supervisor_full,
                     "project_id": project.id,
                     "res_id": project.id,
                     "has_children": bool(child_tasks or child_ms),
@@ -749,6 +834,12 @@ class ProjectProjectDashboard(models.Model):
                         "id": "t-%s" % task["id"],
                         "kind": "task",
                         "name": task["name"],
+                        "staff": task.get("staff") or "—",
+                        "staff_full": task.get("staff_full") or "",
+                        "pic": task.get("pic") or "—",
+                        "pic_full": task.get("pic_full") or "",
+                        "supervisor": task.get("supervisor") or "—",
+                        "supervisor_full": task.get("supervisor_full") or "",
                         "project_id": project.id,
                         "res_id": task["id"],
                         "has_children": False,
@@ -770,6 +861,12 @@ class ProjectProjectDashboard(models.Model):
                         "id": "m-%s" % project.id,
                         "kind": "milestone",
                         "name": "Milestone",
+                        "staff": "—",
+                        "staff_full": "",
+                        "pic": "—",
+                        "pic_full": "",
+                        "supervisor": "—",
+                        "supervisor_full": "",
                         "project_id": project.id,
                         "res_id": project.id,
                         "has_children": False,
@@ -820,7 +917,7 @@ class ProjectProjectDashboard(models.Model):
             rows.append(
                 {
                     "id": project.id,
-                    "name": project.name,
+                    "name": project._lug_project_title(),
                     "pct": pct,
                     "tone": tone,
                 }
@@ -1046,21 +1143,40 @@ class ProjectProjectDashboard(models.Model):
         return {"label": name, "tone": tone}
 
     @api.model
+    def _lug_open_task_deadline(self, project):
+        dates = []
+        done_states = ("1_done", "1_canceled")
+        for task in project.task_ids:
+            if (task.state or "") in done_states:
+                continue
+            due = self._lug_as_date(task.date_deadline)
+            if due:
+                dates.append(due)
+        return min(dates) if dates else False
+
+    @api.model
     def _lug_deadline_badge(self, project, today=None):
         today = today or fields.Date.context_today(self)
         wf = project.lug_workflow_state or "todo"
         deadline = project.lug_deadline or project.date
+        task_due = self._lug_open_task_deadline(project)
         payload = {
-            "date": self._lug_fmt_date(deadline),
+            "date": self._lug_fmt_date(deadline or task_due),
             "state": "none",
             "label": False,
             "late": False,
         }
-        if not deadline or wf in ("done", "cancel", "closed"):
-            if not deadline:
+        if wf in ("done", "cancel", "closed"):
+            if not deadline and not task_due:
                 payload["label"] = "Chưa đặt hạn"
             return payload
-        delta = (deadline - today).days
+        effective = deadline
+        if task_due and task_due < today and (not effective or task_due < effective):
+            effective = task_due
+        if not effective:
+            payload["label"] = "Chưa đặt hạn"
+            return payload
+        delta = (effective - today).days
         if delta < 0:
             payload.update({
                 "state": "late",
@@ -1071,6 +1187,7 @@ class ProjectProjectDashboard(models.Model):
             payload.update({
                 "state": "soon",
                 "label": "Đến hạn hôm nay",
+                "late": True,
             })
         elif delta <= 5:
             payload.update({
@@ -1182,14 +1299,21 @@ class ProjectProjectDashboard(models.Model):
             domain.append(("active", "=", False))
         if overdue:
             today = fields.Date.context_today(self)
+            late_task_ids = self.env["project.task"].search([
+                ("date_deadline", "<", today),
+                ("state", "not in", ("1_done", "1_canceled")),
+                ("project_id.is_template", "=", False),
+            ]).mapped("project_id").ids
             domain += [
                 ("lug_workflow_state", "not in", ("done", "closed", "cancel")),
                 ("last_update_status", "not in", list(_DONE_STATUSES)),
+                "|",
                 "|",
                 ("lug_deadline", "<", today),
                 "&",
                 ("lug_deadline", "=", False),
                 ("date", "<", today),
+                ("id", "in", late_task_ids or [0]),
             ]
         if ids:
             domain.append(("id", "in", [int(item) for item in ids if item]))
@@ -1318,7 +1442,7 @@ class ProjectProjectDashboard(models.Model):
             "id": project.id,
             "stt": project.lug_stt or 0,
             "code": project.lug_code or "—",
-            "name": project.name or "—",
+            "name": project._lug_project_title(),
             "type": self._lug_type_chip(project.lug_type_id),
             "date_start": self._lug_fmt_date(project.date_start),
             "deadline": deadline.get("date"),
@@ -1349,6 +1473,7 @@ class ProjectProjectDashboard(models.Model):
                 for user in managers.sorted(lambda user: (user.name or "").lower())
             ],
             "statuses": [{"key": key, "label": label} for key, label in self._LUG_WF_FILTERS],
+            "can_delete": self.env.user.has_group("base.group_system"),
         }
 
     @api.model
@@ -1606,7 +1731,7 @@ class ProjectProjectDashboard(models.Model):
         return {
             "id": project.id,
             "code": project.lug_code or "—",
-            "name": project.name or "—",
+            "name": project._lug_project_title(),
             "type": type_chip,
             "type_label": type_chip.get("label") or "—",
             "type_id": project.lug_type_id.id if project.lug_type_id else False,

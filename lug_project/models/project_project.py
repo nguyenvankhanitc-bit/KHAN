@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.tools import html2plaintext
 
 _LUG_DOC_EXTS = (".pdf", ".doc", ".docx", ".xls", ".xlsx")
@@ -479,16 +479,29 @@ class ProjectProject(models.Model):
             number += 1
             rec.lug_stt = number
 
+    def _lug_content_title(self, content):
+        text = (content or "").strip()
+        if not text:
+            return ""
+        return text.splitlines()[0][:120]
+
+    def _lug_project_title(self):
+        self.ensure_one()
+        title = self._lug_content_title(self.lug_content)
+        if title:
+            return title
+        return (self.name or "").strip() or "Dự án mới"
+
     def _lug_name_from_vals(self, vals=None, record=None):
         vals = vals or {}
+        content = vals.get("lug_content") if "lug_content" in vals else (record.lug_content if record else "")
+        title = self._lug_content_title(content)
         name = (vals.get("name") if "name" in vals else (record.name if record else "")) or ""
         name = str(name).strip()
+        if title and (not name or name == "Dự án mới"):
+            return title
         if name:
             return name[:120]
-        content = vals.get("lug_content") if "lug_content" in vals else (record.lug_content if record else "")
-        content = (content or "").strip()
-        if content:
-            return content.splitlines()[0][:120]
         return "Dự án mới"
 
     def _get_values_analytic_account_batch(self, project_vals_list):
@@ -551,12 +564,18 @@ class ProjectProject(models.Model):
     def write(self, vals):
         if vals.get("lug_pic_id") and "user_id" not in vals:
             vals = dict(vals, user_id=vals["lug_pic_id"])
-        if "name" in vals and not (vals.get("name") or "").strip():
+        incoming_name = str(vals.get("name") or "").strip() if "name" in vals else None
+        if "lug_content" in vals or incoming_name in ("", "Dự án mới"):
             vals = dict(vals)
-            if len(self) == 1:
-                vals["name"] = self._lug_name_from_vals(vals, self)
-            else:
-                vals["name"] = self._lug_name_from_vals(vals) if (vals.get("lug_content") or "").strip() else "Dự án mới"
+            content = vals.get("lug_content") if "lug_content" in vals else (
+                self.lug_content if len(self) == 1 else ""
+            )
+            title = self._lug_content_title(content)
+            if title and (incoming_name in (None, "", "Dự án mới")):
+                if len(self) == 1 and (self.name or "").strip() in ("", "Dự án mới"):
+                    vals["name"] = title
+                elif incoming_name in ("", "Dự án mới"):
+                    vals["name"] = title
         if vals.get("active") is False and "lug_archived_date" not in vals:
             vals = dict(vals, lug_archived_date=fields.Date.context_today(self))
         if vals.get("active") is True:
@@ -580,9 +599,14 @@ class ProjectProject(models.Model):
             },
         }
 
+    def _lug_can_delete_project(self):
+        return self.env.user.has_group("base.group_system")
+
     def lug_action_delete(self):
-        """Đưa dự án vào thùng rác (ẩn khỏi danh sách, có thể khôi phục)."""
-        self.write({"active": False})
+        """Đưa dự án vào thùng rác. Chỉ tài khoản Administrator."""
+        if not self._lug_can_delete_project():
+            raise AccessError("Chỉ tài khoản Administrator mới được xóa dự án.")
+        self.sudo().write({"active": False})
         return True
 
     def lug_action_restore(self):

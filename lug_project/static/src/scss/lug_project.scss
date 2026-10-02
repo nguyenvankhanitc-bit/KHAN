@@ -80,13 +80,21 @@
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_board {
-    width: 100% !important;
+    width: max-content !important;
+    min-width: 100% !important;
     height: 100% !important;
     min-height: 100% !important;
-    grid-template-columns: 220px minmax(0, 1fr) !important;
+    grid-template-columns: 220px 156px 148px 148px calc(var(--lps-gantt-days, 1) * var(--lps-gantt-px, 32px)) !important;
+}
+
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cal {
+    width: calc(var(--lps-gantt-days, 1) * var(--lps-gantt-px, 32px)) !important;
+    min-width: calc(var(--lps-gantt-days, 1) * var(--lps-gantt-px, 32px)) !important;
+    max-width: calc(var(--lps-gantt-days, 1) * var(--lps-gantt-px, 32px)) !important;
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_body,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_staff_body,
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track_body {
     flex: 0 0 auto !important;
     display: flex !important;
@@ -95,6 +103,7 @@
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_staff_row,
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track {
     flex: 0 0 32px !important;
     height: 32px !important;
@@ -109,8 +118,10 @@
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-task,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_staff_row.is-task,
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track.is-task,
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_name_row.is-milestone,
+.o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_staff_row.is-milestone,
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_track.is-milestone {
     flex: 0 0 28px !important;
     height: 28px !important;
@@ -136,6 +147,10 @@
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_days em {
+    flex: 0 0 var(--lps-gantt-px, 32px) !important;
+    width: var(--lps-gantt-px, 32px) !important;
+    min-width: var(--lps-gantt-px, 32px) !important;
+    max-width: var(--lps-gantt-px, 32px) !important;
     border-right: 1px solid #94a3b8 !important;
     background: #fff !important;
 }
@@ -162,7 +177,10 @@
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i {
     border-right: 1px solid #94a3b8 !important;
-    min-width: 28px !important;
+    flex: 0 0 var(--lps-gantt-px, 32px) !important;
+    width: var(--lps-gantt-px, 32px) !important;
+    min-width: var(--lps-gantt-px, 32px) !important;
+    max-width: var(--lps-gantt-px, 32px) !important;
 }
 
 .o_lps_dash[data-lps-dash="gantt-cal-v6"] .o_lps_gantt_cols i.is-we {
@@ -366,4 +384,19 @@
 
 .o_kanban_view.o_project_horizontal_cards .o_kanban_record:hover {
     box-shadow: none !important;
+}
+
+.o_kanban_view.o_project_horizontal_cards .o_kanban_renderer.o_kanban_grouped {
+    .o_kanban_group:not(.o_column_folded),
+    .o_column_quick_create:not(.o_quick_create_folded) {
+        flex: 1 0 100% !important;
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 100% !important;
+    }
+}
+
+.o_kanban_view.o_project_horizontal_cards .o_lug_dash_card {
+    width: 100% !important;
+    max-width: none !important;
 }

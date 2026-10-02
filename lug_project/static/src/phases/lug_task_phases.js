@@ -311,8 +311,8 @@ export class LugTaskPhaseField extends X2ManyField {
         const project = this.props.record;
         const storeName = String(project.data.name || "").trim();
         const content = String(project.data.lug_content || "").trim();
-        if (!storeName) {
-            const title = (content.split("\n")[0] || "").trim() || "Dự án mới";
+        const title = (content.split("\n")[0] || "").trim();
+        if (title && (!storeName || storeName === "Dự án mới")) {
             await project.update({ name: title });
         }
         const root = this.rootRef.el;

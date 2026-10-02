@@ -281,7 +281,7 @@
     <t t-name="lug_project.LugGanttBoard">
         <div class="o_lps_gantt o_lps_gantt--cal" data-lps-gantt="compact-v5">
             <div class="o_lps_gantt_scroll">
-                <div class="o_lps_gantt_board">
+                <div class="o_lps_gantt_board" t-att-style="ganttBoardStyle">
                     <div class="o_lps_gantt_names">
                         <div class="o_lps_gantt_names_head">Dự án</div>
                         <div class="o_lps_gantt_name_body">
@@ -305,6 +305,20 @@
                             </t>
                         </div>
                     </div>
+                    <t t-foreach="ganttPeopleCols" t-as="col" t-key="col.key">
+                        <div t-att-class="'o_lps_gantt_staff ' + col.cls">
+                            <div class="o_lps_gantt_staff_head" t-esc="col.label"/>
+                            <div class="o_lps_gantt_staff_body">
+                                <t t-foreach="ganttVisibleRows" t-as="row" t-key="col.key + '-' + row.id">
+                                    <div t-att-class="'o_lps_gantt_staff_row is-' + row.kind"
+                                         t-att-style="ganttTrackStyle(row)"
+                                         t-att-title="row[col.full] || ''">
+                                        <span t-esc="row[col.key] || '—'"/>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
                     <div class="o_lps_gantt_cal" t-att-style="ganttCalStyle">
                         <div class="o_lps_gantt_months">
                             <t t-foreach="ganttCal.months" t-as="month" t-key="month_index">

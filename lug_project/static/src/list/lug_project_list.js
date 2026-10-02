@@ -51,6 +51,7 @@ export class LugProjectList extends Component {
             types: [],
             managers: [],
             statuses: WORKFLOW_OPTIONS,
+            canDelete: false,
         });
         this._loadDebounced = debounce(() => this.loadList(), 300);
 
@@ -127,7 +128,8 @@ export class LugProjectList extends Component {
     decorateRow(row) {
         const pct = Math.max(0, Math.min(100, Number(row.progress_pct) || 0));
         const late = Boolean(row.deadline_late);
-        const statusTone = late && row.status === "progress" ? "late" : row.status || "progress";
+        const closed = row.status === "done" || row.status === "cancel";
+        const statusTone = late && !closed ? "late" : row.status || "progress";
         const donutColor = late ? "#ef4444" : pct >= 50 ? "#22c55e" : "#f59e0b";
         const labels = ["Chuẩn bị", "Thực hiện", "Nghiệm thu", "Đóng DA"];
         const steps = (row.phase && row.phase.steps) || [];
@@ -188,6 +190,7 @@ export class LugProjectList extends Component {
             this.state.types = meta.types || [];
             this.state.managers = meta.managers || [];
             this.state.statuses = meta.statuses || WORKFLOW_OPTIONS;
+            this.state.canDelete = Boolean(meta.can_delete);
         } catch (error) {
             console.error(error);
         }

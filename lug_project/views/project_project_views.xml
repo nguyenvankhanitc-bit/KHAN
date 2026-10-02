@@ -449,6 +449,8 @@
         <field name="name">project.project.kanban.horizontal.dashboard</field>
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.view_project_kanban"/>
+        <!-- Sau hr_timesheet (24): card gốc vẫn còn o_project_kanban_boxes khi view đó kế thừa. -->
+        <field name="priority">32</field>
         <field name="arch" type="xml">
             <xpath expr="//kanban" position="attributes">
                 <attribute name="class" add="o_kanban_dashboard o_project_horizontal_cards" separator=" "/>
@@ -489,7 +491,7 @@
                         </div>
                         <div class="row g-0 p-3 align-items-center">
                             <div class="col-md-3 pe-3">
-                                <div class="fw-bold small mb-2" style="color: #6D28D9;">👤 NHÂN SỰ &amp; QUẢN TRỊ</div>
+                                <div class="fw-bold small mb-2" style="color: #6D28D9;">👤 NHÂN SỰ</div>
                                 <div class="small text-secondary mb-1">
                                     • Trưởng DA: <b class="text-dark"><field name="user_id"/></b>
                                 </div>

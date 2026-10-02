@@ -485,14 +485,34 @@ export class LugProjectShell extends Component {
         return "100%";
     }
 
+    get ganttBoardStyle() {
+        const count = Math.max(Number(this.ganttCal.count) || 1, 1);
+        const px = Number(this.ganttCal.day_px) || 32;
+        return `--lps-gantt-days:${count};--lps-gantt-px:${px}px`;
+    }
+
     get ganttCalStyle() {
         const count = Math.max(Number(this.ganttCal.count) || 1, 1);
-        return `width:100%;--lps-gantt-days:${count}`;
+        const px = Number(this.ganttCal.day_px) || 32;
+        const width = count * px;
+        return `width:${width}px;min-width:${width}px;max-width:${width}px`;
+    }
+
+    get ganttPeopleCols() {
+        return [
+            { key: "staff", full: "staff_full", label: "Nhân sự thực hiện", cls: "is-doers" },
+            { key: "pic", full: "pic_full", label: "Người phụ trách", cls: "is-pic" },
+            { key: "supervisor", full: "supervisor_full", label: "Người giám sát", cls: "is-super" },
+        ];
     }
 
     get ganttVisibleRows() {
         const collapsed = this.state.ganttCollapsed || {};
-        const rows = this.state.dashboard.gantt || [];
+        const selected = Number(this.state.filterProjectId) || 0;
+        let rows = this.state.dashboard.gantt || [];
+        if (selected) {
+            rows = rows.filter((row) => Number(row.project_id) === selected);
+        }
         const out = [];
         let index = 0;
         for (const row of rows) {

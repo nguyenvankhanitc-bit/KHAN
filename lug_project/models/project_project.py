@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 
 from datetime import timedelta
 
@@ -519,8 +519,9 @@ class ProjectProject(models.Model):
         return super()._create_analytic_account()
 
     @api.model
-    def _lug_generate_code(self, project_date=None):
+    def _lug_generate_code(self, project_date=None, excluded_codes=None):
         """Generate code: DA2026-23082026-01 (year-date-daily sequence)."""
+        self.env["project.project"].flush_model(["lug_code"])
         today = project_date or fields.Date.context_today(self)
         if hasattr(today, "date"):
             today = today.date()
@@ -540,13 +541,24 @@ class ProjectProject(models.Model):
             (len(prefix) + 1, prefix + "%"),
         )
         next_seq = (self.env.cr.fetchone()[0] or 0) + 1
-        return "%s%02d" % (prefix, next_seq)
+        code = "%s%02d" % (prefix, next_seq)
+
+        excluded = set(excluded_codes or ())
+        while code in excluded or self.sudo().search_count([("lug_code", "=", code)]):
+            next_seq += 1
+            code = "%s%02d" % (prefix, next_seq)
+
+        return code
 
     @api.model_create_multi
     def create(self, vals_list):
+        used_codes = set()
         for vals in vals_list:
             if not vals.get("lug_code"):
-                vals["lug_code"] = self._lug_generate_code() or False
+                code = self._lug_generate_code(excluded_codes=used_codes) or False
+                vals["lug_code"] = code
+                if code:
+                    used_codes.add(code)
             content = (vals.get("lug_content") or "").strip()
             if content and not vals.get("description"):
                 vals["description"] = content

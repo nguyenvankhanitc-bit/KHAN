@@ -15,6 +15,8 @@ Inherit app Project native — không tạo model dự án mới.
     "license": "LGPL-3",
     "depends": [
         "project",
+        "project_todo",
+        "daily_work_task",
         "hr",
         "mail",
     ],

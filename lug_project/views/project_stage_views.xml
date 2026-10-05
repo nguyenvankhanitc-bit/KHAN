@@ -49,6 +49,8 @@
                         <group string="Kinh phí &amp; Ghi chú">
                             <field name="lug_cost"/>
                             <field name="lug_note" placeholder="Nội dung ghi chú chi tiết..."/>
+                            <field name="lug_todo_task_id" readonly="1" string="Việc cần làm"/>
+                            <field name="lug_daily_task_id" readonly="1" string="Công việc hàng ngày"/>
                         </group>
                     </group>
                 </sheet>

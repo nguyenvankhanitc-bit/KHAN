@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="server_kind_vps" model="phan.he.server.kind">
+        <field name="name">VPS</field>
+        <field name="code">vps</field>
+        <field name="sequence">10</field>
+        <field name="color">#0d9488</field>
+    </record>
+    <record id="server_kind_cloud" model="phan.he.server.kind">
+        <field name="name">Cloud</field>
+        <field name="code">cloud</field>
+        <field name="sequence">20</field>
+        <field name="color">#2563eb</field>
+    </record>
+    <record id="server_kind_dedicated" model="phan.he.server.kind">
+        <field name="name">Dedicated</field>
+        <field name="code">dedicated</field>
+        <field name="sequence">30</field>
+        <field name="color">#7c3aed</field>
+    </record>
+    <record id="server_kind_colocation" model="phan.he.server.kind">
+        <field name="name">Colocation</field>
+        <field name="code">colocation</field>
+        <field name="sequence">40</field>
+        <field name="color">#f97316</field>
+    </record>
+    <record id="server_kind_onprem" model="phan.he.server.kind">
+        <field name="name">On-premise</field>
+        <field name="code">onprem</field>
+        <field name="sequence">50</field>
+        <field name="color">#475569</field>
+    </record>
+</odoo>

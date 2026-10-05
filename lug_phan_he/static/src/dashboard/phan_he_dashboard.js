@@ -74,6 +74,13 @@ const SERVER_NAV_SECTIONS = [
                 iconTone: "store",
                 action: "lug_phan_he.action_phan_he_service_entry_server",
             },
+            {
+                id: "srv_kind",
+                label: "Loại máy chủ",
+                icon: "fa-tags",
+                iconTone: "store",
+                action: "lug_phan_he.action_phan_he_server_kind",
+            },
         ],
     },
     {
@@ -162,7 +169,7 @@ const INTERNET_NAV_SECTIONS = [
             },
             {
                 id: "store_declare",
-                label: "Nhập thông tin",
+                label: "Thêm mới",
                 icon: "fa-globe",
                 iconTone: "store",
                 action: "lug_phan_he.action_phan_he_service_entry",

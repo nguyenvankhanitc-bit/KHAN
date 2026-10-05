@@ -10,6 +10,7 @@ SERVER_KINDS = (
     ("cloud", "Cloud", "#2563eb"),
     ("dedicated", "Dedicated", "#7c3aed"),
     ("colocation", "Colocation", "#f97316"),
+    ("onprem", "On-premise", "#475569"),
 )
 
 MIEN_COLORS = {
@@ -29,19 +30,22 @@ class PhanHeDashboard(models.AbstractModel):
 
     @api.model
     def _server_inventory(self, services):
+        color_by_code = {code: color for code, _label, color in SERVER_KINDS}
+        fallback_colors = ["#0d9488", "#2563eb", "#7c3aed", "#f97316", "#475569", "#db2777"]
+        kind_recs = self.env["phan.he.server.kind"].sudo().search([("active", "=", True)])
         kinds = []
-        for code, label, color in SERVER_KINDS:
-            recs = services.filtered(lambda s, c=code: s.server_kind == c)
+        for index, kind in enumerate(kind_recs):
+            recs = services.filtered(lambda s, k=kind: s.server_kind_id == k)
             kinds.append({
-                "id": code,
-                "name": label,
+                "id": kind.code or kind.id,
+                "name": kind.name,
                 "count": len(recs),
                 "amount": sum(recs.mapped("contract_amount")),
-                "color": color,
+                "color": kind.color or color_by_code.get(kind.code) or fallback_colors[index % len(fallback_colors)],
             })
         running = services.filtered(lambda s: s.ops_status == "active")
         top = services.sorted(key=lambda s: s.contract_amount or 0.0, reverse=True)[:8]
-        kind_label = {code: label for code, label, _color in SERVER_KINDS}
+        kind_label = {kind.id: kind.name for kind in kind_recs}
         return {
             "total": len(services),
             "running": len(running),
@@ -51,14 +55,14 @@ class PhanHeDashboard(models.AbstractModel):
             "cpu": sum(services.mapped("cpu_cores")),
             "ram": sum(services.mapped("ram_gb")),
             "storage": sum(services.mapped("storage_gb")),
-            "unset": len(services.filtered(lambda s: not s.server_kind)),
+            "unset": len(services.filtered(lambda s: not s.server_kind_id)),
             "kinds": kinds,
             "top_servers": [
                 {
                     "id": svc.id,
                     "name": svc.hostname or svc.name or svc.code or "—",
                     "store": svc.store_id.name or "—",
-                    "kind": kind_label.get(svc.server_kind) or "Chưa phân loại",
+                    "kind": svc.server_kind_id.name or kind_label.get(svc.server_kind_id.id) or "Chưa phân loại",
                     "ip": svc.ip_address or "—",
                     "spec": svc.server_spec or "—",
                     "provider": svc.provider_id.name or "—",

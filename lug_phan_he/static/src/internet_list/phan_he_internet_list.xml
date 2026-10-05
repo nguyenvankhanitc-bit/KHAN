@@ -5,8 +5,30 @@
             <t t-if="isMobile">
                 <div class="lq-inet-sticky-head">
                 <div class="lq-today-top">
-                    <h1 class="lq-today-title" t-esc="pageMeta.title"/>
-                    <p class="lq-today-sub" t-esc="pageMeta.subtitle"/>
+                    <div class="lq-today-title-row">
+                        <h1 class="lq-today-title" t-esc="pageMeta.title"/>
+                        <button type="button" class="lq-today-search-toggle"
+                                t-att-class="state.mobileSearchOpen ? 'is-on' : ''"
+                                title="Tìm mã khách hàng"
+                                t-on-click="toggleMobileSearch">
+                            <i class="fa fa-search"/>
+                        </button>
+                    </div>
+                    <p class="lq-today-sub">
+                        <t t-esc="pageMeta.subtitle"/>
+                        <t t-if="state.regionFilter"> · <t t-esc="regionLabel"/></t>
+                    </p>
+                    <div t-if="state.mobileSearchOpen" class="lq-today-datebar lq-today-find is-open">
+                        <label class="lq-today-search">
+                            <input type="text"
+                                   placeholder="Nhập mã khách hàng"
+                                   t-att-value="state.searchDraft"
+                                   t-on-input="onSearchDraft"
+                                   t-on-keydown="onMobileSearchKey"
+                                   autofocus="autofocus"/>
+                        </label>
+                        <button type="button" class="lq-today-find-btn" t-on-click="applyMobileSearch">Tìm</button>
+                    </div>
                 </div>
 
                 <div class="lq-today-quick" t-if="!isPaymentMobile">
@@ -65,17 +87,6 @@
                     </button>
                 </div>
 
-                <div class="lq-today-datebar lq-today-find">
-                    <label class="lq-today-search">
-                        <i class="fa fa-search"/>
-                        <input type="text"
-                               placeholder="Cửa hàng, mã khách hàng"
-                               t-att-value="state.searchDraft"
-                               t-on-input="onSearchDraft"
-                               t-on-keydown="onMobileSearchKey"/>
-                    </label>
-                    <button type="button" class="lq-today-find-btn" t-on-click="applyMobileSearch">Tìm</button>
-                </div>
                 </div>
 
                 <t t-if="isPeriodPaymentList and !state.loading">
@@ -114,7 +125,7 @@
                             <i t-att-class="isPaymentMobile ? 'fa fa-check-circle' : 'fa fa-globe'"/>
                         </span>
                         <b t-esc="pageMeta.title"/>
-                        <em t-esc="cardRecords.length"/>
+                        <em t-esc="mobileSectionCount"/>
                         <i t-att-class="state.sectionOpen ? 'fa fa-angle-up' : 'fa fa-angle-down'"/>
                     </button>
 

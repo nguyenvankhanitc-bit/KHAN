@@ -347,6 +347,7 @@
             'default_state': 'active',
             'default_ops_status': 'active',
             'default_server_kind': 'vps',
+            'default_server_kind_id': ref('server_kind_vps'),
             'form_view_initial_mode': 'edit',
             'phan_he_service_type_code': 'server',
         }"/>

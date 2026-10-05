@@ -66,12 +66,20 @@ class PhanHeService(models.Model):
         tracking=True,
         help="VD: 100Mbps, 200Mbps, Fiber 1Gbps",
     )
+    server_kind_id = fields.Many2one(
+        "phan.he.server.kind",
+        string="Loại máy chủ",
+        tracking=True,
+        ondelete="restrict",
+        index=True,
+    )
     server_kind = fields.Selection(
         selection=[
             ("vps", "VPS"),
             ("cloud", "Cloud"),
             ("dedicated", "Dedicated"),
             ("colocation", "Colocation"),
+            ("onprem", "On-premise"),
         ],
         string="Loại máy chủ",
         tracking=True,
@@ -380,7 +388,7 @@ class PhanHeService(models.Model):
                 parts.append(f"{rec.storage_gb}GB")
             rec.server_spec = " / ".join(parts)
 
-    @api.depends("service_type_id", "store_id", "hostname", "server_kind")
+    @api.depends("service_type_id", "store_id", "hostname", "server_kind", "server_kind_id")
     def _compute_name(self):
         kind_label = dict(self._fields["server_kind"].selection)
         for rec in self:
@@ -388,7 +396,7 @@ class PhanHeService(models.Model):
             store = rec.store_id.name or ""
             if (rec.service_type_id.code or "").lower() == "server":
                 host = rec.hostname or store
-                kind = kind_label.get(rec.server_kind) or stype or "Máy chủ"
+                kind = rec.server_kind_id.name or kind_label.get(rec.server_kind) or stype or "Máy chủ"
                 rec.name = f"{kind} - {host}" if host else (kind or rec.code or "")
                 continue
             rec.name = f"{stype} - {store}" if stype and store else (stype or store or rec.code or "")
@@ -562,6 +570,25 @@ class PhanHeService(models.Model):
         for rec in self:
             rec.payment_info_manual = rec.payment_info_text
 
+
+    def _selection_kind_code(self, kind_id):
+        if not kind_id:
+            return False
+        kind = self.env["phan.he.server.kind"].browse(kind_id)
+        code = kind.code or False
+        allowed = dict(self._fields["server_kind"].selection)
+        return code if code in allowed else False
+
+    def _apply_server_kind_vals(self, vals):
+        if vals.get("server_kind_id") and "server_kind" not in vals:
+            vals["server_kind"] = self._selection_kind_code(vals.get("server_kind_id"))
+        elif vals.get("server_kind") and not vals.get("server_kind_id"):
+            kind = self.env["phan.he.server.kind"].search(
+                [("code", "=", vals["server_kind"])], limit=1
+            )
+            if kind:
+                vals["server_kind_id"] = kind.id
+
     @api.model_create_multi
     def create(self, vals_list):
         next_stt = self._next_stt()
@@ -577,6 +604,7 @@ class PhanHeService(models.Model):
                 vals["code"] = Seq.next_by_code("phan.he.service") or "New"
             if "bandwidth" in vals:
                 vals["bandwidth"] = self._normalize_bandwidth(vals.get("bandwidth"))
+            self._apply_server_kind_vals(vals)
             if vals.get("ops_status") and not vals.get("state"):
                 vals["state"] = vals["ops_status"]
             elif vals.get("state") and not vals.get("ops_status"):
@@ -592,6 +620,7 @@ class PhanHeService(models.Model):
         vals = dict(vals)
         if "bandwidth" in vals:
             vals["bandwidth"] = self._normalize_bandwidth(vals.get("bandwidth"))
+        self._apply_server_kind_vals(vals)
         if "ops_status" in vals and "state" not in vals:
             vals["state"] = vals["ops_status"]
         elif "state" in vals and "ops_status" not in vals:
@@ -919,8 +948,7 @@ class PhanHeService(models.Model):
     def _internet_payment_period_bounds(self, year=None, month=None, month_offset=0):
         """Bounds tháng UI. Không truyền year/month → tháng hiện tại + month_offset.
 
-        month_offset=0: Danh sách TT / Xác nhận (tháng hiện tại)
-        month_offset=1: Lịch dự kiến TT (N+1)
+        month_offset=0: Danh sách TT / Xác nhận / Lịch dự kiến (tháng hiện tại)
         """
         today = fields.Date.context_today(self)
         try:
@@ -961,10 +989,11 @@ class PhanHeService(models.Model):
     def _internet_payment_schedule_domain(self, year=None, month=None):
         """Lịch dự kiến TT — HĐ Đang sử dụng có kỳ / date_end trong tháng chọn + quá hạn.
 
-        Mặc định tháng N+1 khi không truyền year/month.
+        Mặc định tháng hiện tại khi không truyền year/month.
+        Sang tháng tiếp theo trên bộ lọc thì lấy đúng tháng đó (vd 10/2026 → 11/2026).
         """
         period_start, period_end, today = self._internet_payment_period_bounds(
-            year, month, month_offset=1
+            year, month, month_offset=0
         )
         return [
             ("active", "=", True),
@@ -1169,7 +1198,7 @@ class PhanHeService(models.Model):
 
         year/month: tháng đang chọn.
         Danh sách TT / Xác nhận: mặc định tháng hiện tại; cửa hàng cần TT (≤30 ngày hoặc quá hạn).
-        Lịch dự kiến TT: mặc định N+1; theo tháng chọn + quá hạn.
+        Lịch dự kiến TT: mặc định tháng hiện tại; theo tháng chọn + quá hạn.
         """
         today = fields.Date.context_today(self)
         soon30 = today + relativedelta(days=30)
@@ -1608,7 +1637,7 @@ class PhanHeService(models.Model):
         """API Danh sách TT (mode=schedule) / Lịch dự kiến TT (mode=forecast).
 
         schedule: cần TT = date_end còn ≤30 ngày hoặc quá hạn; tháng UI = tháng hiện tại.
-        forecast: HĐ có kỳ/date_end trong tháng chọn + quá hạn; mặc định tháng N+1.
+        forecast: HĐ có kỳ/date_end trong tháng chọn + quá hạn; mặc định tháng hiện tại.
         """
         if mode == "forecast":
             domain, period_start, period_end, _today = self._internet_payment_schedule_domain(

@@ -4,6 +4,7 @@ from . import phan_he_currency
 from . import phan_he_access_mixin
 from . import phan_he_org
 from . import phan_he_service_type
+from . import phan_he_server_kind
 from . import phan_he_module_access
 from . import lug_menu_permission
 from . import internet_menu_permission

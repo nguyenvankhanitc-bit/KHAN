@@ -361,6 +361,45 @@
     </record>
 
     <!-- ========== NHÀ CUNG CẤP ========== -->
+
+    <record id="view_phan_he_server_kind_list" model="ir.ui.view">
+        <field name="name">phan.he.server.kind.list</field>
+        <field name="model">phan.he.server.kind</field>
+        <field name="arch" type="xml">
+            <list string="Loại máy chủ" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code" optional="hide"/>
+                <field name="color" optional="hide"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_server_kind_form" model="ir.ui.view">
+        <field name="name">phan.he.server.kind.form</field>
+        <field name="model">phan.he.server.kind</field>
+        <field name="arch" type="xml">
+            <form string="Loại máy chủ">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="sequence"/>
+                        <field name="color"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_phan_he_server_kind" model="ir.actions.act_window">
+        <field name="name">Loại máy chủ</field>
+        <field name="res_model">phan.he.server.kind</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
     <record id="view_phan_he_provider_list" model="ir.ui.view">
         <field name="name">phan.he.provider.list</field>
         <field name="model">phan.he.provider</field>
@@ -660,6 +699,12 @@
                                 <field name="contract_amount" nolabel="1" widget="monetary" required="1"/>
                             </div>
                             <div class="ph-inet-field">
+                                <label for="next_payment_amount">
+                                    <i class="fa fa-money"/> Số tiền thanh toán <span class="ph-req">*</span>
+                                </label>
+                                <field name="next_payment_amount" nolabel="1" widget="monetary" required="1"/>
+                            </div>
+                            <div class="ph-inet-field">
                                 <label for="payment_type">
                                     <i class="fa fa-credit-card"/> Loại thanh toán
                                 </label>
@@ -761,7 +806,7 @@
                 <field name="stt" string="STT" widget="phan_he_stt" readonly="1"/>
                 <field name="hostname" string="HOSTNAME"/>
                 <field name="store_card_html" string="CỬA HÀNG" widget="html" readonly="1"/>
-                <field name="server_kind" string="LOẠI"/>
+                <field name="server_kind_id" string="LOẠI"/>
                 <field name="ip_address" string="IP"/>
                 <field name="server_spec" string="CẤU HÌNH"/>
                 <field name="datacenter" string="DATACENTER" optional="show"/>
@@ -824,10 +869,10 @@
                                 <field name="hostname" nolabel="1" required="1" placeholder="vd: vps-erp-01"/>
                             </div>
                             <div class="ph-inet-field">
-                                <label for="server_kind">
-                                    <i class="fa fa-cloud"/> Loại <span class="ph-req">*</span>
+                                                                <label for="server_kind_id">
+                                    <i class="fa fa-cloud"/> Loại máy chủ <span class="ph-req">*</span>
                                 </label>
-                                <field name="server_kind" nolabel="1" required="1"/>
+                                <field name="server_kind_id" nolabel="1" required="1" options="{'no_open': True}"/>
                             </div>
                             <div class="ph-inet-field">
                                 <label for="ip_address">
@@ -1151,10 +1196,12 @@
                 <field name="customer_code"/>
                 <field name="provider_id"/>
                 <field name="service_type_id"/>
-                <filter name="filter_kind_vps" string="VPS" domain="[('server_kind', '=', 'vps')]"/>
-                <filter name="filter_kind_cloud" string="Cloud" domain="[('server_kind', '=', 'cloud')]"/>
-                <filter name="filter_kind_dedicated" string="Dedicated" domain="[('server_kind', '=', 'dedicated')]"/>
-                <filter name="filter_kind_colo" string="Colocation" domain="[('server_kind', '=', 'colocation')]"/>
+                <filter name="filter_kind_vps" string="VPS" domain="[('server_kind_id.code', '=', 'vps')]"/>
+                <filter name="filter_kind_cloud" string="Cloud" domain="[('server_kind_id.code', '=', 'cloud')]"/>
+                <filter name="filter_kind_dedicated" string="Dedicated" domain="[('server_kind_id.code', '=', 'dedicated')]"/>
+                <filter name="filter_kind_colo" string="Colocation" domain="[('server_kind_id.code', '=', 'colocation')]"/>
+                <filter name="filter_kind_onprem" string="On-premise" domain="[('server_kind_id.code', '=', 'onprem')]"/>
+                <filter name="group_server_kind" string="Loại máy chủ" context="{'group_by': 'server_kind_id'}"/>
                 <separator/>
                 <filter name="filter_active" string="Đang hoạt động"
                         domain="[('state', '=', 'active')]"/>

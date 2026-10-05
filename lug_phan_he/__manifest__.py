@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.494.0",
+    "version": "19.0.2.497.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -31,6 +31,7 @@ Quản lý dịch vụ
         "security/security_rules.xml",
         "data/ir_sequence_data.xml",
         "data/phan_he_service_type_data.xml",
+        "data/phan_he_server_kind_data.xml",
         "data/phan_he_work_shift_data.xml",
         "data/shift_schedule_north_data.xml",
         "data/shift_schedule_dtt_data.xml",

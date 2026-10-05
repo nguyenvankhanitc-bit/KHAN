@@ -46,7 +46,7 @@ const INTERNET_NAV_SECTIONS = [
             },
             {
                 id: "store_declare",
-                label: "Nhập thông tin",
+                label: "Thêm mới",
                 icon: "fa-globe",
                 action: "lug_phan_he.action_phan_he_service_entry",
             },
@@ -215,6 +215,35 @@ const REGION_LABELS = {
     VP: "Văn phòng",
 };
 
+/** Mã phan.he.mien.code — không phụ thuộc ký tự Đ/ă trên selection. */
+function regionMienCode(value) {
+    const raw = String(value || "").trim();
+    if (!raw) {
+        return "";
+    }
+    const folded = raw
+        .replace(/\u0110/g, "D")
+        .replace(/\u0111/g, "d")
+        .replace(/\u00d0/g, "D")
+        .replace(/\u00f0/g, "d")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toUpperCase();
+    if (folded === "NAM" || folded === "MIEN NAM") {
+        return "NAM";
+    }
+    if (folded === "DTT" || folded === "MIEN DTT") {
+        return "DTT";
+    }
+    if (folded === "BAC" || folded === "MIEN BAC") {
+        return "BAC";
+    }
+    if (folded === "VP" || folded === "VAN PHONG") {
+        return "VP";
+    }
+    return "";
+}
+
 export class PhanHeInternetListBoard extends Component {
     static template = "lug_phan_he.PhanHeInternetListBoard";
     static props = {
@@ -245,6 +274,7 @@ export class PhanHeInternetListBoard extends Component {
             totalCount: 0,
             search: "",
             searchDraft: "",
+            mobileSearchOpen: false,
             statusFilter: "",
             providerFilter: "",
             bandwidthFilter: "",
@@ -260,14 +290,8 @@ export class PhanHeInternetListBoard extends Component {
             detailInvoicePending: null,
             internetMenus: this.props.internetMenus || {},
             exporting: false,
-            forecastYear: (this.props.listFilter === "payment_forecast"
-                ? nextMonthParts(1)
-                : nextMonthParts(0)
-            ).year,
-            forecastMonth: (this.props.listFilter === "payment_forecast"
-                ? nextMonthParts(1)
-                : nextMonthParts(0)
-            ).month,
+            forecastYear: nextMonthParts(0).year,
+            forecastMonth: nextMonthParts(0).month,
             forecastGroupOpen: {},
             forecastPrevAmount: 0,
             forecastChartReady: false,
@@ -321,9 +345,9 @@ export class PhanHeInternetListBoard extends Component {
                     this.state.internetMenus = {};
                 }
             }
-            // Lịch dự kiến TT: luôn N+1 khi mở lần đầu (kể cả remount đúng filter).
+            // Lịch dự kiến TT: mở đúng tháng hiện tại. Tháng kế tiếp = tháng sau trên bộ lọc.
             if (this.listFilter === "payment_forecast") {
-                const n = nextMonthParts(1);
+                const n = nextMonthParts(0);
                 this.state.forecastYear = n.year;
                 this.state.forecastMonth = n.month;
                 this.yearOptions = this.buildForecastYearOptions(n.year);
@@ -363,9 +387,9 @@ export class PhanHeInternetListBoard extends Component {
                 this.state.selected = {};
                 this.state.loading = true;
                 this.state.sectionOpen = true;
-                // Danh sách TT = tháng hiện tại; Lịch dự kiến TT = N+1
+                // Danh sách TT và Lịch dự kiến TT đều mở tháng hiện tại.
                 if (nextFilter === "payment_forecast" && curFilter !== "payment_forecast") {
-                    const n = nextMonthParts(1);
+                    const n = nextMonthParts(0);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                     this.yearOptions = this.buildForecastYearOptions(n.year);
@@ -377,8 +401,8 @@ export class PhanHeInternetListBoard extends Component {
                     this.yearOptions = this.buildForecastYearOptions(n.year);
                     this._lastPeriodEmitSig = "";
                 } else if (tokenChanged && nextFilter === "payment_forecast") {
-                    // Reload cùng menu dự kiến → reset về N+1
-                    const n = nextMonthParts(1);
+                    // Reload cùng menu dự kiến → về tháng hiện tại.
+                    const n = nextMonthParts(0);
                     this.state.forecastYear = n.year;
                     this.state.forecastMonth = n.month;
                     this.yearOptions = this.buildForecastYearOptions(n.year);
@@ -1097,7 +1121,10 @@ export class PhanHeInternetListBoard extends Component {
 
     buildQueryDomain(listFilter) {
         const domain = [...this.buildBaseDomain(listFilter)];
-        if (this.state.regionFilter) {
+        const mienCode = regionMienCode(this.state.regionFilter);
+        if (mienCode) {
+            domain.push(["mien_id.code", "=", mienCode]);
+        } else if (this.state.regionFilter) {
             domain.push(["store_mien", "=", this.state.regionFilter]);
         }
         if (this.state.providerFilter) {
@@ -1140,9 +1167,16 @@ export class PhanHeInternetListBoard extends Component {
         }));
     }
 
+    get mobileSectionCount() {
+        if ((this.state.remainTab || "all") === "all") {
+            return this.state.totalCount || 0;
+        }
+        return this.cardRecords.length;
+    }
+
     get tabCounts() {
         const rows = this.pageRecords;
-        const counts = { all: rows.length, ok: 0, warn: 0, danger: 0 };
+        const counts = { all: this.state.totalCount || rows.length, ok: 0, warn: 0, danger: 0 };
         for (const rec of rows) {
             const tone = this.remainTone(rec);
             if (tone === "danger") {
@@ -1377,6 +1411,10 @@ export class PhanHeInternetListBoard extends Component {
 
     setRegionFilter(value) {
         this.state.regionFilter = value || "";
+        this.state.search = "";
+        this.state.searchDraft = "";
+        this.state.mobileSearchOpen = false;
+        this.state.remainTab = "all";
         this.state.page = 1;
         this.state.currentPage = 1;
         this.load();
@@ -1891,6 +1929,10 @@ export class PhanHeInternetListBoard extends Component {
         }
     }
 
+    toggleMobileSearch() {
+        this.state.mobileSearchOpen = !this.state.mobileSearchOpen;
+    }
+
     onSearchDraft(ev) {
         this.state.searchDraft = ev.target.value;
     }
@@ -1906,6 +1948,7 @@ export class PhanHeInternetListBoard extends Component {
         this.state.search = (this.state.searchDraft || "").trim();
         this.state.page = 1;
         this.state.currentPage = 1;
+        this.state.mobileSearchOpen = false;
         this.load();
     }
 
@@ -1924,6 +1967,12 @@ export class PhanHeInternetListBoard extends Component {
 
     onFilterChange(field, ev) {
         this.state[field] = ev.target.value;
+        if (field === "regionFilter") {
+            this.state.search = "";
+            this.state.searchDraft = "";
+            this.state.mobileSearchOpen = false;
+            this.state.remainTab = "all";
+        }
         this.state.page = 1;
         this.state.currentPage = 1;
         this.load();

@@ -1481,6 +1481,18 @@
     .lq-today-title { font-size: 30px; }
 }
 .lq-today-top { margin-bottom: 14px; }
+.lq-today-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+.lq-today-title-row .lq-today-search-toggle {
+    width: 36px;
+    height: 36px;
+    font-size: 15px;
+    flex-shrink: 0;
+}
 .lq-today-title {
     margin: 0;
     font-size: 26px;
@@ -1488,6 +1500,9 @@
     color: #0f172a;
     letter-spacing: -0.02em;
     text-transform: uppercase;
+}
+.lq-today-top .lq-today-find.is-open {
+    margin-top: 10px;
 }
 .lq-today-sub {
     margin: 4px 0 0;
@@ -1611,6 +1626,27 @@
     color: #0f172a;
     font-weight: 800;
     font-size: 14px;
+}
+.lq-today-find:not(.is-open) {
+    background: transparent;
+    box-shadow: none;
+    padding: 0 2px;
+}
+.lq-today-search-toggle {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: #6d28d9;
+    color: #fff;
+    font-size: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.lq-today-search-toggle.is-on {
+    background: #5b21b6;
 }
 .lq-today-find .lq-today-search {
     margin-left: 0;

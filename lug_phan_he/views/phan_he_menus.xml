@@ -460,6 +460,13 @@
               action="action_phan_he_server_expired"
               sequence="8"/>
 
+    <menuitem id="menu_phan_he_server_kind"
+              name="Loại máy chủ"
+              parent="menu_phan_he_server_root"
+              action="action_phan_he_server_kind"
+              sequence="9"/>
+
+
     <!-- ========== CẤU HÌNH CHUNG ========== -->
     <menuitem id="menu_phan_he_config_root"
               name="Cấu hình &amp; Hệ thống"

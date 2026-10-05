@@ -120,7 +120,7 @@ access_linkq_store_permission_line_user,linkq.store.permission.line.user,model_l
 access_linkq_store_permission_line_manager,linkq.store.permission.line.manager,model_linkq_store_permission_line,group_phan_he_service_manager,1,1,1,1
 access_linkq_store_permission_line_admin,linkq.store.permission.line.admin,model_linkq_store_permission_line,group_phan_he_admin,1,1,1,1
 access_linkq_store_permission_line_system,linkq.store.permission.line.system,model_linkq_store_permission_line,base.group_system,1,1,1,1
-
-
-
-
+access_phan_he_server_kind_user,phan.he.server.kind.user,model_phan_he_server_kind,base.group_user,1,1,1,0
+access_phan_he_server_kind_manager,phan.he.server.kind.manager,model_phan_he_server_kind,group_phan_he_service_manager,1,1,1,1
+access_phan_he_server_kind_admin,phan.he.server.kind.admin,model_phan_he_server_kind,group_phan_he_admin,1,1,1,1
+access_phan_he_server_kind_system,phan.he.server.kind.system,model_phan_he_server_kind,base.group_system,1,1,1,1

@@ -75,6 +75,12 @@
                                            t-on-input="(ev) => this.onField('contract_amount', ev)"/>
                                 </div>
                                 <div class="lq-entry-field">
+                                    <label>Số tiền thanh toán <span class="lq-req">*</span></label>
+                                    <input type="number" min="0" step="1000" placeholder="0 VNĐ"
+                                           t-att-value="state.form.next_payment_amount"
+                                           t-on-input="(ev) => this.onField('next_payment_amount', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
                                     <label>Loại thanh toán</label>
                                     <select t-att-value="state.form.payment_type"
                                             t-on-change="(ev) => this.onField('payment_type', ev)">
@@ -95,15 +101,15 @@
 
                                 <div class="lq-entry-field">
                                     <label>Ngày bắt đầu <span class="lq-req">*</span></label>
-                                    <input type="date"
-                                           t-att-value="state.form.date_start"
-                                           t-on-change="(ev) => this.onField('date_start', ev)"/>
+                                    <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy"
+                                           autocomplete="off"
+                                           t-model="state.form.date_start"/>
                                 </div>
                                 <div class="lq-entry-field">
                                     <label>Ngày kết thúc <span class="lq-req">*</span></label>
-                                    <input type="date"
-                                           t-att-value="state.form.date_end"
-                                           t-on-change="(ev) => this.onField('date_end', ev)"/>
+                                    <input type="text" inputmode="numeric" placeholder="dd/mm/yyyy"
+                                           autocomplete="off"
+                                           t-model="state.form.date_end"/>
                                 </div>
                                 <div class="lq-entry-field is-span-3">
                                     <label>Địa chỉ lắp đặt <span class="lq-req">*</span></label>
@@ -118,6 +124,12 @@
                         <div class="lq-entry-sheet">
                             <div class="lq-entry-sheet-title">2. Thông tin thanh toán</div>
                             <div class="lq-entry-grid">
+                                <div class="lq-entry-field">
+                                    <label>Số tiền thanh toán <span class="lq-req">*</span></label>
+                                    <input type="number" min="0" step="1000" placeholder="0 VNĐ"
+                                           t-att-value="state.form.next_payment_amount"
+                                           t-on-input="(ev) => this.onField('next_payment_amount', ev)"/>
+                                </div>
                                 <div class="lq-entry-field">
                                     <label>Tên tài khoản <span class="lq-req">*</span></label>
                                     <input type="text" placeholder="Tên chủ tài khoản"

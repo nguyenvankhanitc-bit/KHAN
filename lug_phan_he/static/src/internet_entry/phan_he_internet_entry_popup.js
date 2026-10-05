@@ -15,10 +15,53 @@ const OPS_STATUS = [
     { value: "liquidated", label: "Thanh lý" },
 ];
 
+function formatDisplayDate(date) {
+    return `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+}
+
+function isoToDisplay(value) {
+    const match = String(value || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!match) {
+        return String(value || "").trim();
+    }
+    return `${match[3]}/${match[2]}/${match[1]}`;
+}
+
+/** Nhận dd/mm/yyyy hoặc yyyy-mm-dd. Trả về yyyy-mm-dd, hoặc null nếu không hợp lệ. */
+function parseDisplayDate(value) {
+    const raw = String(value || "").trim();
+    if (!raw) {
+        return null;
+    }
+    let day;
+    let month;
+    let year;
+    let match = raw.match(/^(\d{1,2})[/.\\-](\d{1,2})[/.\\-](\d{4})$/);
+    if (match) {
+        day = Number(match[1]);
+        month = Number(match[2]);
+        year = Number(match[3]);
+    } else {
+        match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (!match) {
+            return null;
+        }
+        year = Number(match[1]);
+        month = Number(match[2]);
+        day = Number(match[3]);
+    }
+    if (month < 1 || month > 12 || day < 1 || day > 31 || year < 1900 || year > 2100) {
+        return null;
+    }
+    const date = new Date(year, month - 1, day);
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return null;
+    }
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
 function emptyForm() {
     const today = new Date();
-    const ymd = (d) =>
-        `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
     const end = new Date(today);
     end.setFullYear(end.getFullYear() + 1);
     return {
@@ -28,9 +71,10 @@ function emptyForm() {
         customer_code: "",
         bandwidth: "",
         contract_amount: "",
+        next_payment_amount: "",
         payment_type: "prepaid_12",
-        date_start: ymd(today),
-        date_end: ymd(end),
+        date_start: formatDisplayDate(today),
+        date_end: formatDisplayDate(end),
         ops_status: "active",
         usage_address: "",
         bank_account_holder: "",
@@ -129,6 +173,7 @@ export class PhanHeInternetEntryPopup extends Component {
                 "customer_code",
                 "bandwidth",
                 "contract_amount",
+                "next_payment_amount",
                 "payment_type",
                 "date_start",
                 "date_end",
@@ -154,9 +199,10 @@ export class PhanHeInternetEntryPopup extends Component {
             customer_code: rec.customer_code || "",
             bandwidth: rec.bandwidth || "",
             contract_amount: rec.contract_amount != null ? String(rec.contract_amount) : "",
+            next_payment_amount: rec.next_payment_amount != null ? String(rec.next_payment_amount) : "",
             payment_type: rec.payment_type || "prepaid_12",
-            date_start: rec.date_start ? String(rec.date_start).slice(0, 10) : "",
-            date_end: rec.date_end ? String(rec.date_end).slice(0, 10) : "",
+            date_start: isoToDisplay(rec.date_start),
+            date_end: isoToDisplay(rec.date_end),
             ops_status: rec.ops_status || "active",
             usage_address: rec.usage_address || "",
             bank_account_holder: rec.bank_account_holder || "",
@@ -218,14 +264,22 @@ export class PhanHeInternetEntryPopup extends Component {
         if (!f.provider_id) {
             return "Vui lòng chọn nhà cung cấp.";
         }
-        if (!f.date_start || !f.date_end) {
-            return "Vui lòng nhập ngày bắt đầu và kết thúc.";
+        const startIso = parseDisplayDate(f.date_start);
+        const endIso = parseDisplayDate(f.date_end);
+        if (!startIso || !endIso) {
+            return "Nhập ngày bắt đầu và kết thúc theo dạng dd/mm/yyyy. Ví dụ: 05/10/2026.";
+        }
+        if (endIso < startIso) {
+            return "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu.";
         }
         if (!f.usage_address?.trim()) {
             return "Vui lòng nhập địa chỉ lắp đặt.";
         }
         if (f.contract_amount === "" || Number.isNaN(Number(f.contract_amount))) {
             return "Vui lòng nhập cước tháng.";
+        }
+        if (f.next_payment_amount === "" || Number.isNaN(Number(f.next_payment_amount))) {
+            return "Vui lòng nhập số tiền thanh toán.";
         }
         if (!f.bank_account_holder?.trim() || !f.bank_account_number?.trim() || !f.bank_display?.trim()) {
             return "Vui lòng nhập đủ thông tin thanh toán (tài khoản / ngân hàng).";
@@ -247,9 +301,10 @@ export class PhanHeInternetEntryPopup extends Component {
             customer_code: f.customer_code || false,
             bandwidth: f.bandwidth || false,
             contract_amount: Number(f.contract_amount || 0),
+            next_payment_amount: Number(f.next_payment_amount || 0),
             payment_type: f.payment_type || "prepaid_12",
-            date_start: f.date_start || false,
-            date_end: f.date_end || false,
+            date_start: parseDisplayDate(f.date_start) || false,
+            date_end: parseDisplayDate(f.date_end) || false,
             ops_status: ops,
             state: ops,
             usage_address: f.usage_address || false,
@@ -276,6 +331,9 @@ export class PhanHeInternetEntryPopup extends Component {
             }
             if (!Number(f.contract_amount || 0)) {
                 delete vals.contract_amount;
+            }
+            if (!Number(f.next_payment_amount || 0)) {
+                delete vals.next_payment_amount;
             }
         }
         if (!this.isEdit && this.state.serviceTypeId) {

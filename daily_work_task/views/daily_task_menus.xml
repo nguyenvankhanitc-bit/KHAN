@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!--
-        App root: mở Báo cáo KPI (dashboard) mặc định — giống workspace.
+        App root: Quản lý mở Báo cáo KPI, user thường mở Nhập công việc.
         Icon gán ở post-migrate; IA: CÔNG VIỆC | BÁO CÁO | TIỆN ÍCH.
     -->
     <menuitem id="menu_daily_work_root"
               name="Công việc hàng ngày"
               sequence="36"
-              action="action_daily_work_dashboard"
+              action="action_daily_work_home"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📌 CÔNG VIỆC ========== -->
@@ -102,19 +102,28 @@
               sequence="2"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <!-- menu_task_report trong spec = khối BÁO CÁO (menu_daily_work_cat_reports).
+         Sequence 3 để đứng ngay sau Báo cáo cá nhân (các mục kia đang là 1–4). -->
+    <menuitem id="menu_task_team_report"
+              name="Báo cáo CV chi tiết team"
+              parent="menu_daily_work_cat_reports"
+              action="action_task_team_report"
+              sequence="3"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_performance_report"
               name="Báo cáo hiệu suất"
               parent="menu_daily_work_cat_reports"
               action="action_daily_work_performance_report"
-              sequence="3"
+              sequence="4"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_kpi"
               name="Báo cáo KPI"
               parent="menu_daily_work_cat_reports"
               action="action_daily_work_dashboard"
-              sequence="4"
-              groups="daily_work_task.group_daily_work_user"/>
+              sequence="5"
+              groups="daily_work_task.group_daily_work_manager"/>
 
     <!-- Dashboard biểu đồ tổng quan: giữ XML id, ẩn khỏi navbar (mở qua Báo cáo KPI) -->
     <menuitem id="menu_daily_work_dashboard"
@@ -122,6 +131,41 @@
               parent="menu_daily_work_cat_reports"
               action="action_daily_work_dashboard"
               sequence="90"
+              groups="daily_work_task.group_daily_work_manager"/>
+
+    <!-- ========== 📋 PHÂN CÔNG CÔNG VIỆC ========== -->
+    <menuitem id="menu_daily_work_cat_assign"
+              name="PHÂN CÔNG CÔNG VIỆC"
+              parent="menu_daily_work_root"
+              sequence="25"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_task_team_assign_add"
+              name="Thêm phân công công việc"
+              parent="menu_daily_work_cat_assign"
+              action="action_daily_work_assign_board_edit"
+              sequence="1"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_task_team_assign"
+              name="Danh sách phân công công việc"
+              parent="menu_daily_work_cat_assign"
+              action="action_daily_work_assign_board"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_personnel"
+              name="Công việc theo nhân sự"
+              parent="menu_daily_work_cat_assign"
+              action="action_daily_work_personnel"
+              sequence="3"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_work_group"
+              name="Hạng mục"
+              parent="menu_daily_work_cat_assign"
+              action="action_daily_work_category_board"
+              sequence="4"
               groups="daily_work_task.group_daily_work_user"/>
 
     <!-- ========== 📚 TIỆN ÍCH ========== -->
@@ -161,7 +205,7 @@
               groups="daily_work_task.group_daily_work_manager"/>
 
     <menuitem id="menu_daily_work_config"
-              name="Cấu hình"
+              name="Cài đặt"
               parent="menu_daily_work_root"
               sequence="90"
               groups="daily_work_task.group_daily_work_manager"/>
@@ -172,11 +216,12 @@
               action="action_daily_task_employee"
               sequence="10"/>
 
-    <menuitem id="menu_daily_work_work_group"
-              name="Hạng mục"
+    <menuitem id="menu_daily_work_team"
+              name="Team"
               parent="menu_daily_work_config"
-              action="action_daily_task_work_group"
-              sequence="15"/>
+              action="action_daily_task_team"
+              sequence="14"
+              groups="daily_work_task.group_daily_work_manager"/>
 
     <menuitem id="menu_daily_work_recurring"
               name="Công việc lặp lại"
@@ -192,6 +237,13 @@
               sequence="20"
               groups="daily_work_task.group_daily_work_manager"/>
 
+    <menuitem id="menu_daily_work_assign_access"
+              name="Phân quyền phân công công việc"
+              parent="menu_daily_work_config"
+              action="action_daily_task_assign_access_matrix"
+              sequence="22"
+              groups="daily_work_task.group_daily_work_manager"/>
+
     <menuitem id="menu_daily_work_report_access"
               name="Phân quyền Báo cáo tổng"
               parent="menu_daily_work_config"
@@ -204,6 +256,9 @@
         <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_cat_reports" model="ir.ui.menu">
+        <field name="active" eval="True"/>
+    </record>
+    <record id="menu_daily_work_cat_assign" model="ir.ui.menu">
         <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_cat_utils" model="ir.ui.menu">
@@ -229,12 +284,14 @@
     </record>
     <record id="menu_daily_work_dashboard" model="ir.ui.menu">
         <field name="active" eval="False"/>
+        <field name="group_ids" eval="[(6, 0, [ref('group_daily_work_manager')])]"/>
     </record>
     <record id="menu_daily_work_performance_report" model="ir.ui.menu">
         <field name="active" eval="True"/>
     </record>
     <record id="menu_daily_work_kpi" model="ir.ui.menu">
         <field name="active" eval="True"/>
+        <field name="group_ids" eval="[(6, 0, [ref('group_daily_work_manager')])]"/>
     </record>
     <record id="menu_daily_work_viewer" model="ir.ui.menu">
         <field name="active" eval="True"/>

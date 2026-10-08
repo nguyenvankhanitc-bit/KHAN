@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_team_list" model="ir.ui.view">
+        <field name="name">daily.task.team.list</field>
+        <field name="model">daily.task.team</field>
+        <field name="arch" type="xml">
+            <list string="Team" editable="bottom" default_order="department_id, sequence, name">
+                <field name="sequence" string="STT" widget="handle"/>
+                <field name="name" string="Tên Team"
+                         placeholder="Vd: Team An ninh, Team IT..."/>
+                <field name="department_id" string="Phòng ban"
+                         options="{'no_create': True}"/>
+                <field name="work_group_count" string="Số hạng mục" optional="show"/>
+                <field name="note" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_team_form" model="ir.ui.view">
+        <field name="name">daily.task.team.form</field>
+        <field name="model">daily.task.team</field>
+        <field name="arch" type="xml">
+            <form string="Team">
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        <b>Administrator / Quản trị</b> khai báo <b>Team</b> theo <b>phòng ban</b>
+                        tại mục <b>Cài đặt → Team</b>. Khi tạo hạng mục, chọn Team từ danh sách này —
+                        cột Team sẽ hiện trên bảng hạng mục.
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence" string="STT"/>
+                            <field name="name" string="Tên Team"/>
+                            <field name="department_id" string="Phòng ban"
+                                     options="{'no_create': True}"/>
+                        </group>
+                        <group>
+                            <field name="note"/>
+                            <field name="active"/>
+                            <field name="work_group_count" string="Số hạng mục"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_team_search" model="ir.ui.view">
+        <field name="name">daily.task.team.search</field>
+        <field name="model">daily.task.team</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Tên Team"/>
+                <field name="department_id" string="Phòng ban"/>
+                <group>
+                    <filter name="group_dept" string="Phòng ban"
+                            context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_team" model="ir.actions.act_window">
+        <field name="name">Team</field>
+        <field name="res_model">daily.task.team</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_team_search"/>
+        <field name="context">{'search_default_group_dept': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo Team theo phòng ban
+            </p>
+            <p>
+                Sau khi tạo Team, vào Hạng mục và chọn Team tương ứng khi tạo hạng mục mới.
+            </p>
+        </field>
+    </record>
+</odoo>

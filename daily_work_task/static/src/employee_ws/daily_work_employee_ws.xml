@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkEmployeeWs">
-        <div t-att-class="'o_daily_work_employee_ws o_action' + (state.isPhone ? ' o_ews_phone' : '')" t-ref="root">
+        <div t-att-class="'o_daily_work_dashboard o_daily_work_employee_ws o_action' + (state.isPhone ? ' o_ews_phone' : '')" t-ref="root">
+            <DailyWorkAppShell activeNav="'employee_ws'">
             <div class="o_ews_pin" t-ref="pin">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
@@ -119,30 +120,6 @@
                 <t t-else="">
                     <!-- TAB 1: tasks -->
                     <t t-if="isActiveTab('tasks')">
-                        <div class="o_ews_filters">
-                            <div class="o_ews_filter_item">
-                                <label>Từ ngày</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       placeholder="dd/mm/yy"
-                                       inputmode="numeric"
-                                       autocomplete="off"
-                                       t-model="state.dateFrom"
-                                       t-on-blur="(ev) => this.onDateBlur(ev, 'dateFrom')"/>
-                            </div>
-                            <div class="o_ews_filter_item">
-                                <label>Đến ngày</label>
-                                <input type="text" class="form-control form-control-sm"
-                                       placeholder="dd/mm/yy"
-                                       inputmode="numeric"
-                                       autocomplete="off"
-                                       t-model="state.dateTo"
-                                       t-on-blur="(ev) => this.onDateBlur(ev, 'dateTo')"/>
-                            </div>
-                            <button type="button" class="btn btn-success btn-sm" t-on-click="onFilter">
-                                <i class="fa fa-search"/> Xem việc của tôi
-                            </button>
-                        </div>
-
                         <div class="o_ews_info" t-if="state.employee">
                             Xin chào <strong t-esc="state.employee.name"/>
                             <t t-if="state.employee.department">
@@ -194,6 +171,7 @@
                                                 </button>
                                                 <input type="date" class="o_ews_datepicker_native"
                                                        tabindex="-1"
+                                                       lang="vi"
                                                        t-att-value="state.form.assign_date"
                                                        t-on-change="(ev) => this.onFormDateNativeChange('assign_date', ev)"/>
                                             </div>
@@ -217,19 +195,67 @@
                                                 </button>
                                                 <input type="date" class="o_ews_datepicker_native"
                                                        tabindex="-1"
+                                                       lang="vi"
                                                        t-att-value="state.form.deadline"
                                                        t-on-change="(ev) => this.onFormDateNativeChange('deadline', ev)"/>
                                             </div>
                                         </div>
 
+                                        <t t-if="state.datePicker.open">
+                                            <div class="o_ews_vcal" t-att-style="datePickerStyle" t-on-click.stop="">
+                                                <div class="o_ews_vcal_head">
+                                                    <button type="button" class="o_ews_vcal_nav" title="Tháng trước"
+                                                            t-on-click="datePickerPrevMonth">
+                                                        <i class="fa fa-chevron-left"/>
+                                                    </button>
+                                                    <strong class="o_ews_vcal_title" t-esc="datePickerTitle"/>
+                                                    <button type="button" class="o_ews_vcal_nav" title="Tháng sau"
+                                                            t-on-click="datePickerNextMonth">
+                                                        <i class="fa fa-chevron-right"/>
+                                                    </button>
+                                                </div>
+                                                <div class="o_ews_vcal_weekdays">
+                                                    <t t-foreach="datePickerWeekdays" t-as="wd" t-key="wd">
+                                                        <span t-esc="wd"/>
+                                                    </t>
+                                                </div>
+                                                <div class="o_ews_vcal_grid">
+                                                    <t t-foreach="datePickerCells" t-as="cell" t-key="cell.iso">
+                                                        <button type="button"
+                                                                t-att-class="'o_ews_vcal_day'
+                                                                    + (cell.inMonth ? '' : ' is-muted')
+                                                                    + (cell.today ? ' is-today' : '')
+                                                                    + (cell.selected ? ' is-selected' : '')"
+                                                                t-on-click="() => this.selectDatePickerDay(cell.iso)"
+                                                                t-esc="cell.day"/>
+                                                    </t>
+                                                </div>
+                                                <div class="o_ews_vcal_foot">
+                                                    <button type="button" class="btn btn-link btn-sm" t-on-click="clearDatePicker">
+                                                        Xóa
+                                                    </button>
+                                                    <button type="button" class="btn btn-link btn-sm" t-on-click="goDatePickerToday">
+                                                        Hôm nay
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </t>
+
                                         <div class="o_ews_field">
-                                            <label>Hạng mục</label>
-                                            <select class="form-select" t-model="state.form.work_group_id">
-                                                <option value="">-- Chọn hạng mục --</option>
+                                            <label>Tên Công việc hạn mục</label>
+                                            <select class="form-select" t-model="state.form.work_group_id"
+                                                    t-on-change="onFormWorkGroupChange">
+                                                <option value="">-- Chọn tên công việc --</option>
                                                 <t t-foreach="state.workGroups" t-as="g" t-key="g.id">
                                                     <option t-att-value="g.id" t-esc="g.name"/>
                                                 </t>
                                             </select>
+                                        </div>
+                                        <div class="o_ews_field">
+                                            <label>Hạng mục</label>
+                                            <input type="text" class="form-control" readonly="readonly"
+                                                   placeholder="Tự điền khi chọn tên công việc..."
+                                                   t-att-value="state.form.category_label"/>
                                         </div>
                                         <div class="o_ews_field">
                                             <label>Mức ưu tiên</label>
@@ -260,25 +286,24 @@
                                                       placeholder="Nhập mô tả công việc, yêu cầu, tài liệu đính kèm..."
                                                       t-model="state.form.note"/>
                                         </div>
-                                        <div class="o_ews_field" t-if="state.editingTaskId">
+                                        <div class="o_ews_field o_ews_field_pct" t-if="state.editingTaskId">
                                             <label>% hoàn thành CV</label>
                                             <input type="number" class="form-control" min="0" max="100" step="1"
                                                    t-model="state.form.completion_percent"/>
                                         </div>
-                                    </div>
-                                    <div class="o_ews_form_actions">
-                                        <button type="button" class="btn btn-outline-secondary o_ews_cancel"
-                                                t-att-disabled="state.saving"
-                                                t-on-click="onCancelEdit">
-                                            <i class="fa fa-times"/> Hủy
-                                        </button>
-                                        <button type="submit" class="btn o_ews_submit"
-                                                t-att-disabled="state.saving">
-                                            <i class="fa fa-save"/>
-                                            <t t-if="state.saving"> Đang lưu...</t>
-                                            <t t-elif="state.editingTaskId"> LƯU THAY ĐỔI</t>
-                                            <t t-else=""> LƯU CÔNG VIỆC</t>
-                                        </button>
+                                        <div class="o_ews_form_actions">
+                                            <button type="button" class="btn btn-outline-secondary o_ews_cancel"
+                                                    t-att-disabled="state.saving"
+                                                    t-on-click="onCancelEdit">
+                                                <i class="fa fa-times"/> Hủy
+                                            </button>
+                                            <button type="submit" class="btn o_ews_submit"
+                                                    t-att-disabled="state.saving">
+                                                <i class="fa fa-save"/>
+                                                <t t-if="state.saving"> Đang lưu...</t>
+                                                <t t-else=""> Lưu</t>
+                                            </button>
+                                        </div>
                                     </div>
                                 </form>
                             </aside>
@@ -302,6 +327,7 @@
                                             <tr>
                                                 <th class="o_ews_col_stt">STT</th>
                                                 <th class="o_ews_col_name">Tên công việc</th>
+                                                <th class="o_ews_col_hangmuc">Hạng mục</th>
                                                 <th class="o_ews_col_date">Ngày giao việc</th>
                                                 <th class="o_ews_col_date">Hạn hoàn thành</th>
                                                 <th class="o_ews_col_priority">Mức ưu tiên</th>
@@ -317,7 +343,7 @@
                                         <tbody>
                                             <t t-if="!state.tasks.length">
                                                 <tr>
-                                                    <td colspan="11" class="text-center text-muted py-4">
+                                                    <td colspan="13" class="text-center text-muted py-4">
                                                         Chưa có công việc. Hãy thêm việc mới ở biểu mẫu phía trên.
                                                     </td>
                                                 </tr>
@@ -331,6 +357,8 @@
                                                             <i class="fa fa-refresh"/> Lặp
                                                         </span>
                                                     </td>
+                                                    <td class="o_ews_col_hangmuc"
+                                                        t-esc="task.work_group_label || task.category_name || '—'"/>
                                                     <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
                                                     <td t-att-class="'o_ews_col_date' + (isDeadlineToday(task) ? ' o_ews_deadline_today' : '')"
                                                         t-esc="task.deadline_display"/>
@@ -606,7 +634,7 @@
                                                    t-model="state.recurringForm.name" required="required"/>
                                         </div>
                                         <div class="o_ews_field">
-                                            <label>Hạng mục</label>
+                                            <label>Tên Công việc hạn mục</label>
                                             <div class="o_ews_scroll_select"
                                                  t-att-class="{'o_ews_scroll_select_open': state.workGroupFormMenuOpen}">
                                                 <button type="button" class="o_ews_scroll_select_btn"
@@ -924,13 +952,6 @@
                                             t-on-click="onMonthFilter"
                                             t-att-disabled="state.monthLoading">
                                         <i class="fa fa-refresh"/> Xem tháng
-                                    </button>
-                                    <button type="button" class="btn btn-success btn-sm"
-                                            t-on-click="onExportExcel"
-                                            t-att-disabled="state.exporting || state.monthLoading">
-                                        <i class="fa fa-file-excel-o"/>
-                                        <t t-if="state.exporting"> Đang xuất...</t>
-                                        <t t-else=""> Xuất Excel</t>
                                     </button>
                                 </div>
                             </div>
@@ -1468,6 +1489,7 @@
                     </footer>
                 </div>
             </t>
+            </DailyWorkAppShell>
         </div>
     </t>
 </templates>

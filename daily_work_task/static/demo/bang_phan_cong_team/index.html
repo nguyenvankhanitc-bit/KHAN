@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BẢNG PHÂN CÔNG CÔNG VIỆC TEAM</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: "#1c2d42",
+            section: "#dbe4ee",
+            sectionAlt: "#e4e0ec",
+          },
+          fontFamily: {
+            sans: ['"Segoe UI"', "system-ui", "-apple-system", "sans-serif"],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root {
+      --navy: #1c2d42;
+    }
+
+    body {
+      background: #f4f6f9;
+    }
+
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      padding: 0.2rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      line-height: 1.25;
+      white-space: normal;
+      word-break: break-word;
+      text-align: left;
+    }
+
+    .badge-cyan { background: #dbeafe; color: #1e40af; }
+    .badge-orange { background: #ffedd5; color: #9a3412; }
+    .badge-sand { background: #f5e6d3; color: #7c4a1a; }
+    .badge-slate { background: #e2e8f0; color: #334155; }
+    .badge-mint { background: #d1fae5; color: #065f46; }
+    .badge-violet { background: #ede9fe; color: #5b21b6; }
+
+    .empty-dash {
+      color: #cbd5e1;
+      font-weight: 500;
+    }
+
+    #assign-table {
+      border-collapse: separate;
+      border-spacing: 0;
+      min-width: 1100px;
+    }
+
+    #assign-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--navy);
+      color: #fff;
+      font-weight: 700;
+      text-align: center;
+      vertical-align: middle;
+      padding: 0.7rem 0.55rem;
+      border: 1px solid #152536;
+      white-space: normal;
+      line-height: 1.25;
+      font-size: 0.82rem;
+    }
+
+    #assign-table tbody td {
+      border: 1px solid #94a3b8;
+      vertical-align: middle;
+      padding: 0.45rem 0.55rem;
+      background: #fff;
+      font-size: 0.82rem;
+    }
+
+    #assign-table tbody tr.section-row td {
+      background: #dbe4ee;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+      color: #0f172a;
+      padding: 0.65rem 0.75rem;
+      font-size: 0.9rem;
+    }
+
+    #assign-table tbody tr.section-row.section-alt td {
+      background: #e4e0ec;
+    }
+
+    #assign-table tbody tr.task-row:hover td {
+      background: #f8fafc;
+    }
+
+    #assign-table tbody tr.task-row.hidden-row {
+      display: none;
+    }
+
+    .task-sub {
+      display: block;
+      color: #64748b;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+    }
+
+    .task-name {
+      display: block;
+      font-weight: 700;
+      color: #0f172a;
+      text-transform: uppercase;
+      letter-spacing: 0.01em;
+      line-height: 1.35;
+    }
+
+    .table-shell {
+      overflow: auto;
+      max-height: calc(100vh - 170px);
+      border: 1px solid #94a3b8;
+      border-radius: 0.5rem;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    @media print {
+      body { background: #fff; }
+      .no-print { display: none !important; }
+      .table-shell {
+        max-height: none;
+        overflow: visible;
+        border: none;
+        box-shadow: none;
+      }
+      #assign-table { min-width: 0; width: 100%; }
+      #assign-table thead th { position: static; }
+    }
+  </style>
+</head>
+<body class="font-sans text-slate-800 antialiased">
+  <div class="mx-auto max-w-[1600px] px-4 py-5 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <header class="mb-4 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">
+          BẢNG PHÂN CÔNG CÔNG VIỆC TEAM
+        </h1>
+        <p id="subtitle" class="mt-1 text-sm font-medium text-slate-500">Tháng 10 / Năm 2026</p>
+      </div>
+
+      <div class="flex flex-col items-stretch gap-2 sm:items-end">
+        <span class="inline-flex w-fit items-center self-end rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-600 ring-1 ring-inset ring-rose-200">
+          Chế độ: Chỉ xem
+        </span>
+
+        <div class="no-print flex flex-col gap-2 sm:flex-row sm:items-center">
+          <button
+            id="btn-excel"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3.5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
+            </svg>
+            Kết xuất Excel
+          </button>
+
+          <button
+            id="btn-print"
+            type="button"
+            class="inline-flex items-center justify-center gap-2 rounded-lg bg-slate-200 px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-1"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V4h12v5M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v6H6v-6z" />
+            </svg>
+            In ấn
+          </button>
+
+          <div class="relative min-w-[240px]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+            </svg>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Tìm kiếm công việc, nhân sự..."
+              class="w-full rounded-lg border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            />
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Table -->
+    <div class="table-shell">
+      <table id="assign-table" class="w-full">
+        <thead>
+          <tr>
+            <th style="width:56px">STT</th>
+            <th style="min-width:260px">Tên công việc / Hạng mục</th>
+            <th style="min-width:130px">Miền Nam</th>
+            <th style="min-width:130px">Miền ĐTT</th>
+            <th style="min-width:130px">Miền Bắc</th>
+            <th style="min-width:120px">Văn phòng</th>
+            <th style="min-width:140px">User kiểm tra</th>
+            <th style="min-width:160px">User tham gia / phối hợp</th>
+            <th style="min-width:120px">Ghi chú</th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+
+    <p id="empty-state" class="mt-4 hidden text-center text-sm text-slate-500">
+      Không tìm thấy công việc hoặc nhân sự phù hợp.
+    </p>
+  </div>
+
+  <script>
+    /** ====== Dữ liệu mẫu theo hình minh họa ====== */
+    const PEOPLE = {
+      thach: { name: "Thạch Tiến T.", cls: "badge-cyan" },
+      le: { name: "Lê Ngọc Hùng", cls: "badge-orange" },
+      chau: { name: "Châu Hoàng Long", cls: "badge-sand" },
+      khanh: { name: "Nguyễn Văn Khanh", cls: "badge-slate" },
+      phoi: { name: "Nguyễn Văn Khanh", cls: "badge-violet" },
+    };
+
+    const DATA = [
+      {
+        type: "section",
+        code: "I",
+        title: "I. CAMERA",
+        tone: "default",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.1",
+        category: "1. Camera",
+        name: "KIỂM GIỜ MỞ CỬA CAMERA",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.2",
+        category: "1. Camera",
+        name: "KIỂM TRA VỆ SINH",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.3",
+        category: "1. Camera",
+        name: "CHECK BẢNG SALE CTKM",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.4",
+        category: "1. Camera",
+        name: "CHECK SÀN TMĐT",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.5",
+        category: "1. Camera",
+        name: "CHECK NO SALE",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.6",
+        category: "1. Camera",
+        name: "PHÁT SINH TRONG NGÀY",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.7",
+        category: "1. Camera",
+        name: "LẬP BIÊN BẢN",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.8",
+        category: "1. Camera",
+        name: "CHECK TRỰC TIẾP SALE MN",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.9",
+        category: "1. Camera",
+        name: "CHECK CTKM QUÀ TẶNG",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "I",
+        stt: "1.10",
+        category: "1. Camera",
+        name: "KIỂM TRA ĐÓNG CỬA",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+
+      {
+        type: "section",
+        code: "II",
+        title: "II. HỆ THỐNG & PHẦN MỀM (Email & Lark)",
+        tone: "default",
+      },
+      {
+        type: "task",
+        section: "II",
+        stt: "2.1",
+        category: "2. Email",
+        name: "TẠO USER EMAIL",
+        south: null,
+        dtt: null,
+        north: null,
+        office: "khanh",
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "II",
+        stt: "2.2",
+        category: "Phần mềm Lark",
+        name: "TẠO TÀI KHOẢN LARK, SỬA LỖI",
+        south: null,
+        dtt: null,
+        north: null,
+        office: "khanh",
+        checker: "khanh",
+        collab: "phoi",
+        note: "",
+      },
+
+      {
+        type: "section",
+        code: "III",
+        title: "III. THIẾT BỊ & CƠ SỞ VẬT CHẤT",
+        tone: "alt",
+      },
+      {
+        type: "task",
+        section: "III",
+        stt: "3.1",
+        category: "3. Máy lạnh",
+        name: "VỆ SINH MÁY LẠNH",
+        south: "thach",
+        dtt: "le",
+        north: "chau",
+        office: null,
+        checker: null,
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "III",
+        stt: "3.2",
+        category: "Máy chấm công",
+        name: "TẠO VÂN TAY MÁY CHẤM CÔNG",
+        south: null,
+        dtt: null,
+        north: null,
+        office: "khanh",
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+      {
+        type: "task",
+        section: "III",
+        stt: "3.3",
+        category: "Máy chấm công",
+        name: "KIỂM TRA DỮ LIỆU CHẤM CÔNG",
+        south: null,
+        dtt: null,
+        north: null,
+        office: "khanh",
+        checker: "khanh",
+        collab: null,
+        note: "",
+      },
+    ];
+
+    const MONTH_NAMES = [
+      "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6",
+      "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12",
+    ];
+
+    function personCell(key) {
+      if (!key || !PEOPLE[key]) {
+        return '<span class="empty-dash">—</span>';
+      }
+      const p = PEOPLE[key];
+      return `<span class="badge-pill ${p.cls}">${escapeHtml(p.name)}</span>`;
+    }
+
+    function personText(key) {
+      return key && PEOPLE[key] ? PEOPLE[key].name : "—";
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function noteCell(note) {
+      if (!note || !String(note).trim()) {
+        return '<span class="empty-dash">—</span>';
+      }
+      return `<span class="text-slate-700">${escapeHtml(note)}</span>`;
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById("table-body");
+      const html = rows
+        .map((row) => {
+          if (row.type === "section") {
+            const alt = row.tone === "alt" ? " section-alt" : "";
+            return `
+              <tr class="section-row${alt}" data-section="${escapeHtml(row.code)}">
+                <td colspan="9">${escapeHtml(row.title)}</td>
+              </tr>`;
+          }
+
+          const searchBlob = [
+            row.stt,
+            row.category,
+            row.name,
+            personText(row.south),
+            personText(row.dtt),
+            personText(row.north),
+            personText(row.office),
+            personText(row.checker),
+            personText(row.collab),
+            row.note || "",
+          ]
+            .join(" ")
+            .toLowerCase();
+
+          return `
+            <tr class="task-row" data-section="${escapeHtml(row.section)}" data-search="${escapeHtml(searchBlob)}">
+              <td class="text-center font-semibold text-slate-700">${escapeHtml(row.stt)}</td>
+              <td class="pl-4">
+                <span class="task-sub">${escapeHtml(row.category)}</span>
+                <span class="task-name">${escapeHtml(row.name)}</span>
+              </td>
+              <td class="text-center">${personCell(row.south)}</td>
+              <td class="text-center">${personCell(row.dtt)}</td>
+              <td class="text-center">${personCell(row.north)}</td>
+              <td class="text-center">${personCell(row.office)}</td>
+              <td class="text-center">${personCell(row.checker)}</td>
+              <td class="text-center">${personCell(row.collab)}</td>
+              <td class="text-center">${noteCell(row.note)}</td>
+            </tr>`;
+        })
+        .join("");
+
+      tbody.innerHTML = html;
+    }
+
+    function updateSubtitle() {
+      const now = new Date();
+      const month = MONTH_NAMES[now.getMonth()];
+      const year = now.getFullYear();
+      document.getElementById("subtitle").textContent = `${month} / Năm ${year}`;
+      return { monthIndex: now.getMonth() + 1, year, monthLabel: month };
+    }
+
+    function applySearch(query) {
+      const q = (query || "").trim().toLowerCase();
+      const taskRows = document.querySelectorAll("#table-body tr.task-row");
+      const sectionRows = document.querySelectorAll("#table-body tr.section-row");
+      const visibleBySection = {};
+
+      taskRows.forEach((tr) => {
+        const match = !q || (tr.dataset.search || "").includes(q);
+        tr.classList.toggle("hidden-row", !match);
+        if (match) {
+          visibleBySection[tr.dataset.section] = true;
+        }
+      });
+
+      sectionRows.forEach((tr) => {
+        const show = !q || !!visibleBySection[tr.dataset.section];
+        tr.classList.toggle("hidden-row", !show);
+      });
+
+      const anyVisible = Array.from(taskRows).some((tr) => !tr.classList.contains("hidden-row"));
+      document.getElementById("empty-state").classList.toggle("hidden", anyVisible || !q);
+    }
+
+    function exportExcel() {
+      const meta = updateSubtitle();
+      const aoa = [
+        ["BẢNG PHÂN CÔNG CÔNG VIỆC TEAM"],
+        [`${meta.monthLabel} / Năm ${meta.year}`],
+        ["Chế độ: Chỉ xem"],
+        [],
+        [
+          "STT",
+          "Tên công việc / Hạng mục",
+          "Miền Nam",
+          "Miền ĐTT",
+          "Miền Bắc",
+          "Văn phòng",
+          "User kiểm tra",
+          "User tham gia / phối hợp",
+          "Ghi chú",
+        ],
+      ];
+
+      DATA.forEach((row) => {
+        if (row.type === "section") {
+          aoa.push([row.title, "", "", "", "", "", "", "", ""]);
+          return;
+        }
+        aoa.push([
+          row.stt,
+          `${row.category} — ${row.name}`,
+          personText(row.south),
+          personText(row.dtt),
+          personText(row.north),
+          personText(row.office),
+          personText(row.checker),
+          personText(row.collab),
+          row.note || "—",
+        ]);
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+
+      ws["!cols"] = [
+        { wch: 8 },
+        { wch: 48 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 18 },
+        { wch: 20 },
+        { wch: 24 },
+        { wch: 16 },
+      ];
+
+      // Merge tiêu đề
+      ws["!merges"] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 8 } },
+      ];
+
+      XLSX.utils.book_append_sheet(wb, ws, "Phân công");
+      const fileName = `Bang_Phan_Cong_Cong_Viec_Thang_${meta.monthIndex}_${meta.year}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+    }
+
+    // Init
+    document.addEventListener("DOMContentLoaded", () => {
+      updateSubtitle();
+      renderTable(DATA);
+
+      document.getElementById("search-input").addEventListener("input", (e) => {
+        applySearch(e.target.value);
+      });
+
+      document.getElementById("btn-print").addEventListener("click", () => {
+        window.print();
+      });
+
+      document.getElementById("btn-excel").addEventListener("click", () => {
+        if (typeof XLSX === "undefined") {
+          alert("Không tải được thư viện SheetJS. Kiểm tra kết nối mạng / CDN.");
+          return;
+        }
+        exportExcel();
+      });
+    });
+  </script>
+</body>
+</html>

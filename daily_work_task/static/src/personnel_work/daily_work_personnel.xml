@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkPersonnel">
+        <div class="o_daily_work_dashboard o_daily_work_personnel o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dps_shell">
+                    <header class="o_dps_header">
+                        <div>
+                            <h1>Công việc theo nhân sự</h1>
+                            <p>Tách từ bảng phân công team. Mỗi người phụ trách và người kiểm tra là một dòng.</p>
+                        </div>
+                    </header>
+
+                    <div class="o_dps_filters">
+                        <label>
+                            <span>Phòng ban</span>
+                            <select t-on-change="(ev) => this.onFilter('departmentId', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.departments" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.id" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Team</span>
+                            <select t-on-change="(ev) => this.onFilter('teamId', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.teams" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.id" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Nhân sự</span>
+                            <select t-on-change="(ev) => this.onFilter('userId', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.users" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.id" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Hạng mục</span>
+                            <select t-on-change="(ev) => this.onFilter('categoryId', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.categories" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.id" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Khu vực</span>
+                            <select t-on-change="(ev) => this.onFilter('region', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.regions" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.name" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Vai trò</span>
+                            <select t-on-change="(ev) => this.onFilter('role', ev)">
+                                <option value="">Tất cả</option>
+                                <t t-foreach="state.filters.roles" t-as="opt" t-key="opt.id">
+                                    <option t-att-value="opt.id" t-esc="opt.name"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label class="o_dps_search">
+                            <span>Tìm kiếm</span>
+                            <input type="search"
+                                   placeholder="Nhân sự, công việc, mã, hạng mục, khu vực"
+                                   t-att-value="state.search"
+                                   t-on-input="onSearch"/>
+                        </label>
+                    </div>
+
+                    <t t-if="state.loading">
+                        <div class="o_dps_loading"><i class="fa fa-spinner fa-spin"/></div>
+                    </t>
+                    <t t-elif="!visiblePeople.length">
+                        <div class="o_dps_empty">Không có công việc theo bộ lọc hiện tại.</div>
+                    </t>
+                    <div t-else="" class="o_dps_list">
+                        <t t-foreach="visiblePeople" t-as="person" t-key="person.id">
+                            <section class="o_dps_person">
+                                <button type="button" class="o_dps_person_btn" t-on-click="() => this.togglePerson(person.id)">
+                                    <i t-att-class="'fa ' + (person.open ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                    <strong t-esc="person.name"/>
+                                    <em><t t-esc="person.count"/> CV</em>
+                                </button>
+                                <div t-if="person.open" class="o_dps_cats">
+                                    <t t-foreach="person.categories" t-as="cat" t-key="person.id + '-' + cat.id">
+                                        <div class="o_dps_cat">
+                                            <button type="button" class="o_dps_cat_btn" t-on-click="() => this.toggleCat(person.id, cat.id)">
+                                                <i t-att-class="'fa ' + (catOpen(person.id, cat.id) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                <span t-esc="cat.title"/>
+                                                <em><t t-esc="cat.count"/> CV</em>
+                                            </button>
+                                            <div t-if="catOpen(person.id, cat.id)" class="o_dps_table_wrap">
+                                                <table class="o_dps_table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Mã</th>
+                                                            <th>Tên công việc</th>
+                                                            <th>Khu vực</th>
+                                                            <th>Người phụ trách</th>
+                                                            <th>User kiểm tra</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <t t-foreach="taskRows(cat)" t-as="row" t-key="person.id + '-' + row.key">
+                                                            <tr>
+                                                                <td class="o_dps_code" t-esc="row.code"/>
+                                                                <td t-esc="row.name"/>
+                                                                <td t-esc="row.region || '—'"/>
+                                                                <td class="o_dps_user o_dps_user_assignee" t-esc="row.assigneeName || '—'"/>
+                                                                <td class="o_dps_user o_dps_user_checker" t-esc="row.checkerName || '—'"/>
+                                                            </tr>
+                                                        </t>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </t>
+                                </div>
+                            </section>
+                        </t>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

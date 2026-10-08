@@ -1,0 +1,93 @@
+/* Hạng mục — gạch dưới User phụ trách cho dễ nhìn */
+.o_form_view .o_wrap_field:has([name="assignee_user_ids"]),
+.o_form_view .o_wrap_field:has([name="checker_user_ids"]),
+.o_form_view .o_wrap_field:has(.o_wg_assignee_line),
+.o_form_view .o_wrap_field:has(.o_wg_checker_line) {
+    border-bottom: 2px solid #334155;
+    padding-bottom: 0.55rem;
+    margin-bottom: 0.35rem;
+}
+
+/* Hạng mục — kẻ khung lưới toàn bộ bảng dữ liệu */
+.o_list_view.o_daily_task_work_group_list .o_list_table {
+    border-collapse: separate;
+    border-spacing: 0;
+
+    thead th {
+        border: 1px solid #b0b0b0 !important;
+        background: #f0f0f0 !important;
+        text-align: center;
+        font-weight: 600;
+        vertical-align: middle;
+    }
+
+    th[data-name="display_stt"],
+    td[data-name="display_stt"] {
+        width: 64px;
+        min-width: 64px;
+        max-width: 72px;
+        text-align: center !important;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    tbody tr:not(.o_group_header) > td {
+        border: 1px solid #c4c4c4 !important;
+        vertical-align: middle;
+        background: #fff;
+        padding: 4px 6px !important;
+    }
+
+    tbody tr.o_group_header > td {
+        border-bottom: 1px solid #d0d0d0 !important;
+    }
+
+    /* Cột user / miền: rộng hơn + khung trong ô */
+    th[data-name="detail_user_ids"],
+    td[data-name="detail_user_ids"],
+    th[data-name="detail_check_user_ids"],
+    td[data-name="detail_check_user_ids"],
+    th[data-name="total_user_ids"],
+    td[data-name="total_user_ids"],
+    th[data-name="south_user_ids"],
+    td[data-name="south_user_ids"],
+    th[data-name="dtt_user_ids"],
+    td[data-name="dtt_user_ids"],
+    th[data-name="north_user_ids"],
+    td[data-name="north_user_ids"],
+    th[data-name="vptt_user_ids"],
+    td[data-name="vptt_user_ids"],
+    th[data-name="vpmb_user_ids"],
+    td[data-name="vpmb_user_ids"] {
+        min-width: 140px;
+        max-width: 240px;
+    }
+
+    td[data-name="detail_user_ids"] .o_field_widget,
+    td[data-name="detail_check_user_ids"] .o_field_widget,
+    td[data-name="total_user_ids"] .o_field_widget,
+    td[data-name="south_user_ids"] .o_field_widget,
+    td[data-name="dtt_user_ids"] .o_field_widget,
+    td[data-name="north_user_ids"] .o_field_widget,
+    td[data-name="vptt_user_ids"] .o_field_widget,
+    td[data-name="vpmb_user_ids"] .o_field_widget {
+        display: block;
+        min-height: 28px;
+        padding: 3px 5px;
+        border: 1px solid #bdbdbd;
+        border-radius: 3px;
+        background: #fafafa;
+    }
+
+    td[data-name="detail_user_ids"] .o_field_tags,
+    td[data-name="detail_check_user_ids"] .o_field_tags,
+    td[data-name="total_user_ids"] .o_field_tags,
+    td[data-name="south_user_ids"] .o_field_tags,
+    td[data-name="dtt_user_ids"] .o_field_tags,
+    td[data-name="north_user_ids"] .o_field_tags,
+    td[data-name="vptt_user_ids"] .o_field_tags,
+    td[data-name="vpmb_user_ids"] .o_field_tags {
+        max-width: 100%;
+        flex-wrap: wrap;
+    }
+}

@@ -21,6 +21,27 @@
     font-family: var(--dro-font);
     background: var(--dro-bg);
     color: var(--dro-text);
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+
+    > .o_dwd_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .o_dwd_main_embed {
+        display: flex;
+        flex-flow: column nowrap;
+        padding: 0;
+        overflow: hidden;
+        background: var(--dro-bg);
+    }
+
+    .o_dwd_main_embed > .o_dro_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
 
     .o_dro_shell {
         display: flex;
@@ -213,6 +234,15 @@
         &.o_dro_avatar_lg {
             width: 52px;
             height: 52px;
+        }
+
+        &.o_dro_team_avatar {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 22px;
         }
     }
 
@@ -426,6 +456,10 @@
         grid-template-columns: 1.1fr 1.2fr 1fr;
         gap: 0.75rem;
         margin-bottom: 1rem;
+
+        &.o_dro_charts_team {
+            grid-template-columns: 1fr 1.35fr;
+        }
     }
 
     .o_dro_eval_chart_card {
@@ -526,6 +560,12 @@
 
     .o_dro_legend_label {
         flex: 1;
+    }
+
+    .o_dro_chart_sub {
+        margin: -0.15rem 0 0.55rem;
+        font-size: 0.8rem;
+        line-height: 1.35;
     }
 
     .o_dro_chart_box {
@@ -835,6 +875,58 @@
         thead th:nth-child(10) { min-width: 120px; }
         thead th:nth-child(11) { min-width: 120px; }
 
+        /* Phân công công việc Team — bảng riêng dưới Danh sách CV */
+        &.o_dro_excel_table_assign {
+            min-width: 1100px;
+            border: 2px solid #166534;
+
+            thead th {
+                border: 1px solid #0f3d1f !important;
+                box-shadow: none;
+            }
+
+            thead th:nth-child(2) { min-width: 120px; }
+            thead th:nth-child(3) { min-width: 180px; }
+            thead th:nth-child(4) { min-width: 100px; }
+            thead th:nth-child(5),
+            thead th:nth-child(6),
+            thead th:nth-child(7),
+            thead th:nth-child(8) { min-width: 120px; }
+            thead th:nth-child(9) { min-width: 140px; }
+
+            tbody td {
+                border: 1px solid #9ca3af !important;
+                background: #fff;
+            }
+
+            tbody td.o_dro_excel_left {
+                text-align: left;
+            }
+
+            tbody td.o_dro_excel_users {
+                text-align: left;
+                white-space: normal;
+                background: #fafafa;
+            }
+
+            tbody tr:nth-child(even) td {
+                background: #f8fafc;
+            }
+        }
+
+        .o_dro_user_badge {
+            display: inline-block;
+            margin: 2px 3px 2px 0;
+            padding: 2px 10px;
+            border-radius: 999px;
+            background: #e5e7eb;
+            color: #1f2937;
+            font-size: 0.78rem;
+            font-weight: 600;
+            line-height: 1.4;
+            white-space: nowrap;
+        }
+
         tbody tr:nth-child(even) td {
             background: #f8fafc;
         }
@@ -977,6 +1069,10 @@
     .o_dro_bottom {
         display: block;
         align-items: start;
+    }
+
+    .o_dro_assign_team_block {
+        margin-top: 1.25rem;
     }
 
     .o_dro_table_card {

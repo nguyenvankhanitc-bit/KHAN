@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkAppShell">
+        <div t-attf-class="o_dwd_shell {{ shellClassName }}">
+            <header class="o_dwd_topbar">
+                <div class="o_dwd_topbar_left">
+                    <button type="button"
+                            class="o_dwd_burger d-none d-lg-inline-flex"
+                            t-on-click="toggleSidebar"
+                            t-att-title="state.sidebarCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'"
+                            t-att-aria-expanded="(!state.sidebarCollapsed).toString()">
+                        <i t-att-class="state.sidebarCollapsed ? 'fa fa-indent' : 'fa fa-bars'"/>
+                    </button>
+                    <strong class="o_dwd_brand">CÔNG VIỆC</strong>
+                </div>
+                <nav class="o_dwd_topnav">
+                    <button type="button"
+                            t-att-class="'o_dwd_topnav_item' + (isActive('employee_ws') ? ' active' : '')"
+                            t-on-click="() => this.openNav('employee_ws')">
+                        <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
+                    </button>
+                    <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('today')">
+                        <i class="fa fa-sun-o"/><span>Hôm nay</span>
+                        <t t-if="kpi.today"><em class="o_dwd_nav_badge" t-esc="kpi.today"/></t>
+                    </button>
+                    <t t-if="state.canAssign">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('assign')">
+                            <i class="fa fa-share-square-o"/><span>Giao việc</span>
+                        </button>
+                    </t>
+                    <t t-if="state.canViewOthers">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('viewer')">
+                            <i class="fa fa-eye"/><span>Xem CV NV</span>
+                        </button>
+                    </t>
+                    <t t-if="state.canViewChecklist">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('team_checklist')">
+                            <i class="fa fa-check-square-o"/><span>Checklist CV</span>
+                        </button>
+                    </t>
+                    <t t-if="state.canViewOthers">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('report')">
+                            <i class="fa fa-bar-chart"/><span>BC tổng</span>
+                        </button>
+                    </t>
+                    <button type="button"
+                            t-att-class="'o_dwd_topnav_item' + (isActive('overview') ? ' active' : '')"
+                            t-on-click="() => this.openNav('overview')">
+                        <i class="fa fa-user-circle"/><span>BC cá nhân</span>
+                    </button>
+                    <button type="button"
+                            t-att-class="'o_dwd_topnav_item' + (isActive('team_report') ? ' active' : '')"
+                            t-on-click="() => this.openNav('team_report')">
+                        <i class="fa fa-users"/><span>CV chi tiết team</span>
+                    </button>
+                    <t t-if="state.canAssignAdd">
+                        <button type="button"
+                                t-att-class="'o_dwd_topnav_item' + (isActive('team_assign_add') ? ' active' : '')"
+                                t-on-click="() => this.openNav('team_assign_add')">
+                            <i class="fa fa-plus-square"/><span>Thêm phân công</span>
+                        </button>
+                    </t>
+                    <t t-if="state.canAssignList">
+                        <button type="button"
+                                t-att-class="'o_dwd_topnav_item' + (isActive('team_assign_list') || isActive('team_assign') ? ' active' : '')"
+                                t-on-click="() => this.openNav('team_assign_list')">
+                            <i class="fa fa-list-alt"/><span>DS phân công</span>
+                        </button>
+                    </t>
+                    <t t-if="state.canSeePerformance">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('performance')">
+                            <i class="fa fa-line-chart"/><span>Hiệu suất</span>
+                        </button>
+                    </t>
+                    <t t-if="state.isManager">
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('kpi')">
+                            <i class="fa fa-trophy"/><span>BC KPI</span>
+                        </button>
+                    </t>
+                    <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('overdue')">
+                        <i class="fa fa-exclamation-triangle"/><span>Quá hạn</span>
+                        <t t-if="kpi.overdue"><em class="o_dwd_nav_badge" t-esc="kpi.overdue"/></t>
+                    </button>
+                </nav>
+                <div class="o_dwd_topbar_right">
+                    <button type="button" class="o_dwd_notif" title="Việc quá hạn"
+                            t-on-click="() => this.openNav('overdue')">
+                        <i class="fa fa-bell"/>
+                        <t t-if="kpi.overdue">
+                            <em class="o_dwd_badge red" t-esc="kpi.overdue"/>
+                        </t>
+                    </button>
+                    <div class="o_dwd_userchip">
+                        <i class="fa fa-user-circle"/>
+                        <div>
+                            <strong t-esc="state.userName || 'User'"/>
+                            <small t-esc="state.companyName"/>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <div class="o_dwd_body">
+                <div t-if="state.mobileNavOpen"
+                     class="o_dwd_offcanvas_backdrop d-lg-none"
+                     t-on-click="closeMobileNav"/>
+                <aside t-att-class="sidebarClass" t-att-style="sidebarStyle">
+                    <div class="o_dwd_offcanvas_header d-flex d-lg-none align-items-center justify-content-between">
+                        <strong class="o_dwd_offcanvas_title">Menu Công việc</strong>
+                        <button type="button" class="btn btn-sm btn-light" t-on-click="closeMobileNav" aria-label="Đóng">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div class="o_dwd_side_section">
+                        <div class="o_dwd_side_label">📌 CÔNG VIỆC</div>
+                        <button type="button"
+                                t-att-class="'o_dwd_side_item' + (isActive('employee_ws') ? ' active' : '')"
+                                title="Nhập công việc"
+                                t-on-click="() => this.openNav('employee_ws')">
+                            <i class="fa fa-pencil-square-o"/><span>Nhập công việc</span>
+                        </button>
+                        <button type="button" class="o_dwd_side_item" title="Công việc hôm nay"
+                                t-on-click="() => this.openNav('today')">
+                            <i class="fa fa-sun-o"/><span>Công việc hôm nay</span>
+                            <t t-if="kpi.today"><em class="o_dwd_side_count" t-esc="kpi.today"/></t>
+                        </button>
+                        <t t-if="state.canAssign">
+                            <button type="button" class="o_dwd_side_item" title="Giao việc"
+                                    t-on-click="() => this.openNav('assign')">
+                                <i class="fa fa-share"/><span>Giao việc</span>
+                            </button>
+                        </t>
+                        <t t-if="state.canViewOthers">
+                            <button type="button" class="o_dwd_side_item" title="Xem công việc NV"
+                                    t-on-click="() => this.openNav('viewer')">
+                                <i class="fa fa-eye"/><span>Xem công việc NV</span>
+                            </button>
+                        </t>
+                        <t t-if="state.canViewChecklist">
+                            <button type="button" class="o_dwd_side_item" title="Checklist công việc team"
+                                    t-on-click="() => this.openNav('team_checklist')">
+                                <i class="fa fa-check-square-o"/><span>Checklist CV team</span>
+                            </button>
+                        </t>
+                        <button type="button" class="o_dwd_side_item" title="Kanban công việc"
+                                t-on-click="() => this.openNav('kanban')">
+                            <i class="fa fa-th-large"/><span>Kanban công việc</span>
+                        </button>
+                        <button type="button" class="o_dwd_side_item" title="Lịch"
+                                t-on-click="() => this.openNav('calendar')">
+                            <i class="fa fa-calendar-check-o"/><span>Lịch</span>
+                        </button>
+                        <button type="button" class="o_dwd_side_item" title="Công việc quá hạn"
+                                t-on-click="() => this.openNav('overdue')">
+                            <i class="fa fa-exclamation-triangle"/><span>Công việc quá hạn</span>
+                            <t t-if="kpi.overdue"><em class="o_dwd_side_count" t-esc="kpi.overdue"/></t>
+                        </button>
+                        <button type="button" class="o_dwd_side_item" title="Nhắc việc"
+                                t-on-click="() => this.openNav('reminders')">
+                            <i class="fa fa-bell-o"/><span>Nhắc việc</span>
+                            <t t-if="reminderCount">
+                                <em class="o_dwd_side_count" t-esc="reminderCount"/>
+                            </t>
+                        </button>
+                    </div>
+                    <div class="o_dwd_side_section">
+                        <div class="o_dwd_side_label">📊 BÁO CÁO</div>
+                        <t t-if="state.canViewOthers">
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo tổng"
+                                    t-on-click="() => this.openNav('report')">
+                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                            </button>
+                        </t>
+                        <button type="button"
+                                t-att-class="'o_dwd_side_item' + (isActive('overview') ? ' active' : '')"
+                                title="Báo cáo cá nhân"
+                                t-on-click="() => this.openNav('overview')">
+                            <i class="fa fa-user-circle"/><span>Báo cáo cá nhân</span>
+                        </button>
+                        <button type="button"
+                                t-att-class="'o_dwd_side_item' + (isActive('team_report') ? ' active' : '')"
+                                title="Báo cáo CV chi tiết team"
+                                t-on-click="() => this.openNav('team_report')">
+                            <i class="fa fa-users"/><span>Báo cáo CV chi tiết team</span>
+                        </button>
+                        <t t-if="state.canSeePerformance">
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo hiệu suất"
+                                    t-on-click="() => this.openNav('performance')">
+                                <i class="fa fa-line-chart"/><span>Báo cáo hiệu suất</span>
+                            </button>
+                        </t>
+                        <t t-if="state.isManager">
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo KPI"
+                                    t-on-click="() => this.openNav('kpi')">
+                                <i class="fa fa-trophy"/><span>Báo cáo KPI</span>
+                            </button>
+                        </t>
+                    </div>
+                    <t t-if="state.canAssignSection">
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">📋 PHÂN CÔNG CÔNG VIỆC</div>
+                            <t t-if="state.canAssignAdd">
+                                <button type="button"
+                                        t-att-class="'o_dwd_side_item' + (isActive('team_assign_add') ? ' active' : '')"
+                                        title="Thêm phân công công việc"
+                                        t-on-click="() => this.openNav('team_assign_add')">
+                                    <i class="fa fa-plus-square"/><span>Thêm phân công công việc</span>
+                                </button>
+                            </t>
+                            <t t-if="state.canAssignList">
+                                <button type="button"
+                                        t-att-class="'o_dwd_side_item' + (isActive('team_assign_list') || isActive('team_assign') ? ' active' : '')"
+                                        title="Danh sách phân công việc"
+                                        t-on-click="() => this.openNav('team_assign_list')">
+                                    <i class="fa fa-list-alt"/><span>Danh sách phân công công việc</span>
+                                </button>
+                            </t>
+                            <t t-if="state.canAssignPersonnel">
+                                <button type="button"
+                                        t-att-class="'o_dwd_side_item' + (isActive('personnel_work') ? ' active' : '')"
+                                        title="Công việc theo nhân sự"
+                                        t-on-click="() => this.openNav('personnel_work')">
+                                    <i class="fa fa-id-badge"/><span>Công việc theo nhân sự</span>
+                                </button>
+                            </t>
+                            <t t-if="state.canAssignCategory">
+                                <button type="button"
+                                        t-att-class="'o_dwd_side_item' + (isActive('work_group') ? ' active' : '')"
+                                        title="Hạng mục"
+                                        t-on-click="() => this.openNav('work_group')">
+                                    <i class="fa fa-sitemap"/><span>Hạng mục</span>
+                                </button>
+                            </t>
+                        </div>
+                    </t>
+                    <div class="o_dwd_side_section">
+                        <div class="o_dwd_side_label">📚 TIỆN ÍCH</div>
+                        <button type="button" class="o_dwd_side_item" title="Danh bạ"
+                                t-on-click="() => this.openNav('notebook')">
+                            <i class="fa fa-book"/><span>Danh bạ</span>
+                        </button>
+                        <button type="button" class="o_dwd_side_item" title="Ghi chú công việc"
+                                t-on-click="() => this.openNav('work_note')">
+                            <span class="o_dwd_emoji_icon" aria-hidden="true">📝</span><span>Ghi chú</span>
+                        </button>
+                    </div>
+                    <t t-if="state.isManager">
+                        <div class="o_dwd_side_section">
+                            <div class="o_dwd_side_label">QUẢN TRỊ HỆ THỐNG</div>
+                            <button type="button" class="o_dwd_side_item" title="Email nhắc việc"
+                                    t-on-click="() => this.openNav('send_mail')">
+                                <i class="fa fa-envelope"/><span>Email nhắc việc</span>
+                            </button>
+                            <button type="button"
+                                    t-att-class="'o_dwd_side_item o_dwd_side_toggle' + (state.configOpen ? ' open' : '')"
+                                    title="Cài đặt"
+                                    t-on-click="() => this.state.configOpen = !state.configOpen">
+                                <i class="fa fa-sliders"/><span>Cài đặt</span>
+                                <i t-att-class="'fa o_dwd_side_chev ' + (state.configOpen ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                            </button>
+                            <t t-if="state.configOpen">
+                                <div class="o_dwd_side_sub">
+                                    <button type="button" class="o_dwd_side_item sub" title="Team"
+                                            t-on-click="() => this.openNav('team')">
+                                        <i class="fa fa-users"/><span>Team</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Công việc lặp lại"
+                                            t-on-click="() => this.openNav('recurring')">
+                                        <i class="fa fa-refresh"/><span>Công việc lặp lại</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Danh sách nhân viên"
+                                            t-on-click="() => this.openNav('employees')">
+                                        <i class="fa fa-address-book-o"/><span>Danh sách nhân viên</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Phân quyền xem / giao / sửa / xóa"
+                                            t-on-click="() => this.openNav('access')">
+                                        <i class="fa fa-lock"/><span>Phân quyền xem / giao / sửa / xóa</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Phân quyền phân công công việc"
+                                            t-on-click="() => this.openNav('assign_access')">
+                                        <i class="fa fa-clipboard"/><span>Phân quyền phân công công việc</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Phân quyền Báo cáo tổng"
+                                            t-on-click="() => this.openNav('report_access')">
+                                        <i class="fa fa-shield"/><span>Phân quyền Báo cáo tổng</span>
+                                    </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Phân quyền Báo cáo hiệu suất"
+                                            t-on-click="() => this.openNav('performance_access')">
+                                        <i class="fa fa-line-chart"/><span>Phân quyền Báo cáo hiệu suất</span>
+                                    </button>
+                                </div>
+                            </t>
+                        </div>
+                    </t>
+                </aside>
+                <div t-if="!state.sidebarCollapsed"
+                     t-att-class="'o_dwd_sidebar_resizer' + (state.sidebarResizing ? ' active' : '')"
+                     title="Kéo để đổi độ rộng thanh bên (double-click để mặc định)"
+                     t-on-pointerdown="onSidebarResizeStart"
+                     t-on-dblclick="resetSidebarWidth">
+                    <span class="o_dwd_sidebar_resizer_grip" aria-hidden="true"/>
+                </div>
+                <main class="o_dwd_main o_dwd_main_embed">
+                    <t t-slot="default"/>
+                </main>
+            </div>
+        </div>
+    </t>
+</templates>

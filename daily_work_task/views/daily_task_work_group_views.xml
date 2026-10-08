@@ -1,21 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Bảng cha: STT — Hạng mục — Tên công việc (sắp xếp nhỏ → lớn như bảng phân công) -->
     <record id="view_daily_task_work_group_list" model="ir.ui.view">
         <field name="name">daily.task.work.group.list</field>
         <field name="model">daily.task.work.group</field>
         <field name="arch" type="xml">
-            <list string="Nhóm công việc" editable="bottom" default_order="department_id, sequence, name">
-                <field name="sequence" string="STT" widget="handle"/>
-                <field name="name" string="Tên hạng mục"
-                         placeholder="Vd: Điện, Camera, Máy vi tính..."/>
-                <field name="department_id" string="Phòng ban"
+            <list string="Hạng mục"
+                  create="1" edit="1" delete="1"
+                  class="o_daily_task_work_group_list"
+                  default_order="sequence, id">
+                <field name="sequence" widget="handle"/>
+                <field name="display_stt" string="STT" readonly="1" width="70px"/>
+                <field name="name" string="Hạng mục"
+                         placeholder="Vd: Camera, Email, Máy lạnh..."/>
+                <field name="task_name" string="Tên công việc"
+                         placeholder="Vd: Kiểm giờ mở cửa camera..."/>
+                <field name="department_id" string="Phòng ban" optional="show"
                          options="{'no_create': True}"/>
-                <field name="user_ids" string="User áp dụng"
-                         widget="many2many_tags"
+                <field name="team_id" string="Team" optional="show"
                          options="{'no_create': True}"
-                         placeholder="Chọn nhiều user..."/>
-                <field name="task_count" string="Số CV" optional="hide"/>
-                <field name="note" optional="hide"/>
+                         domain="[('department_id', '=', department_id), ('active', '=', True)]"/>
+                <field name="assignee_user_ids" string="User phụ trách" optional="show"
+                         widget="many2many_tags" options="{'no_create': True}"/>
+                <field name="checker_user_ids" string="User kiểm tra" optional="show"
+                         widget="many2many_tags" options="{'no_create': True}"/>
+                <field name="detail_user_ids" string="User áp dụng" optional="hide"
+                         widget="many2many_tags" options="{'no_create': True}"/>
+                <field name="total_user_ids" string="User tổng" optional="hide"
+                         widget="many2many_tags" options="{'no_create': True}"/>
                 <field name="active" optional="hide"/>
             </list>
         </field>
@@ -25,27 +37,53 @@
         <field name="name">daily.task.work.group.form</field>
         <field name="model">daily.task.work.group</field>
         <field name="arch" type="xml">
-            <form string="Nhóm công việc">
+            <form string="Hạng mục">
                 <sheet>
                     <div class="alert alert-info" role="alert">
-                        Mỗi <b>phòng ban</b> có thể có nhiều <b>nhóm công việc</b>.
-                        Cột <b>User áp dụng</b> chọn nhiều user (trình đơn thả xuống / tags).
-                        Để trống User áp dụng = mọi nhân viên thuộc phòng ban đều dùng được nhóm đó.
+                        <b>Hạng mục</b> là mục cha (STT · Hạng mục · Tên công việc).
+                        Sang <b>Thêm phân công công việc</b> để chọn hạng mục và gắn người phụ trách —
+                        sau khi Lưu sẽ tạo công việc cá nhân cho đúng user đó.
                     </div>
                     <group>
-                        <group>
-                            <field name="sequence" string="STT"/>
-                            <field name="name" string="Tên nhóm công việc"/>
+                        <group string="Thông tin hạng mục">
+                            <field name="sequence" string="Thứ tự sắp xếp"/>
+                            <field name="display_stt" string="STT" readonly="1"/>
+                            <field name="name" string="Hạng mục" placeholder="Vd: Camera..."/>
+                            <field name="task_name" string="Tên công việc"
+                                     placeholder="Vd: Kiểm giờ mở cửa camera..."/>
                             <field name="department_id" string="Phòng ban"
                                      options="{'no_create': True}"/>
-                        </group>
-                        <group>
-                            <field name="user_ids" string="User áp dụng"
-                                     widget="many2many_tags"
+                            <field name="team_id" string="Team"
                                      options="{'no_create': True}"
-                                     placeholder="Chọn nhiều user..."/>
-                            <field name="note"/>
+                                     domain="[('department_id', '=', department_id), ('active', '=', True)]"/>
                             <field name="active"/>
+                        </group>
+                        <group string="User được dùng hạng mục (tuỳ chọn)">
+                            <field name="assignee_user_ids" string="User phụ trách"
+                                     class="o_wg_assignee_line"
+                                     widget="many2many_tags" options="{'no_create': True}"
+                                     placeholder="Chọn user phụ trách..."/>
+                            <field name="checker_user_ids" string="User kiểm tra"
+                                     class="o_wg_checker_line"
+                                     widget="many2many_tags" options="{'no_create': True}"
+                                     placeholder="Chọn user kiểm tra..."/>
+                            <field name="detail_user_ids" string="User chi tiết"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="detail_check_user_ids" string="User Kiểm chi tiết"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="total_user_ids" string="User tổng"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="south_user_ids" string="Miền Nam"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="dtt_user_ids" string="Miền ĐTT"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="north_user_ids" string="Miền Bắc"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="vptt_user_ids" string="VPTT"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="vpmb_user_ids" string="VPMB"
+                                     widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="note"/>
                         </group>
                     </group>
                 </sheet>
@@ -58,34 +96,55 @@
         <field name="model">daily.task.work.group</field>
         <field name="arch" type="xml">
             <search>
-                <field name="name" string="Tên nhóm công việc"/>
+                <field name="name" string="Hạng mục"/>
+                <field name="task_name" string="Tên công việc"/>
                 <field name="department_id" string="Phòng ban"/>
-                <field name="user_ids" string="User áp dụng"/>
+                <field name="team_id" string="Team"/>
                 <group>
                     <filter name="group_dept" string="Phòng ban"
                             context="{'group_by': 'department_id'}"/>
-                    <filter name="group_user" string="User áp dụng"
-                            context="{'group_by': 'user_ids'}"/>
+                    <filter name="group_by_name" string="Hạng mục"
+                            context="{'group_by': 'name'}"/>
+                    <filter name="group_by_team" string="Team"
+                            context="{'group_by': 'team_id'}"/>
                 </group>
             </search>
         </field>
     </record>
 
-    <record id="action_daily_task_work_group" model="ir.actions.act_window">
+    <!-- Bảng cha–con: I. CAMERA + 1.1 / 1.2 ... -->
+    <record id="action_daily_work_category_board" model="ir.actions.client">
         <field name="name">Hạng mục</field>
+        <field name="tag">daily_work_category_board</field>
+    </record>
+
+    <!-- Nhập/sửa dạng danh sách phẳng (nút "Nhập danh sách") -->
+    <record id="action_daily_task_work_group" model="ir.actions.act_window">
+        <field name="name">Nhập danh sách hạng mục</field>
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{'search_default_group_dept': 1}</field>
+        <field name="context">{}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Tạo nhóm công việc theo phòng ban
-            </p>
-            <p>
-                Cột: STT · Tên nhóm · Phòng ban · User áp dụng (chọn nhiều).<br/>
-                Một phòng ban có thể có rất nhiều nhóm. User chỉ thấy nhóm mình được gắn
-                (hoặc cả phòng ban nếu để trống User áp dụng).
-            </p>
+            <p class="o_view_nocontent_smiling_face">Tạo hạng mục cha</p>
+            <p>Nhập <b>Hạng mục</b> + <b>Tên công việc</b>. Cùng tên hạng mục sẽ gom thành
+               một nhóm lớn (I, II…) trên bảng Hạng mục.</p>
         </field>
+    </record>
+
+    <record id="action_daily_task_work_group_list" model="ir.actions.act_window">
+        <field name="name">Nhập danh sách hạng mục</field>
+        <field name="res_model">daily.task.work.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_work_group_search"/>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="action_daily_task_work_group_assign" model="ir.actions.act_window">
+        <field name="name">Thêm phân công công việc</field>
+        <field name="res_model">daily.task.work.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_work_group_search"/>
+        <field name="context">{}</field>
     </record>
 </odoo>

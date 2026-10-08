@@ -1,0 +1,364 @@
+/* Danh sách chỉ xem — ẩn handle kéo-copy */
+.o_list_view.o_daily_task_assign_list_readonly {
+    .o_dta_fill_handle {
+        display: none !important;
+    }
+}
+
+/* Danh sách phân công — kẻ ô + nội dung vừa cột + header cố định */
+.o_list_view.o_daily_task_assign_list {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    height: 100%;
+
+    .o_list_renderer {
+        flex: 1 1 auto;
+        min-height: 0;
+        height: 100%;
+        overflow: auto !important;
+        overflow-x: auto !important;
+        --sticky-header-zindex: 30;
+    }
+
+    .o_list_table {
+        /* min-width + max-content: bảng rộng hơn viewport → cuộn ngang, cột không bị ép */
+        width: max-content;
+        min-width: 100%;
+        table-layout: fixed;
+        /* separate giúp sticky header ổn định hơn collapse */
+        border-collapse: separate !important;
+        border-spacing: 0;
+        font-size: 0.82rem;
+        border: 1px solid #94a3b8 !important;
+
+        > thead {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 30 !important;
+        }
+
+        thead th,
+        thead th.o_column_sortable,
+        thead th.o_list_number_th,
+        thead th.o_list_record_selector {
+            position: sticky !important;
+            top: 0 !important;
+            z-index: 31 !important;
+            background: #1e3a5f !important;
+            color: #fff !important;
+            font-weight: 700;
+            text-align: center !important;
+            vertical-align: middle !important;
+            border: 1px solid #152a45 !important;
+            border-bottom: 2px solid #0f2744 !important;
+            padding: 8px 6px !important;
+            white-space: normal !important;
+            word-break: break-word;
+            line-height: 1.25;
+            box-shadow: 0 2px 4px rgba(15, 23, 42, 0.18) !important;
+            background-clip: padding-box;
+        }
+
+        tbody tr:nth-child(even):not(.o_group_header) > td {
+            background: #f8fafc !important;
+        }
+
+        tbody tr:not(.o_group_header) > td,
+        tbody tr:not(.o_group_header) > td.o_data_cell {
+            border: 1px solid #94a3b8 !important;
+            vertical-align: middle !important;
+            padding: 5px 6px !important;
+            box-shadow: none !important;
+            overflow: visible;
+        }
+
+        tbody tr.o_data_row:hover > td {
+            background: #eef6ff !important;
+        }
+
+        /* —— Độ rộng cột (px cố định → không bị ép hẹp khi nhiều cột) —— */
+        th.o_list_record_selector,
+        td.o_list_record_selector {
+            width: 36px !important;
+            min-width: 36px !important;
+            max-width: 36px !important;
+            text-align: center !important;
+        }
+
+        th[data-name="stt"],
+        td[data-name="stt"],
+        th[name="stt"],
+        td[name="stt"] {
+            width: 48px !important;
+            min-width: 48px !important;
+            max-width: 48px !important;
+            text-align: center !important;
+            font-weight: 600;
+        }
+
+        th[data-name="work_group_id"],
+        td[data-name="work_group_id"],
+        th[name="work_group_id"],
+        td[name="work_group_id"] {
+            width: 140px !important;
+            min-width: 140px !important;
+            text-align: left !important;
+        }
+
+        th[data-name="name"],
+        td[data-name="name"],
+        th[name="name"],
+        td[name="name"] {
+            width: 260px !important;
+            min-width: 220px !important;
+            max-width: 320px !important;
+            text-align: left !important;
+            white-space: normal !important;
+            overflow: visible !important;
+            vertical-align: top !important;
+        }
+
+        th[data-name="south_user_ids"],
+        td[data-name="south_user_ids"],
+        th[name="south_user_ids"],
+        td[name="south_user_ids"],
+        th[data-name="dtt_user_ids"],
+        td[data-name="dtt_user_ids"],
+        th[name="dtt_user_ids"],
+        td[name="dtt_user_ids"],
+        th[data-name="north_user_ids"],
+        td[data-name="north_user_ids"],
+        th[name="north_user_ids"],
+        td[name="north_user_ids"],
+        th[data-name="office_user_ids"],
+        td[data-name="office_user_ids"],
+        th[name="office_user_ids"],
+        td[name="office_user_ids"] {
+            width: 150px !important;
+            min-width: 150px !important;
+        }
+
+        th[data-name="assignee_user_ids"],
+        td[data-name="assignee_user_ids"],
+        th[name="assignee_user_ids"],
+        td[name="assignee_user_ids"],
+        th[data-name="detail_user_ids"],
+        td[data-name="detail_user_ids"],
+        th[name="detail_user_ids"],
+        td[name="detail_user_ids"],
+        th[data-name="check_user_ids"],
+        td[data-name="check_user_ids"],
+        th[name="check_user_ids"],
+        td[name="check_user_ids"],
+        th[data-name="coord_user_ids"],
+        td[data-name="coord_user_ids"],
+        th[name="coord_user_ids"],
+        td[name="coord_user_ids"],
+        th[data-name="participant_ids"],
+        td[data-name="participant_ids"],
+        th[name="participant_ids"],
+        td[name="participant_ids"] {
+            width: 150px !important;
+            min-width: 150px !important;
+        }
+
+        th[data-name="note"],
+        td[data-name="note"],
+        th[name="note"],
+        td[name="note"] {
+            width: 140px !important;
+            min-width: 140px !important;
+            text-align: left !important;
+            white-space: normal !important;
+            overflow: visible !important;
+        }
+
+        /* —— Nội dung mặc định (cột text ngắn); cột tag/name tự override —— */
+        tbody td .o_field_widget,
+        tbody td .o_field_char,
+        tbody td .o_field_many2one,
+        tbody td .o_field_many2one_avatar {
+            max-width: 100%;
+            vertical-align: middle;
+        }
+
+        tbody td[data-name="note"] .o_field_widget,
+        tbody td[name="note"] .o_field_widget,
+        tbody td[data-name="note"] .o_field_char,
+        tbody td[name="note"] .o_field_char,
+        tbody td[data-name="work_group_id"] .o_field_widget,
+        tbody td[name="work_group_id"] .o_field_widget {
+            white-space: normal !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            word-break: break-word;
+        }
+
+        tbody td[data-name="name"] .o_field_widget,
+        tbody td[name="name"] .o_field_widget,
+        tbody td[data-name="name"] .o_field_char,
+        tbody td[name="name"] .o_field_char,
+        tbody td[data-name="name"] span,
+        tbody td[name="name"] span,
+        tbody td[data-name="name"] input,
+        tbody td[name="name"] input,
+        tbody td[data-name="name"] textarea,
+        tbody td[name="name"] textarea {
+            max-width: 100% !important;
+            width: 100% !important;
+            white-space: normal !important;
+            word-break: break-word !important;
+            overflow-wrap: anywhere !important;
+            text-overflow: clip !important;
+            line-height: 1.35 !important;
+            overflow: visible !important;
+            display: block !important;
+            -webkit-line-clamp: unset !important;
+        }
+
+        /* Tag user (miền + phụ trách/chi tiết/…) — wrap đủ tên, không cắt giữa chữ */
+        td[data-name="south_user_ids"],
+        td[name="south_user_ids"],
+        td[data-name="dtt_user_ids"],
+        td[name="dtt_user_ids"],
+        td[data-name="north_user_ids"],
+        td[name="north_user_ids"],
+        td[data-name="office_user_ids"],
+        td[name="office_user_ids"],
+        td[data-name="assignee_user_ids"],
+        td[name="assignee_user_ids"],
+        td[data-name="detail_user_ids"],
+        td[name="detail_user_ids"],
+        td[data-name="check_user_ids"],
+        td[name="check_user_ids"],
+        td[data-name="coord_user_ids"],
+        td[name="coord_user_ids"],
+        td[data-name="participant_ids"],
+        td[name="participant_ids"] {
+            overflow: visible !important;
+
+            .o_field_widget {
+                display: block;
+                width: 100%;
+                min-height: 28px;
+                padding: 2px 4px;
+                border: 1px solid #cbd5e1;
+                border-radius: 3px;
+                background: #fafafa;
+                box-sizing: border-box;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+            }
+
+            .o_field_many2manytags,
+            .o_field_tags {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 2px;
+                max-width: 100%;
+                overflow: visible;
+            }
+
+            .o_tag,
+            .o_tag .o_tag_badge_text,
+            .o_badge {
+                font-size: 0.72rem;
+                max-width: 100%;
+                white-space: normal !important;
+                overflow: visible !important;
+                text-overflow: clip !important;
+                word-break: break-word;
+                line-height: 1.25;
+            }
+        }
+
+        /* Avatar user gọn */
+        .o_field_many2one_avatar_user,
+        .o_field_many2many_avatar_user {
+            max-width: 100%;
+            overflow: hidden;
+
+            .o_avatar,
+            .o_m2o_avatar {
+                --Avatar-size: 20px;
+            }
+
+            .o_tag_badge_text,
+            .o_field_many2one_selection,
+            span {
+                max-width: 100%;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+        }
+
+        .o_field_badge,
+        .badge {
+            border-radius: 999px !important;
+            padding: 3px 8px !important;
+            font-weight: 600 !important;
+            font-size: 0.75rem !important;
+        }
+    }
+}
+
+.o_action:has(.o_daily_task_assign_list) .o_control_panel .o_last_breadcrumb_item,
+.o_action:has(.o_daily_task_assign_list) .o_control_panel .breadcrumb-item.active {
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+/* Excel-like fill handle — kéo góc ô để copy xuống */
+.o_list_view.o_daily_task_assign_list {
+    .o_list_table.o_dta_fill_enabled {
+        tbody td.o_dta_fillable {
+            position: relative;
+
+            .o_dta_fill_handle {
+                position: absolute;
+                right: -4px;
+                bottom: -4px;
+                width: 8px;
+                height: 8px;
+                background: #2563eb;
+                border: 1px solid #fff;
+                box-shadow: 0 0 0 1px #1d4ed8;
+                cursor: crosshair;
+                z-index: 5;
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            &:hover .o_dta_fill_handle,
+            &.o_dta_fill_source .o_dta_fill_handle,
+            &.o_selected_cell .o_dta_fill_handle {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        tbody td.o_dta_fill_range {
+            outline: 2px solid #2563eb;
+            outline-offset: -2px;
+            background: #dbeafe !important;
+        }
+
+        tbody td.o_dta_fill_source {
+            outline-color: #1d4ed8;
+            background: #bfdbfe !important;
+        }
+
+        &.o_dta_filling {
+            user-select: none;
+            cursor: crosshair;
+
+            tbody td.o_dta_fillable .o_dta_fill_handle {
+                opacity: 1;
+                pointer-events: none;
+            }
+        }
+    }
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_users_form_daily_work_single_app" model="ir.ui.view">
+        <field name="name">res.users.form.daily.work.single.app</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='access_rights']" position="inside">
+                <group string="Công việc hàng ngày">
+                    <field name="daily_work_single_app"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <function model="res.users" name="action_lock_khan_single_app"/>
+</odoo>

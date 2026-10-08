@@ -6,9 +6,11 @@ import { useService } from "@web/core/utils/hooks";
 import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
 export class DailyWorkReportOverview extends Component {
     static template = "daily_work_task.DailyWorkReportOverview";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {
@@ -27,6 +29,18 @@ export class DailyWorkReportOverview extends Component {
         const focusReminders = Boolean(
             this.props.action?.context?.daily_work_focus_reminders
         );
+        this.teamReport = Boolean(
+            this.props.action?.context?.daily_work_team_report
+            || this.props.action?.tag === "daily_work_team_report"
+        );
+        this.teamAssign = Boolean(
+            this.props.action?.context?.daily_work_team_assign
+            || this.props.action?.tag === "daily_work_team_assign"
+        );
+        // Trang phân công dùng cùng nguồn dữ liệu team
+        if (this.teamAssign) {
+            this.teamReport = true;
+        }
         this.state = useState({
             loading: true,
             message: false,
@@ -38,6 +52,7 @@ export class DailyWorkReportOverview extends Component {
             })),
             years: [year - 1, year, year + 1],
             filterEmp: 0,
+            filterDept: 0,
             search: "",
             page: 1,
             collapsed: {},
@@ -59,10 +74,12 @@ export class DailyWorkReportOverview extends Component {
             },
             evaluation: {},
             rows: [],
+            assignRows: [],
             groups: [],
             filterOptions: { employees: [], work_groups: [] },
             canDelete: false,
             canPickEmployee: false,
+            canPickDepartment: false,
         });
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -94,6 +111,22 @@ export class DailyWorkReportOverview extends Component {
     get monthLabel() {
         const m = String(this.state.monthMonth).padStart(2, "0");
         return `Tháng ${m}/${this.state.monthYear}`;
+    }
+
+    get reportTitle() {
+        return this.teamAssign
+            ? "Danh sách phân công việc"
+            : this.teamReport
+              ? "Báo cáo CV chi tiết team"
+              : "BÁO CÁO CÔNG VIỆC CÁ NHÂN";
+    }
+
+    get shellActiveNav() {
+        return this.teamAssign
+            ? "team_assign_list"
+            : this.teamReport
+              ? "team_report"
+              : "overview";
     }
 
     get visibleGroups() {
@@ -187,6 +220,27 @@ export class DailyWorkReportOverview extends Component {
         return `${total} công việc · ${gcount} hạng mục`;
     }
 
+    /** Flat rows cho bảng team (không accordion). */
+    get excelTeamRows() {
+        return this.state.rows || [];
+    }
+
+    /** Dòng bảng Phân công công việc Team (mỗi khu vực một dòng). */
+    get excelAssignRows() {
+        return this.state.assignRows || [];
+    }
+
+    get assignTableSummary() {
+        const total = (this.state.assignRows || []).length;
+        if (!total) {
+            return "0 dòng phân công";
+        }
+        const regions = new Set(
+            (this.state.assignRows || []).map((r) => r.region).filter((x) => x && x !== "—")
+        );
+        return `${total} dòng · ${regions.size} khu vực`;
+    }
+
     get reminderSummary() {
         const overdue = (this.state.reminders.overdue_tasks || []).length;
         const upcoming = (this.state.reminders.upcoming_tasks || []).length;
@@ -231,6 +285,13 @@ export class DailyWorkReportOverview extends Component {
     }
 
     filtersPayload() {
+        if (this.teamReport) {
+            return {
+                team: true,
+                department_id: Number(this.state.filterDept) || false,
+                search: this.state.search || false,
+            };
+        }
         return {
             employee_id: Number(this.state.filterEmp) || false,
             search: this.state.search || false,
@@ -273,11 +334,14 @@ export class DailyWorkReportOverview extends Component {
             }
             this.state.evaluation = data.evaluation || {};
             this.state.rows = data.rows || [];
+            this.state.assignRows = data.assign_rows || [];
             this.state.groups = data.groups || [];
             this.state.filterOptions = data.filters || { employees: [], work_groups: [] };
             this.state.canDelete = Boolean(data.can_delete);
-            this.state.canPickEmployee = Boolean(data.can_pick_employee);
+            this.state.canPickEmployee = this.teamReport ? false : Boolean(data.can_pick_employee);
+            this.state.canPickDepartment = Boolean(data.can_pick_department);
             this.state.filterEmp = Number(data.selected_employee_id || this.state.filterEmp) || 0;
+            this.state.filterDept = Number(data.selected_department_id || this.state.filterDept) || 0;
             this.state.page = 1;
             this.state.collapsed = {};
             (this.state.groups || []).forEach((g, idx) => {
@@ -349,6 +413,9 @@ export class DailyWorkReportOverview extends Component {
 
     renderCharts() {
         this.destroyCharts();
+        if (this.teamAssign) {
+            return;
+        }
         if (!window.Chart) {
             return;
         }
@@ -383,7 +450,91 @@ export class DailyWorkReportOverview extends Component {
             );
         }
 
-        if (this.weeklyChartRef.el && charts.weekly) {
+        if (this.weeklyChartRef.el && this.teamReport && charts.by_member) {
+            const bm = charts.by_member;
+            const fullNames = bm.full_names || bm.labels || [];
+            const stackLabelPlugin = {
+                id: "dailyWorkStackLabels",
+                afterDatasetsDraw(chart) {
+                    const { ctx } = chart;
+                    ctx.save();
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "middle";
+                    ctx.font = "bold 11px Segoe UI, sans-serif";
+                    chart.data.datasets.forEach((dataset, datasetIndex) => {
+                        const meta = chart.getDatasetMeta(datasetIndex);
+                        if (meta.hidden) {
+                            return;
+                        }
+                        meta.data.forEach((element, index) => {
+                            const value = Number(dataset.data[index] || 0);
+                            if (!value) {
+                                return;
+                            }
+                            const { x, y, base } = element;
+                            const midY = (y + base) / 2;
+                            if (Math.abs(base - y) < 14) {
+                                return;
+                            }
+                            ctx.fillStyle = "#ffffff";
+                            ctx.fillText(String(value), x, midY);
+                        });
+                    });
+                    ctx.restore();
+                },
+            };
+            this.charts.push(
+                new window.Chart(this.weeklyChartRef.el, {
+                    type: "bar",
+                    data: {
+                        labels: bm.labels || [],
+                        datasets: (bm.datasets || []).map((ds) => ({
+                            label: ds.label,
+                            data: ds.data || [],
+                            backgroundColor: ds.color,
+                            borderRadius: { topLeft: 4, topRight: 4, bottomLeft: 0, bottomRight: 0 },
+                            borderSkipped: false,
+                            stack: "member",
+                            maxBarThickness: 48,
+                        })),
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: "bottom",
+                                labels: { boxWidth: 12, usePointStyle: true, padding: 14 },
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => {
+                                        const idx = items?.[0]?.dataIndex ?? 0;
+                                        return fullNames[idx] || items?.[0]?.label || "";
+                                    },
+                                },
+                            },
+                        },
+                        scales: {
+                            x: {
+                                stacked: true,
+                                grid: { display: false },
+                                ticks: { font: { weight: "600" } },
+                            },
+                            y: {
+                                stacked: true,
+                                beginAtZero: true,
+                                ticks: { precision: 0, stepSize: 1 },
+                                grid: { color: "#eef2f0" },
+                                title: { display: true, text: "Số lượng công việc" },
+                            },
+                        },
+                    },
+                    plugins: [stackLabelPlugin],
+                })
+            );
+        } else if (this.weeklyChartRef.el && charts.weekly) {
             this.charts.push(
                 new window.Chart(this.weeklyChartRef.el, {
                     type: "line",
@@ -420,7 +571,7 @@ export class DailyWorkReportOverview extends Component {
             );
         }
 
-        if (this.evalChartRef.el) {
+        if (!this.teamReport && this.evalChartRef.el) {
             const score = Number(this.state.evaluation.score || 0);
             this.charts.push(
                 new window.Chart(this.evalChartRef.el, {
@@ -613,6 +764,8 @@ export class DailyWorkReportOverview extends Component {
             if (!el || typeof window.html2canvas !== "function") {
                 return false;
             }
+            const marker = "o_dro_export_capture";
+            el.classList.add(marker);
             try {
                 const canvas = await window.html2canvas(el, {
                     backgroundColor: "#ffffff",
@@ -620,22 +773,41 @@ export class DailyWorkReportOverview extends Component {
                     useCORS: true,
                     logging: false,
                     allowTaint: true,
+                    // Bỏ khung/bóng/tiêu đề thẻ — Excel đã có caption riêng, tránh lệch
+                    onclone: (doc) => {
+                        const clone = doc.querySelector(`.${marker}`);
+                        if (!clone) {
+                            return;
+                        }
+                        clone.style.boxShadow = "none";
+                        clone.style.border = "none";
+                        clone.style.borderRadius = "0";
+                        clone.style.padding = "6px";
+                        clone.style.margin = "0";
+                        clone.style.background = "#ffffff";
+                        clone.querySelectorAll("h3, .o_dro_chart_sub").forEach((node) => {
+                            node.style.display = "none";
+                        });
+                    },
                 });
                 return canvas.toDataURL("image/png");
             } catch (_e) {
                 return false;
+            } finally {
+                el.classList.remove(marker);
             }
         };
-        // Chụp cả khung thẻ (biểu đồ + chú thích) — giống ảnh xu hướng tuần
         const [state, weekly, evalImg] = await Promise.all([
             grabPanel(this.statePanelRef),
             grabPanel(this.weeklyPanelRef),
-            grabPanel(this.evalPanelRef),
+            this.teamReport ? Promise.resolve(false) : grabPanel(this.evalPanelRef),
         ]);
         return {
             state: state || grabCanvas(this.stateChartRef),
             weekly: weekly || grabCanvas(this.weeklyChartRef),
-            eval: evalImg || grabCanvas(this.evalChartRef),
+            eval: this.teamReport
+                ? false
+                : evalImg || grabCanvas(this.evalChartRef),
         };
     }
 
@@ -681,3 +853,5 @@ export class DailyWorkReportOverview extends Component {
 }
 
 registry.category("actions").add("daily_work_report_overview", DailyWorkReportOverview);
+registry.category("actions").add("daily_work_team_report", DailyWorkReportOverview);
+registry.category("actions").add("daily_work_team_assign", DailyWorkReportOverview);

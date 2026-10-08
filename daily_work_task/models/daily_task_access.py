@@ -256,6 +256,32 @@ class ResUsers(models.Model):
         "employee_id",
         string="NV được xem Checklist CV",
     )
+    daily_work_single_app = fields.Boolean(
+        string="Chỉ dùng Công việc hàng ngày",
+        help="Ẩn App Center và các ứng dụng khác. User chỉ ở trong Công việc hàng ngày.",
+    )
+
+    def write(self, vals):
+        res = super().write(vals)
+        if "daily_work_single_app" in vals:
+            # load_menus cache theo uid — phải xóa khi đổi flag khóa app.
+            self.env.registry.clear_cache()
+        return res
+
+    @api.model
+    def action_lock_khan_single_app(self):
+        """Khóa tài khoản Khan: không vào App Center và ứng dụng khác."""
+        users = self.sudo().search([("login", "=", "khan.nguyen@sangtam.com")])
+        if not users:
+            return True
+        home = self.env.ref(
+            "daily_work_task.action_daily_work_home", raise_if_not_found=False
+        )
+        vals = {"daily_work_single_app": True}
+        if home:
+            vals["action_id"] = home.id
+        users.write(vals)
+        return True
 
     def _sync_daily_work_employees(self):
         """

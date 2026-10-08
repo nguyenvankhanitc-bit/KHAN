@@ -4,6 +4,12 @@
         <field name="name">Báo cáo KPI</field>
         <field name="tag">daily_work_dashboard</field>
     </record>
+    <record id="action_daily_work_home" model="ir.actions.server">
+        <field name="name">Công việc hàng ngày</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_daily_work_home()</field>
+    </record>
     <record id="action_daily_work_task_manager" model="ir.actions.client">
         <field name="name">Quản lý dữ liệu công việc</field>
         <field name="tag">daily_work_task_manager</field>
@@ -40,5 +46,23 @@
         <field name="name">Nhắc việc</field>
         <field name="tag">daily_work_report_overview</field>
         <field name="context">{'daily_work_focus_reminders': True}</field>
+    </record>
+    <record id="action_daily_work_assign_board" model="ir.actions.client">
+        <field name="name">Bảng phân công công việc team</field>
+        <field name="tag">daily_work_assign_board</field>
+        <field name="context">{'daily_work_assign_feature': 'list'}</field>
+    </record>
+    <record id="action_daily_work_personnel" model="ir.actions.client">
+        <field name="name">Công việc theo nhân sự</field>
+        <field name="tag">daily_work_personnel</field>
+    </record>
+    <record id="action_daily_work_assign_board_edit" model="ir.actions.client">
+        <field name="name">Thêm phân công công việc</field>
+        <field name="tag">daily_work_assign_board</field>
+        <field name="context">{
+            'daily_work_assign_edit': True,
+            'daily_work_assign_open_create': True,
+            'daily_work_assign_feature': 'add',
+        }</field>
     </record>
 </odoo>

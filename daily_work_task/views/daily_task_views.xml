@@ -5,7 +5,8 @@
         <field name="name">daily.task.list</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <list string="Danh sách công việc" decoration-success="state == 'done'"
+            <list string="Danh sách công việc" default_group_by="work_group_id"
+                  decoration-success="state == 'done'"
                   decoration-info="state == 'in_progress'" decoration-muted="state == 'not_started'"
                   decoration-danger="is_overdue">
                 <field name="name"/>
@@ -29,6 +30,19 @@
                 <field name="manager_confirmed" string="Xác nhận QL" optional="show"/>
                 <field name="is_overdue" optional="show"/>
                 <field name="note" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_team_report_list" model="ir.ui.view">
+        <field name="name">daily.task.team.report.list</field>
+        <field name="model">daily.task</field>
+        <field name="inherit_id" ref="view_daily_task_list"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="string">Báo cáo CV chi tiết team</attribute>
+                <attribute name="default_group_by">work_group_id</attribute>
             </list>
         </field>
     </record>
@@ -65,7 +79,8 @@
                         </group>
                         <group string="Phân loại &amp; tiến độ" class="o_dwt_form_card" colspan="2">
                             <field name="department_id"/>
-                            <field name="work_group_id"/>
+                            <field name="work_group_id"
+                                   options="{'no_create': True, 'no_quick_create': True}"/>
                             <field name="priority"/>
                             <field name="duration_minutes"/>
                             <field name="duration_hours" readonly="1"/>
@@ -241,6 +256,7 @@
                 <field name="name"/>
                 <field name="assignee_id"/>
                 <field name="department_id"/>
+                <field name="work_group_id"/>
                 <filter string="Hoàn thành" name="filter_done" domain="[('state', '=', 'done')]"/>
                 <filter string="Đang xử lý" name="filter_in_progress" domain="[('state', '=', 'in_progress')]"/>
                 <filter string="Chưa bắt đầu" name="filter_not_started" domain="[('state', '=', 'not_started')]"/>
@@ -252,6 +268,7 @@
                     <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Người phụ trách" name="group_assignee" context="{'group_by': 'assignee_id'}"/>
                     <filter string="Bộ phận" name="group_department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Hạng mục" name="group_by_category" context="{'group_by': 'work_group_id'}"/>
                     <filter string="Ưu tiên" name="group_priority" context="{'group_by': 'priority'}"/>
                     <filter string="Hạn" name="group_deadline" context="{'group_by': 'deadline'}"/>
                 </group>
@@ -302,6 +319,20 @@
         <field name="name">Calendar To Do List</field>
         <field name="res_model">daily.task</field>
         <field name="view_mode">calendar,list,form</field>
+    </record>
+
+    <record id="action_task_team_report" model="ir.actions.server">
+        <field name="name">Báo cáo CV chi tiết team</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_team_report()</field>
+    </record>
+
+    <record id="action_task_team_assign" model="ir.actions.server">
+        <field name="name">Danh sách phân công việc</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_team_assign()</field>
     </record>
 
     <record id="action_daily_task_overdue" model="ir.actions.act_window">

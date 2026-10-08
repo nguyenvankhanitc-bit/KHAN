@@ -236,7 +236,7 @@ class DailyTaskRecurring(models.Model):
             raise ValidationError(
                 "Bạn chỉ được chọn hạng mục của phòng ban mình."
             )
-        if group.user_ids and self.env.uid not in group.user_ids.ids:
+        if not group.is_user_applicable(self.env.uid):
             raise ValidationError(
                 "Bạn không nằm trong danh sách User áp dụng của hạng mục này."
             )

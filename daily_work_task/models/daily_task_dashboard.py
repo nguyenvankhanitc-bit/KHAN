@@ -5,6 +5,7 @@ from collections import Counter, defaultdict
 from datetime import timedelta
 
 from odoo import api, fields, models
+from odoo.exceptions import AccessError
 
 
 class DailyTaskDashboard(models.AbstractModel):
@@ -104,8 +105,86 @@ class DailyTaskDashboard(models.AbstractModel):
         }
 
     @api.model
+    def get_nav_shell_context(self):
+        """Context thanh menu trái (sidebar) — dùng cho mọi user, không chỉ quản lý."""
+        Task = self.env["daily.task"]
+        opts = self.get_filter_options()
+        today = fields.Date.context_today(self)
+        domain = []
+        if not Task._is_manager():
+            emp = self.env["daily.task.employee"].search(
+                [("employee_id.user_id", "=", self.env.uid), ("active", "=", True)],
+                limit=1,
+            )
+            if emp:
+                domain = [("assignee_id", "=", emp.id)]
+            else:
+                domain = [("assignee_user_id", "=", self.env.uid)]
+        today_count = Task.search_count(
+            domain
+            + [
+                "|",
+                ("assign_date", "=", today),
+                ("deadline", "=", today),
+            ]
+        )
+        overdue_count = Task.search_count(domain + [("is_overdue", "=", True)])
+        upcoming_count = Task.search_count(
+            domain
+            + [
+                ("state", "!=", "done"),
+                ("is_overdue", "=", False),
+                ("deadline", "!=", False),
+                ("deadline", ">", today),
+                ("deadline", "<=", today + timedelta(days=7)),
+            ]
+        )
+        assign_access = self.env["daily.task.assign.access"].get_access_map()
+        return {
+            "options": {
+                "is_manager": bool(opts.get("is_manager")),
+                "can_assign": bool(opts.get("can_assign")),
+                "can_view_others": bool(opts.get("can_view_others")),
+                "can_view_checklist": bool(opts.get("can_view_checklist")),
+                "can_see_performance": bool(opts.get("can_see_performance")),
+                "user_name": opts.get("user_name") or "",
+                "company_name": opts.get("company_name") or "",
+                "assign_access": assign_access,
+                # Menu Thêm phân công: cần Xem hoặc Thêm (tạo mới)
+                "can_assign_add": bool(
+                    assign_access.get("add", {}).get("view")
+                    or assign_access.get("add", {}).get("create")
+                ),
+                "can_assign_add_create": bool(
+                    assign_access.get("add", {}).get("create")
+                ),
+                "can_assign_list": bool(assign_access.get("list", {}).get("view")),
+                "can_assign_personnel": bool(
+                    assign_access.get("personnel", {}).get("view")
+                ),
+                "can_assign_category": bool(
+                    assign_access.get("category", {}).get("view")
+                ),
+                "can_assign_section": bool(
+                    assign_access.get("add", {}).get("view")
+                    or assign_access.get("add", {}).get("create")
+                    or assign_access.get("list", {}).get("view")
+                    or assign_access.get("category", {}).get("view")
+                    or assign_access.get("personnel", {}).get("view")
+                ),
+            },
+            "kpi": {
+                "today": today_count,
+                "overdue": overdue_count,
+                "upcoming": upcoming_count,
+            },
+        }
+
+    @api.model
     def get_dashboard_bootstrap(self, filters=None):
         """1 RPC: filter options + dashboard data (giảm round-trip mở phân hệ)."""
+        if not self.env["daily.task"]._is_manager():
+            return {"options": {"is_manager": False}, "data": {}, "filters": {}}
         opts = self.get_filter_options()
         payload = dict(filters or {})
         if not payload.get("date_from"):
@@ -117,6 +196,8 @@ class DailyTaskDashboard(models.AbstractModel):
 
     @api.model
     def get_dashboard_data(self, filters=None):
+        if not self.env["daily.task"]._is_manager():
+            raise AccessError("Bạn không có quyền xem Báo cáo KPI.")
         filters = filters or {}
         Task = self.env["daily.task"]
         today = fields.Date.context_today(self)

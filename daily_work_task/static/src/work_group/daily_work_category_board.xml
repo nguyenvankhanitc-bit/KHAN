@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkCategoryBoard">
+        <div class="o_daily_work_dashboard o_daily_work_category_board o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dcb_shell">
+                    <div class="o_dcb_scroll">
+                        <header class="o_dcb_header">
+                            <div class="o_dcb_header_left">
+                                <h1 t-esc="pageTitle"/>
+                                <p class="o_dcb_subtitle">Phòng ban → Team → Hạng mục → Công việc con</p>
+                            </div>
+                            <div class="o_dcb_header_right">
+                                <div class="o_dcb_toolbar">
+                                    <t t-if="canCreate">
+                                        <button type="button" class="btn o_dcb_btn_new" t-on-click="onCreate">
+                                            <i class="fa fa-plus"/> Mới
+                                        </button>
+                                    </t>
+                                    <t t-if="canCreate or canWrite">
+                                        <button type="button" class="btn o_dcb_btn_list" t-on-click="onOpenList">
+                                            <i class="fa fa-list"/> Nhập danh sách
+                                        </button>
+                                    </t>
+                                    <button type="button" class="btn o_dcb_btn_toggle" t-on-click="onExpandAll">Mở hết</button>
+                                    <button type="button" class="btn o_dcb_btn_toggle" t-on-click="onCollapseAll">Đóng hết</button>
+                                    <div class="o_dcb_search">
+                                        <i class="fa fa-search"/>
+                                        <input type="search" placeholder="Tìm phòng ban, team, hạng mục..." t-att-value="state.search" t-on-input="onSearchInput"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+                        <t t-if="state.loading"><div class="o_dcb_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div></t>
+                        <t t-elif="!visibleTree.length"><div class="o_dcb_empty">Chưa có hạng mục. Bấm Mới để thêm.</div></t>
+                        <t t-else="">
+                            <div class="o_dcb_table_shell">
+                                <table class="o_dcb_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_dcb_col_stt" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">STT</th>
+                                            <th class="o_dcb_col_name" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">Tên công việc / Hạng mục</th>
+                                            <th class="o_dcb_col_users" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">User phụ trách</th>
+                                            <th class="o_dcb_col_users" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">User kiểm tra</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="visibleTree" t-as="dept" t-key="dept.id">
+                                            <tr t-att-class="dept.rowClass" t-on-click="() => this.onToggle(dept.id)">
+                                                <td colspan="4">
+                                                    <button type="button" class="o_dcb_section_btn o_dcb_indent_0">
+                                                        <span t-att-class="dept.chevronClass" aria-hidden="true"></span>
+                                                        <span class="o_dcb_section_title" t-esc="dept.title"/>
+                                                        <span class="o_dcb_section_count"><t t-esc="dept.task_count"/> CV</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <t t-if="dept.isOpen">
+                                                <t t-foreach="dept.teams" t-as="team" t-key="team.id">
+                                                    <tr t-att-class="team.rowClass" t-on-click="() => this.onToggle(team.id)">
+                                                        <td colspan="4">
+                                                            <button type="button" class="o_dcb_section_btn o_dcb_indent_1">
+                                                                <span t-att-class="team.chevronClass" aria-hidden="true"></span>
+                                                                <span class="o_dcb_section_title" t-esc="team.title"/>
+                                                                <span class="o_dcb_section_count"><t t-esc="team.task_count"/> CV</span>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <t t-if="team.isOpen">
+                                                        <t t-foreach="team.categories" t-as="cat" t-key="cat.id">
+                                                            <tr t-att-class="cat.rowClass" t-on-click="() => this.onToggle(cat.id)">
+                                                                <td colspan="4">
+                                                                    <button type="button" class="o_dcb_section_btn o_dcb_indent_2">
+                                                                        <span t-att-class="cat.chevronClass" aria-hidden="true"></span>
+                                                                        <span class="o_dcb_section_title" t-esc="cat.title"/>
+                                                                        <span class="o_dcb_section_count"><t t-esc="cat.task_count"/> CV</span>
+                                                                    </button>
+                                                                </td>
+                                                            </tr>
+                                                            <t t-if="cat.isOpen">
+                                                                <t t-foreach="cat.tasks" t-as="task" t-key="task.id">
+                                                                    <tr class="o_dcb_task">
+                                                                        <td class="o_dcb_col_stt" t-esc="task.display_stt"/>
+                                                                        <td class="o_dcb_col_name o_dcb_task_indent">
+                                                                            <button type="button" class="o_dcb_task_link" t-on-click.stop="() => this.onOpenTask(task)" t-att-title="task.name">
+                                                                                <span class="o_dcb_task_name" t-esc="task.name"/>
+                                                                            </button>
+                                                                        </td>
+                                                                        <td class="o_dcb_users" t-on-click.stop="() => this.openEditor(task, 'assignee')">
+                                                                            <div class="o_dcb_role">
+                                                                                <t t-if="task.assignees and task.assignees.length">
+                                                                                    <span t-foreach="task.assignees" t-as="person" t-key="person.id" class="o_dcb_tag" t-esc="person.name"/>
+                                                                                </t>
+                                                                                <span t-else="" class="o_dcb_placeholder">Chọn user</span>
+                                                                                <div t-if="editorOpen(task.id, 'assignee')" class="o_dcb_picker" t-on-click.stop="">
+                                                                                    <input type="search" placeholder="Tìm user..." t-att-value="state.editor.query" t-on-input="onEditorSearch"/>
+                                                                                    <div class="o_dcb_picker_list">
+                                                                                        <t t-foreach="editorOptions" t-as="opt" t-key="opt.id + '-' + (isEditorSelected(opt.id) ? '1' : '0')">
+                                                                                            <label>
+                                                                                                <input type="checkbox" t-att-checked="isEditorSelected(opt.id)" t-on-change="(ev) => this.toggleRoleUser(opt, ev)"/>
+                                                                                                <span t-esc="opt.name"/>
+                                                                                            </label>
+                                                                                        </t>
+                                                                                    </div>
+                                                                                    <button type="button" class="btn btn-sm o_dcb_picker_done" t-on-click.stop="closeEditor">Xong</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                        <td class="o_dcb_users" t-on-click.stop="() => this.openEditor(task, 'checker')">
+                                                                            <div class="o_dcb_role">
+                                                                                <t t-if="task.checkers and task.checkers.length">
+                                                                                    <span t-foreach="task.checkers" t-as="person" t-key="person.id" class="o_dcb_tag o_dcb_tag_check" t-esc="person.name"/>
+                                                                                </t>
+                                                                                <span t-else="" class="o_dcb_placeholder">Chọn user</span>
+                                                                                <div t-if="editorOpen(task.id, 'checker')" class="o_dcb_picker" t-on-click.stop="">
+                                                                                    <input type="search" placeholder="Tìm user..." t-att-value="state.editor.query" t-on-input="onEditorSearch"/>
+                                                                                    <div class="o_dcb_picker_list">
+                                                                                        <t t-foreach="editorOptions" t-as="opt" t-key="opt.id + '-' + (isEditorSelected(opt.id) ? '1' : '0')">
+                                                                                            <label>
+                                                                                                <input type="checkbox" t-att-checked="isEditorSelected(opt.id)" t-on-change="(ev) => this.toggleRoleUser(opt, ev)"/>
+                                                                                                <span t-esc="opt.name"/>
+                                                                                            </label>
+                                                                                        </t>
+                                                                                    </div>
+                                                                                    <button type="button" class="btn btn-sm o_dcb_picker_done" t-on-click.stop="closeEditor">Xong</button>
+                                                                                </div>
+                                                                            </div>
+                                                                        </td>
+                                                                    </tr>
+                                                                </t>
+                                                            </t>
+                                                        </t>
+                                                    </t>
+                                                </t>
+                                            </t>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

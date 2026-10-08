@@ -1,4 +1,5 @@
 /** @odoo-module **/
+/* cache-bust-assign-access-menu: 19.0.1.39.25 */
 
 import { loadBundle } from "@web/core/assets";
 import { registry } from "@web/core/registry";
@@ -100,6 +101,12 @@ export class DailyWorkDashboard extends Component {
             }
         });
         onMounted(() => {
+            if (this._leaveKpi) {
+                this.action.doAction("daily_work_task.action_daily_work_employee_ws", {
+                    clearBreadcrumbs: true,
+                });
+                return;
+            }
             this._mq = window.matchMedia("(max-width: 991.98px)");
             this._onMqChange();
             if (this._mq.addEventListener) {
@@ -128,12 +135,16 @@ export class DailyWorkDashboard extends Component {
                     { filters: {} }
                 );
                 const opts = boot?.options || {};
+                this.state.isManager = Boolean(opts.is_manager);
+                if (!this.state.isManager) {
+                    this._leaveKpi = true;
+                    return;
+                }
                 this.state.employees = opts.employees || [];
                 this.state.departments = opts.departments || [];
                 this.state.dateFrom =
                     boot?.filters?.date_from || opts.default_date_from || "";
                 this.state.dateTo = boot?.filters?.date_to || opts.default_date_to || "";
-                this.state.isManager = Boolean(opts.is_manager);
                 this.state.canAssign = Boolean(opts.can_assign);
                 this.state.canViewOthers = Boolean(opts.can_view_others);
                 this.state.canViewChecklist = Boolean(opts.can_view_checklist);
@@ -150,7 +161,9 @@ export class DailyWorkDashboard extends Component {
                     { type: "danger" }
                 );
             } finally {
-                this.state.loading = false;
+                if (!this._leaveKpi) {
+                    this.state.loading = false;
+                }
             }
         });
         useEffect(
@@ -677,7 +690,29 @@ export class DailyWorkDashboard extends Component {
             await this.loadDashboard();
             return;
         }
+        if (key === "team_report") {
+            await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
+            return;
+        }
+        if (key === "team_assign" || key === "team_assign_list") {
+            await this._doNavAction("daily_work_task.action_daily_work_assign_board", asPopup);
+            return;
+        }
+        if (key === "personnel_work") {
+            await this._doNavAction("daily_work_task.action_daily_work_personnel", asPopup);
+            return;
+        }
+        if (key === "team_assign_add") {
+            await this._doNavAction("daily_work_task.action_daily_work_assign_board_edit", asPopup);
+            return;
+        }
         if (key === "kpi") {
+            if (!this.state.isManager) {
+                this.notification.add(_t("Bạn không có quyền xem Báo cáo KPI."), {
+                    type: "warning",
+                });
+                return;
+            }
             await this.loadDashboard();
             this._scrollToKpi();
             return;
@@ -715,7 +750,11 @@ export class DailyWorkDashboard extends Component {
             await this._doNavAction("daily_work_task.action_daily_task_send_overdue", asPopup);
             return;
         }
-        if (key === "config") {
+        if (key === "team") {
+            await this._doNavAction("daily_work_task.action_daily_task_team", asPopup);
+            return;
+        }
+        if (key === "work_group" || key === "config") {
             await this._doNavAction("daily_work_task.action_daily_task_work_group", asPopup);
             return;
         }
@@ -729,6 +768,13 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "access") {
             await this._doNavAction("daily_work_task.action_daily_task_access", asPopup);
+            return;
+        }
+        if (key === "assign_access") {
+            await this._doNavAction(
+                "daily_work_task.action_daily_task_assign_access_matrix",
+                asPopup
+            );
             return;
         }
         if (key === "report_access") {

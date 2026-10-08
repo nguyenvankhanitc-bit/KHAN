@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkReportOverview">
-        <div class="o_daily_work_report_overview o_action">
+        <div class="o_daily_work_dashboard o_daily_work_report_overview o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
             <div class="o_dro_shell o_dro_shell_noside">
                 <div class="o_dro_main">
                     <div class="o_dro_scroll">
@@ -16,7 +17,14 @@
                             <header class="o_dro_top">
                                 <div class="o_dro_top_left">
                                     <div class="o_dro_user_chip">
-                                        <img class="o_dro_avatar o_dro_avatar_lg" t-att-src="state.profile.avatar_url" alt=""/>
+                                        <t t-if="teamReport">
+                                            <span class="o_dro_avatar o_dro_avatar_lg o_dro_team_avatar">
+                                                <i class="fa fa-users"/>
+                                            </span>
+                                        </t>
+                                        <t t-else="">
+                                            <img class="o_dro_avatar o_dro_avatar_lg" t-att-src="state.profile.avatar_url" alt=""/>
+                                        </t>
                                         <div>
                                             <strong t-esc="state.profile.name || state.userName"/>
                                             <div class="o_dro_muted">
@@ -28,11 +36,19 @@
                                         </div>
                                     </div>
                                     <div class="o_dro_title_block">
-                                        <h1>BÁO CÁO CÔNG VIỆC CÁ NHÂN</h1>
+                                        <h1 t-esc="reportTitle"/>
                                         <span class="o_dro_month_tag" t-esc="monthLabel"/>
                                     </div>
                                 </div>
                                 <div class="o_dro_top_right">
+                                    <t t-if="state.canPickDepartment">
+                                        <select class="form-select form-select-sm" t-model.number="state.filterDept"
+                                                t-on-change="onRefresh">
+                                            <t t-foreach="state.filterOptions.departments" t-as="d" t-key="d.id">
+                                                <option t-att-value="d.id" t-esc="d.name"/>
+                                            </t>
+                                        </select>
+                                    </t>
                                     <t t-if="state.canPickEmployee">
                                         <select class="form-select form-select-sm" t-model.number="state.filterEmp"
                                                 t-on-change="onRefresh">
@@ -60,7 +76,7 @@
                                     <button type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
                                         <i class="fa fa-file-excel-o"/> Xuất Excel
                                     </button>
-                                    <button type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">
+                                    <button t-if="!teamAssign" type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">
                                         <i class="fa fa-file-pdf-o"/> Xuất PDF
                                     </button>
                                 </div>
@@ -348,6 +364,76 @@
                                     </div>
                                 </div>
                             </t>
+                            <t t-elif="teamAssign">
+                            <!-- Trang riêng: Phân công công việc Team (menu BÁO CÁO) -->
+                            <div class="o_dro_bottom o_dro_assign_team_block">
+                                <div class="o_dro_card o_dro_table_card">
+                                    <div class="o_dro_card_head">
+                                        <h3><i class="fa fa-list-alt"/> Danh sách phân công việc</h3>
+                                        <span class="o_dro_muted" t-esc="assignTableSummary"/>
+                                    </div>
+                                    <t t-if="!excelAssignRows.length">
+                                        <div class="text-center text-muted py-4">
+                                            Không có dữ liệu phân công.
+                                            Gắn user theo khu vực tại <b>Báo cáo KPI → Hạng mục</b>
+                                            (Miền Nam / ĐTT / Bắc / VPTT / VPMB).
+                                        </div>
+                                    </t>
+                                    <div class="o_dro_excel_wrap" t-else="">
+                                        <table class="o_dro_excel_table o_dro_excel_table_assign">
+                                            <thead>
+                                                <tr>
+                                                    <th class="o_dro_excel_stt">STT</th>
+                                                    <th>HẠNG MỤC</th>
+                                                    <th>NỘI DUNG CÔNG VIỆC</th>
+                                                    <th>KHU VỰC</th>
+                                                    <th>NGƯỜI PHỤ TRÁCH</th>
+                                                    <th>USER CHI TIẾT</th>
+                                                    <th>USER KIỂM TRA</th>
+                                                    <th>USER PHỐI HỢP</th>
+                                                    <th>GHI CHÚ</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="excelAssignRows" t-as="row" t-key="row.id">
+                                                    <tr>
+                                                        <td class="o_dro_excel_stt" t-esc="row.stt"/>
+                                                        <td class="o_dro_excel_left" t-esc="row.category_name || '—'"/>
+                                                        <td class="o_dro_excel_left" t-esc="row.task_name || '—'"/>
+                                                        <td t-esc="row.region || '—'"/>
+                                                        <td class="o_dro_excel_users">
+                                                            <t t-foreach="row.assignee_names || []" t-as="uname" t-key="uname_index">
+                                                                <span class="o_dro_user_badge" t-esc="uname"/>
+                                                            </t>
+                                                            <t t-if="!(row.assignee_names || []).length">—</t>
+                                                        </td>
+                                                        <td class="o_dro_excel_users">
+                                                            <t t-foreach="row.user_detail_names || []" t-as="uname" t-key="uname_index">
+                                                                <span class="o_dro_user_badge" t-esc="uname"/>
+                                                            </t>
+                                                            <t t-if="!(row.user_detail_names || []).length">—</t>
+                                                        </td>
+                                                        <td class="o_dro_excel_users">
+                                                            <t t-foreach="row.user_check_names || []" t-as="uname" t-key="uname_index">
+                                                                <span class="o_dro_user_badge" t-esc="uname"/>
+                                                            </t>
+                                                            <t t-if="!(row.user_check_names || []).length">—</t>
+                                                        </td>
+                                                        <td class="o_dro_excel_users">
+                                                            <t t-foreach="row.user_coord_names || []" t-as="uname" t-key="uname_index">
+                                                                <span class="o_dro_user_badge" t-esc="uname"/>
+                                                            </t>
+                                                            <t t-if="!(row.user_coord_names || []).length">—</t>
+                                                        </td>
+                                                        <td class="o_dro_excel_left" t-esc="row.note || ''"/>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                            </t>
                             <t t-else="">
                             <!-- KPI -->
                             <div class="o_dro_kpi">
@@ -410,7 +496,7 @@
                             </div>
 
                             <!-- Charts -->
-                            <div class="o_dro_charts">
+                            <div t-att-class="'o_dro_charts' + (teamReport ? ' o_dro_charts_team' : '')">
                                 <div class="o_dro_card" t-ref="statePanel">
                                     <h3>Tỷ lệ trạng thái công việc</h3>
                                     <div class="o_dro_donut_wrap">
@@ -434,10 +520,19 @@
                                     </div>
                                 </div>
                                 <div class="o_dro_card" t-ref="weeklyPanel">
-                                    <h3>Xu hướng hoàn thành công việc (theo tuần)</h3>
+                                    <t t-if="teamReport">
+                                        <h3>Tình hình công việc theo thành viên</h3>
+                                        <p class="o_dro_muted o_dro_chart_sub">
+                                            So sánh số lượng công việc đã hoàn thành, đang thực hiện,
+                                            chưa hoàn thành và chưa bắt đầu của từng thành viên trong Team.
+                                        </p>
+                                    </t>
+                                    <t t-else="">
+                                        <h3>Xu hướng hoàn thành công việc (theo tuần)</h3>
+                                    </t>
                                     <div class="o_dro_chart_box"><canvas t-ref="weeklyChart"/></div>
                                 </div>
-                                <div class="o_dro_card o_dro_eval_chart_card" t-ref="evalPanel">
+                                <div t-if="!teamReport" class="o_dro_card o_dro_eval_chart_card" t-ref="evalPanel">
                                     <h3>Đánh giá hiệu suất tháng</h3>
                                     <div class="o_dro_eval_inline">
                                         <div class="o_dro_eval_gauge">
@@ -466,7 +561,7 @@
                                 </div>
                             </div>
 
-                            <!-- Table grouped by hạng mục — kiểu Excel -->
+                            <!-- Table grouped by hạng mục — kiểu Excel (giữ như cũ) -->
                             <div class="o_dro_bottom">
                                 <div class="o_dro_card o_dro_table_card">
                                     <div class="o_dro_card_head">
@@ -482,6 +577,7 @@
                                                 <tr>
                                                     <th class="o_dro_excel_stt">STT</th>
                                                     <th>Tên công việc</th>
+                                                    <th t-if="teamReport">Người phụ trách</th>
                                                     <th>Ngày giao việc</th>
                                                     <th>Hạn hoàn thành</th>
                                                     <th>Mức ưu tiên</th>
@@ -500,7 +596,7 @@
                                                         role="button"
                                                         t-att-aria-expanded="group.collapsed ? 'false' : 'true'"
                                                         t-att-title="group.collapsed ? 'Bấm để mở' : 'Bấm để thu gọn'">
-                                                        <td colspan="11">
+                                                        <td t-att-colspan="teamReport ? 12 : 11">
                                                             <span class="o_dro_excel_group_toggle">
                                                                 <i t-att-class="group.collapsed ? 'fa fa-chevron-right' : 'fa fa-chevron-down'"/>
                                                             </span>
@@ -521,6 +617,7 @@
                                                             <tr t-att-class="excelRowClass(row)">
                                                                 <td class="o_dro_excel_stt" t-esc="row.stt"/>
                                                                 <td t-esc="row.name"/>
+                                                                <td t-if="teamReport" t-esc="row.assignee_name || '—'"/>
                                                                 <td t-esc="row.assign_date_display || '—'"/>
                                                                 <td t-esc="row.deadline_display || '—'"/>
                                                                 <td>
@@ -548,7 +645,7 @@
                                                     </t>
                                                 </t>
                                                 <tr class="o_dro_excel_total" t-if="excelGroups.length">
-                                                    <td colspan="11">
+                                                    <td t-att-colspan="teamReport ? 12 : 11">
                                                         Tổng % hoàn thành công việc trong tháng
                                                         (AVERAGE các hạng mục):
                                                         <strong t-esc="formatMonthAvg()"/>%
@@ -564,6 +661,7 @@
                     </div>
                 </div>
             </div>
+            </DailyWorkAppShell>
         </div>
     </t>
 </templates>

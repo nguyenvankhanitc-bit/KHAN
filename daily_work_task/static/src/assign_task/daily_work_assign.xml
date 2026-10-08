@@ -323,11 +323,11 @@
                                     </select>
                                     <small class="text-muted">
                                         <t t-if="!selectedAssignee">
-                                            Chọn nhân viên trước — hạng mục theo User áp dụng của người nhận.
+                                            Chọn nhân viên trước — hạng mục theo User chi tiết / Kiểm chi tiết / tổng của người nhận.
                                         </t>
                                         <t t-elif="!filteredWorkGroups.length">
                                             Nhân viên này chưa được gắn hạng mục nào
-                                            (Cấu hình → Hạng mục → User áp dụng).
+                                            (Cấu hình → Hạng mục → User chi tiết / Kiểm chi tiết / User tổng).
                                         </t>
                                         <t t-else="">
                                             Chỉ hiện hạng mục người được giao nằm trong User áp dụng.

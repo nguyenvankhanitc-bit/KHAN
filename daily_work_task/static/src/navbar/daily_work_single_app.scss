@@ -1,0 +1,18 @@
+/* Khóa 1 app: giữ sidebar menu nội bộ, chỉ chặn chuyển app khác. */
+html.o_dw_single_app {
+    .o_navbar_apps_menu {
+        display: none !important;
+    }
+
+    .o_app_menu_sidebar {
+        .o_sidebar_topbar .btn-primary {
+            display: none !important;
+        }
+    }
+
+    /* Thanh shortcut Lark cũng không cần khi chỉ còn 1 app */
+    .o-mail-LarkAppsBar-globalShell,
+    .o-mail-LarkAppsBar-global {
+        display: none !important;
+    }
+}

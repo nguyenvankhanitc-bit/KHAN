@@ -52,5 +52,56 @@ class IrUiMenu(models.Model):
             )
             if menu:
                 res.append(menu.id)
+
+        # PHÂN CÔNG CÔNG VIỆC — theo bảng Phân quyền phân công
+        AssignAccess = self.env["daily.task.assign.access"]
+        # Menu Thêm phân công: cần Xem hoặc Thêm
+        if not (AssignAccess.can("add", "view") or AssignAccess.can("add", "create")):
+            menu = self.env.ref(
+                "daily_work_task.menu_task_team_assign_add",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+        if not AssignAccess.can("list", "view"):
+            menu = self.env.ref(
+                "daily_work_task.menu_task_team_assign",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+        if not AssignAccess.can("personnel", "view"):
+            menu = self.env.ref(
+                "daily_work_task.menu_daily_work_personnel",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+        if not AssignAccess.can("category", "view"):
+            menu = self.env.ref(
+                "daily_work_task.menu_daily_work_work_group",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+        if not AssignAccess.can_any_assign_menu():
+            menu = self.env.ref(
+                "daily_work_task.menu_daily_work_cat_assign",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
+
+        # Tài khoản khóa app: chỉ còn menu Công việc hàng ngày.
+        user = self.env.user
+        if user.sudo().daily_work_single_app and not user._is_system():
+            root = self.env.ref(
+                "daily_work_task.menu_daily_work_root", raise_if_not_found=False
+            )
+            if root:
+                others = self.sudo().with_context(active_test=False).search(
+                    [("parent_id", "=", False), ("id", "!=", root.id)]
+                )
+                res.extend(others.ids)
         return res
 

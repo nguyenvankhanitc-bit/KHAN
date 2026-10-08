@@ -1,10 +1,12 @@
 /** @odoo-module **/
+/* cache-bust 19.0.1.39.22 */
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
 const SIDEBAR_STORAGE_KEY = "daily_work_task.employee_ws.sidebarWidth";
 const SIDEBAR_MIN = 240;
@@ -83,6 +85,7 @@ function dmyToIso(text) {
 
 export class DailyWorkEmployeeWs extends Component {
     static template = "daily_work_task.DailyWorkEmployeeWs";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {
@@ -224,6 +227,14 @@ export class DailyWorkEmployeeWs extends Component {
                 { value: 11, label: "Tháng 11" },
                 { value: 12, label: "Tháng 12" },
             ],
+            datePicker: {
+                open: false,
+                field: null,
+                year: ym.year,
+                month: ym.month,
+                top: 0,
+                left: 0,
+            },
         });
         onWillStart(async () => {
             await this.load();
@@ -231,6 +242,7 @@ export class DailyWorkEmployeeWs extends Component {
             await this.loadMonthlySummary();
         });
         this._syncPhoneMode = this._syncPhoneMode.bind(this);
+        this._onDatePickerOutside = this._onDatePickerOutside.bind(this);
         onMounted(() => {
             window.addEventListener("pointermove", this._onPointerMove);
             window.addEventListener("pointerup", this._onPointerUp);
@@ -255,6 +267,7 @@ export class DailyWorkEmployeeWs extends Component {
             }
         });
         onWillUnmount(() => {
+            this.closeDatePicker();
             window.removeEventListener("pointermove", this._onPointerMove);
             window.removeEventListener("pointerup", this._onPointerUp);
             window.removeEventListener("resize", this._syncPhoneMode);
@@ -988,6 +1001,7 @@ export class DailyWorkEmployeeWs extends Component {
             state: "not_started",
             note: "",
             work_group_id: "",
+            category_label: "",
             duration_minutes: "",
             completion_percent: 0,
         };
@@ -1008,30 +1022,168 @@ export class DailyWorkEmployeeWs extends Component {
     openFormDatePicker(field, ev) {
         ev?.preventDefault?.();
         ev?.stopPropagation?.();
-        const wrap = ev?.currentTarget?.closest?.(".o_ews_datepicker");
-        const native = wrap?.querySelector?.(".o_ews_datepicker_native");
-        if (!native) {
+        if (this.state.datePicker.open && this.state.datePicker.field === field) {
+            this.closeDatePicker();
             return;
         }
-        // Đồng bộ value trước khi mở lịch
-        if (this.state.form[field]) {
-            native.value = this.state.form[field];
+        const iso = this.state.form[field] || "";
+        let year = this.state.datePicker.year;
+        let month = this.state.datePicker.month;
+        const m = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        if (m) {
+            year = Number(m[1]);
+            month = Number(m[2]);
+        } else {
+            const now = new Date();
+            year = now.getFullYear();
+            month = now.getMonth() + 1;
         }
-        const open = () => {
-            try {
-                if (typeof native.showPicker === "function") {
-                    native.showPicker();
-                    return;
-                }
-            } catch (_e) {
-                // fall through
+        const btn = ev?.currentTarget;
+        const rect = btn?.getBoundingClientRect?.();
+        const width = 292;
+        let left = 16;
+        let top = 80;
+        if (rect) {
+            left = Math.min(
+                Math.max(8, rect.right - width),
+                (window.innerWidth || 400) - width - 8
+            );
+            top = rect.bottom + 6;
+            if (top + 320 > (window.innerHeight || 800)) {
+                top = Math.max(8, rect.top - 326);
             }
-            native.focus({ preventScroll: true });
-            native.click();
+        }
+        this.state.datePicker = {
+            open: true,
+            field,
+            year,
+            month,
+            top,
+            left,
         };
-        // Một số trình duyệt cần focus trước showPicker
-        native.focus({ preventScroll: true });
-        open();
+        window.setTimeout(() => {
+            document.addEventListener("pointerdown", this._onDatePickerOutside, true);
+        }, 0);
+    }
+
+    closeDatePicker() {
+        if (this.state.datePicker) {
+            this.state.datePicker.open = false;
+            this.state.datePicker.field = null;
+        }
+        document.removeEventListener("pointerdown", this._onDatePickerOutside, true);
+    }
+
+    _onDatePickerOutside(ev) {
+        const t = ev?.target;
+        if (t?.closest?.(".o_ews_vcal") || t?.closest?.(".o_ews_datepicker_btn")) {
+            return;
+        }
+        this.closeDatePicker();
+    }
+
+    get datePickerTitle() {
+        const y = this.state.datePicker.year;
+        const m = this.state.datePicker.month;
+        return `Tháng ${m} năm ${y}`;
+    }
+
+    get datePickerWeekdays() {
+        return ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+    }
+
+    get datePickerStyle() {
+        const dp = this.state.datePicker;
+        return `top:${dp.top}px;left:${dp.left}px;`;
+    }
+
+    get datePickerCells() {
+        const y = this.state.datePicker.year;
+        const m = this.state.datePicker.month;
+        const selected = this.state.form[this.state.datePicker.field] || "";
+        const todayIso = this._formatIsoDate(new Date());
+        const first = new Date(y, m - 1, 1);
+        // Monday-first: JS getDay() Sun=0 → shift so Mon=0
+        let startPad = (first.getDay() + 6) % 7;
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const cells = [];
+        const prevDays = new Date(y, m - 1, 0).getDate();
+        for (let i = startPad - 1; i >= 0; i--) {
+            const day = prevDays - i;
+            const dt = new Date(y, m - 2, day);
+            cells.push(this._datePickerCell(dt, false, selected, todayIso));
+        }
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dt = new Date(y, m - 1, day);
+            cells.push(this._datePickerCell(dt, true, selected, todayIso));
+        }
+        let nextDay = 1;
+        while (cells.length % 7 !== 0 || cells.length < 42) {
+            const dt = new Date(y, m, nextDay++);
+            cells.push(this._datePickerCell(dt, false, selected, todayIso));
+            if (cells.length >= 42) {
+                break;
+            }
+        }
+        return cells;
+    }
+
+    _datePickerCell(dt, inMonth, selectedIso, todayIso) {
+        const iso = this._formatIsoDate(dt);
+        return {
+            day: dt.getDate(),
+            iso,
+            inMonth,
+            selected: iso === selectedIso,
+            today: iso === todayIso,
+        };
+    }
+
+    datePickerPrevMonth() {
+        let { year, month } = this.state.datePicker;
+        month -= 1;
+        if (month < 1) {
+            month = 12;
+            year -= 1;
+        }
+        this.state.datePicker.year = year;
+        this.state.datePicker.month = month;
+    }
+
+    datePickerNextMonth() {
+        let { year, month } = this.state.datePicker;
+        month += 1;
+        if (month > 12) {
+            month = 1;
+            year += 1;
+        }
+        this.state.datePicker.year = year;
+        this.state.datePicker.month = month;
+    }
+
+    selectDatePickerDay(iso) {
+        const field = this.state.datePicker.field;
+        if (!field || !iso) {
+            return;
+        }
+        this.state.form[field] = iso;
+        this.state.formDateText[field] = isoToDmyFull(iso);
+        this.closeDatePicker();
+    }
+
+    clearDatePicker() {
+        const field = this.state.datePicker.field;
+        if (!field) {
+            return;
+        }
+        this.state.form[field] = "";
+        this.state.formDateText[field] = "";
+        this.closeDatePicker();
+    }
+
+    goDatePickerToday() {
+        const iso = this._formatIsoDate(new Date());
+        this.selectDatePickerDay(iso);
     }
 
     onFormDateTextInput(field, ev) {
@@ -1439,6 +1591,7 @@ export class DailyWorkEmployeeWs extends Component {
             state: task.state || "not_started",
             note: task.note || "",
             work_group_id: task.work_group_id ? String(task.work_group_id) : "",
+            category_label: task.work_group_label || task.category_name || "",
             duration_minutes:
                 task.duration_minutes === 0 || task.duration_minutes
                     ? String(task.duration_minutes)
@@ -1671,6 +1824,22 @@ export class DailyWorkEmployeeWs extends Component {
         a.click();
         a.remove();
         URL.revokeObjectURL(url);
+    }
+
+    onFormWorkGroupChange() {
+        /** Chọn tên công việc (phân công) → điền Tên CV + Hạng mục tương ứng. */
+        const wgId = this.state.form.work_group_id;
+        const g = (this.state.workGroups || []).find((x) => String(x.id) === String(wgId));
+        if (!g) {
+            this.state.form.category_label = "";
+            return;
+        }
+        const taskLabel = (g.task_name || g.name || "").trim();
+        const category = (g.category || "").trim();
+        this.state.form.category_label = category;
+        if (taskLabel) {
+            this.state.form.name = taskLabel;
+        }
     }
 
     async onSubmit(ev) {

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="web.NavBar.AppsMenu" t-inherit-mode="extension">
+        <!-- Desktop: ẩn nút lưới chuyển app -->
+        <xpath expr="//div[hasclass('o_navbar_apps_menu')]" position="attributes">
+            <attribute name="t-if">!isScopedApp and !dailyWorkSingleApp</attribute>
+        </xpath>
+    </t>
+
+    <t t-inherit="web.NavBar.AppsMenu.Sidebar" t-inherit-mode="extension">
+        <!-- Mobile sidebar: ẩn nút All Apps / App Center khi khóa 1 app -->
+        <xpath expr="//a[hasclass('btn-primary')]" position="attributes">
+            <attribute name="t-if">!dailyWorkSingleApp</attribute>
+        </xpath>
+    </t>
+</templates>

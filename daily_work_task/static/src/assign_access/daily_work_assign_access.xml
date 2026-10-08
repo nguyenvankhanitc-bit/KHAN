@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkAssignAccessMatrix">
+        <div class="o_daily_work_dashboard o_daily_work_assign_access o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_daa_shell">
+                    <header class="o_daa_header">
+                        <div class="o_daa_header_left">
+                            <h1>Phân quyền phân công công việc</h1>
+                            <p class="o_daa_subtitle">
+                                Nhóm theo phòng ban · Nhiều user trên 1 dòng (cùng quyền) · Công việc theo nhân sự chỉ hiện việc của đúng user
+                            </p>
+                        </div>
+                        <div class="o_daa_header_actions">
+                            <button type="button"
+                                    class="btn o_daa_btn_cancel"
+                                    t-att-disabled="state.saving"
+                                    t-on-click="onCancel">
+                                <i class="fa fa-times"/> Hủy
+                            </button>
+                            <button type="button"
+                                    class="btn o_daa_btn_save"
+                                    t-att-disabled="state.saving or !state.dirty"
+                                    t-on-click="onSave">
+                                <i class="fa fa-save"/>
+                                <t t-if="state.saving"> Đang lưu...</t>
+                                <t t-else=""> Lưu</t>
+                            </button>
+                        </div>
+                    </header>
+
+                    <t t-if="state.loading">
+                        <div class="o_daa_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_daa_toolbar">
+                            <button type="button" class="btn o_daa_btn_add" t-on-click="onAddRow">
+                                <i class="fa fa-plus"/> Thêm user
+                            </button>
+                            <span t-if="state.dirty" class="o_daa_dirty">● Có thay đổi chưa lưu</span>
+                        </div>
+
+                        <div class="o_daa_table_wrap">
+                            <table class="o_daa_table">
+                                <thead>
+                                    <tr>
+                                        <th class="o_daa_col_stt" rowspan="2">STT</th>
+                                        <th class="o_daa_col_user" rowspan="2">User được phân quyền</th>
+                                        <th class="o_daa_col_group" rowspan="2">Nhóm phân quyền</th>
+                                        <th colspan="4" class="o_daa_col_perms_head">Quyền</th>
+                                        <th class="o_daa_col_act" rowspan="2">Thao tác</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="o_daa_col_perm">Xem</th>
+                                        <th class="o_daa_col_perm">Thêm</th>
+                                        <th class="o_daa_col_perm">Chỉnh sửa</th>
+                                        <th class="o_daa_col_perm">Xóa</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="sections" t-as="sec" t-key="sec.key">
+                                        <tr class="o_daa_dept_row" t-on-click="() => this.toggleSection(sec.key)">
+                                            <td colspan="8" class="o_daa_dept_cell">
+                                                <button type="button" class="o_daa_dept_btn">
+                                                    <i t-att-class="'fa ' + (sec.collapsed ? 'fa-chevron-right' : 'fa-chevron-down')"/>
+                                                    <span class="o_daa_dept_name" t-esc="sec.label"/>
+                                                    <span class="o_daa_dept_meta">
+                                                        <t t-esc="sec.rows.length"/> dòng ·
+                                                        <t t-esc="sec.userCount"/> user
+                                                    </span>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <t t-if="!sec.collapsed">
+                                            <t t-foreach="sec.rows" t-as="row" t-key="row.key">
+                                                <t t-foreach="GROUPS" t-as="grp" t-key="row.key + '-' + grp.key">
+                                                    <tr t-att-class="'o_daa_row' + (grp_first ? ' o_daa_row_first' : '') + (grp_last ? ' o_daa_row_last' : '')">
+                                                        <td t-if="grp_first" class="o_daa_col_stt" t-att-rowspan="GROUPS.length"
+                                                            t-esc="row.stt"/>
+                                                        <td t-if="grp_first" class="o_daa_col_user" t-att-rowspan="GROUPS.length">
+                                                            <div class="o_daa_multi"
+                                                                 t-on-click.stop="() => { row.open = true; }">
+                                                                <t t-foreach="selectedEmployees(row)" t-as="emp" t-key="emp.id">
+                                                                    <span class="o_daa_tag">
+                                                                        <span t-esc="emp.name"/>
+                                                                        <button type="button"
+                                                                                class="o_daa_tag_x"
+                                                                                title="Bỏ chọn"
+                                                                                t-on-click.stop="() => this.onRemoveEmployee(row, emp.id)">
+                                                                            ×
+                                                                        </button>
+                                                                    </span>
+                                                                </t>
+                                                                <input type="text"
+                                                                       class="o_daa_multi_input"
+                                                                       placeholder="Gõ tên để tìm / chọn nhiều user..."
+                                                                       t-att-value="row.query"
+                                                                       t-on-input="(ev) => this.onQueryInput(row, ev)"
+                                                                       t-on-focus="() => this.onQueryFocus(row)"
+                                                                       t-on-blur="() => this.onQueryBlur(row)"
+                                                                       t-on-keydown="(ev) => this.onQueryKeydown(row, ev)"/>
+                                                            </div>
+                                                            <div t-if="row.open and filteredSuggestions(row).length"
+                                                                 class="o_daa_suggest">
+                                                                <t t-foreach="filteredSuggestions(row)" t-as="sug" t-key="sug.id">
+                                                                    <button type="button"
+                                                                            class="o_daa_suggest_item"
+                                                                            t-on-mousedown.prevent="() => this.onPickEmployee(row, sug.id)">
+                                                                        <strong t-esc="sug.name"/>
+                                                                        <span t-if="sug.department_name"
+                                                                              class="o_daa_suggest_dept"
+                                                                              t-esc="sug.department_name"/>
+                                                                    </button>
+                                                                </t>
+                                                            </div>
+                                                            <div t-if="row.open and row.query and !filteredSuggestions(row).length"
+                                                                 class="o_daa_suggest o_daa_suggest_empty">
+                                                                Không tìm thấy user phù hợp
+                                                            </div>
+                                                        </td>
+                                                        <td class="o_daa_col_group" t-esc="grp.label"/>
+                                                        <t t-foreach="PERMS" t-as="perm" t-key="grp.key + '-' + perm.key + '-' + (row[grp.key][perm.key] ? '1' : '0')">
+                                                            <td class="o_daa_col_perm">
+                                                                <label class="o_daa_check">
+                                                                    <input type="checkbox"
+                                                                           t-att-checked="row[grp.key][perm.key] or undefined"
+                                                                           t-on-change="(ev) => this.onToggle(row, grp.key, perm.key, ev)"/>
+                                                                    <span class="o_daa_box"/>
+                                                                </label>
+                                                            </td>
+                                                        </t>
+                                                        <td t-if="grp_first" class="o_daa_col_act" t-att-rowspan="GROUPS.length">
+                                                            <button type="button"
+                                                                    class="btn btn-link o_daa_btn_del"
+                                                                    title="Xóa dòng"
+                                                                    t-on-click="() => this.onRemoveRow(row)">
+                                                                <i class="fa fa-trash"/>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                        </t>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

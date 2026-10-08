@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="webclient_bootstrap_single_app" inherit_id="web.webclient_bootstrap">
+        <xpath expr="//t[@t-set='head_web']" position="inside">
+            <t t-if="request.env.user.sudo().daily_work_single_app and not request.env.user._is_system()">
+                <style>
+                    .o_navbar_apps_menu { display: none !important; }
+                    .o_app_menu_sidebar .o_sidebar_topbar .btn-primary { display: none !important; }
+                    .o-mail-LarkAppsBar-globalShell,
+                    .o-mail-LarkAppsBar-global { display: none !important; }
+                </style>
+                <script>
+                    document.documentElement.classList.add("o_dw_single_app");
+                </script>
+            </t>
+        </xpath>
+    </template>
+</odoo>

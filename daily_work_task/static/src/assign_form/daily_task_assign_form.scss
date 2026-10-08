@@ -1,0 +1,103 @@
+/* Form popup phân công — hiện gạch dưới ô nhập giống Hạng mục */
+.o_form_view.o_daily_task_assign_form,
+.o_dialog .o_form_view.o_daily_task_assign_form {
+    /* Danh sách tên CV dạng checkbox — cuộn khi dài */
+    .o_field_many2many_checkboxes {
+        max-height: 220px;
+        overflow: auto;
+        padding: 4px 0;
+        border-bottom: 1px solid #d4c4d0;
+    }
+
+    .o_field_many2many_checkboxes .form-check {
+        margin-bottom: 0.35rem;
+    }
+
+    .o_inner_group .o_cell.o_wrap_field,
+    .o_inner_group .o_wrap_field {
+        .o_field_widget {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+
+    /* Many2one (Hạng mục) — giữ gạch dưới rõ */
+    .o_field_many2one .o_input,
+    .o_field_many2one_selection .o_input,
+    .o_field_many2one input {
+        border: none !important;
+        border-bottom: 1px solid #714b67 !important;
+        border-radius: 0 !important;
+        min-height: 30px;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    /* Many2many tags — thêm gạch dưới khi trống / có giá trị */
+    .o_field_many2manytags,
+    .o_field_tags {
+        display: flex !important;
+        flex-wrap: wrap;
+        align-items: center;
+        width: 100%;
+        min-height: 30px;
+        padding: 2px 0 4px !important;
+        border: none !important;
+        border-bottom: 1px solid #714b67 !important;
+        border-radius: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+    }
+
+    .o_field_many2manytags:focus-within,
+    .o_field_tags:focus-within,
+    .o_field_many2one:focus-within .o_input {
+        border-bottom-color: #5b21b6 !important;
+        border-bottom-width: 2px !important;
+    }
+
+    .o_field_many2manytags .o_input,
+    .o_field_tags .o_input,
+    .o_field_many2manytags input,
+    .o_field_tags input {
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
+        min-width: 80px;
+        flex: 1 1 auto;
+    }
+
+    /* Char / note */
+    .o_field_char input,
+    .o_field_integer input,
+    .o_field_float input {
+        border: none !important;
+        border-bottom: 1px solid #714b67 !important;
+        border-radius: 0 !important;
+        min-height: 30px;
+        background: transparent !important;
+        box-shadow: none !important;
+        width: 100%;
+    }
+
+    .o_field_char input:focus,
+    .o_field_integer input:focus,
+    .o_field_float input:focus {
+        border-bottom-color: #5b21b6 !important;
+        border-bottom-width: 2px !important;
+    }
+
+    /* Related readonly vẫn hiện hàng rõ */
+    .o_field_widget.o_readonly_modifier,
+    span.o_field_widget {
+        display: inline-block;
+        min-height: 30px;
+        width: 100%;
+        border-bottom: 1px solid #d4c4d0;
+        padding-top: 4px;
+    }
+
+    .o_field_boolean {
+        border-bottom: none !important;
+    }
+}

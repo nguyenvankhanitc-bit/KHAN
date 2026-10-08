@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkAssignBoard">
+        <div t-att-class="'o_daily_work_dashboard o_daily_work_assign_board o_action' + (isEditMode ? ' o_dab_is_edit' : '')">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dab_shell">
+                    <div class="o_dab_scroll">
+                        <header class="o_dab_header">
+                            <div class="o_dab_header_left">
+                                <h1 t-esc="pageTitle"/>
+                                <p class="o_dab_subtitle" t-esc="state.monthLabel"/>
+                            </div>
+                            <div class="o_dab_header_right">
+                                <span t-att-class="isEditMode ? 'o_dab_edit_badge' : 'o_dab_readonly_badge'"
+                                      t-esc="modeBadge"/>
+                                <div class="o_dab_toolbar no-print">
+                                    <t t-if="isEditMode and canCreate">
+                                        <button type="button" class="btn o_dab_btn_new" t-on-click="onCreateTask">
+                                            <i class="fa fa-plus"/> Mới
+                                        </button>
+                                    </t>
+                                    <button type="button"
+                                            class="btn o_dab_btn_excel"
+                                            t-att-disabled="state.exporting"
+                                            t-on-click="onExportExcel">
+                                        <i class="fa fa-file-excel-o"/>
+                                        <t t-if="state.exporting">Đang xuất...</t>
+                                        <t t-else="">Kết xuất Excel</t>
+                                    </button>
+                                    <button type="button" class="btn o_dab_btn_print" t-on-click="onPrint">
+                                        <i class="fa fa-print"/> In ấn
+                                    </button>
+                                    <div class="o_dab_search">
+                                        <i class="fa fa-search"/>
+                                        <input type="search"
+                                               placeholder="Tìm kiếm công việc, nhân sự..."
+                                               t-att-value="state.search"
+                                               t-on-input="onSearchInput"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <t t-if="isEditMode">
+                            <div class="o_dab_blank"/>
+                        </t>
+                        <t t-elif="state.loading">
+                            <div class="o_dab_loading">
+                                <i class="fa fa-spinner fa-spin fa-2x"/>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <div class="o_dab_table_shell">
+                                <table class="o_dab_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_dab_col_stt">STT</th>
+                                            <th class="o_dab_col_name">Tên công việc / Hạng mục</th>
+                                            <th>Miền Nam</th>
+                                            <th>Miền ĐTT</th>
+                                            <th>Miền Bắc</th>
+                                            <th>Văn phòng</th>
+                                            <th>Người phụ trách</th>
+                                            <th>User kiểm tra</th>
+                                            <th>User tham gia / phối hợp</th>
+                                            <th>Ghi chú</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="visibleSections" t-as="section" t-key="section.id">
+                                            <tr t-att-class="'o_dab_section' + (section.tone === 'alt' ? ' o_dab_section_alt' : '')">
+                                                <td colspan="10" t-esc="section.title"/>
+                                            </tr>
+                                            <t t-foreach="section.tasks" t-as="task" t-key="task.id">
+                                                <tr class="o_dab_task">
+                                                    <td class="o_dab_col_stt" t-esc="task.display_stt"/>
+                                                    <td class="o_dab_col_name">
+                                                        <button type="button"
+                                                                class="o_dab_task_link"
+                                                                t-on-click="(ev) => this.onOpenTask(task, ev)"
+                                                                t-att-title="task.name">
+                                                            <span class="o_dab_task_name" t-esc="task.name"/>
+                                                        </button>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.south"/>
+                                                            <t t-set="tone" t-value="'cyan'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.dtt"/>
+                                                            <t t-set="tone" t-value="'orange'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.north"/>
+                                                            <t t-set="tone" t-value="'sand'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.office"/>
+                                                            <t t-set="tone" t-value="'mint'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.assignee"/>
+                                                            <t t-set="tone" t-value="'slate'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.checker"/>
+                                                            <t t-set="tone" t-value="'slate'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_people">
+                                                        <t t-call="daily_work_task.AssignBoardPeople">
+                                                            <t t-set="people" t-value="task.collab"/>
+                                                            <t t-set="tone" t-value="'violet'"/>
+                                                        </t>
+                                                    </td>
+                                                    <td class="o_dab_note">
+                                                        <t t-if="task.note" t-esc="task.note"/>
+                                                        <t t-else=""><span class="o_dab_empty">—</span></t>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </t>
+                                        <t t-if="!visibleSections.length">
+                                            <tr>
+                                                <td colspan="10" class="o_dab_empty_row">
+                                                    Không tìm thấy công việc hoặc nhân sự phù hợp.
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+
+    <t t-name="daily_work_task.AssignBoardPeople">
+        <t t-if="people and people.length">
+            <t t-foreach="people" t-as="person" t-key="person.id">
+                <span t-att-class="'o_dab_pill o_dab_pill_' + tone" t-esc="person.name"/>
+            </t>
+        </t>
+        <t t-else="">
+            <span class="o_dab_empty">—</span>
+        </t>
+    </t>
+</templates>

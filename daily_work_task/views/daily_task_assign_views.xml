@@ -1,0 +1,254 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Danh sách — theo mẫu UI -->
+    <record id="view_daily_task_assign_list" model="ir.ui.view">
+        <field name="name">daily.task.assign.list</field>
+        <field name="model">daily.task.assign</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách phân công công việc"
+                  class="o_daily_task_assign_list o_daily_task_assign_list_readonly"
+                  create="0" edit="0" delete="0"
+                  default_order="stt, id">
+                <field name="stt" string="STT"/>
+                <field name="work_group_id" string="Hạng mục"
+                         context="{'work_group_short_name': 1}"
+                         options="{'no_create': True}"/>
+                <field name="name" string="Nội dung công việc"/>
+                <field name="south_user_ids" string="Miền Nam"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="dtt_user_ids" string="Miền ĐTT"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="north_user_ids" string="Miền Bắc"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="office_user_ids" string="Văn phòng"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="assignee_user_ids" string="Người phụ trách"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="detail_user_ids" string="User chi tiết"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="check_user_ids" string="User kiểm tra"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="coord_user_ids" string="User phối hợp"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="participant_ids" string="Người tham gia"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="note" string="Ghi chú"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Thêm phân công — editable + nút Mới -->
+    <record id="view_daily_task_assign_list_add" model="ir.ui.view">
+        <field name="name">daily.task.assign.list.add</field>
+        <field name="model">daily.task.assign</field>
+        <field name="arch" type="xml">
+            <list string="Thêm phân công công việc"
+                  class="o_daily_task_assign_list"
+                  editable="bottom"
+                  create="1" edit="1" delete="1"
+                  default_order="stt, id">
+                <field name="stt" string="STT"/>
+                <field name="work_group_id" string="Hạng mục"
+                         context="{'work_group_short_name': 1}"
+                         options="{'no_create': True}"
+                         required="1"/>
+                <field name="name" string="Nội dung công việc"
+                         placeholder="Vd: Kiểm giờ mở cửa camera..."
+                         required="1"/>
+                <field name="south_user_ids" string="Miền Nam"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="dtt_user_ids" string="Miền ĐTT"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="north_user_ids" string="Miền Bắc"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="office_user_ids" string="Văn phòng"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="assignee_user_ids" string="Người phụ trách"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="detail_user_ids" string="User chi tiết"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="check_user_ids" string="User kiểm tra"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="coord_user_ids" string="User phối hợp"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="participant_ids" string="Người tham gia"
+                         widget="many2many_tags"
+                         options="{'no_create': True}"
+                         placeholder="Chọn user..."/>
+                <field name="note" string="Ghi chú" placeholder="Ghi chú..."/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_assign_form" model="ir.ui.view">
+        <field name="name">daily.task.assign.form</field>
+        <field name="model">daily.task.assign</field>
+        <field name="arch" type="xml">
+            <form string="Phân công công việc" class="o_daily_task_assign_form">
+                <header>
+                    <field name="state" widget="statusbar"
+                             statusbar_visible="not_started,in_progress,done,overdue"/>
+                </header>
+                <sheet>
+                    <div class="alert alert-info" role="alert">
+                        Chọn <b>Hạng mục</b> → tích một hoặc nhiều <b>Tên công việc</b>.
+                        Gắn <b>Người phụ trách</b> → bấm Lưu (mỗi tên CV = 1 dòng phân công).
+                    </div>
+                    <group>
+                        <group string="Hạng mục cha">
+                            <field name="stt"/>
+                            <field name="department_id" options="{'no_create': True}"
+                                     placeholder="Tự lấy từ hồ sơ nhân viên..."/>
+                            <field name="category_group_id"
+                                     options="{'no_create': True, 'no_open': True}"
+                                     context="{'work_group_unique_category': 1, 'work_group_short_name': 1}"
+                                     domain="[('department_id', '=', department_id)]"
+                                     placeholder="Chọn hạng mục (Camera, Email…)…"/>
+                            <field name="category_name" invisible="1"/>
+                            <field name="work_group_ids" string="Tên công việc"
+                                     widget="many2many_checkboxes"
+                                     context="{'work_group_show_task_name': 1}"
+                                     domain="[('department_id', '=', department_id), ('name', '=', category_name)]"
+                                     invisible="not category_name"/>
+                            <field name="work_group_id" invisible="1" force_save="1"/>
+                            <field name="name" invisible="1"/>
+                            <field name="team_id"/>
+                        </group>
+                        <group string="Người phụ trách (xuống CV cá nhân)">
+                            <field name="assignee_user_ids" widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user phụ trách..."/>
+                            <field name="south_user_ids" string="Miền Nam"
+                                     widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="dtt_user_ids" string="Miền ĐTT"
+                                     widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="north_user_ids" string="Miền Bắc"
+                                     widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="office_user_ids" string="Văn phòng"
+                                     widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="check_user_ids" widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="detail_user_ids" widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="coord_user_ids" widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="participant_ids" widget="many2many_tags"
+                                     options="{'no_create': True}"
+                                     placeholder="Chọn user..."/>
+                            <field name="note" placeholder="Ghi chú..."/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu" special="save" class="btn-primary"/>
+                    <button string="Hủy" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_daily_task_assign_search" model="ir.ui.view">
+        <field name="name">daily.task.assign.search</field>
+        <field name="model">daily.task.assign</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Nội dung"/>
+                <field name="work_group_id" string="Hạng mục"/>
+                <field name="assignee_user_id" string="Người phụ trách"/>
+                <filter name="filter_south" string="Miền Nam" domain="[('south_user_ids', '!=', False)]"/>
+                <filter name="filter_dtt" string="Miền ĐTT" domain="[('dtt_user_ids', '!=', False)]"/>
+                <filter name="filter_north" string="Miền Bắc" domain="[('north_user_ids', '!=', False)]"/>
+                <filter name="filter_office" string="Văn phòng" domain="[('office_user_ids', '!=', False)]"/>
+                <group>
+                    <filter name="group_work_group" string="Hạng mục"
+                            context="{'group_by': 'work_group_id'}"/>
+                    <filter name="group_assignee" string="Người phụ trách"
+                            context="{'group_by': 'assignee_user_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_assign_add" model="ir.actions.act_window">
+        <field name="name">Thêm phân công công việc</field>
+        <field name="res_model">daily.task.assign</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_assign_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_daily_task_assign_list_add')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_daily_task_assign_form')})]"/>
+        <field name="context">{'work_group_short_name': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm phân công công việc mới</p>
+            <p>Bấm <b>Mới</b> hoặc <b>Thêm một dòng</b> để nhập phân công theo khu vực.</p>
+        </field>
+    </record>
+
+    <record id="action_daily_task_assign_list" model="ir.actions.act_window">
+        <field name="name">Danh sách phân công công việc</field>
+        <field name="res_model">daily.task.assign</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_daily_task_assign_search"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_daily_task_assign_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_daily_task_assign_form')})]"/>
+        <field name="context">{
+            'work_group_short_name': 1,
+            'create': False,
+            'edit': False,
+            'delete': False,
+            'duplicate': False,
+            'form_view_initial_mode': 'readonly',
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Chưa có dòng phân công</p>
+            <p>Màn hình này chỉ để <b>xem</b>. Vào <b>Thêm phân công công việc</b> để tạo hoặc sửa.</p>
+        </field>
+    </record>
+</odoo>

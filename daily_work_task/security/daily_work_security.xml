@@ -56,6 +56,29 @@
         <field name="perm_unlink" eval="False"/>
     </record>
 
+    <!-- Đọc việc cùng phòng ban (Báo cáo công việc team). Không mở quyền sửa. -->
+    <record id="rule_daily_task_same_department_read" model="ir.rule">
+        <field name="name">CVHN: đọc việc cùng phòng ban</field>
+        <field name="model_id" ref="model_daily_task"/>
+        <field name="domain_force">[('department_id', 'in', user.env['daily.task'].rule_team_department_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_employee_same_department_read" model="ir.rule">
+        <field name="name">CVHN: đọc hồ sơ nhân viên cùng phòng ban</field>
+        <field name="model_id" ref="model_daily_task_employee"/>
+        <field name="domain_force">[('department_id', 'in', user.env['daily.task'].rule_team_department_ids())]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
     <!-- Người xem / giao việc: đọc việc của NV trong bảng phân quyền.
          Lấy ID qua daily.task.access + sudo để không bị rule hr.employee lọc M2M. -->
     <record id="rule_daily_task_viewer_extra" model="ir.rule">
@@ -177,6 +200,29 @@
     <record id="rule_daily_task_access_manager" model="ir.rule">
         <field name="name">CVHN: quản lý — tất cả phân quyền</field>
         <field name="model_id" ref="model_daily_task_access"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <!-- Phân quyền Phân công công việc -->
+    <record id="rule_daily_task_assign_access_own" model="ir.rule">
+        <field name="name">CVHN: user — xem phân quyền Phân công của mình</field>
+        <field name="model_id" ref="model_daily_task_assign_access"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
+    </record>
+
+    <record id="rule_daily_task_assign_access_manager" model="ir.rule">
+        <field name="name">CVHN: quản lý — tất cả phân quyền Phân công</field>
+        <field name="model_id" ref="model_daily_task_assign_access"/>
         <field name="domain_force">[(1, '=', 1)]</field>
         <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
         <field name="perm_read" eval="True"/>

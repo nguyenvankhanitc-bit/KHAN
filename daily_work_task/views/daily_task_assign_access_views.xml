@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_assign_access_list" model="ir.ui.view">
+        <field name="name">daily.task.assign.access.list</field>
+        <field name="model">daily.task.assign.access</field>
+        <field name="arch" type="xml">
+            <list string="Phân quyền phân công công việc">
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <field name="perm_add_view"/>
+                <field name="perm_list_view"/>
+                <field name="perm_category_view"/>
+                <field name="perm_personnel_view"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_assign_access_form" model="ir.ui.view">
+        <field name="name">daily.task.assign.access.form</field>
+        <field name="model">daily.task.assign.access</field>
+        <field name="arch" type="xml">
+            <form string="Phân quyền phân công công việc">
+                <sheet>
+                    <group>
+                        <field name="employee_id"/>
+                        <field name="department_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action cũ (list) — giữ để không lỗi xmlid; menu dùng action matrix -->
+    <record id="action_daily_task_assign_access" model="ir.actions.act_window">
+        <field name="name">Phân quyền phân công (list)</field>
+        <field name="res_model">daily.task.assign.access</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Ma trận OWL: STT · User · Nhóm · Xem/Thêm/Chỉnh sửa/Xóa + Lưu/Hủy -->
+    <record id="action_daily_task_assign_access_matrix" model="ir.actions.client">
+        <field name="name">Phân quyền phân công công việc</field>
+        <field name="tag">daily_work_assign_access_matrix</field>
+    </record>
+</odoo>

@@ -1,0 +1,447 @@
+/* Bọc trong .o_daily_work_dashboard để dùng layout shell chung */
+.o_daily_work_dashboard.o_daily_work_assign_board {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f4f6f9;
+
+    &.o_dab_is_edit,
+    &.o_dab_is_edit .o_dwd_main_embed,
+    &.o_dab_is_edit .o_dab_scroll {
+        background: #fff;
+    }
+
+    > .o_dwd_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .o_dwd_main_embed {
+        display: flex;
+        flex-flow: column nowrap;
+        padding: 0;
+        overflow: hidden;
+        background: #f4f6f9;
+    }
+
+    .o_dwd_main_embed > .o_dab_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .o_dab_shell {
+        height: 100%;
+        min-height: 0;
+    }
+
+    .o_dab_scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 1rem 1.25rem 1.5rem;
+    }
+
+    .o_dab_header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem 1rem;
+        margin-bottom: 0.9rem;
+    }
+
+    .o_dab_header_left h1 {
+        margin: 0;
+        font-size: 1.55rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        color: #0f172a;
+        line-height: 1.25;
+    }
+
+    .o_dab_subtitle {
+        margin: 0.25rem 0 0;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #64748b;
+    }
+
+    .o_dab_header_right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.5rem;
+    }
+
+    .o_dab_readonly_badge,
+    .o_dab_edit_badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.25rem 0.7rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .o_dab_readonly_badge {
+        color: #e11d48;
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+    }
+
+    .o_dab_edit_badge {
+        color: #1d4ed8;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+    }
+
+    .o_dab_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 0.45rem;
+    }
+
+    .o_dab_btn_new {
+        background: #6d28d9 !important;
+        color: #fff !important;
+        border: none !important;
+        font-weight: 700;
+        font-size: 0.84rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        &:hover {
+            background: #5b21b6 !important;
+        }
+    }
+
+    .o_dab_btn_excel {
+        background: #059669 !important;
+        color: #fff !important;
+        border: none !important;
+        font-weight: 700;
+        font-size: 0.84rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        &:hover:not(:disabled) {
+            background: #047857 !important;
+        }
+
+        &:disabled {
+            opacity: 0.7;
+        }
+    }
+
+    .o_dab_btn_print {
+        background: #e2e8f0 !important;
+        color: #334155 !important;
+        border: none !important;
+        font-weight: 700;
+        font-size: 0.84rem;
+        padding: 0.45rem 0.85rem;
+        border-radius: 0.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+
+        &:hover {
+            background: #cbd5e1 !important;
+        }
+    }
+
+    .o_dab_search {
+        position: relative;
+        min-width: 240px;
+
+        > i {
+            position: absolute;
+            left: 0.7rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            padding: 0.45rem 0.7rem 0.45rem 2rem;
+            font-size: 0.84rem;
+            background: #fff;
+            color: #0f172a;
+
+            &:focus {
+                outline: none;
+                border-color: #64748b;
+                box-shadow: 0 0 0 2px rgba(100, 116, 139, 0.2);
+            }
+        }
+    }
+
+    .o_dab_loading {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: #64748b;
+    }
+
+    .o_dab_blank {
+        min-height: calc(100vh - 220px);
+        background: #fff;
+    }
+
+    .o_dab_table_shell {
+        overflow: auto;
+        max-height: calc(100vh - 260px);
+        border: 1px solid #94a3b8;
+        border-radius: 0.5rem;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .o_dab_table {
+        width: max-content;
+        min-width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.82rem;
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #1c2d42;
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+            vertical-align: middle;
+            padding: 0.7rem 0.55rem;
+            border: 1px solid #152536;
+            white-space: normal;
+            line-height: 1.25;
+        }
+
+        tbody td {
+            border: 1px solid #94a3b8;
+            vertical-align: middle;
+            padding: 0.45rem 0.55rem;
+            background: #fff;
+        }
+
+        /* Cố định STT + Tên công việc khi cuộn ngang */
+        .o_dab_col_stt {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            width: 56px;
+            min-width: 56px;
+            max-width: 56px;
+            text-align: center;
+            font-weight: 700;
+            color: #334155;
+            background: #fff;
+        }
+
+        .o_dab_col_name {
+            position: sticky;
+            left: 56px;
+            z-index: 2;
+            min-width: 260px;
+            width: 280px;
+            max-width: 320px;
+            text-align: left;
+            background: #fff;
+            box-shadow: 3px 0 6px rgba(15, 23, 42, 0.1);
+        }
+
+        thead th.o_dab_col_stt {
+            z-index: 7;
+            left: 0;
+            top: 0;
+            background: #1c2d42;
+            color: #fff;
+        }
+
+        thead th.o_dab_col_name {
+            z-index: 7;
+            left: 56px;
+            top: 0;
+            background: #1c2d42;
+            color: #fff;
+            box-shadow: 3px 0 6px rgba(0, 0, 0, 0.25);
+        }
+
+        .o_dab_section td {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: #dbe4ee;
+            font-weight: 800;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #0f172a;
+            padding: 0.65rem 0.75rem;
+            font-size: 0.9rem;
+            box-shadow: 3px 0 6px rgba(15, 23, 42, 0.08);
+        }
+
+        .o_dab_section_alt td {
+            background: #e4e0ec;
+        }
+
+        .o_dab_task:hover td {
+            background: #f8fafc;
+        }
+
+        .o_dab_task:hover .o_dab_col_stt,
+        .o_dab_task:hover .o_dab_col_name {
+            background: #f8fafc;
+        }
+
+        .o_dab_task_link {
+            display: block;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            border: none;
+            background: transparent;
+            text-align: left;
+            cursor: pointer;
+
+            &:hover .o_dab_task_name,
+            &:focus-visible .o_dab_task_name {
+                color: #1d4ed8;
+                text-decoration: underline;
+            }
+
+            &:focus-visible {
+                outline: 2px solid #93c5fd;
+                outline-offset: 2px;
+                border-radius: 4px;
+            }
+        }
+
+        .o_dab_task_name {
+            display: block;
+            font-weight: 700;
+            color: #1e40af;
+            text-transform: uppercase;
+            letter-spacing: 0.01em;
+            line-height: 1.35;
+            white-space: normal;
+            word-break: break-word;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+        }
+
+        .o_dab_people {
+            min-width: 140px;
+            text-align: center;
+        }
+
+        .o_dab_note {
+            min-width: 120px;
+            text-align: center;
+            color: #334155;
+        }
+
+        .o_dab_empty {
+            color: #cbd5e1;
+            font-weight: 500;
+        }
+
+        .o_dab_empty_row {
+            text-align: center;
+            color: #64748b;
+            padding: 1.5rem !important;
+        }
+    }
+
+    .o_dab_pill {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        margin: 0.1rem;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.76rem;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: normal;
+        word-break: break-word;
+        text-align: left;
+    }
+
+    .o_dab_pill_cyan {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .o_dab_pill_orange {
+        background: #ffedd5;
+        color: #9a3412;
+    }
+
+    .o_dab_pill_sand {
+        background: #f5e6d3;
+        color: #7c4a1a;
+    }
+
+    .o_dab_pill_mint {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .o_dab_pill_slate {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .o_dab_pill_violet {
+        background: #ede9fe;
+        color: #5b21b6;
+    }
+}
+
+@media print {
+    .o_daily_work_dashboard.o_daily_work_assign_board {
+        background: #fff;
+        overflow: visible;
+
+        .no-print,
+        .o_dwd_topbar,
+        .o_dwd_sidebar,
+        .o_dwd_sidebar_resizer {
+            display: none !important;
+        }
+
+        .o_dab_table_shell {
+            max-height: none;
+            overflow: visible;
+            border: none;
+            box-shadow: none;
+        }
+
+        .o_dab_table {
+            width: 100%;
+            min-width: 0;
+
+            thead th {
+                position: static;
+            }
+        }
+    }
+}

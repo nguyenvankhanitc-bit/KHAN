@@ -104,14 +104,32 @@ class DailyTask(models.Model):
         copy=False,
     )
     note = fields.Text(string="Ghi chú")
+    assign_line_id = fields.Many2one(
+        "daily.task.assign",
+        string="Dòng phân công",
+        index=True,
+        ondelete="set null",
+        copy=False,
+        help="Liên kết từ bảng Thêm phân công công việc.",
+    )
     work_group_id = fields.Many2one(
         "daily.task.work.group",
         string="Hạng mục",
         index=True,
         ondelete="restrict",
         tracking=True,
-        domain="[('department_id', '=', department_id)]",
-        help="Hạng mục công việc theo phòng ban (nhóm CV).",
+        domain="[('department_id', '=', department_id),"
+        " '|', '|', '|',"
+        " '&', '&',"
+        " ('detail_user_ids', '=', False),"
+        " ('detail_check_user_ids', '=', False),"
+        " ('total_user_ids', '=', False),"
+        " ('detail_user_ids', 'in', assignee_user_id),"
+        " ('detail_check_user_ids', 'in', assignee_user_id),"
+        " ('total_user_ids', 'in', assignee_user_id)]",
+        help="Hạng mục theo phòng ban. Dropdown chỉ hiện hạng mục của phòng ban, "
+        "và hạng mục có User chi tiết / Kiểm chi tiết / tổng trùng người phụ trách "
+        "(để trống cả 3 = cả phòng ban).",
     )
     duration_minutes = fields.Integer(
         string="Thời gian thực hiện (phút)",
@@ -214,17 +232,30 @@ class DailyTask(models.Model):
             if pct is not None and (pct < 0 or pct > 100):
                 raise ValidationError("% hoàn thành CV phải từ 0 đến 100.")
 
-    @api.constrains("work_group_id", "department_id")
+    @api.constrains("work_group_id", "department_id", "assignee_user_id")
     def _check_work_group_department(self):
+        if self.env.context.get("skip_work_group_user_check"):
+            return
         for rec in self:
+            group = rec.work_group_id
+            if not group:
+                continue
             if (
-                rec.work_group_id
-                and rec.department_id
-                and rec.work_group_id.department_id
-                and rec.work_group_id.department_id != rec.department_id
+                rec.department_id
+                and group.department_id
+                and group.department_id != rec.department_id
             ):
                 raise ValidationError(
-                    "Nhóm công việc phải thuộc cùng phòng ban với công việc."
+                    "Hạng mục «%s» không thuộc phòng ban của công việc."
+                    % (group.name or "")
+                )
+            # Việc tạo từ bảng Phân công: quản lý gán người → không bắt User áp dụng hạng mục
+            if rec.assign_line_id or self.env.context.get("from_daily_task_assign"):
+                continue
+            if rec.assignee_user_id and not group.is_user_applicable(rec.assignee_user_id):
+                raise ValidationError(
+                    "Hạng mục «%s» không áp dụng cho người phụ trách này."
+                    % (group.name or "")
                 )
 
     def _is_work_completed(self):
@@ -1007,9 +1038,50 @@ class DailyTask(models.Model):
         wg = self.sudo().work_group_id
         overdue_days = self._overdue_days()
         active_overdue = (not self._is_work_completed()) and overdue_days > 0
+
+        # User áp dụng hạng mục (cấu hình Phòng ban → Hạng mục)
+        detail_users = wg.detail_user_ids if wg else self.env["res.users"]
+        check_users = wg.detail_check_user_ids if wg else self.env["res.users"]
+        total_users = wg.total_user_ids if wg else self.env["res.users"]
+        # User chi tiết: ưu tiên cấu hình hạng mục; trống → người thực hiện
+        if detail_users:
+            user_detail_ids = detail_users.ids
+            user_detail_names = detail_users.mapped("name")
+        else:
+            assignee_user = (
+                self.assignee_id.employee_id.user_id
+                if self.assignee_id and self.assignee_id.employee_id
+                else False
+            )
+            if assignee_user:
+                user_detail_ids = [assignee_user.id]
+                user_detail_names = [assignee_user.name or self.assignee_id.name or ""]
+            elif self.assignee_id:
+                user_detail_ids = []
+                user_detail_names = [self.assignee_id.name or ""] if self.assignee_id.name else []
+            else:
+                user_detail_ids = []
+                user_detail_names = []
+
+        # Deadline dạng chu kỳ (Hằng ngày / Tuần / Tháng) từ mẫu lặp
+        cycle_labels = {
+            "daily": "Hằng ngày",
+            "weekly": "Tuần",
+            "monthly": "Tháng",
+            "yearly": "Cố định ngày",
+        }
+        rec = self.sudo().recurring_id
+        if rec and rec.recurrence_type:
+            deadline_period = cycle_labels.get(rec.recurrence_type, "")
+            deadline_period_key = rec.recurrence_type
+        else:
+            deadline_period = ""
+            deadline_period_key = ""
+
         return {
             "id": self.id,
             "name": self.name or "",
+            "task_name": self.name or "",
             "assign_date": self.assign_date.isoformat() if self.assign_date else "",
             "assign_date_display": self.assign_date.strftime("%d/%m/%Y")
             if self.assign_date
@@ -1023,6 +1095,8 @@ class DailyTask(models.Model):
             "can_delete": self._can_employee_delete_task(),
             "deadline": self.deadline.isoformat() if self.deadline else "",
             "deadline_display": self.deadline.strftime("%d/%m/%Y") if self.deadline else "",
+            "deadline_period": deadline_period,
+            "deadline_period_key": deadline_period_key,
             "department_id": self.department_id.id if self.department_id else False,
             "department_label": self.department_id.display_name if self.department_id else "",
             "assignee_id": self.assignee_id.id,
@@ -1032,6 +1106,14 @@ class DailyTask(models.Model):
             else False,
             "work_group_id": wg.id if wg else False,
             "work_group_label": (wg.name or "") if wg else "",
+            "category_name": (wg.name or "") if wg else "",
+            "work_group_task_name": (wg.task_name or "") if wg else "",
+            "user_detail_ids": user_detail_ids,
+            "user_detail_names": user_detail_names,
+            "user_check_ids": check_users.ids,
+            "user_check_names": check_users.mapped("name"),
+            "user_total_ids": total_users.ids,
+            "user_total_names": total_users.mapped("name"),
             "duration_minutes": minutes,
             "duration_hours": hours,
             "duration_hours_display": ("%.2f" % hours).rstrip("0").rstrip(".") or "0",
@@ -1065,6 +1147,106 @@ class DailyTask(models.Model):
             "discussion_count": 0,
             "discussion_unread": 0,
         }
+
+    @api.model
+    def _build_team_assign_rows(self, tasks):
+        """Bảng Phân công Team: mỗi (nội dung × khu vực) một dòng.
+
+        Khu vực lấy từ cấu hình Hạng mục (Miền Nam / ĐTT / Bắc / VPTT / VPMB).
+        Người phụ trách + User chi tiết = user của khu vực đó.
+        User kiểm tra = User Kiểm chi tiết (trống → User tổng).
+        User phối hợp = User tổng (chỉ khi đã có User Kiểm chi tiết).
+        """
+        Users = self.env["res.users"]
+        regions = (
+            ("south_user_ids", "Miền Nam"),
+            ("dtt_user_ids", "Miền ĐTT"),
+            ("north_user_ids", "Miền Bắc"),
+            ("vptt_user_ids", "VPTT"),
+            ("vpmb_user_ids", "VPMB"),
+        )
+        seen = set()
+        unique = self.env["daily.task"]
+        for task in tasks:
+            key = (
+                task.work_group_id.id if task.work_group_id else 0,
+                (task.name or "").strip().casefold(),
+            )
+            if key in seen:
+                continue
+            seen.add(key)
+            unique |= task
+
+        rows = []
+        stt = 0
+        for task in unique.sorted(
+            key=lambda t: (
+                (t.work_group_id.name or "").casefold(),
+                (t.name or "").casefold(),
+                t.id,
+            )
+        ):
+            wg = task.sudo().work_group_id
+            check = wg.detail_check_user_ids if wg else Users.browse()
+            total = wg.total_user_ids if wg else Users.browse()
+            if check:
+                check_names = check.mapped("name")
+                coord_names = total.mapped("name")
+            else:
+                check_names = total.mapped("name")
+                coord_names = []
+
+            category = (wg.name or "") if wg else ""
+            content = task.name or ""
+            note = task.note or ""
+            emitted = False
+            for field, label in regions:
+                users = getattr(wg, field, Users.browse()) if wg else Users.browse()
+                if not users:
+                    continue
+                emitted = True
+                stt += 1
+                names = users.mapped("name")
+                rows.append(
+                    {
+                        "id": "%s-%s" % (task.id, field),
+                        "task_id": task.id,
+                        "stt": stt,
+                        "category_name": category,
+                        "task_name": content,
+                        "region": label,
+                        "assignee_names": names,
+                        "user_detail_names": names,
+                        "user_check_names": check_names,
+                        "user_coord_names": coord_names,
+                        "note": note,
+                    }
+                )
+            if not emitted:
+                detail = wg.detail_user_ids if wg else Users.browse()
+                if detail:
+                    names = detail.mapped("name")
+                elif task.assignee_id:
+                    names = [task.assignee_id.name or ""]
+                else:
+                    names = []
+                stt += 1
+                rows.append(
+                    {
+                        "id": "%s-none" % task.id,
+                        "task_id": task.id,
+                        "stt": stt,
+                        "category_name": category,
+                        "task_name": content,
+                        "region": "—",
+                        "assignee_names": names,
+                        "user_detail_names": names,
+                        "user_check_names": check_names,
+                        "user_coord_names": coord_names,
+                        "note": note,
+                    }
+                )
+        return rows
 
     @api.model
     def _calendar_visible_domain(self):
@@ -1183,6 +1365,16 @@ class DailyTask(models.Model):
         }
 
     @api.model
+    def action_open_daily_work_home(self):
+        """App root: Quản lý vào Báo cáo KPI, user thường vào Nhập công việc."""
+        xmlid = (
+            "daily_work_task.action_daily_work_dashboard"
+            if self._is_manager()
+            else "daily_work_task.action_daily_work_employee_ws"
+        )
+        return self.env["ir.actions.actions"]._for_xml_id(xmlid)
+
+    @api.model
     def _is_manager(self):
         return self.env.user.has_group("daily_work_task.group_daily_work_manager")
 
@@ -1257,6 +1449,47 @@ class DailyTask(models.Model):
         if self._is_manager():
             return None
         return self._access_target_ids_sql("perm_checklist")
+
+    @api.model
+    def rule_team_department_ids(self):
+        """Phòng ban của user đang login — dùng cho Báo cáo công việc team và ir.rule."""
+        employee = self.env.user.employee_id
+        dept = employee.department_id if employee else False
+        if not dept:
+            mine = self._my_hr_employee()
+            dept = mine.department_id if mine else False
+        return [dept.id] if dept else [0]
+
+    @api.model
+    def action_open_team_report(self):
+        """Dashboard team — cùng giao diện báo cáo cá nhân, số liệu cả phòng ban."""
+        return {
+            "type": "ir.actions.client",
+            "tag": "daily_work_team_report",
+            "name": "Báo cáo CV chi tiết team",
+            "context": {"daily_work_team_report": True},
+            "target": "current",
+        }
+
+    @api.model
+    def action_open_team_assign(self):
+        """Bảng phân công công việc team — giao diện chỉ xem theo hạng mục."""
+        return {
+            "type": "ir.actions.client",
+            "tag": "daily_work_assign_board",
+            "name": "Bảng phân công công việc team",
+            "target": "current",
+        }
+
+    @api.model
+    def _resolve_team_department_id(self, filters):
+        """Phòng ban của báo cáo team. Quản lý được chọn; user thường khóa phòng mình."""
+        own = [d for d in self.rule_team_department_ids() if d]
+        requested = int((filters or {}).get("department_id") or 0)
+        if self._is_manager() and requested:
+            if self.env["hr.department"].sudo().browse(requested).exists():
+                return requested
+        return own[0] if own else 0
 
     @api.model
     def rule_viewable_employee_ids(self):
@@ -2235,7 +2468,7 @@ class DailyTask(models.Model):
                 raise ValidationError(
                     "Bạn chỉ được chọn nhóm công việc của phòng ban mình."
                 )
-            if group.user_ids and self.env.uid not in group.user_ids.ids:
+            if not group.is_user_applicable(self.env.uid):
                 raise ValidationError(
                     "Bạn không nằm trong danh sách User áp dụng của nhóm này."
                 )
@@ -2837,15 +3070,15 @@ class DailyTask(models.Model):
                 )
             if not department_id and group.department_id:
                 department_id = group.department_id.id
-            # Hạng mục phải trong User áp dụng của người được giao (để trống = cả phòng ban)
-            if group.user_ids:
+            # Hạng mục phải trong User áp dụng của người được giao (để trống cả 3 = cả phòng ban)
+            if group.applicable_users():
                 self.env.cr.execute(
                     "SELECT user_id FROM hr_employee WHERE id = %s",
                     (hr_id,),
                 )
                 row = self.env.cr.fetchone()
                 assignee_uid = int(row[0]) if row and row[0] else False
-                if not assignee_uid or assignee_uid not in group.user_ids.ids:
+                if not assignee_uid or not group.is_user_applicable(assignee_uid):
                     raise ValidationError(
                         "Nhân viên được giao không nằm trong User áp dụng của hạng mục «%s»."
                         % (group.name or "")
@@ -2939,14 +3172,14 @@ class DailyTask(models.Model):
                 )
             if not department_id and group.department_id:
                 department_id = group.department_id.id
-            if group.user_ids:
+            if group.applicable_users():
                 self.env.cr.execute(
                     "SELECT user_id FROM hr_employee WHERE id = %s",
                     (hr_id,),
                 )
                 row = self.env.cr.fetchone()
                 assignee_uid = int(row[0]) if row and row[0] else False
-                if not assignee_uid or assignee_uid not in group.user_ids.ids:
+                if not assignee_uid or not group.is_user_applicable(assignee_uid):
                     raise ValidationError(
                         "Nhân viên được giao không nằm trong User áp dụng của hạng mục «%s»."
                         % (group.name or "")
@@ -3379,7 +3612,7 @@ class DailyTask(models.Model):
         """
         Báo cáo công việc cá nhân (mẫu dashboard): KPI + biểu đồ + hôm nay /
         deadline / nhắc việc + bảng + đánh giá.
-        filters: department_id, employee_id, work_group_id, state, search
+        filters: department_id, employee_id, work_group_id, state, search, team
         """
         from collections import defaultdict
         from datetime import timedelta
@@ -3401,7 +3634,7 @@ class DailyTask(models.Model):
             )
             allowed = [r[0] for r in self.env.cr.fetchall()]
         elif self._is_viewer():
-            if not allowed_emp_ids and not my:
+            if not filters.get("team") and not allowed_emp_ids and not my:
                 return {
                     "year": year,
                     "month": month,
@@ -3427,6 +3660,8 @@ class DailyTask(models.Model):
                 allowed.append(my.id)
         elif my:
             allowed = [my.id]
+        elif filters.get("team"):
+            allowed = []
         else:
             raise ValidationError(
                 "Không tìm thấy hồ sơ nhân viên gắn với tài khoản. "
@@ -3440,9 +3675,40 @@ class DailyTask(models.Model):
         state_f = (filters.get("state") or "").strip()
         search = (filters.get("search") or "").strip().lower()
         personal_only = bool(filters.get("personal_only"))
+        team = bool(filters.get("team"))
+        dept_id = 0
 
-        # Dashboard cá nhân: luôn khóa đúng user đang đăng nhập
-        if personal_only:
+        # Dashboard cá nhân: luôn khóa đúng user đang đăng nhập.
+        # Báo cáo team: gom mọi việc của phòng ban, không khóa một nhân viên.
+        if team:
+            dept_id = self._resolve_team_department_id(filters)
+            if not dept_id:
+                return {
+                    "year": year,
+                    "month": month,
+                    "message": (
+                        "Tài khoản chưa gắn phòng ban nên chưa xem được báo cáo team."
+                    ),
+                    "user_name": self.env.user.name or "",
+                    "profile": {},
+                    "kpi": {},
+                    "rows": [],
+                    "assign_rows": [],
+                    "groups": [],
+                    "charts": {},
+                    "today": {"date_label": "", "tasks": [], "total_hours": 0},
+                    "deadlines": {"in_1_day": [], "in_2_3_days": [], "this_week": []},
+                    "reminders": {"overdue": 0, "today": 0, "tomorrow": 0, "this_week": 0},
+                    "evaluation": {},
+                    "filters": {"departments": [], "employees": [], "work_groups": []},
+                    "can_delete": False,
+                    "can_pick_employee": False,
+                    "can_pick_department": False,
+                    "team": True,
+                    "report_title": "Báo cáo CV chi tiết team",
+                }
+            emp_id = 0
+        elif personal_only:
             if not my:
                 raise ValidationError(
                     "Không tìm thấy hồ sơ nhân viên gắn với tài khoản. "
@@ -3458,16 +3724,28 @@ class DailyTask(models.Model):
 
         profile = self._report_profile_for_employee(emp_id)
 
-        domain = [
-            ("assignee_id.employee_id", "=", emp_id or 0),
-            "|",
-            "&",
-            ("deadline", ">=", date_from),
-            ("deadline", "<=", date_to),
-            "&",
-            ("assign_date", ">=", date_from),
-            ("assign_date", "<=", date_to),
-        ]
+        if team:
+            domain = [
+                ("department_id", "=", dept_id),
+                "|",
+                "&",
+                ("deadline", ">=", date_from),
+                ("deadline", "<=", date_to),
+                "&",
+                ("assign_date", ">=", date_from),
+                ("assign_date", "<=", date_to),
+            ]
+        else:
+            domain = [
+                ("assignee_id.employee_id", "=", emp_id or 0),
+                "|",
+                "&",
+                ("deadline", ">=", date_from),
+                ("deadline", "<=", date_to),
+                "&",
+                ("assign_date", ">=", date_from),
+                ("assign_date", "<=", date_to),
+            ]
         if wg_id:
             domain.append(("work_group_id", "=", wg_id))
         if state_f in ("done", "in_progress", "not_started"):
@@ -3484,6 +3762,7 @@ class DailyTask(models.Model):
                     [
                         data.get("name") or "",
                         data.get("work_group_label") or "",
+                        data.get("assignee_name") or "",
                         data.get("note") or "",
                     ]
                 ).lower()
@@ -3654,6 +3933,66 @@ class DailyTask(models.Model):
             ],
         }
 
+        # Biểu đồ cột chồng theo thành viên (Báo cáo team)
+        by_member = False
+        if team:
+            member_map = {}
+            member_order = []
+            for r in rows:
+                aid = r.get("assignee_id") or 0
+                aname = (r.get("assignee_name") or "").strip() or "Không xác định"
+                if aid not in member_map:
+                    parts = aname.split()
+                    member_map[aid] = {
+                        "name": aname,
+                        "short": parts[-1] if parts else aname,
+                        "done": 0,
+                        "in_progress": 0,
+                        "overdue": 0,
+                        "not_started": 0,
+                    }
+                    member_order.append(aid)
+                m = member_map[aid]
+                if r.get("state") == "done":
+                    m["done"] += 1
+                elif r.get("is_active_overdue"):
+                    m["overdue"] += 1
+                elif r.get("state") == "in_progress":
+                    m["in_progress"] += 1
+                else:
+                    m["not_started"] += 1
+            members = [member_map[aid] for aid in member_order]
+            by_member = {
+                "labels": [m["short"] for m in members],
+                "full_names": [m["name"] for m in members],
+                "datasets": [
+                    {
+                        "key": "done",
+                        "label": "Hoàn thành",
+                        "color": "#22c55e",
+                        "data": [m["done"] for m in members],
+                    },
+                    {
+                        "key": "in_progress",
+                        "label": "Đang thực hiện",
+                        "color": "#eab308",
+                        "data": [m["in_progress"] for m in members],
+                    },
+                    {
+                        "key": "overdue",
+                        "label": "Chưa hoàn thành",
+                        "color": "#ef4444",
+                        "data": [m["overdue"] for m in members],
+                    },
+                    {
+                        "key": "not_started",
+                        "label": "Chưa bắt đầu",
+                        "color": "#94a3b8",
+                        "data": [m["not_started"] for m in members],
+                    },
+                ],
+            }
+
         pri_order = [("high", "Cao", "#ef4444"), ("medium", "Trung bình", "#f59e0b"), ("low", "Thấp", "#3b82f6")]
         pri_counts = {k: sum(1 for r in rows if r.get("priority") == k) for k, _l, _c in pri_order}
         by_priority = {
@@ -3669,13 +4008,17 @@ class DailyTask(models.Model):
         }
 
         # Việc active (không giới hạn tháng) cho hôm nay / deadline / nhắc
-        active = self.sudo().search(
-            [
+        if team:
+            active_domain = [
+                ("department_id", "=", dept_id),
+                ("state", "!=", "done"),
+            ]
+        else:
+            active_domain = [
                 ("assignee_id.employee_id", "=", emp_id or 0),
                 ("state", "!=", "done"),
-            ],
-            order="deadline asc, id asc",
-        )
+            ]
+        active = self.sudo().search(active_domain, order="deadline asc, id asc")
         self._refresh_overdue_flags(active)
         active_rows = []
         for t in active:
@@ -3868,6 +4211,40 @@ class DailyTask(models.Model):
             limit=200,
         )
 
+        report_title = "BÁO CÁO CÔNG VIỆC CÁ NHÂN"
+        can_pick_department = False
+        selected_department_id = False
+        department_options = [
+            {"id": k, "name": v}
+            for k, v in sorted(depts.items(), key=lambda x: x[1])
+        ]
+        if team:
+            report_title = "Báo cáo CV chi tiết team"
+            dept = self.env["hr.department"].sudo().browse(dept_id)
+            member_count = self.env["hr.employee"].sudo().search_count(
+                [("department_id", "=", dept_id), ("active", "=", True)]
+            )
+            profile = {
+                "id": False,
+                "name": dept.display_name or "Team",
+                "job_title": "Team",
+                "department": "%s nhân viên" % member_count,
+                "avatar_url": False,
+            }
+            selected_department_id = dept_id
+            if self._is_manager():
+                department_options = [
+                    {"id": d.id, "name": d.display_name or d.name or "—"}
+                    for d in self.env["hr.department"].sudo().search(
+                        [("active", "=", True)], order="name"
+                    )
+                ]
+                can_pick_department = len(department_options) > 1
+            else:
+                department_options = [{"id": dept_id, "name": profile["name"]}]
+
+        assign_rows = self._build_team_assign_rows(tasks) if team else []
+
         return {
             "year": year,
             "month": month,
@@ -3901,6 +4278,7 @@ class DailyTask(models.Model):
                 "rating": rating,
             },
             "rows": rows,
+            "assign_rows": assign_rows,
             "groups": groups,
             "charts": {
                 "by_state": by_state,
@@ -3908,6 +4286,7 @@ class DailyTask(models.Model):
                 "by_priority": by_priority,
                 "by_work_group": by_work_group,
                 "weekly": weekly,
+                "by_member": by_member,
             },
             "today": {
                 "date_label": today_label,
@@ -3929,10 +4308,7 @@ class DailyTask(models.Model):
                 "hours": hours,
             },
             "filters": {
-                "departments": [
-                    {"id": k, "name": v}
-                    for k, v in sorted(depts.items(), key=lambda x: x[1])
-                ],
+                "departments": department_options,
                 "employees": [
                     {
                         "id": e["id"],
@@ -3945,8 +4321,12 @@ class DailyTask(models.Model):
             },
             "can_delete": self._is_system_admin(),
             "can_pick_employee": False
-            if personal_only
+            if team or personal_only
             else (self._is_viewer() or self._is_manager()),
+            "can_pick_department": can_pick_department,
+            "selected_department_id": selected_department_id,
+            "team": team,
+            "report_title": report_title,
             "personal_only": personal_only,
         }
 
@@ -4003,6 +4383,55 @@ class DailyTask(models.Model):
             return bio
         except Exception:
             return False
+
+    @api.model
+    def _png_image_size(self, bio):
+        """Đọc width/height từ PNG header (không cần Pillow)."""
+        if not bio:
+            return 0, 0
+        try:
+            pos = bio.tell()
+            bio.seek(0)
+            header = bio.read(24)
+            bio.seek(pos)
+            if len(header) >= 24 and header[12:16] == b"IHDR":
+                w = int.from_bytes(header[16:20], "big")
+                h = int.from_bytes(header[20:24], "big")
+                return w, h
+        except Exception:
+            pass
+        return 0, 0
+
+    @api.model
+    def _excel_fit_image_options(self, bio, target_w_px, target_h_px, pad=8):
+        """Scale + offset để ảnh vừa khung ô Excel (giữ tỉ lệ, căn giữa)."""
+        w, h = self._png_image_size(bio)
+        if not w or not h or target_w_px <= 0 or target_h_px <= 0:
+            return {
+                "image_data": bio,
+                "x_scale": 0.35,
+                "y_scale": 0.35,
+                "x_offset": pad,
+                "y_offset": pad,
+                "object_position": 1,
+            }
+        avail_w = max(40, target_w_px - pad * 2)
+        avail_h = max(40, target_h_px - pad * 2)
+        scale = min(avail_w / float(w), avail_h / float(h))
+        # Không phóng quá lớn ảnh nhỏ
+        scale = min(scale, 1.0)
+        drawn_w = w * scale
+        drawn_h = h * scale
+        x_offset = max(0, int(pad + (avail_w - drawn_w) / 2))
+        y_offset = max(0, int(pad + (avail_h - drawn_h) / 2))
+        return {
+            "image_data": bio,
+            "x_scale": scale,
+            "y_scale": scale,
+            "x_offset": x_offset,
+            "y_offset": y_offset,
+            "object_position": 1,
+        }
 
     @api.model
     def export_personal_report_excel(self, year=None, month=None, filters=None, chart_images=None):
@@ -4128,7 +4557,8 @@ class DailyTask(models.Model):
             )
         ws.write(r, 0, "", frame_fill)
         ws.write(r, 1, "", frame_fill)
-        ws.merge_range(r, 2, r, 9, "BÁO CÁO CÔNG VIỆC CÁ NHÂN", title_fmt)
+        report_title = data.get("report_title") or "BÁO CÁO CÔNG VIỆC CÁ NHÂN"
+        ws.merge_range(r, 2, r, 9, report_title, title_fmt)
         r += 1
         # Hàng 2: họ tên · phòng ban (căn giữa, cạnh tiêu đề)
         name_dept = "%s%s" % (
@@ -4172,15 +4602,37 @@ class DailyTask(models.Model):
                 ws.write(r + 2, col, "", kpi_sub)
         r += 4
 
-        # ===== KHUNG BIỂU ĐỒ: dán 3 ảnh chụp cả thẻ UI (như xu hướng tuần) =====
+        # ===== KHUNG BIỂU ĐỒ =====
         ws.merge_range(r, 0, r, 9, "  ■ BIỂU ĐỒ", section_fmt)
         r += 1
+        weekly_caption = (
+            "Tình hình công việc theo thành viên"
+            if data.get("team")
+            else "Xu hướng hoàn thành công việc (theo tuần)"
+        )
+        is_team = bool(data.get("team"))
         chart_label_row = r
-        for c1, c2, label in (
-            (0, 2, "Tỷ lệ trạng thái công việc"),
-            (3, 5, "Xu hướng hoàn thành công việc (theo tuần)"),
-            (6, 9, "Đánh giá hiệu suất tháng"),
-        ):
+        if is_team:
+            caption_spans = (
+                (0, 4, "Tỷ lệ trạng thái công việc"),
+                (5, 9, weekly_caption),
+            )
+            panels = (
+                ("state", 0, 4),
+                ("weekly", 5, 9),
+            )
+        else:
+            caption_spans = (
+                (0, 2, "Tỷ lệ trạng thái công việc"),
+                (3, 5, weekly_caption),
+                (6, 9, "Đánh giá hiệu suất tháng"),
+            )
+            panels = (
+                ("state", 0, 2),
+                ("weekly", 3, 5),
+                ("eval", 6, 9),
+            )
+        for c1, c2, label in caption_spans:
             ws.merge_range(chart_label_row, c1, chart_label_row, c2, label, chart_caption)
         r += 1
 
@@ -4188,33 +4640,28 @@ class DailyTask(models.Model):
             border=2, border_color=BORDER_CLR, bg_color="#ffffff",
             valign="vcenter", align="center",
         )
-        img_h = 12
+        img_rows = 14
+        row_pt = 15
         body_top = r
-        body_bottom = r + img_h - 1
+        body_bottom = r + img_rows - 1
         for rr in range(body_top, body_bottom + 1):
-            ws.set_row(rr, 15)
+            ws.set_row(rr, row_pt)
 
-        panels = [
-            ("state", 0, 2, 0.42),
-            ("weekly", 3, 5, 0.42),
-            ("eval", 6, 9, 0.42),
-        ]
-        for key, c1, c2, scale in panels:
+        def _pane_width_px(c1, c2):
+            return int(sum(widths[c] for c in range(c1, c2 + 1)) * 7.0 + 5)
+
+        pane_h_px = int(img_rows * row_pt * 96.0 / 72.0)
+        for key, c1, c2 in panels:
             ws.merge_range(body_top, c1, body_bottom, c2, "", pane_box)
             img = self._decode_data_url_image(chart_images.get(key))
             if img:
-                ws.insert_image(
-                    body_top,
-                    c1,
-                    "%s.png" % key,
-                    {
-                        "image_data": img,
-                        "x_scale": scale,
-                        "y_scale": scale,
-                        "x_offset": 6,
-                        "y_offset": 6,
-                    },
+                opts = self._excel_fit_image_options(
+                    img,
+                    target_w_px=_pane_width_px(c1, c2),
+                    target_h_px=pane_h_px,
+                    pad=6,
                 )
+                ws.insert_image(body_top, c1, "%s.png" % key, opts)
 
         r = body_bottom + 2
 
@@ -4223,9 +4670,10 @@ class DailyTask(models.Model):
             "STT", "Công việc", "Ưu tiên", "Tiến độ", "Trạng thái",
             "Deadline", "Thời gian", "Người phụ trách", "Ghi chú", "Quá hạn",
         ]
+        col_count = 10
         for group in groups:
             ws.merge_range(
-                r, 0, r, 9,
+                r, 0, r, col_count - 1,
                 "%s %s  (%s)"
                 % (
                     self._work_group_export_icon(group.get("label")),
@@ -4240,7 +4688,7 @@ class DailyTask(models.Model):
             r += 1
             rows_in_group = group.get("rows") or []
             if not rows_in_group:
-                for col in range(10):
+                for col in range(col_count):
                     ws.write(r, col, "" if col else "(không có công việc)", cell_fmt)
                 r += 1
             for row in rows_in_group:
@@ -4262,9 +4710,49 @@ class DailyTask(models.Model):
                     )
                     ws.write(r, col, val, use)
                 r += 1
-            for col in range(10):
+            for col in range(col_count):
                 ws.write(r, col, "", box_empty_soft)
             r += 1
+
+        # ===== BẢNG PHÂN CÔNG TEAM (nếu báo cáo team) =====
+        if bool(data.get("team")):
+            r += 1
+            assign_title = fmt(
+                bold=True, font_size=13, font_color="#166534",
+                align="left", valign="vcenter",
+            )
+            ws.merge_range(r, 0, r, 8, "Phân công công việc Team", assign_title)
+            r += 1
+            assign_headers = [
+                "STT",
+                "Hạng mục",
+                "Nội dung công việc",
+                "Khu vực",
+                "Người phụ trách",
+                "User chi tiết",
+                "User kiểm tra",
+                "User phối hợp",
+                "Ghi chú",
+            ]
+            for col, h in enumerate(assign_headers):
+                ws.write(r, col, h, header_fmt)
+            r += 1
+            for row in data.get("assign_rows") or []:
+                vals = [
+                    row.get("stt") or "",
+                    row.get("category_name") or "",
+                    row.get("task_name") or "",
+                    row.get("region") or "",
+                    ", ".join(row.get("assignee_names") or []),
+                    ", ".join(row.get("user_detail_names") or []),
+                    ", ".join(row.get("user_check_names") or []),
+                    ", ".join(row.get("user_coord_names") or []),
+                    row.get("note") or "",
+                ]
+                for col, val in enumerate(vals):
+                    use = center_fmt if col in (0, 3) else cell_fmt
+                    ws.write(r, col, val, use)
+                r += 1
 
         # ===== KHUNG CHỮ KÝ =====
         sign = self._personal_report_sign_block()
@@ -4297,13 +4785,15 @@ class DailyTask(models.Model):
         ws.merge_range(r, 3, r, 5, "Trưởng bộ phận", sign_title)
         ws.merge_range(r, 6, r, 9, "Giám đốc", sign_title)
         r += 1
-        # Khoảng trống ký (~5 dòng)
-        for _ in range(5):
-            ws.set_row(r, 18)
-            ws.merge_range(r, 0, r, 2, "", sign_space)
-            ws.merge_range(r, 3, r, 5, "", sign_space)
-            ws.merge_range(r, 6, r, 9, "", sign_space)
-            r += 1
+        # Khoảng trống ký: gộp cả khối 5 dòng (không còn đường kẻ ngang trong khung)
+        sign_top = r
+        sign_bottom = r + 4
+        for rr in range(sign_top, sign_bottom + 1):
+            ws.set_row(rr, 18)
+        ws.merge_range(sign_top, 0, sign_bottom, 2, "", sign_space)
+        ws.merge_range(sign_top, 3, sign_bottom, 5, "", sign_space)
+        ws.merge_range(sign_top, 6, sign_bottom, 9, "", sign_space)
+        r = sign_bottom + 1
         # Họ tên
         ws.merge_range(r, 0, r, 2, sign.get("preparer") or "", sign_name)
         ws.merge_range(r, 3, r, 5, sign.get("dept_head") or "", sign_name)
@@ -4313,7 +4803,8 @@ class DailyTask(models.Model):
         wb.close()
         raw = buffer.getvalue()
         safe_name = re.sub(r"[^\w\-]+", "_", profile.get("name") or "NhanVien")
-        filename = "Bao_cao_ca_nhan_%s_%02d_%s.xlsx" % (safe_name, month, year)
+        name_prefix = "Bao_cao_team" if data.get("team") else "Bao_cao_ca_nhan"
+        filename = "%s_%s_%02d_%s.xlsx" % (name_prefix, safe_name, month, year)
         return {
             "filename": filename,
             "file_base64": base64.b64encode(raw).decode("ascii"),
@@ -4403,9 +4894,10 @@ class DailyTask(models.Model):
                 header_bits.append(RLImage(logo, width=42 * mm, height=18 * mm))
             except Exception:
                 pass
+        report_title = data.get("report_title") or "BÁO CÁO CÔNG VIỆC CÁ NHÂN"
         header_bits.append(
             Paragraph(
-                "<b>BÁO CÁO CÔNG VIỆC CÁ NHÂN</b>",
+                "<b>%s</b>" % report_title,
                 title_style,
             )
         )
@@ -4494,14 +4986,28 @@ class DailyTask(models.Model):
             )
             return inner
 
-        ct = Table(
-            [[
-                _panel_img("state", "Tỷ lệ trạng thái công việc"),
-                _panel_img("weekly", "Xu hướng hoàn thành công việc (theo tuần)"),
-                _panel_img("eval", "Đánh giá hiệu suất tháng"),
-            ]],
-            colWidths=[90 * mm, 90 * mm, 90 * mm],
+        weekly_title = (
+            "Tình hình công việc theo thành viên"
+            if data.get("team")
+            else "Xu hướng hoàn thành công việc (theo tuần)"
         )
+        if data.get("team"):
+            ct = Table(
+                [[
+                    _panel_img("state", "Tỷ lệ trạng thái công việc"),
+                    _panel_img("weekly", weekly_title),
+                ]],
+                colWidths=[135 * mm, 135 * mm],
+            )
+        else:
+            ct = Table(
+                [[
+                    _panel_img("state", "Tỷ lệ trạng thái công việc"),
+                    _panel_img("weekly", weekly_title),
+                    _panel_img("eval", "Đánh giá hiệu suất tháng"),
+                ]],
+                colWidths=[90 * mm, 90 * mm, 90 * mm],
+            )
         ct.setStyle(
             TableStyle(
                 [
@@ -4633,7 +5139,8 @@ class DailyTask(models.Model):
         doc.build(story)
         raw = buffer.getvalue()
         safe_name = re.sub(r"[^\w\-]+", "_", profile.get("name") or "NhanVien")
-        filename = "Bao_cao_ca_nhan_%s_%02d_%s.pdf" % (safe_name, month, year)
+        name_prefix = "Bao_cao_team" if data.get("team") else "Bao_cao_ca_nhan"
+        filename = "%s_%s_%02d_%s.pdf" % (name_prefix, safe_name, month, year)
         return {
             "filename": filename,
             "file_base64": base64.b64encode(raw).decode("ascii"),
@@ -4924,6 +5431,22 @@ class DailyTask(models.Model):
     def _onchange_assignee_id(self):
         if self.assignee_id and self.assignee_id.employee_id and self.assignee_id.employee_id.department_id:
             self.department_id = self.assignee_id.employee_id.department_id
+        self._clear_work_group_if_out_of_scope()
+
+    @api.onchange("department_id")
+    def _onchange_department_id_work_group(self):
+        self._clear_work_group_if_out_of_scope()
+
+    def _clear_work_group_if_out_of_scope(self):
+        group = self.work_group_id
+        if not group:
+            return
+        if self.department_id and group.department_id and group.department_id != self.department_id:
+            self.work_group_id = False
+            return
+        user = self.assignee_user_id
+        if user and not group.is_user_applicable(user):
+            self.work_group_id = False
 
     @api.model
     def action_open_hr_employee(self, hr_employee_id):

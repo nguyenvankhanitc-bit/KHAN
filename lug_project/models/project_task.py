@@ -42,6 +42,7 @@ class ProjectTask(models.Model):
         index=True,
         tracking=True,
     )
+    lug_execution_date = fields.Date(string="Ngày thực hiện", copy=False)
     lug_done_date = fields.Date(string="Ngày hoàn thành", copy=False)
     lug_result = fields.Char(string="Kết quả")
     lug_note = fields.Char(string="Ghi chú")

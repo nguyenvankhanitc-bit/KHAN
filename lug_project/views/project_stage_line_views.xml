@@ -13,6 +13,7 @@
                 <field name="name" string="Tên công việc giai đoạn"/>
                 <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
                 <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                <field name="execution_date" string="Ngày thực hiện"/>
                 <field name="deadline" string="Deadline"/>
                 <field name="state" string="Trạng thái" widget="badge"
                        decoration-muted="state == 'draft'"
@@ -43,6 +44,7 @@
                                    options="{'no_create': True}"/>
                             <field name="supervisor_ids" widget="many2many_avatar_user"
                                    options="{'no_create': True}"/>
+                            <field name="execution_date"/>
                             <field name="deadline"/>
                         </group>
                         <group>
@@ -115,6 +117,7 @@
                             <field name="name" string="Tên công việc giai đoạn"/>
                             <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
                             <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                            <field name="execution_date" string="Ngày thực hiện"/>
                             <field name="deadline" string="Deadline"/>
                             <field name="state" string="Trạng thái" widget="badge"
                                    decoration-muted="state == 'draft'"

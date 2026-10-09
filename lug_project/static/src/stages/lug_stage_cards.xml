@@ -33,6 +33,7 @@
                                         <th class="is-name">Tên công việc giai đoạn</th>
                                         <th class="is-user">Người phụ trách</th>
                                         <th class="is-supervisor">Người giám sát</th>
+                                        <th class="is-execution-date">Ngày thực hiện</th>
                                         <th class="is-deadline">Deadline</th>
                                         <th class="is-state">Trạng thái</th>
                                         <th class="is-timeleft">Timeleft</th>
@@ -48,6 +49,7 @@
                                             <td class="is-name" t-esc="task.name"/>
                                             <td class="is-user" t-esc="task.userName"/>
                                             <td class="is-supervisor" t-esc="task.supervisorName"/>
+                                            <td class="is-execution-date" t-esc="task.executionDateLabel"/>
                                             <td class="is-deadline" t-esc="task.deadlineLabel"/>
                                             <td class="is-state">
                                                 <span t-att-class="'o_lug_sc_badge is-' + task.state"
@@ -65,12 +67,12 @@
                                         </tr>
                                     </t>
                                     <tr t-if="!card.tasks.length" class="o_lug_sc_empty">
-                                        <td t-att-colspan="canEdit ? 10 : 9">Chưa có công việc</td>
+                                        <td t-att-colspan="canEdit ? 11 : 10">Chưa có công việc</td>
                                     </tr>
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td t-att-colspan="8"/>
+                                        <td t-att-colspan="9"/>
                                         <td class="is-cost o_lug_sc_total">
                                             Tổng: <t t-esc="card.totalCost"/>
                                         </td>

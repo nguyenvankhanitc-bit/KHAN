@@ -39,6 +39,7 @@
                         <group string="Phân công &amp; Tiến độ">
                             <field name="lug_pic_id" widget="many2one_avatar_user"/>
                             <field name="lug_supervisor_id" widget="many2one_avatar_user"/>
+                            <field name="lug_execution_date"/>
                             <field name="date_deadline"/>
                             <field name="lug_timeleft" widget="lug_timeleft" readonly="1"/>
                             <field name="lug_status" widget="radio" options="{'horizontal': true}"/>
@@ -107,6 +108,7 @@
                                     <field name="name" string="TÊN CÔNG VIỆC"/>
                                     <field name="lug_pic_id" string="PHỤ TRÁCH" widget="many2one_avatar_user"/>
                                     <field name="lug_supervisor_id" string="GIÁM SÁT" widget="many2one_avatar_user"/>
+                                    <field name="lug_execution_date" string="NGÀY THỰC HIỆN"/>
                                     <field name="date_deadline" string="DEADLINE"/>
                                     <field name="lug_timeleft" string="TIME LEFT" widget="lug_timeleft"/>
                                     <field name="lug_status" string="TRẠNG THÁI" widget="lug_status_pill"/>
@@ -126,6 +128,7 @@
                                                 <field name="name"/>
                                                 <field name="lug_pic_id" widget="many2one_avatar_user"/>
                                                 <field name="lug_supervisor_id" widget="many2one_avatar_user"/>
+                                                <field name="lug_execution_date"/>
                                                 <field name="date_deadline"/>
                                                 <field name="lug_timeleft" widget="lug_timeleft" readonly="1"/>
                                             </group>

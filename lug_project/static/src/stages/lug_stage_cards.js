@@ -106,6 +106,7 @@ export class LugStageCardsField extends X2ManyField {
             const tasks = (this.state.tasksByStage[stageId] || []).map((task) => ({
                 ...task,
                 deadlineLabel: formatDate(task.deadline),
+                executionDateLabel: formatDate(task.execution_date),
                 userName: task.user_display || "—",
                 supervisorName: task.supervisor_display || "—",
                 stateLabel: STATE_LABEL[task.state] || task.state,
@@ -181,6 +182,7 @@ export class LugStageCardsField extends X2ManyField {
                     "name",
                     "user_display",
                     "supervisor_display",
+                    "execution_date",
                     "deadline",
                     "state",
                     "timeleft",

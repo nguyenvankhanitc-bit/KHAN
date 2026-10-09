@@ -53,6 +53,7 @@ class ProjectStageTask(models.Model):
         string="Người giám sát",
         compute="_compute_assignee_display",
     )
+    execution_date = fields.Date(string="Ngày thực hiện")
     deadline = fields.Date(string="Ngày hết hạn")
     state = fields.Selection(
         [

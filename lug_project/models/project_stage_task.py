@@ -83,6 +83,10 @@ class ProjectStageTask(models.Model):
     def init(self):
         """Migrate old Many2one columns to Many2many relation tables."""
         cr = self.env.cr
+        try:
+            cr.execute("ALTER TABLE project_stage_task ADD COLUMN IF NOT EXISTS execution_date DATE")
+        except Exception:
+            pass
         cr.execute(
             """
             SELECT column_name
@@ -343,3 +347,10 @@ class ProjectStageTask(models.Model):
             "views": [(view.id, "form")],
             "target": "new",
         }
+
+    def _register_hook(self):
+        super()._register_hook()
+        try:
+            self.env.cr.execute("ALTER TABLE project_stage_task ADD COLUMN IF NOT EXISTS execution_date DATE")
+        except Exception:
+            pass

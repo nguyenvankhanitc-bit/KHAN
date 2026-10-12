@@ -431,3 +431,10 @@ class ProjectTask(models.Model):
         for rec in self:
             if rec.lug_progress < 0 or rec.lug_progress > 100:
                 raise ValidationError("Tiến độ công việc phải từ 0 đến 100.")
+
+    def _register_hook(self):
+        super()._register_hook()
+        try:
+            self.env.cr.execute("ALTER TABLE project_task ADD COLUMN IF NOT EXISTS lug_execution_date DATE")
+        except Exception:
+            pass

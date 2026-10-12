@@ -179,6 +179,22 @@ class ProjectProject(models.Model):
         copy=False,
         index=True,
     )
+    lug_expense_ids = fields.One2many(
+        "hr.expense",
+        "project_id",
+        string="Chi phí liên quan",
+    )
+    lug_total_expense = fields.Monetary(
+        string="Chi phí",
+        currency_field="currency_id",
+        compute="_compute_lug_total_expense",
+        store=True,
+        tracking=True,
+    )
+    lug_expense_count = fields.Integer(
+        string="Số phiếu chi phí",
+        compute="_compute_lug_total_expense",
+    )
     _lug_code_uniq = models.Constraint(
         "unique(lug_code)",
         "Mã dự án phải duy nhất.",
@@ -197,6 +213,35 @@ class ProjectProject(models.Model):
                 rec.project_type = "internal"
             else:
                 rec.project_type = "other"
+
+    @api.depends("lug_expense_ids.total_amount", "lug_expense_ids.state")
+    def _compute_lug_total_expense(self):
+        VALID_STATES = ("approved", "posted", "in_payment", "paid")
+        Expense = self.env["hr.expense"]
+        for project in self:
+            expenses = project.lug_expense_ids.filtered(lambda exp: exp.state in VALID_STATES)
+            if hasattr(project, "account_id") and project.account_id and hasattr(Expense, "analytic_distribution"):
+                analytic_expenses = Expense.search([
+                    ("id", "not in", expenses.ids),
+                    ("state", "in", VALID_STATES),
+                    ("analytic_distribution", "in", project.account_id.ids),
+                ])
+                expenses = expenses | analytic_expenses
+            project.lug_total_expense = sum(exp.total_amount for exp in expenses) if expenses else 0.0
+            project.lug_expense_count = len(expenses)
+
+    def action_view_lug_expenses(self):
+        self.ensure_one()
+        action = self.env["ir.actions.actions"]._for_xml_id("hr_expense.hr_expense_actions_all")
+        domain = [("project_id", "=", self.id)]
+        if hasattr(self, "account_id") and self.account_id:
+            domain = ["|", ("project_id", "=", self.id), ("analytic_distribution", "in", self.account_id.ids)]
+        action["domain"] = domain
+        action["context"] = {
+            "default_project_id": self.id,
+            "search_default_project_id": self.id,
+        }
+        return action
 
     @api.depends("date", "lug_deadline")
     def _compute_deadline_status(self):

@@ -1457,6 +1457,8 @@ class ProjectProjectDashboard(models.Model):
             "status_label": self._LUG_WF_LABELS.get(wf, wf),
             "progress_pct": progress_pct,
             "progress_tone": progress_tone,
+            "total_expense": project.lug_total_expense or 0.0,
+            "expense_count": project.lug_expense_count or 0,
             "timeleft": self._lug_project_timeleft_meta(project, today=today),
             "trash_days": trash_days,
             "trash_left": trash_left,
@@ -1572,9 +1574,9 @@ class ProjectProjectDashboard(models.Model):
         headers = [
             "STT", "Mã dự án", "Cửa hàng / Dự án", "Loại", "Bắt đầu", "Deadline",
             "Cảnh báo hạn", "Độ ưu tiên", "Trưởng DA", "Phụ trách", "Giai đoạn",
-            "Trạng thái", "Tiến độ (%)",
+            "Trạng thái", "Tiến độ (%)", "Chi phí",
         ]
-        widths = [6, 16, 28, 16, 14, 14, 16, 12, 22, 28, 28, 14, 12]
+        widths = [6, 16, 28, 16, 14, 14, 16, 12, 22, 28, 28, 14, 12, 16]
         for col, title in enumerate(headers):
             sheet.write(0, col, title, header_fmt)
             sheet.set_column(col, col, widths[col])
@@ -1598,6 +1600,7 @@ class ProjectProjectDashboard(models.Model):
                 (row.get("phase") or {}).get("label") or "",
                 row.get("status_label") or "",
                 row.get("progress_pct") or 0,
+                row.get("total_expense") or 0.0,
             ]
             for col, value in enumerate(values):
                 sheet.write(index, col, value, cell_fmt)

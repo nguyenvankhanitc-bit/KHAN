@@ -248,6 +248,16 @@
         <field name="model">project.project</field>
         <field name="inherit_id" ref="project.edit_project"/>
         <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_lug_expenses" icon="fa-money">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_value">
+                            <field name="lug_total_expense" widget="monetary"/>
+                        </span>
+                        <span class="o_stat_text">Chi phí (<field name="lug_expense_count"/>)</span>
+                    </div>
+                </button>
+            </xpath>
             <xpath expr="//group/group/field[@name='label_tasks']" position="before">
                 <field name="lug_code" placeholder="Mã dự án"/>
             </xpath>
@@ -392,6 +402,7 @@
                 <field name="lug_pic_id" string="Phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}"/>
                 <field name="lug_workflow_state" string="Trạng thái" widget="badge" optional="show"/>
                 <field name="lug_progress_pct" string="Tiến độ" widget="progressbar"/>
+                <field name="lug_total_expense" string="Chi phí" widget="monetary" optional="show"/>
                 <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft" column_invisible="1" optional="hide"/>
                 <field name="lug_worker_ids" string="Người làm" widget="lug_workers" column_invisible="1" readonly="1" options="{'no_create': True}"/>
                 <field name="lug_content" column_invisible="1" optional="hide"/>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Kế thừa Form View của hr.expense để thêm trường Dự án -->
+    <record id="hr_expense_view_form_lug_project" model="ir.ui.view">
+        <field name="name">hr.expense.view.form.lug.project</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_form"/>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='date']" position="after">
+                <field name="project_id" readonly="not is_editable" options="{'no_create': True}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Kế thừa List View của hr.expense để hiển thị cột Dự án -->
+    <record id="hr_expense_view_tree_lug_project" model="ir.ui.view">
+        <field name="name">hr.expense.view.list.lug.project</field>
+        <field name="model">hr.expense</field>
+        <field name="inherit_id" ref="hr_expense.hr_expense_view_expenses_analysis_tree"/>
+        <field name="priority">30</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='employee_id']" position="after">
+                <field name="project_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

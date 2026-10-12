@@ -60,11 +60,12 @@ mock_models.Model = MockModel
 mock_exceptions = MagicMock()
 
 
-class ValidationError(Exception):
-    pass
-
-
-mock_exceptions.ValidationError = ValidationError
+if "odoo.exceptions" in sys.modules and hasattr(sys.modules["odoo.exceptions"], "ValidationError"):
+    ValidationError = sys.modules["odoo.exceptions"].ValidationError
+else:
+    class ValidationError(Exception):
+        pass
+    mock_exceptions.ValidationError = ValidationError
 mock_exceptions.UserError = Exception
 
 mock_tools = MagicMock()

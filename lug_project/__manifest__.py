@@ -18,6 +18,7 @@ Inherit app Project native — không tạo model dự án mới.
         "project_todo",
         "daily_work_task",
         "hr",
+        "hr_expense",
         "mail",
     ],
     "data": [
@@ -27,6 +28,7 @@ Inherit app Project native — không tạo model dự án mới.
         "data/project_type_data.xml",
         "data/project_phase_data.xml",
         "data/ir_cron_data.xml",
+        "views/hr_expense_views.xml",
         "views/project_type_views.xml",
         "views/project_phase_views.xml",
         "views/project_stage_views.xml",

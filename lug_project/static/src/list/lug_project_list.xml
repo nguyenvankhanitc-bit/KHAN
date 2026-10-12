@@ -262,6 +262,8 @@
                                                                 t-esc="opt.label"/>
                                                     </t>
                                                 </div>
+                                            </header>
+
                                             <!-- Bảng danh sách công việc chi tiết theo giai đoạn -->
                                             <section class="o_lug_plist_phases mt-3">
                                                 <header class="o_lug_plist_phases_head d-flex justify-content-between align-items-center">

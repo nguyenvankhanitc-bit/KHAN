@@ -188,8 +188,6 @@ class ProjectProject(models.Model):
         string="Chi phí",
         currency_field="currency_id",
         compute="_compute_lug_total_expense",
-        store=True,
-        tracking=True,
     )
     lug_expense_count = fields.Integer(
         string="Số phiếu chi phí",
@@ -217,16 +215,25 @@ class ProjectProject(models.Model):
     @api.depends("lug_expense_ids.total_amount", "lug_expense_ids.state")
     def _compute_lug_total_expense(self):
         VALID_STATES = ("approved", "posted", "in_payment", "paid")
-        Expense = self.env["hr.expense"]
+        Expense = self.env.get("hr.expense")
+        if not Expense:
+            for project in self:
+                project.lug_total_expense = 0.0
+                project.lug_expense_count = 0
+            return
+
         for project in self:
             expenses = project.lug_expense_ids.filtered(lambda exp: exp.state in VALID_STATES)
             if hasattr(project, "account_id") and project.account_id and hasattr(Expense, "analytic_distribution"):
-                analytic_expenses = Expense.search([
-                    ("id", "not in", expenses.ids),
-                    ("state", "in", VALID_STATES),
-                    ("analytic_distribution", "in", project.account_id.ids),
-                ])
-                expenses = expenses | analytic_expenses
+                try:
+                    analytic_expenses = Expense.search([
+                        ("id", "not in", expenses.ids),
+                        ("state", "in", VALID_STATES),
+                        ("analytic_distribution", "in", project.account_id.ids),
+                    ])
+                    expenses = expenses | analytic_expenses
+                except Exception:
+                    pass
             project.lug_total_expense = sum(exp.total_amount for exp in expenses) if expenses else 0.0
             project.lug_expense_count = len(expenses)
 
@@ -754,8 +761,19 @@ class ProjectProject(models.Model):
             if text:
                 rec.lug_content = text
 
+    def init(self):
+        super().init()
+        try:
+            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
+        except Exception:
+            pass
+
     def _register_hook(self):
         super()._register_hook()
+        try:
+            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
+        except Exception:
+            pass
         try:
             empty = self.sudo().search([("lug_stt", "=", 0)], limit=1)
             if empty:

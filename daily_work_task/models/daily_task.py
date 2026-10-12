@@ -1512,11 +1512,25 @@ class DailyTask(models.Model):
         return self.env.user.has_group("daily_work_task.group_daily_work_viewer")
 
     @api.model
+    def _req_cache(self, key, compute):
+        """Nhớ kết quả trong 1 request (cr.cache — xoá khi đóng cursor), tránh truy vấn lặp
+        hàng trăm lần khi dựng bảng. Xoá bằng _req_cache_clear() khi đổi phân quyền."""
+        store = self.env.cr.cache.setdefault("daily_work_task", {})
+        if key not in store:
+            store[key] = compute()
+        return store[key]
+
+    @api.model
+    def _req_cache_clear(self):
+        self.env.cr.cache.pop("daily_work_task", None)
+
+    @api.model
     def _my_hr_employee(self):
-        return self.env["hr.employee"].search(
-            [("user_id", "=", self.env.user.id)],
-            limit=1,
+        emp_id = self._req_cache(
+            ("my_emp", self.env.uid, self.env.su),
+            lambda: self.env["hr.employee"].search([("user_id", "=", self.env.user.id)], limit=1).id,
         )
+        return self.env["hr.employee"].browse(emp_id or [])
 
     @api.model
     def _access_target_ids_sql(self, perm_field):
@@ -1529,6 +1543,13 @@ class DailyTask(models.Model):
             "perm_checklist",
         ):
             return []
+        return list(self._req_cache(
+            ("access_targets", self.env.uid, perm_field),
+            lambda: self._access_target_ids_sql_raw(perm_field),
+        ))
+
+    @api.model
+    def _access_target_ids_sql_raw(self, perm_field):
         self.env.cr.execute(
             """
             SELECT DISTINCT rel.employee_id
@@ -3911,15 +3932,29 @@ class DailyTask(models.Model):
                 else "/web/image/res.users/%s/avatar_128" % self.env.user.id
             )
 
-        # Nhóm theo hạng mục (bảng danh sách)
+        # Nhóm theo hạng mục (bảng danh sách): gộp các CV con cùng tên hạng mục
+        # ("1. Camera" / "Camera" → 1 nhóm), thứ tự giống Bảng hạng mục
+        WG = self.env["daily.task.work.group"].sudo()
+
+        def _cat_key(label):
+            return " ".join(WG._norm_category_name(label).split()).casefold()
+
+        cat_order = {}
+        # Lưu ý: KHÔNG đặt tên biến vòng lặp là `team` / `dept` — trùng biến cờ báo cáo team của hàm này
+        for board_dept in WG.get_category_board_data().get("departments") or []:
+            for board_team in board_dept.get("teams") or []:
+                for cat in board_team.get("categories") or []:
+                    cat_order.setdefault(_cat_key(cat.get("name")), len(cat_order))
+
         group_map = {}
         group_order = []
         for r in rows:
-            key = r.get("work_group_id") or 0
-            label = (r.get("work_group_label") or "").strip() or "Không có hạng mục"
+            raw_label = (r.get("work_group_label") or "").strip()
+            key = _cat_key(raw_label) if r.get("work_group_id") and raw_label else 0
+            label = " ".join(WG._norm_category_name(raw_label).split()) if key else "Không có hạng mục"
             if key not in group_map:
                 group_map[key] = {
-                    "key": str(key),
+                    "key": "cat:%s" % key if key else "0",
                     "label": label,
                     "rows": [],
                     "minutes": 0,
@@ -3963,6 +3998,7 @@ class DailyTask(models.Model):
         groups.sort(
             key=lambda x: (
                 0 if x["key"] != "0" else 1,
+                cat_order.get(_cat_key(x["label"]), 10**6),
                 str(x["label"] or "").casefold(),
             )
         )

@@ -14,8 +14,21 @@
                         </t>
                         <t t-else="">
                             <!-- Header -->
-                            <header class="o_dro_top">
-                                <div class="o_dro_top_left">
+                            <header t-att-class="'o_dro_top' + (personalLayout ? ' o_dro_top_centered' : '')">
+                                <!-- Báo cáo cá nhân: tiêu đề canh giữa (giống Báo cáo công việc tháng) -->
+                                <t t-if="personalLayout">
+                                    <div class="o_dro_top_spacer"/>
+                                    <div class="o_dro_center_title">
+                                        <h1>BÁO CÁO CÔNG VIỆC CÁ NHÂN</h1>
+                                        <div>Họ và tên: <b t-esc="state.profile.name || state.userName"/></div>
+                                        <div class="o_dro_center_sub">
+                                            <t t-esc="state.profile.job_title || 'Nhân viên'"/>
+                                            <t t-if="state.profile.department"> · <t t-esc="state.profile.department"/></t>
+                                        </div>
+                                        <div t-esc="'Tháng ' + state.monthMonth + ' Năm ' + state.monthYear"/>
+                                    </div>
+                                </t>
+                                <div t-else="" class="o_dro_top_left">
                                     <div class="o_dro_user_chip">
                                         <t t-if="teamReport">
                                             <span class="o_dro_avatar o_dro_avatar_lg o_dro_team_avatar">
@@ -49,7 +62,7 @@
                                             </t>
                                         </select>
                                     </t>
-                                    <t t-if="state.canPickEmployee">
+                                    <t t-if="state.canPickEmployee and !personalLayout">
                                         <select class="form-select form-select-sm" t-model.number="state.filterEmp"
                                                 t-on-change="onRefresh">
                                             <t t-foreach="state.filterOptions.employees" t-as="e" t-key="e.id">
@@ -572,7 +585,7 @@
                                         <div class="text-center text-muted py-4">Không có dữ liệu.</div>
                                     </t>
                                     <div class="o_dro_excel_wrap" t-else="">
-                                        <table class="o_dro_excel_table">
+                                        <table t-att-class="'o_dro_excel_table' + (personalLayout ? ' o_dro_excel_plan_colors' : '')">
                                             <thead>
                                                 <tr>
                                                     <th class="o_dro_excel_stt">STT</th>

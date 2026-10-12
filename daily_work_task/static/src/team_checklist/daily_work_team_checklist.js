@@ -2,7 +2,8 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
+import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
@@ -53,11 +54,27 @@ export class DailyWorkTeamChecklist extends Component {
             selectedConfirm: {},
             saving: false,
             openVerified: {},
+            openUnchecked: {},
             openCats: {},
             catsOpen: false,
             openEmpGroups: {},
         });
-        onWillStart(() => this.load());
+        // Biểu đồ cột chồng theo nhân sự: Hoàn thành / Đang làm / Chưa bắt đầu / Trễ hạn
+        this.chartRef = useRef("statusChart");
+        this.chart = null;
+        onWillStart(async () => {
+            await loadBundle("web.chartjs_lib");
+            await this.load();
+        });
+        useEffect(
+            () => {
+                if (!this.state.loading) {
+                    this.renderChart();
+                }
+                return () => this.destroyChart();
+            },
+            () => [this.state.loading, this.state.employees, this.state.verified]
+        );
     }
 
     async load() {
@@ -245,6 +262,141 @@ export class DailyWorkTeamChecklist extends Component {
         URL.revokeObjectURL(url);
     }
 
+    /** Số việc theo trạng thái của từng nhân sự (gộp chưa kiểm tra + đã kiểm tra). */
+    get chartData() {
+        const index = {};
+        const people = [];
+        const add = (key, name, task) => {
+            if (!index[key]) {
+                index[key] = { name: name || "—", done: 0, doing: 0, todo: 0, late: 0 };
+                people.push(index[key]);
+            }
+            const p = index[key];
+            if (task.is_done || task.state === "done") {
+                p.done += 1;
+            } else if (task.is_overdue) {
+                p.late += 1;
+            } else if (task.state === "in_progress") {
+                p.doing += 1;
+            } else {
+                p.todo += 1;
+            }
+        };
+        for (const emp of this.state.employees || []) {
+            for (const t of emp.tasks || []) {
+                add(emp.assignee_id || emp.name, emp.name, t);
+            }
+        }
+        for (const t of this.state.verified || []) {
+            add(t.assignee_id || t.assignee_name, t.assignee_name, t);
+        }
+        people.sort((a, b) => a.name.localeCompare(b.name, "vi"));
+        const sum = (k) => people.reduce((acc, p) => acc + p[k], 0);
+        return {
+            people,
+            totals: { done: sum("done"), doing: sum("doing"), todo: sum("todo"), late: sum("late") },
+        };
+    }
+
+    get chartLegend() {
+        const t = this.chartData.totals;
+        return [
+            { key: "done", label: "Hoàn thành", color: "#22c55e", value: t.done },
+            { key: "doing", label: "Đang làm", color: "#f59e0b", value: t.doing },
+            { key: "todo", label: "Chưa bắt đầu", color: "#94a3b8", value: t.todo },
+            { key: "late", label: "Trễ hạn", color: "#ef4444", value: t.late },
+        ];
+    }
+
+    get chartTotal() {
+        const t = this.chartData.totals;
+        return t.done + t.doing + t.todo + t.late;
+    }
+
+    destroyChart() {
+        if (this.chart) {
+            this.chart.destroy();
+            this.chart = null;
+        }
+    }
+
+    renderChart() {
+        this.destroyChart();
+        const el = this.chartRef.el;
+        if (!el || !window.Chart) {
+            return;
+        }
+        const people = this.chartData.people;
+        if (!people.length) {
+            return;
+        }
+        const legend = this.chartLegend;
+        // Ghi tổng số việc trên đầu mỗi cột
+        const totalLabels = {
+            id: "dwtTotals",
+            afterDatasetsDraw(chart) {
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = "700 12px sans-serif";
+                ctx.fillStyle = "#0f172a";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                people.forEach((p, i) => {
+                    const total = p.done + p.doing + p.todo + p.late;
+                    let top = Infinity;
+                    let x = null;
+                    for (let d = 0; d < chart.data.datasets.length; d++) {
+                        const bar = chart.getDatasetMeta(d).data[i];
+                        if (bar) {
+                            x = bar.x;
+                            if (chart.data.datasets[d].data[i]) {
+                                top = Math.min(top, bar.y);
+                            }
+                        }
+                    }
+                    if (total && top !== Infinity && x !== null) {
+                        ctx.fillText(String(total), x, top - 4);
+                    }
+                });
+                ctx.restore();
+            },
+        };
+        this.chart = new window.Chart(el, {
+            type: "bar",
+            data: {
+                labels: people.map((p) => p.name),
+                datasets: legend.map((l) => ({
+                    label: l.label,
+                    data: people.map((p) => p[l.key]),
+                    backgroundColor: l.color,
+                    borderWidth: 0,
+                    maxBarThickness: 56,
+                })),
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: { top: 18 } },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            footer: (items) => {
+                                const p = people[items[0].dataIndex];
+                                return "Tổng: " + (p.done + p.doing + p.todo + p.late) + " việc";
+                            },
+                        },
+                    },
+                },
+                scales: {
+                    x: { stacked: true, grid: { display: false } },
+                    y: { stacked: true, beginAtZero: true, ticks: { precision: 0 } },
+                },
+            },
+            plugins: [totalLabels],
+        });
+    }
+
     get verifiedGroups() {
         const groups = [];
         const index = {};
@@ -270,11 +422,12 @@ export class DailyWorkTeamChecklist extends Component {
         const groups = [];
         const index = {};
         for (const task of emp.tasks || []) {
-            const key = task.work_group_id || task.category || 0;
+            const catName = String(task.category || "").replace(/^\d+\.\s*/, "").replace(/\s+/g, " ").trim();
+            const key = catName ? catName.toLocaleLowerCase("vi") : "0";
             if (!index[key]) {
                 index[key] = {
                     key,
-                    name: task.category || "Khác",
+                    name: catName || "Khác",
                     icon: task.category_icon || "fa-folder-open-o",
                     tasks: [],
                     minutes: 0,
@@ -315,6 +468,18 @@ export class DailyWorkTeamChecklist extends Component {
     romanIndex(i) {
         const nums = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
         return nums[i] || String(i + 1);
+    }
+
+    toggleUnchecked(key) {
+        this.state.openUnchecked[key] = !this.isUncheckedOpen(key);
+    }
+
+    /** Danh sách chưa kiểm tra: mặc định mở khi chỉ có 1 nhân viên. */
+    isUncheckedOpen(key) {
+        if (key in this.state.openUnchecked) {
+            return Boolean(this.state.openUnchecked[key]);
+        }
+        return (this.state.employees || []).length === 1;
     }
 
     toggleVerified(key) {

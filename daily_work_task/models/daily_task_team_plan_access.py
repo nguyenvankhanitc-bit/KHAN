@@ -57,16 +57,19 @@ class DailyTaskTeamPlanAccess(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         records = super().create(vals_list)
+        self.env["daily.task"]._req_cache_clear()
         self.env.cr.postcommit.add(self.env.registry.clear_cache)
         return records
 
     def write(self, vals):
         res = super().write(vals)
+        self.env["daily.task"]._req_cache_clear()
         self.env.cr.postcommit.add(self.env.registry.clear_cache)
         return res
 
     def unlink(self):
         res = super().unlink()
+        self.env["daily.task"]._req_cache_clear()
         self.env.cr.postcommit.add(self.env.registry.clear_cache)
         return res
 
@@ -75,6 +78,13 @@ class DailyTaskTeamPlanAccess(models.Model):
     def get_perms(self, user=None):
         """{'create','write','unlink'} của user trên Plan tổng. Quản lý module → tất cả."""
         user = user or self.env.user
+        return dict(self.env["daily.task"]._req_cache(
+            ("tpa_perms", self.env.uid, user.id),
+            lambda: self._compute_perms(user),
+        ))
+
+    @api.model
+    def _compute_perms(self, user):
         if self.env["daily.task.assign.access"]._is_manager(user):
             return {"view": True, "create": True, "write": True, "unlink": True}
         line = self.sudo().search([("active", "=", True), ("user_id", "=", user.id)], limit=1)

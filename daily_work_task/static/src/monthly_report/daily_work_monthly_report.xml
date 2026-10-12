@@ -6,22 +6,18 @@
                 <div class="o_dmr_shell">
                     <!-- Đầu trang giống Báo cáo cá nhân: avatar · tên · chức danh/phòng ban · tiêu đề + tháng · bộ lọc -->
                     <header class="o_dmr_head">
-                        <div class="o_dmr_profile">
-                            <span class="o_dmr_avatar" t-esc="initial"/>
-                            <div>
-                                <b t-esc="state.data and state.data.employee ? state.data.employee.name : ''"/>
-                                <small t-if="state.data and state.data.employee">
-                                    <t t-esc="state.data.employee.job_title or 'Nhân viên'"/>
-                                    <t t-if="state.data.employee.department"> · <t t-esc="state.data.employee.department"/></t>
-                                </small>
+                        <div class="o_dmr_profile"/>
+                        <!-- Tiêu đề canh giữa: Báo cáo công việc / Họ và tên / Tháng … Năm … -->
+                        <div class="o_dmr_center_title">
+                            <h1>BÁO CÁO CÔNG VIỆC</h1>
+                            <div>Họ và tên: <b t-esc="state.data and state.data.employee ? state.data.employee.name : ''"/></div>
+                            <div t-if="state.data and state.data.employee" class="o_dmr_center_sub">
+                                <t t-esc="state.data.employee.job_title or 'Nhân viên'"/>
+                                <t t-if="state.data.employee.department"> · <t t-esc="state.data.employee.department"/></t>
                             </div>
+                            <div t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>
                         </div>
                         <div class="o_dmr_tools">
-                            <select t-if="state.data and state.data.can_pick_employee" class="o_dmr_ctrl o_dmr_emp" t-on-change="onEmployee">
-                                <t t-foreach="state.data.employees" t-as="e" t-key="e.id">
-                                    <option t-att-value="e.id" t-att-selected="e.id === state.employeeId" t-esc="e.name"/>
-                                </t>
-                            </select>
                             <select class="o_dmr_ctrl" t-on-change="onMonthSelect">
                                 <t t-foreach="monthOptions" t-as="m" t-key="m">
                                     <option t-att-value="m" t-att-selected="m === state.month" t-esc="'Tháng ' + m"/>
@@ -37,8 +33,6 @@
                             </button>
                         </div>
                     </header>
-                    <!-- Tiêu đề trên cùng, giống bố cục Báo cáo cá nhân -->
-                    <h1 class="o_dmr_pagetitle">BÁO CÁO CÔNG VIỆC <span t-esc="monthLabel"/></h1>
 
                     <div t-if="state.loading" class="o_dmr_empty"><i class="fa fa-spinner fa-spin"/> Đang tải…</div>
                     <div t-elif="!state.data" class="o_dmr_empty">Không có dữ liệu.</div>
@@ -101,10 +95,6 @@
                         </div>
                         <div class="o_dmr_paper">
 
-                            <div class="o_dmr_who">
-                                <div>Họ và tên nhân viên: <b t-esc="d.employee.name or ''"/></div>
-                                <div>Phòng ban: <b t-esc="d.employee.department or ''"/></div>
-                            </div>
                             <div class="o_dmr_table_wrap">
                                 <table class="o_dmr_table">
                                     <thead>
@@ -112,23 +102,23 @@
                                             <th rowspan="2" class="c-stt">STT</th>
                                             <th rowspan="2" class="c-name">NỘI DUNG CÔNG VIỆC</th>
                                             <th rowspan="2" class="c-dl">DEADLINES</th>
-                                            <th rowspan="2" class="c-num">SỐ NGÀY</th>
-                                            <th colspan="3">TẦN SUẤT THỰC HIỆN</th>
+                                            <th rowspan="2" class="c-days">SỐ NGÀY</th>
+                                            <th colspan="3" class="c-freqhead">TẦN SUẤT THỰC HIỆN</th>
                                             <th rowspan="2" class="c-tg">TG THỰC HIỆN (ĐVT: PHÚT)</th>
                                             <th colspan="2" class="is-green">ĐỊNH BIÊN</th>
                                             <th colspan="2" class="is-green">THỰC HIỆN</th>
-                                            <th rowspan="2" class="c-desc">DIỄN GIẢI / MÔ TẢ</th>
+                                            <th rowspan="2" class="c-desc">GHI CHÚ</th>
                                             <th colspan="2">QUẢN LÝ ĐÁNH GIÁ</th>
                                         </tr>
                                         <tr>
-                                            <th>NGÀY</th>
-                                            <th>TUẦN</th>
-                                            <th>THÁNG</th>
+                                            <th class="c-freq">NGÀY</th>
+                                            <th class="c-freq">TUẦN</th>
+                                            <th class="c-freq">THÁNG</th>
                                             <th class="c-num">THỜI GIAN (THEO GIỜ)</th>
-                                            <th>%</th>
+                                            <th class="c-pct">%</th>
                                             <th class="c-num">THỜI GIAN (THEO GIỜ)</th>
                                             <th class="c-num">MỨC ĐỘ HOÀN THÀNH</th>
-                                            <th class="c-num">THEO %</th>
+                                            <th class="c-num">% HOÀN THÀNH</th>
                                             <th class="c-note">GHI CHÚ</th>
                                         </tr>
                                     </thead>
@@ -144,7 +134,9 @@
                                                 <td class="c" t-esc="g.plan_pct + '%'"/>
                                                 <td class="c" t-esc="fmt(g.actual_hours)"/>
                                                 <td class="c" t-esc="g.progress + '%'" title="% Hoàn thành CV TB hạng mục (AVERAGE) — như Báo cáo cá nhân"/>
-                                                <td/><td/><td/>
+                                                <td/>
+                                                <td class="c" t-esc="g.mgr_pct + '%'" title="% việc đã được Quản lý xác nhận (Kiểm tra CV)"/>
+                                                <td/>
                                             </tr>
                                             <t t-foreach="g.lines" t-as="l" t-key="g.code + '-' + l.stt">
                                                 <t t-call="daily_work_task.DailyWorkMonthlyReportLine"/>
@@ -168,7 +160,9 @@
                                             <td class="o_dmr_slash"/>
                                             <td class="c" t-esc="fmt(d.total_actual_hours)"/>
                                             <td class="c" t-esc="d.total_progress + '%'"/>
-                                            <td/><td/><td/>
+                                            <td/>
+                                            <td class="c" t-esc="d.total_mgr_pct + '%'"/>
+                                            <td/>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -204,9 +198,10 @@
             <td class="c" t-esc="l.plan_pct + '%'"/>
             <td class="c" t-esc="fmt(l.actual_hours)"/>
             <td class="c" t-esc="l.progress + '%'"/>
+            <!-- GHI CHÚ = ghi chú nhập ở Danh sách công việc cá nhân (Quản lý công việc) -->
+            <td class="c-desc-cell" t-esc="l.note"/>
+            <td class="c" t-esc="l.mgr_pct + '%'" title="% việc đã được Quản lý xác nhận (Kiểm tra CV)"/>
             <td/>
-            <td/>
-            <td t-esc="l.note"/>
         </tr>
     </t>
 </templates>

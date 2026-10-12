@@ -76,6 +76,7 @@ class DailyTaskTeam(models.Model):
             rec.work_group_count = Group.search_count([("team_id", "=", rec.id)])
 
     def write(self, vals):
+        self.env["daily.task"]._req_cache_clear()
         if "manager_ids" in vals and not self.env.su \
                 and not self.env["daily.task.assign.access"]._is_manager():
             raise AccessError("Chỉ Quản lý mới chọn được User quản lý team.")

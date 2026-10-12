@@ -1575,3 +1575,94 @@
         }
     }
 }
+
+// Báo cáo cá nhân: đầu trang 3 phần — trống (trái) · tiêu đề canh giữa · bộ lọc (phải)
+.o_dro_top.o_dro_top_centered {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 12px;
+
+    .o_dro_top_right {
+        justify-self: end;
+        justify-content: flex-end;
+    }
+
+    .o_dro_center_title {
+        text-align: center;
+        color: #0f172a;
+        line-height: 1.45;
+        font-size: 15px;
+
+        h1 {
+            margin: 0 0 4px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+        }
+
+        .o_dro_center_sub {
+            font-size: 13px;
+            color: #64748b;
+        }
+    }
+}
+
+@media (max-width: 1200px) {
+    .o_dro_top.o_dro_top_centered {
+        grid-template-columns: 1fr;
+
+        .o_dro_top_spacer { display: none; }
+        .o_dro_top_right { justify-self: center; }
+    }
+}
+
+// Báo cáo cá nhân: màu giống Plan CV cá nhân / Báo cáo công việc tháng
+// (tiêu đề cam nhạt chữ đen, dòng hạng mục xanh nhạt)
+.o_dro_excel_table.o_dro_excel_plan_colors {
+    thead th {
+        background: #fce4d6;
+        color: #0f172a;
+        border: 1px solid #94a3b8;
+        box-shadow: none;
+    }
+
+    tbody tr.o_dro_excel_group td {
+        background: #b4c6e7 !important;
+        border-top: 1px solid #64748b;
+        border-bottom: 1px solid #64748b;
+        color: #0f172a;
+    }
+
+    tbody tr.o_dro_excel_total td {
+        background: #b4c6e7 !important;
+        border-top: 2px solid #64748b;
+        border-bottom: 1px solid #64748b;
+        color: #0f172a;
+    }
+}
+
+// Báo cáo cá nhân: dòng công việc nền trắng (bỏ nền xanh của việc đã hoàn thành)
+.o_dro_excel_table.o_dro_excel_plan_colors {
+    tbody tr:not(.o_dro_excel_group):not(.o_dro_excel_total) td,
+    tbody tr.o_dro_excel_row_done td {
+        background: #fff;
+    }
+}
+
+.o_dro_excel_table.o_dro_excel_plan_colors tbody tr.o_dro_excel_row_overdue td {
+    background: #fee2e2;
+}
+
+// Báo cáo cá nhân: chữ dòng hạng mục màu đen
+.o_dro_excel_table.o_dro_excel_plan_colors tbody tr.o_dro_excel_group td {
+    color: #000;
+
+    .o_dro_excel_group_toggle,
+    .o_dro_excel_group_name,
+    .o_dro_excel_group_meta,
+    .o_dro_excel_group_meta strong,
+    i {
+        color: #000;
+    }
+}

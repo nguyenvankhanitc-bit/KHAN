@@ -339,7 +339,7 @@ export class DailyWorkEmployeeWs extends Component {
     /** Tab mở trang khác trong Quản lý công việc: Công việc hôm nay / Giao việc / Xem CV NV / Checklist CV team. */
     async openWorkPage(key) {
         if (key === "today") {
-            await this.action.doAction("daily_work_task.action_daily_work_today");
+            await this.action.doAction("daily_work_task.action_daily_work_today", { clearBreadcrumbs: true });
             return;
         }
         if (key === "kanban") {
@@ -348,7 +348,7 @@ export class DailyWorkEmployeeWs extends Component {
         }
         const tag = { assign: "daily_work_assign", viewer: "daily_work_viewer", team_checklist: "daily_work_team_checklist" }[key];
         if (tag) {
-            await this.action.doAction({ type: "ir.actions.client", tag, target: "current" });
+            await this.action.doAction({ type: "ir.actions.client", tag, target: "current" }, { clearBreadcrumbs: true });
         }
     }
 

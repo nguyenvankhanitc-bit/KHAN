@@ -53,6 +53,12 @@ class DailyTaskAssign(models.Model):
     freq_day = fields.Boolean(string="Ngày")
     freq_week = fields.Boolean(string="Tuần")
     freq_month = fields.Boolean(string="Tháng")
+    # Số ngày người dùng nhập — cột SỐ NGÀY của Báo cáo công việc tháng (để trống = tự đếm ngày hoàn thành)
+    freq_days = fields.Integer(
+        string="Số ngày",
+        help="Số ngày thực hiện trong tháng — đưa vào cột SỐ NGÀY của Báo cáo công việc tháng "
+             "(Thời gian thực hiện = phút/lần ÷ 60 × Số ngày). Để 0 = tự đếm số ngày đã hoàn thành.",
+    )
 
     @api.onchange("freq_day")
     def _onchange_freq_day(self):
@@ -597,6 +603,7 @@ class DailyTaskAssign(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        self.env["daily.task"]._req_cache_clear()
         self._check_assign_access("create")
         vals_list = self._expand_vals_by_work_groups(vals_list)
         last = self.search([], order="stt desc", limit=1)
@@ -717,6 +724,7 @@ class DailyTaskAssign(models.Model):
         return touched
 
     def write(self, vals):
+        self.env["daily.task"]._req_cache_clear()
         self._check_assign_access("write")
         vals = dict(vals)
         self._sync_m2o_from_m2m_vals(vals)
@@ -809,6 +817,7 @@ class DailyTaskAssign(models.Model):
                 wg.sudo().with_context(skip_link_users=True).write(vals)
 
     def unlink(self):
+        self.env["daily.task"]._req_cache_clear()
         self._check_assign_access("unlink")
         return super().unlink()
 

@@ -160,9 +160,12 @@
 
     <t t-name="daily_work_task.AssignBoardPeople">
         <t t-if="people and people.length">
-            <t t-foreach="people" t-as="person" t-key="person.id">
-                <span t-att-class="'o_dab_pill o_dab_pill_' + tone" t-esc="person.name"/>
-            </t>
+            <!-- Nhiều user: xếp 2 người / dòng rồi xuống dòng -->
+            <div t-att-class="'o_dab_pills' + (people.length &gt; 1 ? ' is-multi' : '')">
+                <t t-foreach="people" t-as="person" t-key="person.id">
+                    <span t-att-class="'o_dab_pill o_dab_pill_' + tone" t-esc="person.name"/>
+                </t>
+            </div>
         </t>
         <t t-else="">
             <span class="o_dab_empty">—</span>

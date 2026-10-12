@@ -40,7 +40,7 @@ class DailyTaskAccess(models.Model):
     )
     perm_view = fields.Boolean(string="Xem", default=True)
     perm_checklist = fields.Boolean(
-        string="Checklist CV",
+        string="Kiểm tra CV",
         default=True,
         help="Xem Checklist công việc của các nhân viên ở «Xem việc của».",
     )
@@ -130,11 +130,13 @@ class DailyTaskAccess(models.Model):
     def unlink(self):
         users = self.mapped("user_id")
         res = super().unlink()
+        self.env["daily.task"]._req_cache_clear()
         users._sync_daily_work_employees()
         self.env.registry.clear_cache()
         return res
 
     def _after_access_change(self, extra_users=None):
+        self.env["daily.task"]._req_cache_clear()
         users = self.mapped("user_id")
         if extra_users:
             users |= extra_users
@@ -254,7 +256,7 @@ class ResUsers(models.Model):
         "daily_work_user_checklist_employee_rel",
         "user_id",
         "employee_id",
-        string="NV được xem Checklist CV",
+        string="NV được xem Kiểm tra CV",
     )
     daily_work_single_app = fields.Boolean(
         string="Chỉ dùng Công việc hàng ngày",

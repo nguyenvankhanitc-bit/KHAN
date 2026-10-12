@@ -5,7 +5,7 @@
             <div class="o_content o_tcl_scroll">
             <div class="o_tcl_toolbar">
                 <div class="o_tcl_toolbar_left">
-                    <h2><i class="fa fa-calendar-check-o"/> CHECKLIST CÔNG VIỆC TEAM</h2>
+                    <h2><i class="fa fa-calendar-check-o"/> KIỂM TRA CÔNG VIỆC TEAM</h2>
                     <div class="o_tcl_datebox">
                         <button type="button" class="btn btn-light btn-sm" t-on-click="onPrevDay">
                             <i class="fa fa-chevron-left"/>
@@ -55,45 +55,23 @@
                        t-model="state.search" t-on-change="onFilterChange"/>
             </div>
 
-            <div class="o_tcl_kpis">
-                <div class="o_tcl_kpi o_tcl_kpi_total">
-                    <span class="o_tcl_kpi_icon is-total"><i class="fa fa-clipboard"/></span>
-                    <div>
-                        <small>TỔNG SỐ VIỆC</small>
-                        <strong t-esc="state.stats.total or 0"/>
-                    </div>
+            <!-- Biểu đồ cột chồng theo nhân sự: Hoàn thành / Đang làm / Chưa bắt đầu / Trễ hạn; số trên cột = tổng việc -->
+            <div class="o_tcl_chart_card">
+                <div class="o_tcl_chart_head">
+                    <b>Tình trạng công việc theo nhân sự</b>
+                    <span class="o_tcl_chart_total">Tổng: <strong t-esc="chartTotal"/> việc</span>
                 </div>
-                <div class="o_tcl_kpi">
-                    <span class="o_tcl_kpi_icon is-done"><i class="fa fa-check"/></span>
-                    <div>
-                        <small>ĐÃ LÀM</small>
-                        <strong class="text-success" t-esc="state.stats.done or 0"/>
-                    </div>
-                    <em t-esc="(state.stats.done_percent or 0) + '%'"/>
+                <div class="o_tcl_chart_legend">
+                    <t t-foreach="chartLegend" t-as="lg" t-key="lg.key">
+                        <span class="o_tcl_chart_lg">
+                            <i t-att-style="'background:' + lg.color"/>
+                            <t t-esc="lg.label"/>: <strong t-esc="lg.value"/>
+                        </span>
+                    </t>
                 </div>
-                <div class="o_tcl_kpi">
-                    <span class="o_tcl_kpi_icon is-todo"><i class="fa fa-pencil"/></span>
-                    <div>
-                        <small>CHƯA LÀM</small>
-                        <strong class="text-danger" t-esc="state.stats.todo or 0"/>
-                    </div>
-                    <em t-esc="(state.stats.todo_percent or 0) + '%'"/>
-                </div>
-                <div class="o_tcl_kpi">
-                    <span class="o_tcl_kpi_icon is-doing"><i class="fa fa-clock-o"/></span>
-                    <div>
-                        <small>ĐANG LÀM</small>
-                        <strong class="text-warning" t-esc="state.stats.in_progress or 0"/>
-                    </div>
-                    <em t-esc="(state.stats.in_progress_percent or 0) + '%'"/>
-                </div>
-                <div class="o_tcl_kpi">
-                    <span class="o_tcl_kpi_icon is-overdue"><i class="fa fa-exclamation-triangle"/></span>
-                    <div>
-                        <small>QUÁ HẠN</small>
-                        <strong class="text-danger" t-esc="state.stats.overdue or 0"/>
-                    </div>
-                    <em t-esc="(state.stats.overdue_percent or 0) + '%'"/>
+                <div class="o_tcl_chart_box" t-att-style="'height:' + (chartData.people.length ? 260 : 60) + 'px'">
+                    <canvas t-ref="statusChart" t-att-class="chartData.people.length ? '' : 'd-none'"/>
+                    <div t-if="!chartData.people.length and !state.loading" class="text-muted text-center pt-3">Không có công việc trong ngày này.</div>
                 </div>
             </div>
 
@@ -153,85 +131,41 @@
                 </div>
             </div>
 
-            <div class="o_tcl_verified">
-                <h4>Danh sách CV đã kiểm tra</h4>
-                <t t-if="!state.loading and !verifiedGroups.length">
-                    <div class="text-muted px-1 pb-2">Chưa có công việc được xác nhận.</div>
+            <!-- 1. Danh sách công việc chưa kiểm tra: mỗi nhân viên 1 dòng xổ xuống (giống danh sách đã kiểm tra) -->
+            <div class="o_tcl_verified o_tcl_unchecked">
+                <h4><i class="fa fa-hourglass-half text-warning"/> Danh sách công việc chưa kiểm tra</h4>
+                <t t-if="state.loading">
+                    <div class="text-center p-4"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                 </t>
-                <t t-foreach="verifiedGroups" t-as="vemp" t-key="vemp.key">
-                    <div class="o_tcl_vdrop">
-                        <button type="button" class="o_tcl_vdrop_btn" t-on-click="() => this.toggleVerified(vemp.key)">
-                            <span class="o_tcl_vdrop_who">
-                                <span class="o_tcl_vdrop_avatar" t-esc="vemp.initial"/>
-                                <b t-esc="vemp.name"/>
-                                <em t-esc="vemp.tasks.length + ' việc'"/>
-                            </span>
-                            <i t-att-class="'fa ' + (isVerifiedOpen(vemp.key) ? 'fa-chevron-up' : 'fa-chevron-down')"/>
-                        </button>
-                        <div class="o_tcl_vdrop_body" t-if="isVerifiedOpen(vemp.key)">
-                            <table class="o_tcl_verified_table">
-                                <thead>
-                                    <tr>
-                                        <th>STT</th>
-                                        <th>Công việc</th>
-                                        <th>Hạn</th>
-                                        <th>Trạng thái</th>
-                                        <th>Xác nhận QL</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <t t-foreach="vemp.tasks" t-as="vtask" t-key="vtask.id">
-                                        <tr>
-                                            <td class="o_tcl_stt" t-esc="vtask_index + 1"/>
-                                            <td t-esc="vtask.name"/>
-                                            <td t-esc="vtask.deadline"/>
-                                            <td><span t-att-class="stateClass(vtask)" t-esc="stateLabel(vtask)"/></td>
-                                            <td class="o_tcl_td_confirm">
-                                                <input type="checkbox" class="form-check-input o_tcl_confirm"
-                                                       t-att-checked="vtask.manager_confirmed"
-                                                       t-att-disabled="!vtask.can_confirm"
-                                                       t-on-click.stop.prevent="() => this.onConfirm(vtask)"/>
-                                            </td>
-                                        </tr>
-                                    </t>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <t t-elif="!state.employees.length">
+                    <div class="text-muted px-1 pb-2">Không có công việc chưa kiểm tra trong ngày này.</div>
                 </t>
-            </div>
-
-            <t t-if="state.loading">
-                <div class="text-center p-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
-            </t>
-            <t t-else="">
-                <t t-if="!state.employees.length">
-                    <div class="alert alert-info m-3">Không có công việc chưa kiểm tra trong ngày này.</div>
-                </t>
-                <div class="o_tcl_cards" t-if="state.employees.length">
+                <t t-else="">
                     <t t-foreach="state.employees" t-as="emp" t-key="emp.assignee_id">
-                        <div t-att-class="'o_tcl_card tone-' + (emp_index % 3)">
-                            <div class="o_tcl_card_head">
-                                <div class="o_tcl_who">
-                                    <span class="o_tcl_avatar" t-esc="emp.initial"/>
-                                    <div>
-                                        <h3 t-esc="emp.name"/>
-                                        <small t-esc="emp.total + ' công việc'"/>
-                                    </div>
-                                </div>
-                                <button type="button" class="o_tcl_btn_save"
-                                        t-att-disabled="!hasDraft(emp) || state.saving"
-                                        t-on-click="() => this.onSaveConfirm(emp)">
-                                    Lưu
-                                </button>
-                                <b class="o_tcl_pct" t-esc="emp.percent + '%'"/>
+                        <div class="o_tcl_vdrop o_tcl_udrop">
+                            <div class="o_tcl_vdrop_btn o_tcl_udrop_head" role="button"
+                                 t-on-click="() => this.toggleUnchecked(emp.assignee_id)">
+                                <span class="o_tcl_vdrop_who">
+                                    <span class="o_tcl_vdrop_avatar" t-esc="emp.initial"/>
+                                    <b t-esc="emp.name"/>
+                                    <em t-esc="emp.total + ' việc'"/>
+                                    <span class="o_tcl_sub o_tcl_udrop_sub">
+                                        <span class="is-done"><i class="fa fa-circle"/> <t t-esc="emp.done_count"/> đã làm</span>
+                                        <span class="is-todo"><i class="fa fa-circle"/> <t t-esc="emp.todo_count"/> chưa làm</span>
+                                        <span class="is-overdue"><i class="fa fa-circle"/> <t t-esc="emp.overdue_count"/> quá hạn</span>
+                                    </span>
+                                </span>
+                                <span class="o_tcl_udrop_right">
+                                    <button type="button" class="o_tcl_btn_save"
+                                            t-att-disabled="!hasDraft(emp) || state.saving"
+                                            t-on-click.stop="() => this.onSaveConfirm(emp)">
+                                        Lưu
+                                    </button>
+                                    <b class="o_tcl_pct" t-esc="emp.percent + '%'"/>
+                                    <i t-att-class="'fa ' + (isUncheckedOpen(emp.assignee_id) ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                                </span>
                             </div>
-                            <div class="o_tcl_progress"><span t-att-style="'width:' + emp.percent + '%'"/></div>
-                            <div class="o_tcl_sub">
-                                <span class="is-done"><i class="fa fa-circle"/> <t t-esc="emp.done_count"/> đã làm</span>
-                                <span class="is-todo"><i class="fa fa-circle"/> <t t-esc="emp.todo_count"/> chưa làm</span>
-                                <span class="is-overdue"><i class="fa fa-circle"/> <t t-esc="emp.overdue_count"/> quá hạn</span>
-                            </div>
+                            <div class="o_tcl_vdrop_body" t-if="isUncheckedOpen(emp.assignee_id)">
                             <div class="o_tcl_table_wrap">
                             <table class="o_tcl_table">
                                 <thead>
@@ -357,10 +291,60 @@
                                     <t t-if="emp.overdue_count"> · <t t-esc="emp.overdue_count"/> việc quá hạn</t>
                                 </div>
                             </t>
+                            </div>
                         </div>
                     </t>
-                </div>
-            </t>
+                </t>
+            </div>
+
+            <div class="o_tcl_verified">
+                <h4><i class="fa fa-check-circle text-success"/> Danh sách công việc đã kiểm tra</h4>
+                <t t-if="!state.loading and !verifiedGroups.length">
+                    <div class="text-muted px-1 pb-2">Chưa có công việc được xác nhận.</div>
+                </t>
+                <t t-foreach="verifiedGroups" t-as="vemp" t-key="vemp.key">
+                    <div class="o_tcl_vdrop">
+                        <button type="button" class="o_tcl_vdrop_btn" t-on-click="() => this.toggleVerified(vemp.key)">
+                            <span class="o_tcl_vdrop_who">
+                                <span class="o_tcl_vdrop_avatar" t-esc="vemp.initial"/>
+                                <b t-esc="vemp.name"/>
+                                <em t-esc="vemp.tasks.length + ' việc'"/>
+                            </span>
+                            <i t-att-class="'fa ' + (isVerifiedOpen(vemp.key) ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+                        </button>
+                        <div class="o_tcl_vdrop_body" t-if="isVerifiedOpen(vemp.key)">
+                            <table class="o_tcl_verified_table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Công việc</th>
+                                        <th>Hạn</th>
+                                        <th>Trạng thái</th>
+                                        <th>Xác nhận QL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="vemp.tasks" t-as="vtask" t-key="vtask.id">
+                                        <tr>
+                                            <td class="o_tcl_stt" t-esc="vtask_index + 1"/>
+                                            <td t-esc="vtask.name"/>
+                                            <td t-esc="vtask.deadline"/>
+                                            <td><span t-att-class="stateClass(vtask)" t-esc="stateLabel(vtask)"/></td>
+                                            <td class="o_tcl_td_confirm">
+                                                <input type="checkbox" class="form-check-input o_tcl_confirm"
+                                                       t-att-checked="vtask.manager_confirmed"
+                                                       t-att-disabled="!vtask.can_confirm"
+                                                       t-on-click.stop.prevent="() => this.onConfirm(vtask)"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </div>
+
             </div>
         </div>
     </t>

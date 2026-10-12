@@ -16,7 +16,7 @@
                          options="{'no_create': True}"
                          placeholder="Vd: Hùng, Phú, Thành..."/>
                 <field name="perm_view" string="Xem"/>
-                <field name="perm_checklist" string="Checklist CV"/>
+                <field name="perm_checklist" string="Kiểm tra CV"/>
                 <field name="perm_assign" string="Giao"/>
                 <field name="perm_edit" string="Chỉnh sửa"/>
                 <field name="perm_delete" string="Xóa"/>
@@ -37,7 +37,7 @@
                         <b>Ví dụ:</b> User được phân quyền = <b>Nguyễn Văn Khan</b>;
                         Xem việc của = <b>Hùng, Phú, Thành</b>; tick <b>Xem</b>
                         → Khan thấy công việc của 3 người đó trên Dashboard / Xem công việc NV.
-                        Tick <b>Checklist CV</b> để xem Checklist công việc của những người đó.
+                        Tick <b>Kiểm tra CV</b> để xem Kiểm tra công việc của những người đó.
                     </div>
                     <group>
                         <group string="Người được quyền">
@@ -47,7 +47,7 @@
                         </group>
                         <group string="Mô tả quyền">
                             <field name="perm_view" string="Xem"/>
-                            <field name="perm_checklist" string="Checklist CV"/>
+                            <field name="perm_checklist" string="Kiểm tra CV"/>
                             <field name="perm_assign" string="Giao"/>
                             <field name="perm_edit" string="Chỉnh sửa"/>
                             <field name="perm_delete" string="Xóa"/>
@@ -75,7 +75,7 @@
                 <field name="target_ids"/>
                 <field name="department_id"/>
                 <filter name="filter_view" string="Có Xem" domain="[('perm_view','=',True)]"/>
-                <filter name="filter_checklist" string="Có Checklist CV" domain="[('perm_checklist','=',True)]"/>
+                <filter name="filter_checklist" string="Có Kiểm tra CV" domain="[('perm_checklist','=',True)]"/>
                 <filter name="filter_assign" string="Có Giao" domain="[('perm_assign','=',True)]"/>
                 <filter name="filter_edit" string="Có Chỉnh sửa" domain="[('perm_edit','=',True)]"/>
                 <filter name="filter_delete" string="Có Xóa" domain="[('perm_delete','=',True)]"/>
@@ -94,7 +94,7 @@
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Khan xem việc Hùng/Phú/Thành: chọn Khan, chọn 3 người, tick Xem.
-                Tick Checklist CV để Khan xem checklist công việc của 3 người đó.
+                Tick Kiểm tra CV để Khan xem kiểm tra công việc của 3 người đó.
             </p>
         </field>
     </record>

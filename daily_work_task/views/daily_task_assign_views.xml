@@ -157,6 +157,8 @@
                                 <field name="freq_week" nolabel="1"/><span class="me-3">Tuần</span>
                                 <field name="freq_month" nolabel="1"/><span>Tháng</span>
                             </div>
+                            <field name="freq_days" string="Số ngày" class="o_assign_freq_days"
+                                     placeholder="Vd: 26"/>
                         </group>
                         <group string="Người phụ trách (xuống CV cá nhân)">
                             <field name="assignee_user_ids" widget="many2many_tags"

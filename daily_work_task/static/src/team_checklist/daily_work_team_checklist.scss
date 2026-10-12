@@ -824,3 +824,127 @@
         color: #475569;
     }
 }
+
+// ===== 2 bảng: Chưa kiểm tra (xổ xuống theo nhân viên) / Đã kiểm tra — kẻ khung phân biệt nội dung =====
+.o_daily_work_team_checklist {
+    .o_tcl_verified h4 {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .o_tcl_udrop_head {
+        cursor: pointer;
+        flex-wrap: wrap;
+    }
+
+    .o_tcl_udrop_sub {
+        display: inline-flex;
+        gap: 12px;
+        margin: 0 0 0 8px;
+        padding: 0;
+        b, em { text-transform: none; }
+    }
+
+    .o_tcl_udrop_right {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        margin-left: auto;
+
+        .o_tcl_pct { font-size: 16px; }
+    }
+
+    .o_tcl_udrop .o_tcl_table_wrap {
+        max-height: none;
+        overflow: visible;
+    }
+
+    .o_tcl_udrop .o_tcl_foot {
+        margin-top: 6px;
+    }
+
+    // Kẻ khung cho cả 2 bảng
+    .o_tcl_table,
+    .o_tcl_verified_table {
+        border-collapse: collapse;
+        border: 1px solid #cbd5e1;
+
+        th,
+        td {
+            border: 1px solid #cbd5e1 !important;
+            vertical-align: middle;
+        }
+
+        thead th {
+            background: #fce4d6;
+            color: #0f172a;
+            font-weight: 800;
+        }
+    }
+
+    .o_tcl_table tr.o_tcl_group > td {
+        background: #b4c6e7;
+        color: #0f172a;
+    }
+
+    .o_tcl_table tr.o_tcl_group .o_tcl_group_btn,
+    .o_tcl_table tr.o_tcl_group .o_tcl_group_meta,
+    .o_tcl_table tr.o_tcl_group .o_tcl_group_meta strong {
+        color: #0f172a;
+    }
+
+    .o_tcl_verified_table {
+        margin-top: 4px;
+
+        td:nth-child(1) { width: 50px; text-align: center; }
+        td:nth-child(3), td:nth-child(4), td:nth-child(5) { text-align: center; }
+    }
+}
+
+
+// Biểu đồ cột chồng theo nhân sự
+.o_tcl_chart_card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+    padding: 14px 18px 12px;
+    margin: 0 16px 16px;
+}
+
+.o_tcl_chart_head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+
+    b { font-size: 15px; font-weight: 800; color: #0f172a; }
+    .o_tcl_chart_total { font-size: 13px; color: #475569; }
+}
+
+.o_tcl_chart_legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 18px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.o_tcl_chart_lg {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    i {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 3px;
+    }
+}
+
+.o_tcl_chart_box {
+    position: relative;
+    width: 100%;
+}

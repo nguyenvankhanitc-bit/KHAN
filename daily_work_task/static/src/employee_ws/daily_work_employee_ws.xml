@@ -64,7 +64,7 @@
                                 <span class="o_ews_tab_sep" aria-hidden="true">|</span>
                                 <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('team_checklist')">
                                     <i class="fa fa-check-square-o o_ews_tab_icon o_ews_tab_icon_checklist"/>
-                                    <span>Checklist CV team</span>
+                                    <span>Kiểm tra CV</span>
                                 </button>
                             </t>
                             <span class="o_ews_tab_sep" aria-hidden="true">|</span>

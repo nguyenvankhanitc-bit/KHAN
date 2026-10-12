@@ -113,6 +113,11 @@ export class DailyWorkReportOverview extends Component {
         return `Tháng ${m}/${this.state.monthYear}`;
     }
 
+    /** Báo cáo cá nhân (không phải báo cáo team / danh sách phân công) → đầu trang tiêu đề canh giữa. */
+    get personalLayout() {
+        return !this.teamAssign && !this.teamReport;
+    }
+
     get reportTitle() {
         return this.teamAssign
             ? "Danh sách phân công việc"

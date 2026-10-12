@@ -54,7 +54,7 @@
               groups="daily_work_task.group_daily_work_viewer"/>
 
     <menuitem id="menu_daily_work_team_checklist"
-              name="Checklist CV team"
+              name="Kiểm tra CV"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_team_checklist"
               sequence="5"

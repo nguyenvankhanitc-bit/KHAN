@@ -112,7 +112,7 @@ export class DailyWorkCategoryBoard extends Component {
     }
 
     get pageTitle() {
-        return _t("BẢNG HẠNG MỤC CÔNG VIỆC");
+        return _t("DANH SÁCH HẠNG MỤC CÔNG VIỆC");
     }
 
     _isOpen(id, defaultOpen = false) {

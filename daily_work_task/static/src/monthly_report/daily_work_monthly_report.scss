@@ -543,3 +543,107 @@
         }
     }
 }
+
+// Tiêu đề bảng: không bẻ chữ từng ký tự; cột Ngày / Tuần / Tháng đủ rộng, chữ nằm ngang
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_table {
+    min-width: 1500px;
+
+    thead th {
+        overflow-wrap: normal;
+        word-break: keep-all;
+    }
+
+    thead th.c-freqhead { min-width: 180px; }
+    thead th.c-freq {
+        width: 60px;
+        min-width: 60px;
+        white-space: nowrap;
+    }
+    thead th.c-pct { width: 64px; min-width: 64px; }
+    thead th.c-num { min-width: 110px; }
+    thead th.c-tg { min-width: 130px; }
+    thead th.c-desc { min-width: 130px; }
+    thead th.c-dl { min-width: 110px; }
+}
+
+// SỐ NGÀY thu nhỏ; DIỄN GIẢI / MÔ TẢ tự giãn theo nội dung (tối đa 280px) và xuống dòng
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_table {
+    thead th.c-days {
+        width: 64px;
+        min-width: 64px;
+    }
+
+    thead th.c-desc {
+        width: auto;
+        min-width: 120px;
+        max-width: 280px;
+    }
+
+    td.c-desc-cell {
+        max-width: 280px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+}
+
+// Đầu trang: hồ sơ (trái) · tiêu đề canh giữa · bộ lọc (phải)
+.o_daily_work_dashboard.o_daily_work_monthly_report {
+    .o_dmr_head {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .o_dmr_head .o_dmr_tools {
+        justify-self: end;
+        justify-content: flex-end;
+    }
+
+    .o_dmr_center_title {
+        text-align: center;
+        color: #0f172a;
+        line-height: 1.45;
+        font-size: 15px;
+
+        h1 {
+            margin: 0 0 4px;
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+        }
+    }
+}
+
+@media (max-width: 1200px) {
+    .o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_head {
+        grid-template-columns: 1fr;
+
+        .o_dmr_center_title { order: -1; }
+        .o_dmr_tools { justify-self: center; }
+    }
+}
+
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_center_title .o_dmr_center_sub {
+    font-size: 13px;
+    color: #64748b;
+}
+
+// Màu nền giống Plan CV cá nhân: tiêu đề cam nhạt, dòng hạng mục xanh nhạt
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_table {
+    thead th,
+    thead th.is-green {
+        background: #fce4d6;
+        color: #0f172a;
+    }
+
+    .o_dmr_band td {
+        background: #e2e8f0;
+    }
+
+    .o_dmr_group td {
+        background: #b4c6e7;
+    }
+}

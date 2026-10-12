@@ -27,7 +27,7 @@
         <field name="tag">daily_work_viewer</field>
     </record>
     <record id="action_daily_work_team_checklist" model="ir.actions.client">
-        <field name="name">Checklist công việc team</field>
+        <field name="name">Kiểm tra CV</field>
         <field name="tag">daily_work_team_checklist</field>
     </record>
     <record id="action_daily_work_summary_report" model="ir.actions.client">

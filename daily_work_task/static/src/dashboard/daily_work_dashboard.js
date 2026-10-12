@@ -658,7 +658,7 @@ export class DailyWorkDashboard extends Component {
             return;
         }
         if (key === "team_checklist" && !this.state.canViewChecklist) {
-            this.notification.add(_t("Bạn không có quyền xem Checklist CV nhân viên."), {
+            this.notification.add(_t("Bạn không có quyền xem Kiểm tra CV nhân viên."), {
                 type: "warning",
             });
             return;
@@ -830,10 +830,12 @@ export class DailyWorkDashboard extends Component {
                     /* fallback */
                 }
             }
-            await this.action.doAction(action);
+            await this.action.doAction(action, asPopup ? {} : { clearBreadcrumbs: true });
             return;
         }
-        await this.action.doAction(action);
+        // Menu điều hướng: mở trang mới thay vì chồng breadcrumb (URL dài, giữ nhiều trang cũ trong bộ nhớ,
+        // F5 phải tải lại từng action) → nhanh hơn khi bấm qua lại giữa các mục
+        await this.action.doAction(action, asPopup || action.target === "new" ? {} : { clearBreadcrumbs: true });
     }
 
     async onExportExcel() {

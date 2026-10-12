@@ -54,6 +54,9 @@ class DailyTaskMonthlyReport(models.AbstractModel):
     @api.model
     def get_report(self, year=None, month=None, employee_id=None):
         Task = self.env["daily.task"]
+        if not employee_id:
+            # Báo cáo tháng luôn là của user đang đăng nhập (không còn ô chọn nhân viên)
+            employee_id = Task._my_hr_employee().id or False
         filters = {"employee_id": int(employee_id)} if employee_id else {}
         data = Task.get_report_overview(year=year, month=month, filters=filters)
         if data.get("message"):
@@ -132,14 +135,16 @@ class DailyTaskMonthlyReport(models.AbstractModel):
             pct = [row_pct.get(t.id, int(t.completion_percent or 0)) for t in recs]
             notes = [n for n in dict.fromkeys((t.note or "").strip() for t in recs) if n]
             plan_h = round(per_time / 60.0 * self._STANDARD_DAYS, 1)
-            # SỐ NGÀY = số ngày đã thực hiện (ngày có việc hoàn thành)
+            # SỐ NGÀY = số ngày nhập trên Thêm phân công công việc; để trống → số ngày đã hoàn thành
             done_days = len({t.assign_date or t.deadline for t in recs
                              if t.state == "done" and (t.assign_date or t.deadline)})
-            actual_h = round(done_days * per_time / 60.0, 1)
+            set_days = max([int(l.freq_days or 0) for l in recs.mapped("assign_line_id")] or [0])
+            so_ngay = set_days or done_days
+            actual_h = round(so_ngay * per_time / 60.0, 1)
             return {
                 "name": item["name"],
                 "deadline": label,
-                "freq": done_days,
+                "freq": so_ngay,
                 "day": "X" if col == "day" else "",
                 "week": "X" if col == "week" else "",
                 "month": "X" if col == "month" else "",
@@ -149,6 +154,9 @@ class DailyTaskMonthlyReport(models.AbstractModel):
                 "done_days": done_days,
                 "progress": round(sum(pct) / len(pct)) if pct else 0,
                 "_pct_sum": sum(pct),
+                # QUẢN LÝ ĐÁNH GIÁ — % HOÀN THÀNH = số việc QL đã tick «Xác nhận QL» (Kiểm tra CV) / tổng số việc
+                "mgr_pct": round(100.0 * len(recs.filtered("manager_confirmed")) / len(recs)) if recs else 0,
+                "_mgr_ok": len(recs.filtered("manager_confirmed")),
                 "_pct_n": len(pct),
                 "note": "; ".join(notes),
                 "first": min((t.assign_date or t.deadline) for t in recs if (t.assign_date or t.deadline))
@@ -170,6 +178,8 @@ class DailyTaskMonthlyReport(models.AbstractModel):
                 "progress": round(sum(r["_pct_sum"] for r in lines) / sum(r["_pct_n"] for r in lines))
                 if sum(r["_pct_n"] for r in lines) else 0,
                 "actual_hours": round(sum(r["actual_hours"] for r in lines), 1),
+                "mgr_pct": round(100.0 * sum(r["_mgr_ok"] for r in lines) / sum(r["_pct_n"] for r in lines))
+                if sum(r["_pct_n"] for r in lines) else 0,
                 "_sort": cat_order.get(gkey, 10**6),
             }
             if is_other:
@@ -192,7 +202,9 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         all_lines = [r for b in groups + ([other] if other else []) for r in b["lines"]]
         n_tasks = sum(r["_pct_n"] for r in all_lines)
         done_pct = round(sum(r["_pct_sum"] for r in all_lines) / n_tasks, 1) if n_tasks else 0
+        mgr_pct = round(100.0 * sum(r["_mgr_ok"] for r in all_lines) / n_tasks, 1) if n_tasks else 0
         for r in all_lines:
+            r.pop("_mgr_ok", None)
             r.pop("_pct_sum", None)
             r.pop("_pct_n", None)
 
@@ -220,6 +232,7 @@ class DailyTaskMonthlyReport(models.AbstractModel):
             "total_plan_hours": round(total_plan, 1),
             "total_actual_hours": total_actual,
             "total_progress": done_pct,
+            "total_mgr_pct": mgr_pct,
             "can_pick_employee": bool(data.get("can_pick_employee")),
             "employees": filt.get("employees") or [],
         }
@@ -278,7 +291,7 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         r = 5
         ws.set_row(r + 1, 48)
         for c, text in ((0, "STT"), (1, "NỘI DUNG CÔNG VIỆC"), (2, "DEADLINES"), (3, "SỐ NGÀY"),
-                        (7, "TG THỰC HIỆN (ĐVT: PHÚT)"), (12, "DIỄN GIẢI / MÔ TẢ")):
+                        (7, "TG THỰC HIỆN (ĐVT: PHÚT)"), (12, "GHI CHÚ")):
             ws.merge_range(r, c, r + 1, c, text, head)
         ws.merge_range(r, 4, r, 6, "TẦN SUẤT THỰC HIỆN", head)
         for c, text in ((4, "NGÀY"), (5, "TUẦN"), (6, "THÁNG")):
@@ -287,16 +300,16 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         ws.merge_range(r, 10, r, 11, "THỰC HIỆN", head_green)
         ws.merge_range(r, 13, r, 14, "QUẢN LÝ ĐÁNH GIÁ", head)
         for c, text in ((8, "THỜI GIAN (THEO GIỜ)"), (9, "%"), (10, "THỜI GIAN (THEO GIỜ)"),
-                        (11, "MỨC ĐỘ HOÀN THÀNH"), (13, "THEO %"), (14, "GHI CHÚ")):
+                        (11, "MỨC ĐỘ HOÀN THÀNH"), (13, "% HOÀN THÀNH"), (14, "GHI CHÚ")):
             ws.write(r + 1, c, text, head)
         r += 2
 
         def write_line(r, line):
             vals = [line["stt"], line["name"], line["deadline"], line["freq"], line["day"], line["week"],
                     line["month"], line["minutes"] or "", line["plan_hours"], "%s%%" % line["plan_pct"],
-                    line["actual_hours"], "%s%%" % line["progress"], "", "", line["note"]]
+                    line["actual_hours"], "%s%%" % line["progress"], line["note"], "%s%%" % line["mgr_pct"], ""]
             for c, v in enumerate(vals):
-                ws.write(r, c, v, cell if c in (1, 14) else cell_c)
+                ws.write(r, c, v, cell if c in (1, 12, 14) else cell_c)
             # Định biên THỜI GIAN (giờ) = (TG thực hiện phút / 60) × SỐ NGÀY — ghi công thức như mẫu
             ws.write_formula(r, 8, "=ROUND((H%d/60)*%d,1)" % (r + 1, self._STANDARD_DAYS), cell_c, line["plan_hours"])
             # Thực hiện THỜI GIAN (giờ) = (TG thực hiện phút / 60) × số ngày đã thực hiện
@@ -315,6 +328,7 @@ class DailyTaskMonthlyReport(models.AbstractModel):
             ws.write(r, 9, "%s%%" % g["plan_pct"], grp_c)
             ws.write(r, 10, g["actual_hours"], grp_c)
             ws.write(r, 11, "%s%%" % g["progress"], grp_c)
+            ws.write(r, 13, "%s%%" % g["mgr_pct"], grp_c)
             r += 1
             for line in g["lines"]:
                 write_line(r, line)
@@ -337,6 +351,7 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         ws.write(r, 8, data["total_plan_hours"], grp_c)
         ws.write(r, 10, data["total_actual_hours"], grp_c)
         ws.write(r, 11, "%s%%" % data["total_progress"], grp_c)
+        ws.write(r, 13, "%s%%" % data["total_mgr_pct"], grp_c)
         r += 2
 
         ws.write(r, 1, "Đánh giá của cấp quản lý/ trưởng bộ phận:", bold)

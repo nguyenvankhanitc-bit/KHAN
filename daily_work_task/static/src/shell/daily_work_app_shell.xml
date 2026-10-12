@@ -35,7 +35,7 @@
                     </t>
                     <t t-if="state.canViewChecklist">
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('team_checklist')">
-                            <i class="fa fa-check-square-o"/><span>Checklist CV</span>
+                            <i class="fa fa-check-square-o"/><span>Kiểm tra CV</span>
                         </button>
                     </t>
                     <t t-if="state.canViewOthers">

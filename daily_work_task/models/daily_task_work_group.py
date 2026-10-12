@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import re
 
 from odoo import api, fields, models
@@ -299,6 +300,15 @@ class DailyTaskWorkGroup(models.Model):
 
     @api.model
     def get_category_board_data(self, search=""):
+        """Dữ liệu bảng hạng mục — nhớ trong 1 request (Plan tổng / báo cáo gọi lại nhiều lần)."""
+        data = self.env["daily.task"]._req_cache(
+            ("cat_board", self.env.uid, self.env.su, (search or "").strip().lower()),
+            lambda: self._get_category_board_data_raw(search),
+        )
+        return copy.deepcopy(data)
+
+    @api.model
+    def _get_category_board_data_raw(self, search=""):
         """Dữ liệu bảng hạng mục — group: Phòng ban → Team → Hạng mục → CV con."""
         needle = (search or "").strip().lower()
         assign_users = self._role_users_from_assigns()
@@ -498,6 +508,7 @@ class DailyTaskWorkGroup(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        self.env["daily.task"]._req_cache_clear()
         self.env["daily.task.assign.access"].check("category", "create")
         records = super().create(vals_list)
         self._refresh_category_heads(records.mapped("team_id").ids or None)
@@ -512,6 +523,7 @@ class DailyTaskWorkGroup(models.Model):
         return records
 
     def write(self, vals):
+        self.env["daily.task"]._req_cache_clear()
         self.env["daily.task.assign.access"].check("category", "write")
         if "category_manager_ids" in vals and not self.env.su \
                 and not self.env["daily.task.assign.access"]._is_manager():
@@ -561,6 +573,7 @@ class DailyTaskWorkGroup(models.Model):
         return res
 
     def unlink(self):
+        self.env["daily.task"]._req_cache_clear()
         self.env["daily.task.assign.access"].check("category", "unlink")
         teams = self.mapped("team_id").ids
         res = super().unlink()

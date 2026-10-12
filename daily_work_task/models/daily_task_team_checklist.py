@@ -96,8 +96,8 @@ class DailyTaskTeamChecklist(models.Model):
             allowed = self._checklist_employee_ids() or []
             if not allowed:
                 raise ValidationError(
-                    "Chưa được phân quyền xem Checklist CV nhân viên. "
-                    "Vào Cấu hình → Phân quyền, chọn nhân viên và tick Checklist CV."
+                    "Chưa được phân quyền xem Kiểm tra CV nhân viên. "
+                    "Vào Cấu hình → Phân quyền, chọn nhân viên và tick Kiểm tra CV."
                 )
 
         month_start = target.replace(day=1)

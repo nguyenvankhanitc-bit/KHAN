@@ -3990,3 +3990,22 @@ body.o_ews_resizing {
     font-style: normal;
     line-height: 1;
 }
+
+// Cột Trạng thái: đủ rộng cho "⚠ Trễ hạn (10)" — không bị che chữ
+.o_daily_work_employee_ws {
+    table .o_ews_col_state {
+        width: 140px;
+        min-width: 140px;
+    }
+
+    table .o_ews_col_state .o_ews_state_select {
+        max-width: 134px;
+    }
+
+    table .o_ews_col_state .o_ews_state_select.o_ews_state_overdue {
+        padding-left: 0.25rem;
+        padding-right: 1.1rem !important;
+        background-position: right 0.2rem center !important;
+        letter-spacing: -0.01em;
+    }
+}

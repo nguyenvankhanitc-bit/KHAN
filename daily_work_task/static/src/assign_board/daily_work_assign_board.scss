@@ -528,3 +528,22 @@
         color: #000;
     }
 }
+
+// Ô user: nhiều người → lưới 2 cột (2 người / dòng) rồi xuống dòng
+.o_dab_pills {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    &.is-multi {
+        display: inline-grid;
+        grid-template-columns: repeat(2, max-content);
+        gap: 0.2rem 0.3rem;
+        justify-items: stretch;
+
+        .o_dab_pill {
+            margin: 0;
+            justify-content: center;
+        }
+    }
+}

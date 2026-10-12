@@ -437,7 +437,11 @@ export class LugProjectList extends Component {
     }
 
     async addTask(projectId) {
-        const detail = this.state.details[projectId];
+        let detail = this.state.details[projectId];
+        if (!detail) {
+            await this.loadDetail(projectId);
+            detail = this.state.details[projectId];
+        }
         const stageId = detail?.stages?.[0]?.id;
         if (!stageId) {
             await this.editProject(projectId);
@@ -450,6 +454,23 @@ export class LugProjectList extends Component {
                     delete this.state.details[projectId];
                     await this.loadList();
                     if (this.state.expandedId === projectId) {
+                        await this.loadDetail(projectId);
+                    }
+                },
+            });
+        }
+    }
+
+    async openTask(taskId) {
+        if (!taskId) return;
+        const act = await this.orm.call("project.stage.task", "action_open_popup", [[taskId]]);
+        if (act) {
+            await this.action.doAction(act, {
+                onClose: async () => {
+                    const projectId = this.state.expandedId;
+                    if (projectId) {
+                        delete this.state.details[projectId];
+                        await this.loadList();
                         await this.loadDetail(projectId);
                     }
                 },

@@ -55,6 +55,12 @@ class MockModel:
     def unlink(self):
         return True
 
+    def sudo(self):
+        return self
+
+    def with_context(self, *args, **kwargs):
+        return self
+
 
 mock_models.Model = MockModel
 mock_exceptions = MagicMock()
@@ -169,7 +175,9 @@ class TestDuanToDailyTaskSync(unittest.TestCase):
             created_records.append(vals)
             return rec
 
-        mock_daily_model.with_context.return_value.create.side_effect = fake_create
+        mock_daily_model.sudo.return_value = mock_daily_model
+        mock_daily_model.with_context.return_value = mock_daily_model
+        mock_daily_model.create.side_effect = fake_create
 
         mock_env_obj = MagicMock()
         mock_env_obj.get.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()

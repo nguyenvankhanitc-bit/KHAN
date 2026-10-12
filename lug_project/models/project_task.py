@@ -187,15 +187,54 @@ class ProjectTask(models.Model):
         DailyEmp = self.env.get("daily.task.employee")
         if not DailyEmp:
             return False
-        hr_emp = self.env["hr.employee"].search([("user_id", "=", user.id)], limit=1)
-        if hr_emp:
-            return DailyEmp.get_or_create_from_hr(hr_emp.id)
+        # Direct SQL search on hr_employee to bypass HR visibility restrictions
+        self.env.cr.execute(
+            """
+            SELECT id FROM hr_employee
+             WHERE user_id = %s
+             LIMIT 1
+            """,
+            (user.id,),
+        )
+        row = self.env.cr.fetchone()
+        hr_emp_id = row[0] if row else False
+        if not hr_emp_id:
+            mail = (user.email or user.login or "").strip()
+            if mail:
+                self.env.cr.execute(
+                    """
+                    SELECT id FROM hr_employee
+                     WHERE LOWER(work_email) = LOWER(%s)
+                        OR LOWER(private_email) = LOWER(%s)
+                     LIMIT 1
+                    """,
+                    (mail, mail),
+                )
+                row = self.env.cr.fetchone()
+                if row:
+                    hr_emp_id = row[0]
+        if not hr_emp_id and user.name:
+            self.env.cr.execute(
+                """
+                SELECT id FROM hr_employee
+                 WHERE LOWER(name) = LOWER(%s)
+                 LIMIT 1
+                """,
+                (user.name.strip(),),
+            )
+            row = self.env.cr.fetchone()
+            if row:
+                hr_emp_id = row[0]
+
+        if hr_emp_id:
+            return DailyEmp.sudo().get_or_create_from_hr(hr_emp_id)
+
         mail = (user.email or user.login or "").strip()
         domain = [("email", "=", mail)] if mail else [("name", "=ilike", user.name)]
-        existing = DailyEmp.search(domain, limit=1)
+        existing = DailyEmp.sudo().search(domain, limit=1)
         if existing:
             return existing
-        return DailyEmp.create({
+        return DailyEmp.sudo().create({
             "name": user.name,
             "email": mail or False,
         })

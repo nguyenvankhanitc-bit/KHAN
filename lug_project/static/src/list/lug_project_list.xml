@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 
     <t t-name="lug_project.LugPlistUserChip">
@@ -262,7 +262,69 @@
                                                                 t-esc="opt.label"/>
                                                     </t>
                                                 </div>
-                                            </header>
+                                            <!-- Bảng danh sách công việc chi tiết theo giai đoạn -->
+                                            <section class="o_lug_plist_phases mt-3">
+                                                <header class="o_lug_plist_phases_head d-flex justify-content-between align-items-center">
+                                                    <span>DANH SÁCH CÔNG VIỆC CHI TIẾT THEO GIAI ĐOẠN:</span>
+                                                    <span class="badge bg-primary-subtle text-primary">
+                                                        <t t-esc="state.details[row.id].progress_done"/> / <t t-esc="state.details[row.id].progress_total"/> hoàn thành
+                                                    </span>
+                                                </header>
+                                                <div class="o_lug_plist_phases_table_wrap">
+                                                    <table class="o_lug_plist_phases_table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>GIAI ĐOẠN</th>
+                                                                <th>STT</th>
+                                                                <th>TÊN CÔNG VIỆC GIAI ĐOẠN</th>
+                                                                <th>PHỤ TRÁCH</th>
+                                                                <th>DEADLINE</th>
+                                                                <th>TRẠNG THÁI</th>
+                                                                <th>TIMELEFT</th>
+                                                                <th>GHI CHÚ</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <t t-foreach="state.details[row.id].stages" t-as="stage" t-key="stage.id">
+                                                                <t t-foreach="stage.tasks" t-as="task" t-key="task.id">
+                                                                    <tr class="o_lug_plist_task_row" t-on-click="() => this.openTask(task.id)" style="cursor: pointer;">
+                                                                        <td>
+                                                                            <span t-att-class="'o_lug_plist_phase is-' + stage.phase_tone" t-esc="stage.phase_label"/>
+                                                                        </td>
+                                                                        <td class="text-center" t-esc="task.stt"/>
+                                                                        <td class="fw-semibold text-primary">
+                                                                            <t t-esc="task.name"/>
+                                                                        </td>
+                                                                        <td><i class="fa fa-user o_lug_plist_task_user"/> <t t-esc="task.assignees"/></td>
+                                                                        <td t-esc="task.deadline or '—'"/>
+                                                                        <td>
+                                                                            <span t-att-class="'o_lug_plist_task_pill is-' + task.state" t-esc="task.state_label"/>
+                                                                        </td>
+                                                                        <td>
+                                                                            <span t-att-class="'o_lug_plist_tl is-' + (task.timeleft.state or 'none')">
+                                                                                <i t-if="task.timeleft.state === 'ok'" class="fa fa-hourglass-half"/>
+                                                                                <i t-elif="task.timeleft.state === 'late'" class="fa fa-exclamation-triangle"/>
+                                                                                <t t-esc="task.timeleft.short or task.timeleft.label"/>
+                                                                            </span>
+                                                                        </td>
+                                                                        <td t-esc="task.notes or '—'"/>
+                                                                    </tr>
+                                                                </t>
+                                                                <tr t-if="!stage.tasks.length" class="o_lug_plist_phase_empty">
+                                                                    <td>
+                                                                        <span t-att-class="'o_lug_plist_phase is-' + stage.phase_tone" t-esc="stage.phase_label"/>
+                                                                    </td>
+                                                                    <td colspan="7" class="o_lug_plist_muted text-center py-2">Chưa có công việc trong giai đoạn này.</td>
+                                                                </tr>
+                                                            </t>
+                                                            <tr t-if="!state.details[row.id].stages.length">
+                                                                <td colspan="8" class="o_lug_plist_muted text-center py-3">Chưa có giai đoạn công việc. Bấm "Sửa dự án" để thêm giai đoạn.</td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </section>
+
                                             <footer class="o_lug_plist_detail_actions">
                                                 <button type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click.stop="() => this.editProject(row.id)">
                                                     <i class="fa fa-pencil"/> Sửa dự án

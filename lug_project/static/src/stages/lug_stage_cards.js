@@ -202,7 +202,8 @@ export class LugStageCardsField extends X2ManyField {
                 map[stageId].push(row);
             }
             this.state.tasksByStage = map;
-        } catch {
+        } catch (err) {
+            console.error("Failed to load stage tasks:", err);
             this.state.tasksByStage = {};
         }
     }

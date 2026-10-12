@@ -201,15 +201,54 @@ class ProjectStageTask(models.Model):
         DailyEmp = self.env.get("daily.task.employee")
         if not DailyEmp:
             return False
-        hr_emp = self.env["hr.employee"].search([("user_id", "=", user.id)], limit=1)
-        if hr_emp:
-            return DailyEmp.get_or_create_from_hr(hr_emp.id)
+        # Direct SQL search on hr_employee to bypass HR visibility restrictions
+        self.env.cr.execute(
+            """
+            SELECT id FROM hr_employee
+             WHERE user_id = %s
+             LIMIT 1
+            """,
+            (user.id,),
+        )
+        row = self.env.cr.fetchone()
+        hr_emp_id = row[0] if row else False
+        if not hr_emp_id:
+            mail = (user.email or user.login or "").strip()
+            if mail:
+                self.env.cr.execute(
+                    """
+                    SELECT id FROM hr_employee
+                     WHERE LOWER(work_email) = LOWER(%s)
+                        OR LOWER(private_email) = LOWER(%s)
+                     LIMIT 1
+                    """,
+                    (mail, mail),
+                )
+                row = self.env.cr.fetchone()
+                if row:
+                    hr_emp_id = row[0]
+        if not hr_emp_id and user.name:
+            self.env.cr.execute(
+                """
+                SELECT id FROM hr_employee
+                 WHERE LOWER(name) = LOWER(%s)
+                 LIMIT 1
+                """,
+                (user.name.strip(),),
+            )
+            row = self.env.cr.fetchone()
+            if row:
+                hr_emp_id = row[0]
+
+        if hr_emp_id:
+            return DailyEmp.sudo().get_or_create_from_hr(hr_emp_id)
+
         mail = (user.email or user.login or "").strip()
         domain = [("email", "=", mail)] if mail else [("name", "=ilike", user.name)]
-        existing = DailyEmp.search(domain, limit=1)
+        existing = DailyEmp.sudo().search(domain, limit=1)
         if existing:
             return existing
-        return DailyEmp.create({
+        return DailyEmp.sudo().create({
             "name": user.name,
             "email": mail or False,
         })
@@ -218,73 +257,79 @@ class ProjectStageTask(models.Model):
         DailyTaskModel = self.env.get("daily.task")
         if not DailyTaskModel:
             return
+        DailyTaskModel = DailyTaskModel.sudo()
         for task in self:
-            project = task.project_id
-            proj_name = project.name or "Dự án" if project else "Dự án"
-            sync_name = f"[{proj_name}] {task.name}"
-            daily_state = (
-                "done"
-                if task.state == "done"
-                else ("in_progress" if task.state == "in_progress" else "not_started")
-            )
-            daily_priority = (
-                "high"
-                if project and project.lug_priority == "high"
-                else ("low" if project and project.lug_priority == "low" else "medium")
-            )
-            deadline = (
-                task.deadline
-                or (project and (project.lug_deadline or project.date))
-                or fields.Date.context_today(task)
-            )
-            assign_date = task.execution_date or fields.Date.context_today(task)
-            assigned_by_id = (
-                (project and project.user_id.id)
-                or (project and project.lug_pic_id.id)
-                or task.env.user.id
-            )
+            try:
+                project = task.project_id or task.stage_id.project_id
+                proj_name = project.name or "Dự án" if project else "Dự án"
+                sync_name = f"[{proj_name}] {task.name}"
+                daily_state = (
+                    "done"
+                    if task.state == "done"
+                    else ("in_progress" if task.state == "in_progress" else "not_started")
+                )
+                daily_priority = (
+                    "high"
+                    if project and project.lug_priority == "high"
+                    else ("low" if project and project.lug_priority == "low" else "medium")
+                )
+                deadline = (
+                    task.deadline
+                    or (project and (project.lug_deadline or project.date))
+                    or fields.Date.context_today(task)
+                )
+                assign_date = task.execution_date or fields.Date.context_today(task)
+                assigned_by_id = (
+                    (project and project.user_id.id)
+                    or (project and project.lug_pic_id.id)
+                    or task.env.user.id
+                )
 
-            active_daily_emps = {}
-            for user in task.user_ids:
-                emp = task._lug_get_or_create_daily_employee(user)
-                if emp:
-                    active_daily_emps[emp.id] = (user, emp)
+                active_daily_emps = {}
+                for user in task.user_ids:
+                    emp = task._lug_get_or_create_daily_employee(user)
+                    if emp:
+                        active_daily_emps[emp.id] = (user, emp)
 
-            existing_daily_tasks = (
-                task.daily_task_ids.exists()
-                if (hasattr(task, "daily_task_ids") and hasattr(task.daily_task_ids, "exists"))
-                else []
-            )
-            existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+                task_rec = task.sudo() if hasattr(task, "sudo") else task
+                existing_daily_tasks = (
+                    task_rec.daily_task_ids.exists()
+                    if (hasattr(task_rec, "daily_task_ids") and hasattr(task_rec.daily_task_ids, "exists"))
+                    else []
+                )
+                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
 
-            for emp_id, (user, emp) in active_daily_emps.items():
-                daily_vals = {
-                    "name": sync_name,
-                    "deadline": deadline,
-                    "assign_date": assign_date,
-                    "state": daily_state,
-                    "priority": daily_priority,
-                }
-                if daily_state == "done":
-                    daily_vals["date_done"] = fields.Date.context_today(task)
+                for emp_id, (user, emp) in active_daily_emps.items():
+                    daily_vals = {
+                        "name": sync_name,
+                        "deadline": deadline,
+                        "assign_date": assign_date,
+                        "state": daily_state,
+                        "priority": daily_priority,
+                    }
+                    if daily_state == "done":
+                        daily_vals["date_done"] = fields.Date.context_today(task)
 
-                if emp_id in existing_by_emp:
-                    existing_by_emp[emp_id].with_context(lug_sync_lock=True).write(daily_vals)
-                else:
-                    daily_vals.update({
-                        "assignee_id": emp.id,
-                        "assigned_by_id": assigned_by_id,
-                        "department_id": emp.department_id.id or (project and project.lug_department_id.id) or False,
-                        "lug_origin_stage_task_id": task.id,
-                    })
-                    DailyTaskModel.with_context(lug_sync_lock=True).create(daily_vals)
+                    if emp_id in existing_by_emp:
+                        existing_by_emp[emp_id].with_context(lug_sync_lock=True).sudo().write(daily_vals)
+                    else:
+                        daily_vals.update({
+                            "assignee_id": emp.id,
+                            "assigned_by_id": assigned_by_id,
+                            "department_id": emp.department_id.id or (project and project.lug_department_id.id) or False,
+                            "lug_origin_stage_task_id": task.id,
+                        })
+                        DailyTaskModel.with_context(lug_sync_lock=True).sudo().create(daily_vals)
 
-            for emp_id, dt in existing_by_emp.items():
-                if emp_id not in active_daily_emps:
-                    try:
-                        dt.with_context(lug_sync_lock=True).unlink()
-                    except Exception:
-                        pass
+                for emp_id, dt in existing_by_emp.items():
+                    if emp_id not in active_daily_emps:
+                        try:
+                            dt.with_context(lug_sync_lock=True).sudo().unlink()
+                        except Exception:
+                            pass
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning("Error syncing stage task %s to daily task: %s", task.id, e)
 
     @api.model_create_multi
     def create(self, vals_list):

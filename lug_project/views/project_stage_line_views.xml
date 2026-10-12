@@ -11,7 +11,7 @@
                 <field name="sequence" widget="handle"/>
                 <field name="stt" string="STT" optional="show"/>
                 <field name="name" string="Tên công việc giai đoạn"/>
-                <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
+                <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user" required="1"/>
                 <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
                 <field name="execution_date" string="Ngày thực hiện"/>
                 <field name="deadline" string="Deadline"/>
@@ -41,7 +41,7 @@
                             <field name="name" string="Tên công việc giai đoạn"
                                    placeholder="Ví dụ: Khảo sát hiện trạng mặt bằng..."/>
                             <field name="user_ids" widget="many2many_avatar_user"
-                                   options="{'no_create': True}"/>
+                                   options="{'no_create': True}" required="1"/>
                             <field name="supervisor_ids" widget="many2many_avatar_user"
                                    options="{'no_create': True}"/>
                             <field name="execution_date"/>
@@ -115,7 +115,7 @@
                             <field name="sequence" widget="handle"/>
                             <field name="stt" string="STT"/>
                             <field name="name" string="Tên công việc giai đoạn"/>
-                            <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user"/>
+                            <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user" required="1"/>
                             <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
                             <field name="execution_date" string="Ngày thực hiện"/>
                             <field name="deadline" string="Deadline"/>

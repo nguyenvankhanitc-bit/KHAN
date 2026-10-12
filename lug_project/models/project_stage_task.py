@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
 
 
 class ProjectStageTask(models.Model):
     _name = "project.stage.task"
     _description = "Công việc chi tiết theo giai đoạn"
     _order = "sequence, id"
+
+    daily_task_ids = fields.One2many(
+        "daily.task",
+        "lug_origin_stage_task_id",
+        string="Công việc hàng ngày liên kết",
+    )
 
     stage_id = fields.Many2one(
         "project.stage.line",
@@ -178,6 +185,103 @@ class ProjectStageTask(models.Model):
             else:
                 rec.timeleft = "Trễ %s ngày" % abs(delta)
 
+    @api.constrains("user_ids")
+    def _check_user_ids(self):
+        for rec in self:
+            if not rec.user_ids:
+                raise ValidationError("Vui lòng chọn Người phụ trách cho công việc.")
+
+    def _lug_get_or_create_daily_employee(self, user):
+        if not user:
+            return False
+        DailyEmp = self.env.get("daily.task.employee")
+        if not DailyEmp:
+            return False
+        hr_emp = self.env["hr.employee"].search([("user_id", "=", user.id)], limit=1)
+        if hr_emp:
+            return DailyEmp.get_or_create_from_hr(hr_emp.id)
+        mail = (user.email or user.login or "").strip()
+        domain = [("email", "=", mail)] if mail else [("name", "=ilike", user.name)]
+        existing = DailyEmp.search(domain, limit=1)
+        if existing:
+            return existing
+        return DailyEmp.create({
+            "name": user.name,
+            "email": mail or False,
+        })
+
+    def _lug_sync_to_daily(self):
+        DailyTaskModel = self.env.get("daily.task")
+        if not DailyTaskModel:
+            return
+        for task in self:
+            project = task.project_id
+            proj_name = project.name or "Dự án" if project else "Dự án"
+            sync_name = f"[{proj_name}] {task.name}"
+            daily_state = (
+                "done"
+                if task.state == "done"
+                else ("in_progress" if task.state == "in_progress" else "not_started")
+            )
+            daily_priority = (
+                "high"
+                if project and project.lug_priority == "high"
+                else ("low" if project and project.lug_priority == "low" else "medium")
+            )
+            deadline = (
+                task.deadline
+                or (project and (project.lug_deadline or project.date))
+                or fields.Date.context_today(task)
+            )
+            assign_date = task.execution_date or fields.Date.context_today(task)
+            assigned_by_id = (
+                (project and project.user_id.id)
+                or (project and project.lug_pic_id.id)
+                or task.env.user.id
+            )
+
+            active_daily_emps = {}
+            for user in task.user_ids:
+                emp = task._lug_get_or_create_daily_employee(user)
+                if emp:
+                    active_daily_emps[emp.id] = (user, emp)
+
+            existing_daily_tasks = (
+                task.daily_task_ids.exists()
+                if (hasattr(task, "daily_task_ids") and hasattr(task.daily_task_ids, "exists"))
+                else []
+            )
+            existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+
+            for emp_id, (user, emp) in active_daily_emps.items():
+                daily_vals = {
+                    "name": sync_name,
+                    "deadline": deadline,
+                    "assign_date": assign_date,
+                    "state": daily_state,
+                    "priority": daily_priority,
+                }
+                if daily_state == "done":
+                    daily_vals["date_done"] = fields.Date.context_today(task)
+
+                if emp_id in existing_by_emp:
+                    existing_by_emp[emp_id].with_context(lug_sync_lock=True).write(daily_vals)
+                else:
+                    daily_vals.update({
+                        "assignee_id": emp.id,
+                        "assigned_by_id": assigned_by_id,
+                        "department_id": emp.department_id.id or (project and project.lug_department_id.id) or False,
+                        "lug_origin_stage_task_id": task.id,
+                    })
+                    DailyTaskModel.with_context(lug_sync_lock=True).create(daily_vals)
+
+            for emp_id, dt in existing_by_emp.items():
+                if emp_id not in active_daily_emps:
+                    try:
+                        dt.with_context(lug_sync_lock=True).unlink()
+                    except Exception:
+                        pass
+
     @api.model_create_multi
     def create(self, vals_list):
         Stage = self.env["project.stage.line"]
@@ -196,7 +300,10 @@ class ProjectStageTask(models.Model):
                 vals["supervisor_ids"] = [(6, 0, [vals.pop("supervisor_id")])]
             elif "supervisor_id" in vals:
                 vals.pop("supervisor_id")
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        if not self.env.context.get("lug_sync_lock"):
+            records._lug_sync_to_daily()
+        return records
 
     def write(self, vals):
         vals = dict(vals)
@@ -208,7 +315,21 @@ class ProjectStageTask(models.Model):
             vals["supervisor_ids"] = [(6, 0, [vals.pop("supervisor_id")])]
         elif "supervisor_id" in vals:
             vals.pop("supervisor_id")
-        return super().write(vals)
+        res = super().write(vals)
+        if not self.env.context.get("lug_sync_lock"):
+            sync_fields = {"name", "user_ids", "deadline", "execution_date", "state", "stage_id"}
+            if any(f in vals for f in sync_fields):
+                self._lug_sync_to_daily()
+        return res
+
+    def unlink(self):
+        for rec in self:
+            if rec.daily_task_ids:
+                try:
+                    rec.daily_task_ids.with_context(lug_sync_lock=True).unlink()
+                except Exception:
+                    pass
+        return super().unlink()
 
     def action_open_popup(self):
         self.ensure_one()

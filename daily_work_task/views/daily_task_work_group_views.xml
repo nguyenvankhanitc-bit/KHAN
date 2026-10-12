@@ -48,20 +48,20 @@
                         <group string="Thông tin hạng mục">
                             <field name="sequence" string="Thứ tự sắp xếp"/>
                             <field name="display_stt" string="STT" readonly="1"/>
-                            <field name="name" string="Hạng mục" placeholder="Vd: Camera..." required="1"/>
-                            <field name="task_name" string="Tên công việc" required="1"
+                            <field name="name" string="Hạng mục" placeholder="Vd: Camera..."/>
+                            <field name="task_name" string="Tên công việc"
                                      placeholder="Vd: Kiểm giờ mở cửa camera..."/>
                             <field name="dept_locked" invisible="1"/>
-                            <field name="department_id" string="Phòng ban" required="1"
+                            <field name="department_id" string="Phòng ban"
                                      readonly="dept_locked" force_save="1"
                                      options="{'no_create': True}"/>
-                            <field name="team_id" string="Team" required="1"
+                            <field name="team_id" string="Team"
                                      options="{'no_create': True}"
                                      domain="department_id and [('department_id', '=', department_id), ('active', '=', True)] or [('active', '=', True)]"/>
                             <field name="active"/>
                         </group>
                         <group string="User được dùng hạng mục (tuỳ chọn)">
-                            <field name="category_manager_ids" string="User quản lý hạng mục" required="1"
+                            <field name="category_manager_ids" string="User quản lý hạng mục"
                                      widget="many2many_tags" options="{'no_create': True}"
                                      placeholder="Chọn user quản lý hạng mục..."/>
                             <field name="assignee_user_ids" string="User phụ trách"

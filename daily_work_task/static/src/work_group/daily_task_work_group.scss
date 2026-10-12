@@ -108,3 +108,42 @@
         }
     }
 }
+
+// Danh sách Team (Cài đặt → Team): kẻ ô phân biệt nội dung
+.o_list_view.o_daily_task_team_list .o_list_table {
+    border: 1px solid #cbd5e1;
+    border-collapse: collapse;
+
+    > thead > tr > th,
+    > tbody > tr > td,
+    > tfoot > tr > td {
+        border: 1px solid #cbd5e1 !important;
+        vertical-align: middle;
+    }
+
+    > thead > tr > th {
+        background: #eef2f7;
+        color: #0f172a;
+        font-weight: 700;
+    }
+
+    > tbody > tr.o_group_header > th,
+    > tbody > tr.o_group_header > td {
+        border: 1px solid #cbd5e1 !important;
+        background: #f1f5f9;
+        font-weight: 700;
+    }
+}
+
+// Cột User Group / User quản lý team: chứa nhiều user → thẻ xuống dòng, không bị cắt
+.o_list_view.o_daily_task_team_list .o_list_table {
+    td[name="member_ids"],
+    td[name="manager_ids"] {
+        white-space: normal !important;
+
+        .o_field_tags {
+            flex-wrap: wrap;
+            gap: 2px 0;
+        }
+    }
+}

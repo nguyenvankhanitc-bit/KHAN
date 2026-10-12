@@ -31,6 +31,16 @@ class DailyTaskTeam(models.Model):
         domain="[('share', '=', False), ('active', '=', True)]",
         help="Quản lý toàn bộ hạng mục của team: thêm việc, sửa việc chung, duyệt Plan nhân sự trong team.",
     )
+    member_ids = fields.Many2many(
+        "res.users",
+        "daily_task_team_member_rel",
+        "team_id",
+        "user_id",
+        string="User Group",
+        domain="[('share', '=', False), ('active', '=', True)]",
+        help="Thành viên của team — dùng để xác định user thuộc team nào (tự điền Team khi tạo hạng mục).",
+    )
+    member_count = fields.Integer(string="Số user", compute="_compute_member_count")
     work_group_ids = fields.One2many(
         "daily.task.work.group",
         "team_id",
@@ -54,6 +64,11 @@ class DailyTaskTeam(models.Model):
         for rec in self:
             dept = rec.department_id.display_name if rec.department_id else ""
             rec.display_name = "%s (%s)" % (rec.name, dept) if dept else (rec.name or "")
+
+    @api.depends("member_ids")
+    def _compute_member_count(self):
+        for rec in self:
+            rec.member_count = len(rec.member_ids)
 
     def _compute_work_group_count(self):
         Group = self.env["daily.task.work.group"]

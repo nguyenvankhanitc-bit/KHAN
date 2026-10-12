@@ -4,15 +4,18 @@
         <field name="name">daily.task.team.list</field>
         <field name="model">daily.task.team</field>
         <field name="arch" type="xml">
-            <list string="Team" editable="bottom" default_order="department_id, sequence, name">
+            <list string="Team" editable="bottom" default_order="department_id, sequence, name"
+                  class="o_daily_task_team_list">
                 <field name="sequence" string="STT" widget="handle"/>
-                <field name="name" string="Tên Team"
+                <field name="name" string="Tên Team" width="170px"
                          placeholder="Vd: Team An ninh, Team IT..."/>
-                <field name="department_id" string="Phòng ban"
+                <field name="department_id" string="Phòng ban" width="240px"
                          options="{'no_create': True}"/>
-                <field name="manager_ids" string="User quản lý team" widget="many2many_tags"
+                <field name="manager_ids" string="User quản lý team" widget="many2many_tags" width="200px"
                          options="{'no_create': True}" optional="show"/>
-                <field name="work_group_count" string="Số hạng mục" optional="show"/>
+                <field name="member_ids" string="User Group" widget="many2many_tags"
+                         options="{'no_create': True}" optional="show"/>
+                <field name="work_group_count" string="Số hạng mục" width="100px" optional="show"/>
                 <field name="note" optional="hide"/>
                 <field name="active" optional="hide"/>
             </list>
@@ -39,6 +42,9 @@
                             <field name="manager_ids" string="User quản lý team"
                                      widget="many2many_tags" options="{'no_create': True}"
                                      placeholder="Chọn user quản lý team..."/>
+                            <field name="member_ids" string="User Group"
+                                     widget="many2many_tags" options="{'no_create': True}"
+                                     placeholder="Chọn user thuộc team..."/>
                         </group>
                         <group>
                             <field name="note"/>
@@ -58,6 +64,7 @@
             <search>
                 <field name="name" string="Tên Team"/>
                 <field name="department_id" string="Phòng ban"/>
+                <field name="member_ids" string="User Group"/>
                 <group>
                     <filter name="group_dept" string="Phòng ban"
                             context="{'group_by': 'department_id'}"/>

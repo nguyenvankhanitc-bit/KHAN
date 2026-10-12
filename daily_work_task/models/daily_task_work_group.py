@@ -54,7 +54,8 @@ class DailyTaskWorkGroup(models.Model):
         index=True,
         ondelete="restrict",
         domain="[('department_id', '=', department_id), ('active', '=', True)]",
-        help="Team thuộc phòng ban. Quản trị viên tạo Team trước, rồi chọn khi tạo hạng mục.",
+        default=lambda self: self._team_from_user(),
+        help="Team thuộc phòng ban. Tự lấy theo user (quản lý Team, hoặc Team của các hạng mục user đang tham gia).",
     )
     assignee_user_ids = fields.Many2many(
         "res.users",
@@ -892,6 +893,53 @@ class DailyTaskWorkGroup(models.Model):
             and self.team_id.department_id != self.department_id
         ):
             self.team_id = False
+
+    _TEAM_USER_FIELDS = (
+        "category_manager_ids", "assignee_user_ids", "checker_user_ids", "detail_user_ids",
+        "detail_check_user_ids", "total_user_ids", "south_user_ids", "dtt_user_ids",
+        "north_user_ids", "vptt_user_ids", "vpmb_user_ids",
+    )
+
+    @api.model
+    def _team_from_user(self, user=None, department=None):
+        """Team của user nếu có trong hệ thống: ưu tiên Team user làm quản lý, rồi Team có user
+        trong User Group, sau đó Team xuất hiện nhiều nhất trong các hạng mục user đang tham gia. Không có → trống."""
+        user = user or self.env.user
+        if department is None:
+            department = self.env["daily.task.assign"]._department_from_user(user)
+        Team = self.env["daily.task.team"].sudo()
+        dom = [("active", "=", True)]
+        if department:
+            dom.append(("department_id", "=", department.id))
+        managed = Team.search(dom + [("manager_ids", "in", user.id)], limit=1)
+        if managed:
+            return managed
+        member = Team.search(dom + [("member_ids", "in", user.id)], limit=1)
+        if member:
+            return member
+        user_dom = ["|"] * (len(self._TEAM_USER_FIELDS) - 1) + [
+            (f, "in", user.id) for f in self._TEAM_USER_FIELDS
+        ]
+        grp_dom = [("team_id", "!=", False), ("team_id.active", "=", True)] + user_dom
+        if department:
+            grp_dom.append(("team_id.department_id", "=", department.id))
+        counts = {}
+        for g in self.sudo().search(grp_dom):
+            counts[g.team_id] = counts.get(g.team_id, 0) + 1
+        if not counts:
+            return Team
+        return max(counts, key=lambda t: (counts[t], -t.id))
+
+    @api.onchange("category_manager_ids")
+    def _onchange_category_manager_team(self):
+        """Chưa có Team → lấy Team theo User quản lý hạng mục (nếu có trong hệ thống)."""
+        if self.team_id or not self.category_manager_ids:
+            return
+        for user in self.category_manager_ids:
+            team = self._team_from_user(user._origin or user, self.department_id or None)
+            if team:
+                self.team_id = team
+                return
 
     @api.onchange("team_id")
     def _onchange_team_id(self):

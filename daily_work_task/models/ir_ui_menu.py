@@ -77,6 +77,14 @@ class IrUiMenu(models.Model):
             )
             if menu:
                 res.append(menu.id)
+        # Plan tổng team: cần Xem danh sách phân công hoặc Công việc theo nhân sự
+        if not self.env["daily.task.assign"]._team_plan_can_view():
+            menu = self.env.ref(
+                "daily_work_task.menu_daily_work_team_plan",
+                raise_if_not_found=False,
+            )
+            if menu:
+                res.append(menu.id)
         if not AssignAccess.can("category", "view"):
             menu = self.env.ref(
                 "daily_work_task.menu_daily_work_work_group",

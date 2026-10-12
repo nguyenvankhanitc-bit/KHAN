@@ -19,9 +19,16 @@
 
     <!-- Landing mặc định -->
     <menuitem id="menu_daily_work_employee_ws"
-              name="Nhập công việc"
+              name="Quản lý công việc"
               parent="menu_daily_work_cat_tasks"
               action="action_daily_work_employee_ws"
+              sequence="1"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_plan"
+              name="Plan CV cá nhân"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_plan"
               sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
@@ -102,6 +109,13 @@
               sequence="2"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <menuitem id="menu_daily_work_monthly_report"
+              name="Báo cáo công việc tháng"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_monthly_report"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <!-- menu_task_report trong spec = khối BÁO CÁO (menu_daily_work_cat_reports).
          Sequence 3 để đứng ngay sau Báo cáo cá nhân (các mục kia đang là 1–4). -->
     <menuitem id="menu_task_team_report"
@@ -159,6 +173,13 @@
               parent="menu_daily_work_cat_assign"
               action="action_daily_work_personnel"
               sequence="3"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_team_plan"
+              name="Plan tổng team"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_team_plan"
+              sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_work_group"
@@ -242,6 +263,13 @@
               parent="menu_daily_work_config"
               action="action_daily_task_assign_access_matrix"
               sequence="22"
+              groups="daily_work_task.group_daily_work_manager"/>
+
+    <menuitem id="menu_daily_work_team_plan_access"
+              name="Phân quyền Plan tổng"
+              parent="menu_daily_work_config"
+              action="action_daily_task_team_plan_access"
+              sequence="23"
               groups="daily_work_task.group_daily_work_manager"/>
 
     <menuitem id="menu_daily_work_report_access"

@@ -120,6 +120,16 @@ class DailyTaskRecurring(models.Model):
         string="Công việc đã sinh",
     )
     task_count = fields.Integer(compute="_compute_task_count", string="Số lần đã tạo")
+    # Mẫu sinh tự động từ dòng Phân công (Plan hằng ngày) — chỉ lặp trong khoảng ngày của plan
+    assign_line_id = fields.Many2one(
+        "daily.task.assign",
+        string="Dòng phân công",
+        index=True,
+        ondelete="cascade",
+        copy=False,
+    )
+    date_from = fields.Date(string="Lặp từ ngày")
+    date_to = fields.Date(string="Lặp đến ngày")
 
     @api.depends("task_ids")
     def _compute_task_count(self):
@@ -513,6 +523,8 @@ class DailyTaskRecurring(models.Model):
         self.ensure_one()
         if not self.active:
             return False
+        if (self.date_from and day < self.date_from) or (self.date_to and day > self.date_to):
+            return False
         weekday = day.weekday()
         skip_saturday = bool(self.skip_saturday or self.skip_weekend)
         skip_sunday = bool(self.skip_sunday or self.skip_weekend)
@@ -599,6 +611,7 @@ class DailyTaskRecurring(models.Model):
                 "state": "not_started",
                 "note": self.note or "",
                 "recurring_id": self.id,
+                "assign_line_id": self.assign_line_id.id or False,
             }
         )
         self.sudo().write({"last_generated_date": day})

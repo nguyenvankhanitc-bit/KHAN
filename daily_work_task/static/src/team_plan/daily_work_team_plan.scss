@@ -1,0 +1,399 @@
+// Plan tổng team — dùng chung style Plan CV cá nhân (o_daily_work_plan), bổ sung cột riêng
+.o_daily_work_dashboard.o_daily_work_team_plan {
+    // ---- Duyệt Plan tháng ----
+    .o_dwtp_approval {
+        margin-bottom: 0.7rem;
+        padding: 0.6rem 0.75rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+    }
+
+    .o_dwtp_approval_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6rem;
+
+        &.is-toggle {
+            cursor: pointer;
+            user-select: none;
+
+            > .fa {
+                width: 1rem;
+                color: #475569;
+            }
+
+            &:hover b {
+                color: #1d4ed8;
+            }
+        }
+
+        em {
+            font-style: normal;
+        }
+
+        + .o_dwtp_members {
+            margin-top: 0.6rem;
+        }
+
+        b {
+            font-size: 0.92rem;
+            color: #0f172a;
+        }
+
+        span {
+            font-size: 0.8rem;
+            color: #475569;
+        }
+
+        .btn {
+            margin-left: auto;
+        }
+    }
+
+    .o_dwtp_members {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+        gap: 0.5rem;
+    }
+
+    .o_dwtp_member_top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.4rem;
+    }
+
+    .o_dwtp_member_counts {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .o_dwtp_member_meta {
+        color: #64748b;
+        font-size: 0.72rem;
+    }
+
+    .o_dwtp_member_reason {
+        color: #b91c1c;
+        font-size: 0.74rem;
+    }
+
+    .o_dwtp_reason_input {
+        width: 100%;
+        padding: 0.3rem 0.45rem;
+        border: 1px solid #fca5a5;
+        border-radius: 6px;
+        font-size: 0.78rem;
+    }
+
+    .o_dwtp_member_actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.35rem;
+
+        .btn {
+            padding: 0.1rem 0.55rem;
+            font-size: 0.75rem;
+        }
+    }
+
+    .o_dwtp_badge {
+        padding: 0.05rem 0.5rem;
+        border-radius: 999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+
+        &.is-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        &.is-approved {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        &.is-rejected {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+    }
+
+    .o_dwtp_member {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+        padding: 0.5rem 0.65rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid #f59e0b;
+        border-radius: 8px;
+        font-size: 0.78rem;
+
+        &.is-approved {
+            border-left-color: #16a34a;
+        }
+
+        &.is-rejected {
+            border-left-color: #dc2626;
+        }
+
+        b {
+            color: #0f172a;
+        }
+
+        span {
+            color: #475569;
+        }
+
+        em {
+            min-width: 1.4rem;
+            padding: 0 0.3rem;
+            border-radius: 999px;
+            font-style: normal;
+            font-weight: 700;
+            text-align: center;
+
+            &.k-done {
+                background: #dcfce7;
+                color: #166534;
+            }
+
+            &.k-progress {
+                background: #ffedd5;
+                color: #9a3412;
+            }
+
+            &.k-todo {
+                background: #e2e8f0;
+                color: #334155;
+            }
+
+            &.k-late {
+                background: #fee2e2;
+                color: #b91c1c;
+            }
+        }
+    }
+
+    .o_dwtp_table {
+        // Phòng ban → Team (giống bảng Hạng mục)
+        .o_dwtp_dept td {
+            background: #c7d2e1;
+            color: #0f172a;
+            font-weight: 800;
+            font-size: 0.86rem;
+            text-transform: uppercase;
+            cursor: pointer;
+
+            em {
+                margin-left: 0.4rem;
+                font-style: normal;
+                font-weight: 600;
+                text-transform: none;
+            }
+        }
+
+        .o_dwtp_team td {
+            background: #dde6f0;
+            color: #0f172a;
+            font-weight: 700;
+            cursor: pointer;
+
+            em {
+                margin-left: 0.3rem;
+                font-style: normal;
+                font-weight: 500;
+                color: #334155;
+            }
+        }
+
+        .o_dwtp_team .o_dwp_c_name {
+            padding-left: 1.2rem;
+        }
+
+        .o_dwp_group .o_dwp_c_name {
+            padding-left: 2rem;
+        }
+
+        .o_dwtp_people_head {
+            text-align: center;
+        }
+
+        .o_dwtp_c_people {
+            min-width: 8.5rem;
+            max-width: 11rem;
+            white-space: nowrap;
+            line-height: 1.35;
+            font-size: 0.76rem;
+            color: #000;
+        }
+
+        .o_dwtp_c_owner {
+            min-width: 10rem;
+            white-space: nowrap;
+            line-height: 1.35;
+        }
+
+        .o_dwtp_c_check {
+            min-width: 8rem;
+            white-space: normal;
+            color: #000;
+        }
+
+        .o_dwtp_c_result {
+            min-width: 7rem;
+            text-align: center;
+            font-weight: 600;
+            color: #000;
+        }
+
+        .o_dwtp_c_note {
+            min-width: 12rem;
+            max-width: 18rem;
+            white-space: normal;
+            font-size: 0.76rem;
+            color: #000;
+        }
+
+        thead .o_dwtp_c_people,
+        thead .o_dwtp_c_check,
+        thead .o_dwtp_c_note,
+        thead .o_dwtp_people_head {
+            background: #fce4d6;
+            color: #000;
+            font-weight: 800;
+        }
+    }
+}
+
+.o_dwp_grp_mgr {
+    margin-left: 0.75rem;
+    font-weight: 600;
+    color: #1e3a8a;
+    font-size: 0.85em;
+}
+
+// Khung Thêm công việc cho team — dùng chung cho Plan tổng team và Plan CV cá nhân
+.o_daily_work_dashboard.o_daily_work_plan {
+    // ---- Khung Thêm công việc cho team ----
+    .o_dwtp_add_modal {
+        width: 54rem;
+
+        .o_dwp_field select {
+            padding: 0.4rem 0.5rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+        }
+    }
+
+    .o_dwtp_inline {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding-top: 0.35rem;
+        color: #334155;
+    }
+
+    .o_dwtp_add_people {
+        flex-basis: 100%;
+    }
+
+    .o_dwtp_add_people_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+
+        span {
+            color: #64748b;
+        }
+
+        select {
+            margin-left: auto;
+            padding: 0.25rem 0.45rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.78rem;
+        }
+    }
+
+    .o_dwtp_add_table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.82rem;
+
+        th,
+        td {
+            padding: 0.3rem 0.5rem;
+            border: 1px solid #94a3b8;
+        }
+
+        th {
+            background: #fce4d6;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .o_dwtp_add_cb {
+            text-align: center;
+            width: 6.5rem;
+
+            input {
+                width: 1rem;
+                height: 1rem;
+                cursor: pointer;
+            }
+        }
+    }
+}
+
+// Khung Thêm công việc: nhiều cột vai trò user → rộng hơn, cuộn ngang, cột Nhân sự cố định
+.o_daily_work_dashboard.o_daily_work_plan {
+    .o_dwtp_add_modal {
+        width: 78rem;
+        max-width: 96vw;
+    }
+
+    .o_dwtp_add_scroll {
+        overflow-x: auto;
+        max-height: 50vh;
+        overflow-y: auto;
+    }
+
+    .o_dwtp_add_table {
+        th {
+            font-size: 0.74rem;
+            line-height: 1.15;
+            white-space: normal;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        .o_dwtp_add_cb {
+            width: 5rem;
+            min-width: 4.5rem;
+        }
+
+        .o_dwtp_add_name,
+        tbody td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            min-width: 11rem;
+            background: #fff;
+        }
+
+        th.o_dwtp_add_name {
+            background: #fce4d6;
+            z-index: 3;
+        }
+    }
+}

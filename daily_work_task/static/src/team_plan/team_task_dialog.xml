@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <!-- Thêm công việc cho team → dòng phân công, tự giao vào Plan cá nhân từng người -->
+    <t t-name="daily_work_task.TeamTaskDialog">
+        <div t-if="state.newLine" class="o_dwp_modal_backdrop" t-on-click.self="close">
+            <div class="o_dwp_modal o_dwtp_add_modal" t-on-click="closePicker">
+                <header>
+                    <div>
+                        <h3>Thêm công việc cho team</h3>
+                        <small>Giao vào Plan CV cá nhân của từng người được chọn</small>
+                    </div>
+                    <button type="button" class="btn btn-light btn-sm" title="Đóng" t-on-click="close">
+                        <i class="fa fa-times"/>
+                    </button>
+                </header>
+                <div class="o_dwp_modal_body">
+                    <label class="o_dwp_field o_dwp_field_wide">
+                        <span>Tên công việc *</span>
+                        <input type="text" placeholder="Nhập công việc…" t-att-value="state.newLine.name"
+                               t-on-input="(ev) => this.onAddField('name', ev)"/>
+                    </label>
+                    <label class="o_dwp_field">
+                        <span>Team *</span>
+                        <select t-on-change="(ev) => this.onAddField('team_id', ev)">
+                            <t t-foreach="state.opts.teams" t-as="tm" t-key="tm.id">
+                                <option t-att-value="tm.id" t-att-selected="tm.id === state.newLine.team_id" t-esc="tm.name"/>
+                            </t>
+                        </select>
+                    </label>
+                    <label class="o_dwp_field">
+                        <span>Hạng mục *</span>
+                        <select t-on-change="(ev) => this.onAddField('category', ev)">
+                            <t t-foreach="addTeam ? addTeam.categories : []" t-as="cat" t-key="cat.name">
+                                <option t-att-value="cat.name" t-att-selected="cat.name === state.newLine.category" t-esc="cat.label"/>
+                            </t>
+                        </select>
+                    </label>
+                    <t t-foreach="[['date_start', 'Ngày bắt đầu'], ['deadline', 'Deadline']]" t-as="df" t-key="df[0]">
+                        <div class="o_dwp_field">
+                            <span t-esc="df[1]"/>
+                            <button type="button" class="o_dwp_datebtn is-editing"
+                                    t-on-click.stop="() => this.openPicker(df[0])">
+                                <t t-esc="formatDate(state.newLine[df[0]]) or '—'"/>
+                                <i class="fa fa-calendar"/>
+                            </button>
+                            <div t-if="state.picker and state.picker.field === df[0]" class="o_dwp_picker" t-on-click.stop="() => {}">
+                                <div class="o_dwp_picker_head">
+                                    <button type="button" title="Tháng trước" t-on-click="() => this.pickerShift(-1)"><i class="fa fa-chevron-left"/></button>
+                                    <b t-esc="pickerTitle"/>
+                                    <button type="button" title="Tháng sau" t-on-click="() => this.pickerShift(1)"><i class="fa fa-chevron-right"/></button>
+                                </div>
+                                <div class="o_dwp_picker_grid">
+                                    <t t-foreach="pickerWeekdays" t-as="wd" t-key="wd">
+                                        <span t-att-class="'o_dwp_picker_wd' + (wd === 'CN' ? ' is-sun' : '')" t-esc="wd"/>
+                                    </t>
+                                    <t t-foreach="pickerDays" t-as="pd" t-key="pd.iso">
+                                        <button type="button" t-att-class="pd.cls" t-on-click="() => this.pickDate(pd.iso)" t-esc="pd.day"/>
+                                    </t>
+                                </div>
+                                <div class="o_dwp_picker_foot">
+                                    <button type="button" t-on-click="() => this.pickDate('')">Xóa</button>
+                                    <button type="button" t-on-click="pickToday">Hôm nay</button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <label class="o_dwp_field o_dwtp_add_check">
+                        <span>Lặp hằng ngày</span>
+                        <span class="o_dwtp_inline">
+                            <input type="checkbox" t-att-checked="state.newLine.plan_daily"
+                                   t-on-change="(ev) => this.onAddField('plan_daily', ev)"/>
+                            mỗi ngày (trừ CN) sinh việc vào Công việc hôm nay
+                        </span>
+                    </label>
+    
+                    <!-- Nhân sự chính theo miền + Kiểm soát -->
+                    <div class="o_dwtp_add_people">
+                        <div class="o_dwtp_add_people_head">
+                            <b>Nhân sự chính *</b>
+                            <span>Tích vai trò cho từng người (1 người có thể nhiều cột)</span>
+                            <select t-if="addOtherUsers.length" t-on-change="addExtraUser">
+                                <option value="">+ Thêm người ngoài team…</option>
+                                <t t-foreach="addOtherUsers" t-as="ou" t-key="ou.id">
+                                    <option t-att-value="ou.id" t-esc="ou.name"/>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="o_dwtp_add_scroll"><table class="o_dwtp_add_table">
+                            <thead>
+                                <tr>
+                                    <th class="o_dwtp_add_name">Nhân sự</th>
+                                    <t t-foreach="roleCols" t-as="col" t-key="col.key">
+                                        <th t-att-title="col.title or col.label" t-esc="col.label"/>
+                                    </t>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="addMembers" t-as="mb" t-key="mb.id">
+                                    <tr>
+                                        <td t-esc="mb.name"/>
+                                        <t t-foreach="roleCols" t-as="col" t-key="col.key">
+                                            <td class="o_dwtp_add_cb">
+                                                <input type="checkbox" t-att-checked="hasRegion(mb.id, col.key)"
+                                                       t-on-change="() => this.toggleRegion(mb.id, col.key)"/>
+                                            </td>
+                                        </t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table></div>
+                    </div>
+    
+                    <label class="o_dwp_field o_dwp_field_wide">
+                        <span>Ghi chú</span>
+                        <input type="text" placeholder="Ghi chú (không bắt buộc)" t-att-value="state.newLine.note"
+                               t-on-input="(ev) => this.onAddField('note', ev)"/>
+                    </label>
+                </div>
+                <footer>
+                    <button type="button" class="btn btn-light btn-sm" t-on-click="close">Hủy</button>
+                    <button type="button" class="btn btn-success btn-sm" t-att-disabled="state.busy"
+                            t-on-click="save"><i class="fa fa-save"/> Lưu</button>
+                </footer>
+            </div>
+        </div>
+    </t>
+    <!-- Plan tổng: sửa / xóa 1 công việc chung -->
+    <t t-name="daily_work_task.TeamLineEditDialog">
+        <div t-if="state.newLine" class="o_dwp_modal_backdrop" t-on-click.self="close">
+            <div class="o_dwp_modal" t-on-click="closePicker">
+                <header>
+                    <div>
+                        <h3><t t-esc="canEdit ? 'Chỉnh sửa công việc' : 'Công việc'"/></h3>
+                        <small t-if="mode === 'personal'"><t t-esc="props.line.code"/> · Việc bổ sung của bạn</small>
+                        <small t-else=""><t t-esc="props.line.code"/> · Plan tổng team · áp dụng cho Plan cá nhân của mọi người</small>
+                    </div>
+                    <button type="button" class="btn btn-light btn-sm" title="Đóng" t-on-click="close">
+                        <i class="fa fa-times"/>
+                    </button>
+                </header>
+                <div class="o_dwp_modal_body">
+                    <label class="o_dwp_field o_dwp_field_wide">
+                        <span>Tên công việc</span>
+                        <input type="text" t-att-value="state.newLine.name" t-att-disabled="!canEdit" placeholder="Nhập công việc…"
+                               t-on-input="(ev) => this.onAddField('name', ev)"/>
+                    </label>
+                    <t t-foreach="[['date_start', 'Ngày bắt đầu'], ['deadline', 'Deadline']]" t-as="df" t-key="df[0]">
+                        <div class="o_dwp_field">
+                            <span t-esc="df[1]"/>
+                            <button type="button" t-att-class="'o_dwp_datebtn' + (canEdit ? ' is-editing' : ' is-readonly')"
+                                    t-att-disabled="!canEdit" t-on-click.stop="() => this.openPicker(df[0])">
+                                <t t-esc="formatDate(state.newLine[df[0]]) or '—'"/>
+                                <i class="fa fa-calendar"/>
+                            </button>
+                            <div t-if="state.picker and state.picker.field === df[0]" class="o_dwp_picker" t-on-click.stop="() => {}">
+                                <div class="o_dwp_picker_head">
+                                    <button type="button" title="Tháng trước" t-on-click="() => this.pickerShift(-1)"><i class="fa fa-chevron-left"/></button>
+                                    <b t-esc="pickerTitle"/>
+                                    <button type="button" title="Tháng sau" t-on-click="() => this.pickerShift(1)"><i class="fa fa-chevron-right"/></button>
+                                </div>
+                                <div class="o_dwp_picker_grid">
+                                    <t t-foreach="pickerWeekdays" t-as="wd" t-key="wd">
+                                        <span t-att-class="'o_dwp_picker_wd' + (wd === 'CN' ? ' is-sun' : '')" t-esc="wd"/>
+                                    </t>
+                                    <t t-foreach="pickerDays" t-as="pd" t-key="pd.iso">
+                                        <button type="button" t-att-class="pd.cls" t-on-click="() => this.pickDate(pd.iso)" t-esc="pd.day"/>
+                                    </t>
+                                </div>
+                                <div class="o_dwp_picker_foot">
+                                    <button type="button" t-on-click="() => this.pickDate('')">Xóa</button>
+                                    <button type="button" t-on-click="pickToday">Hôm nay</button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                    <p t-if="mode === 'team' and !canEdit" class="o_dwp_modal_note">
+                        <i class="fa fa-lock"/> Việc Plan tổng đã áp xuống — chỉ người có quyền Chỉnh sửa Plan tổng mới sửa được nội dung.
+                    </p>
+                </div>
+                <footer>
+                    <button t-if="mode === 'team' and props.canUnlink" type="button" class="btn btn-outline-danger btn-sm me-auto"
+                            t-att-disabled="state.busy" t-on-click="remove">
+                        <i class="fa fa-trash"/> Xóa công việc
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm" t-on-click="close">Hủy</button>
+                    <button t-if="canEdit" type="button" class="btn btn-success btn-sm"
+                            t-att-disabled="state.busy" t-on-click="save"><i class="fa fa-save"/> Lưu</button>
+                </footer>
+            </div>
+        </div>
+    </t>
+</templates>

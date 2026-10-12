@@ -162,6 +162,7 @@ class DailyTaskDashboard(models.AbstractModel):
                 "can_assign_personnel": bool(
                     assign_access.get("personnel", {}).get("view")
                 ),
+                "can_team_plan": bool(self.env["daily.task.assign"]._team_plan_can_view()),
                 "can_assign_category": bool(
                     assign_access.get("category", {}).get("view")
                 ),

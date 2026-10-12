@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "LUG Enterprise Application Center",
-    "version": "19.0.1.3.16",
+    "version": "19.0.1.3.17",
     "category": "Productivity",
     "summary": "Cổng truy cập tập trung toàn bộ ứng dụng doanh nghiệp",
     "description": """
@@ -16,6 +16,8 @@ Một cổng truy cập — toàn bộ ứng dụng doanh nghiệp.
     "depends": [
         "web",
         "mail",
+        # Chạy sau Phân quyền ứng dụng để App Center luôn hiện
+        "lug_permission",
     ],
     "data": [
         "security/ir.model.access.csv",

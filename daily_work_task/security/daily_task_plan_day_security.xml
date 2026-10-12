@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Plan công việc (ô 'x' theo ngày):
+        - Nhân viên (base.group_user → group_daily_work_user): thêm / xem / sửa / xóa ô của chính mình.
+        - Quản lý: toàn quyền mọi ô của team.
+        Dòng phân công (daily.task.assign) vẫn theo bảng Phân quyền phân công; trang Plan sửa
+        ngày Bắt đầu / Deadline qua plan_update_line (kiểm tra người phụ trách ở server).
+    -->
+    <record id="rule_daily_task_plan_day_own" model="ir.rule">
+        <field name="name">CVHN: Plan — nhân viên chỉ ô của mình</field>
+        <field name="model_id" ref="model_daily_task_plan_day"/>
+        <field name="domain_force">[('user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_user'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+
+    <record id="rule_daily_task_plan_day_manager" model="ir.rule">
+        <field name="name">CVHN: Plan — quản lý toàn bộ team</field>
+        <field name="model_id" ref="model_daily_task_plan_day"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+        <field name="groups" eval="[(4, ref('group_daily_work_manager'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="True"/>
+        <field name="perm_create" eval="True"/>
+        <field name="perm_unlink" eval="True"/>
+    </record>
+</odoo>

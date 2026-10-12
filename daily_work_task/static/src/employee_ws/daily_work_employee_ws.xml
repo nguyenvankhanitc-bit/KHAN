@@ -6,19 +6,12 @@
             <div class="o_ews_pin" t-ref="pin">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
-                        <h2 class="o_ews_page_title" t-on-click="openMobileForm">
+                        <h2 class="o_ews_page_title" t-on-click="() => state.isPhone and this.openMobileForm()">
                             <t t-if="isActiveTab('board')">CÔNG VIỆC HÔM NAY</t>
                             <t t-elif="isActiveTab('month')">BÁO CÁO THÁNG</t>
-                            <t t-else="">NHẬP CÔNG VIỆC</t>
+                            <t t-else="">QUẢN LÝ CÔNG VIỆC</t>
                         </h2>
                         <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
-                            <button type="button"
-                                    t-att-class="'o_ews_tab' + (isActiveTab('tasks') ? ' active' : '')"
-                                    t-on-click="openMyTasksTab">
-                                <i class="fa fa-pencil-square-o o_ews_tab_icon o_ews_tab_icon_tasks"/>
-                                <span>Việc của tôi</span>
-                            </button>
-                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
                             <button type="button"
                                     t-att-class="'o_ews_tab' + (isActiveTab('recurring') ? ' active' : '')"
                                     t-on-click="() => this.setActiveTab('recurring')">
@@ -46,9 +39,43 @@
                                 <i class="fa fa-calendar o_ews_tab_icon o_ews_tab_icon_calendar"/>
                                 <span>Lịch công việc</span>
                             </button>
+                            <!-- Các trang thuộc Quản lý công việc (cùng thanh tab) -->
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('today')">
+                                <i class="fa fa-sun-o o_ews_tab_icon o_ews_tab_icon_today"/>
+                                <span>Công việc hôm nay</span>
+                                <em t-if="navAccess.todayCount" class="o_ews_tab_badge" t-esc="navAccess.todayCount"/>
+                            </button>
+                            <t t-if="navAccess.canAssign">
+                                <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                                <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('assign')">
+                                    <i class="fa fa-share o_ews_tab_icon o_ews_tab_icon_assign"/>
+                                    <span>Giao việc</span>
+                                </button>
+                            </t>
+                            <t t-if="navAccess.canViewOthers">
+                                <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                                <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('viewer')">
+                                    <i class="fa fa-eye o_ews_tab_icon o_ews_tab_icon_viewer"/>
+                                    <span>Xem công việc NV</span>
+                                </button>
+                            </t>
+                            <t t-if="navAccess.canViewChecklist">
+                                <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                                <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('team_checklist')">
+                                    <i class="fa fa-check-square-o o_ews_tab_icon o_ews_tab_icon_checklist"/>
+                                    <span>Checklist CV team</span>
+                                </button>
+                            </t>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('kanban')">
+                                <i class="fa fa-th-large o_ews_tab_icon o_ews_tab_icon_kanban"/>
+                                <span>Kanban công việc</span>
+                            </button>
                         </nav>
                     </div>
-                    <div class="o_ews_header_kpis" aria-label="Thống kê trạng thái công việc">
+                    <div class="o_ews_header_kpis" aria-label="Thống kê trạng thái công việc"
+                         t-if="state.isPhone or !isActiveTab('tasks')">
                         <div class="o_ews_header_kpi o_ews_header_kpi_done">
                             <i class="fa fa-check-circle o_ews_header_kpi_icon"/>
                             <div class="o_ews_header_kpi_body">
@@ -120,15 +147,49 @@
                 <t t-else="">
                     <!-- TAB 1: tasks -->
                     <t t-if="isActiveTab('tasks')">
-                        <div class="o_ews_info" t-if="state.employee">
-                            Xin chào <strong t-esc="state.employee.name"/>
-                            <t t-if="state.employee.department">
-                                — <span t-esc="state.employee.department"/>
-                            </t>
-                            · <span t-esc="state.tasks.length"/> công việc
+                        <!-- Quản lý công việc (giống mẫu): tiêu đề + Tạo công việc · thẻ thống kê · bộ lọc -->
+                        <div class="o_ews_qm" t-if="state.employee">
+                            <div class="o_ews_qm_head">
+                                <div class="o_ews_qm_icon"><i class="fa fa-clipboard"/></div>
+                                <div class="o_ews_qm_title">
+                                    <h3>Quản lý công việc</h3>
+                                    <p>
+                                        <span t-esc="state.employee.name"/>
+                                        <t t-if="state.employee.department"> • <span t-esc="state.employee.department"/></t>
+                                        • <i class="fa fa-calendar"/> <span t-esc="listMonthLabel"/>
+                                    </p>
+                                </div>
+                                <button type="button" class="o_ews_qm_create" t-on-click="openCreateForm">
+                                    <i class="fa fa-plus"/> Tạo công việc
+                                </button>
+                            </div>
+                            <div class="o_ews_qm_kpis">
+                                <div class="o_ews_qm_kpi is-total">
+                                    <span class="o_ews_qm_kpi_ico"><i class="fa fa-list-alt"/></span>
+                                    <div><span>Tổng công việc</span><b t-esc="listKpiTotal"/></div>
+                                </div>
+                                <div class="o_ews_qm_kpi is-done">
+                                    <span class="o_ews_qm_kpi_ico"><i class="fa fa-check"/></span>
+                                    <div><span>Hoàn thành</span><b t-esc="statusBoardDone.length"/></div>
+                                </div>
+                                <div class="o_ews_qm_kpi is-progress">
+                                    <span class="o_ews_qm_kpi_ico"><i class="fa fa-clock-o"/></span>
+                                    <div><span>Đang xử lý</span><b t-esc="statusBoardInProgress.length"/></div>
+                                </div>
+                                <div class="o_ews_qm_kpi is-todo">
+                                    <span class="o_ews_qm_kpi_ico"><i class="fa fa-play"/></span>
+                                    <div><span>Chưa bắt đầu</span><b t-esc="statusBoardNotStarted.length"/></div>
+                                </div>
+                                <div class="o_ews_qm_kpi is-overdue">
+                                    <span class="o_ews_qm_kpi_ico"><i class="fa fa-exclamation-triangle"/></span>
+                                    <div><span>Quá hạn</span><b t-esc="statusBoardOverdue.length"/></div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div class="o_ews_layout" t-ref="layout">
+                        <div class="o_ews_layout o_ews_layout_qm" t-ref="layout">
+                            <div t-if="state.showTaskForm and !state.isPhone" class="o_ews_form_backdrop"
+                                 t-on-click="() => state.editingTaskId ? this.onCancelEdit() : this.closeMobileForm()"/>
                             <aside class="o_ews_form_panel"
                                    t-att-class="(state.editingTaskId ? 'o_ews_form_editing' : '') + (state.showTaskForm ? ' o_ews_form_open' : '')"
                                    t-on-click="onFormPanelClick">
@@ -153,7 +214,7 @@
                                                    t-att-value="state.employee.name"/>
                                         </div>
                                         <div class="o_ews_field">
-                                            <label>Ngày giao <span class="text-danger">*</span></label>
+                                            <label>Ngày bắt đầu <span class="text-danger">*</span></label>
                                             <div class="o_ews_datepicker">
                                                 <input type="text" class="form-control o_ews_datepicker_text"
                                                        placeholder="dd/mm/yyyy"
@@ -177,7 +238,7 @@
                                             </div>
                                         </div>
                                         <div class="o_ews_field">
-                                            <label>Hạn hoàn thành <span class="text-danger">*</span></label>
+                                            <label>Deadline <span class="text-danger">*</span></label>
                                             <div class="o_ews_datepicker">
                                                 <input type="text" class="form-control o_ews_datepicker_text"
                                                        placeholder="dd/mm/yyyy"
@@ -189,7 +250,7 @@
                                                        t-on-blur="() => this.onFormDateTextBlur('deadline')"/>
                                                 <button type="button"
                                                         class="o_ews_datepicker_btn"
-                                                        title="Chọn hạn hoàn thành trên lịch"
+                                                        title="Chọn deadline trên lịch"
                                                         t-on-click="(ev) => this.openFormDatePicker('deadline', ev)">
                                                     <i class="fa fa-calendar"/>
                                                 </button>
@@ -243,13 +304,40 @@
 
                                         <div class="o_ews_field">
                                             <label>Tên Công việc hạn mục</label>
-                                            <select class="form-select" t-model="state.form.work_group_id"
-                                                    t-on-change="onFormWorkGroupChange">
-                                                <option value="">-- Chọn tên công việc --</option>
-                                                <t t-foreach="state.workGroups" t-as="g" t-key="g.id">
-                                                    <option t-att-value="g.id" t-esc="g.name"/>
-                                                </t>
-                                            </select>
+                                            <!-- Hạng mục cha (I, II…) → công việc con (1.1, 1.2…), tích ô để chọn -->
+                                            <div class="o_ews_wgpick">
+                                                <button type="button" class="form-select o_ews_wgpick_btn" t-on-click="toggleWgPicker">
+                                                    <span t-if="wgLabel" t-esc="wgLabel"/>
+                                                    <span t-else="" class="o_ews_wgpick_ph">-- Chọn tên công việc hạng mục --</span>
+                                                </button>
+                                                <!-- Bấm ra ngoài (nền) để đóng, thay cho nút Xong -->
+                                                <div t-if="state.wgPicker.open" class="o_ews_wgpick_backdrop" t-on-click="closeWgPicker"/>
+                                                <div t-if="state.wgPicker.open" class="o_ews_wgpick_panel">
+                                                    <input type="search" class="form-control form-control-sm" placeholder="Tìm hạng mục / công việc..."
+                                                           t-att-value="state.wgPicker.query" t-on-input="onWgQuery"/>
+                                                    <div class="o_ews_wgpick_list">
+                                                        <t t-foreach="wgTree" t-as="cat" t-key="cat.key">
+                                                            <label class="o_ews_wgpick_cat">
+                                                                <input type="checkbox" t-att-checked="isWgCat(cat)" t-on-change="() => this.toggleWgCat(cat)"/>
+                                                                <b><t t-if="cat.code" t-esc="cat.code + '. '"/><t t-esc="cat.name.toUpperCase()"/></b>
+                                                                <em t-esc="'(' + cat.items.length + ' CV)'"/>
+                                                            </label>
+                                                            <t t-foreach="cat.items" t-as="g" t-key="g.id">
+                                                                <label class="o_ews_wgpick_item">
+                                                                    <input type="checkbox" t-att-checked="isWgItem(g)" t-on-change="() => this.toggleWgItem(g)"/>
+                                                                    <span class="o_ews_wgpick_stt" t-esc="g.stt"/>
+                                                                    <span t-esc="g.name"/>
+                                                                </label>
+                                                            </t>
+                                                        </t>
+                                                        <div t-if="!wgTree.length" class="o_ews_wgpick_empty">Không có hạng mục phù hợp</div>
+                                                    </div>
+                                                    <div class="o_ews_wgpick_foot">
+                                                        <button type="button" class="btn btn-sm btn-light" t-on-click="clearWg">Bỏ chọn</button>
+                                                        <button type="button" class="btn btn-sm btn-primary" t-on-click="toggleWgPicker">Xong</button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div class="o_ews_field">
                                             <label>Hạng mục</label>
@@ -310,7 +398,8 @@
 
                             <section class="o_ews_table_panel" t-if="state.showMyList">
                                 <h3 class="o_ews_table_title">
-                                    Danh sách việc của tôi
+                                    Danh sách công việc
+                                    <span class="o_ews_qm_count"><t t-esc="filteredTasks.length"/> công việc</span>
                                     <span class="o_ews_total_hours" t-if="state.tasks.length">
                                         · Tổng TG: <strong t-esc="formatHours(state.totalDurationMinutes)"/> giờ
                                         (<t t-esc="state.totalDurationMinutes"/> phút)
@@ -327,9 +416,9 @@
                                             <tr>
                                                 <th class="o_ews_col_stt">STT</th>
                                                 <th class="o_ews_col_name">Tên công việc</th>
-                                                <th class="o_ews_col_hangmuc">Hạng mục</th>
-                                                <th class="o_ews_col_date">Ngày giao việc</th>
-                                                <th class="o_ews_col_date">Hạn hoàn thành</th>
+                                                <th class="o_ews_col_date">Ngày bắt đầu</th>
+                                                <th class="o_ews_col_date">Deadline</th>
+                                                <th class="o_ews_col_date">Ngày hoàn thành</th>
                                                 <th class="o_ews_col_priority">Mức ưu tiên</th>
                                                 <th class="o_ews_col_minutes">Thời gian (phút)</th>
                                                 <th class="o_ews_col_hours">Tổng TG (giờ)</th>
@@ -341,14 +430,15 @@
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            <t t-if="!state.tasks.length">
+                                            <t t-if="!filteredTasks.length">
                                                 <tr>
                                                     <td colspan="13" class="text-center text-muted py-4">
-                                                        Chưa có công việc. Hãy thêm việc mới ở biểu mẫu phía trên.
+                                                        <t t-if="listFilterActive">Không có công việc khớp bộ lọc.</t>
+                                                        <t t-else="">Chưa có công việc. Bấm «Tạo công việc» để thêm việc mới.</t>
                                                     </td>
                                                 </tr>
                                             </t>
-                                            <t t-foreach="state.tasks" t-as="task" t-key="task.id">
+                                            <t t-foreach="filteredTasks" t-as="task" t-key="task.id">
                                                 <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id}">
                                                     <td class="o_ews_col_stt" t-esc="task.stt"/>
                                                     <td t-att-class="'o_ews_col_name' + (isTaskOverdue(task) ? ' o_ews_name_overdue' : '')">
@@ -357,11 +447,12 @@
                                                             <i class="fa fa-refresh"/> Lặp
                                                         </span>
                                                     </td>
-                                                    <td class="o_ews_col_hangmuc"
-                                                        t-esc="task.work_group_label || task.category_name || '—'"/>
                                                     <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
                                                     <td t-att-class="'o_ews_col_date' + (isDeadlineToday(task) ? ' o_ews_deadline_today' : '')"
                                                         t-esc="task.deadline_display"/>
+                                                    <td t-att-class="'o_ews_col_date o_ews_col_done_date' + (task.date_done ? ' is-done' : '')"
+                                                        t-att-title="task.date_done ? 'Tự ghi khi đạt 100% / Hoàn thành' : 'Tự điền khi đạt 100% hoặc trạng thái Hoàn thành'"
+                                                        t-esc="task.date_done_display || '—'"/>
                                                     <td class="o_ews_col_priority">
                                                         <span t-att-class="'o_ews_badge ' + priorityClass(task.priority)"
                                                               t-esc="task.priority_label"/>
@@ -389,14 +480,19 @@
                                                         </div>
                                                     </td>
                                                     <td class="o_ews_col_state">
-                                                        <select t-att-class="'form-select form-select-sm o_ews_state_select ' + stateSelectClass(task.state)"
-                                                                t-att-value="task.state"
+                                                        <select t-att-class="'form-select form-select-sm o_ews_state_select ' + (stateLateDays(task) ? 'o_ews_state_overdue' : stateSelectClass(task.state))"
+                                                                t-att-value="stateLateDays(task) ? '__late' : task.state"
+                                                                t-att-title="stateLateDays(task) ? 'Trễ hạn ' + stateLateDays(task) + ' ngày (Deadline ' + task.deadline_display + ') — nhập 100% hoặc chọn Đã hoàn thành' : ''"
                                                                 t-on-change="(ev) => this.onStateChange(task, ev)">
                                                             <t t-foreach="state.states" t-as="s" t-key="s.value">
                                                                 <option t-att-value="s.value"
-                                                                        t-att-selected="s.value === task.state"
+                                                                        t-att-selected="!stateLateDays(task) and s.value === task.state"
                                                                         t-esc="s.label"/>
                                                             </t>
+                                                            <!-- Trễ hạn: tự động khi chưa hoàn thành và hôm nay > Deadline (không lưu thành trạng thái) -->
+                                                            <option t-if="stateLateDays(task)" value="__late" selected="selected"
+                                                                    t-esc="'⚠ Trễ hạn (' + stateLateDays(task) + ')'"/>
+                                                            <option t-else="" value="__late" disabled="disabled">Trễ hạn (tự động)</option>
                                                         </select>
                                                     </td>
                                                     <td class="o_ews_col_note">
@@ -462,7 +558,7 @@
                                 <div class="o_ews_mobile_board">
                                     <div class="o_ews_mdate"><i class="fa fa-calendar"/> <t t-esc="todayBarLabel"/></div>
                                     <t t-if="!mobileTasks.length">
-                                        <div class="o_ews_mempty">Chưa có công việc. Bấm «Việc của tôi» để nhập việc mới.</div>
+                                        <div class="o_ews_mempty">Chưa có công việc. Bấm «Tạo công việc» để thêm việc mới.</div>
                                     </t>
                                     <t t-foreach="mobileTasks" t-as="mtask" t-key="mtask.id">
                                         <article class="o_ews_mcard" t-on-click="() => this.openMobileDetail(mtask)">
@@ -470,11 +566,11 @@
                                                 <h4 class="o_ews_mcard_name" t-esc="mtask.name"/>
                                                 <div class="o_ews_mcard_grid">
                                                     <span>
-                                                        <i class="fa fa-calendar-plus-o"/> Ngày giao<br/>
+                                                        <i class="fa fa-calendar-plus-o"/> Ngày bắt đầu<br/>
                                                         <b t-esc="mtask.assign_date_display"/>
                                                     </span>
                                                     <span>
-                                                        <i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/>
+                                                        <i class="fa fa-calendar-check-o"/> Deadline<br/>
                                                         <b t-esc="mtask.deadline_display"/>
                                                     </span>
                                                     <span>
@@ -513,8 +609,8 @@
                                         </button>
                                         <h3 class="o_ews_mcard_name" t-esc="state.detailTask.name"/>
                                         <div class="o_ews_mcard_grid">
-                                            <span>Ngày giao<br/><b t-esc="state.detailTask.assign_date_display"/></span>
-                                            <span>Hạn hoàn thành<br/><b t-esc="state.detailTask.deadline_display"/></span>
+                                            <span>Ngày bắt đầu<br/><b t-esc="state.detailTask.assign_date_display"/></span>
+                                            <span>Deadline<br/><b t-esc="state.detailTask.deadline_display"/></span>
                                             <span>Thời gian<br/><b t-esc="(state.detailTask.duration_minutes || 0) + ' phút'"/></span>
                                             <span>Trạng thái<br/><b t-att-class="mobileStateClass(state.detailTask)" t-esc="mobileStateLabel(state.detailTask)"/></span>
                                             <span>Người thực hiện<br/><b t-esc="state.detailTask.assignee_name || '—'"/></span>
@@ -996,11 +1092,11 @@
                                                                 <span t-att-class="mobileStateClass(row)" t-esc="mobileStateLabel(row)"/>
                                                             </div>
                                                             <div class="o_ews_tcard_meta">
-                                                                <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="row.assign_date_display || '—'"/></span>
+                                                                <span><i class="fa fa-calendar-plus-o"/> Ngày bắt đầu<br/><b t-esc="row.assign_date_display || '—'"/></span>
                                                                 <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(row.duration_minutes || 0) + ' phút'"/></span>
                                                                 <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="row.assignee_name || '—'"/></span>
                                                                 <i class="fa fa-eye o_ews_tcard_go"/>
-                                                                <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="row.deadline_display || '—'"/></span>
+                                                                <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Deadline<br/><b t-esc="row.deadline_display || '—'"/></span>
                                                             </div>
                                                             <div class="o_ews_tcard_note">
                                                                 <i class="fa fa-sticky-note-o"/> Ghi chú
@@ -1073,8 +1169,8 @@
                                             <tr>
                                                 <th class="o_ews_col_stt">STT</th>
                                                 <th>Tên công việc</th>
-                                                <th>Ngày giao việc</th>
-                                                <th>Hạn hoàn thành</th>
+                                                <th>Ngày bắt đầu</th>
+                                                <th>Deadline</th>
                                                 <th>Mức ưu tiên</th>
                                                 <th>Trạng thái</th>
                                                 <th>Phút</th>
@@ -1193,11 +1289,11 @@
                                                         <span t-att-class="mobileStateClass(task)" t-esc="mobileStateLabel(task)"/>
                                                     </div>
                                                     <div class="o_ews_tcard_meta">
-                                                        <span><i class="fa fa-calendar-plus-o"/> Ngày giao<br/><b t-esc="task.assign_date_display || '—'"/></span>
+                                                        <span><i class="fa fa-calendar-plus-o"/> Ngày bắt đầu<br/><b t-esc="task.assign_date_display || '—'"/></span>
                                                         <span><i class="fa fa-clock-o"/> Thời gian<br/><b t-esc="(task.duration_minutes || 0) + ' phút'"/></span>
                                                         <span><i class="fa fa-user"/> Người thực hiện<br/><b t-esc="task.assignee_name || '—'"/></span>
                                                         <i class="fa fa-chevron-right o_ews_tcard_go"/>
-                                                        <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Hạn hoàn thành<br/><b t-esc="task.deadline_display || '—'"/></span>
+                                                        <span class="o_ews_tcard_deadline"><i class="fa fa-calendar-check-o"/> Deadline<br/><b t-esc="task.deadline_display || '—'"/></span>
                                                     </div>
                                                     <div class="o_ews_tcard_note">
                                                         <i class="fa fa-sticky-note-o"/> Ghi chú
@@ -1221,7 +1317,7 @@
                                     </div>
                                     <div class="o_ews_status_col_labels" aria-hidden="true">
                                         <span>Tên công việc</span>
-                                        <span>Hạn hoàn thành</span>
+                                        <span>Deadline</span>
                                     </div>
                                 </div>
                                 <div class="o_ews_status_table_wrap">
@@ -1246,7 +1342,7 @@
                                     <div class="o_ews_status_col_head">Công việc hoàn thành</div>
                                     <div class="o_ews_status_col_labels" aria-hidden="true">
                                         <span>Tên công việc</span>
-                                        <span>Hạn hoàn thành</span>
+                                        <span>Deadline</span>
                                     </div>
                                 </div>
                                 <div class="o_ews_status_table_wrap">
@@ -1271,7 +1367,7 @@
                                     <div class="o_ews_status_col_head">Công việc đang xử lý</div>
                                     <div class="o_ews_status_col_labels" aria-hidden="true">
                                         <span>Tên công việc</span>
-                                        <span>Hạn hoàn thành</span>
+                                        <span>Deadline</span>
                                     </div>
                                 </div>
                                 <div class="o_ews_status_table_wrap">
@@ -1296,7 +1392,7 @@
                                     <div class="o_ews_status_col_head">Công việc chưa bắt đầu</div>
                                     <div class="o_ews_status_col_labels" aria-hidden="true">
                                         <span>Tên công việc</span>
-                                        <span>Hạn hoàn thành</span>
+                                        <span>Deadline</span>
                                     </div>
                                 </div>
                                 <div class="o_ews_status_table_wrap">
@@ -1321,7 +1417,7 @@
                                     <div class="o_ews_status_col_head">Công việc quá hạn</div>
                                     <div class="o_ews_status_col_labels" aria-hidden="true">
                                         <span>Tên công việc</span>
-                                        <span>Hạn hoàn thành</span>
+                                        <span>Deadline</span>
                                     </div>
                                 </div>
                                 <div class="o_ews_status_table_wrap">
@@ -1370,7 +1466,7 @@
                             <p class="o_ews_month_toggle_hint">
                                 Lưới tháng (Thứ 2 → Chủ nhật) — toàn bộ ngày trong tháng
                                 <t t-if="calendarRangeLabel"> · <t t-esc="calendarRangeLabel"/></t>
-                                · Việc hiện trong các ngày từ Ngày giao đến Hạn hoàn thành
+                                · Việc hiện trong các ngày từ Ngày bắt đầu đến Deadline
                             </p>
                         </div>
 

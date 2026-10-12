@@ -13,5 +13,5 @@
         </field>
     </record>
 
-    <function model="res.users" name="action_lock_khan_single_app"/>
+    <!-- Không tự khóa tài khoản Khan mỗi lần upgrade nữa — bật/tắt thủ công ở ô «Chỉ dùng Công việc hàng ngày» trên form người dùng -->
 </odoo>

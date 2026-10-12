@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkTeamPlan">
+        <!-- Dùng chung giao diện Plan CV cá nhân (o_daily_work_plan) -->
+        <div class="o_daily_work_dashboard o_daily_work_plan o_daily_work_team_plan o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dwp_shell">
+                    <header class="o_dwp_header">
+                        <div>
+                            <h1>Plan tổng team</h1>
+                            <p t-if="state.data">
+                                <t t-if="state.data.mode === 'all'">Tất cả phòng ban / team</t>
+                                <t t-elif="state.data.team">Team: <strong t-esc="state.data.team.name"/></t>
+                                · <t t-esc="state.data.members.length"/> thành viên
+                            </p>
+                        </div>
+                        <div class="o_dwp_tools">
+                            <select t-if="state.data and (state.data.can_all or state.data.teams.length > 1)"
+                                    class="o_dwp_user" t-on-change="onTeam">
+                                <option t-if="state.data.can_all" value="all" t-att-selected="state.teamId === 'all'">— Tất cả phòng ban / team —</option>
+                                <t t-foreach="state.data.teams" t-as="tm" t-key="tm.id">
+                                    <option t-att-value="tm.id" t-att-selected="tm.id === state.teamId" t-esc="'Team: ' + tm.name"/>
+                                </t>
+                            </select>
+                            <button t-if="state.data and state.data.can_add" type="button" class="btn btn-success btn-sm"
+                                    t-att-disabled="state.busy" t-on-click="openAdd">
+                                <i class="fa fa-plus"/> Thêm công việc
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm o_dwp_export"
+                                    t-att-disabled="state.exporting or !state.data"
+                                    title="Xuất Plan tổng team ra Excel (mẫu PLAN TEAM)"
+                                    t-on-click="onExportExcel">
+                                <i t-att-class="state.exporting ? 'fa fa-spinner fa-spin' : 'fa fa-file-excel-o'"/> Xuất Excel
+                            </button>
+                            <div class="o_dwp_month">
+                                <button type="button" class="btn btn-light btn-sm" title="Tháng trước"
+                                        t-on-click="() => this.shiftMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                                <span t-esc="state.data ? state.data.month_label : ''"/>
+                                <button type="button" class="btn btn-light btn-sm" title="Tháng sau"
+                                        t-on-click="() => this.shiftMonth(1)"><i class="fa fa-chevron-right"/></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Dashboard team: tổng các Plan cá nhân -->
+                    <div class="o_dwp_kpis">
+                        <button type="button" t-att-class="'o_dwp_kpi k-total' + (!state.filterState ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('')">
+                            <i class="fa fa-tasks"/>
+                            <div><span>Tổng công việc</span><b t-esc="statusCount('total')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('total')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-done' + (state.filterState === 'done' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('done')">
+                            <i class="fa fa-check-circle"/>
+                            <div><span>Hoàn thành</span><b t-esc="statusCount('done')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('done')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-progress' + (state.filterState === 'in_progress' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('in_progress')">
+                            <i class="fa fa-refresh"/>
+                            <div><span>Đang thực hiện</span><b t-esc="statusCount('in_progress')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('in_progress')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-todo' + (state.filterState === 'not_started' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('not_started')">
+                            <i class="fa fa-hourglass-half"/>
+                            <div><span>Chưa bắt đầu</span><b t-esc="statusCount('not_started')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('not_started')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-late' + (state.filterState === 'overdue' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('overdue')">
+                            <i class="fa fa-exclamation-triangle"/>
+                            <div><span>Trễ hạn</span><b t-esc="statusCount('overdue')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('overdue')"/> ô x</small></div>
+                        </button>
+                        <div class="o_dwp_kpi k-rate">
+                            <i class="fa fa-pie-chart"/>
+                            <div><span>Tỷ lệ hoàn thành</span><b><t t-esc="doneTaskPercent"/>%</b></div>
+                        </div>
+                    </div>
+
+                    <!-- Bước 3–4: Tổng hợp theo nhân sự + Duyệt / Từ chối Plan tháng -->
+                    <div t-if="state.data and state.data.members.length" class="o_dwtp_approval">
+                        <div class="o_dwtp_approval_head is-toggle" t-on-click="toggleMembers"
+                             t-att-title="state.showMembers ? 'Thu gọn danh sách nhân viên' : 'Mở danh sách nhân viên'">
+                            <i t-att-class="'fa ' + (state.showMembers ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                            <b>Duyệt Plan tháng theo nhân sự</b>
+                            <em t-if="approvalCount('pending')" class="o_dwtp_badge is-pending">
+                                <t t-esc="approvalCount('pending')"/> chờ duyệt
+                            </em>
+                            <em t-if="approvalCount('rejected')" class="o_dwtp_badge is-rejected">
+                                <t t-esc="approvalCount('rejected')"/> từ chối
+                            </em>
+                            <span>
+                                Đã duyệt <t t-esc="approvalCount('approved')"/>/<t t-esc="state.data.members.length"/>
+                                · Chờ duyệt <t t-esc="approvalCount('pending')"/>
+                                · Từ chối <t t-esc="approvalCount('rejected')"/>
+                            </span>
+                            <button t-if="pendingApprovable.length" type="button" class="btn btn-success btn-sm"
+                                    t-att-disabled="state.busy" t-on-click.stop="approveAll">
+                                <i class="fa fa-check-square-o"/> Duyệt tất cả (<t t-esc="pendingApprovable.length"/>)
+                            </button>
+                        </div>
+                        <div t-if="state.showMembers" class="o_dwtp_members">
+                            <t t-foreach="state.data.members" t-as="m" t-key="m.id">
+                                <div t-att-class="'o_dwtp_member is-' + m.approval.state">
+                                    <div class="o_dwtp_member_top">
+                                        <b t-esc="m.name"/>
+                                        <span t-att-class="'o_dwtp_badge is-' + m.approval.state" t-esc="m.approval.state_label"/>
+                                    </div>
+                                    <div class="o_dwtp_member_counts">
+                                        <span><t t-esc="m.total"/> việc</span>
+                                        <em class="k-done" title="Hoàn thành"><t t-esc="m.done"/></em>
+                                        <em class="k-progress" title="Đang thực hiện"><t t-esc="m.in_progress"/></em>
+                                        <em class="k-todo" title="Chưa bắt đầu"><t t-esc="m.not_started"/></em>
+                                        <em class="k-late" title="Trễ hạn"><t t-esc="m.overdue"/></em>
+                                    </div>
+                                    <small t-if="m.approval.approver" class="o_dwtp_member_meta">
+                                        <t t-esc="m.approval.state === 'approved' ? 'Duyệt' : 'Xử lý'"/> bởi
+                                        <t t-esc="m.approval.approver"/> · <t t-esc="m.approval.date"/>
+                                    </small>
+                                    <small t-if="m.approval.reason" class="o_dwtp_member_reason">
+                                        Lý do: <t t-esc="m.approval.reason"/>
+                                    </small>
+                                    <t t-if="state.rejectingId === m.id">
+                                        <textarea class="o_dwtp_reason_input" rows="2" placeholder="Nhập lý do từ chối…"
+                                                  t-att-value="state.rejectReason"
+                                                  t-on-input="(ev) => this.state.rejectReason = ev.target.value"/>
+                                        <div class="o_dwtp_member_actions">
+                                            <button type="button" class="btn btn-light btn-sm" t-on-click="cancelReject">Hủy</button>
+                                            <button type="button" class="btn btn-danger btn-sm" t-att-disabled="state.busy"
+                                                    t-on-click="() => this.confirmReject(m)">Xác nhận từ chối</button>
+                                        </div>
+                                    </t>
+                                    <div t-elif="m.approval.can_approve" class="o_dwtp_member_actions">
+                                        <button t-if="m.approval.state !== 'approved'" type="button" class="btn btn-success btn-sm"
+                                                t-att-disabled="state.busy" t-on-click="() => this.approve(m)">
+                                            <i class="fa fa-check"/> Duyệt
+                                        </button>
+                                        <button t-if="m.approval.state !== 'rejected'" type="button" class="btn btn-outline-danger btn-sm"
+                                                t-att-disabled="state.busy" t-on-click="() => this.startReject(m)">
+                                            <i class="fa fa-times"/> Từ chối
+                                        </button>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <div class="o_dwp_legend">
+                        <span><i class="st-not_started"/> x Chưa bắt đầu</span>
+                        <span><i class="st-in_progress"/> x Đang xử lý</span>
+                        <span><i class="st-done"/> x Đã hoàn thành</span>
+                        <span><i class="st-overdue"/> x Trễ hạn</span>
+                        <span><i class="is-sun"/> Chủ nhật</span>
+                        <span><i class="fa fa-info-circle"/> Ô chung của team lấy trạng thái chậm nhất giữa các thành viên · tổng hợp tự động từ Plan CV cá nhân</span>
+                    </div>
+
+                    <t t-if="state.loading">
+                        <div class="o_dwp_empty"><i class="fa fa-spinner fa-spin"/> Đang tải…</div>
+                    </t>
+                    <t t-elif="!state.data or !hasRows">
+                        <div class="o_dwp_empty">Chưa có công việc nào của team trong tháng này.</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_dwp_table_wrap">
+                            <table class="o_dwp_table o_dwtp_table">
+                                <thead>
+                                    <tr>
+                                        <th class="o_dwp_c_code" rowspan="2">STT</th>
+                                        <th class="o_dwp_c_name" rowspan="2">NỘI DUNG CÔNG VIỆC</th>
+                                        <th class="o_dwtp_people_head" colspan="4">Nhân sự chính</th>
+                                        <th class="o_dwtp_c_check" rowspan="2">Kiểm soát</th>
+                                        <th class="o_dwp_c_date" rowspan="2">Bắt đầu</th>
+                                        <th class="o_dwp_c_date" rowspan="2">Deadline</th>
+                                        <th class="o_dwtp_c_result o_dwp_c_pct" rowspan="2">KẾT QUẢ</th>
+                                        <t t-foreach="state.data.days" t-as="d" t-key="d.day">
+                                            <th t-att-class="'o_dwp_day' + (d.saturday ? ' is-sat' : '') + (d.sunday ? ' is-sun' : '')" t-esc="d.day"/>
+                                        </t>
+                                        <th class="o_dwtp_c_note" rowspan="2">GHI CHÚ</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="o_dwtp_c_people">Miền Nam</th>
+                                        <th class="o_dwtp_c_people">Miền ĐTT</th>
+                                        <th class="o_dwtp_c_people">Miền Bắc</th>
+                                        <th class="o_dwtp_c_people">Văn phòng</th>
+                                        <t t-foreach="state.data.days" t-as="d" t-key="d.day">
+                                            <th t-att-class="'o_dwp_wd' + (d.saturday ? ' is-sat' : '') + (d.sunday ? ' is-sun' : '')" t-esc="d.wd"/>
+                                        </t>
+                                    </tr>
+                                </thead>
+                                <!-- Phòng ban → Team → Hạng mục → Công việc (giống bảng Hạng mục) -->
+                                <t t-foreach="state.data.departments" t-as="dept" t-key="dept.id">
+                                    <tbody>
+                                        <tr class="o_dwtp_dept" t-on-click="() => this.toggleDept(dept)">
+                                            <td class="o_dwp_c_code"><i t-att-class="'fa ' + (deptOpen(dept) ? 'fa-caret-down' : 'fa-caret-right')"/></td>
+                                            <td class="o_dwp_c_name" colspan="9">
+                                                <t t-esc="dept.name"/>
+                                                <em t-esc="'(' + dept.task_total + ' CV)'"/>
+                                            </td>
+                                            <td t-att-colspan="state.data.days.length + 1"/>
+                                        </tr>
+                                    </tbody>
+                                    <t t-if="deptOpen(dept)">
+                                    <t t-foreach="dept.teams" t-as="team" t-key="team.id">
+                                    <tbody>
+                                        <tr class="o_dwtp_team" t-on-click="() => this.toggleTeam(team)">
+                                            <td class="o_dwp_c_code"><i t-att-class="'fa ' + (teamOpen(team) ? 'fa-caret-down' : 'fa-caret-right')"/></td>
+                                            <td class="o_dwp_c_name" colspan="9">
+                                                Team: <t t-esc="team.name"/>
+                                                <em t-esc="'· ' + team.member_count + ' thành viên · ' + team.task_total + ' CV'"/>
+                                            </td>
+                                            <td t-att-colspan="state.data.days.length + 1"/>
+                                        </tr>
+                                    </tbody>
+                                    <t t-if="teamOpen(team)">
+                                <t t-foreach="visibleGroupsOf(team)" t-as="group" t-key="group.key">
+                                    <tbody>
+                                        <tr class="o_dwp_group" t-on-click="() => this.toggleGroup(group)">
+                                            <td class="o_dwp_c_code" t-esc="group.code"/>
+                                            <td class="o_dwp_c_name" colspan="9">
+                                                <i t-att-class="'fa ' + (groupOpen(group) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                <t t-esc="group.name"/>
+                                                <em t-esc="'(' + group.lines.length + ' CV)'"/>
+                                                <span t-if="group.managers" class="o_dwp_grp_mgr"><i class="fa fa-user-circle"/> Quản lý: <t t-esc="group.managers"/></span>
+                                            </td>
+                                            <td t-att-colspan="state.data.days.length + 1"/>
+                                        </tr>
+                                        <t t-if="groupOpen(group)">
+                                            <t t-foreach="group.lines" t-as="line" t-key="line.key">
+                                                <tr>
+                                                    <td class="o_dwp_c_code" t-esc="line.code"/>
+                                                    <td class="o_dwp_c_name">
+                                                        <a t-if="canOpenLine(line)" href="#" class="o_dwp_name_link"
+                                                           title="Bấm để chỉnh sửa / xóa công việc"
+                                                           t-on-click.prevent="() => this.openLine(line)" t-esc="line.name"/>
+                                                        <span t-else="" t-esc="line.name"/>
+                                                        <i t-if="line.plan_daily" class="fa fa-repeat o_dwp_daily" title="Lặp hằng ngày (trừ CN)"/>
+                                                    </td>
+                                                    <!-- Người phụ trách theo miền: mỗi nhân sự 1 dòng -->
+                                                    <t t-foreach="[line.south, line.dtt, line.north, line.office]" t-as="people" t-key="people_index">
+                                                        <td class="o_dwtp_c_people">
+                                                            <t t-foreach="(people or '').split(', ').filter((p) => p)" t-as="person" t-key="person_index">
+                                                                <div t-esc="person"/>
+                                                            </t>
+                                                        </td>
+                                                    </t>
+                                                    <td class="o_dwtp_c_check" t-esc="line.checker or '—'"/>
+                                                    <td class="o_dwp_c_date" t-esc="line.start or '—'"/>
+                                                    <td class="o_dwp_c_date" t-esc="line.deadline or '—'"/>
+                                                    <td class="o_dwtp_c_result o_dwp_c_pct" t-esc="line.result"/>
+                                                    <t t-foreach="line.cells" t-as="cell" t-key="cell.day">
+                                                        <td t-att-class="'o_dwp_cell ' + cell.cls" t-esc="cell.mark"/>
+                                                    </t>
+                                                    <td class="o_dwtp_c_note" t-esc="line.note"/>
+                                                </tr>
+                                            </t>
+                                        </t>
+                                    </tbody>
+                                </t>
+                                    </t>
+                                    </t>
+                                    </t>
+                                </t>
+                            </table>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Thêm công việc chung của team → dòng phân công, tự giao vào Plan cá nhân từng người -->
+                <TeamTaskDialog t-if="state.adding" teamId="state.teamId" onClose.bind="closeAdd" onSaved.bind="onAddSaved"/>
+                <!-- Chỉnh sửa / Xóa công việc chung theo Phân quyền Plan tổng -->
+                <TeamLineEditDialog t-if="state.editLine" t-key="state.editLine.key" line="state.editLine"
+                                    canWrite="!!state.data.can_write" canUnlink="!!state.data.can_unlink"
+                                    onClose.bind="closeLine" onSaved.bind="onLineSaved"/>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

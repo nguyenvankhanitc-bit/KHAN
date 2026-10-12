@@ -41,6 +41,10 @@ export class DailyWorkAssign extends Component {
             form: this.emptyForm(),
             editingTaskId: false,
             assigneeQuery: "",
+            // Giao 1 việc cho nhiều người: danh sách hr.employee id đã chọn (mỗi người 1 việc riêng)
+            picked: [],
+            // Ô chọn Hạng mục phân cấp (giống Quản lý công việc)
+            wgPicker: { open: false, query: "", cat: "" },
             assigneeOpen: false,
             assigneeHighlight: -1,
             chat: {
@@ -286,22 +290,90 @@ export class DailyWorkAssign extends Component {
                 // Chỉ hạng mục mà người được giao nằm trong User áp dụng
                 return assigneeUid && allowed.map(Number).includes(assigneeUid);
             })
-            .slice()
-            .sort((a, b) => {
-                const sa = Number(a.sequence);
-                const sb = Number(b.sequence);
-                const seqA = Number.isFinite(sa) ? sa : 0;
-                const seqB = Number.isFinite(sb) ? sb : 0;
-                if (seqA !== seqB) {
-                    return seqA - seqB;
-                }
-                const na = String(a.name || "");
-                const nb = String(b.name || "");
-                if (na !== nb) {
-                    return na.localeCompare(nb, "vi");
-                }
-                return (Number(a.id) || 0) - (Number(b.id) || 0);
-            });
+            .slice();
+    }
+
+    /** Hạng mục cha (I, II…) → công việc con (1.1, 1.2…), theo thứ tự Bảng hạng mục; lọc theo ô tìm. */
+    get wgTree() {
+        const q = normalizeText(this.state.wgPicker.query);
+        const cats = [];
+        const byKey = {};
+        for (const g of this.filteredWorkGroups) {
+            const key = String(g.cat_key || g.category || g.name || "");
+            if (!byKey[key]) {
+                byKey[key] = { key, code: g.cat_code || "", name: g.cat_name || g.category || g.name || "Khác", items: [] };
+                cats.push(byKey[key]);
+            }
+            byKey[key].items.push(g);
+        }
+        if (!q) {
+            return cats;
+        }
+        return cats
+            .map((c) => {
+                const hit = normalizeText(`${c.code} ${c.name}`).includes(q);
+                const items = hit
+                    ? c.items
+                    : c.items.filter((g) => normalizeText(`${g.stt || ""} ${g.task_name || g.name || ""}`).includes(q));
+                return { ...c, items };
+            })
+            .filter((c) => c.items.length);
+    }
+
+    get wgLabel() {
+        const p = this.state.wgPicker;
+        if (p.cat) {
+            const cat = this.wgTree.find((c) => c.key === p.cat);
+            if (cat) {
+                return `${cat.code ? cat.code + ". " : ""}${cat.name} (cả hạng mục)`;
+            }
+        }
+        const g = this.filteredWorkGroups.find((x) => String(x.id) === String(this.state.form.work_group_id));
+        return g ? `${g.stt ? g.stt + " " : ""}${g.task_name || g.name}` : "";
+    }
+
+    toggleWgPicker() {
+        if (!this.filteredWorkGroups.length) {
+            return;
+        }
+        this.state.wgPicker.open = !this.state.wgPicker.open;
+    }
+
+    closeWgPicker() {
+        this.state.wgPicker.open = false;
+        this.state.wgPicker.query = "";
+    }
+
+    onWgQuery(ev) {
+        this.state.wgPicker.query = ev.target.value || "";
+    }
+
+    isWgCat(cat) {
+        return this.state.wgPicker.cat === cat.key;
+    }
+
+    isWgItem(g) {
+        return !this.state.wgPicker.cat && String(this.state.form.work_group_id) === String(g.id);
+    }
+
+    toggleWgCat(cat) {
+        if (this.isWgCat(cat)) {
+            this.state.wgPicker.cat = "";
+            this.state.form.work_group_id = "";
+        } else {
+            this.state.wgPicker.cat = cat.key;
+            this.state.form.work_group_id = String(cat.items[0]?.id || "");
+        }
+    }
+
+    toggleWgItem(g) {
+        this.state.wgPicker.cat = "";
+        this.state.form.work_group_id = this.isWgItem(g) ? "" : String(g.id);
+    }
+
+    clearWg() {
+        this.state.wgPicker.cat = "";
+        this.state.form.work_group_id = "";
     }
 
     get filteredTasks() {
@@ -375,7 +447,32 @@ export class DailyWorkAssign extends Component {
         return this.state.employees.find((e) => e.id === id) || false;
     }
 
+    _todayIso() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    /** Quá hạn: chưa hoàn thành và Hạn < hôm nay (giống bảng Danh sách việc của tôi). */
+    isTaskOverdue(task) {
+        return Boolean(task?.deadline && task.state !== "done" && task.deadline < this._todayIso());
+    }
+
+    isDeadlineToday(task) {
+        return Boolean(task?.deadline && task.state !== "done" && task.deadline === this._todayIso());
+    }
+
+    get pickedEmployees() {
+        return (this.state.picked || [])
+            .map((id) => this.state.employees.find((e) => Number(e.id) === Number(id)))
+            .filter(Boolean);
+    }
+
     get assigneeSuggestions() {
+        const picked = new Set((this.state.picked || []).map(Number));
+        return this._assigneeSuggestionsAll.filter((e) => !picked.has(Number(e.id)));
+    }
+
+    get _assigneeSuggestionsAll() {
         const q = normalizeText(this.state.assigneeQuery);
         if (!q) {
             return this.state.employees.slice(0, 12);
@@ -441,7 +538,7 @@ export class DailyWorkAssign extends Component {
             this.state.assigneeOpen = false;
             this.state.assigneeHighlight = -1;
             // Nếu đã chọn rồi thì giữ label; nếu chưa chọn thì giữ query
-            if (this.selectedAssignee) {
+            if (this.state.editingTaskId && this.selectedAssignee) {
                 this.state.assigneeQuery = this._assigneeLabel(this.selectedAssignee);
             }
         }
@@ -456,13 +553,15 @@ export class DailyWorkAssign extends Component {
 
     onAssigneeFocus() {
         this.state.assigneeOpen = true;
-        if (this.selectedAssignee && !this.state.assigneeQuery) {
+        if (this.state.editingTaskId && this.selectedAssignee && !this.state.assigneeQuery) {
             this.state.assigneeQuery = this._assigneeLabel(this.selectedAssignee);
         }
     }
 
     onAssigneeInput() {
-        this.state.form.assignee_id = 0;
+        if (this.state.editingTaskId) {
+            this.state.form.assignee_id = 0;
+        }
         this.state.assigneeOpen = true;
         this.state.assigneeHighlight = this.assigneeSuggestions.length ? 0 : -1;
     }
@@ -500,6 +599,17 @@ export class DailyWorkAssign extends Component {
     }
 
     selectAssignee(emp) {
+        if (!this.state.editingTaskId) {
+            // Giao mới: chọn được nhiều người (thẻ) — người đầu tiên dùng để lọc Bộ phận / Hạng mục
+            if (!this.state.picked.includes(emp.id)) {
+                this.state.picked = [...this.state.picked, emp.id];
+            }
+            this.state.assigneeQuery = "";
+            this.state.assigneeOpen = false;
+            this.state.assigneeHighlight = -1;
+            this._syncPrimaryAssignee();
+            return;
+        }
         this.state.form.assignee_id = emp.id;
         this.state.assigneeQuery = this._assigneeLabel(emp);
         this.state.assigneeOpen = false;
@@ -509,7 +619,36 @@ export class DailyWorkAssign extends Component {
         this._syncWorkGroupWithDepartment();
     }
 
+    removePicked(empId) {
+        this.state.picked = this.state.picked.filter((id) => Number(id) !== Number(empId));
+        this._syncPrimaryAssignee();
+    }
+
+    _syncPrimaryAssignee() {
+        const first = this.pickedEmployees[0];
+        this.state.form.assignee_id = first ? first.id : 0;
+        this.state.form.department_id = first && first.department_id ? Number(first.department_id) : 0;
+        this._syncWorkGroupWithDepartment();
+    }
+
+    /** Hạng mục áp dụng cho từng người (cùng phòng ban + nằm trong User áp dụng), nếu không thì bỏ trống. */
+    _workGroupFor(emp, wgId) {
+        const g = this.state.workGroups.find((x) => Number(x.id) === Number(wgId));
+        if (!g || !emp) {
+            return false;
+        }
+        if (Number(g.department_id) !== Number(emp.department_id || 0)) {
+            return false;
+        }
+        const allowed = Array.isArray(g.user_ids) ? g.user_ids.map(Number) : [];
+        if (allowed.length && !allowed.includes(Number(emp.user_id) || 0)) {
+            return false;
+        }
+        return Number(g.id);
+    }
+
     clearAssignee() {
+        this.state.picked = [];
         this.state.form.assignee_id = 0;
         this.state.form.department_id = 0;
         this.state.form.work_group_id = "";
@@ -549,6 +688,7 @@ export class DailyWorkAssign extends Component {
         const hrId = Number(task.hr_employee_id) || 0;
         const emp = this.state.employees.find((e) => Number(e.id) === hrId);
         this.state.editingTaskId = task.id;
+        this.state.picked = [];
         this.state.form = {
             name: task.name || "",
             deadline: task.deadline || "",
@@ -574,6 +714,7 @@ export class DailyWorkAssign extends Component {
 
     onCancelEdit() {
         this.state.editingTaskId = false;
+        this.state.picked = [];
         this.state.form = this.emptyForm();
         this.state.assigneeQuery = "";
         this.state.assigneeOpen = false;
@@ -607,6 +748,51 @@ export class DailyWorkAssign extends Component {
         }
     }
 
+    /** Giao cùng 1 việc cho nhiều người: mỗi người được tạo 1 công việc riêng như giao bình thường. */
+    async _submitMulti(f) {
+        const people = this.pickedEmployees;
+        this.state.saving = true;
+        const ok = [];
+        const failed = [];
+        try {
+            for (const emp of people) {
+                const payload = {
+                    name: f.name.trim(),
+                    deadline: f.deadline,
+                    department_id: Number(emp.department_id) || false,
+                    assignee_id: Number(emp.id),
+                    work_group_id: this._workGroupFor(emp, f.work_group_id),
+                    priority: f.priority,
+                    state: f.state || "not_started",
+                    note: f.note,
+                };
+                try {
+                    await this.orm.call("daily.task", "create_from_assign", [payload]);
+                    ok.push(emp.name);
+                } catch (e) {
+                    failed.push(`${emp.name}: ${e?.data?.message || _t("lỗi")}`);
+                }
+            }
+            this.state.tasks = await this.orm.call("daily.task", "get_assign_tasks", []);
+            if (ok.length) {
+                this.state.form = { ...this.emptyForm(), work_group_id: f.work_group_id };
+                this._syncPrimaryAssignee();
+                this.notification.add(
+                    `Đã giao việc cho ${ok.length} người: ${ok.join(", ")}. Mỗi người nhận 1 việc riêng.`,
+                    { type: "success" }
+                );
+            }
+            if (failed.length) {
+                this.notification.add(`Không giao được cho: ${failed.join(" · ")}`, {
+                    type: "danger",
+                    sticky: true,
+                });
+            }
+        } finally {
+            this.state.saving = false;
+        }
+    }
+
     async onSubmit(ev) {
         ev.preventDefault();
         const f = this.state.form;
@@ -615,11 +801,15 @@ export class DailyWorkAssign extends Component {
             return;
         }
         if (!f.deadline) {
-            this.notification.add(_t("Vui lòng chọn hạn hoàn thành."), { type: "warning" });
+            this.notification.add(_t("Vui lòng chọn Deadline."), { type: "warning" });
+            return;
+        }
+        if (!this.state.editingTaskId && this.state.picked.length) {
+            await this._submitMulti(f);
             return;
         }
         if (!Number(f.assignee_id)) {
-            this.notification.add(_t("Vui lòng chọn người được giao từ danh sách gợi ý."), {
+            this.notification.add(_t("Vui lòng chọn người phụ trách từ danh sách gợi ý."), {
                 type: "warning",
             });
             return;

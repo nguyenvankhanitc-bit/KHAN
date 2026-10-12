@@ -443,3 +443,86 @@
         }
     }
 }
+
+// User quản lý hạng mục (trên dòng tiêu đề hạng mục)
+.o_daily_work_category_board .o_dcb_table .o_dcb_cat_manager {
+    position: relative;
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 1.25rem;
+    padding: 0.15rem 0.5rem;
+    border: 1px dashed #94a3b8;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    font-size: 0.78rem;
+    cursor: pointer;
+    vertical-align: middle;
+
+    > .fa {
+        color: #1d4ed8;
+    }
+
+    .o_dcb_cat_manager_label {
+        font-weight: 700;
+        color: #334155;
+    }
+
+    .o_dcb_tag_manager {
+        background: #dbeafe;
+        color: #1e3a8a;
+        font-weight: 600;
+    }
+
+    &:hover {
+        border-color: #1d4ed8;
+    }
+
+    .o_dcb_picker {
+        top: calc(100% + 0.25rem);
+        left: 0;
+        z-index: 20;
+    }
+}
+
+.o_daily_work_category_board .o_dcb_table .o_dcb_cat .o_dcb_section_btn {
+    display: inline-flex;
+    width: auto;
+    vertical-align: middle;
+}
+
+.o_daily_work_category_board .o_dcb_table .o_dcb_team .o_dcb_section_btn {
+    display: inline-flex;
+    width: auto;
+    vertical-align: middle;
+}
+
+.o_daily_work_category_board .o_dcb_table .o_dcb_team_manager {
+    border-color: #6366f1;
+    > .fa {
+        color: #4338ca;
+    }
+}
+
+
+// Tần suất Ngày / Tuần / Tháng (X theo ô đã tích ở Thêm phân công công việc)
+.o_daily_work_category_board .o_dcb_table {
+    .o_dcb_col_freq_head {
+        text-align: center;
+    }
+
+    th.o_dcb_col_freq,
+    td.o_dcb_col_freq {
+        width: 64px;
+        min-width: 64px;
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    td.o_dcb_col_freq.is-on {
+        font-weight: 800;
+        color: #3730a3;
+        background: #eef2ff;
+    }
+}

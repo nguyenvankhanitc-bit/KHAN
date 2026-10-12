@@ -37,7 +37,7 @@
         <field name="name">daily.task.work.group.form</field>
         <field name="model">daily.task.work.group</field>
         <field name="arch" type="xml">
-            <form string="Hạng mục">
+            <form string="Hạng mục" class="o_dwg_form_lined">
                 <sheet>
                     <div class="alert alert-info" role="alert">
                         <b>Hạng mục</b> là mục cha (STT · Hạng mục · Tên công việc).
@@ -48,17 +48,22 @@
                         <group string="Thông tin hạng mục">
                             <field name="sequence" string="Thứ tự sắp xếp"/>
                             <field name="display_stt" string="STT" readonly="1"/>
-                            <field name="name" string="Hạng mục" placeholder="Vd: Camera..."/>
-                            <field name="task_name" string="Tên công việc"
+                            <field name="name" string="Hạng mục" placeholder="Vd: Camera..." required="1"/>
+                            <field name="task_name" string="Tên công việc" required="1"
                                      placeholder="Vd: Kiểm giờ mở cửa camera..."/>
-                            <field name="department_id" string="Phòng ban"
+                            <field name="dept_locked" invisible="1"/>
+                            <field name="department_id" string="Phòng ban" required="1"
+                                     readonly="dept_locked" force_save="1"
                                      options="{'no_create': True}"/>
-                            <field name="team_id" string="Team"
+                            <field name="team_id" string="Team" required="1"
                                      options="{'no_create': True}"
-                                     domain="[('department_id', '=', department_id), ('active', '=', True)]"/>
+                                     domain="department_id and [('department_id', '=', department_id), ('active', '=', True)] or [('active', '=', True)]"/>
                             <field name="active"/>
                         </group>
                         <group string="User được dùng hạng mục (tuỳ chọn)">
+                            <field name="category_manager_ids" string="User quản lý hạng mục" required="1"
+                                     widget="many2many_tags" options="{'no_create': True}"
+                                     placeholder="Chọn user quản lý hạng mục..."/>
                             <field name="assignee_user_ids" string="User phụ trách"
                                      class="o_wg_assignee_line"
                                      widget="many2many_tags" options="{'no_create': True}"
@@ -107,6 +112,8 @@
                             context="{'group_by': 'name'}"/>
                     <filter name="group_by_team" string="Team"
                             context="{'group_by': 'team_id'}"/>
+                    <filter name="group_by_head" string="Nhóm hạng mục"
+                            context="{'group_by': 'category_head_id'}"/>
                 </group>
             </search>
         </field>
@@ -124,7 +131,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'search_default_group_by_head': 3, 'work_group_category_label': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Tạo hạng mục cha</p>
             <p>Nhập <b>Hạng mục</b> + <b>Tên công việc</b>. Cùng tên hạng mục sẽ gom thành
@@ -137,7 +144,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'search_default_group_by_head': 3, 'work_group_category_label': True}</field>
     </record>
 
     <record id="action_daily_task_work_group_assign" model="ir.actions.act_window">

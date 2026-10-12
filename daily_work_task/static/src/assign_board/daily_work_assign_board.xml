@@ -54,22 +54,28 @@
                                 <table class="o_dab_table">
                                     <thead>
                                         <tr>
-                                            <th class="o_dab_col_stt">STT</th>
-                                            <th class="o_dab_col_name">Tên công việc / Hạng mục</th>
-                                            <th>Miền Nam</th>
-                                            <th>Miền ĐTT</th>
-                                            <th>Miền Bắc</th>
-                                            <th>Văn phòng</th>
-                                            <th>Người phụ trách</th>
-                                            <th>User kiểm tra</th>
-                                            <th>User tham gia / phối hợp</th>
-                                            <th>Ghi chú</th>
+                                            <th class="o_dab_col_stt" rowspan="2">STT</th>
+                                            <th class="o_dab_col_name" rowspan="2">Tên công việc / Hạng mục</th>
+                                            <th class="o_dab_col_freq_head" colspan="3">Tần suất</th>
+                                            <th rowspan="2">Miền Nam</th>
+                                            <th rowspan="2">Miền ĐTT</th>
+                                            <th rowspan="2">Miền Bắc</th>
+                                            <th rowspan="2">Văn phòng</th>
+                                            <th rowspan="2">Người phụ trách</th>
+                                            <th rowspan="2">User kiểm tra</th>
+                                            <th rowspan="2">User tham gia / phối hợp</th>
+                                            <th rowspan="2">Ghi chú</th>
+                                        </tr>
+                                        <tr>
+                                            <th class="o_dab_col_freq">Ngày</th>
+                                            <th class="o_dab_col_freq">Tuần</th>
+                                            <th class="o_dab_col_freq">Tháng</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-foreach="visibleSections" t-as="section" t-key="section.id">
                                             <tr t-att-class="'o_dab_section' + (section.tone === 'alt' ? ' o_dab_section_alt' : '')">
-                                                <td colspan="10" t-esc="section.title"/>
+                                                <td colspan="13" t-esc="section.title"/>
                                             </tr>
                                             <t t-foreach="section.tasks" t-as="task" t-key="task.id">
                                                 <tr class="o_dab_task">
@@ -82,6 +88,10 @@
                                                             <span class="o_dab_task_name" t-esc="task.name"/>
                                                         </button>
                                                     </td>
+                                                    <t t-foreach="['day', 'week', 'month']" t-as="fk" t-key="fk">
+                                                        <td t-att-class="'o_dab_col_freq' + (task.freq === fk ? ' is-on' : '')"
+                                                            t-esc="task.freq === fk ? 'X' : ''"/>
+                                                    </t>
                                                     <td class="o_dab_people">
                                                         <t t-call="daily_work_task.AssignBoardPeople">
                                                             <t t-set="people" t-value="task.south"/>
@@ -133,7 +143,7 @@
                                         </t>
                                         <t t-if="!visibleSections.length">
                                             <tr>
-                                                <td colspan="10" class="o_dab_empty_row">
+                                                <td colspan="13" class="o_dab_empty_row">
                                                     Không tìm thấy công việc hoặc nhân sự phù hợp.
                                                 </td>
                                             </tr>

@@ -432,7 +432,26 @@
         }
 
         tbody tr:nth-child(even) td {
-            background: #fff7ed;
+            background: #fff;
+        }
+
+        /* Quá hạn / đến hạn hôm nay — giống bảng Danh sách việc của tôi */
+        tbody td.o_dwa_name_overdue {
+            background: #fee2e2 !important;
+            color: #991b1b;
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px #fca5a5;
+
+            .o_dwa_task_link {
+                color: #991b1b;
+            }
+        }
+
+        tbody td.o_dwa_deadline_today {
+            background: #ffedd5 !important;
+            color: #9a3412;
+            font-weight: 700;
+            box-shadow: inset 0 0 0 1px #fdba74;
         }
     }
 
@@ -1152,5 +1171,190 @@ body.o_dwa_resizing {
 
     * {
         cursor: col-resize !important;
+    }
+}
+
+
+// Giao 1 việc cho nhiều người: thẻ người đã chọn
+.o_dwa_picked {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.o_dwa_picked_tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 4px 3px 10px;
+    border-radius: 999px;
+    background: #ffedd5;
+    color: #9a3412;
+    font-size: 13px;
+    font-weight: 600;
+
+    button {
+        width: 20px;
+        height: 20px;
+        border: 0;
+        border-radius: 50%;
+        background: transparent;
+        color: #9a3412;
+        line-height: 1;
+        cursor: pointer;
+
+        &:hover {
+            background: #fed7aa;
+        }
+    }
+}
+
+
+// Hạng mục phân cấp (giống Quản lý công việc): cha I, II… → con 1.1, 1.2… có ô tích
+.o_dwa_field .o_dwa_wgpick {
+    position: relative;
+
+    .o_dwa_wgpick_btn {
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .o_dwa_wgpick_ph {
+        color: #94a3b8;
+    }
+
+    .o_dwa_wgpick_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 29;
+    }
+
+    .o_dwa_wgpick_panel {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 30;
+        width: 30rem;
+        max-width: 90vw;
+        padding: 0.5rem;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+    }
+
+    .o_dwa_wgpick_list {
+        max-height: 22rem;
+        overflow-y: auto;
+        margin-top: 0.4rem;
+    }
+
+    .o_dwa_wgpick_cat,
+    .o_dwa_wgpick_item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.35rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.86rem;
+        font-weight: 400;
+        cursor: pointer;
+
+        input[type="checkbox"] {
+            width: 1rem;
+            min-width: 1rem;
+            height: 1rem;
+            flex: 0 0 1rem;
+            margin: 0;
+        }
+
+        &:hover {
+            background: #f1f5f9;
+        }
+    }
+
+    .o_dwa_wgpick_cat {
+        margin-top: 0.3rem;
+        background: #dbe4f3;
+        color: #0f172a;
+
+        b {
+            font-weight: 800;
+        }
+
+        em {
+            margin-left: auto;
+            padding-left: 0.5rem;
+            white-space: nowrap;
+            font-style: normal;
+            font-size: 0.78rem;
+            color: #475569;
+        }
+    }
+
+    .o_dwa_wgpick_item {
+        padding-left: 1.75rem;
+        color: #1e293b;
+    }
+
+    .o_dwa_wgpick_stt {
+        flex: 0 0 2.6rem;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .o_dwa_wgpick_empty {
+        padding: 0.6rem;
+        color: #64748b;
+        font-style: italic;
+    }
+
+    .o_dwa_wgpick_foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+    }
+}
+
+// Kẻ ô rõ ràng + tách bạch từng nhân sự
+.o_daily_work_assign.o_action {
+    .o_dwa_groups {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+
+    .o_dwa_group {
+        border: 2px solid #fb923c;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+    }
+
+    .o_dwa_group_summary {
+        border-bottom: 2px solid #fb923c;
+    }
+
+    .o_dwa_table {
+        border-collapse: collapse;
+
+        thead th {
+            border: 1px solid #cbd5e1;
+            border-bottom: 2px solid #fdba74;
+        }
+
+        tbody td {
+            border: 1px solid #cbd5e1;
+        }
+
+        tbody td.o_dwa_name_overdue {
+            box-shadow: none;
+        }
     }
 }

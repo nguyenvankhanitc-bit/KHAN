@@ -41,3 +41,9 @@ access_daily_task_recurring_manager,daily.task.recurring manager,model_daily_tas
 access_daily_task_checklist_user,daily.task.checklist.item user,model_daily_task_checklist_item,group_daily_work_user,1,1,1,1
 access_daily_task_checklist_assigner,daily.task.checklist.item assigner,model_daily_task_checklist_item,group_daily_work_assigner,1,1,1,1
 access_daily_task_checklist_manager,daily.task.checklist.item manager,model_daily_task_checklist_item,group_daily_work_manager,1,1,1,1
+access_daily_task_plan_day_user,daily.task.plan.day user,model_daily_task_plan_day,group_daily_work_user,1,1,1,1
+access_daily_task_plan_day_manager,daily.task.plan.day manager,model_daily_task_plan_day,group_daily_work_manager,1,1,1,1
+access_daily_task_plan_approval_user,daily.task.plan.approval user,model_daily_task_plan_approval,group_daily_work_user,1,0,0,0
+access_daily_task_plan_approval_manager,daily.task.plan.approval manager,model_daily_task_plan_approval,group_daily_work_manager,1,1,1,1
+access_daily_task_team_plan_access_user,daily.task.team.plan.access user,model_daily_task_team_plan_access,group_daily_work_user,1,0,0,0
+access_daily_task_team_plan_access_manager,daily.task.team.plan.access manager,model_daily_task_team_plan_access,group_daily_work_manager,1,1,1,1

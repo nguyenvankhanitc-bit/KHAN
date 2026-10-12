@@ -91,3 +91,20 @@
         flex-wrap: wrap;
     }
 }
+
+// Form Hạng mục: gạch chân cố định dưới mọi ô nhập (kể cả khi chưa bấm vào)
+.o_dwg_form_lined {
+    .o_inner_group .o_cell .o_field_widget:not(.o_field_boolean):not(.o_readonly_modifier) {
+        width: 100%;
+        border-bottom: 1px solid #94a3b8;
+
+        .o_input,
+        input {
+            border-bottom-color: transparent;
+        }
+
+        &:focus-within {
+            border-bottom-color: #714b67;
+        }
+    }
+}

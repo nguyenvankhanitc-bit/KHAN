@@ -141,11 +141,15 @@ export class DailyWorkEmployeeWs extends Component {
             monthRows: [],
             monthMessage: false,
             workGroups: [],
+            // Ô chọn Tên công việc hạng mục (cha / con, có ô tích)
+            wgPicker: { open: false, query: "", cat: "" },
             totalDurationMinutes: 0,
             totalDurationHours: 0,
             completionPercentAvg: 0,
             showMyList: true,
             showTaskForm: false,
+            // Bộ lọc bảng Danh sách việc của tôi (giống mẫu Quản lý công việc)
+            listFilter: { q: "", cat: "", state: "", time: "" },
             isPhone: false,
             detailTask: false,
             listChip: "all",
@@ -236,10 +240,25 @@ export class DailyWorkEmployeeWs extends Component {
                 left: 0,
             },
         });
+        // Quyền các tab mở trang khác (giống menu bên trái): Giao việc / Xem CV NV / Checklist CV team
+        this.navAccess = { canAssign: false, canViewOthers: false, canViewChecklist: false, todayCount: 0 };
         onWillStart(async () => {
             await this.load();
             await this.loadRecurring();
             await this.loadMonthlySummary();
+            try {
+                const ctx = await this.orm.call("daily.task.dashboard", "get_nav_shell_context", []);
+                const opts = ctx?.options || {};
+                this.navAccess = {
+                    canAssign: Boolean(opts.can_assign),
+                    canViewOthers: Boolean(opts.can_view_others),
+                    canViewChecklist: Boolean(opts.can_view_checklist),
+                    // Số việc hôm nay (badge đỏ, giống menu cũ)
+                    todayCount: Number(ctx?.kpi?.today || 0),
+                };
+            } catch {
+                /* không có quyền → ẩn tab */
+            }
         });
         this._syncPhoneMode = this._syncPhoneMode.bind(this);
         this._onDatePickerOutside = this._onDatePickerOutside.bind(this);
@@ -317,9 +336,122 @@ export class DailyWorkEmployeeWs extends Component {
         }
     }
 
+    /** Tab mở trang khác trong Quản lý công việc: Công việc hôm nay / Giao việc / Xem CV NV / Checklist CV team. */
+    async openWorkPage(key) {
+        if (key === "today") {
+            await this.action.doAction("daily_work_task.action_daily_work_today");
+            return;
+        }
+        if (key === "kanban") {
+            await this.action.doAction("daily_work_task.action_daily_task_kanban");
+            return;
+        }
+        const tag = { assign: "daily_work_assign", viewer: "daily_work_viewer", team_checklist: "daily_work_team_checklist" }[key];
+        if (tag) {
+            await this.action.doAction({ type: "ir.actions.client", tag, target: "current" });
+        }
+    }
+
     openMyTasksTab() {
         this.state.activeTab = "tasks";
+        if (this.state.isPhone) {
+            this.openMobileForm();
+        }
+    }
+
+    /** Nút "+ Tạo công việc": mở khung Thêm công việc (form giữ nguyên các trường). */
+    openCreateForm() {
+        this.state.editingTaskId = false;
         this.openMobileForm();
+    }
+
+    // ---- Bảng Danh sách việc của tôi: thống kê + bộ lọc ----
+    get listMonthLabel() {
+        const d = new Date();
+        return `Tháng ${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+    }
+
+    get listKpiTotal() {
+        return (
+            this.statusBoardDone.length +
+            this.statusBoardInProgress.length +
+            this.statusBoardNotStarted.length +
+            this.statusBoardOverdue.length
+        );
+    }
+
+    _taskCategory(task) {
+        return (task.work_group_label || task.category_name || "").trim();
+    }
+
+    get listCategories() {
+        const set = new Set();
+        for (const t of this.state.tasks || []) {
+            const c = this._taskCategory(t);
+            if (c) {
+                set.add(c);
+            }
+        }
+        return [...set].sort((a, b) => a.localeCompare(b, "vi"));
+    }
+
+    get listFilterActive() {
+        const f = this.state.listFilter;
+        return Boolean(f.q || f.cat || f.state || f.time);
+    }
+
+    onListFilter(field, ev) {
+        this.state.listFilter = { ...this.state.listFilter, [field]: ev.target.value || "" };
+    }
+
+    clearListFilter() {
+        this.state.listFilter = { q: "", cat: "", state: "", time: "" };
+    }
+
+    _inTimeRange(task, range) {
+        if (!range) {
+            return true;
+        }
+        const iso = task.deadline || task.assign_date;
+        if (!iso) {
+            return false;
+        }
+        const now = new Date();
+        const today = this._formatIsoDate(now);
+        if (range === "today") {
+            return iso === today;
+        }
+        if (range === "week") {
+            const day = (now.getDay() + 6) % 7;
+            const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - day);
+            const sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6);
+            return iso >= this._formatIsoDate(mon) && iso <= this._formatIsoDate(sun);
+        }
+        if (range === "month") {
+            return iso.slice(0, 7) === today.slice(0, 7);
+        }
+        return true;
+    }
+
+    /** Danh sách đã lọc (tìm tên / hạng mục / trạng thái / thời gian) — cột & dữ liệu giữ nguyên. */
+    get filteredTasks() {
+        const f = this.state.listFilter;
+        const q = (f.q || "").trim().toLowerCase();
+        return (this.state.tasks || []).filter((t) => {
+            if (q && !(t.name || "").toLowerCase().includes(q)) {
+                return false;
+            }
+            if (f.cat && this._taskCategory(t) !== f.cat) {
+                return false;
+            }
+            if (f.state) {
+                const late = this.stateLateDays(t) > 0;
+                if (f.state === "overdue" ? !late : late || t.state !== f.state) {
+                    return false;
+                }
+            }
+            return this._inTimeRange(t, f.time);
+        });
     }
 
     closeMobileForm() {
@@ -1016,6 +1148,7 @@ export class DailyWorkEmployeeWs extends Component {
 
     _setForm(form) {
         this.state.form = form;
+        this.state.wgPicker = { open: false, query: "", cat: "" };
         this._syncFormDateText(form);
     }
 
@@ -1603,7 +1736,7 @@ export class DailyWorkEmployeeWs extends Component {
         if (panel) {
             panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
         }
-        this.notification.add(_t("Đang chỉnh sửa — sửa bên trái rồi bấm Lưu thay đổi."), {
+        this.notification.add(_t("Đang chỉnh sửa — sửa trong khung rồi bấm Lưu thay đổi."), {
             type: "info",
         });
     }
@@ -1826,20 +1959,102 @@ export class DailyWorkEmployeeWs extends Component {
         URL.revokeObjectURL(url);
     }
 
+    /** Hạng mục cha → công việc con, đúng thứ tự Bảng hạng mục; lọc theo ô tìm. */
+    get wgTree() {
+        const q = (this.state.wgPicker.query || "").trim().toLowerCase();
+        const cats = [];
+        const byKey = {};
+        for (const g of this.state.workGroups || []) {
+            const key = String(g.cat_key || g.category || "");
+            if (!byKey[key]) {
+                byKey[key] = {
+                    key,
+                    code: g.cat_code || "",
+                    name: g.cat_name || g.category || "Khác",
+                    items: [],
+                };
+                cats.push(byKey[key]);
+            }
+            byKey[key].items.push(g);
+        }
+        if (!q) {
+            return cats;
+        }
+        return cats
+            .map((c) => {
+                const catHit = `${c.code} ${c.name}`.toLowerCase().includes(q);
+                const items = catHit
+                    ? c.items
+                    : c.items.filter((g) => `${g.stt || ""} ${g.name || ""}`.toLowerCase().includes(q));
+                return { ...c, items };
+            })
+            .filter((c) => c.items.length);
+    }
+
+    get wgLabel() {
+        const p = this.state.wgPicker;
+        if (p.cat) {
+            const cat = this.wgTree.find((c) => c.key === p.cat) ||
+                { code: "", name: p.cat };
+            return `${cat.code ? cat.code + ". " : ""}${cat.name} (cả hạng mục)`;
+        }
+        const g = (this.state.workGroups || []).find(
+            (x) => String(x.id) === String(this.state.form.work_group_id)
+        );
+        return g ? `${g.stt ? g.stt + " " : ""}${g.name}` : "";
+    }
+
+    toggleWgPicker() {
+        this.state.wgPicker.open = !this.state.wgPicker.open;
+    }
+
+    closeWgPicker() {
+        this.state.wgPicker.open = false;
+        this.state.wgPicker.query = "";
+    }
+
+    onWgQuery(ev) {
+        this.state.wgPicker.query = ev.target.value || "";
+    }
+
+    isWgCat(cat) {
+        return this.state.wgPicker.cat === cat.key;
+    }
+
+    isWgItem(g) {
+        return !this.state.wgPicker.cat && String(this.state.form.work_group_id) === String(g.id);
+    }
+
+    /** Tích hạng mục cha → chọn cả hạng mục (gắn dòng đầu của hạng mục). Bỏ tích → bỏ chọn. */
+    toggleWgCat(cat) {
+        if (this.isWgCat(cat)) {
+            this.state.wgPicker.cat = "";
+            this.state.form.work_group_id = "";
+        } else {
+            this.state.wgPicker.cat = cat.key;
+            this.state.form.work_group_id = String(cat.items[0]?.id || "");
+        }
+        this.onFormWorkGroupChange();
+    }
+
+    /** Tích công việc con → chọn đúng 1 công việc (chỉ 1 ô được tích). */
+    toggleWgItem(g) {
+        this.state.wgPicker.cat = "";
+        this.state.form.work_group_id = this.isWgItem(g) ? "" : String(g.id);
+        this.onFormWorkGroupChange();
+    }
+
+    clearWg() {
+        this.state.wgPicker.cat = "";
+        this.state.form.work_group_id = "";
+        this.onFormWorkGroupChange();
+    }
+
     onFormWorkGroupChange() {
-        /** Chọn tên công việc (phân công) → điền Tên CV + Hạng mục tương ứng. */
+        /** Chọn Tên công việc hạng mục → chỉ điền Hạng mục; Tên công việc do người dùng tự nhập (độc lập). */
         const wgId = this.state.form.work_group_id;
         const g = (this.state.workGroups || []).find((x) => String(x.id) === String(wgId));
-        if (!g) {
-            this.state.form.category_label = "";
-            return;
-        }
-        const taskLabel = (g.task_name || g.name || "").trim();
-        const category = (g.category || "").trim();
-        this.state.form.category_label = category;
-        if (taskLabel) {
-            this.state.form.name = taskLabel;
-        }
+        this.state.form.category_label = g ? (g.category || "").trim() : "";
     }
 
     async onSubmit(ev) {
@@ -1855,13 +2070,13 @@ export class DailyWorkEmployeeWs extends Component {
         const deadlineIso =
             toIsoDate(this.state.formDateText.deadline) || toIsoDate(f.deadline);
         if (!assignIso) {
-            this.notification.add(_t("Vui lòng chọn ngày giao (dd/mm/yyyy)."), {
+            this.notification.add(_t("Vui lòng chọn ngày bắt đầu (dd/mm/yyyy)."), {
                 type: "warning",
             });
             return;
         }
         if (!deadlineIso) {
-            this.notification.add(_t("Vui lòng chọn hạn hoàn thành (dd/mm/yyyy)."), {
+            this.notification.add(_t("Vui lòng chọn deadline (dd/mm/yyyy)."), {
                 type: "warning",
             });
             return;
@@ -2028,12 +2243,14 @@ export class DailyWorkEmployeeWs extends Component {
                 { completion_percent: pct },
             ]);
             if (updated.state === "done") {
-                this.state.tasks = this.state.tasks.filter((t) => t.id !== task.id);
+                // Giữ dòng tại chỗ để thấy Ngày hoàn thành tự điền; tải lại sẽ chuyển xuống bảng tổng tháng
+                this._replaceTaskRow(task, updated);
                 this._refreshCompletionAvg();
                 await this.loadMonthlySummary();
-                this.notification.add(_t("Đạt 100% — đã đánh dấu hoàn thành."), {
-                    type: "success",
-                });
+                this.notification.add(
+                    _t("Đạt 100% — đã hoàn thành ngày %s.", updated.date_done_display || ""),
+                    { type: "success" }
+                );
                 return;
             }
             const idx = this.state.tasks.findIndex((t) => t.id === task.id);
@@ -2086,20 +2303,36 @@ export class DailyWorkEmployeeWs extends Component {
         }
     }
 
+    _replaceTaskRow(task, updated) {
+        const idx = this.state.tasks.findIndex((t) => t.id === task.id);
+        if (idx >= 0) {
+            this.state.tasks[idx] = {
+                ...updated,
+                stt: this.state.tasks[idx].stt || idx + 1,
+            };
+        }
+    }
+
     async onStateChange(task, ev) {
         const stateVal = ev.target.value;
+        if (stateVal === "__late") {
+            // "Trễ hạn" chỉ hiển thị tự động, không phải trạng thái lưu
+            return;
+        }
         try {
             const updated = await this.orm.call("daily.task", "update_from_manager", [
                 [task.id],
                 { state: stateVal },
             ]);
             if (stateVal === "done") {
-                // Chuyển xuống bảng tổng tháng
-                this.state.tasks = this.state.tasks.filter((t) => t.id !== task.id);
+                // Giữ dòng tại chỗ để thấy Ngày hoàn thành tự điền; tải lại sẽ chuyển xuống bảng tổng tháng
+                this._replaceTaskRow(task, updated);
+                this._refreshCompletionAvg();
                 await this.loadMonthlySummary();
-                this.notification.add(_t("Đã hoàn thành — chuyển xuống bảng tổng tháng."), {
-                    type: "success",
-                });
+                this.notification.add(
+                    _t("Đã hoàn thành ngày %s.", updated.date_done_display || ""),
+                    { type: "success" }
+                );
             } else {
                 const idx = this.state.tasks.findIndex((t) => t.id === task.id);
                 if (idx >= 0) {
@@ -2115,6 +2348,19 @@ export class DailyWorkEmployeeWs extends Component {
             this.notification.add(_t("Không thể cập nhật trạng thái."), { type: "danger" });
             await this.load();
         }
+    }
+
+    /** Số ngày trễ: chưa hoàn thành và hôm nay > Deadline (tự tính theo ngày hiện tại). */
+    stateLateDays(task) {
+        if (!task?.deadline || task.state === "done") {
+            return 0;
+        }
+        const today = this._formatIsoDate(new Date());
+        if (task.deadline >= today) {
+            return 0;
+        }
+        const diff = (Date.parse(today) - Date.parse(task.deadline)) / 86400000;
+        return Math.max(1, Math.round(diff));
     }
 
     stateSelectClass(state) {

@@ -702,6 +702,18 @@ export class DailyWorkDashboard extends Component {
             await this._doNavAction("daily_work_task.action_daily_work_personnel", asPopup);
             return;
         }
+        if (key === "plan") {
+            await this._doNavAction("daily_work_task.action_daily_work_plan", asPopup);
+            return;
+        }
+        if (key === "monthly_report") {
+            await this._doNavAction("daily_work_task.action_daily_work_monthly_report", asPopup);
+            return;
+        }
+        if (key === "team_plan") {
+            await this._doNavAction("daily_work_task.action_daily_work_team_plan", asPopup);
+            return;
+        }
         if (key === "team_assign_add") {
             await this._doNavAction("daily_work_task.action_daily_work_assign_board_edit", asPopup);
             return;
@@ -768,6 +780,10 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "access") {
             await this._doNavAction("daily_work_task.action_daily_task_access", asPopup);
+            return;
+        }
+        if (key === "team_plan_access") {
+            await this._doNavAction("daily_work_task.action_daily_task_team_plan_access", asPopup);
             return;
         }
         if (key === "assign_access") {

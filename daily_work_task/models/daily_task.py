@@ -18,8 +18,11 @@ class DailyTask(models.Model):
     _rec_name = "name"
 
     name = fields.Char(string="Tên công việc", required=True, tracking=True)
+    # Phiên bản kế hoạch ban đầu — ghi khi trưởng nhóm duyệt (chốt) Plan tháng; không đổi theo ngày thực tế
+    plan_start_date = fields.Date(string="Ngày bắt đầu kế hoạch", copy=False, readonly=True)
+    plan_deadline = fields.Date(string="Deadline kế hoạch", copy=False, readonly=True)
     assign_date = fields.Date(
-        string="Ngày giao việc",
+        string="Ngày bắt đầu",
         default=fields.Date.context_today,
         tracking=True,
         index=True,
@@ -231,6 +234,49 @@ class DailyTask(models.Model):
             pct = rec.completion_percent
             if pct is not None and (pct < 0 or pct > 100):
                 raise ValidationError("% hoàn thành CV phải từ 0 đến 100.")
+
+    @api.constrains("name", "assign_date", "deadline", "assignee_id")
+    def _check_duplicate_personal_task(self):
+        """Việc bổ sung (tự thêm ở bảng cá nhân / Plan cá nhân) không được trùng nội dung với việc
+        đã có của cùng người trong cùng khoảng thời gian (kể cả việc Plan tổng đã áp xuống).
+        Không trùng → tự hiện ở Plan cá nhân và Plan tổng."""
+        def norm(text):
+            return " ".join((text or "").split()).casefold()
+
+        for rec in self:
+            if rec.assign_line_id or rec.recurring_id or not rec.assignee_id:
+                continue
+            key = norm(rec.name)
+            if not key:
+                continue
+            start = rec.assign_date or rec.deadline
+            end = rec.deadline or rec.assign_date
+            # So tên đã chuẩn hóa (bỏ khoảng trắng thừa, không phân biệt hoa/thường)
+            first_word = key.split(" ")[0]
+            others = self.sudo().search([
+                ("id", "!=", rec.id),
+                ("assignee_id", "=", rec.assignee_id.id),
+                ("name", "ilike", first_word),
+            ])
+            for other in others:
+                if norm(other.name) != key:
+                    continue
+                o_start = other.assign_date or other.deadline
+                o_end = other.deadline or other.assign_date
+                overlap = not (start and end and o_start and o_end) or (start <= o_end and o_start <= end)
+                if overlap:
+                    src = "Plan tổng" if other.assign_line_id else ("Công việc lặp" if other.recurring_id else "bảng cá nhân")
+                    raise ValidationError(
+                        "Trùng công việc: «%s» đã có trong %s của %s (%s → %s).\n"
+                        "Không thêm việc trùng nội dung — hãy cập nhật việc có sẵn."
+                        % (
+                            rec.name,
+                            src,
+                            rec.assignee_id.name or "",
+                            o_start.strftime("%d/%m/%Y") if o_start else "…",
+                            o_end.strftime("%d/%m/%Y") if o_end else "…",
+                        )
+                    )
 
     @api.constrains("work_group_id", "department_id", "assignee_user_id")
     def _check_work_group_department(self):
@@ -496,15 +542,55 @@ class DailyTask(models.Model):
                 raise AccessError("Bạn không được cập nhật trạng thái công việc này.")
         self.write({"state": "done", "completion_percent": 100})
 
+    @api.model
+    def _state_from_percent(self, pct):
+        """% hoàn thành → trạng thái: 0 = Chưa bắt đầu, 1–99 = Đang xử lý, 100 = Đã hoàn thành."""
+        if pct >= 100:
+            return "done"
+        if pct > 0:
+            return "in_progress"
+        return "not_started"
+
+    _PLAN_LOCKED_FIELDS = ("name", "assign_date", "deadline", "work_group_id")
+
+    def _check_plan_locked_vals(self, vals):
+        """Chặn cá nhân đổi nội dung việc Plan tổng đã áp xuống (chỉ khi giá trị thật sự đổi)."""
+        if self.env.su or self.env.context.get("from_daily_task_assign"):
+            return
+        keys = [k for k in self._PLAN_LOCKED_FIELDS if k in vals]
+        if not keys:
+            return
+        for rec in self:
+            if not rec._is_plan_locked():
+                continue
+            for k in keys:
+                field = rec._fields[k]
+                new = vals[k]
+                if field.type == "date":
+                    new = fields.Date.to_date(new) if new else False
+                    old = rec[k] or False
+                elif field.type == "many2one":
+                    new = int(new) if new else False
+                    old = rec[k].id or False
+                else:
+                    new = (new or "").strip()
+                    old = (rec[k] or "").strip()
+                if new != old:
+                    raise AccessError(
+                        "Việc «%s» được áp xuống từ Plan tổng — cá nhân không sửa được Tên / Ngày bắt đầu / "
+                        "Deadline / Hạng mục. Bạn vẫn cập nhật được tiến độ, trạng thái, ghi chú." % rec.name
+                    )
+
     def write(self, vals):
         vals = dict(vals)
+        self._check_plan_locked_vals(vals)
         if "completion_percent" in vals:
             try:
                 pct = int(vals.get("completion_percent") or 0)
             except (TypeError, ValueError):
                 pct = 0
-            if pct >= 100:
-                vals["state"] = "done"
+            if pct >= 100 or "state" not in vals:
+                vals["state"] = self._state_from_percent(pct)
         if vals.get("state") == "done" and "completion_percent" not in vals:
             vals["completion_percent"] = 100
         becoming_done = self.browse()
@@ -524,7 +610,35 @@ class DailyTask(models.Model):
         res = super().write(vals)
         if becoming_done:
             becoming_done._notify_assigner_done()
+        if set(vals) & {"assign_date", "deadline", "assign_line_id", "recurring_id", "assignee_id"}:
+            self.env["daily.task.plan.day"].sync_tasks(self)
+        if not self.env.context.get("from_daily_task_assign"):
+            self._push_to_plan_line(vals)
         return res
+
+    # Liên kết 2 chiều Việc cá nhân ↔ Plan (dòng phân công)
+    _PLAN_LINE_FIELDS = {"name": "name", "assign_date": "date_start", "deadline": "deadline"}
+
+    def _push_to_plan_line(self, vals):
+        """Sửa Tên / Ngày bắt đầu / Deadline ở bảng cá nhân → cập nhật dòng Plan tương ứng.
+
+        Chỉ áp dụng dòng phân công mà người này là người phụ trách duy nhất (dòng chung của
+        team chỉ quản lý sửa trên Plan). Không áp dụng việc sinh từ mẫu lặp hằng ngày.
+        """
+        changed = {k: v for k, v in vals.items() if k in self._PLAN_LINE_FIELDS}
+        if not changed:
+            return
+        for task in self.sudo().filtered(lambda t: t.assign_line_id and not t.recurring_id):
+            line = task.assign_line_id
+            if line._responsible_users() != task.assignee_user_id:
+                continue
+            line_vals = {
+                self._PLAN_LINE_FIELDS[k]: task[k]
+                for k in changed
+                if line[self._PLAN_LINE_FIELDS[k]] != task[k]
+            }
+            if line_vals:
+                line.write(line_vals)
 
     def _assigner_uid(self):
         """UID người thật sự thao tác — không lấy OdooBot khi đang sudo()."""
@@ -567,9 +681,20 @@ class DailyTask(models.Model):
             # Tránh default/sudo ghi OdooBot đè người giao thật
             if vals.get("assigned_by_id") in (1, False, None) and assigner and assigner != 1:
                 vals["assigned_by_id"] = assigner
+            # Nhập sẵn % khi tạo mà không chọn trạng thái → suy ra trạng thái theo %
+            if vals.get("completion_percent") and not vals.get("state"):
+                try:
+                    vals["state"] = self._state_from_percent(int(vals["completion_percent"]))
+                except (TypeError, ValueError):
+                    pass
             if vals.get("state") == "done" and not vals.get("date_done"):
                 vals["date_done"] = today
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        # Việc cá nhân tự nhập → hiện trên Plan công việc (ô 'x' theo Ngày bắt đầu → Deadline)
+        self.env["daily.task.plan.day"].sync_tasks(
+            records.filtered(lambda t: not t.recurring_id)
+        )
+        return records
 
     def _assignee_user(self):
         """User của người được giao — đọc SQL tránh HR ACL chặn."""
@@ -1581,9 +1706,17 @@ class DailyTask(models.Model):
         emp = self.assignee_id.employee_id
         return bool(emp and emp.id in (allowed or []))
 
+    def _is_plan_locked(self):
+        """Việc Plan tổng / Phân công đã áp xuống: cá nhân không sửa nội dung (tên, ngày, hạng mục)."""
+        self.ensure_one()
+        line = self.sudo().assign_line_id
+        return bool(line) and line._is_team_locked()
+
     def _can_edit_task_details(self):
         """Sửa nội dung phiếu (tên/hạn/ghi chú...). Việc được người khác giao thì khóa."""
         self.ensure_one()
+        if self._is_plan_locked():
+            return False
         if self._is_manager():
             return True
         emp = self.assignee_id.employee_id
@@ -2631,7 +2764,7 @@ class DailyTask(models.Model):
         for t in tasks:
             row = t._to_manager_dict()
             is_assigner = bool(t.assigned_by_id and t.assigned_by_id.id == uid)
-            row["can_edit"] = bool(is_assigner or t._can_edit_task_details())
+            row["can_edit"] = bool((is_assigner and not t._is_plan_locked()) or t._can_edit_task_details())
             row["can_delete"] = bool(is_admin or is_assigner)
             rows.append(row)
         return self._enrich_assign_discussion(rows)
@@ -3129,7 +3262,7 @@ class DailyTask(models.Model):
             raise ValidationError("Không tìm thấy công việc.")
         uid = self.env.uid
         is_assigner = bool(task.assigned_by_id and task.assigned_by_id.id == uid)
-        if not (is_assigner or task._can_edit_task_details()):
+        if not ((is_assigner and not task._is_plan_locked()) or task._can_edit_task_details()):
             raise AccessError("Bạn không được sửa công việc này.")
         name = (vals.get("name") or "").strip()
         if not name:

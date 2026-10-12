@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 
 class DailyTaskTeam(models.Model):
@@ -22,6 +22,15 @@ class DailyTaskTeam(models.Model):
     )
     active = fields.Boolean(default=True)
     note = fields.Char(string="Ghi chú")
+    manager_ids = fields.Many2many(
+        "res.users",
+        "daily_task_team_manager_rel",
+        "team_id",
+        "user_id",
+        string="User quản lý team",
+        domain="[('share', '=', False), ('active', '=', True)]",
+        help="Quản lý toàn bộ hạng mục của team: thêm việc, sửa việc chung, duyệt Plan nhân sự trong team.",
+    )
     work_group_ids = fields.One2many(
         "daily.task.work.group",
         "team_id",
@@ -50,6 +59,29 @@ class DailyTaskTeam(models.Model):
         Group = self.env["daily.task.work.group"]
         for rec in self:
             rec.work_group_count = Group.search_count([("team_id", "=", rec.id)])
+
+    def write(self, vals):
+        if "manager_ids" in vals and not self.env.su \
+                and not self.env["daily.task.assign.access"]._is_manager():
+            raise AccessError("Chỉ Quản lý mới chọn được User quản lý team.")
+        return super().write(vals)
+
+    def set_team_managers(self, user_ids):
+        """Chọn User quản lý team (từ Bảng hạng mục). Chỉ Quản lý module."""
+        self.ensure_one()
+        if not self.env["daily.task.assign.access"]._is_manager():
+            raise AccessError("Chỉ Quản lý mới chọn được User quản lý team.")
+        ids = []
+        for raw in user_ids or []:
+            try:
+                ids.append(int(raw))
+            except (TypeError, ValueError):
+                continue
+        users = self.env["res.users"].sudo().search(
+            [("id", "in", ids), ("share", "=", False), ("active", "=", True)]
+        )
+        self.sudo().write({"manager_ids": [(6, 0, users.ids)]})
+        return [{"id": u.id, "name": u.name or ""} for u in users]
 
     @api.constrains("name")
     def _check_name(self):

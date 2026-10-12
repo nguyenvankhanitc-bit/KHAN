@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkPlan">
+        <div class="o_daily_work_dashboard o_daily_work_plan o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dwp_shell">
+                    <header class="o_dwp_header">
+                        <div>
+                            <h1>Plan CV cá nhân</h1>
+                            <p>
+                                <t t-if="state.data">
+                                    <strong t-esc="state.data.user.name"/>
+                                    <t t-if="state.data.teams and state.data.teams.length">
+                                        · Team: <strong t-esc="state.data.teams.join(', ')"/>
+                                    </t>
+                                </t>
+                            </p>
+                        </div>
+                        <div class="o_dwp_tools">
+                            <button t-if="state.data and (state.data.can_add or state.data.can_team_add) and !state.adding" type="button"
+                                    class="btn btn-success btn-sm" t-on-click="openAdd">
+                                <i class="fa fa-plus"/> Thêm công việc
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm o_dwp_export"
+                                    t-att-disabled="state.exporting or !state.data"
+                                    title="Xuất Plan tháng đang xem ra file Excel"
+                                    t-on-click="onExportExcel">
+                                <i t-att-class="state.exporting ? 'fa fa-spinner fa-spin' : 'fa fa-file-excel-o'"/> Xuất Excel
+                            </button>
+                            <t t-if="state.data and state.data.can_pick_user">
+                                <select class="o_dwp_user" t-on-change="onUser">
+                                    <option value="">Tôi</option>
+                                    <t t-foreach="state.data.users" t-as="u" t-key="u.id">
+                                        <option t-att-value="u.id" t-att-selected="u.id === state.userId" t-esc="u.name"/>
+                                    </t>
+                                </select>
+                            </t>
+                            <div class="o_dwp_month">
+                                <button type="button" class="btn btn-light btn-sm" title="Tháng trước"
+                                        t-on-click="() => this.shiftMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                                <span t-esc="state.data ? state.data.month_label : ''"/>
+                                <button type="button" class="btn btn-light btn-sm" title="Tháng sau"
+                                        t-on-click="() => this.shiftMonth(1)"><i class="fa fa-chevron-right"/></button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <!-- Trạng thái duyệt Plan tháng (Bước 3–4) -->
+                    <!-- Chỉ hiện khi bị Từ chối (cần nút Gửi duyệt lại); Đã duyệt / Chờ duyệt thì ẩn -->
+                    <div t-if="state.data and state.data.approval and state.data.approval.state === 'rejected'"
+                         t-att-class="'o_dwp_approval is-' + state.data.approval.state">
+                        <i t-att-class="'fa ' + (state.data.approval.state === 'approved' ? 'fa-check-circle' : (state.data.approval.state === 'rejected' ? 'fa-times-circle' : 'fa-clock-o'))"/>
+                        <span>
+                            Plan <t t-esc="state.data.month_label"/>:
+                            <b t-esc="state.data.approval.state_label"/>
+                            <t t-if="state.data.approval.approver">
+                                · bởi <t t-esc="state.data.approval.approver"/> (<t t-esc="state.data.approval.date"/>)
+                            </t>
+                            <t t-if="state.data.approval.state === 'approved'">
+                                · đã chốt kế hoạch ban đầu <t t-esc="state.data.approval.task_count"/> việc
+                            </t>
+                            <t t-if="state.data.approval.state === 'pending'"> · trưởng nhóm sẽ duyệt trên Plan tổng team</t>
+                        </span>
+                        <em t-if="state.data.approval.reason">Lý do: <t t-esc="state.data.approval.reason"/></em>
+                        <button t-if="state.data.approval.state === 'rejected' and !state.userId" type="button"
+                                class="btn btn-sm btn-warning" t-att-disabled="state.busy" t-on-click="resubmitPlan">
+                            <i class="fa fa-paper-plane"/> Gửi duyệt lại
+                        </button>
+                    </div>
+
+                    <!-- Dashboard trạng thái: số việc của user theo trạng thái (giống bảng cá nhân); bấm để lọc -->
+                    <div class="o_dwp_kpis">
+                        <button type="button" t-att-class="'o_dwp_kpi k-total' + (!state.filterState ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('')">
+                            <i class="fa fa-tasks"/>
+                            <div><span>Tổng công việc</span><b t-esc="statusCount('total')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('total')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-done' + (state.filterState === 'done' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('done')">
+                            <i class="fa fa-check-circle"/>
+                            <div><span>Hoàn thành</span><b t-esc="statusCount('done')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('done')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-progress' + (state.filterState === 'in_progress' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('in_progress')">
+                            <i class="fa fa-refresh"/>
+                            <div><span>Đang thực hiện</span><b t-esc="statusCount('in_progress')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('in_progress')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-todo' + (state.filterState === 'not_started' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('not_started')">
+                            <i class="fa fa-hourglass-half"/>
+                            <div><span>Chưa bắt đầu</span><b t-esc="statusCount('not_started')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('not_started')"/> ô x</small></div>
+                        </button>
+                        <button type="button" t-att-class="'o_dwp_kpi k-late' + (state.filterState === 'overdue' ? ' is-active' : '')"
+                                t-on-click="() => this.setFilter('overdue')">
+                            <i class="fa fa-exclamation-triangle"/>
+                            <div><span>Trễ hạn</span><b t-esc="statusCount('overdue')"/><small class="o_dwp_kpi_x">việc · <t t-esc="xCount('overdue')"/> ô x</small></div>
+                        </button>
+                        <div class="o_dwp_kpi k-rate">
+                            <i class="fa fa-pie-chart"/>
+                            <div><span>Tỷ lệ hoàn thành</span><b><t t-esc="doneTaskPercent"/>%</b></div>
+                        </div>
+                    </div>
+
+                    <div t-if="state.adding" class="o_dwp_add">
+                        <label class="o_dwp_add_name">
+                            <span>Tên công việc *</span>
+                            <input type="text" placeholder="Nhập công việc…" t-att-value="state.newLine.name"
+                                   t-on-input="(ev) => this.onNewField('name', ev)"/>
+                        </label>
+                        <label>
+                            <span>Hạng mục</span>
+                            <select t-on-change="(ev) => this.onNewField('category', ev)">
+                                <option value="">— Khác —</option>
+                                <t t-foreach="state.data.categories" t-as="cat" t-key="cat">
+                                    <option t-att-value="cat" t-esc="cat"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <span>Ngày bắt đầu</span>
+                            <input type="date" t-att-value="state.newLine.date_start"
+                                   t-on-change="(ev) => this.onNewField('date_start', ev)"/>
+                        </label>
+                        <label>
+                            <span>Deadline</span>
+                            <input type="date" t-att-value="state.newLine.deadline"
+                                   t-on-change="(ev) => this.onNewField('deadline', ev)"/>
+                        </label>
+                        <label class="o_dwp_add_check">
+                            <input type="checkbox" t-att-checked="state.newLine.plan_daily"
+                                   t-on-change="(ev) => this.onNewField('plan_daily', ev)"/>
+                            <span>Lặp hằng ngày (trừ CN)</span>
+                        </label>
+                        <div class="o_dwp_add_actions">
+                            <button type="button" class="btn btn-light btn-sm" t-on-click="cancelAdd">Hủy</button>
+                            <button type="button" class="btn btn-success btn-sm" t-att-disabled="state.busy"
+                                    t-on-click="saveNewLine"><i class="fa fa-save"/> Lưu</button>
+                        </div>
+                    </div>
+
+                    <div class="o_dwp_legend">
+                        <span><i class="st-not_started"/> x Chưa bắt đầu</span>
+                        <span><i class="st-in_progress"/> x Đang xử lý</span>
+                        <span><i class="st-done"/> x Đã hoàn thành</span>
+                        <span><i class="st-overdue"/> x Trễ hạn</span>
+                        <span><i class="is-sun"/> Chủ nhật</span>
+                        <span><i class="fa fa-repeat"/> Lặp hằng ngày</span>
+                        <span><i class="fa fa-hand-pointer-o"/> Bảng chỉ để xem · bấm vào tên công việc để mở khung chỉnh sửa (tên, ngày, ô x) → bấm Lưu mới có hiệu lực · việc đã hoàn thành (x xanh) bị khóa 🔒</span>
+                    </div>
+
+                    <t t-if="state.loading">
+                        <div class="o_dwp_empty"><i class="fa fa-spinner fa-spin"/> Đang tải…</div>
+                    </t>
+                    <t t-elif="!state.data or !state.data.groups.length">
+                        <div class="o_dwp_empty">Chưa có công việc nào được phân công trong tháng này.</div>
+                    </t>
+                    <t t-else="">
+                        <div class="o_dwp_table_wrap">
+                            <table class="o_dwp_table">
+                                <thead>
+                                    <tr>
+                                        <th class="o_dwp_c_code" rowspan="2">STT</th>
+                                        <th class="o_dwp_c_name" rowspan="2">Nội dung công việc</th>
+                                        <th class="o_dwp_c_owner" rowspan="2">Người phụ trách</th>
+                                        <th class="o_dwp_c_date" rowspan="2">Ngày bắt đầu</th>
+                                        <th class="o_dwp_c_date" rowspan="2">Deadline</th>
+                                        <th class="o_dwp_c_days" rowspan="2">Số ngày</th>
+                                        <th class="o_dwp_c_pct" rowspan="2">Tiến độ</th>
+                                        <t t-foreach="state.data.days" t-as="d" t-key="d.day">
+                                            <th t-att-class="'o_dwp_day' + (d.saturday ? ' is-sat' : '') + (d.sunday ? ' is-sun' : '') + (d.today ? ' is-today' : '')" t-esc="d.day"/>
+                                        </t>
+                                    </tr>
+                                    <tr>
+                                        <t t-foreach="state.data.days" t-as="d" t-key="d.day">
+                                            <th t-att-class="'o_dwp_wd' + (d.saturday ? ' is-sat' : '') + (d.sunday ? ' is-sun' : '') + (d.today ? ' is-today' : '')" t-esc="d.wd"/>
+                                        </t>
+                                    </tr>
+                                </thead>
+                                <t t-foreach="visibleGroups" t-as="group" t-key="group.code">
+                                    <tbody>
+                                        <tr class="o_dwp_group" t-on-click="() => this.toggleGroup(group)">
+                                            <td class="o_dwp_c_code" t-esc="group.code"/>
+                                            <td class="o_dwp_c_name" colspan="6">
+                                                <i t-att-class="'fa ' + (groupOpen(group) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                <t t-esc="group.name"/>
+                                                <em t-esc="'(' + group.lines.length + ' CV)'"/>
+                                            </td>
+                                            <td t-att-colspan="state.data.days.length"/>
+                                        </tr>
+                                        <t t-if="groupOpen(group)">
+                                            <t t-foreach="group.lines" t-as="line" t-key="line.key">
+                                                <tr>
+                                                    <td class="o_dwp_c_code" t-esc="line.code"/>
+                                                    <td class="o_dwp_c_name">
+                                                        <a t-if="canOpen(line)" href="#" class="o_dwp_name_link"
+                                                           title="Bấm để xem / chỉnh sửa công việc"
+                                                           t-on-click.prevent="() => this.openEdit(line)" t-esc="line.name"/>
+                                                        <span t-else="" t-att-class="'o_dwp_name_text' + (line.locked ? ' is-locked' : '')"
+                                                              t-att-title="line.locked ? 'Đã hoàn thành — không chỉnh sửa' : ''" t-esc="line.name"/>
+                                                        <i t-if="line.locked" class="fa fa-lock o_dwp_lock" title="Đã hoàn thành — không chỉnh sửa"/>
+                                                        <i t-if="line.plan_daily" class="fa fa-repeat o_dwp_daily" title="Lặp hằng ngày (trừ CN)"/>
+                                                        <em t-if="line.personal" class="o_dwp_personal" title="Việc bổ sung của cá nhân — tự cập nhật được">Cá nhân</em>
+                                                        <em t-if="line.team_locked" class="o_dwp_personal o_dwp_teamtag"
+                                                            title="Việc Plan tổng đã áp xuống — cá nhân không sửa nội dung; cập nhật tiến độ / trạng thái ở Công việc cá nhân">Plan tổng</em>
+                                                    </td>
+                                                    <td class="o_dwp_c_owner" t-esc="line.owner or '—'"/>
+                                                    <td class="o_dwp_c_date" t-esc="line.start or '—'"/>
+                                                    <td class="o_dwp_c_date" t-esc="line.deadline or '—'"/>
+                                                    <td class="o_dwp_c_days" t-esc="line.days_count === null ? '—' : line.days_count"/>
+                                                    <td class="o_dwp_c_pct">
+                                                        <div class="o_dwp_bar"><span t-att-style="'width:' + line.progress + '%'"/></div>
+                                                        <small><t t-esc="line.progress"/>%</small>
+                                                    </td>
+                                                    <t t-foreach="line.cells" t-as="cell" t-key="cell.day">
+                                                        <td t-att-class="'o_dwp_cell ' + cell.cls" t-esc="cell.mark"/>
+                                                    </t>
+                                                </tr>
+                                            </t>
+                                        </t>
+                                    </tbody>
+                                </t>
+                            </table>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Thêm công việc: khung dùng chung với Plan tổng team -->
+                <TeamTaskDialog t-if="state.teamAdding" presetUserId="state.data and state.data.user ? state.data.user.id : false"
+                                onClose.bind="closeTeamAdd" onSaved.bind="onTeamAddSaved"/>
+
+                <!-- Khung chỉnh sửa 1 công việc: chỉ ghi khi bấm Lưu -->
+                <div t-if="state.edit" class="o_dwp_modal_backdrop" t-on-click.self="closeEdit">
+                    <div class="o_dwp_modal" t-on-keydown="onModalKey" t-on-click="closePicker">
+                        <header>
+                            <div>
+                                <h3>Chỉnh sửa công việc</h3>
+                                <small>
+                                    <t t-esc="state.edit.code"/> ·
+                                    <t t-if="state.edit.personal">Việc cá nhân</t>
+                                    <t t-else="">Dòng phân công</t>
+                                    <t t-if="state.edit.plan_daily"> · Lặp hằng ngày (trừ CN)</t>
+                                </small>
+                            </div>
+                            <button type="button" class="btn btn-light btn-sm" title="Đóng" t-on-click="closeEdit">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </header>
+
+                        <div class="o_dwp_modal_body">
+                            <label class="o_dwp_field o_dwp_field_wide">
+                                <span>Tên công việc</span>
+                                <input type="text" t-att-value="state.edit.name" t-att-disabled="!state.edit.canEditInfo"
+                                       t-on-input="(ev) => this.onEditField('name', ev)"/>
+                            </label>
+                            <t t-foreach="[['start', 'Ngày bắt đầu'], ['deadline', 'Deadline']]" t-as="df" t-key="df[0]">
+                                <div class="o_dwp_field">
+                                    <span t-esc="df[1]"/>
+                                    <button type="button"
+                                            t-att-class="'o_dwp_datebtn' + (state.edit.canEditInfo ? ' is-editing' : ' is-readonly')"
+                                            t-att-disabled="!state.edit.canEditInfo"
+                                            t-on-click.stop="() => this.openPicker(df[0])">
+                                        <t t-esc="formatDate(state.edit[df[0]]) or '—'"/>
+                                        <i class="fa fa-calendar"/>
+                                    </button>
+                                    <!-- Lịch chọn ngày tiếng Việt (thay lịch mặc định của trình duyệt) -->
+                                    <div t-if="state.picker and state.picker.field === df[0]" class="o_dwp_picker" t-on-click.stop="() => {}">
+                                        <div class="o_dwp_picker_head">
+                                            <button type="button" title="Tháng trước" t-on-click="() => this.pickerShift(-1)"><i class="fa fa-chevron-left"/></button>
+                                            <b t-esc="pickerTitle"/>
+                                            <button type="button" title="Tháng sau" t-on-click="() => this.pickerShift(1)"><i class="fa fa-chevron-right"/></button>
+                                        </div>
+                                        <div class="o_dwp_picker_grid">
+                                            <t t-foreach="pickerWeekdays" t-as="wd" t-key="wd">
+                                                <span t-att-class="'o_dwp_picker_wd' + (wd === 'CN' ? ' is-sun' : '')" t-esc="wd"/>
+                                            </t>
+                                            <t t-foreach="pickerDays" t-as="pd" t-key="pd.iso">
+                                                <button type="button" t-att-class="pd.cls" t-on-click="() => this.pickDate(pd.iso)" t-esc="pd.day"/>
+                                            </t>
+                                        </div>
+                                        <div class="o_dwp_picker_foot">
+                                            <button type="button" t-on-click="() => this.pickDate('')">Xóa</button>
+                                            <button type="button" t-on-click="pickToday">Hôm nay</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </t>
+                            <p t-if="state.edit.recurring" class="o_dwp_modal_note">
+                                <i class="fa fa-repeat"/> Việc lặp hằng ngày (trừ CN): ô x theo lịch lặp. Sửa Tên / Ngày bắt đầu / Deadline áp dụng cho các ngày chưa sinh việc; việc đã sinh giữ nguyên.
+                            </p>
+                            <p t-if="!state.edit.canEditInfo" class="o_dwp_modal_note">
+                                <i class="fa fa-lock"/> Dòng nhiều người phụ trách hoặc việc do người khác giao — chỉ quản lý sửa tên / ngày.
+                            </p>
+
+                            <div class="o_dwp_modal_days">
+                                <div class="o_dwp_modal_days_head">
+                                    <span>Ngày kế hoạch (x) · <t t-esc="state.data.month_label"/></span>
+                                    <em t-if="state.edit.canEditDays">Bấm ngày để bật/tắt x · đổi Ngày bắt đầu/Deadline sẽ tính lại dải x</em>
+                                </div>
+                                <div class="o_dwp_modal_grid">
+                                    <t t-foreach="state.data.days" t-as="d" t-key="d.day">
+                                        <button type="button"
+                                                t-att-class="'o_dwp_mday' + (state.edit.days[d.day] ? ' is-on' : '') + (d.saturday ? ' is-sat' : '') + (d.sunday ? ' is-sun' : '') + (d.today ? ' is-today' : '')"
+                                                t-att-disabled="!state.edit.canEditDays or state.edit.lockedDays[d.day]"
+                                                t-att-title="state.edit.lockedDays[d.day] ? 'Đã hoàn thành — không chỉnh sửa' : ''"
+                                                t-on-click="() => this.toggleEditDay(d.day)">
+                                            <b t-esc="d.day"/>
+                                            <small t-esc="d.wd"/>
+                                            <span t-esc="state.edit.days[d.day] ? 'x' : ''"/>
+                                        </button>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+
+                        <footer>
+                            <span t-if="isEditDirty" class="o_dwp_dirty"><i class="fa fa-circle"/> Có thay đổi chưa lưu</span>
+                            <button type="button" class="btn btn-light btn-sm" t-on-click="closeEdit">Hủy</button>
+                            <button type="button" class="btn btn-success btn-sm" t-att-disabled="state.busy or !isEditDirty"
+                                    t-on-click="saveEdit"><i class="fa fa-save"/> Lưu</button>
+                        </footer>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

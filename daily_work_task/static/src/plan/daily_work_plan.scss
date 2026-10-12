@@ -1,0 +1,1016 @@
+.o_daily_work_dashboard.o_daily_work_plan {
+    height: 100%;
+    display: flex;
+    flex-flow: column nowrap;
+    overflow: hidden;
+    background: #f8fafc;
+
+    > .o_dwd_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+    }
+
+    .o_dwd_main_embed {
+        display: flex;
+        flex-flow: column nowrap;
+        padding: 0;
+        overflow: hidden;
+        background: #f8fafc;
+    }
+
+    // Bố cục cột: phần trên (tiêu đề, dashboard…) giữ nguyên chiều cao, bảng lấp phần còn lại
+    // của màn hình → thanh kéo ngang của bảng luôn nằm cố định ở đáy màn hình.
+    .o_dwd_main_embed > .o_dwp_shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: auto;
+        padding: 1rem 1.25rem 0.75rem;
+
+        > * {
+            flex-shrink: 0;
+        }
+
+        > .o_dwp_table_wrap {
+            flex: 1 1 0;
+        }
+    }
+
+    .o_dwp_header {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 0.75rem;
+
+        h1 {
+            margin: 0;
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #0f172a;
+        }
+
+        p {
+            margin: 0.25rem 0 0;
+            color: #64748b;
+            font-size: 0.86rem;
+        }
+    }
+
+    .o_dwp_tools {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .o_dwp_user {
+        min-width: 14rem;
+        padding: 0.3rem 0.5rem;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .o_dwp_month {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-weight: 700;
+        color: #1e293b;
+
+        span {
+            min-width: 7.5rem;
+            text-align: center;
+        }
+    }
+
+    // Trạng thái duyệt Plan tháng
+    .o_dwp_approval {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.75rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        border: 1px solid #fcd34d;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 0.84rem;
+
+        > .fa {
+            font-size: 1.1rem;
+        }
+
+        em {
+            flex-basis: 100%;
+            font-style: normal;
+            color: #b91c1c;
+        }
+
+        .btn {
+            margin-left: auto;
+        }
+
+        &.is-approved {
+            border-color: #86efac;
+            background: #f0fdf4;
+            color: #166534;
+        }
+
+        &.is-rejected {
+            border-color: #fca5a5;
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+    }
+
+    // Dashboard trạng thái (màu giống ô x trên lưới / bảng cá nhân)
+    .o_dwp_kpis {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+        margin: 0.9rem 0 0.6rem;
+    }
+
+    .o_dwp_kpi {
+        --kpi: #2563eb;
+        --kpi-bg: #eff6ff;
+        flex: 1 1 9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.6rem 0.85rem;
+        text-align: left;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-left: 4px solid var(--kpi);
+        border-radius: 10px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+
+        > .fa {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 2.2rem;
+            height: 2.2rem;
+            font-size: 1.1rem;
+            color: var(--kpi);
+            background: var(--kpi-bg);
+            border-radius: 50%;
+        }
+
+        span {
+            display: block;
+            font-size: 0.76rem;
+            color: #475569;
+        }
+
+        b {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: var(--kpi);
+        }
+
+        &.k-done {
+            --kpi: #16a34a;
+            --kpi-bg: #dcfce7;
+        }
+
+        &.k-progress {
+            --kpi: #ea580c;
+            --kpi-bg: #ffedd5;
+        }
+
+        &.k-todo {
+            --kpi: #64748b;
+            --kpi-bg: #e2e8f0;
+        }
+
+        &.k-late {
+            --kpi: #dc2626;
+            --kpi-bg: #fee2e2;
+        }
+
+        &.k-rate {
+            --kpi: #0f766e;
+            --kpi-bg: #ccfbf1;
+        }
+    }
+
+    .o_dwp_kpi_x {
+        margin-left: 0.35rem;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    button.o_dwp_kpi {
+        cursor: pointer;
+
+        &:hover {
+            border-color: var(--kpi);
+        }
+
+        &.is-active {
+            background: var(--kpi-bg);
+            border-color: var(--kpi);
+            box-shadow: 0 0 0 2px var(--kpi-bg);
+        }
+    }
+
+    .o_dwp_legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 0.6rem;
+        font-size: 0.78rem;
+        color: #475569;
+
+        i:not(.fa) {
+            display: inline-block;
+            width: 0.9rem;
+            height: 0.9rem;
+            vertical-align: -2px;
+            border: 1px solid #cbd5e1;
+            border-radius: 2px;
+        }
+    }
+
+    .o_dwp_empty {
+        padding: 2rem;
+        text-align: center;
+        color: #64748b;
+        background: #fff;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+    }
+
+    // Khung cuộn riêng cho bảng → tiêu đề (2 hàng) cố định khi cuộn dọc, cột STT/Nội dung cố định khi cuộn ngang
+    .o_dwp_table_wrap {
+        overflow: auto;
+        // Chiều cao = phần còn lại của màn hình (xem .o_dwp_shell); tối thiểu để vẫn đọc được bảng
+        min-height: 16rem;
+        background: #fff;
+        border: 1px solid #94a3b8;
+        border-radius: 8px;
+    }
+
+    .o_dwp_table {
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.8rem;
+        min-width: 100%;
+
+        // Kẻ viền ô rõ hơn để phân biệt nội dung (dùng chung Plan cá nhân + Plan tổng team)
+        th,
+        td {
+            border-right: 1px solid #94a3b8;
+            border-bottom: 1px solid #94a3b8;
+            padding: 0.3rem 0.4rem;
+            white-space: nowrap;
+        }
+
+        thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #fce4d6;
+            color: #000;
+            font-weight: 800;
+            border-bottom: 2px solid #94a3b8;
+            text-align: center;
+        }
+
+        // Hàng 1 tiêu đề cao cố định để hàng 2 (thứ) dính ngay bên dưới
+        thead tr:first-child th {
+            height: 1.9rem;
+            box-sizing: border-box;
+        }
+
+        thead tr:nth-child(2) th {
+            top: 1.9rem;
+            font-weight: 600;
+            font-size: 0.7rem;
+        }
+
+        .o_dwp_c_code {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            min-width: 3rem;
+            text-align: center;
+            background: #fff;
+        }
+
+        .o_dwp_c_name {
+            position: sticky;
+            left: 3rem;
+            z-index: 1;
+            min-width: 18rem;
+            max-width: 26rem;
+            white-space: normal;
+            background: #fff;
+
+            small {
+                display: block;
+                color: #94a3b8;
+                font-size: 0.7rem;
+            }
+        }
+
+        thead .o_dwp_c_code,
+        thead .o_dwp_c_name {
+            z-index: 3;
+            background: #fce4d6;
+        }
+
+        .o_dwp_c_date {
+            text-align: center;
+            color: #000;
+        }
+
+        td {
+            color: #000;
+        }
+
+        .o_dwp_c_pct {
+            min-width: 5.5rem;
+
+            small {
+                color: #000;
+            }
+        }
+
+        .o_dwp_bar {
+            height: 0.35rem;
+            background: #e2e8f0;
+            border-radius: 1rem;
+            overflow: hidden;
+
+            span {
+                display: block;
+                height: 100%;
+                background: #16a34a;
+            }
+        }
+
+        .o_dwp_daily {
+            margin-left: 0.3rem;
+            color: #2563eb;
+        }
+
+        .o_dwp_day,
+        .o_dwp_wd,
+        .o_dwp_cell {
+            min-width: 1.75rem;
+            width: 1.75rem;
+            padding: 0.25rem 0;
+            text-align: center;
+        }
+
+        // Kẻ khung từng ô ngày 1–31 để phân biệt nội dung
+        .o_dwp_day,
+        .o_dwp_wd,
+        .o_dwp_cell {
+            border-right: 1px solid #94a3b8;
+            border-bottom: 1px solid #94a3b8;
+        }
+
+        // Đường ngăn đậm giữa phần nội dung và lưới ngày (cột ngày 1)
+        th.o_dwp_c_pct,
+        td.o_dwp_c_pct {
+            border-right: 2px solid #475569;
+        }
+
+        thead tr:nth-child(2) .o_dwp_wd:first-child {
+            border-left: 2px solid #475569;
+        }
+
+        .o_dwp_group td {
+            background: #b4c6e7;
+            font-weight: 800;
+            color: #000;
+            cursor: pointer;
+
+            em {
+                margin-left: 0.35rem;
+                font-style: normal;
+                font-weight: 800;
+                color: #000;
+            }
+
+            .fa {
+                margin-right: 0.35rem;
+            }
+        }
+    }
+
+    .o_dwp_add {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.6rem;
+        margin-bottom: 0.7rem;
+        padding: 0.75rem;
+        background: #fff;
+        border: 1px solid #86efac;
+        border-radius: 8px;
+
+        label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            margin: 0;
+            font-size: 0.78rem;
+            color: #475569;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        select {
+            padding: 0.3rem 0.45rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+        }
+
+        .o_dwp_add_name {
+            flex: 1 1 16rem;
+        }
+
+        .o_dwp_add_check {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.35rem;
+            padding-bottom: 0.35rem;
+        }
+
+        .o_dwp_add_actions {
+            display: flex;
+            gap: 0.4rem;
+            margin-left: auto;
+        }
+    }
+
+    // ---- Khung chỉnh sửa công việc ----
+    .o_dwp_modal_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        background: rgba(15, 23, 42, 0.45);
+    }
+
+    .o_dwp_modal {
+        width: 46rem;
+        max-width: 100%;
+        max-height: calc(100vh - 2rem);
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+        overflow: hidden;
+
+        header,
+        footer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        header {
+            justify-content: space-between;
+
+            h3 {
+                margin: 0;
+                font-size: 1.05rem;
+                font-weight: 800;
+                color: #0f172a;
+            }
+
+            small {
+                color: #64748b;
+            }
+        }
+
+        footer {
+            justify-content: flex-end;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 0;
+        }
+    }
+
+    .o_dwp_modal_body {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1rem;
+        overflow: auto;
+    }
+
+    .o_dwp_field {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        flex: 1 1 10rem;
+        margin: 0;
+        font-size: 0.8rem;
+        color: #475569;
+
+        input[type="text"] {
+            padding: 0.4rem 0.55rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+
+            &:disabled {
+                background: #f1f5f9;
+                color: #64748b;
+            }
+        }
+
+        .o_dwp_datebtn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+            padding: 0.4rem 0.55rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            color: #0f172a;
+            cursor: pointer;
+
+            &.is-readonly {
+                background: #f1f5f9;
+                color: #64748b;
+                cursor: default;
+            }
+        }
+    }
+
+    .o_dwp_field {
+        position: relative;
+
+        button.o_dwp_datebtn {
+            width: 100%;
+            background: #fff;
+            font: inherit;
+            text-align: left;
+
+            &:disabled {
+                background: #f1f5f9;
+            }
+        }
+    }
+
+    // ---- Lịch chọn ngày tiếng Việt ----
+    .o_dwp_picker {
+        position: absolute;
+        top: calc(100% + 0.25rem);
+        left: 0;
+        z-index: 10;
+        width: 17rem;
+        padding: 0.5rem;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.2);
+        color: #0f172a;
+
+        button {
+            border: 0;
+            background: transparent;
+            font: inherit;
+            cursor: pointer;
+        }
+    }
+
+    .o_dwp_picker_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 0.35rem;
+
+        b {
+            font-size: 0.9rem;
+        }
+
+        button {
+            width: 1.8rem;
+            height: 1.8rem;
+            border-radius: 50%;
+
+            &:hover {
+                background: #eff6ff;
+            }
+        }
+    }
+
+    .o_dwp_picker_grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.15rem;
+    }
+
+    .o_dwp_picker_wd {
+        padding: 0.15rem 0;
+        text-align: center;
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #475569;
+
+        &.is-sun {
+            color: #a16207;
+        }
+    }
+
+    button.o_dwp_picker_day {
+        height: 2rem;
+        border-radius: 6px;
+        font-size: 0.82rem;
+        text-align: center;
+
+        &:hover {
+            background: #e0f2fe;
+        }
+
+        &.is-out {
+            color: #94a3b8;
+        }
+
+        &.is-sun {
+            background: #fef9c3;
+        }
+
+        &.is-today {
+            box-shadow: inset 0 0 0 2px #2563eb;
+        }
+
+        &.is-selected {
+            background: #2563eb;
+            color: #fff;
+            font-weight: 700;
+        }
+    }
+
+    .o_dwp_picker_foot {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.35rem;
+
+        button {
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            color: #1d4ed8;
+            font-size: 0.8rem;
+
+            &:hover {
+                background: #eff6ff;
+            }
+        }
+    }
+
+    .o_dwp_field_wide {
+        flex-basis: 100%;
+    }
+
+    .o_dwp_modal_note {
+        flex-basis: 100%;
+        margin: 0;
+        font-size: 0.78rem;
+        color: #92400e;
+    }
+
+    .o_dwp_modal_days {
+        flex-basis: 100%;
+    }
+
+    .o_dwp_modal_days_head {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #334155;
+
+        em {
+            font-weight: 400;
+            color: #64748b;
+        }
+    }
+
+    .o_dwp_modal_grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(2.6rem, 1fr));
+        gap: 0.25rem;
+    }
+
+    .o_dwp_mday {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.2rem 0;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        background: #fff;
+        font-size: 0.72rem;
+        line-height: 1.15;
+
+        b {
+            font-size: 0.8rem;
+        }
+
+        small {
+            color: #64748b;
+        }
+
+        span {
+            min-height: 0.9rem;
+            font-weight: 800;
+            color: #166534;
+        }
+
+        &.is-sat {
+            background: #fff;
+        }
+
+        &.is-sun {
+            background: #fff59d;
+        }
+
+        &.is-on {
+            background: #bbf7d0;
+            border-color: #22c55e;
+        }
+
+        &.is-today {
+            box-shadow: inset 0 0 0 2px #2563eb;
+        }
+
+        &:not(:disabled):hover {
+            border-color: #60a5fa;
+        }
+
+        &:disabled {
+            cursor: default;
+        }
+    }
+
+    .o_dwp_dirty {
+        margin-right: auto;
+        font-size: 0.78rem;
+        color: #b45309;
+
+        .fa {
+            font-size: 0.5rem;
+            vertical-align: middle;
+        }
+    }
+
+    .o_dwp_mday.is-on:disabled {
+        background: #86efac;
+        border-color: #22c55e;
+    }
+
+    .o_dwp_table {
+        .o_dwp_c_owner {
+            min-width: 9rem;
+            max-width: 16rem;
+            white-space: normal;
+            color: #000;
+        }
+
+        .o_dwp_c_days {
+            min-width: 4rem;
+            text-align: center;
+            font-weight: 700;
+            color: #000;
+        }
+
+        .o_dwp_name_text.is-locked {
+            color: #000;
+        }
+
+        .o_dwp_lock {
+            margin-left: 0.3rem;
+            font-size: 0.72rem;
+            color: #16a34a;
+        }
+
+        .o_dwp_name_link {
+            color: #000;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+
+            &:hover {
+                text-decoration: underline;
+            }
+        }
+
+        .o_dwp_row_editing td {
+            background: #eff6ff;
+        }
+
+        .o_dwp_name_text.is-editable {
+            cursor: pointer;
+
+            &:hover {
+                color: #1d4ed8;
+                text-decoration: underline dotted;
+            }
+        }
+
+        .o_dwp_edit_icon {
+            margin-left: 0.35rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            cursor: pointer;
+
+            &:hover {
+                color: #1d4ed8;
+            }
+        }
+
+        .o_dwp_edit_actions {
+            display: flex;
+            gap: 0.35rem;
+            margin-top: 0.3rem;
+
+            .btn {
+                padding: 0.1rem 0.55rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        .o_dwp_row_editing .o_dwp_name {
+            border-color: #60a5fa;
+            background: #fff;
+        }
+
+        .o_dwp_datebtn.is-editing {
+            border-color: #60a5fa;
+            background: #fff;
+        }
+
+        .o_dwp_name {
+            width: 100%;
+            padding: 0.1rem 0.25rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background: transparent;
+            color: inherit;
+
+            &:hover,
+            &:focus {
+                border-color: #93c5fd;
+                background: #fff;
+            }
+        }
+
+        .o_dwp_personal {
+            display: inline-block;
+            margin-left: 0.3rem;
+            padding: 0 0.35rem;
+            font-size: 0.68rem;
+            font-style: normal;
+            color: #7c3aed;
+            background: #ede9fe;
+            border-radius: 1rem;
+        }
+
+        .o_dwp_datebtn {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.1rem 0.35rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            cursor: pointer;
+
+            .fa {
+                color: #94a3b8;
+                font-size: 0.75rem;
+            }
+
+            &:hover {
+                border-color: #93c5fd;
+                background: #fff;
+            }
+        }
+
+        // Ô date gốc của trình duyệt chỉ dùng để mở lịch (hiển thị theo locale → dễ nhầm mm/dd)
+        .o_dwp_date_native {
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .o_dwp_date {
+            width: 7.4rem;
+            padding: 0.1rem 0.2rem;
+            font-size: 0.76rem;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            background: transparent;
+
+            &:hover,
+            &:focus {
+                border-color: #93c5fd;
+                background: #fff;
+            }
+        }
+
+        .o_dwp_cell {
+            font-weight: 700;
+            color: #166534;
+        }
+
+        .o_dwp_editable {
+            cursor: pointer;
+
+            &:hover {
+                outline: 2px solid #60a5fa;
+                outline-offset: -2px;
+            }
+        }
+    }
+
+    // Màu ô ngày (dùng chung cho chú thích). Thứ tự: kế hoạch < T7/CN < hoàn thành / chưa làm
+    .is-plan {
+        background: #dcfce7;
+    }
+
+    .is-sat {
+        background: #fff;
+    }
+
+    .is-sun {
+        background: #ffeb3b;
+    }
+
+    thead th.is-sat {
+        background: #fce4d6;
+        color: #000;
+    }
+
+    thead th.is-sun {
+        background: #fdd835;
+        color: #000;
+    }
+
+    // Ô 'x' theo Trạng thái công việc ở bảng cá nhân (đè màu T7 / CN)
+    .st-not_started {
+        background: #e2e8f0;
+        color: #334155;
+    }
+
+    .st-in_progress {
+        background: #fdba74;
+        color: #7c2d12;
+    }
+
+    .st-done {
+        background: #86efac;
+        color: #14532d;
+    }
+
+    .st-overdue {
+        background: #dc2626;
+        color: #fff;
+    }
+
+    .is-done {
+        background: #16a34a;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .is-missed {
+        background: #fdba74;
+    }
+
+    // Ngày hôm nay hiển thị như ngày thường trên bảng (không viền)
+}
+
+// Nhãn việc Plan tổng đã áp xuống (khóa nội dung với cá nhân)
+.o_daily_work_dashboard.o_daily_work_plan .o_dwp_teamtag {
+    background: #e0e7ff !important;
+    color: #3730a3 !important;
+}

@@ -58,6 +58,7 @@ export class DailyWorkAppShell extends Component {
             canAssignAdd: false,
             canAssignList: false,
             canAssignPersonnel: false,
+            canTeamPlan: false,
             canAssignCategory: false,
             canAssignSection: false,
             assignAccess: {},
@@ -95,6 +96,7 @@ export class DailyWorkAppShell extends Component {
                 this.state.canAssignAdd = Boolean(opts.can_assign_add);
                 this.state.canAssignList = Boolean(opts.can_assign_list);
                 this.state.canAssignPersonnel = Boolean(opts.can_assign_personnel);
+                this.state.canTeamPlan = Boolean(opts.can_team_plan);
                 this.state.canAssignCategory = Boolean(opts.can_assign_category);
                 this.state.canAssignSection = Boolean(opts.can_assign_section);
                 this.state.assignAccess = opts.assign_access || {};
@@ -310,6 +312,18 @@ export class DailyWorkAppShell extends Component {
             await this._doNavAction("daily_work_task.action_daily_work_personnel", asPopup);
             return;
         }
+        if (key === "plan") {
+            await this._doNavAction("daily_work_task.action_daily_work_plan", asPopup);
+            return;
+        }
+        if (key === "team_plan") {
+            await this._doNavAction("daily_work_task.action_daily_work_team_plan", asPopup);
+            return;
+        }
+        if (key === "monthly_report") {
+            await this._doNavAction("daily_work_task.action_daily_work_monthly_report", asPopup);
+            return;
+        }
         if (key === "team_assign_add") {
             await this._doNavAction("daily_work_task.action_daily_work_assign_board_edit", asPopup);
             return;
@@ -375,6 +389,10 @@ export class DailyWorkAppShell extends Component {
         }
         if (key === "access") {
             await this._doNavAction("daily_work_task.action_daily_task_access", asPopup);
+            return;
+        }
+        if (key === "team_plan_access") {
+            await this._doNavAction("daily_work_task.action_daily_task_team_plan_access", asPopup);
             return;
         }
         if (key === "assign_access") {

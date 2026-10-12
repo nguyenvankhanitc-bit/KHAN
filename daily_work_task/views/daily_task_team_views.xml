@@ -10,6 +10,8 @@
                          placeholder="Vd: Team An ninh, Team IT..."/>
                 <field name="department_id" string="Phòng ban"
                          options="{'no_create': True}"/>
+                <field name="manager_ids" string="User quản lý team" widget="many2many_tags"
+                         options="{'no_create': True}" optional="show"/>
                 <field name="work_group_count" string="Số hạng mục" optional="show"/>
                 <field name="note" optional="hide"/>
                 <field name="active" optional="hide"/>
@@ -34,6 +36,9 @@
                             <field name="name" string="Tên Team"/>
                             <field name="department_id" string="Phòng ban"
                                      options="{'no_create': True}"/>
+                            <field name="manager_ids" string="User quản lý team"
+                                     widget="many2many_tags" options="{'no_create': True}"
+                                     placeholder="Chọn user quản lý team..."/>
                         </group>
                         <group>
                             <field name="note"/>

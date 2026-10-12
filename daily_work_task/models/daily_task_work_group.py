@@ -3,7 +3,7 @@
 import re
 
 from odoo import api, fields, models
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 _USER_DOMAIN = "[('share', '=', False), ('active', '=', True)]"
 
@@ -13,7 +13,7 @@ class DailyTaskWorkGroup(models.Model):
 
     _name = "daily.task.work.group"
     _description = "Nhóm công việc"
-    _order = "department_id, sequence, id"
+    _order = "department_id, sequence, name, id"
     _rec_names_search = ["name", "task_name"]
 
     sequence = fields.Integer(string="Thứ tự", default=10, index=True)
@@ -35,7 +35,19 @@ class DailyTaskWorkGroup(models.Model):
         required=True,
         index=True,
         ondelete="restrict",
+        default=lambda self: self.env["daily.task.assign"]._department_from_user(),
+        help="Tự lấy theo phòng ban trên hồ sơ nhân viên của user đăng nhập.",
     )
+    dept_locked = fields.Boolean(
+        compute="_compute_dept_locked",
+        help="Phòng ban tự lấy theo user đăng nhập — chỉ Quản lý được đổi.",
+    )
+
+    @api.depends_context("uid")
+    def _compute_dept_locked(self):
+        locked = not self.env["daily.task.assign.access"]._is_manager()
+        for rec in self:
+            rec.dept_locked = locked
     team_id = fields.Many2one(
         "daily.task.team",
         string="Team",
@@ -52,6 +64,17 @@ class DailyTaskWorkGroup(models.Model):
         string="User phụ trách",
         domain=_USER_DOMAIN,
         help="Người phụ trách hạng mục. Tự chọn, không điền sẵn.",
+    )
+    # User quản lý cả Hạng mục (vd: I. Camera của team IT) — lưu giống nhau trên mọi dòng cùng hạng mục
+    category_manager_ids = fields.Many2many(
+        "res.users",
+        "daily_task_work_group_cat_manager_rel",
+        "group_id",
+        "user_id",
+        string="User quản lý hạng mục",
+        domain=_USER_DOMAIN,
+        help="Người quản lý cả hạng mục: được thêm/sửa việc chung, mặc định là Kiểm soát việc mới "
+        "và được duyệt Plan của thành viên có việc trong hạng mục.",
     )
     checker_user_ids = fields.Many2many(
         "res.users",
@@ -144,6 +167,46 @@ class DailyTaskWorkGroup(models.Model):
             "Hạng mục + Tên công việc này đã tồn tại trong phòng ban.",
         )
     ]
+
+    category_head_id = fields.Many2one(
+        "daily.task.work.group",
+        string="Nhóm hạng mục",
+        index=True,
+        readonly=True,
+        ondelete="set null",
+        help="Dòng đại diện của hạng mục (cùng team + cùng tên) — dùng để group danh sách theo hạng mục.",
+    )
+
+    def init(self):
+        super().init()
+        try:
+            self.sudo()._refresh_category_heads()
+        except Exception:  # noqa: BLE001 — chưa đủ cột lúc cài mới
+            pass
+
+    @api.model
+    def _refresh_category_heads(self, team_ids=None):
+        """Gán category_head_id = dòng nhỏ nhất (sequence, id) của mỗi hạng mục trong team."""
+        domain = [("active", "=", True)]
+        if team_ids is not None:
+            team_ids = [t for t in team_ids if t]
+            domain.append(("team_id", "in", team_ids) if team_ids else ("team_id", "=", False))
+        rows = self.sudo().with_context(active_test=False).search(domain, order="sequence, id")
+        heads = {}
+        updates = {}
+        for g in rows:
+            key = (g.team_id.id, g.department_id.id if not g.team_id else 0,
+                   self._norm_category_name(g.name).casefold())
+            head = heads.setdefault(key, g.id)
+            if g.category_head_id.id != head:
+                updates.setdefault(head, []).append(g.id)
+        for head, ids in updates.items():
+            self.env.cr.execute(
+                "UPDATE daily_task_work_group SET category_head_id = %s WHERE id IN %s",
+                (head, tuple(ids)),
+            )
+        if updates:
+            self.invalidate_model(["category_head_id"])
 
     @staticmethod
     def _norm_category_name(name):
@@ -238,6 +301,14 @@ class DailyTaskWorkGroup(models.Model):
         """Dữ liệu bảng hạng mục — group: Phòng ban → Team → Hạng mục → CV con."""
         needle = (search or "").strip().lower()
         assign_users = self._role_users_from_assigns()
+        # Tần suất (Ngày / Tuần / Tháng) = ô đã tích trên Thêm phân công công việc của tên CV này
+        freq_map = {}
+        for line in self.env["daily.task.assign"].sudo().search(
+            [("active", "=", True), ("work_group_id", "!=", False)], order="stt, id"
+        ):
+            key = line._frequency_key()
+            if key:
+                freq_map.setdefault(line.work_group_id.id, key)
         groups = self.search(
             [("active", "=", True)],
             order="department_id, sequence, id",
@@ -280,6 +351,8 @@ class DailyTaskWorkGroup(models.Model):
                     "name": team_name,
                     "title": "Team: %s" % team_name,
                     "sequence": team_seq,
+                    "team_id": team_id or False,
+                    "managers": g.team_id.manager_ids if g.team_id else self.env["res.users"],
                     "categories": {},
                     "cat_order": [],
                 }
@@ -294,6 +367,8 @@ class DailyTaskWorkGroup(models.Model):
                     "name": cat,
                     "sequence": int(g.sequence or 0),
                     "tasks": [],
+                    "group_id": g.id,
+                    "managers": self.env["res.users"],
                 }
                 team["cat_order"].append(ckey)
             else:
@@ -301,6 +376,7 @@ class DailyTaskWorkGroup(models.Model):
                     team["categories"][ckey]["sequence"],
                     int(g.sequence or 0),
                 )
+            team["categories"][ckey]["managers"] |= g.category_manager_ids
 
             linked = assign_users.get(g.id) or {}
             assignees = g.assignee_user_ids | linked.get(
@@ -317,6 +393,7 @@ class DailyTaskWorkGroup(models.Model):
                     "department": dept_name,
                     "team": team_name if team_id else "",
                     "team_id": team_id or False,
+                    "freq": freq_map.get(g.id) or "",
                     "assignees": self._user_tags(assignees),
                     "checkers": self._user_tags(checkers),
                 }
@@ -372,6 +449,9 @@ class DailyTaskWorkGroup(models.Model):
                             "tone": "alt" if global_cat_idx % 3 == 0 else "default",
                             "task_count": len(tasks),
                             "tasks": tasks,
+                            # User quản lý hạng mục
+                            "group_id": cat["group_id"],
+                            "managers": self._user_tags(cat["managers"]),
                         }
                     )
                 teams_out.append(
@@ -379,6 +459,8 @@ class DailyTaskWorkGroup(models.Model):
                         "id": team["id"],
                         "name": team["name"],
                         "title": team["title"],
+                        "team_id": team["team_id"],
+                        "managers": self._user_tags(team["managers"]),
                         "category_count": len(cats_out),
                         "task_count": sum(c["task_count"] for c in cats_out),
                         "categories": cats_out,
@@ -408,17 +490,43 @@ class DailyTaskWorkGroup(models.Model):
                 "create": bool(access.get("create")),
                 "write": bool(access.get("write")),
                 "unlink": bool(access.get("unlink")),
+                # Chọn User quản lý hạng mục: chỉ Quản lý module
+                "set_manager": bool(Access._is_manager()),
             },
         }
 
     @api.model_create_multi
     def create(self, vals_list):
         self.env["daily.task.assign.access"].check("category", "create")
-        return super().create(vals_list)
+        records = super().create(vals_list)
+        self._refresh_category_heads(records.mapped("team_id").ids or None)
+        for rec, vals in zip(records, vals_list):
+            if "category_manager_ids" in vals:
+                continue
+            managers = (rec._category_siblings() - rec).mapped("category_manager_ids")
+            if managers:
+                rec.sudo().with_context(skip_cat_manager_sync=True, skip_link_users=True).write(
+                    {"category_manager_ids": [(6, 0, managers.ids)]}
+                )
+        return records
 
     def write(self, vals):
         self.env["daily.task.assign.access"].check("category", "write")
+        if "category_manager_ids" in vals and not self.env.su \
+                and not self.env["daily.task.assign.access"]._is_manager():
+            raise AccessError("Chỉ Quản lý mới chọn được User quản lý hạng mục.")
+        old_teams = self.mapped("team_id").ids
         res = super().write(vals)
+        if {"name", "team_id", "active", "sequence", "department_id"} & set(vals):
+            self._refresh_category_heads(list(set(old_teams + self.mapped("team_id").ids)) or None)
+        if "category_manager_ids" in vals and not self.env.context.get("skip_cat_manager_sync"):
+            # Quản lý áp dụng cho cả hạng mục (mọi dòng cùng team + cùng tên hạng mục)
+            for rec in self:
+                others = rec._category_siblings() - rec
+                if others:
+                    others.with_context(skip_cat_manager_sync=True, skip_link_users=True).write(
+                        {"category_manager_ids": [(6, 0, rec.category_manager_ids.ids)]}
+                    )
         if self.env.context.get("skip_link_users"):
             return res
         link = {
@@ -453,7 +561,10 @@ class DailyTaskWorkGroup(models.Model):
 
     def unlink(self):
         self.env["daily.task.assign.access"].check("category", "unlink")
-        return super().unlink()
+        teams = self.mapped("team_id").ids
+        res = super().unlink()
+        self._refresh_category_heads(teams or None)
+        return res
 
     @api.model
     def action_import_from_assign_board(self):
@@ -516,6 +627,49 @@ class DailyTaskWorkGroup(models.Model):
         if needle:
             domain.append(("name", "ilike", needle))
         users = self.env["res.users"].search(domain, order="name", limit=40)
+        return self._user_tags(users)
+
+    # ------------------------------------------------------------------
+    # User quản lý hạng mục
+    # ------------------------------------------------------------------
+    def _category_siblings(self):
+        """Mọi dòng đang dùng của cùng hạng mục (cùng team + cùng tên hạng mục, bỏ tiền tố số)."""
+        self.ensure_one()
+        key = self._norm_category_name(self.name).casefold()
+        rows = self.sudo().search([("active", "=", True), ("team_id", "=", self.team_id.id or False)])
+        return rows.filtered(lambda g: self._norm_category_name(g.name).casefold() == key)
+
+    def _category_managers(self):
+        users = self.env["res.users"]
+        for wg in self:
+            users |= wg._category_siblings().mapped("category_manager_ids")
+        return users
+
+    @api.model
+    def _is_category_manager(self, wg, user=None):
+        """User quản lý hạng mục, hoặc User quản lý team chứa hạng mục."""
+        user = user or self.env.user
+        if not wg:
+            return False
+        return user in wg._category_managers() or user in wg.sudo().team_id.manager_ids
+
+    def set_category_managers(self, user_ids):
+        """Chọn User quản lý cho cả hạng mục (ghi lên mọi dòng cùng hạng mục). Chỉ Quản lý module."""
+        self.ensure_one()
+        if not self.env["daily.task.assign.access"]._is_manager():
+            raise AccessError("Chỉ Quản lý mới chọn được User quản lý hạng mục.")
+        ids = []
+        for raw in user_ids or []:
+            try:
+                ids.append(int(raw))
+            except (TypeError, ValueError):
+                continue
+        users = self.env["res.users"].sudo().search(
+            [("id", "in", ids), ("share", "=", False), ("active", "=", True)]
+        )
+        self._category_siblings().with_context(
+            skip_cat_manager_sync=True, skip_link_users=True
+        ).write({"category_manager_ids": [(6, 0, users.ids)]})
         return self._user_tags(users)
 
     def set_role_users(self, role, user_ids):
@@ -645,15 +799,27 @@ class DailyTaskWorkGroup(models.Model):
         )
 
     @api.depends("name", "task_name", "department_id")
-    @api.depends_context("work_group_short_name", "work_group_show_task_name")
+    @api.depends_context("work_group_short_name", "work_group_show_task_name", "work_group_category_label")
     def _compute_display_name(self):
         """
         - work_group_short_name: chỉ cột Hạng mục (Camera, Email…)
         - work_group_show_task_name: chỉ cột Tên công việc
+        - work_group_category_label: nhãn nhóm "Hạng mục: I. CAMERA" (group danh sách)
         - mặc định: Hạng mục (Phòng ban)
         """
         short = bool(self.env.context.get("work_group_short_name"))
         show_task = bool(self.env.context.get("work_group_show_task_name"))
+        if self.env.context.get("work_group_category_label"):
+            for rec in self:
+                heads = self.sudo().search([
+                    ("active", "=", True),
+                    ("team_id", "=", rec.team_id.id or False),
+                ]).mapped("category_head_id")
+                ordered = heads.sorted(lambda h: (h.sequence, (h.name or "").casefold(), h.id))
+                idx = (ordered.ids.index(rec.id) + 1) if rec.id in ordered.ids else 0
+                name = self._norm_category_name(rec.name).upper()
+                rec.display_name = "Hạng mục: %s. %s" % (self._roman(idx), name) if idx else name
+            return
         for rec in self:
             label = (rec.name or "").strip()
             task = (rec.task_name or "").strip()
@@ -727,6 +893,12 @@ class DailyTaskWorkGroup(models.Model):
         ):
             self.team_id = False
 
+    @api.onchange("team_id")
+    def _onchange_team_id(self):
+        """Chọn Team trước → tự điền Phòng ban của Team."""
+        if self.team_id and self.team_id.department_id and not self.department_id:
+            self.department_id = self.team_id.department_id
+
     @api.model
     def get_groups_for_assign(self):
         """Danh sách hạng mục cho màn Giao việc (kèm user_ids = union 3 loại)."""
@@ -740,6 +912,9 @@ class DailyTaskWorkGroup(models.Model):
                 {
                     "id": g.id,
                     "name": g.name or "",
+                    # Ô chọn phân cấp: hạng mục cha → tên công việc con (giống Quản lý công việc)
+                    "category": g.name or "",
+                    "task_name": (g.task_name or g.name or "").strip(),
                     "sequence": int(g.sequence or 0),
                     "department_id": g.department_id.id if g.department_id else False,
                     "department": g.department_id.display_name if g.department_id else "",
@@ -750,7 +925,8 @@ class DailyTaskWorkGroup(models.Model):
                     "total_user_ids": g.total_user_ids.ids,
                 }
             )
-        return result
+        # Thứ tự + số hạng mục (I, II…) / STT (1.1, 1.2…) giống Bảng hạng mục
+        return self._order_like_board(result)
 
     @api.model
     def get_groups_for_user(self, department_id=None, user_id=None, allow_all_for_manager=False):
@@ -828,7 +1004,7 @@ class DailyTaskWorkGroup(models.Model):
                 }
             )
         if result:
-            return result
+            return self._order_like_board(result)
 
         # Fallback: chưa có phân công → hạng mục theo cấu hình user
         domain = [("active", "=", True)]
@@ -853,7 +1029,49 @@ class DailyTaskWorkGroup(models.Model):
                     "department": g.department_id.display_name if g.department_id else "",
                 }
             )
-        return result
+        return self._order_like_board(result)
+
+    @api.model
+    def _order_like_board(self, items):
+        """Sắp xếp + đánh số giống Bảng hạng mục: hạng mục cha (I, II…) → công việc con (1.1, 1.2…)."""
+        order = {}
+        cat_index = 0
+        for dept in self.sudo().get_category_board_data().get("departments") or []:
+            for team in dept.get("teams") or []:
+                for cat in team.get("categories") or []:
+                    cat_index += 1
+                    for t_idx, task in enumerate(cat.get("tasks") or [], start=1):
+                        order[task["id"]] = {
+                            "cat_index": cat_index,
+                            "cat_key": cat["id"],
+                            "cat_code": cat.get("code") or "",
+                            "cat_name": cat.get("name") or "",
+                            "task_index": t_idx,
+                            "stt": task.get("display_stt") or "",
+                        }
+        out = []
+        for item in items:
+            meta = order.get(item["id"])
+            if meta:
+                item.update({
+                    "cat_key": meta["cat_key"],
+                    "cat_code": meta["cat_code"],
+                    "cat_name": meta["cat_name"],
+                    "stt": meta["stt"],
+                    "_sort": (meta["cat_index"], meta["task_index"]),
+                })
+            else:
+                name = self._norm_category_name(item.get("category"))
+                item.update({
+                    "cat_key": "other-%s" % name.casefold(),
+                    "cat_code": "",
+                    "cat_name": name or "Khác",
+                    "stt": "",
+                    "_sort": (10**6, int(item.get("sequence") or 0), item.get("name") or ""),
+                })
+            out.append(item)
+        out.sort(key=lambda x: x.pop("_sort"))
+        return out
 
     @api.model
     def get_groups_for_department(self, department_id):

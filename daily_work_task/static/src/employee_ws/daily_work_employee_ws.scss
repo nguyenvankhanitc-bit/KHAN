@@ -1743,6 +1743,16 @@
         color: #475569 !important;
         border-color: #cbd5e1 !important;
     }
+    // Trễ hạn: chưa hoàn thành và hôm nay > Deadline
+    .o_ews_state_overdue {
+        background: #fee2e2 !important;
+        color: #b91c1c !important;
+        border-color: #f87171 !important;
+        font-weight: 700;
+        padding-right: 1.4rem !important;
+        background-position: right 0.3rem center !important;
+        text-overflow: clip;
+    }
 
     .o_ews_state_badge {
         display: inline-block;
@@ -3546,4 +3556,437 @@ body.o_ews_resizing {
     * {
         cursor: col-resize !important;
     }
+}
+
+// Ngày hoàn thành: tự điền khi đạt 100% / Hoàn thành
+.o_ews_col_done_date {
+    white-space: nowrap;
+    color: #94a3b8;
+
+    &.is-done {
+        color: #15803d;
+        font-weight: 700;
+    }
+}
+
+
+// Tên Công việc hạng mục: hạng mục cha → công việc con, có ô tích
+// (lồng đủ sâu để thắng style chung .o_ews_field label / input của form)
+.o_daily_work_employee_ws.o_action .o_ews_field .o_ews_wgpick {
+    position: relative;
+
+    .o_ews_wgpick_btn {
+        text-align: left;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .o_ews_wgpick_ph {
+        color: #94a3b8;
+    }
+
+    .o_ews_wgpick_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 29;
+        background: transparent;
+    }
+
+    .o_ews_wgpick_panel {
+        position: absolute;
+        top: calc(100% + 4px);
+        left: 0;
+        z-index: 30;
+        width: 34rem;
+        max-width: 92vw;
+        padding: 0.5rem;
+        background: #fff;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
+    }
+
+    .o_ews_wgpick_list {
+        max-height: 22rem;
+        overflow-y: auto;
+        margin-top: 0.4rem;
+    }
+
+    .o_ews_wgpick_cat,
+    .o_ews_wgpick_item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.35rem 0.5rem;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.86rem;
+        font-weight: 400;
+        line-height: 1.3;
+        text-transform: none;
+
+        input[type="checkbox"] {
+            width: 1rem;
+            min-width: 1rem;
+            height: 1rem;
+            flex: 0 0 1rem;
+            margin: 0;
+            padding: 0;
+            position: static;
+        }
+
+        &:hover {
+            background: #f1f5f9;
+        }
+    }
+
+    .o_ews_wgpick_cat {
+        margin-top: 0.3rem;
+        font-weight: 700;
+
+        b {
+            font-weight: 800;
+        }
+        background: #dbe4f3;
+        color: #0f172a;
+
+        em {
+            margin-left: auto;
+            padding-left: 0.5rem;
+            white-space: nowrap;
+            font-weight: 500;
+            font-style: normal;
+            font-size: 0.78rem;
+            color: #475569;
+        }
+    }
+
+    .o_ews_wgpick_item {
+        padding-left: 1.75rem;
+        color: #1e293b;
+    }
+
+    .o_ews_wgpick_stt {
+        flex: 0 0 2.6rem;
+        min-width: 2.6rem;
+        font-weight: 700;
+        color: #475569;
+    }
+
+    .o_ews_wgpick_empty {
+        padding: 0.6rem;
+        color: #64748b;
+        font-style: italic;
+    }
+
+    .o_ews_wgpick_foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 0.4rem;
+        margin-top: 0.4rem;
+    }
+}
+
+
+// ======================================================================
+// Việc của tôi — giao diện "Quản lý công việc" (thanh đầu, thẻ thống kê, bộ lọc,
+// form Thêm/Sửa bật lên). Cột bảng & trường form giữ nguyên.
+// ======================================================================
+.o_daily_work_employee_ws.o_action {
+    .o_ews_qm {
+        margin: 4px 0 14px;
+        padding: 18px 20px;
+        background: #fff;
+        border: 1px solid #e5e9f2;
+        border-radius: 14px;
+        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.05);
+    }
+
+    .o_ews_qm_head {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .o_ews_qm_icon {
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        background: #6d4bd6;
+        color: #fff;
+        font-size: 22px;
+    }
+
+    .o_ews_qm_title {
+        flex: 1 1 auto;
+        min-width: 0;
+
+        h3 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: #1e1b4b;
+        }
+
+        p {
+            margin: 2px 0 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+    }
+
+    .o_ews_qm_create {
+        border: 0;
+        border-radius: 10px;
+        padding: 11px 22px;
+        background: linear-gradient(135deg, #6d4bd6, #4f46e5);
+        color: #fff;
+        font-weight: 700;
+        font-size: 15px;
+        box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+        cursor: pointer;
+
+        &:hover {
+            filter: brightness(1.06);
+        }
+    }
+
+    .o_ews_qm_kpis {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .o_ews_qm_kpi {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border: 1px solid #e5e9f2;
+        border-radius: 12px;
+        background: #fff;
+
+        span {
+            display: block;
+            color: #475569;
+            font-size: 13px;
+        }
+
+        b {
+            display: block;
+            font-size: 24px;
+            font-weight: 800;
+            line-height: 1.15;
+        }
+    }
+
+    .o_ews_qm_kpi_ico {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        color: #fff !important;
+        font-size: 18px !important;
+    }
+
+    .o_ews_qm_kpi.is-total .o_ews_qm_kpi_ico { background: #3b82f6; }
+    .o_ews_qm_kpi.is-total b { color: #312e81; }
+    .o_ews_qm_kpi.is-done .o_ews_qm_kpi_ico { background: #22a55b; }
+    .o_ews_qm_kpi.is-done b { color: #15803d; }
+    .o_ews_qm_kpi.is-progress .o_ews_qm_kpi_ico { background: #f59e0b; }
+    .o_ews_qm_kpi.is-progress b { color: #d97706; }
+    .o_ews_qm_kpi.is-todo .o_ews_qm_kpi_ico { background: #94a3b8; }
+    .o_ews_qm_kpi.is-todo b { color: #334155; }
+    .o_ews_qm_kpi.is-overdue .o_ews_qm_kpi_ico { background: #ef4444; }
+    .o_ews_qm_kpi.is-overdue b { color: #dc2626; }
+
+    .o_ews_qm_filters {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+
+        select {
+            min-width: 150px;
+            height: 40px;
+            padding: 0 30px 0 12px;
+            border: 1px solid #d6dbe6;
+            border-radius: 8px;
+            background-color: #fff;
+            color: #334155;
+        }
+    }
+
+    .o_ews_qm_search {
+        flex: 1 1 280px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 12px;
+        border: 1px solid #d6dbe6;
+        border-radius: 8px;
+        background: #fff;
+        color: #64748b;
+
+        input {
+            flex: 1 1 auto;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            min-width: 0;
+        }
+    }
+
+    .o_ews_qm_reset {
+        width: 40px;
+        height: 40px;
+        border: 1px solid #d6dbe6;
+        border-radius: 8px;
+        background: #fff;
+        color: #475569;
+
+        &:not(:disabled):hover {
+            background: #eef2ff;
+            color: #4338ca;
+        }
+    }
+
+    .o_ews_qm_count {
+        margin-left: 10px;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 13px;
+        font-weight: 600;
+    }
+}
+
+// Desktop: form Thêm/Sửa là khung bật lên (ẩn khi chưa bấm Tạo công việc / Sửa)
+.o_daily_work_employee_ws.o_action:not(.o_ews_phone) .o_ews_layout_qm {
+    display: block;
+
+    > .o_ews_table_panel {
+        width: 100%;
+        max-width: none;
+    }
+
+    > .o_ews_form_panel {
+        display: none;
+    }
+
+    > .o_ews_form_panel.o_ews_form_open {
+        display: block;
+        position: fixed;
+        top: 4vh;
+        left: 0;
+        right: 0;
+        z-index: 1050;
+        width: 1440px;
+        max-width: 97vw;
+        margin: 0 auto !important;
+        max-height: 92vh;
+        overflow: auto;
+        padding: 26px 30px 24px;
+        border-radius: 14px;
+        box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+
+        // Lớn hơn một chút: tiêu đề, nhãn, ô nhập
+        .o_ews_form_title {
+            font-size: 22px;
+            margin-bottom: 16px;
+        }
+
+        .o_ews_form_grid {
+            column-gap: 22px;
+            row-gap: 18px;
+        }
+
+        .o_ews_field label {
+            font-size: 15px;
+        }
+
+        .form-control,
+        .form-select,
+        .o_ews_wgpick_btn {
+            min-height: 48px;
+            font-size: 16px;
+        }
+
+        textarea.form-control {
+            min-height: 120px;
+        }
+    }
+
+    > .o_ews_form_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1049;
+        background: rgba(15, 23, 42, 0.35);
+    }
+
+    .o_ews_form_close {
+        display: inline-flex;
+        margin-left: auto;
+        border: 0;
+        background: transparent;
+        font-size: 18px;
+        color: #64748b;
+        cursor: pointer;
+    }
+
+    .o_ews_form_title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+}
+
+@media (max-width: 1280px) {
+    .o_daily_work_employee_ws.o_action .o_ews_qm_kpis {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+
+// Tab mở trang khác trong Quản lý công việc
+.o_daily_work_employee_ws.o_action .o_ews_tabs {
+    flex-wrap: wrap;
+
+    .o_ews_tab_icon_today { color: #f59e0b; }
+    .o_ews_tab_icon_assign { color: #7c3aed; }
+    .o_ews_tab_icon_viewer { color: #0891b2; }
+    .o_ews_tab_icon_checklist { color: #16a34a; }
+}
+
+.o_daily_work_employee_ws.o_action .o_ews_tabs .o_ews_tab_icon_kanban { color: #db2777; }
+
+// Badge đỏ số việc hôm nay trên tab
+.o_daily_work_employee_ws.o_action .o_ews_tabs .o_ews_tab_badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    margin-left: 6px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    font-style: normal;
+    line-height: 1;
 }

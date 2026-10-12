@@ -1,0 +1,545 @@
+// Báo cáo công việc tháng — giống mẫu Excel (Times New Roman, nhóm vàng, Định biên / Thực hiện xanh)
+.o_daily_work_dashboard.o_daily_work_monthly_report {
+    .o_dmr_shell {
+        padding: 16px 20px 32px;
+    }
+
+    .o_dmr_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+
+        h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 800;
+            color: #1e1b4b;
+        }
+    }
+
+    .o_dmr_tools {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .o_dmr_emp {
+        height: 34px;
+        padding: 0 10px;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        background: #fff;
+    }
+
+    .o_dmr_month {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+    }
+
+    .o_dmr_empty {
+        padding: 40px;
+        text-align: center;
+        color: #64748b;
+    }
+
+    .o_dmr_paper {
+        padding: 18px 20px 26px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-family: "Times New Roman", Times, serif;
+        color: #000;
+    }
+
+    .o_dmr_who {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-bottom: 12px;
+        font-size: 15px;
+    }
+
+    .o_dmr_period {
+        margin: -6px 0 14px;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 700;
+    }
+
+    .o_dmr_title {
+        margin: 4px 0 10px;
+        text-align: center;
+        color: #ff0000;
+        font-family: inherit;
+        font-size: 26px;
+        font-weight: 800;
+    }
+
+    .o_dmr_table_wrap {
+        overflow-x: auto;
+    }
+
+    .o_dmr_table {
+        width: 100%;
+        min-width: 1300px;
+        border-collapse: collapse;
+        font-size: 14px;
+
+        th,
+        td {
+            padding: 6px 6px;
+            border: 1px solid #000;
+            vertical-align: middle;
+        }
+
+        th {
+            text-align: center;
+            font-weight: 700;
+            background: #fff;
+        }
+
+        th.is-green {
+            background: #c6e0b4;
+        }
+
+        .c-name {
+            min-width: 300px;
+        }
+
+        .c-note {
+            min-width: 220px;
+        }
+
+        .c {
+            text-align: center;
+        }
+    }
+
+    .o_dmr_band td {
+        background: #d9e1f2;
+        font-weight: 700;
+    }
+
+    .o_dmr_group td {
+        background: #ffff00;
+        font-weight: 700;
+    }
+
+    .o_dmr_slash {
+        background-image: linear-gradient(to top right, transparent calc(50% - 0.6px), #000 50%, transparent calc(50% + 0.6px)) !important;
+    }
+
+    .o_dmr_none {
+        text-align: center;
+        font-style: italic;
+        color: #64748b;
+    }
+
+    .o_dmr_eval {
+        margin-top: 18px;
+        font-size: 15px;
+    }
+
+    .o_dmr_dots {
+        height: 24px;
+        border-bottom: 1px dotted #000;
+    }
+
+    .o_dmr_date {
+        margin-top: 12px;
+    }
+
+    .o_dmr_sign {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        margin-top: 6px;
+        text-align: center;
+
+        div {
+            display: flex;
+            flex-direction: column;
+            gap: 70px;
+        }
+
+        div:first-child {
+            text-align: left;
+        }
+    }
+}
+
+
+// ===== Dashboard (giống Báo cáo cá nhân) =====
+.o_daily_work_dashboard.o_daily_work_monthly_report {
+    .o_dmr_kpis {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+
+    .o_dmr_kpi {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        padding: 14px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+
+        small {
+            display: block;
+            color: #475569;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        b {
+            display: block;
+            font-size: 22px;
+            font-weight: 800;
+            color: #0f172a;
+            line-height: 1.2;
+        }
+
+        em {
+            display: block;
+            color: #64748b;
+            font-size: 11px;
+            font-style: normal;
+        }
+
+        > div {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .ico {
+            width: 32px;
+            height: 32px;
+            flex: 0 0 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            font-size: 15px;
+
+            &.blue { background: #dbeafe; color: #2563eb; }
+            &.green { background: #dcfce7; color: #16a34a; }
+            &.amber { background: #fef3c7; color: #d97706; }
+            &.red { background: #fee2e2; color: #dc2626; }
+            &.violet { background: #ede9fe; color: #7c3aed; }
+            &.teal { background: #ccfbf1; color: #0d9488; }
+        }
+    }
+
+    .o_dmr_bar {
+        height: 6px;
+        margin-top: 8px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+
+        span {
+            display: block;
+            height: 100%;
+            background: #16a34a;
+        }
+    }
+
+    .o_dmr_charts {
+        display: grid;
+        grid-template-columns: 1fr 1.25fr 1fr;
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+
+    .o_dmr_card {
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+
+        h4 {
+            margin: 0 0 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eef2f0;
+            font-size: 15px;
+            font-weight: 700;
+        }
+    }
+
+    .o_dmr_donut_row,
+    .o_dmr_eval_row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .o_dmr_donut {
+        position: relative;
+        width: 150px;
+        height: 150px;
+        flex: 0 0 150px;
+    }
+
+    .o_dmr_donut_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+
+        b {
+            font-size: 22px;
+            font-weight: 800;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 11px;
+        }
+    }
+
+    .o_dmr_legend {
+        flex: 1 1 auto;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+
+        li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 0;
+        }
+
+        i {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+        }
+
+        span {
+            flex: 1 1 auto;
+        }
+
+        em {
+            color: #64748b;
+            font-style: normal;
+            font-size: 12px;
+        }
+    }
+
+    .o_dmr_line {
+        height: 170px;
+    }
+
+    .o_dmr_eval_info {
+        flex: 1 1 auto;
+        font-size: 13px;
+
+        dl {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 4px 10px;
+            margin: 10px 0 0;
+        }
+
+        dt {
+            font-weight: 400;
+            color: #475569;
+        }
+
+        dd {
+            margin: 0;
+            font-weight: 700;
+            text-align: right;
+
+            &.red {
+                color: #dc2626;
+            }
+        }
+    }
+
+    .o_dmr_stars {
+        color: #f59e0b;
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+}
+
+@media (max-width: 1400px) {
+    .o_daily_work_dashboard.o_daily_work_monthly_report {
+        .o_dmr_kpis {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+
+        .o_dmr_charts {
+            grid-template-columns: 1fr;
+        }
+    }
+}
+
+// Tiêu đề bảng: in hoa, canh giữa 2 chiều, đủ rộng để không cắt chữ
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_table {
+    thead th {
+        height: auto;
+        padding: 8px 6px;
+        text-align: center;
+        vertical-align: middle;
+        text-transform: uppercase;
+        white-space: normal;
+        word-break: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.3;
+        font-size: 13px;
+    }
+
+    thead th.c-stt { width: 46px; min-width: 46px; }
+    thead th.c-dl { min-width: 100px; }
+    thead th.c-num { min-width: 92px; }
+    thead th.c-tg { min-width: 120px; }
+    thead th.c-desc { min-width: 110px; }
+}
+
+
+// ===== Đầu trang giống Báo cáo cá nhân =====
+.o_daily_work_dashboard.o_daily_work_monthly_report {
+    .o_dmr_head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 6px;
+    }
+
+    .o_dmr_profile {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        b {
+            display: block;
+            font-size: 15px;
+            color: #0f172a;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 12px;
+        }
+    }
+
+    .o_dmr_avatar {
+        width: 46px;
+        height: 46px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: #16a34a;
+        color: #fff;
+        font-size: 22px;
+        font-weight: 700;
+    }
+
+    .o_dmr_tools {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .o_dmr_ctrl {
+        height: 32px;
+        min-width: 90px;
+        padding: 0 10px;
+        border: 1px solid #d6dbe6;
+        border-radius: 4px;
+        background: #fff;
+        font-size: 13px;
+    }
+
+    .o_dmr_emp {
+        min-width: 160px;
+    }
+
+    .o_dmr_year {
+        width: 90px;
+    }
+
+    .o_dmr_btn {
+        height: 32px;
+        font-weight: 600;
+    }
+
+    .o_dmr_pagetitle {
+        margin: 6px 0 14px;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        letter-spacing: 0.01em;
+
+        span {
+            margin-left: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #16a34a;
+        }
+    }
+}
+
+// Thanh công cụ đầu trang: các ô chọn nằm trên 1 hàng (không giãn full width)
+.o_daily_work_dashboard.o_daily_work_monthly_report .o_dmr_head {
+    margin-bottom: 14px;
+
+    .o_dmr_tools {
+        flex-wrap: nowrap;
+    }
+
+    .o_dmr_ctrl {
+        display: inline-block;
+        width: auto !important;
+        flex: 0 0 auto;
+    }
+
+    .o_dmr_emp {
+        width: 180px !important;
+    }
+
+    .o_dmr_year {
+        width: 80px !important;
+    }
+}
+
+// Tiêu đề trang ngay dưới thông tin nhân viên (như Báo cáo cá nhân)
+.o_daily_work_dashboard.o_daily_work_monthly_report {
+    .o_dmr_head {
+        margin-bottom: 4px;
+    }
+
+    .o_dmr_pagetitle {
+        margin: 4px 0 12px;
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+        text-transform: uppercase;
+
+        span {
+            margin-left: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #16a34a;
+            text-transform: none;
+        }
+    }
+}

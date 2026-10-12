@@ -38,6 +38,75 @@ export class DailyWorkCategoryBoard extends Component {
         return Boolean(this.state.access?.write);
     }
 
+    get canSetManager() {
+        return Boolean(this.state.access?.set_manager);
+    }
+
+    /** Chọn User quản lý cho cả hạng mục (dùng chung bộ chọn user). */
+    async openCatEditor(cat) {
+        if (!this.canSetManager) {
+            this.notification.add(_t("Chỉ Quản lý mới chọn được User quản lý hạng mục."), { type: "warning" });
+            return;
+        }
+        if (this.editorOpen(cat.id, "manager")) {
+            return;
+        }
+        const people = cat.managers || [];
+        this.state.editor = {
+            taskId: cat.id,
+            groupId: cat.group_id,
+            role: "manager",
+            query: "",
+            options: [],
+            selectedIds: people.map((u) => u.id),
+            selectedUsers: people.map((u) => ({ id: u.id, name: u.name })),
+        };
+        await this.searchRoleUsers("");
+    }
+
+    /** Chọn User quản lý team (dùng chung bộ chọn user). */
+    async openTeamEditor(team) {
+        if (!this.canSetManager) {
+            this.notification.add(_t("Chỉ Quản lý mới chọn được User quản lý team."), { type: "warning" });
+            return;
+        }
+        if (this.editorOpen(team.id, "team_manager")) {
+            return;
+        }
+        const people = team.managers || [];
+        this.state.editor = {
+            taskId: team.id,
+            teamId: team.team_id,
+            role: "team_manager",
+            query: "",
+            options: [],
+            selectedIds: people.map((u) => u.id),
+            selectedUsers: people.map((u) => ({ id: u.id, name: u.name })),
+        };
+        await this.searchRoleUsers("");
+    }
+
+    _patchTeamManagers(teamNodeId, users) {
+        this.state.departments = (this.state.departments || []).map((dept) => ({
+            ...dept,
+            teams: (dept.teams || []).map((team) =>
+                team.id === teamNodeId ? { ...team, managers: users } : team
+            ),
+        }));
+    }
+
+    _patchCatManagers(catId, users) {
+        this.state.departments = (this.state.departments || []).map((dept) => ({
+            ...dept,
+            teams: (dept.teams || []).map((team) => ({
+                ...team,
+                categories: (team.categories || []).map((cat) =>
+                    cat.id === catId ? { ...cat, managers: users } : cat
+                ),
+            })),
+        }));
+    }
+
     get shellActiveNav() {
         return "work_group";
     }
@@ -338,6 +407,40 @@ export class DailyWorkCategoryBoard extends Component {
         }
         editor.selectedIds = selectedIds;
         editor.selectedUsers = selectedUsers;
+        if (editor.role === "team_manager") {
+            try {
+                const saved = await this.orm.call("daily.task.team", "set_team_managers", [
+                    [editor.teamId],
+                    selectedIds,
+                ]);
+                this._patchTeamManagers(editor.taskId, saved || selectedUsers);
+            } catch (e) {
+                if (ev?.target) {
+                    ev.target.checked = !checked;
+                }
+                this.notification.add(e?.data?.message || _t("Không lưu được User quản lý team."), {
+                    type: "danger",
+                });
+            }
+            return;
+        }
+        if (editor.role === "manager") {
+            try {
+                const saved = await this.orm.call("daily.task.work.group", "set_category_managers", [
+                    [editor.groupId],
+                    selectedIds,
+                ]);
+                this._patchCatManagers(editor.taskId, saved || selectedUsers);
+            } catch (e) {
+                if (ev?.target) {
+                    ev.target.checked = !checked;
+                }
+                this.notification.add(e?.data?.message || _t("Không lưu được User quản lý."), {
+                    type: "danger",
+                });
+            }
+            return;
+        }
         try {
             const saved = await this.orm.call(
                 "daily.task.work.group",

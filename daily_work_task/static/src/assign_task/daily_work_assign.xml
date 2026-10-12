@@ -243,18 +243,26 @@
                                            t-model="state.form.name" required="required"/>
                                 </div>
                                 <div class="o_dwa_field">
-                                    <label>Hạn hoàn thành <span class="text-danger">*</span></label>
+                                    <label>Deadline <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control"
                                            t-model="state.form.deadline" required="required"/>
                                 </div>
                                 <div class="o_dwa_field">
-                                    <label>Người được giao <span class="text-danger">*</span></label>
+                                    <label>Người phụ trách <span class="text-danger">*</span>
+                                        <small t-if="!state.editingTaskId" class="text-muted"> (chọn được nhiều người)</small></label>
+                                    <!-- Giao 1 việc cho nhiều người: mỗi người 1 thẻ -->
+                                    <div t-if="!state.editingTaskId and pickedEmployees.length" class="o_dwa_picked">
+                                        <span t-foreach="pickedEmployees" t-as="pe" t-key="pe.id" class="o_dwa_picked_tag">
+                                            <span t-esc="pe.name"/>
+                                            <button type="button" title="Bỏ người này" t-on-click="() => this.removePicked(pe.id)">×</button>
+                                        </span>
+                                    </div>
                                     <div class="o_dwa_autocomplete" t-ref="assigneeBox">
                                         <div class="o_dwa_autocomplete_input_wrap">
                                             <i class="fa fa-search o_dwa_autocomplete_icon"/>
                                             <input type="text"
                                                    class="form-control o_dwa_autocomplete_input"
-                                                   placeholder="Gõ tên nhân viên để tìm..."
+                                                   t-att-placeholder="state.editingTaskId ? 'Gõ tên nhân viên để tìm...' : (pickedEmployees.length ? 'Thêm người khác...' : 'Gõ tên nhân viên để tìm...')"
                                                    autocomplete="off"
                                                    t-model="state.assigneeQuery"
                                                    t-on-focus="onAssigneeFocus"
@@ -268,7 +276,7 @@
                                                 <i class="fa fa-times"/>
                                             </button>
                                         </div>
-                                        <t t-if="state.form.assignee_id and selectedAssignee">
+                                        <t t-if="state.editingTaskId and state.form.assignee_id and selectedAssignee">
                                             <div class="o_dwa_assignee_selected">
                                                 <i class="fa fa-check-circle"/>
                                                 Đã chọn: <strong t-esc="selectedAssignee.name"/>
@@ -302,7 +310,10 @@
                                             </ul>
                                         </t>
                                     </div>
-                                    <small class="text-muted">Gõ tên (không phân biệt dấu) — chọn từ danh sách gợi ý.</small>
+                                    <small class="text-muted">
+                                        <t t-if="state.editingTaskId">Gõ tên (không phân biệt dấu) — chọn từ danh sách gợi ý.</t>
+                                        <t t-else="">Chọn 1 hoặc nhiều người — mỗi người nhận 1 công việc riêng như giao bình thường.</t>
+                                    </small>
                                 </div>
                                 <div class="o_dwa_field">
                                     <label>Bộ phận</label>
@@ -314,13 +325,40 @@
                                 </div>
                                 <div class="o_dwa_field">
                                     <label>Hạng mục</label>
-                                    <select class="form-select" t-model="state.form.work_group_id"
-                                            t-att-disabled="!filteredWorkGroups.length">
-                                        <option value="">-- Chọn hạng mục --</option>
-                                        <t t-foreach="filteredWorkGroups" t-as="g" t-key="g.id">
-                                            <option t-att-value="g.id" t-esc="g.name"/>
-                                        </t>
-                                    </select>
+                                    <!-- Hạng mục cha (I, II…) → công việc con (1.1, 1.2…), tích ô để chọn — giống Quản lý công việc -->
+                                    <div class="o_dwa_wgpick">
+                                        <button type="button" class="form-select o_dwa_wgpick_btn"
+                                                t-att-disabled="!filteredWorkGroups.length" t-on-click="toggleWgPicker">
+                                            <span t-if="wgLabel" t-esc="wgLabel"/>
+                                            <span t-else="" class="o_dwa_wgpick_ph">-- Chọn hạng mục --</span>
+                                        </button>
+                                        <div t-if="state.wgPicker.open" class="o_dwa_wgpick_backdrop" t-on-click="closeWgPicker"/>
+                                        <div t-if="state.wgPicker.open" class="o_dwa_wgpick_panel">
+                                            <input type="search" class="form-control form-control-sm" placeholder="Tìm hạng mục / công việc..."
+                                                   t-att-value="state.wgPicker.query" t-on-input="onWgQuery"/>
+                                            <div class="o_dwa_wgpick_list">
+                                                <t t-foreach="wgTree" t-as="cat" t-key="cat.key">
+                                                    <label class="o_dwa_wgpick_cat">
+                                                        <input type="checkbox" t-att-checked="isWgCat(cat)" t-on-change="() => this.toggleWgCat(cat)"/>
+                                                        <b><t t-if="cat.code" t-esc="cat.code + '. '"/><t t-esc="cat.name.toUpperCase()"/></b>
+                                                        <em t-esc="'(' + cat.items.length + ' CV)'"/>
+                                                    </label>
+                                                    <t t-foreach="cat.items" t-as="g" t-key="g.id">
+                                                        <label class="o_dwa_wgpick_item">
+                                                            <input type="checkbox" t-att-checked="isWgItem(g)" t-on-change="() => this.toggleWgItem(g)"/>
+                                                            <span class="o_dwa_wgpick_stt" t-esc="g.stt"/>
+                                                            <span t-esc="g.task_name || g.name"/>
+                                                        </label>
+                                                    </t>
+                                                </t>
+                                                <div t-if="!wgTree.length" class="o_dwa_wgpick_empty">Không có hạng mục phù hợp</div>
+                                            </div>
+                                            <div class="o_dwa_wgpick_foot">
+                                                <button type="button" class="btn btn-sm btn-light" t-on-click="clearWg">Bỏ chọn</button>
+                                                <button type="button" class="btn btn-sm btn-primary" t-on-click="closeWgPicker">Xong</button>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <small class="text-muted">
                                         <t t-if="!selectedAssignee">
                                             Chọn nhân viên trước — hạng mục theo User chi tiết / Kiểm chi tiết / tổng của người nhận.
@@ -462,13 +500,14 @@
                                                 <tbody>
                                                     <t t-foreach="group.tasks" t-as="task" t-key="task.id">
                                                         <tr t-att-class="state.editingTaskId === task.id ? 'o_dwa_row_editing' : ''">
-                                                            <td>
+                                                            <td t-att-class="isTaskOverdue(task) ? 'o_dwa_name_overdue' : ''"
+                                                                t-att-title="isTaskOverdue(task) ? 'Quá hạn' : ''">
                                                                 <button type="button" class="o_dwa_task_link"
                                                                         t-on-click="() => this.openTaskDetail(task)"
                                                                         t-esc="task.name"/>
                                                             </td>
                                                             <td t-esc="task.work_group_label || '—'"/>
-                                                            <td t-esc="task.deadline_display"/>
+                                                            <td t-att-class="isDeadlineToday(task) ? 'o_dwa_deadline_today' : ''" t-esc="task.deadline_display"/>
                                                             <td>
                                                                 <span t-att-class="'o_dwa_badge ' + priorityClass(task.priority)"
                                                                       t-esc="task.priority_label"/>

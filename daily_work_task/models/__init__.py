@@ -4,6 +4,10 @@ from . import daily_task_employee
 from . import daily_task_team
 from . import daily_task_work_group
 from . import daily_task_assign
+from . import daily_task_plan_day
+from . import daily_task_plan_approval
+from . import daily_task_team_plan_access
+from . import daily_task_monthly_report
 from . import daily_task_recurring
 from . import daily_task_checklist
 from . import daily_task

@@ -445,3 +445,86 @@
         }
     }
 }
+
+
+// Cột Tần suất (Ngày / Tuần / Tháng) — đứng trước Miền Nam
+.o_dab_col_freq {
+    width: 90px;
+    min-width: 90px;
+    text-align: center;
+}
+
+.o_dab_freq {
+    display: inline-block;
+    padding: 2px 12px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+
+// Tần suất: 3 cột con Ngày / Tuần / Tháng, đánh X
+.o_dab_table {
+    .o_dab_col_freq_head {
+        text-align: center;
+    }
+
+    th.o_dab_col_freq,
+    td.o_dab_col_freq {
+        width: 56px;
+        min-width: 56px;
+        text-align: center;
+    }
+
+    td.o_dab_col_freq.is-on {
+        font-weight: 800;
+        color: #3730a3;
+        background: #eef2ff;
+    }
+}
+
+// ===== Màu bảng: tiêu đề nền sáng + chữ đen in đậm, nội dung ô chữ đen =====
+.o_daily_work_dashboard.o_daily_work_assign_board .o_dab_table {
+    thead th,
+    thead th.o_dab_col_stt,
+    thead th.o_dab_col_name {
+        background: #e2e8f0;
+        color: #000;
+        font-weight: 800;
+        border: 1px solid #94a3b8;
+        box-shadow: none;
+    }
+
+    // Dòng tiêu đề thứ 2 (Ngày / Tuần / Tháng) dính ngay dưới dòng 1 khi cuộn
+    thead tr:nth-child(2) th {
+        top: 2.6rem;
+    }
+
+    tbody td,
+    .o_dab_col_stt,
+    .o_dab_note {
+        color: #000;
+    }
+
+    .o_dab_task_name {
+        color: #000;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .o_dab_task_link:hover .o_dab_task_name,
+    .o_dab_task_link:focus-visible .o_dab_task_name {
+        color: #000;
+        text-decoration: underline;
+    }
+
+    .o_dab_pill {
+        color: #000 !important;
+    }
+
+    td.o_dab_col_freq.is-on {
+        color: #000;
+    }
+}

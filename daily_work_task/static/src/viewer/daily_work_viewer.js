@@ -5,6 +5,7 @@ import { useService } from "@web/core/utils/hooks";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
 function normalizeText(text) {
     return String(text || "")
@@ -27,6 +28,12 @@ const EMPTY_KPI = {
 export class DailyWorkViewer extends Component {
     static template = "daily_work_task.DailyWorkViewer";
     static props = { ...standardActionServiceProps };
+    // Thanh menu bên trái dùng chung (giống các trang Công việc khác)
+    static components = { DailyWorkAppShell };
+
+    get shellActiveNav() {
+        return "viewer";
+    }
 
     setup() {
         this.orm = useService("orm");

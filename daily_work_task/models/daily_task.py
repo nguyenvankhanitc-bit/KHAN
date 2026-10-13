@@ -89,6 +89,9 @@ class DailyTask(models.Model):
         copy=False,
         help="Ngày bấm hoàn thành công việc. Dùng để tính cột Quá hạn.",
     )
+    notify_done_pending = fields.Boolean(
+        string="Chờ gửi thông báo hoàn thành", default=False, copy=False, index=True,
+    )
     manager_confirmed = fields.Boolean(
         string="Xác nhận QL",
         default=False,
@@ -593,6 +596,9 @@ class DailyTask(models.Model):
                 vals["state"] = self._state_from_percent(pct)
         if vals.get("state") == "done" and "completion_percent" not in vals:
             vals["completion_percent"] = 100
+        # Việc bị QL trả lại: nhân viên làm xong lại (Hoàn thành) → bỏ nền cam
+        if vals.get("state") == "done" and "manager_returned" not in vals:
+            vals["manager_returned"] = False
         becoming_done = self.browse()
         if "state" in vals:
             new_state = vals.get("state")
@@ -607,9 +613,14 @@ class DailyTask(models.Model):
                 # Mở lại việc đã HT → xóa mốc ngày hoàn thành
                 if self.filtered(lambda t: t.state == "done"):
                     vals["date_done"] = False
+            if new_state != "done" and "manager_confirmed" not in vals and self.filtered("manager_confirmed"):
+                # Việc mở lại (không còn Hoàn thành) → quay về danh sách chưa kiểm tra
+                vals.update({"manager_confirmed": False, "manager_confirmed_uid": False,
+                             "manager_confirmed_date": False, "manager_eval_percent": 0})
         res = super().write(vals)
         if becoming_done:
-            becoming_done._notify_assigner_done()
+            # Gửi thông báo / email cho người giao CHẠY NỀN (cron) — tránh chờ 2–5 giây khi bấm Hoàn thành
+            becoming_done._queue_notify_assigner_done()
         if set(vals) & {"assign_date", "deadline", "assign_line_id", "recurring_id", "assignee_id"}:
             self.env["daily.task.plan.day"].sync_tasks(self)
         if not self.env.context.get("from_daily_task_assign"):
@@ -902,6 +913,33 @@ class DailyTask(models.Model):
                     "daily_work_task: thông báo giao việc thất bại task_id=%s",
                     task.id,
                 )
+
+    def _queue_notify_assigner_done(self):
+        if not self.ids:
+            return
+        self.env.cr.execute(
+            "UPDATE daily_task SET notify_done_pending = TRUE WHERE id IN %s", (tuple(self.ids),)
+        )
+        self.invalidate_recordset(["notify_done_pending"])
+        cron = self.env.ref("daily_work_task.ir_cron_daily_work_notify_done", raise_if_not_found=False)
+        if cron:
+            cron.sudo()._trigger()
+        else:
+            self._notify_assigner_done()
+
+    @api.model
+    def cron_notify_assigner_done(self):
+        """Cron: gửi thông báo «Công việc đã hoàn thành» cho người giao (việc đang chờ gửi)."""
+        tasks = self.sudo().search([("notify_done_pending", "=", True)], limit=200)
+        if not tasks:
+            return
+        self.env.cr.execute(
+            "UPDATE daily_task SET notify_done_pending = FALSE WHERE id IN %s", (tuple(tasks.ids),)
+        )
+        tasks.invalidate_recordset(["notify_done_pending"])
+        tasks.filtered(lambda t: t.state == "done")._notify_assigner_done()
+        if len(tasks) == 200:
+            self.env.ref("daily_work_task.ir_cron_daily_work_notify_done")._trigger()
 
     def _notify_assigner_done(self):
         """Thông báo Discuss/Inbox cho người giao khi việc được hoàn thành."""
@@ -1251,6 +1289,7 @@ class DailyTask(models.Model):
             "state": self.state or "",
             "state_label": dict(self._fields["state"].selection).get(self.state, "") or "",
             "note": self.note or "",
+            "manager_returned": bool(self.manager_returned),
             # Cột Quá hạn: đã HT → so ngày bấm HT với hạn; chưa HT → so hôm nay
             "is_overdue": overdue_days > 0,
             "is_active_overdue": active_overdue,
@@ -2142,9 +2181,13 @@ class DailyTask(models.Model):
             use_sudo = True
         else:
             emp = self._my_hr_employee()
-        return self._build_monthly_summary_for_employee(
+        data = self._build_monthly_summary_for_employee(
             emp, year=year, month=month, use_sudo=use_sudo
         )
+        rows = (data or {}).get("rows") or []
+        if rows:
+            self._enrich_assign_discussion(rows)
+        return data
 
     @api.model
     def export_employee_monthly_excel(self, year=None, month=None):
@@ -2847,6 +2890,9 @@ class DailyTask(models.Model):
             return True
         if self._is_manager():
             return True
+        # Người được phân quyền Kiểm tra CV nhân viên này cũng thảo luận được
+        if self._can_manager_confirm():
+            return True
         return False
 
     def _discussion_partner_ids(self):
@@ -2993,14 +3039,22 @@ class DailyTask(models.Model):
         if partners:
             task.message_subscribe(partner_ids=partners.ids)
         notify_partners = partners - self.env.user.partner_id
-        msg = task.with_user(self.env.user).sudo().message_post(
+        # Chat nội bộ: KHÔNG gửi email — chỉ lưu tin + thông báo Inbox + đẩy realtime (bus) cho bên kia
+        msg = task.with_user(self.env.user).sudo().with_context(
+            mail_notify_force_send=False,
+            mail_post_autofollow=False,
+        ).message_post(
             body=html_body,
             message_type="comment",
             subtype_xmlid="mail.mt_comment",
-            partner_ids=notify_partners.ids,
+            partner_ids=[],
             author_id=self.env.user.partner_id.id,
+            notify_skip_followers=True,
         )
         task._force_inbox_notifications(msg, notify_partners)
+        payload = {"task_id": task.id, "author": self.env.user.name or ""}
+        for partner in notify_partners | self.env.user.partner_id:
+            partner._bus_send("daily_task/discussion", payload)
         return self.get_task_discussion(task.id)
 
     @api.model
@@ -4014,8 +4068,9 @@ class DailyTask(models.Model):
             if r.get("is_active_overdue")
             or (r.get("state") != "done" and (r.get("overdue_days") or 0) > 0)
         )
-        minutes = sum(int(r.get("duration_minutes") or 0) for r in rows)
-        hours = round(minutes / 60.0, 2) if minutes else 0.0
+        # TỔNG THỜI GIAN = phút của các việc ĐÃ HOÀN THÀNH — khớp cột THỰC HIỆN của Báo cáo công việc tháng
+        minutes = sum(int(r.get("duration_minutes") or 0) for r in rows if r.get("state") == "done")
+        hours = round(minutes / 60.0, 1) if minutes else 0.0
         avg_progress = (
             round(
                 sum(int(r.get("completion_percent") or 0) for r in rows) / float(len(rows)),
@@ -4024,7 +4079,14 @@ class DailyTask(models.Model):
             if rows
             else 0.0
         )
-        efficiency = round((done / float(total)) * 100.0, 1) if total else 0.0
+        # HIỆU SUẤT = kết quả sau cùng do Quản lý đánh giá (% Hoàn thành trên Kiểm tra CV),
+        # trung bình trên mọi việc trong tháng (việc chưa được đánh giá tính 0%)
+        eval_tasks = self.sudo().browse([r["id"] for r in rows if r.get("id")])
+        efficiency = (
+            round(sum(int(t.manager_eval_percent or 0) for t in eval_tasks) / float(len(eval_tasks)), 1)
+            if eval_tasks
+            else 0.0
+        )
 
         # Thời gian theo hạng mục (biểu đồ ngang)
         time_map = defaultdict(int)
@@ -4359,12 +4421,13 @@ class DailyTask(models.Model):
         else:
             greet = "Chào buổi tối"
 
+        # Xếp loại theo kết quả Quản lý đánh giá
         rating = "Trung bình"
-        if efficiency >= 85 or avg_progress >= 85:
+        if efficiency >= 85:
             rating = "Tốt"
-        elif efficiency >= 70 or avg_progress >= 70:
+        elif efficiency >= 70:
             rating = "Khá"
-        elif efficiency < 50 and avg_progress < 50:
+        elif efficiency < 50:
             rating = "Cần cải thiện"
         stars = min(5.0, round((efficiency / 20.0) * 2) / 2.0) if efficiency else 0.0
 

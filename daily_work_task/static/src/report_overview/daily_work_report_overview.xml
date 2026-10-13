@@ -495,7 +495,7 @@
                                     <div>
                                         <div class="o_dro_kpi_label">Hiệu suất</div>
                                         <div class="o_dro_kpi_value" t-esc="(state.kpi.efficiency || 0) + '%'"/>
-                                        <div class="o_dro_kpi_sub">Hiệu suất chung</div>
+                                        <div class="o_dro_kpi_sub">Theo QL đánh giá</div>
                                     </div>
                                 </div>
                                 <div class="o_dro_kpi_card o_dro_kpi_progress_card">

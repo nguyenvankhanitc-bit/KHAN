@@ -30,6 +30,17 @@ export class DailyWorkMonthlyReport extends Component {
         this.stateChartRef = useRef("stateChart");
         this.weeklyChartRef = useRef("weeklyChart");
         this.evalChartRef = useRef("evalChart");
+        // Khung bảng cao đúng bằng vùng nội dung → thanh cuộn ngang nằm sát đáy màn hình
+        this.tableWrapRef = useRef("tableWrap");
+        this._fitTableWrap = () => this.fitTableWrap();
+        useEffect(
+            () => {
+                this.fitTableWrap();
+                window.addEventListener("resize", this._fitTableWrap);
+                return () => window.removeEventListener("resize", this._fitTableWrap);
+            },
+            () => [this.state.loading, this.state.data]
+        );
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -44,6 +55,29 @@ export class DailyWorkMonthlyReport extends Component {
             },
             () => [this.state.loading, this.state.data]
         );
+    }
+
+    /** Chiều cao khung bảng = phần nhìn thấy của vùng cuộn trang (dưới thanh menu tới đáy cửa sổ). */
+    fitTableWrap() {
+        const wrap = this.tableWrapRef.el;
+        if (!wrap) {
+            return;
+        }
+        let scroller = wrap.parentElement;
+        while (scroller && scroller !== document.body) {
+            const oy = getComputedStyle(scroller).overflowY;
+            if ((oy === "auto" || oy === "scroll") && scroller.clientHeight < scroller.scrollHeight + 1) {
+                break;
+            }
+            scroller = scroller.parentElement;
+        }
+        const top = scroller && scroller !== document.body ? scroller.getBoundingClientRect().top : 0;
+        const bottom = Math.min(
+            window.innerHeight,
+            scroller && scroller !== document.body ? scroller.getBoundingClientRect().bottom : window.innerHeight
+        );
+        const h = Math.max(320, Math.floor(bottom - Math.max(0, top) - 4));
+        wrap.style.maxHeight = h + "px";
     }
 
     get kpi() {

@@ -52,7 +52,7 @@
                             <div class="o_dmr_kpi"><span class="ico violet"><i class="fa fa-hourglass"/></span>
                                 <div><small>TỔNG THỜI GIAN</small><b t-esc="(kpi.duration_hours || 0) + ' giờ'"/><em>Trong tháng</em></div></div>
                             <div class="o_dmr_kpi"><span class="ico teal"><i class="fa fa-line-chart"/></span>
-                                <div><small>HIỆU SUẤT</small><b t-esc="Math.round(kpi.efficiency || 0) + '%'"/><em>Hiệu suất chung</em></div></div>
+                                <div><small>HIỆU SUẤT</small><b t-esc="(kpi.efficiency || 0) + '%'"/><em>Theo QL đánh giá</em></div></div>
                             <div class="o_dmr_kpi is-progress">
                                 <div><small>TIẾN ĐỘ HOÀN THÀNH</small><b t-esc="(kpi.avg_progress || 0) + '%'"/>
                                     <div class="o_dmr_bar"><span t-att-style="'width:' + Math.min(100, kpi.avg_progress || 0) + '%'"/></div></div></div>
@@ -79,7 +79,7 @@
                                 <h4>Đánh giá hiệu suất tháng</h4>
                                 <div class="o_dmr_eval_row">
                                     <div class="o_dmr_donut"><canvas t-ref="evalChart"/>
-                                        <div class="o_dmr_donut_center"><b t-esc="Math.round(evaluation.score || 0) + '%'"/></div></div>
+                                        <div class="o_dmr_donut_center"><b t-esc="(evaluation.score || 0) + '%'"/></div></div>
                                     <div class="o_dmr_eval_info">
                                         <div class="o_dmr_stars"><i t-foreach="stars" t-as="s" t-key="s_index" t-att-class="s"/></div>
                                         <div>Đánh giá: <b t-esc="evaluation.rating || '—'"/></div>
@@ -95,7 +95,7 @@
                         </div>
                         <div class="o_dmr_paper">
 
-                            <div class="o_dmr_table_wrap">
+                            <div class="o_dmr_table_wrap" t-ref="tableWrap">
                                 <table class="o_dmr_table">
                                     <thead>
                                         <tr>
@@ -135,7 +135,7 @@
                                                 <td class="c" t-esc="fmt(g.actual_hours)"/>
                                                 <td class="c" t-esc="g.progress + '%'" title="% Hoàn thành CV TB hạng mục (AVERAGE) — như Báo cáo cá nhân"/>
                                                 <td/>
-                                                <td class="c" t-esc="g.mgr_pct + '%'" title="% việc đã được Quản lý xác nhận (Kiểm tra CV)"/>
+                                                <td class="c" t-esc="g.mgr_pct + '%'" title="% Hoàn thành TB do Quản lý đánh giá (Kiểm tra CV)"/>
                                                 <td/>
                                             </tr>
                                             <t t-foreach="g.lines" t-as="l" t-key="g.code + '-' + l.stt">
@@ -200,8 +200,9 @@
             <td class="c" t-esc="l.progress + '%'"/>
             <!-- GHI CHÚ = ghi chú nhập ở Danh sách công việc cá nhân (Quản lý công việc) -->
             <td class="c-desc-cell" t-esc="l.note"/>
-            <td class="c" t-esc="l.mgr_pct + '%'" title="% việc đã được Quản lý xác nhận (Kiểm tra CV)"/>
-            <td/>
+            <!-- QUẢN LÝ ĐÁNH GIÁ: nhập trên Kiểm tra CV -->
+            <td class="c" t-esc="l.mgr_pct + '%'" title="% Hoàn thành do Quản lý đánh giá (Kiểm tra CV)"/>
+            <td class="c-desc-cell" t-esc="l.mgr_note"/>
         </tr>
     </t>
 </templates>

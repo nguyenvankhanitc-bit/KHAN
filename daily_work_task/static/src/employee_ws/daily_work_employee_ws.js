@@ -242,6 +242,11 @@ export class DailyWorkEmployeeWs extends Component {
         });
         // Quyền các tab mở trang khác (giống menu bên trái): Giao việc / Xem CV NV / Checklist CV team
         this.navAccess = { canAssign: false, canViewOthers: false, canViewChecklist: false, todayCount: 0 };
+        // Thảo luận realtime qua bus (không qua email)
+        this.busService = useService("bus_service");
+        this._discussionBusCb = (payload) => this._onDiscussionBus(payload);
+        this.busService.subscribe("daily_task/discussion", this._discussionBusCb);
+        onWillUnmount(() => this.busService.unsubscribe("daily_task/discussion", this._discussionBusCb));
         onWillStart(async () => {
             await this.load();
             await this.loadRecurring();
@@ -2416,8 +2421,7 @@ export class DailyWorkEmployeeWs extends Component {
             ]);
             this.state.chat.taskName = data.task_name || task.name || "";
             this.state.chat.messages = data.messages || [];
-            const row = this.state.tasks.find((t) => t.id === task.id);
-            if (row) {
+            for (const row of [...this.state.tasks, ...(this.state.monthRows || [])].filter((t) => t.id === task.id)) {
                 row.discussion_count = data.discussion_count || 0;
                 row.discussion_unread = 0;
             }
@@ -2430,6 +2434,32 @@ export class DailyWorkEmployeeWs extends Component {
             this.state.chat.open = false;
         } finally {
             this.state.chat.loading = false;
+        }
+    }
+
+    /** Realtime: có tin thảo luận mới (bus) → tải lại khung chat đang mở hoặc tăng số tin chưa đọc. */
+    async _onDiscussionBus(payload) {
+        const taskId = Number(payload?.task_id) || 0;
+        if (!taskId) {
+            return;
+        }
+        if (this.state.chat.open && this.state.chat.taskId === taskId) {
+            try {
+                const data = await this.orm.call("daily.task", "get_task_discussion", [taskId]);
+                this.state.chat.messages = data.messages || [];
+                for (const row of [...this.state.tasks, ...(this.state.monthRows || [])].filter((t) => t.id === taskId)) {
+                    row.discussion_count = data.discussion_count || 0;
+                    row.discussion_unread = 0;
+                }
+                this._scrollChatToEnd();
+            } catch {
+                /* bỏ qua */
+            }
+            return;
+        }
+        for (const row of [...this.state.tasks, ...(this.state.monthRows || [])].filter((t) => t.id === taskId)) {
+            row.discussion_count = (Number(row.discussion_count) || 0) + 1;
+            row.discussion_unread = (Number(row.discussion_unread) || 0) + 1;
         }
     }
 

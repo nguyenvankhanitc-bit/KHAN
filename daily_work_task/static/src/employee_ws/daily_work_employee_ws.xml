@@ -439,12 +439,15 @@
                                                 </tr>
                                             </t>
                                             <t t-foreach="filteredTasks" t-as="task" t-key="task.id">
-                                                <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id}">
+                                                <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id, 'o_ews_row_returned': task.manager_returned}">
                                                     <td class="o_ews_col_stt" t-esc="task.stt"/>
                                                     <td t-att-class="'o_ews_col_name' + (isTaskOverdue(task) ? ' o_ews_name_overdue' : '')">
                                                         <t t-esc="task.name"/>
                                                         <span t-if="task.is_from_recurring" class="o_ews_recurring_tag" title="Sinh từ mẫu lặp">
                                                             <i class="fa fa-refresh"/> Lặp
+                                                        </span>
+                                                        <span t-if="task.manager_returned" class="o_ews_returned_tag" title="Quản lý trả lại — làm lại và chọn Đã hoàn thành">
+                                                            <i class="fa fa-undo"/> QL trả lại
                                                         </span>
                                                     </td>
                                                     <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
@@ -1178,19 +1181,20 @@
                                                 <th>% Hoàn thành CV</th>
                                                 <th>Ghi chú</th>
                                                 <th>Quá hạn</th>
+                                                <th class="o_ews_col_discuss">Thảo luận</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             <t t-if="!state.monthRows.length">
                                                 <tr>
-                                                    <td colspan="11" class="text-center text-muted py-4">
+                                                    <td colspan="12" class="text-center text-muted py-4">
                                                         Không có công việc trong tháng này.
                                                     </td>
                                                 </tr>
                                             </t>
                                             <t t-foreach="monthGroups" t-as="group" t-key="group.key">
                                                 <tr class="o_ews_excel_group">
-                                                    <td colspan="11">
+                                                    <td colspan="12">
                                                         <button type="button" class="o_ews_excel_group_toggle"
                                                                 t-on-click="() => this.toggleMonthGroup(group.key)"
                                                                 t-att-aria-expanded="isMonthGroupOpen(group.key) ? 'true' : 'false'">
@@ -1235,13 +1239,25 @@
                                                                 </span>
                                                             </t>
                                                         </td>
+                                                        <!-- Thảo luận cả việc đã hoàn thành (QL nhắn từ Kiểm tra CV) -->
+                                                        <td class="o_ews_col_discuss">
+                                                            <button type="button"
+                                                                    t-att-class="'o_ews_discuss_btn' + (row.discussion_unread ? ' has-unread' : '')"
+                                                                    title="Thảo luận"
+                                                                    t-on-click="() => this.openDiscussion(row)">
+                                                                <i class="fa fa-comments"/>
+                                                                <t t-if="discussionBadge(row)">
+                                                                    <span class="o_ews_discuss_badge" t-esc="discussionBadge(row)"/>
+                                                                </t>
+                                                            </button>
+                                                        </td>
                                                     </tr>
                                                 </t>
                                                 </t>
                                             </t>
                                             <t t-if="monthGroups.length">
                                                 <tr class="o_ews_excel_total_avg">
-                                                    <td colspan="11">
+                                                    <td colspan="12">
                                                         Tổng % hoàn thành công việc trong tháng
                                                         (AVERAGE các hạng mục):
                                                         <strong t-esc="formatMonthAvgCompletion()"/>%

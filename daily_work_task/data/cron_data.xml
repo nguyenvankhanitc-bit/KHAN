@@ -2,6 +2,17 @@
 <odoo>
     <!-- noupdate: tránh mỗi lần -u module đẩy nextcall sang ngày mai -->
     <data noupdate="1">
+        <!-- Gửi thông báo «Công việc đã hoàn thành» cho người giao — chạy nền, được kích hoạt ngay khi có việc hoàn thành -->
+        <record id="ir_cron_daily_work_notify_done" model="ir.cron">
+            <field name="name">QLCV: Gửi thông báo hoàn thành cho người giao</field>
+            <field name="model_id" ref="model_daily_task"/>
+            <field name="state">code</field>
+            <field name="code">model.cron_notify_assigner_done()</field>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+
         <record id="ir_cron_daily_work_recompute_overdue" model="ir.cron">
             <field name="name">QLCV: Cập nhật cờ quá hạn mỗi ngày</field>
             <field name="model_id" ref="model_daily_task"/>

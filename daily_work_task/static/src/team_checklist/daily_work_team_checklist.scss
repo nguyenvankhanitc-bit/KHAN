@@ -948,3 +948,572 @@
     position: relative;
     width: 100%;
 }
+
+
+// Quản lý đánh giá: % Hoàn thành / Ghi chú (Kiểm tra CV)
+.o_daily_work_team_checklist {
+    .o_tcl_table {
+        th.o_tcl_th_eval, td.o_tcl_td_eval { width: 96px; text-align: center; }
+        th.o_tcl_th_note, td.o_tcl_td_note { width: 220px; }
+    }
+
+    .o_tcl_verified_table {
+        th.o_tcl_th_eval, td.o_tcl_td_eval { width: 110px; text-align: center; }
+        th.o_tcl_th_note, td.o_tcl_td_note { width: 260px; }
+    }
+
+    .o_tcl_eval_pct {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+
+        input {
+            width: 62px;
+            text-align: center;
+            padding: 2px 4px;
+        }
+    }
+
+    .o_tcl_td_note textarea {
+        min-height: 30px;
+        resize: vertical;
+        font-size: 12px;
+    }
+}
+
+
+// Tiêu đề 2 tầng: QUẢN LÝ ĐÁNH GIÁ (gộp % Hoàn thành / Ghi chú / Xác nhận QL)
+.o_daily_work_team_checklist {
+    .o_tcl_table thead th,
+    .o_tcl_verified_table thead th {
+        position: static;
+    }
+
+    th.o_tcl_th_group {
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+}
+
+// Hàng tiêu đề thứ 2 không ăn quy tắc độ rộng theo thứ tự cột của hàng 1
+.o_daily_work_team_checklist .o_tcl_table tr.o_tcl_head2 th {
+    width: auto;
+    text-align: center;
+}
+
+
+// Cột Trả task
+.o_daily_work_team_checklist {
+    td.o_tcl_td_return,
+    th.o_tcl_th_return {
+        text-align: center;
+        width: 86px;
+    }
+
+    .o_tcl_btn_return {
+        background: #fff7ed;
+        color: #c2410c;
+        border: 1px solid #fdba74;
+        font-weight: 700;
+        padding: 2px 8px;
+
+        &:hover:not(:disabled) {
+            background: #fb923c;
+            color: #fff;
+        }
+    }
+
+    .o_tcl_returned_tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #ffedd5;
+        color: #c2410c;
+        font-size: 12px;
+        font-weight: 700;
+    }
+}
+
+// Ô tick "Cả mục" trên dòng hạng mục
+.o_daily_work_team_checklist .o_tcl_table tr.o_tcl_group > td.o_tcl_group_confirm {
+    text-align: center;
+    padding: 4px 2px;
+
+    .o_tcl_confirm_group {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1px;
+        margin: 0;
+        cursor: pointer;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+}
+
+// Ô tick "Cả mục": viền đậm, dễ thấy trên nền xanh
+.o_daily_work_team_checklist .o_tcl_table tr.o_tcl_group .o_tcl_confirm_group input.form-check-input {
+    width: 18px;
+    height: 18px;
+    border: 2px solid #1e3a8a;
+    background-color: #fff;
+    box-shadow: none;
+
+    &:checked {
+        background-color: #1e3a8a;
+        border-color: #1e3a8a;
+    }
+}
+
+
+// ===== Bố cục mới: KPI 4 ô + 3 khối (Chưa kiểm tra / Đã kiểm tra / Biểu đồ) =====
+.o_tcl_kpi4 {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin: 0 16px 16px;
+}
+
+.o_tcl_kpi4_card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 20px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+
+    small { display: block; font-size: 13px; font-weight: 600; color: #334155; }
+    b { display: block; font-size: 28px; font-weight: 800; line-height: 1.1; color: #0f172a; }
+
+    .o_tcl_kpi4_ico {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        background: #e0e7ff;
+        color: #4338ca;
+    }
+
+    &.is-todo { background: #fff7ed; border-color: #fed7aa;
+        small, b { color: #ea580c; } .o_tcl_kpi4_ico { background: #ffedd5; color: #ea580c; } }
+    &.is-late { background: #fef2f2; border-color: #fecaca;
+        small, b { color: #dc2626; } .o_tcl_kpi4_ico { background: #fee2e2; color: #dc2626; } }
+    &.is-done { background: #f0fdf4; border-color: #bbf7d0;
+        small, b { color: #15803d; } .o_tcl_kpi4_ico { background: #dcfce7; color: #16a34a; } }
+}
+
+.o_daily_work_team_checklist .o_tcl_sec {
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+}
+
+.o_tcl_sec_head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 18px 20px;
+}
+
+.o_tcl_sec_no {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 16px;
+    background: #6d28d9;
+
+    &.is-2 { background: #16a34a; }
+    &.is-3 { background: #1d4ed8; }
+}
+
+.o_tcl_sec_text {
+    flex: 1 1 auto;
+    min-width: 0;
+
+    b { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 800; color: #0f172a; }
+    small { display: block; margin-top: 4px; font-size: 13px; color: #64748b; }
+}
+
+.o_tcl_sec_tag {
+    font-style: normal;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #f59e0b;
+    color: #fff;
+}
+
+.o_tcl_sec_stats {
+    display: flex;
+    gap: 12px;
+}
+
+.o_tcl_sec_stat {
+    min-width: 130px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #f1f5f9;
+
+    small { display: block; font-size: 12px; font-weight: 600; color: #475569; }
+    b { display: block; font-size: 20px; font-weight: 800; color: #0f172a; }
+
+    &.is-todo { background: #fff7ed; small, b { color: #ea580c; } }
+    &.is-late { background: #fef2f2; small, b { color: #dc2626; } }
+}
+
+.o_tcl_sec_legend {
+    display: flex;
+    gap: 16px;
+    font-size: 12px;
+    color: #475569;
+
+    span { display: inline-flex; align-items: center; gap: 5px; }
+    i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+}
+
+.o_tcl_sec_btn {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #fff;
+    color: #0f172a;
+    font-weight: 700;
+    font-size: 13px;
+
+    &:hover { background: #f1f5f9; }
+}
+
+.o_tcl_sec_body {
+    padding: 0 18px 16px;
+    border-top: 1px solid #eef2f7;
+    padding-top: 12px;
+}
+
+@media (max-width: 1100px) {
+    .o_tcl_kpi4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .o_tcl_sec_head { flex-wrap: wrap; }
+}
+
+
+// Tháng / Năm + lọc Team
+.o_daily_work_team_checklist {
+    .o_tcl_datebox {
+        .o_tcl_month { width: 110px; }
+        .o_tcl_year { width: 100px; }
+    }
+
+    .o_tcl_filters {
+        grid-template-columns: 170px 170px 190px 160px minmax(220px, 1fr);
+    }
+}
+
+// Tình trạng công việc theo nhân sự: thanh ngang chồng theo từng nhân viên
+.o_tcl_hbars {
+    margin-top: 6px;
+}
+
+.o_tcl_hbars_head {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 6px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+.o_tcl_hbar_row {
+    display: grid;
+    grid-template-columns: minmax(200px, 22%) 1fr 90px;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 6px;
+    border-top: 1px solid #eef2f7;
+}
+
+.o_tcl_hbar_who {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.o_tcl_hbar_avatar {
+    flex: 0 0 auto;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #4f46e5;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.o_tcl_hbar_name {
+    font-size: 15px;
+    color: #1e293b;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.o_tcl_hbar_track {
+    display: flex;
+    height: 28px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #f1f5f9;
+}
+
+.o_tcl_hbar_seg {
+    flex-basis: 0;
+    min-width: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 700;
+    font-size: 14px;
+}
+
+.o_tcl_hbar_total {
+    text-align: right;
+    font-size: 16px;
+    font-weight: 800;
+    color: #1e293b;
+    padding-right: 6px;
+}
+
+
+// Trả task đang chờ Lưu
+.o_daily_work_team_checklist .o_tcl_btn_return.is-pending {
+    background: #fb923c;
+    border-color: #ea580c;
+    color: #fff;
+}
+
+.o_daily_work_team_checklist .o_tcl_table tbody tr:has(.o_tcl_btn_return.is-pending) > td {
+    background: #fff7ed;
+}
+
+
+// Thảo luận trên Kiểm tra CV (chép kiểu khung chat của Quản lý công việc)
+.o_daily_work_team_checklist {
+    .o_ews_chat_panel {
+        position: fixed;
+        right: 24px;
+        bottom: 24px;
+        width: 380px;
+        max-width: calc(100vw - 32px);
+        height: 480px;
+        max-height: calc(100vh - 96px);
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        box-shadow: 0 18px 40px rgba(15, 23, 42, 0.22);
+        display: flex;
+        flex-direction: column;
+        z-index: 1050;
+        overflow: hidden;
+    }
+
+    .o_ews_chat_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+        color: #fff;
+    }
+
+    .o_ews_chat_head_text {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+
+        strong {
+            font-size: 0.92rem;
+            line-height: 1.35;
+            word-break: break-word;
+        }
+    }
+
+    .o_ews_chat_sub {
+        font-size: 0.75rem;
+        opacity: 0.9;
+    }
+
+    .o_ews_chat_close {
+        flex: 0 0 auto;
+        border: 0;
+        background: rgba(255, 255, 255, 0.18) !important;
+        color: #fff !important;
+    }
+
+    .o_ews_chat_body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: auto;
+        padding: 14px 12px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .o_ews_chat_empty {
+        margin: auto;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 0.85rem;
+        padding: 24px 12px;
+    }
+
+    .o_ews_chat_msg {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        max-width: 92%;
+
+        &.mine {
+            align-self: flex-end;
+            flex-direction: row-reverse;
+
+            .o_ews_chat_bubble {
+                background: #dbeafe;
+                border-color: #bfdbfe;
+            }
+        }
+    }
+
+    .o_ews_chat_avatar {
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        object-fit: cover;
+        flex: 0 0 auto;
+        background: #e2e8f0;
+    }
+
+    .o_ews_chat_bubble {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 8px 10px;
+    }
+
+    .o_ews_chat_meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        font-size: 0.7rem;
+        color: #64748b;
+        margin-bottom: 4px;
+
+        strong {
+            color: #0f172a;
+        }
+    }
+
+    .o_ews_chat_text {
+        font-size: 0.88rem;
+        color: #0f172a;
+        white-space: pre-wrap;
+        word-break: break-word;
+        line-height: 1.4;
+    }
+
+    .o_ews_chat_foot {
+        display: flex;
+        gap: 8px;
+        align-items: flex-end;
+        padding: 10px 12px;
+        border-top: 1px solid #e2e8f0;
+        background: #fff;
+    }
+
+    .o_ews_chat_input {
+        flex: 1 1 auto;
+        resize: none;
+        font-size: 0.88rem;
+        min-height: 42px;
+    }
+
+    .o_ews_chat_send {
+        flex: 0 0 auto;
+        width: 42px;
+        height: 42px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    td.o_tcl_td_discuss,
+    th.o_tcl_th_discuss {
+        text-align: center;
+        width: 80px;
+    }
+
+    .o_tcl_discuss_btn {
+        position: relative;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 1px solid #cbd5e1;
+        background: #fff;
+        color: #2563eb;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        &:hover { background: #eff6ff; }
+        &.has-unread { border-color: #ef4444; color: #ef4444; }
+    }
+
+    .o_tcl_discuss_badge {
+        position: absolute;
+        top: -6px;
+        right: -8px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        border-radius: 999px;
+        background: #ef4444;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 18px;
+    }
+}
+
+// Ô "Cả mục" khi hạng mục chưa có việc hoàn thành: vẫn hiện, mờ đi
+.o_daily_work_team_checklist .o_tcl_table tr.o_tcl_group .o_tcl_confirm_group.is-disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+
+    input.form-check-input:disabled {
+        opacity: 1;
+        background-color: #e2e8f0;
+    }
+}

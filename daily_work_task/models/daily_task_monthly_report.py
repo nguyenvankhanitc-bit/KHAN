@@ -154,9 +154,11 @@ class DailyTaskMonthlyReport(models.AbstractModel):
                 "done_days": done_days,
                 "progress": round(sum(pct) / len(pct)) if pct else 0,
                 "_pct_sum": sum(pct),
-                # QUẢN LÝ ĐÁNH GIÁ — % HOÀN THÀNH = số việc QL đã tick «Xác nhận QL» (Kiểm tra CV) / tổng số việc
-                "mgr_pct": round(100.0 * len(recs.filtered("manager_confirmed")) / len(recs)) if recs else 0,
-                "_mgr_ok": len(recs.filtered("manager_confirmed")),
+                # QUẢN LÝ ĐÁNH GIÁ = % Hoàn thành / Ghi chú quản lý nhập trên Kiểm tra CV (trung bình các lần)
+                "mgr_pct": round(sum(int(t.manager_eval_percent or 0) for t in recs) / len(recs)) if recs else 0,
+                "_mgr_ok": sum(int(t.manager_eval_percent or 0) for t in recs) / 100.0,
+                "mgr_note": "; ".join(n for n in dict.fromkeys(
+                    (t.manager_eval_note or "").strip() for t in recs) if n),
                 "_pct_n": len(pct),
                 "note": "; ".join(notes),
                 "first": min((t.assign_date or t.deadline) for t in recs if (t.assign_date or t.deadline))
@@ -212,8 +214,16 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         charts = data.get("charts") or {}
         # Dashboard: số việc / biểu đồ giống Báo cáo cá nhân; riêng "Tổng thời gian" lấy đúng
         # tổng THỰC HIỆN của bảng (chỉ ngày đã hoàn thành) để 2 nơi khớp nhau
-        kpi = dict(data.get("kpi") or {}, duration_hours=total_actual)
-        evaluation = dict(data.get("evaluation") or {}, hours=total_actual)
+        # HIỆU SUẤT / Đánh giá hiệu suất tháng = đúng dòng tổng «QUẢN LÝ ĐÁNH GIÁ – % HOÀN THÀNH» của bảng
+        kpi = dict(data.get("kpi") or {}, duration_hours=total_actual, efficiency=mgr_pct)
+        rating = "Tốt" if mgr_pct >= 85 else "Khá" if mgr_pct >= 70 else "Cần cải thiện" if mgr_pct < 50 else "Trung bình"
+        evaluation = dict(
+            data.get("evaluation") or {},
+            hours=total_actual,
+            score=mgr_pct,
+            rating=rating,
+            stars=min(5.0, round((mgr_pct / 20.0) * 2) / 2.0) if mgr_pct else 0.0,
+        )
         return {
             "kpi": kpi,
             "charts": {"by_state": charts.get("by_state") or {}, "weekly": charts.get("weekly") or {}},
@@ -307,7 +317,7 @@ class DailyTaskMonthlyReport(models.AbstractModel):
         def write_line(r, line):
             vals = [line["stt"], line["name"], line["deadline"], line["freq"], line["day"], line["week"],
                     line["month"], line["minutes"] or "", line["plan_hours"], "%s%%" % line["plan_pct"],
-                    line["actual_hours"], "%s%%" % line["progress"], line["note"], "%s%%" % line["mgr_pct"], ""]
+                    line["actual_hours"], "%s%%" % line["progress"], line["note"], "%s%%" % line["mgr_pct"], line["mgr_note"]]
             for c, v in enumerate(vals):
                 ws.write(r, c, v, cell if c in (1, 12, 14) else cell_c)
             # Định biên THỜI GIAN (giờ) = (TG thực hiện phút / 60) × SỐ NGÀY — ghi công thức như mẫu

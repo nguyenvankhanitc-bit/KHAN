@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkViewer">
-        <div class="o_daily_work_viewer o_action">
+        <div class="o_daily_work_dashboard o_daily_work_viewer o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
             <div class="o_content o_dwv_scroll">
                 <div class="o_dwv_header">
                     <h2><i class="fa fa-eye"/> Xem công việc nhân viên</h2>
@@ -275,6 +276,7 @@
                     </div>
                 </t>
             </div>
+            </DailyWorkAppShell>
         </div>
     </t>
 </templates>

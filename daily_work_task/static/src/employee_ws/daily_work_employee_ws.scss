@@ -4009,3 +4009,22 @@ body.o_ews_resizing {
         letter-spacing: -0.01em;
     }
 }
+
+
+// Việc bị Quản lý trả lại (Kiểm tra CV → Trả task): nền cam
+.o_daily_work_employee_ws table tbody tr.o_ews_row_returned > td {
+    background: #ffedd5 !important;
+}
+
+.o_daily_work_employee_ws .o_ews_returned_tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #fb923c;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+}

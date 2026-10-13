@@ -2,10 +2,11 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useEffect, useRef, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
 function shiftIso(iso, days) {
     const d = new Date(`${iso}T00:00:00`);
@@ -27,6 +28,12 @@ function todayIso() {
 export class DailyWorkTeamChecklist extends Component {
     static template = "daily_work_task.DailyWorkTeamChecklist";
     static props = { ...standardActionServiceProps };
+    // Thanh menu bên trái dùng chung (giống các trang Công việc khác)
+    static components = { DailyWorkAppShell };
+
+    get shellActiveNav() {
+        return "team_checklist";
+    }
 
     setup() {
         this.orm = useService("orm");
@@ -35,6 +42,10 @@ export class DailyWorkTeamChecklist extends Component {
         this.state = useState({
             loading: true,
             date: todayIso(),
+            month: new Date().getMonth() + 1,
+            year: new Date().getFullYear(),
+            teamId: null,
+            teams: [],
             employeeId: 0,
             workGroupId: 0,
             stateFilter: "",
@@ -55,12 +66,25 @@ export class DailyWorkTeamChecklist extends Component {
             saving: false,
             openVerified: {},
             openUnchecked: {},
+            // 3 khối: chưa kiểm tra / đã kiểm tra / biểu đồ — bấm «Xem chi tiết» để mở
+            secOpen: { unchecked: false, verified: false, chart: false },
+            // % Hoàn thành / Ghi chú QL đã nhập nhưng chưa bấm Lưu: { taskId: { field: value } }
+            evalDraft: {},
+            // Trả task đã bấm nhưng chưa bấm «Lưu»: { taskId: true }
+            returnDraft: {},
+            chat: { open: false, loading: false, sending: false, taskId: 0, taskName: "", assigneeName: "", draft: "", messages: [] },
             openCats: {},
             catsOpen: false,
             openEmpGroups: {},
         });
         // Biểu đồ cột chồng theo nhân sự: Hoàn thành / Đang làm / Chưa bắt đầu / Trễ hạn
         this.chartRef = useRef("statusChart");
+        this.chatBodyRef = useRef("chatBody");
+        // Thảo luận realtime qua bus (không qua email)
+        this.busService = useService("bus_service");
+        this._discussionBusCb = (payload) => this._onDiscussionBus(payload);
+        this.busService.subscribe("daily_task/discussion", this._discussionBusCb);
+        onWillUnmount(() => this.busService.unsubscribe("daily_task/discussion", this._discussionBusCb));
         this.chart = null;
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -73,7 +97,7 @@ export class DailyWorkTeamChecklist extends Component {
                 }
                 return () => this.destroyChart();
             },
-            () => [this.state.loading, this.state.employees, this.state.verified]
+            () => [this.state.loading, this.state.employees, this.state.verified, this.state.secOpen.chart]
         );
     }
 
@@ -82,7 +106,8 @@ export class DailyWorkTeamChecklist extends Component {
         try {
             const data = await this.orm.call("daily.task", "get_team_checklist_data", [], {
                 filters: {
-                    date: this.state.date,
+                    date: this.monthTargetIso(),
+                    team_id: this.state.teamId || 0,
                     employee_id: this.state.employeeId,
                     work_group_id: this.state.workGroupId,
                     state: this.state.stateFilter,
@@ -96,12 +121,22 @@ export class DailyWorkTeamChecklist extends Component {
             this.state.categories = data.categories || [];
             this.state.filterEmployees = data.filters?.employees || [];
             this.state.workGroups = data.filters?.work_groups || [];
+            this.state.teams = data.filters?.teams || [];
+            if (this.state.teamId === null) {
+                // Lần đầu: lọc theo team của user đang đăng nhập
+                this.state.teamId = Number(data.default_team_id) || 0;
+                if (this.state.teamId) {
+                    return this.load();
+                }
+            }
             this.state.canAssign = Boolean(data.can_assign);
             this.state.dateDisplay = data.date_display || "";
             if (data.date) {
                 this.state.date = data.date;
             }
             this.state.selectedConfirm = {};
+            this.state.evalDraft = {};
+            this.state.returnDraft = {};
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không tải được checklist team."), {
                 type: "danger",
@@ -109,6 +144,59 @@ export class DailyWorkTeamChecklist extends Component {
         } finally {
             this.state.loading = false;
         }
+    }
+
+    get monthOptions() {
+        return Array.from({ length: 12 }, (_, i) => i + 1);
+    }
+
+    get yearOptions() {
+        const y = new Date().getFullYear();
+        return [y - 2, y - 1, y, y + 1];
+    }
+
+    /** Tháng đang chọn → ngày mốc: tháng hiện tại = hôm nay, tháng khác = ngày cuối tháng. */
+    monthTargetIso() {
+        const now = new Date();
+        if (this.state.year === now.getFullYear() && this.state.month === now.getMonth() + 1) {
+            return todayIso();
+        }
+        const last = new Date(this.state.year, this.state.month, 0);
+        const m = String(last.getMonth() + 1).padStart(2, "0");
+        const d = String(last.getDate()).padStart(2, "0");
+        return `${last.getFullYear()}-${m}-${d}`;
+    }
+
+    onMonthSelect(ev) {
+        this.state.month = parseInt(ev.target.value, 10) || this.state.month;
+        this.load();
+    }
+
+    onYearSelect(ev) {
+        this.state.year = parseInt(ev.target.value, 10) || this.state.year;
+        this.load();
+    }
+
+    shiftMonth(delta) {
+        let m = this.state.month + delta;
+        let y = this.state.year;
+        if (m < 1) {
+            m = 12;
+            y -= 1;
+        } else if (m > 12) {
+            m = 1;
+            y += 1;
+        }
+        this.state.month = m;
+        this.state.year = y;
+        this.load();
+    }
+
+    onThisMonth() {
+        const now = new Date();
+        this.state.month = now.getMonth() + 1;
+        this.state.year = now.getFullYear();
+        this.load();
     }
 
     onDateInput(ev) {
@@ -156,7 +244,7 @@ export class DailyWorkTeamChecklist extends Component {
     }
 
     canConfirmAll(emp) {
-        return (emp.tasks || []).some((t) => t.can_confirm && !t.manager_confirmed);
+        return (emp.tasks || []).some((t) => t.can_tick && !t.manager_confirmed);
     }
 
     isDraft(task) {
@@ -164,23 +252,58 @@ export class DailyWorkTeamChecklist extends Component {
     }
 
     hasDraft(emp) {
-        return (emp.tasks || []).some((t) => this.state.selectedConfirm[t.id]);
+        return (emp.tasks || []).some(
+            (t) => this.state.selectedConfirm[t.id] || this.state.evalDraft[t.id] || this.state.returnDraft[t.id]
+        );
     }
 
     isAllDraft(emp) {
-        const tasks = (emp.tasks || []).filter((t) => t.can_confirm && !t.manager_confirmed);
+        const tasks = (emp.tasks || []).filter((t) => t.can_tick && !t.manager_confirmed);
         return tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
     }
 
     toggleDraft(task) {
-        if (!task.can_confirm) {
+        // Chỉ việc ĐÃ HOÀN THÀNH mới Xác nhận QL được
+        if (!task.can_tick) {
             return;
         }
         this.state.selectedConfirm[task.id] = !this.state.selectedConfirm[task.id];
+        if (this.state.selectedConfirm[task.id]) {
+            delete this.state.returnDraft[task.id];
+        }
+        // Bỏ tick → ô % không còn ép 100 (trả về số đã nhập / đã lưu)
+        if (!this.state.selectedConfirm[task.id] && this.state.evalDraft[task.id]?.manager_eval_percent === 100) {
+            delete this.state.evalDraft[task.id].manager_eval_percent;
+        }
+    }
+
+    _groupConfirmable(group) {
+        return (group.tasks || []).filter((t) => t.can_tick && !t.manager_confirmed);
+    }
+
+    canConfirmGroup(group) {
+        return this._groupConfirmable(group).length > 0;
+    }
+
+    isGroupAllDraft(group) {
+        const tasks = this._groupConfirmable(group);
+        return tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
+    }
+
+    /** Tick / bỏ tick Xác nhận QL cho toàn bộ việc trong 1 hạng mục. */
+    toggleGroupDraft(group) {
+        const tasks = this._groupConfirmable(group);
+        const allOn = tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
+        for (const t of tasks) {
+            this.state.selectedConfirm[t.id] = !allOn;
+            if (allOn && this.state.evalDraft[t.id]?.manager_eval_percent === 100) {
+                delete this.state.evalDraft[t.id].manager_eval_percent;
+            }
+        }
     }
 
     toggleDraftAll(emp) {
-        const tasks = (emp.tasks || []).filter((t) => t.can_confirm && !t.manager_confirmed);
+        const tasks = (emp.tasks || []).filter((t) => t.can_tick && !t.manager_confirmed);
         const allOn = tasks.length > 0 && tasks.every((t) => this.state.selectedConfirm[t.id]);
         for (const t of tasks) {
             this.state.selectedConfirm[t.id] = !allOn;
@@ -191,12 +314,41 @@ export class DailyWorkTeamChecklist extends Component {
         const ids = (emp.tasks || [])
             .filter((t) => t.can_confirm && this.state.selectedConfirm[t.id])
             .map((t) => t.id);
-        if (!ids.length || this.state.saving) {
+        const returns = (emp.tasks || []).filter((t) => t.can_confirm && this.state.returnDraft[t.id]).map((t) => t.id);
+        const evals = (emp.tasks || []).filter(
+            (t) => t.can_confirm && this.state.evalDraft[t.id] && !this.state.returnDraft[t.id]
+        );
+        if ((!ids.length && !evals.length && !returns.length) || this.state.saving) {
             return;
         }
         this.state.saving = true;
         try {
-            await this.orm.call("daily.task", "toggle_manager_confirm", [ids, true]);
+            // Trả task (đã bấm «Trả») → về bảng công việc cá nhân của nhân viên
+            if (returns.length) {
+                await this.orm.call("daily.task", "action_manager_return", [returns]);
+                for (const id of returns) {
+                    delete this.state.returnDraft[id];
+                    delete this.state.selectedConfirm[id];
+                }
+            }
+            // Lưu % Hoàn thành / Ghi chú QL đã nhập tay
+            for (const t of evals) {
+                const vals = { ...this.state.evalDraft[t.id] };
+                if (Object.keys(vals).length) {
+                    await this.orm.call("daily.task", "set_manager_evaluation", [[t.id], vals]);
+                }
+                delete this.state.evalDraft[t.id];
+            }
+            const confirmIds = ids.filter((id) => !returns.includes(id));
+            if (!confirmIds.length) {
+                await this.load();
+                this.notification.add(
+                    returns.length ? _t("Đã trả task về cho nhân viên.") : _t("Đã lưu đánh giá QL."),
+                    { type: "success" }
+                );
+                return;
+            }
+            await this.orm.call("daily.task", "toggle_manager_confirm", [confirmIds, true]);
             await this.load();
             if (emp.assignee_id) {
                 this.state.openVerified[emp.assignee_id] = true;
@@ -208,6 +360,188 @@ export class DailyWorkTeamChecklist extends Component {
             });
         } finally {
             this.state.saving = false;
+        }
+    }
+
+    /** Lưu ngay % Hoàn thành / Ghi chú quản lý đánh giá (không tải lại để giữ ô đã tick chờ Lưu). */
+    /** Ô % Hoàn thành: đã tick Xác nhận QL (chờ Lưu / đã xác nhận) → 100%. */
+    evalPercentShown(task) {
+        if (this.isDraft(task) || task.manager_confirmed) {
+            return 100;
+        }
+        const draft = this.state.evalDraft[task.id];
+        if (draft && "manager_eval_percent" in draft) {
+            return draft.manager_eval_percent;
+        }
+        return task.manager_eval_percent || 0;
+    }
+
+    evalNoteShown(task) {
+        const draft = this.state.evalDraft[task.id];
+        if (draft && "manager_eval_note" in draft) {
+            return draft.manager_eval_note;
+        }
+        return task.manager_eval_note || "";
+    }
+
+    /** Trả task về cho nhân viên: hiện lại ở bảng công việc cá nhân (nền cam). */
+    // ---- Thảo luận (giống Giao việc) ----
+    _allTasks() {
+        return [...(this.state.employees || []).flatMap((e) => e.tasks || []), ...(this.state.verified || [])];
+    }
+
+    async openDiscussion(task) {
+        if (!task?.id) {
+            return;
+        }
+        Object.assign(this.state.chat, {
+            open: true,
+            loading: true,
+            taskId: task.id,
+            taskName: task.name || "",
+            assigneeName: task.assignee_name ? `Nhân viên: ${task.assignee_name}` : "",
+            draft: "",
+            messages: [],
+        });
+        try {
+            const data = await this.orm.call("daily.task", "get_task_discussion", [task.id]);
+            this.state.chat.taskName = data.task_name || task.name || "";
+            this.state.chat.messages = data.messages || [];
+            for (const row of this._allTasks().filter((t) => t.id === task.id)) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không mở được thảo luận."), { type: "danger" });
+            this.state.chat.open = false;
+        } finally {
+            this.state.chat.loading = false;
+        }
+    }
+
+    /** Realtime: có tin thảo luận mới (bus) → tải lại khung chat đang mở hoặc tăng số tin chưa đọc. */
+    async _onDiscussionBus(payload) {
+        const taskId = Number(payload?.task_id) || 0;
+        if (!taskId) {
+            return;
+        }
+        if (this.state.chat.open && this.state.chat.taskId === taskId) {
+            try {
+                const data = await this.orm.call("daily.task", "get_task_discussion", [taskId]);
+                this.state.chat.messages = data.messages || [];
+                for (const row of this._allTasks().filter((t) => t.id === taskId)) {
+                    row.discussion_count = data.discussion_count || 0;
+                    row.discussion_unread = 0;
+                }
+                this._scrollChatToEnd();
+            } catch {
+                /* bỏ qua */
+            }
+            return;
+        }
+        for (const row of this._allTasks().filter((t) => t.id === taskId)) {
+            row.discussion_count = (Number(row.discussion_count) || 0) + 1;
+            row.discussion_unread = (Number(row.discussion_unread) || 0) + 1;
+        }
+    }
+
+    closeDiscussion() {
+        Object.assign(this.state.chat, { open: false, draft: "", messages: [], taskId: 0 });
+    }
+
+    _scrollChatToEnd() {
+        requestAnimationFrame(() => {
+            const el = this.chatBodyRef.el;
+            if (el) {
+                el.scrollTop = el.scrollHeight;
+            }
+        });
+    }
+
+    onChatKeydown(ev) {
+        if (ev.key === "Enter" && !ev.shiftKey) {
+            ev.preventDefault();
+            this.sendDiscussion();
+        }
+    }
+
+    async sendDiscussion() {
+        const text = (this.state.chat.draft || "").trim();
+        if (!text || !this.state.chat.taskId || this.state.chat.sending) {
+            return;
+        }
+        this.state.chat.sending = true;
+        try {
+            const data = await this.orm.call("daily.task", "post_task_discussion", [this.state.chat.taskId, text]);
+            this.state.chat.draft = "";
+            this.state.chat.messages = data.messages || [];
+            for (const row of this._allTasks().filter((t) => t.id === this.state.chat.taskId)) {
+                row.discussion_count = data.discussion_count || 0;
+                row.discussion_unread = 0;
+            }
+            this._scrollChatToEnd();
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không gửi được tin nhắn."), { type: "danger" });
+        } finally {
+            this.state.chat.sending = false;
+        }
+    }
+
+    isReturnDraft(task) {
+        return Boolean(this.state.returnDraft[task.id]);
+    }
+
+    async onReturnTask(task) {
+        if (!task.manager_confirmed) {
+            // Danh sách chưa kiểm tra: chỉ đánh dấu, bấm «Lưu» mới có hiệu lực
+            if (this.state.returnDraft[task.id]) {
+                delete this.state.returnDraft[task.id];
+            } else {
+                this.state.returnDraft[task.id] = true;
+                delete this.state.selectedConfirm[task.id];
+            }
+            return;
+        }
+        const ok = window.confirm(
+            `Trả lại công việc «${task.name}» cho ${task.assignee_name || "nhân viên"}?\n` +
+                "Công việc sẽ chuyển về Đang làm và hiện nền cam ở bảng công việc cá nhân."
+        );
+        if (!ok) {
+            return;
+        }
+        try {
+            await this.orm.call("daily.task", "action_manager_return", [[task.id]]);
+            delete this.state.selectedConfirm[task.id];
+            this.notification.add(_t("Đã trả lại công việc cho nhân viên."), { type: "success" });
+            await this.load();
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không trả lại được công việc."), { type: "danger" });
+        }
+    }
+
+    async onEvalChange(task, field, ev) {
+        let value = ev.target.value;
+        if (field === "manager_eval_percent") {
+            value = Math.max(0, Math.min(100, parseInt(value, 10) || 0));
+            ev.target.value = value;
+        }
+        if (!task.manager_confirmed) {
+            // Việc chưa kiểm tra: giữ lại, bấm «Lưu» mới ghi. Nhập 100% = đồng ý → tự tick Xác nhận QL
+            const draft = this.state.evalDraft[task.id] || {};
+            draft[field] = value;
+            this.state.evalDraft[task.id] = draft;
+            if (field === "manager_eval_percent" && task.can_tick) {
+                this.state.selectedConfirm[task.id] = value === 100;
+            }
+            return;
+        }
+        try {
+            await this.orm.call("daily.task", "set_manager_evaluation", [[task.id], { [field]: value }]);
+            task[field] = value;
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không lưu được đánh giá."), { type: "danger" });
+            ev.target.value = task[field] ?? "";
         }
     }
 
@@ -260,6 +594,36 @@ export class DailyWorkTeamChecklist extends Component {
         a.download = `checklist_team_${this.state.date}.csv`;
         a.click();
         URL.revokeObjectURL(url);
+    }
+
+    /** Chữ viết tắt cho avatar: "Châu Hoàng Phú" → "CP". */
+    initials(name) {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) {
+            return "?";
+        }
+        const first = parts[0][0] || "";
+        const last = parts.length > 1 ? parts[parts.length - 1][0] : "";
+        return (first + last).toUpperCase();
+    }
+
+    toggleSection(key) {
+        this.state.secOpen[key] = !this.state.secOpen[key];
+    }
+
+    get sumUnchecked() {
+        return (this.state.employees || []).reduce((n, e) => n + (e.tasks || []).length, 0);
+    }
+
+    get sumUncheckedLate() {
+        return (this.state.employees || []).reduce(
+            (n, e) => n + (e.tasks || []).filter((t) => t.is_overdue && !t.is_done).length,
+            0
+        );
+    }
+
+    get sumVerified() {
+        return (this.state.verified || []).length;
     }
 
     /** Số việc theo trạng thái của từng nhân sự (gộp chưa kiểm tra + đã kiểm tra). */

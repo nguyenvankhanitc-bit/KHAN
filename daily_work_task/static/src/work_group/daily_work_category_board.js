@@ -227,9 +227,18 @@ export class DailyWorkCategoryBoard extends Component {
     }
 
     _initOpenMap(departments) {
+        // Mặc định mở sẵn Phòng ban + Team (chỉ cần bấm Hạng mục để xem công việc con);
+        // giữ trạng thái đang mở/đóng khi tải lại (sau khi thêm / sửa)
+        const prev = this.state.openMap || {};
         const map = {};
-        for (const id of this._collectIds(departments)) {
-            map[id] = false;
+        for (const dept of departments || []) {
+            map[dept.id] = dept.id in prev ? prev[dept.id] : true;
+            for (const team of dept.teams || []) {
+                map[team.id] = team.id in prev ? prev[team.id] : true;
+                for (const cat of team.categories || []) {
+                    map[cat.id] = cat.id in prev ? prev[cat.id] : false;
+                }
+            }
         }
         this.state.openMap = map;
     }
@@ -267,6 +276,12 @@ export class DailyWorkCategoryBoard extends Component {
         if (!nodeId || (this.state.search || "").trim()) {
             return;
         }
+        // Chống bấm đúp / bấm nhanh 2 lần (mở rồi đóng ngay → tưởng «không ăn»)
+        const now = Date.now();
+        if (this._lastToggle && this._lastToggle.id === nodeId && now - this._lastToggle.at < 400) {
+            return;
+        }
+        this._lastToggle = { id: nodeId, at: now };
         const cur =
             nodeId in this.state.openMap
                 ? Boolean(this.state.openMap[nodeId])

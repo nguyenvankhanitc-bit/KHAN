@@ -526,3 +526,10 @@
         background: #eef2ff;
     }
 }
+
+// Dòng nhóm bấm được: con trỏ tay, không bôi đen chữ khi bấm nhanh
+.o_dcb_section_btn,
+tr:has(> td > .o_dcb_section_btn) {
+    cursor: pointer;
+    user-select: none;
+}

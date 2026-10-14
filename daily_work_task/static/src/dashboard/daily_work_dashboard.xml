@@ -167,7 +167,7 @@
                         </div>
                         <div class="o_dwd_side_section">
                             <div class="o_dwd_side_label">📋 PHÂN CÔNG CÔNG VIỆC</div>
-                            <button type="button" class="o_dwd_side_item" title="Thêm phân công công việc"
+                            <button t-if="false" type="button" class="o_dwd_side_item" title="Thêm phân công công việc"
                                     t-on-click="() => this.openNav('team_assign_add')">
                                 <i class="fa fa-plus-square"/><span>Thêm phân công công việc</span>
                             </button>

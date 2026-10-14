@@ -1666,3 +1666,38 @@
         color: #000;
     }
 }
+
+// Báo cáo CV chi tiết team: dòng công việc nền trắng (kể cả trễ hạn — đã có nhãn «Trễ hạn x ngày» màu đỏ)
+.o_dro_excel_table.o_dro_excel_plan_colors.o_dro_excel_team tbody tr.o_dro_excel_row_overdue td,
+.o_dro_excel_table.o_dro_excel_plan_colors.o_dro_excel_team tbody tr.o_dro_excel_row_done td {
+    background: #fff;
+}
+
+// Báo cáo team: nhãn trạng thái / ưu tiên không bẻ từng chữ
+.o_dro_excel_table.o_dro_excel_team {
+    .o_dro_excel_state,
+    .o_dro_excel_badge {
+        white-space: nowrap;
+    }
+
+    thead th:nth-child(7),
+    tbody td:nth-child(7) {
+        min-width: 120px;
+    }
+}
+
+// Ô «Ngày giao việc» gộp theo ngày
+.o_dro_excel_table td.o_dro_excel_day.is-merged {
+    background: #f8fafc !important;
+    font-weight: 700;
+    color: #1e3a8a;
+    vertical-align: middle;
+    border-right: 2px solid #c7d2fe !important;
+}
+
+// Căn lề theo class (không theo thứ tự cột — vì ô «Ngày giao việc» gộp làm lệch thứ tự)
+.o_dro_excel_table.o_dro_excel_plan_colors tbody tr:not(.o_dro_excel_group):not(.o_dro_excel_total) td {
+    text-align: center !important;
+
+    &.o_dro_excel_left { text-align: left !important; }
+}

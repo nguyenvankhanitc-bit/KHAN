@@ -152,6 +152,7 @@ class DailyTaskPerformanceReport(models.AbstractModel):
             "dept_chart": dept_chart,
             "trend": trend,
             "staff": staff,
+            "staff_groups": self._staff_groups(staff),
             "departments": dept_opts,
             "tree": tree,
             "selected_employee_id": selected.id,
@@ -208,32 +209,42 @@ class DailyTaskPerformanceReport(models.AbstractModel):
         r += 1
         ws.write(r, 0, "HIỆU SUẤT THEO TEAM", sec)
         r += 1
-        for col, txt in enumerate(["Team", "Hoàn thành", "Đang thực hiện", "Trễ hạn", "Tổng"]):
+        for col, txt in enumerate(["Team", "Hoàn thành", "Đang làm", "Chưa làm", "Trễ hạn", "Tổng"]):
             ws.write(r, col, txt, h)
         r += 1
         for t in data.get("dept_chart") or []:
             ws.write(r, 0, t["name"], l)
             ws.write(r, 1, t["done"], c)
-            ws.write(r, 2, t["other"], c)
-            ws.write(r, 3, t["overdue"], c)
-            ws.write(r, 4, t["done"] + t["other"] + t["overdue"], c)
+            ws.write(r, 2, t.get("doing", 0), c)
+            ws.write(r, 3, t.get("todo", 0), c)
+            ws.write(r, 4, t["overdue"], c)
+            ws.write(r, 5, t["done"] + t["other"] + t["overdue"], c)
             r += 1
 
         r += 1
         ws.write(r, 0, "HIỆU SUẤT NHÂN SỰ", sec)
         r += 1
-        heads = ["STT", "Nhân sự", "Chức danh · Phòng ban", "Tổng CV", "Hoàn thành", "Đang làm", "Chưa làm", "Trễ hạn", "Hiệu suất"]
+        heads = ["STT", "Nhân sự", "Chức danh", "Tổng CV", "Hoàn thành", "Đang làm", "Chưa làm", "Trễ hạn", "Hiệu suất"]
         for col, txt in enumerate(heads):
             ws.write(r, col, txt, h)
         r += 1
-        for i, s in enumerate(data.get("staff") or [], start=1):
-            ws.write(r, 0, i, c)
-            ws.write(r, 1, s["name"], l)
-            ws.write(r, 2, " · ".join(x for x in (s.get("job"), s.get("department")) if x), l)
+        gh = f(bold=True, border=1, bg_color="#B4C6E7")
+        gh_c = f(bold=True, border=1, bg_color="#B4C6E7", align="center")
+        gh_p = f(bold=True, border=1, bg_color="#B4C6E7", align="center", num_format='0.0"%"')
+        for g in data.get("staff_groups") or []:
+            ws.merge_range(r, 0, r, 2, "%s (%s nhân sự)" % (g["name"], g["count"]), gh)
             for col, key in ((3, "total"), (4, "done"), (5, "doing"), (6, "todo"), (7, "late")):
-                ws.write(r, col, s.get(key) or 0, c)
-            ws.write(r, 8, s.get("efficiency") or 0, pct)
+                ws.write(r, col, g.get(key) or 0, gh_c)
+            ws.write(r, 8, g.get("efficiency") or 0, gh_p)
             r += 1
+            for i, s in enumerate(g["rows"], start=1):
+                ws.write(r, 0, i, c)
+                ws.write(r, 1, s["name"], l)
+                ws.write(r, 2, s.get("job") or "", l)
+                for col, key in ((3, "total"), (4, "done"), (5, "doing"), (6, "todo"), (7, "late")):
+                    ws.write(r, col, s.get(key) or 0, c)
+                ws.write(r, 8, s.get("efficiency") or 0, pct)
+                r += 1
 
         ws.set_column(0, 0, 28)
         ws.set_column(1, 1, 26)
@@ -270,6 +281,7 @@ class DailyTaskPerformanceReport(models.AbstractModel):
             "dept_chart": [],
             "trend": [],
             "staff": [],
+            "staff_groups": [],
             "departments": [],
             "tree": [],
             "selected_employee_id": False,
@@ -327,14 +339,16 @@ class DailyTaskPerformanceReport(models.AbstractModel):
         for t in teams:
             for u in t.manager_ids | t.member_ids:
                 team_of_user.setdefault(u.id, t.id)
-        rows = {t.id: {"id": t.id, "name": t.name, "done": 0, "overdue": 0, "other": 0} for t in teams}
+        rows = {t.id: {"id": t.id, "name": t.name, "done": 0, "overdue": 0, "other": 0, "doing": 0, "todo": 0}
+                for t in teams}
         for task in tasks:
             tid = task.work_group_id.team_id.id
             if tid not in rows:
                 tid = team_of_user.get(task.assignee_user_id.id)
             if tid not in rows:
                 tid = 0
-                rows.setdefault(0, {"id": 0, "name": "Chưa có team", "done": 0, "overdue": 0, "other": 0})
+                rows.setdefault(0, {"id": 0, "name": "Chưa có team", "done": 0, "overdue": 0, "other": 0,
+                                    "doing": 0, "todo": 0})
             r = rows[tid]
             if task.state == "done":
                 r["done"] += 1
@@ -342,6 +356,7 @@ class DailyTaskPerformanceReport(models.AbstractModel):
                 r["overdue"] += 1
             else:
                 r["other"] += 1
+                r["doing" if task.state == "in_progress" else "todo"] += 1
         out = [rows[t.id] for t in teams.sorted(lambda t: (t.sequence, (t.name or "").casefold()))]
         if 0 in rows:
             out.append(rows[0])
@@ -377,6 +392,24 @@ class DailyTaskPerformanceReport(models.AbstractModel):
             })
         rows.sort(key=lambda r: (r["total"] == 0, -r["efficiency"], -r["total"], r["name"].casefold()))
         return rows
+
+    @api.model
+    def _staff_groups(self, staff):
+        """Nhóm bảng nhân sự theo phòng ban + dòng tổng của phòng."""
+        groups = {}
+        for r in staff:
+            name = r.get("department") or "Chưa có phòng ban"
+            g = groups.setdefault(name, {"name": name, "rows": []})
+            g["rows"].append(r)
+        out = []
+        for g in groups.values():
+            rows = g["rows"]
+            tot = {k: sum(int(r.get(k) or 0) for r in rows) for k in ("total", "done", "doing", "todo", "late")}
+            # Hiệu suất phòng = TB có trọng số theo số việc (= TB % QL đánh giá trên mọi việc của phòng)
+            eff = round(sum(r["efficiency"] * r["total"] for r in rows) / tot["total"], 1) if tot["total"] else 0.0
+            out.append(dict(g, key=g["name"], count=len(rows), efficiency=eff, **tot))
+        out.sort(key=lambda g: (g["name"] == "Chưa có phòng ban", -g["total"], g["name"].casefold()))
+        return out
 
     @api.model
     def _assignee_for_emp(self, emp, assignee_by_hr):

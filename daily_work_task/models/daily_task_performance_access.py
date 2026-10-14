@@ -148,6 +148,10 @@ class DailyTaskPerformanceAccess(models.Model):
         if not lines:
             return []
         emp_ids = set()
+        # Luôn có chính user đang đăng nhập (xem được công việc của mình)
+        own = self.env["hr.employee"].sudo().search([("user_id", "=", user.id), ("active", "=", True)], limit=1)
+        if own:
+            emp_ids.add(own.id)
         for line in lines:
             # Có chọn «User bị xem» → CHỈ xem đúng những người đó (phòng ban chỉ là nhóm tham chiếu)
             if line.target_ids:

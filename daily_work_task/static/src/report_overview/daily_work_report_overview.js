@@ -146,6 +146,25 @@ export class DailyWorkReportOverview extends Component {
 
     /** Nhóm dạng bảng Excel (có thu gọn/mở). */
     get excelGroups() {
+        // Gộp ô «Ngày giao việc» theo ngày: trong 1 hạng mục, các việc cùng ngày đứng liền nhau, ô ngày gộp (rowspan)
+        const dayKey = (r) => {
+            const m = String(r.assign_date_display || "").match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            return m ? `${m[3]}${m[2]}${m[1]}` : "99999999";
+        };
+        const withDaySpans = (rows) => {
+            const sorted = [...(rows || [])].sort((x, y) => dayKey(x).localeCompare(dayKey(y)));
+            const out = sorted.map((r, i) => ({ ...r, stt: i + 1, day_span: 1 }));
+            for (let i = 0; i < out.length; ) {
+                let j = i + 1;
+                while (j < out.length && dayKey(out[j]) === dayKey(out[i])) {
+                    out[j].day_span = 0;
+                    j++;
+                }
+                out[i].day_span = j - i;
+                i = j;
+            }
+            return out;
+        };
         return (this.state.groups || []).map((g) => {
             const key = String(g.key);
             const hours = Number(g.duration_hours) || 0;
@@ -159,6 +178,7 @@ export class DailyWorkReportOverview extends Component {
                 duration_hours_display: hoursDisplay || "0",
                 completion_percent_avg: Number.isFinite(avg) ? avg : 0,
                 has_overdue: (g.rows || []).some((r) => r.is_active_overdue),
+                rows: withDaySpans(g.rows),
             };
         });
     }

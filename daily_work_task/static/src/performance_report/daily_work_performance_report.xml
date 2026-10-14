@@ -95,13 +95,31 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <t t-foreach="state.data.staff or []" t-as="r" t-key="r.id">
+                            <t t-foreach="state.data.staff_groups or []" t-as="g" t-key="g.key">
+                                <!-- Dòng nhóm phòng ban (bấm để thu gọn / mở) -->
+                                <tr class="o_dpr_dept_row" t-on-click="() => this.toggleDept(g)">
+                                    <td>
+                                        <i t-att-class="'fa ' + (isDeptOpen(g) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                        <b t-esc="g.name"/>
+                                        <em t-esc="g.count + ' nhân sự'"/>
+                                    </td>
+                                    <td class="num" t-esc="g.total"/>
+                                    <td class="num is-done" t-esc="g.done"/>
+                                    <td class="num is-doing" t-esc="g.doing"/>
+                                    <td class="num is-todo" t-esc="g.todo"/>
+                                    <td class="num is-late" t-esc="g.late"/>
+                                    <td class="num">
+                                        <span t-att-class="'o_dpr_eff ' + effClass(g.efficiency)" t-esc="g.efficiency + '%'"/>
+                                    </td>
+                                </tr>
+                            <t t-if="isDeptOpen(g)">
+                            <t t-foreach="g.rows" t-as="r" t-key="g.key + '-' + r.id">
                                 <tr>
                                     <td>
                                         <span class="o_dpr_staff_avatar" t-esc="initials(r.name)"/>
                                         <span class="o_dpr_staff_name">
                                             <b t-esc="r.name"/>
-                                            <small t-esc="(r.job || '') + (r.department ? ' · ' + r.department : '')"/>
+                                            <small t-esc="r.job || ''"/>
                                         </span>
                                     </td>
                                     <td class="num" t-esc="r.total"/>
@@ -113,6 +131,8 @@
                                         <span t-att-class="'o_dpr_eff ' + effClass(r.efficiency)" t-esc="r.efficiency + '%'"/>
                                     </td>
                                 </tr>
+                            </t>
+                            </t>
                             </t>
                             <tr t-if="!(state.data.staff || []).length">
                                 <td colspan="7" class="text-muted text-center">Chưa có dữ liệu nhân sự.</td>

@@ -43,6 +43,8 @@ export class DailyWorkPerformanceReport extends Component {
             },
             expanded: {},
             exporting: false,
+            // Nhóm phòng ban đang thu gọn: { tên phòng: true }
+            deptClosed: {},
         });
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -94,6 +96,18 @@ export class DailyWorkPerformanceReport extends Component {
             card("overdue", "Quá hạn", k.overdue, p.overdue, "", false),
             card("eff", "Hiệu suất TB (QL đánh giá)", k.efficiency, p.efficiency, "%", true),
         ];
+    }
+
+    toggleDept(g) {
+        this.state.deptClosed[g.key] = this.isDeptOpen(g);
+    }
+
+    /** Mặc định: mở phòng có công việc, thu gọn phòng chưa có việc nào. */
+    isDeptOpen(g) {
+        if (g.key in this.state.deptClosed) {
+            return !this.state.deptClosed[g.key];
+        }
+        return (Number(g.total) || 0) > 0;
     }
 
     initials(name) {
@@ -253,8 +267,9 @@ export class DailyWorkPerformanceReport extends Component {
                     data: {
                         labels: dept.map((d) => d.name),
                         datasets: [
-                            { label: "Hoàn thành", data: dept.map((d) => d.done), backgroundColor: "#3b5bdb", borderRadius: 4, maxBarThickness: 48 },
-                            { label: "Đang thực hiện", data: dept.map((d) => d.other), backgroundColor: "#8b3dff", borderRadius: 4, maxBarThickness: 48 },
+                            { label: "Hoàn thành", data: dept.map((d) => d.done), backgroundColor: "#22c55e", borderRadius: 4, maxBarThickness: 48 },
+                            { label: "Đang làm", data: dept.map((d) => d.doing || 0), backgroundColor: "#f59e0b", borderRadius: 4, maxBarThickness: 48 },
+                            { label: "Chưa làm", data: dept.map((d) => d.todo || 0), backgroundColor: "#94a3b8", borderRadius: 4, maxBarThickness: 48 },
                             { label: "Trễ hạn", data: dept.map((d) => d.overdue), backgroundColor: "#ef4444", borderRadius: 4, maxBarThickness: 48 },
                         ],
                     },

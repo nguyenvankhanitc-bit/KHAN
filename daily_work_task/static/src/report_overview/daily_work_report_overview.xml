@@ -585,7 +585,7 @@
                                         <div class="text-center text-muted py-4">Không có dữ liệu.</div>
                                     </t>
                                     <div class="o_dro_excel_wrap" t-else="">
-                                        <table t-att-class="'o_dro_excel_table' + (personalLayout ? ' o_dro_excel_plan_colors' : '')">
+                                        <table t-att-class="'o_dro_excel_table o_dro_excel_plan_colors' + (teamReport ? ' o_dro_excel_team' : '')">
                                             <thead>
                                                 <tr>
                                                     <th class="o_dro_excel_stt">STT</th>
@@ -629,9 +629,11 @@
                                                         <t t-foreach="group.rows" t-as="row" t-key="row.id">
                                                             <tr t-att-class="excelRowClass(row)">
                                                                 <td class="o_dro_excel_stt" t-esc="row.stt"/>
-                                                                <td t-esc="row.name"/>
+                                                                <td class="o_dro_excel_left" t-esc="row.name"/>
                                                                 <td t-if="teamReport" t-esc="row.assignee_name || '—'"/>
-                                                                <td t-esc="row.assign_date_display || '—'"/>
+                                                                <td t-if="row.day_span" t-att-rowspan="row.day_span"
+                                                                    t-att-class="'o_dro_excel_day' + (row.day_span &gt; 1 ? ' is-merged' : '')"
+                                                                    t-esc="row.assign_date_display || '—'"/>
                                                                 <td t-esc="row.deadline_display || '—'"/>
                                                                 <td>
                                                                     <span t-att-class="'o_dro_excel_badge ' + excelPriorityClass(row.priority)"
@@ -644,7 +646,7 @@
                                                                 <td t-esc="row.duration_minutes || 0"/>
                                                                 <td t-esc="row.duration_hours_display || 0"/>
                                                                 <td t-esc="(row.completion_percent || 0) + '%'"/>
-                                                                <td t-esc="row.note || ''"/>
+                                                                <td class="o_dro_excel_left" t-esc="row.note || ''"/>
                                                                 <td>
                                                                     <t t-if="row.overdue_days">
                                                                         <span class="o_dro_excel_overdue" t-att-title="row.overdue_label">

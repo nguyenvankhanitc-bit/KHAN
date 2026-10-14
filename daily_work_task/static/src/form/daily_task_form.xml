@@ -13,5 +13,16 @@
                 Hủy
             </button>
         </xpath>
+        <xpath expr="//div[hasclass('o_form_view_container')]" position="after">
+            <!-- Điện thoại: thanh Hủy / Lưu cố định đáy màn hình -->
+            <div t-if="env.isSmall" class="o_dwt_mobile_savebar">
+                <button type="button" class="btn o_dwt_mbar_cancel" t-on-click.stop="discard">
+                    <i class="fa fa-times"/> Hủy
+                </button>
+                <button type="button" class="btn o_dwt_mbar_save" t-on-click.stop="() => this.saveButtonClicked()">
+                    <i class="fa fa-floppy-o"/> Lưu
+                </button>
+            </div>
+        </xpath>
     </t>
 </templates>

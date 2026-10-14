@@ -941,19 +941,37 @@ class DailyTask(models.Model):
         if len(tasks) == 200:
             self.env.ref("daily_work_task.ir_cron_daily_work_notify_done")._trigger()
 
+    def _done_notify_managers(self):
+        """Quản lý nhận thông báo hoàn thành: User quản lý hạng mục (kể cả hạng mục cùng tên
+        trong phòng ban, vd «1. Camera» ↔ «Camera»); hạng mục chưa có → User quản lý team."""
+        self.ensure_one()
+        wg = self.sudo().work_group_id
+        if not wg:
+            return self.env["res.users"]
+        managers = wg.category_manager_ids
+        if not managers:
+            key = " ".join(wg._norm_category_name(wg.name or "").split()).casefold()
+            siblings = wg.search([("department_id", "=", wg.department_id.id), ("id", "!=", wg.id)])
+            managers = siblings.filtered(
+                lambda g: " ".join(g._norm_category_name(g.name or "").split()).casefold() == key
+            ).mapped("category_manager_ids")
+        if not managers:
+            managers = wg.team_id.manager_ids
+        return managers
+
     def _notify_assigner_done(self):
-        """Thông báo Discuss/Inbox cho người giao khi việc được hoàn thành."""
+        """Thông báo OdooBot (Discuss/Inbox) khi việc được hoàn thành cho:
+        người giao việc + User quản lý hạng mục (không gửi cho chính người làm)."""
         for task in self:
             try:
-                assigner = task.assigned_by_id
-                if (
-                    not assigner
-                    or assigner.share
-                    or not assigner.partner_id
-                    or not assigner.active
-                ):
-                    continue
                 assignee = task._assignee_user()
+                recipients = (task.assigned_by_id | task._done_notify_managers()).filtered(
+                    lambda u: u.active and not u.share and u.partner_id
+                )
+                if assignee:
+                    recipients -= assignee
+                if not recipients:
+                    continue
                 assignee_name = (
                     (assignee.name if assignee else None)
                     or (task.assignee_id.name if task.assignee_id else None)
@@ -968,21 +986,24 @@ class DailyTask(models.Model):
                     "<b>CÔNG VIỆC ĐÃ HOÀN THÀNH</b><br/>"
                     "Người thực hiện: <b>{assignee}</b><br/>"
                     "Công việc: <b>{name}</b><br/>"
+                    "Hạng mục: <b>{category}</b><br/>"
                     "Hạn: <b>{deadline}</b><br/>"
                     "Ngày hoàn thành: <b>{done_date}</b><br/>"
                     "{detail_btn}"
                 ).format(
                     assignee=escape(str(assignee_name)),
                     name=escape(str(task.name or "")),
+                    category=escape(str(task.sudo().work_group_id.name or "—")),
                     deadline=escape(deadline),
                     done_date=escape(done_date),
                     detail_btn=detail_btn,
                 )
-                task._post_assign_bot_discuss_message(assigner, body)
+                for user in recipients:
+                    task._post_assign_bot_discuss_message(user, body)
                 bot_user = task._get_assign_bot_user()
                 task.sudo().message_post(
                     body=body,
-                    partner_ids=assigner.partner_id.ids,
+                    partner_ids=recipients.mapped("partner_id").ids,
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
                     author_id=bot_user.partner_id.id

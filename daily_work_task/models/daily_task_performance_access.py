@@ -31,8 +31,7 @@ class DailyTaskPerformanceAccess(models.Model):
         "access_id",
         "department_id",
         string="Phòng ban được xem",
-        help="Chọn một hoặc nhiều phòng ban → tự xem tất cả NV thuộc các phòng đó, "
-        "không cần chọn «User bị xem».",
+        help="Chỉ chọn phòng ban (để trống «User bị xem») → xem tất cả NV thuộc các phòng đó.",
     )
     target_ids = fields.Many2many(
         "hr.employee",
@@ -40,7 +39,8 @@ class DailyTaskPerformanceAccess(models.Model):
         "access_id",
         "employee_id",
         string="User bị xem",
-        help="Bắt buộc khi không chọn phòng ban. Có thể chọn nhiều NV cùng lúc.",
+        help="Có chọn → CHỈ xem đúng những NV này (phòng ban không mở rộng thêm). "
+        "Bắt buộc khi không chọn phòng ban.",
         domain="[('user_id', '!=', False)]",
     )
     active = fields.Boolean(default=True)
@@ -133,8 +133,8 @@ class DailyTaskPerformanceAccess(models.Model):
     def performance_employee_ids_for_user(self, user=None):
         """
         Phạm vi báo cáo hiệu suất:
-        - NV thuộc các «Phòng ban được xem» (ăn theo phòng, không cần chọn từng user)
-        - ∪ «User bị xem» (khi chọn thêm hoặc khi không chọn phòng ban)
+        - Dòng có chọn «User bị xem» → chỉ xem đúng các user đó
+        - Dòng chỉ chọn «Phòng ban được xem» → xem toàn bộ NV của phòng ban
         None = quản lý / tất cả.
         [] = chưa phân quyền.
         """
@@ -147,8 +147,12 @@ class DailyTaskPerformanceAccess(models.Model):
         )
         if not lines:
             return []
-        emp_ids = set(lines.mapped("target_ids").ids)
-        dept_ids = list(set(lines.mapped("department_ids").ids))
+        emp_ids = set()
+        for line in lines:
+            # Có chọn «User bị xem» → CHỈ xem đúng những người đó (phòng ban chỉ là nhóm tham chiếu)
+            if line.target_ids:
+                emp_ids.update(line.target_ids.ids)
+        dept_ids = list(set(lines.filtered(lambda l: not l.target_ids).mapped("department_ids").ids))
         if dept_ids:
             self.env.cr.execute(
                 """

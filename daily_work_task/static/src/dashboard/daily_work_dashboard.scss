@@ -1674,3 +1674,13 @@ body.o_dwd_sidebar_resizing {
         user-select: none !important;
     }
 }
+
+// Điện thoại: mở menu Công việc (offcanvas) ở mọi trang dùng khung chung
+@media (max-width: 992px) {
+    .o_dwd_shell.is-mobile-nav-open .o_dwd_sidebar,
+    .o_dwd_sidebar.is-mobile-open {
+        transform: translateX(0) !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+}

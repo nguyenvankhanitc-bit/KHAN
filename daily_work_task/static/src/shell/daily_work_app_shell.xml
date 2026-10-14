@@ -4,6 +4,13 @@
         <div t-attf-class="o_dwd_shell {{ shellClassName }}">
             <header class="o_dwd_topbar">
                 <div class="o_dwd_topbar_left">
+                    <!-- Điện thoại: nút ≡ mở menu Công việc (thay nút «Menu» trên thanh tím) -->
+                    <button type="button"
+                            class="o_dwd_burger o_dwd_burger_mobile d-inline-flex d-lg-none"
+                            title="Menu Công việc"
+                            t-on-click="openMobileNav">
+                        <i class="fa fa-bars"/>
+                    </button>
                     <button type="button"
                             class="o_dwd_burger d-none d-lg-inline-flex"
                             t-on-click="toggleSidebar"
@@ -73,7 +80,7 @@
                         </button>
                     </t>
                     <t t-if="state.canSeePerformance">
-                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('performance')">
+                        <button type="button" t-att-class="'o_dwd_topnav_item' + (isActive('performance') ? ' active' : '')" t-on-click="() => this.openNav('performance')">
                             <i class="fa fa-line-chart"/><span>Hiệu suất</span>
                         </button>
                     </t>

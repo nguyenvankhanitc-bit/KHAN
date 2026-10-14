@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkNavTocButton">
-        <button t-if="state.shellActive"
+        <!-- Đã bỏ nút «Menu» trên thanh tím: mở menu Công việc bằng nút ≡ cạnh chữ CÔNG VIỆC -->
+        <button t-if="false"
                 type="button"
                 class="o_dwd_nav_toc_btn btn btn-sm btn-outline-light text-white d-flex align-items-center gap-1 d-lg-none me-2"
                 title="Menu"

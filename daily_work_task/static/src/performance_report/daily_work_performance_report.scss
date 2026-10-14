@@ -526,3 +526,168 @@
     padding: 0.75rem;
     &.big { text-align: center; padding: 2.5rem 1rem; }
 }
+
+
+// ===== Bố cục mới (theo mẫu dashboard) =====
+.o_dpr_root {
+    background: #f8fafc;
+
+    .o_dpr_kpi { display: none; }
+
+    .o_dpr_kpi4 {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .o_dpr_kpi4_card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+        strong { display: block; font-size: 28px; font-weight: 800; color: #0f172a; margin: 6px 0 2px; }
+        small { font-size: 12px; color: #64748b; }
+    }
+
+    .o_dpr_kpi4_top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .o_dpr_kpi4_label { font-size: 13px; font-weight: 600; color: #475569; }
+    .o_dpr_trend { font-size: 13px; }
+    .is-good { color: #16a34a; }
+    .is-bad { color: #dc2626; }
+    .is-flat { color: #94a3b8; }
+
+    .o_dpr_charts {
+        display: grid;
+        grid-template-columns: 1.15fr 1fr;
+        gap: 16px;
+        margin-bottom: 16px;
+    }
+
+    .o_dpr_chart_card {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+        h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; }
+        > p { margin: 2px 0 10px; font-size: 12px; color: #64748b; }
+    }
+
+    .o_dpr_chart_box {
+        position: relative;
+        height: 300px;
+    }
+
+    .o_dpr_staff_card { margin-bottom: 16px; }
+
+    .o_dpr_staff {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+
+        th {
+            padding: 10px 12px;
+            font-weight: 700;
+            color: #0f172a;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #1e293b;
+            vertical-align: middle;
+        }
+
+        .num { text-align: right; }
+
+        tbody tr { cursor: default; }
+        tbody tr:hover td { background: #f8fafc; }
+        tbody tr.active td { background: #eef2ff; }
+    }
+
+    .o_dpr_staff_avatar {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        margin-right: 10px;
+        border-radius: 50%;
+        background: #4f46e5;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        vertical-align: middle;
+    }
+
+    .o_dpr_staff_name {
+        display: inline-flex;
+        flex-direction: column;
+        vertical-align: middle;
+
+        small { font-size: 11px; color: #94a3b8; }
+    }
+
+    .o_dpr_eff {
+        display: inline-block;
+        min-width: 58px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 700;
+        text-align: center;
+
+        &.is-good { background: #dcfce7; color: #15803d; }
+        &.is-ok { background: #dbeafe; color: #1d4ed8; }
+        &.is-mid { background: #fef3c7; color: #b45309; }
+        &.is-bad { background: #fee2e2; color: #b91c1c; }
+    }
+
+    .o_dpr_body_full {
+        display: block;
+
+        .o_dpr_detail { width: 100%; }
+    }
+}
+
+@media (max-width: 1100px) {
+    .o_dpr_root {
+        .o_dpr_kpi4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .o_dpr_charts { grid-template-columns: 1fr; }
+    }
+}
+
+.o_dpr_root .o_dpr_staff td.num {
+    &.is-done { color: #15803d; font-weight: 700; }
+    &.is-doing { color: #d97706; font-weight: 700; }
+    &.is-todo { color: #64748b; font-weight: 700; }
+    &.is-late { color: #dc2626; font-weight: 700; }
+}
+
+
+// Bảng Hiệu suất nhân sự: đóng khung từng ô
+.o_dpr_root .o_dpr_staff {
+    border: 1px solid #cbd5e1;
+
+    th,
+    td {
+        border: 1px solid #cbd5e1 !important;
+    }
+
+    thead th {
+        background: #fce4d6;
+        text-align: center;
+    }
+
+    thead th:first-child { text-align: left; }
+}

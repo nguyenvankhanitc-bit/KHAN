@@ -4028,3 +4028,119 @@ body.o_ews_resizing {
     font-size: 11px;
     font-weight: 700;
 }
+
+// Điện thoại: trang đã nằm trong khung chung (DailyWorkAppShell) → bỏ chừa chỗ cho header ghim cũ
+// (padding-top + overflow:hidden làm trống 1 khoảng lớn và không cuộn / thao tác được)
+@media (max-width: 1024px) {
+    .o_daily_work_employee_ws.o_action {
+        padding-top: 0 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .o_daily_work_employee_ws.o_action .o_ews_pin {
+        position: static !important;
+        box-shadow: none !important;
+        padding: 6px 8px 4px !important;
+    }
+}
+
+// Điện thoại: icon / chữ nhỏ lại cho cân đối, KPI gọn 1 hàng
+@media (max-width: 767.98px) {
+    .o_daily_work_employee_ws.o_action {
+        .o_ews_page_title { font-size: 1.05rem !important; margin: 2px 0 6px !important; }
+
+        .o_ews_tabs {
+            gap: 2px 6px !important;
+            padding: 6px 8px !important;
+            font-size: 0.82rem !important;
+        }
+
+        .o_ews_tab { font-size: 0.82rem !important; padding: 2px 4px !important; }
+        .o_ews_tab .fa,
+        .o_ews_tab_icon { font-size: 0.85rem !important; }
+
+        .o_ews_qm { padding: 12px !important; border-radius: 14px !important; }
+
+        .o_ews_qm_head {
+            display: grid !important;
+            grid-template-columns: 32px 1fr;
+            align-items: center;
+            gap: 8px 10px !important;
+        }
+
+        .o_ews_qm_icon {
+            width: 32px !important;
+            height: 32px !important;
+            min-width: 32px !important;
+            border-radius: 9px !important;
+            font-size: 15px !important;
+        }
+
+        .o_ews_qm_title {
+            h3 { font-size: 1.05rem !important; margin: 0 !important; line-height: 1.25; }
+            p { font-size: 0.72rem !important; margin: 2px 0 0 !important; line-height: 1.35; }
+        }
+
+        .o_ews_qm_create {
+            grid-column: 1 / -1;
+            width: 100%;
+            min-height: 40px;
+            padding: 6px 12px !important;
+            font-size: 0.9rem !important;
+            border-radius: 10px !important;
+        }
+
+        .o_ews_qm_kpis {
+            display: grid !important;
+            grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+            gap: 6px !important;
+            margin-top: 10px !important;
+        }
+
+        .o_ews_qm_kpi {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center;
+            gap: 4px !important;
+            padding: 8px 2px !important;
+            min-height: 0 !important;
+            border-radius: 10px !important;
+            text-align: center;
+
+            > div { display: flex; flex-direction: column; align-items: center; }
+            span:not(.o_ews_qm_kpi_ico) {
+                font-size: 0.62rem !important;
+                line-height: 1.15;
+                white-space: normal;
+            }
+            b { font-size: 1.05rem !important; line-height: 1.1; }
+        }
+
+        .o_ews_qm_kpi_ico {
+            width: 26px !important;
+            height: 26px !important;
+            min-width: 26px !important;
+            min-height: 26px !important;
+            max-height: 26px !important;
+            flex: 0 0 26px !important;
+            align-self: center !important;
+            border-radius: 50% !important;
+            font-size: 12px !important;
+        }
+
+        .o_ews_mchips .badge,
+        .o_ews_mchips button { font-size: 0.78rem !important; }
+    }
+}
+
+// Điện thoại: vùng nội dung tự cuộn lên xuống (khung chung có overflow: hidden)
+@media (max-width: 1024px) {
+    .o_daily_work_employee_ws.o_action .o_content.o_ews_scroll {
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding-bottom: 96px !important;
+    }
+}

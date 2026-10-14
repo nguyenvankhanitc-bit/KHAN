@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="daily_work_task.DailyWorkPerformanceReport">
-        <div class="o_dpr_root o_action">
+        <div class="o_daily_work_dashboard o_daily_work_performance o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+        <div class="o_dpr_root">
             <t t-if="state.loading">
                 <div class="o_dpr_loading"><i class="fa fa-spinner fa-spin fa-2x"/><span>Đang tải báo cáo hiệu suất…</span></div>
             </t>
@@ -38,6 +40,9 @@
                         <button type="button" class="btn btn-primary btn-sm o_dpr_filter_btn" t-on-click="onFilter">
                             <i class="fa fa-filter"/> Lọc
                         </button>
+                        <button type="button" class="btn btn-success btn-sm o_dpr_filter_btn" t-att-disabled="state.exporting" t-on-click="onExport">
+                            <i t-att-class="state.exporting ? 'fa fa-spinner fa-spin' : 'fa fa-file-excel-o'"/> Xuất Excel
+                        </button>
                     </div>
                 </header>
 
@@ -45,178 +50,80 @@
                     <div class="o_dpr_msg" t-esc="state.message"/>
                 </t>
 
-                <div class="o_dpr_kpi">
-                    <div class="o_dpr_kpi_card">
-                        <span>Tổng công việc</span>
-                        <strong t-esc="kpi.total || 0"/>
-                    </div>
-                    <div class="o_dpr_kpi_card green">
-                        <span>Hoàn thành</span>
-                        <strong t-esc="kpi.done || 0"/>
-                        <em t-esc="(kpi.done_pct || 0) + '%'"/>
-                    </div>
-                    <div class="o_dpr_kpi_card red">
-                        <span>Quá hạn</span>
-                        <strong t-esc="kpi.overdue || 0"/>
-                        <em t-esc="(kpi.overdue_pct || 0) + '%'"/>
-                    </div>
-                    <div class="o_dpr_kpi_card orange">
-                        <span>Đang xử lý</span>
-                        <strong t-esc="kpi.in_progress || 0"/>
-                        <em t-esc="(kpi.in_progress_pct || 0) + '%'"/>
-                    </div>
-                    <div class="o_dpr_kpi_card purple">
-                        <span>Hiệu suất TB</span>
-                        <strong t-esc="(kpi.efficiency || 0) + '%'"/>
-                    </div>
-                </div>
-
-                <div class="o_dpr_body">
-                    <aside class="o_dpr_tree_panel">
-                        <h3>CẤP ĐỘ QUẢN LÝ</h3>
-                        <div class="o_dpr_tree">
-                            <t t-call="daily_work_task.DprTreeNodes">
-                                <t t-set="nodes" t-value="state.data.tree or []"/>
-                                <t t-set="depth" t-value="0"/>
-                            </t>
-                            <t t-if="!(state.data.tree || []).length">
-                                <div class="o_dpr_empty">Chưa có dữ liệu nhân viên.</div>
-                            </t>
+                <!-- KPI: so với tháng trước -->
+                <div class="o_dpr_kpi4">
+                    <t t-foreach="kpiCards" t-as="c" t-key="c.key">
+                        <div class="o_dpr_kpi4_card">
+                            <div class="o_dpr_kpi4_top">
+                                <span class="o_dpr_kpi4_label" t-esc="c.label"/>
+                                <i t-att-class="'fa ' + c.trendIcon + ' o_dpr_trend ' + c.trendClass"/>
+                            </div>
+                            <strong t-esc="c.value"/>
+                            <small><b t-att-class="c.trendClass" t-esc="c.deltaText"/> so với tháng trước</small>
                         </div>
-                    </aside>
-
-                    <section class="o_dpr_detail">
-                        <t t-if="detail.id">
-                            <div class="o_dpr_detail_top">
-                                <div class="o_dpr_person">
-                                    <div class="o_dpr_avatar"><i class="fa fa-user"/></div>
-                                    <div>
-                                        <strong t-esc="detail.name"/>
-                                        <span t-esc="(detail.job || '') + (detail.department ? ' · ' + detail.department : '')"/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="o_dpr_detail_grid">
-                                <div class="o_dpr_card o_dpr_score">
-                                    <h4>Hiệu suất tổng</h4>
-                                    <div class="o_dpr_score_value" t-esc="(detail.efficiency || 0) + '%'"/>
-                                    <div class="o_dpr_stars">
-                                        <t t-set="si" t-value="starIcons(detail.stars)"/>
-                                        <t t-foreach="si.full" t-as="i" t-key="'f'+i">
-                                            <i class="fa fa-star"/>
-                                        </t>
-                                        <t t-if="si.half"><i class="fa fa-star-half-o"/></t>
-                                        <t t-foreach="si.empty" t-as="i" t-key="'e'+i">
-                                            <i class="fa fa-star-o"/>
-                                        </t>
-                                    </div>
-                                    <em t-esc="detail.rating || ''"/>
-                                </div>
-                                <div class="o_dpr_card o_dpr_donut_card">
-                                    <h4>Tỷ lệ trạng thái</h4>
-                                    <div class="o_dpr_donut_wrap">
-                                        <canvas t-ref="stateChart"/>
-                                        <div class="o_dpr_donut_center">
-                                            <strong t-esc="(detail.state_chart and detail.state_chart.done_pct) or 0"/>%
-                                            <span>HT</span>
-                                        </div>
-                                    </div>
-                                    <div class="o_dpr_legend">
-                                        <span><i class="dot green"/>Hoàn thành</span>
-                                        <span><i class="dot red"/>Quá hạn</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="o_dpr_card">
-                                <h4>Danh sách công việc</h4>
-                                <div class="o_dpr_table_wrap">
-                                    <table class="o_dpr_table">
-                                        <thead>
-                                            <tr>
-                                                <th>Tên công việc</th>
-                                                <th>Ưu tiên</th>
-                                                <th>Hạn</th>
-                                                <th>Trạng thái</th>
-                                                <th>Tiến độ</th>
-                                                <th>Đánh giá</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-foreach="detail.tasks or []" t-as="row" t-key="row.id">
-                                                <tr>
-                                                    <td t-esc="row.name"/>
-                                                    <td><span t-att-class="'badge ' + priorityClass(row.priority)" t-esc="row.priority_label"/></td>
-                                                    <td t-esc="row.deadline"/>
-                                                    <td><span t-att-class="'badge ' + stateClass(row)" t-esc="row.state_label"/></td>
-                                                    <td>
-                                                        <div class="o_dpr_prog">
-                                                            <div class="track">
-                                                                <i t-att-style="'width:' + row.progress + '%'"/>
-                                                            </div>
-                                                            <em t-esc="row.progress + '%'"/>
-                                                        </div>
-                                                    </td>
-                                                    <td class="stars-cell">
-                                                        <t t-set="tsi" t-value="starIcons(row.stars)"/>
-                                                        <t t-foreach="tsi.full" t-as="i" t-key="'tf'+row.id+'-'+i">
-                                                            <i class="fa fa-star"/>
-                                                        </t>
-                                                        <t t-if="tsi.half"><i class="fa fa-star-half-o"/></t>
-                                                        <t t-foreach="tsi.empty" t-as="i" t-key="'te'+row.id+'-'+i">
-                                                            <i class="fa fa-star-o"/>
-                                                        </t>
-                                                    </td>
-                                                </tr>
-                                            </t>
-                                            <t t-if="!(detail.tasks || []).length">
-                                                <tr><td colspan="6" class="text-muted text-center">Không có công việc trong tháng.</td></tr>
-                                            </t>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-
-                            <div class="o_dpr_card">
-                                <h4>Điểm theo tiêu chí</h4>
-                                <div class="o_dpr_criteria_scroll">
-                                    <table class="o_dpr_criteria_table">
-                                        <thead>
-                                            <tr>
-                                                <th>STT</th>
-                                                <th>Tiêu chí</th>
-                                                <th>Điểm</th>
-                                                <th>Mức đạt</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <t t-foreach="detail.criteria or []" t-as="c" t-key="c.key">
-                                                <tr>
-                                                    <td class="col-stt" t-esc="c_index + 1"/>
-                                                    <td class="col-label" t-esc="c.label"/>
-                                                    <td class="col-score" t-esc="c.score + '%'"/>
-                                                    <td class="col-bar">
-                                                        <div class="bar"><i t-att-style="'width:' + c.score + '%'"/></div>
-                                                    </td>
-                                                </tr>
-                                            </t>
-                                            <t t-if="!(detail.criteria || []).length">
-                                                <tr>
-                                                    <td colspan="4" class="text-muted text-center">Chưa có dữ liệu tiêu chí.</td>
-                                                </tr>
-                                            </t>
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </t>
-                        <t t-else="">
-                            <div class="o_dpr_empty big">Chọn nhân viên ở cây cấp độ quản lý để xem chi tiết.</div>
-                        </t>
-                    </section>
+                    </t>
                 </div>
+
+                <!-- Biểu đồ: theo phòng ban + xu hướng -->
+                <div class="o_dpr_charts">
+                    <div class="o_dpr_chart_card">
+                        <h3>Hiệu suất theo team</h3>
+                        <p>Công việc trong tháng theo trạng thái của từng team</p>
+                        <div class="o_dpr_chart_box"><canvas t-ref="deptChart"/></div>
+                    </div>
+                    <div class="o_dpr_chart_card">
+                        <h3>Xu hướng hoàn thành</h3>
+                        <p>Tổng công việc và số việc hoàn thành 7 tháng gần nhất</p>
+                        <div class="o_dpr_chart_box"><canvas t-ref="trendChart"/></div>
+                    </div>
+                </div>
+
+                <!-- Bảng hiệu suất nhân sự -->
+                <div class="o_dpr_chart_card o_dpr_staff_card">
+                    <h3>Hiệu suất nhân sự</h3>
+                    <p>Số liệu công việc trong tháng theo từng nhân sự</p>
+                    <table class="o_dpr_staff">
+                        <thead>
+                            <tr>
+                                <th>Nhân sự</th>
+                                <th class="num">Tổng CV</th>
+                                <th class="num">Hoàn thành</th>
+                                <th class="num">Đang làm</th>
+                                <th class="num">Chưa làm</th>
+                                <th class="num">Trễ hạn</th>
+                                <th class="num">Hiệu suất</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.data.staff or []" t-as="r" t-key="r.id">
+                                <tr>
+                                    <td>
+                                        <span class="o_dpr_staff_avatar" t-esc="initials(r.name)"/>
+                                        <span class="o_dpr_staff_name">
+                                            <b t-esc="r.name"/>
+                                            <small t-esc="(r.job || '') + (r.department ? ' · ' + r.department : '')"/>
+                                        </span>
+                                    </td>
+                                    <td class="num" t-esc="r.total"/>
+                                    <td class="num is-done" t-esc="r.done"/>
+                                    <td class="num is-doing" t-esc="r.doing"/>
+                                    <td class="num is-todo" t-esc="r.todo"/>
+                                    <td class="num is-late" t-esc="r.late"/>
+                                    <td class="num">
+                                        <span t-att-class="'o_dpr_eff ' + effClass(r.efficiency)" t-esc="r.efficiency + '%'"/>
+                                    </td>
+                                </tr>
+                            </t>
+                            <tr t-if="!(state.data.staff || []).length">
+                                <td colspan="7" class="text-muted text-center">Chưa có dữ liệu nhân sự.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </t>
+        </div>
+            </DailyWorkAppShell>
         </div>
     </t>
 

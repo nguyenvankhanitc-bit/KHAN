@@ -54,7 +54,7 @@
         <field name="arch" type="xml">
             <form string="Công việc" class="o_dwt_task_form" js_class="daily_task_form">
                 <sheet>
-                    <div class="o_dwt_state_bar">
+                    <div class="o_dwt_state_bar o_dwt_desktop_only">
                         <label for="state" class="o_dwt_state_bar_lbl">Trạng thái công việc</label>
                         <field name="state" class="o_dwt_state_dropdown"/>
                     </div>
@@ -68,16 +68,19 @@
                         </h1>
                     </div>
                     <group class="o_dwt_form_sections">
-                        <group string="Thông tin giao việc" class="o_dwt_form_card" colspan="2">
+                        <group string="Thông tin giao việc" class="o_dwt_form_card o_dwt_desktop_only" colspan="2">
                             <field name="assigned_by_id" widget="many2one_avatar_user"/>
                             <field name="assignee_id"/>
-                            <field name="assignee_user_id" widget="many2one_avatar_user"
-                                   string="User nhận việc"/>
                             <field name="employee_hr_id" invisible="1"/>
                             <field name="assign_date"/>
                             <field name="deadline"/>
+                            <!-- Ngày hoàn thành: giống cột trên Danh sách công việc -->
+                            <field name="date_done" string="Ngày hoàn thành" readonly="1"/>
+                            <!-- Để cuối khối: điện thoại ẩn (trùng Người phụ trách) -->
+                            <field name="assignee_user_id" widget="many2one_avatar_user"
+                                   string="User nhận việc" class="o_dwt_hide_mobile"/>
                         </group>
-                        <group string="Phân loại &amp; tiến độ" class="o_dwt_form_card" colspan="2">
+                        <group string="Phân loại &amp; tiến độ" class="o_dwt_form_card o_dwt_desktop_only" colspan="2">
                             <field name="department_id"/>
                             <field name="work_group_id"
                                    options="{'no_create': True, 'no_quick_create': True}"/>
@@ -88,10 +91,24 @@
                                    class="o_dwt_pct_input"
                                    widget="integer"
                                    readonly="state == 'done'"/>
-                            <field name="is_overdue" readonly="1"/>
+                            <field name="is_overdue" readonly="1" class="o_dwt_hide_mobile"/>
+                        </group>
+                        <!-- ĐIỆN THOẠI: đúng các cột của Danh sách công việc (máy tính ẩn khối này) -->
+                        <group string="Công việc" class="o_dwt_form_card o_dwt_mobile_only" colspan="2">
+                            <field name="assign_date" string="Ngày bắt đầu"/>
+                            <field name="deadline" string="Deadline"/>
+                            <field name="date_done" string="Ngày hoàn thành" readonly="1"/>
+                            <field name="priority" string="Mức ưu tiên"/>
+                            <field name="duration_minutes" string="Thời gian (phút)"/>
+                            <field name="duration_hours" string="Tổng TG (giờ)" readonly="1"/>
+                            <field name="completion_percent" string="% hoàn thành CV"
+                                   class="o_dwt_pct_input" widget="integer"
+                                   readonly="state == 'done'"/>
+                            <field name="state" string="Trạng thái công việc"/>
+                            <field name="note" string="Ghi chú" placeholder="Nhập ghi chú..."/>
                         </group>
                     </group>
-                    <notebook>
+                    <notebook class="o_dwt_desktop_only">
                         <page string="Mô tả" name="page_description">
                             <field name="description" nolabel="1"
                                    placeholder="Mô tả yêu cầu / nội dung công việc..."/>

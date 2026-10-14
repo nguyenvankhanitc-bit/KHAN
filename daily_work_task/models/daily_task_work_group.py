@@ -308,6 +308,28 @@ class DailyTaskWorkGroup(models.Model):
         return copy.deepcopy(data)
 
     @api.model
+    def get_category_board_view(self, search=""):
+        """Trang «Danh sách hạng mục công việc»: Quản lý thấy mọi phòng ban; người khác chỉ thấy
+        phòng ban của mình + phòng ban có Team mà mình là quản lý / thành viên."""
+        data = self.get_category_board_data(search)
+        if self.env["daily.task.assign.access"]._is_manager():
+            return data
+        user = self.env.user
+        dept_ids = set(d for d in self.env["daily.task"].rule_team_department_ids() if d)
+        teams = self.env["daily.task.team"].sudo().search(
+            ["|", ("manager_ids", "in", user.id), ("member_ids", "in", user.id)]
+        )
+        dept_ids |= set(teams.mapped("department_id").ids)
+        allowed = {"dept-%s" % i for i in dept_ids}
+        depts = [d for d in data.get("departments") or [] if d.get("id") in allowed]
+        data["departments"] = depts
+        data["task_count"] = sum(
+            len(c.get("tasks") or [])
+            for d in depts for t in d.get("teams") or [] for c in t.get("categories") or []
+        )
+        return data
+
+    @api.model
     def _get_category_board_data_raw(self, search=""):
         """Dữ liệu bảng hạng mục — group: Phòng ban → Team → Hạng mục → CV con."""
         needle = (search or "").strip().lower()

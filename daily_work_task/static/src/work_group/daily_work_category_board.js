@@ -239,7 +239,7 @@ export class DailyWorkCategoryBoard extends Component {
         try {
             const data = await this.orm.call(
                 "daily.task.work.group",
-                "get_category_board_data",
+                "get_category_board_view",
                 [],
                 { search: "" }
             );

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.47.1",
+    "version": "19.0.1.48.0",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -43,6 +43,7 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
         "views/daily_task_access_views.xml",
         "views/daily_task_assign_access_views.xml",
         "views/daily_task_team_plan_access_views.xml",
+        "views/daily_task_self_review_views.xml",
         "views/daily_task_monthly_report_views.xml",
         "views/daily_task_report_access_views.xml",
         "views/daily_task_performance_access_views.xml",

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_daily_task_self_review_list" model="ir.ui.view">
+        <field name="name">daily.task.self.review.list</field>
+        <field name="model">daily.task.self.review</field>
+        <field name="arch" type="xml">
+            <list string="Phân quyền tự kiểm tra CV" editable="bottom">
+                <field name="user_id" options="{'no_create': True}" width="240px"/>
+                <field name="employee_id" readonly="1" optional="show"/>
+                <field name="department_id" readonly="1" optional="show"/>
+                <field name="note" optional="show"/>
+                <field name="active" widget="boolean_toggle"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_daily_task_self_review_search" model="ir.ui.view">
+        <field name="name">daily.task.self.review.search</field>
+        <field name="model">daily.task.self.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="user_id"/>
+                <field name="department_id"/>
+                <filter name="inactive" string="Đã tắt" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter name="group_dept" string="Phòng ban" context="{'group_by': 'department_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_daily_task_self_review" model="ir.actions.act_window">
+        <field name="name">Phân quyền tự kiểm tra CV</field>
+        <field name="res_model">daily.task.self.review</field>
+        <field name="view_mode">list</field>
+        <field name="search_view_id" ref="view_daily_task_self_review_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm user được tự kiểm tra công việc của mình</p>
+            <p>
+                User có trong danh sách sẽ thấy <b>công việc của chính mình</b> trên trang
+                <b>Kiểm tra CV</b> và được tự <b>Xác nhận QL</b>, nhập <b>% Hoàn thành</b> và
+                <b>Ghi chú</b> đánh giá (vd: quản lý không có cấp trên duyệt).
+            </p>
+        </field>
+    </record>
+</odoo>

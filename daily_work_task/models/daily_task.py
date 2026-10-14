@@ -1633,7 +1633,20 @@ class DailyTask(models.Model):
     def _checklist_employee_ids(self):
         if self._is_manager():
             return None
-        return self._access_target_ids_sql("perm_checklist")
+        ids = list(self._access_target_ids_sql("perm_checklist"))
+        # Phân quyền tự kiểm tra CV → thấy việc của chính mình trên Kiểm tra CV
+        if self._can_self_review():
+            mine = self._my_hr_employee().id
+            if mine and mine not in ids:
+                ids.append(mine)
+        return ids
+
+    @api.model
+    def _can_self_review(self):
+        return bool(self._req_cache(
+            ("self_review", self.env.uid),
+            lambda: self.env["daily.task.self.review"].user_can_self_review(),
+        ))
 
     @api.model
     def rule_team_department_ids(self):

@@ -236,6 +236,10 @@
                                             t-on-click="() => this.openNav('team_plan_access')">
                                         <i class="fa fa-calendar-check-o"/><span>Phân quyền Plan tổng</span>
                                     </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Phân quyền tự kiểm tra CV"
+                                            t-on-click="() => this.openNav('self_review')">
+                                        <i class="fa fa-user-circle-o"/><span>Phân quyền tự kiểm tra CV</span>
+                                    </button>
                                     <button type="button" class="o_dwd_side_item sub" title="Phân quyền Báo cáo tổng"
                                             t-on-click="() => this.openNav('report_access')">
                                         <i class="fa fa-shield"/><span>Phân quyền Báo cáo tổng</span>

@@ -272,6 +272,13 @@
               sequence="23"
               groups="daily_work_task.group_daily_work_manager"/>
 
+    <menuitem id="menu_daily_work_self_review"
+              name="Phân quyền tự kiểm tra CV"
+              parent="menu_daily_work_config"
+              action="action_daily_task_self_review"
+              sequence="24"
+              groups="daily_work_task.group_daily_work_manager"/>
+
     <menuitem id="menu_daily_work_report_access"
               name="Phân quyền Báo cáo tổng"
               parent="menu_daily_work_config"

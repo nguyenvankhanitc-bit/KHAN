@@ -101,3 +101,107 @@
         border-bottom: none !important;
     }
 }
+
+// Hạng mục: danh sách ô vuông tích chọn, có thanh trượt
+.o_dwt_catlist {
+    width: 100%;
+
+    .o_dwt_catlist_search {
+        width: 100%;
+        margin-bottom: 6px;
+    }
+
+    .o_dwt_catlist_box {
+        max-height: 230px;
+        overflow-y: auto;
+        border: 1px solid #d6dce8;
+        border-radius: 8px;
+        padding: 4px;
+        background: #fff;
+    }
+
+    .o_dwt_catlist_item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+        padding: 5px 8px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 0.9rem;
+
+        input.form-check-input {
+            flex: 0 0 auto;
+            width: 16px;
+            height: 16px;
+            margin: 0;
+            border: 2px solid #64748b;
+        }
+
+        &:hover { background: #f1f5f9; }
+        &.is-checked { background: #ede9fe; font-weight: 700; color: #4c1d95; }
+    }
+
+    .o_dwt_catlist_empty {
+        padding: 8px;
+        color: #94a3b8;
+        font-style: italic;
+    }
+}
+
+// User trong team: ô vuông tích chọn, có thanh trượt
+.o_form_view .o_field_many2many_checkboxes.o_dwt_team_users {
+    display: block;
+    max-height: 140px;
+    overflow-y: auto;
+    border: 1px solid #d6dce8;
+    border-radius: 8px;
+    padding: 4px 8px;
+    background: #fff;
+
+    .form-check { margin: 2px 0; }
+    .form-check-input { border: 2px solid #64748b; }
+}
+
+
+// Ô chọn thu gọn (Hạng mục / Tên công việc)
+.o_dwt_catlist {
+    .o_dwt_catlist_toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        width: 100%;
+        min-height: 36px;
+        padding: 6px 10px;
+        margin-bottom: 6px;
+        border: 1px solid #d6dce8;
+        border-radius: 8px;
+        background: #fff;
+        text-align: left;
+        cursor: pointer;
+
+        &:hover, &.is-open { border-color: #7c3aed; }
+        .fa-chevron-down, .fa-chevron-up { color: #64748b; }
+    }
+
+    .o_dwt_catlist_value { font-weight: 700; color: #4c1d95; .fa { color: #7c3aed; } }
+    .o_dwt_catlist_ph { color: #94a3b8; }
+}
+
+.o_dwt_tasklist .o_dwt_catlist_box {
+    max-height: 220px;
+    padding: 4px 8px;
+}
+
+// Ô user dùng widget thu gọn: bỏ khung cũ (khung nằm trong widget)
+.o_form_view .o_field_widget.o_dwt_team_users {
+    border: 0 !important;
+    padding: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    display: block;
+    width: 100%;
+
+    .o_dwt_catlist_value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

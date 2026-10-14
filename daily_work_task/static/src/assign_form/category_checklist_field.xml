@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DwtCategoryChecklistField">
+        <div class="o_dwt_catlist">
+            <!-- Ô chọn: bấm để mở danh sách hạng mục -->
+            <button type="button" t-att-class="'o_dwt_catlist_toggle' + (state.open ? ' is-open' : '')"
+                    t-att-disabled="props.readonly" t-on-click="toggleOpen">
+                <span t-if="selectedLabel" class="o_dwt_catlist_value"><i class="fa fa-check-square"/> <t t-esc="selectedLabel"/></span>
+                <span t-else="" class="o_dwt_catlist_ph">Bấm để chọn hạng mục...</span>
+                <i t-att-class="'fa ' + (state.open ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+            </button>
+            <t t-if="state.open">
+                <input type="search" class="o_input o_dwt_catlist_search" placeholder="Tìm hạng mục..."
+                       t-att-value="state.query" t-on-input="onQuery"/>
+                <div class="o_dwt_catlist_box">
+                    <t t-foreach="items" t-as="item" t-key="item[0]">
+                        <label t-att-class="'o_dwt_catlist_item' + (value === item[0] ? ' is-checked' : '')">
+                            <input type="checkbox" class="form-check-input"
+                                   t-att-checked="value === item[0]"
+                                   t-on-change="() => this.onToggle(item)"/>
+                            <span t-esc="item[1]"/>
+                        </label>
+                    </t>
+                    <div t-if="!items.length" class="o_dwt_catlist_empty">Không có hạng mục phù hợp.</div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- Tên công việc: thu gọn — bấm để hiện danh sách tích chọn -->
+    <t t-name="daily_work_task.DwtCollapsibleCheckboxesField">
+        <div class="o_dwt_catlist o_dwt_tasklist" t-ref="root">
+            <button type="button" t-att-class="'o_dwt_catlist_toggle' + (state.open ? ' is-open' : '')"
+                    t-on-click="toggleOpen">
+                <span t-if="selectedCount" class="o_dwt_catlist_value" t-att-title="selectedNames">
+                    <i class="fa fa-check-square"/>
+                    <t t-if="props.unit === 'user' and selectedCount &lt;= 3" t-esc="selectedNames"/>
+                    <t t-else="">Đã chọn <t t-esc="selectedCount"/> <t t-esc="props.unit"/></t>
+                </span>
+                <span t-else="" class="o_dwt_catlist_ph" t-esc="props.placeholder || ('Bấm để chọn ' + props.unit + '...')"/>
+                <i t-att-class="'fa ' + (state.open ? 'fa-chevron-up' : 'fa-chevron-down')"/>
+            </button>
+            <div t-if="state.open" class="o_dwt_catlist_box">
+                <t t-call="web.Many2ManyCheckboxesField"/>
+            </div>
+        </div>
+    </t>
+</templates>

@@ -137,14 +137,14 @@
                             <field name="department_id" options="{'no_create': True}"
                                      readonly="dept_locked" force_save="1"
                                      placeholder="Tự lấy theo user đăng nhập..."/>
-                            <field name="category_group_id"
+                            <field name="category_group_id" widget="dwt_category_checklist"
                                      options="{'no_create': True, 'no_open': True}"
                                      context="{'work_group_unique_category': 1, 'work_group_short_name': 1}"
                                      domain="[('department_id', '=', department_id)]"
                                      placeholder="Chọn hạng mục (Camera, Email…)…"/>
                             <field name="category_name" invisible="1"/>
                             <field name="work_group_ids" string="Tên công việc"
-                                     widget="many2many_checkboxes"
+                                     widget="dwt_collapsible_checkboxes"
                                      context="{'work_group_show_task_name': 1}"
                                      domain="[('department_id', '=', department_id), ('name', '=', category_name)]"
                                      invisible="not category_name"/>
@@ -161,37 +161,34 @@
                                      placeholder="Vd: 26"/>
                         </group>
                         <group string="Người phụ trách (xuống CV cá nhân)">
-                            <field name="assignee_user_ids" widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user phụ trách..."/>
-                            <field name="south_user_ids" string="Miền Nam"
-                                     widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
-                            <field name="dtt_user_ids" string="Miền ĐTT"
-                                     widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
-                            <field name="north_user_ids" string="Miền Bắc"
-                                     widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
-                            <field name="office_user_ids" string="Văn phòng"
-                                     widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
-                            <field name="check_user_ids" widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
-                            <field name="detail_user_ids" widget="many2many_tags"
-                                     options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
+                            <field name="team_user_ids" invisible="1"/>
+                            <field name="assignee_user_ids" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="south_user_ids" string="Miền Nam" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="dtt_user_ids" string="Miền ĐTT" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="north_user_ids" string="Miền Bắc" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="office_user_ids" string="Văn phòng" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="check_user_ids" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
+                            <field name="detail_user_ids" widget="dwt_collapsible_checkboxes" class="o_dwt_team_users"
+                                     options="{'unit': 'user'}" placeholder="Bấm để chọn user trong team..."
+                                     domain="[('id', 'in', team_user_ids)]"/>
                             <field name="coord_user_ids" widget="many2many_tags"
                                      options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
+                                     placeholder="Gõ tên để tìm user bất kỳ..."/>
                             <field name="participant_ids" widget="many2many_tags"
                                      options="{'no_create': True}"
-                                     placeholder="Chọn user..."/>
+                                     placeholder="Gõ tên để tìm user bất kỳ..."/>
                             <field name="date_start"/>
                             <field name="deadline"/>
                             <field name="plan_daily"/>

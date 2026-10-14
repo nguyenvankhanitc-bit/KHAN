@@ -279,6 +279,33 @@ class DailyTaskAssign(models.Model):
         domain=_USER_DOMAIN,
         ondelete="set null",
     )
+    # User trong team (để tích chọn Người phụ trách / Miền / Văn phòng / Kiểm tra / Chi tiết)
+    team_user_ids = fields.Many2many(
+        "res.users",
+        compute="_compute_team_user_ids",
+        string="User trong team",
+    )
+
+    @api.depends("team_id", "category_group_id", "work_group_ids", "department_id")
+    @api.depends_context("uid")
+    def _compute_team_user_ids(self):
+        WG = self.env["daily.task.work.group"].sudo()
+        Users = self.env["res.users"].sudo()
+        for rec in self:
+            team = (
+                rec.team_id
+                or rec.work_group_ids[:1].team_id
+                or rec.category_group_id.team_id
+                or WG._team_from_user(department=rec.department_id or None)
+            )
+            users = (team.member_ids | team.manager_ids) if team else Users
+            if not users and rec.department_id:
+                emps = self.env["hr.employee"].sudo().search(
+                    [("department_id", "=", rec.department_id.id), ("user_id", "!=", False)]
+                )
+                users = emps.mapped("user_id")
+            rec.team_user_ids = users.filtered(lambda u: u.active and not u.share).sorted("name")
+
     participant_ids = fields.Many2many(
         "res.users",
         "daily_task_assign_participant_rel",
@@ -1258,7 +1285,7 @@ class DailyTaskAssign(models.Model):
         for col, w in enumerate(widths):
             ws.set_column(col, col, w)
 
-        ws.merge_range(0, 0, 0, 12, "BẢNG PHÂN CÔNG CÔNG VIỆC TEAM", title_fmt)
+        ws.merge_range(0, 0, 0, 12, "DANH SÁCH PHÂN CÔNG CÔNG VIỆC", title_fmt)
         ws.merge_range(1, 0, 1, 12, data.get("month_label") or "", sub_fmt)
         ws.merge_range(2, 0, 2, 12, "Chế độ: Chỉ xem", sub_fmt)
 

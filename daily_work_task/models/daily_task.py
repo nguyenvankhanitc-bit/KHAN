@@ -1696,7 +1696,7 @@ class DailyTask(models.Model):
         return {
             "type": "ir.actions.client",
             "tag": "daily_work_assign_board",
-            "name": "Bảng phân công công việc team",
+            "name": "Danh sách phân công công việc",
             "target": "current",
         }
 

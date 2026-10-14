@@ -60,7 +60,7 @@ export class DailyWorkAssignBoard extends Component {
     }
 
     get pageTitle() {
-        return _t("BẢNG PHÂN CÔNG CÔNG VIỆC TEAM");
+        return _t("DANH SÁCH PHÂN CÔNG CÔNG VIỆC");
     }
 
     get modeBadge() {

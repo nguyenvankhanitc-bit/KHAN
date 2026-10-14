@@ -48,7 +48,7 @@
         <field name="context">{'daily_work_focus_reminders': True}</field>
     </record>
     <record id="action_daily_work_assign_board" model="ir.actions.client">
-        <field name="name">Bảng phân công công việc team</field>
+        <field name="name">Danh sách phân công công việc</field>
         <field name="tag">daily_work_assign_board</field>
         <field name="context">{'daily_work_assign_feature': 'list'}</field>
     </record>

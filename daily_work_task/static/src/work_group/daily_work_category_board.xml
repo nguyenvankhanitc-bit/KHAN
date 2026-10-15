@@ -109,6 +109,11 @@
                                                                             t-on-click.stop="(ev) => this.onAddSubTask(dept, team, cat, ev)">
                                                                         <i class="fa fa-plus"/> Thêm CV con
                                                                     </button>
+                                                                    <button t-if="canDeleteCat(team, cat)" type="button" class="btn btn-sm o_dcb_del_cat"
+                                                                            title="Xoá hạng mục này (vd hạng mục bị trùng)"
+                                                                            t-on-click.stop="(ev) => this.onDeleteCategory(cat, ev)">
+                                                                        <i class="fa fa-trash"/> Xoá
+                                                                    </button>
                                                                     <!-- User quản lý hạng mục -->
                                                                     <div class="o_dcb_cat_manager" t-on-click.stop="() => this.openCatEditor(cat)"
                                                                          t-att-title="canSetManager ? 'Bấm để chọn User quản lý hạng mục' : 'User quản lý hạng mục'">
@@ -140,6 +145,11 @@
                                                                         <td class="o_dcb_col_name o_dcb_task_indent">
                                                                             <button type="button" class="o_dcb_task_link" t-on-click.stop="() => this.onOpenTask(task)" t-att-title="task.name">
                                                                                 <span class="o_dcb_task_name" t-esc="task.name"/>
+                                                                            </button>
+                                                                            <button t-if="canDeleteCat(team, cat)" type="button" class="o_dcb_del_task"
+                                                                                    title="Xoá công việc con này"
+                                                                                    t-on-click.stop="(ev) => this.onDeleteTask(cat, task, ev)">
+                                                                                <i class="fa fa-trash"/>
                                                                             </button>
                                                                         </td>
                                                                         <!-- Tần suất: X theo ô đã tích ở Thêm phân công công việc -->

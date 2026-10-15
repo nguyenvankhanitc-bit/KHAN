@@ -556,3 +556,32 @@ tr:has(> td > .o_dcb_section_btn) {
 
     &:hover { background: #ede9fe; }
 }
+
+// Nút «Xoá» hạng mục
+.o_dcb_del_cat {
+    margin-left: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px dashed #dc2626;
+    background: #fff;
+    color: #b91c1c;
+    font-size: 12px;
+    font-weight: 700;
+    vertical-align: middle;
+
+    &:hover { background: #fee2e2; }
+}
+
+// Nút xoá từng công việc con (hiện khi rê chuột vào dòng)
+.o_dcb_del_task {
+    margin-left: 8px;
+    padding: 0 6px;
+    border: 0;
+    background: transparent;
+    color: #dc2626;
+    opacity: 0.35;
+    vertical-align: middle;
+
+    &:hover { opacity: 1; }
+}
+.o_dcb_task:hover .o_dcb_del_task { opacity: 0.85; }

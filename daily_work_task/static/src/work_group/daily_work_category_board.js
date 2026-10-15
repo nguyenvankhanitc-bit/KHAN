@@ -3,6 +3,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
@@ -17,6 +18,7 @@ export class DailyWorkCategoryBoard extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.dialog = useService("dialog");
         this.state = useState({
             loading: true,
             search: "",
@@ -328,6 +330,56 @@ export class DailyWorkCategoryBoard extends Component {
     }
 
     /** Thêm công việc con cho hạng mục đã có (điền sẵn Hạng mục / Phòng ban / Team / Quản lý). */
+    get canUnlink() {
+        return Boolean(this.state.access?.unlink);
+    }
+
+    /** Xoá được: Phân quyền phân công công việc → dòng «Hạng mục» có tick «Xóa». */
+    canDeleteCat() {
+        return this.canUnlink;
+    }
+
+    /** Xoá hạng mục (vd hạng mục bị trùng): công việc đã dùng → lưu trữ, chưa dùng → xoá hẳn. */
+    onDeleteCategory(cat, ev) {
+        ev?.stopPropagation?.();
+        const ids = (cat.tasks || []).map((t) => t.id);
+        if (!ids.length) {
+            return;
+        }
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Xoá hạng mục"),
+            body: `Xoá hạng mục «${cat.name || ""}» cùng ${ids.length} công việc con? Công việc con đã có dữ liệu sẽ được lưu trữ (ẩn), không mất lịch sử.`,
+            confirmLabel: _t("Xoá"),
+            cancelLabel: _t("Huỷ"),
+            confirm: async () => {
+                const res = await this.orm.call("daily.task.work.group", "delete_category", [ids]);
+                this.notification.add(
+                    `Đã xoá hạng mục «${cat.name || ""}»: xoá ${res.deleted}, lưu trữ ${res.archived} công việc con.`,
+                    { type: "success" }
+                );
+                await this.load();
+            },
+            cancel: () => {},
+        });
+    }
+
+    /** Xoá 1 công việc con (vd dòng bị trùng). */
+    onDeleteTask(cat, task, ev) {
+        ev?.stopPropagation?.();
+        this.dialog.add(ConfirmationDialog, {
+            title: _t("Xoá công việc con"),
+            body: `Xoá «${task.name || ""}» khỏi hạng mục «${cat.name || ""}»? Nếu đã có dữ liệu sẽ được lưu trữ (ẩn), không mất lịch sử.`,
+            confirmLabel: _t("Xoá"),
+            cancelLabel: _t("Huỷ"),
+            confirm: async () => {
+                await this.orm.call("daily.task.work.group", "delete_category", [[task.id]]);
+                this.notification.add(`Đã xoá «${task.name || ""}».`, { type: "success" });
+                await this.load();
+            },
+            cancel: () => {},
+        });
+    }
+
     async onAddSubTask(dept, team, cat, ev) {
         ev?.stopPropagation?.();
         if (!this.canCreate) {

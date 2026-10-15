@@ -1155,6 +1155,28 @@ class DailyTaskAssign(models.Model):
         needle = (search or "").strip().lower()
         WorkGroup = self.env["daily.task.work.group"]
         records = self.search([], order="stt, id")
+        # Lọc theo Team (Cài đặt → Bộ phận → Team); Quản lý xem tất cả
+        scope = WorkGroup._team_scope()
+        if scope is not None:
+            # Dòng chưa gán Team → lấy Team theo người phụ trách
+            user_teams = {}
+            for team in self.env["daily.task.team"].sudo().search([("active", "=", True)]):
+                for u in team.manager_ids | team.member_ids:
+                    user_teams.setdefault(u.id, set()).add(team.id)
+
+            def visible(r):
+                dept_id = (r.work_group_id.department_id or r.department_id).id
+                team_id = (r.team_id or r.work_group_id.team_id).id
+                if team_id or scope["teams"] is None:
+                    return WorkGroup._in_team_scope(scope, team_id, dept_id)
+                inferred = set()
+                for u in r._responsible_users():
+                    inferred |= user_teams.get(u.id, set())
+                if inferred:
+                    return bool(inferred & scope["teams"])
+                return WorkGroup._in_team_scope(scope, False, dept_id)
+
+            records = records.filtered(visible)
         records.mapped("work_group_id").mapped("display_stt")
         # Sắp theo thứ tự hạng mục (sequence) rồi STT phân công
         records = records.sorted(

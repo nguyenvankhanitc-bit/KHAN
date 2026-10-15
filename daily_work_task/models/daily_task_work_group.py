@@ -245,9 +245,12 @@ class DailyTaskWorkGroup(models.Model):
 
     @staticmethod
     def _norm_category_name(name):
-        """Bỏ tiền tố số (1. / 2.) để nhóm hạng mục giống bảng phân công."""
-        raw = (name or "").strip()
-        cleaned = re.sub(r"^\d+\.\s*", "", raw).strip()
+        """Bỏ tiền tố số (1. / 2.) và số La Mã (III. / IV.) để nhóm hạng mục giống bảng phân công.
+
+        «III. INTERNET» và «INTERNET» là cùng 1 hạng mục.
+        """
+        raw = " ".join((name or "").split())
+        cleaned = re.sub(r"^(?:(?:\d+|[IVXLCDM]+)[.)]\s+)+", "", raw).strip()
         return cleaned or raw
 
     @api.depends("sequence", "name", "department_id", "task_name", "active")
@@ -341,12 +344,59 @@ class DailyTaskWorkGroup(models.Model):
         return copy.deepcopy(data)
 
     @api.model
-    def get_category_board_view(self, search=""):
-        """Trang «Danh sách hạng mục công việc»: Quản lý thấy mọi phòng ban; người khác chỉ thấy
-        phòng ban của mình + phòng ban có Team mà mình là quản lý / thành viên."""
-        data = self.get_category_board_data(search)
+    def _team_scope(self):
+        """Phạm vi xem theo Cài đặt → Bộ phận → Team.
+
+        None → Quản lý module: xem tất cả.
+        Ngược lại {"teams": set|None, "depts": set}:
+        - teams: Team mà user là User quản lý team hoặc nằm trong User Group (None = chưa thuộc team nào)
+        - depts: phòng ban của user (dòng chưa gán Team của phòng ban mình vẫn thấy)
+        """
         if self.env["daily.task.assign.access"]._is_manager():
+            return None
+        uid = self.env.uid
+        teams = self.env["daily.task.team"].sudo().search(
+            [("active", "=", True), "|", ("manager_ids", "in", uid), ("member_ids", "in", uid)]
+        )
+        depts = set(d for d in self.env["daily.task"].rule_team_department_ids() if d)
+        if not teams:
+            return {"teams": None, "depts": depts}
+        return {"teams": set(teams.ids), "depts": depts | set(teams.mapped("department_id").ids)}
+
+    @api.model
+    def _in_team_scope(self, scope, team_id, dept_id):
+        if scope is None:
+            return True
+        if scope["teams"] is None:
+            return bool(dept_id) and dept_id in scope["depts"]
+        if team_id:
+            return team_id in scope["teams"]
+        return bool(dept_id) and dept_id in scope["depts"]
+
+    @api.model
+    def get_category_board_view(self, search=""):
+        """Trang «Danh sách hạng mục công việc»: Quản lý thấy tất cả; người khác chỉ thấy
+        Team của mình theo Cài đặt → Bộ phận → Team (+ dòng chưa gán Team của phòng ban mình)."""
+        data = self.get_category_board_data(search)
+        scope = self._team_scope()
+        if scope is None:
             return data
+        depts = []
+        for d in data.get("departments") or []:
+            try:
+                dept_id = int(str(d.get("id") or "").replace("dept-", "") or 0)
+            except ValueError:
+                dept_id = 0
+            teams = [t for t in d.get("teams") or [] if self._in_team_scope(scope, t.get("team_id"), dept_id)]
+            if not teams:
+                continue
+            d["teams"] = teams
+            d["team_count"] = len(teams)
+            d["task_count"] = sum(t.get("task_count") or 0 for t in teams)
+            depts.append(d)
+        data["departments"] = depts
+        data["task_count"] = sum(d["task_count"] for d in depts)
+        return data
         user = self.env.user
         dept_ids = set(d for d in self.env["daily.task"].rule_team_department_ids() if d)
         teams = self.env["daily.task.team"].sudo().search(
@@ -627,13 +677,48 @@ class DailyTaskWorkGroup(models.Model):
                     assign.with_context(skip_link_users=True).write(updates)
         return res
 
+    def _used_ids(self):
+        """Dòng hạng mục đang được công việc / phân công / việc lặp dùng (không xoá cứng được)."""
+        if not self:
+            return set()
+        used = set()
+        for model, field in (
+            ("daily.task", "work_group_id"),
+            ("daily.task.assign", "work_group_id"),
+            ("daily.task.recurring", "work_group_id"),
+        ):
+            if model not in self.env:
+                continue
+            rows = self.env[model].sudo().with_context(active_test=False).search_read(
+                [(field, "in", self.ids)], [field]
+            )
+            used |= {r[field][0] for r in rows if r[field]}
+        return used
+
     def unlink(self):
+        """Xoá hạng mục: dòng chưa dùng → xoá hẳn; dòng đã có công việc → lưu trữ (ẩn), giữ lịch sử."""
         self.env["daily.task"]._req_cache_clear()
-        self.env["daily.task.assign.access"].check("category", "unlink")
+        if not self.env.context.get("skip_category_unlink_check"):
+            self.env["daily.task.assign.access"].check("category", "unlink")
         teams = self.mapped("team_id").ids
-        res = super().unlink()
+        used = self._used_ids()
+        to_archive = self.filtered(lambda g: g.id in used)
+        if to_archive:
+            to_archive.sudo().with_context(skip_link_users=True).write({"active": False})
+        res = super(DailyTaskWorkGroup, self - to_archive).unlink()
         self._refresh_category_heads(teams or None)
         return res
+
+    @api.model
+    def delete_category(self, group_ids):
+        """Nút «Xoá» trên dòng hạng mục: xoá mọi công việc con của hạng mục."""
+        rows = self.sudo().browse([int(i) for i in group_ids or []]).exists()
+        # Theo Phân quyền phân công công việc → dòng «Hạng mục» → cột «Xóa»
+        self.env["daily.task.assign.access"].check("category", "unlink")
+        used = rows._used_ids()
+        archived = len([r for r in rows if r.id in used])
+        rows.with_context(skip_category_unlink_check=True).unlink()
+        return {"deleted": len(rows) - archived, "archived": archived}
 
     @api.model
     def action_import_from_assign_board(self):

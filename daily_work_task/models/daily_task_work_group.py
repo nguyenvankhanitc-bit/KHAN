@@ -254,28 +254,37 @@ class DailyTaskWorkGroup(models.Model):
         cleaned = re.sub(r"^(?:(?:\d+|[IVXLCDM]+)[.)]\s+)+", "", raw).strip()
         return cleaned or raw
 
-    @api.depends("sequence", "name", "department_id", "task_name", "active")
+    @api.depends("sequence", "name", "department_id", "team_id", "task_name", "active")
     def _compute_display_stt(self):
-        """STT dạng 1.1, 1.2, 2.1… — nhóm theo hạng mục, tăng dần trong nhóm."""
+        """STT dạng 1.1, 1.2, 2.1… — đánh lại trong mỗi Team (chưa có Team: theo phòng ban).
+
+        Thứ tự giống trang «Danh sách hạng mục»: hạng mục theo sequence nhỏ nhất rồi tên,
+        công việc con theo sequence rồi tên.
+        """
         depts = self.mapped("department_id")
         domain = [("active", "=", True)]
         if depts:
             domain.append(("department_id", "in", depts.ids))
         siblings = self.sudo().search(domain, order="department_id, sequence, id")
-        by_dept = {}
+        by_scope = {}
         for g in siblings:
-            by_dept.setdefault(g.department_id.id, []).append(g)
+            scope = (g.department_id.id, g.team_id.id or 0)
+            by_scope.setdefault(scope, []).append(g)
 
         computed = {}
-        for rows in by_dept.values():
-            cat_index = {}
-            cat_counter = {}
+        for rows in by_scope.values():
+            cats = {}
             for g in rows:
                 key = self._norm_category_name(g.name).casefold()
-                if key not in cat_index:
-                    cat_index[key] = len(cat_index) + 1
-                cat_counter[key] = cat_counter.get(key, 0) + 1
-                computed[g.id] = "%s.%s" % (cat_index[key], cat_counter[key])
+                cats.setdefault(key, []).append(g)
+            ordered = sorted(
+                cats.items(),
+                key=lambda kv: (min(int(r.sequence or 0) for r in kv[1]), kv[0]),
+            )
+            for c_idx, (_key, items) in enumerate(ordered, start=1):
+                items = sorted(items, key=lambda r: (int(r.sequence or 0), (r.task_name or "").casefold(), r.id))
+                for t_idx, g in enumerate(items, start=1):
+                    computed[g.id] = "%s.%s" % (c_idx, t_idx)
 
         for rec in self:
             rec.display_stt = computed.get(rec.id) or (

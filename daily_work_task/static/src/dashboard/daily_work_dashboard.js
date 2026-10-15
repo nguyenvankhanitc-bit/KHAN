@@ -767,7 +767,8 @@ export class DailyWorkDashboard extends Component {
             return;
         }
         if (key === "work_group" || key === "config") {
-            await this._doNavAction("daily_work_task.action_daily_task_work_group", asPopup);
+            // Cùng trang «Danh sách hạng mục công việc» như thanh bên (không mở danh sách thô)
+            await this._doNavAction("daily_work_task.action_daily_work_category_board", asPopup);
             return;
         }
         if (key === "recurring") {

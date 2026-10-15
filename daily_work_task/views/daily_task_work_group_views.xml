@@ -8,6 +8,7 @@
             <list string="Hạng mục"
                   create="1" edit="1" delete="1"
                   class="o_daily_task_work_group_list"
+                  expand="1"
                   default_order="sequence, id">
                 <field name="sequence" widget="handle"/>
                 <field name="display_stt" string="STT" readonly="1" width="70px"/>
@@ -39,6 +40,9 @@
         <field name="arch" type="xml">
             <form string="Hạng mục" class="o_dwg_form_lined">
                 <sheet>
+                    <div class="alert alert-success" role="status" invisible="not last_saved_label">
+                        <i class="fa fa-check-circle"/> <field name="last_saved_label" readonly="1" nolabel="1" class="d-inline"/>
+                    </div>
                     <div class="alert alert-info" role="alert">
                         <b>Hạng mục</b> là mục cha (STT · Hạng mục · Tên công việc).
                         Sang <b>Thêm phân công công việc</b> để chọn hạng mục và gắn người phụ trách —
@@ -101,6 +105,12 @@
                         </group>
                     </group>
                 </sheet>
+                <!-- Popup: Lưu xong vẫn giữ form, hiện CV vừa thêm để nhập tiếp -->
+                <footer>
+                    <button name="action_save_and_continue" type="object" string="Lưu" class="btn-primary"
+                            title="Lưu và giữ form để thêm tiếp công việc con"/>
+                    <button string="Đóng" special="cancel" class="btn-secondary"/>
+                </footer>
             </form>
         </field>
     </record>
@@ -140,7 +150,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'search_default_group_by_head': 3, 'work_group_category_label': True}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Tạo hạng mục cha</p>
             <p>Nhập <b>Hạng mục</b> + <b>Tên công việc</b>. Cùng tên hạng mục sẽ gom thành
@@ -153,7 +163,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'search_default_group_by_head': 3, 'work_group_category_label': True}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True}</field>
     </record>
 
     <record id="action_daily_task_work_group_assign" model="ir.actions.act_window">

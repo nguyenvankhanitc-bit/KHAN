@@ -585,3 +585,9 @@ tr:has(> td > .o_dcb_section_btn) {
     &:hover { opacity: 1; }
 }
 .o_dcb_task:hover .o_dcb_del_task { opacity: 0.85; }
+
+// Tên công việc con + nút xoá nằm cùng 1 dòng
+.o_daily_work_category_board .o_dcb_table .o_dcb_task .o_dcb_task_link {
+    display: inline;
+    width: auto;
+}

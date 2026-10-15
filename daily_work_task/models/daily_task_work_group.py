@@ -179,6 +179,7 @@ class DailyTaskWorkGroup(models.Model):
         store=False,
         help="Hạng mục đã có: chọn để thêm Tên công việc con vào hạng mục đó.",
     )
+    last_saved_label = fields.Char(compute="_compute_last_saved_label")
     category_task_names = fields.Text(
         string="Công việc đã có trong hạng mục",
         compute="_compute_category_task_names",
@@ -677,6 +678,18 @@ class DailyTaskWorkGroup(models.Model):
                     assign.with_context(skip_link_users=True).write(updates)
         return res
 
+    @api.model
+    def formatted_read_group(self, domain, groupby=(), aggregates=(), having=(), offset=0, limit=None, order=None):
+        """Nhập danh sách hạng mục (nhóm Phòng ban > Team): mở sẵn cả nhóm Team, không cần bấm từng nhóm."""
+        groups = super().formatted_read_group(
+            domain, groupby=groupby, aggregates=aggregates, having=having,
+            offset=offset, limit=limit, order=order,
+        )
+        if self.env.context.get("dwg_unfold_all") and groupby:
+            for group in groups:
+                group.setdefault("__fold", False)
+        return groups
+
     def _used_ids(self):
         """Dòng hạng mục đang được công việc / phân công / việc lặp dùng (không xoá cứng được)."""
         if not self:
@@ -719,6 +732,27 @@ class DailyTaskWorkGroup(models.Model):
         archived = len([r for r in rows if r.id in used])
         rows.with_context(skip_category_unlink_check=True).unlink()
         return {"deleted": len(rows) - archived, "archived": archived}
+
+    def action_save_and_continue(self):
+        """Popup Thêm hạng mục: Lưu xong mở lại form cùng hạng mục (CV vừa thêm hiện trong danh sách)."""
+        self.ensure_one()
+        ctx = {
+            "default_name": self.name,
+            "default_department_id": self.department_id.id,
+            "default_team_id": self.team_id.id or False,
+            "default_sequence": self.sequence,
+            "dwg_last_saved": self.task_name or self.name,
+        }
+        if self.category_manager_ids:
+            ctx["default_category_manager_ids"] = [(6, 0, self.category_manager_ids.ids)]
+        return {
+            "type": "ir.actions.act_window",
+            "name": "Thêm công việc con: %s" % (self.name or ""),
+            "res_model": self._name,
+            "views": [[False, "form"]],
+            "target": "new",
+            "context": ctx,
+        }
 
     @api.model
     def action_import_from_assign_board(self):
@@ -1054,6 +1088,11 @@ class DailyTaskWorkGroup(models.Model):
                     "Team «%s» không thuộc phòng ban của hạng mục."
                     % (rec.team_id.display_name,)
                 )
+
+    def _compute_last_saved_label(self):
+        saved = self.env.context.get("dwg_last_saved")
+        for rec in self:
+            rec.last_saved_label = ("Đã lưu «%s». Nhập tiếp công việc con khác hoặc bấm Đóng." % saved) if saved and not rec.id else False
 
     def _compute_pick_category(self):
         for rec in self:

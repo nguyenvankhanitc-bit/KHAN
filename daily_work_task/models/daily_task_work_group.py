@@ -1105,7 +1105,17 @@ class DailyTaskWorkGroup(models.Model):
                 if limit and len(result) >= limit:
                     break
             return result
-        return super().name_search(name=name, domain=domain, operator=operator, limit=limit)
+        result = super().name_search(name=name, domain=domain, operator=operator, limit=limit)
+        if self.env.context.get("work_group_show_task_name") and result:
+            # Tên chi tiết hạng mục: ẩn dòng «chỉ có tên hạng mục» (vd «II. MÁY VI TÍNH» không có tên chi tiết)
+            # khi hạng mục đó đã có công việc chi tiết khác.
+            recs = self.sudo().browse([r[0] for r in result])
+            has_detail = {g.category_head_id.id for g in recs if (g.task_name or "").strip()}
+            result = [
+                r for r, g in zip(result, recs)
+                if (g.task_name or "").strip() or g.category_head_id.id not in has_detail
+            ]
+        return result
 
     def _compute_task_count(self):
         Task = self.env["daily.task"]

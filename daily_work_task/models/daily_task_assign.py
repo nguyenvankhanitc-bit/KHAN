@@ -1249,7 +1249,8 @@ class DailyTaskAssign(models.Model):
             for t_idx, task in enumerate(g["tasks"], start=1):
                 tasks.append({
                     **task,
-                    "display_stt": task.get("wg_stt") or "%s.%s" % (idx, t_idx),
+                    # STT theo đúng bảng: nhóm I → 1.1, 1.2…; nhóm II → 2.1…
+                    "display_stt": "%s.%s" % (idx, t_idx),
                 })
             sections.append({
                 "id": g["id"],

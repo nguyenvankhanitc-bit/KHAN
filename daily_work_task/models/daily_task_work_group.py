@@ -170,6 +170,20 @@ class DailyTaskWorkGroup(models.Model):
         )
     ]
 
+    # Form: chọn hạng mục đã có → điền sẵn tên / phòng ban / team / quản lý để thêm CV con
+    pick_category_id = fields.Many2one(
+        "daily.task.work.group",
+        string="Chọn hạng mục có sẵn",
+        compute="_compute_pick_category",
+        readonly=False,
+        store=False,
+        help="Hạng mục đã có: chọn để thêm Tên công việc con vào hạng mục đó.",
+    )
+    category_task_names = fields.Text(
+        string="Công việc đã có trong hạng mục",
+        compute="_compute_category_task_names",
+    )
+
     category_head_id = fields.Many2one(
         "daily.task.work.group",
         string="Nhóm hạng mục",
@@ -181,6 +195,25 @@ class DailyTaskWorkGroup(models.Model):
 
     def init(self):
         super().init()
+        # Bản cũ có ràng buộc unique(department_id, name) → không thêm được CV con cho hạng mục đã có.
+        # Gỡ mọi ràng buộc / index UNIQUE còn sót trên (department_id, name).
+        self.env.cr.execute(
+            """
+            SELECT conname FROM pg_constraint
+             WHERE conrelid = 'daily_task_work_group'::regclass AND contype = 'u'
+            """
+        )
+        for (conname,) in self.env.cr.fetchall():
+            self.env.cr.execute('ALTER TABLE daily_task_work_group DROP CONSTRAINT IF EXISTS "%s"' % conname)
+        self.env.cr.execute(
+            """
+            SELECT indexname FROM pg_indexes
+             WHERE tablename = 'daily_task_work_group' AND indexdef ILIKE '%%unique%%'
+               AND indexname <> 'daily_task_work_group_pkey'
+            """
+        )
+        for (idx,) in self.env.cr.fetchall():
+            self.env.cr.execute('DROP INDEX IF EXISTS "%s"' % idx)
         try:
             self.sudo()._refresh_category_heads()
         except Exception:  # noqa: BLE001 — chưa đủ cột lúc cài mới
@@ -899,11 +932,29 @@ class DailyTaskWorkGroup(models.Model):
         for rec in self:
             rec.task_count = Task.search_count([("work_group_id", "=", rec.id)])
 
-    @api.constrains("name", "department_id")
+    @api.constrains("name", "department_id", "task_name", "active")
     def _check_name(self):
         for rec in self:
             if not (rec.name or "").strip():
                 raise ValidationError("Vui lòng nhập tên nhóm công việc.")
+            # Chỉ chặn trùng ĐÚNG: cùng phòng ban + cùng hạng mục + cùng tên công việc con.
+            # Cùng hạng mục nhưng tên CV con khác (vd Internet → Thanh toán cước / Di dời lắp đặt) là hợp lệ.
+            if not rec.active:
+                continue
+            key_cat = " ".join(self._norm_category_name(rec.name).split()).casefold()
+            key_task = " ".join((rec.task_name or "").split()).casefold()
+            others = self.search([
+                ("id", "!=", rec.id),
+                ("department_id", "=", rec.department_id.id),
+                ("active", "=", True),
+            ])
+            for o in others:
+                if (" ".join(self._norm_category_name(o.name).split()).casefold() == key_cat
+                        and " ".join((o.task_name or "").split()).casefold() == key_task):
+                    raise ValidationError(
+                        "Hạng mục «%s» đã có công việc «%s» trong phòng ban này."
+                        % (rec.name, rec.task_name or "")
+                    )
 
     @api.constrains("team_id", "department_id")
     def _check_team_department(self):
@@ -918,6 +969,45 @@ class DailyTaskWorkGroup(models.Model):
                     "Team «%s» không thuộc phòng ban của hạng mục."
                     % (rec.team_id.display_name,)
                 )
+
+    def _compute_pick_category(self):
+        for rec in self:
+            rec.pick_category_id = False
+
+    @api.depends("name", "department_id", "team_id")
+    def _compute_category_task_names(self):
+        for rec in self:
+            key = self._norm_category_name(rec.name).casefold()
+            if not key or not rec.department_id:
+                rec.category_task_names = False
+                continue
+            rows = self.sudo().search(
+                [("active", "=", True), ("department_id", "=", rec.department_id.id)],
+                order="sequence, id",
+            ).filtered(lambda g: self._norm_category_name(g.name).casefold() == key
+                       and g.id != rec._origin.id)
+            names = [(g.task_name or "").strip() for g in rows if (g.task_name or "").strip()]
+            rec.category_task_names = "\n".join("• " + n for n in names) or False
+
+    @api.onchange("pick_category_id")
+    def _onchange_pick_category(self):
+        """Chọn hạng mục có sẵn → điền tên, phòng ban, team, quản lý, thứ tự (để thêm CV con)."""
+        cat = self.pick_category_id
+        if not cat:
+            return
+        cat = cat._origin or cat
+        self.name = cat.name
+        if cat.department_id:
+            self.department_id = cat.department_id
+        self.team_id = cat.team_id
+        siblings = cat.sudo()._category_siblings()
+        if not self.category_manager_ids:
+            managers = siblings.mapped("category_manager_ids")
+            if managers:
+                self.category_manager_ids = [(6, 0, managers.ids)]
+        if siblings:
+            self.sequence = max(siblings.mapped("sequence"))
+        self.task_name = False
 
     @api.onchange("department_id")
     def _onchange_department_id(self):

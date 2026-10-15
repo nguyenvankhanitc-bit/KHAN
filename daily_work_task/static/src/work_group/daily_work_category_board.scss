@@ -481,9 +481,16 @@
 
     .o_dcb_picker {
         top: calc(100% + 0.25rem);
-        left: 0;
+        left: auto;
+        right: 0;
         z-index: 20;
     }
+}
+
+// Quản lý hạng mục: nằm bên phải dòng hạng mục
+.o_daily_work_category_board .o_dcb_table .o_dcb_cat td > .o_dcb_cat_manager {
+    float: right;
+    margin: 0.2rem 0.5rem 0 1rem;
 }
 
 .o_daily_work_category_board .o_dcb_table .o_dcb_cat .o_dcb_section_btn {
@@ -532,4 +539,20 @@
 tr:has(> td > .o_dcb_section_btn) {
     cursor: pointer;
     user-select: none;
+}
+
+
+// Nút «+ Thêm CV con» trên dòng hạng mục
+.o_dcb_add_sub {
+    margin-left: 10px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px dashed #7c3aed;
+    background: #fff;
+    color: #6d28d9;
+    font-size: 12px;
+    font-weight: 700;
+    vertical-align: middle;
+
+    &:hover { background: #ede9fe; }
 }

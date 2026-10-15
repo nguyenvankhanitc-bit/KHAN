@@ -147,3 +147,16 @@
         }
     }
 }
+
+
+// Danh sách công việc con đã có trong hạng mục (form Thêm hạng mục)
+.o_dwg_existing_tasks {
+    white-space: pre-line;
+    max-height: 160px;
+    overflow-y: auto;
+    padding: 6px 10px;
+    border-radius: 8px;
+    background: #f5f3ff;
+    color: #4c1d95;
+    font-size: 13px;
+}

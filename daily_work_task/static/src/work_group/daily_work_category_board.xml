@@ -103,6 +103,12 @@
                                                                         <span class="o_dcb_section_title" t-esc="cat.title"/>
                                                                         <span class="o_dcb_section_count"><t t-esc="cat.task_count"/> CV</span>
                                                                     </button>
+                                                                    <!-- Thêm công việc con cho hạng mục này -->
+                                                                    <button t-if="canCreate" type="button" class="btn btn-sm o_dcb_add_sub"
+                                                                            title="Thêm công việc con vào hạng mục này"
+                                                                            t-on-click.stop="(ev) => this.onAddSubTask(dept, team, cat, ev)">
+                                                                        <i class="fa fa-plus"/> Thêm CV con
+                                                                    </button>
                                                                     <!-- User quản lý hạng mục -->
                                                                     <div class="o_dcb_cat_manager" t-on-click.stop="() => this.openCatEditor(cat)"
                                                                          t-att-title="canSetManager ? 'Bấm để chọn User quản lý hạng mục' : 'User quản lý hạng mục'">

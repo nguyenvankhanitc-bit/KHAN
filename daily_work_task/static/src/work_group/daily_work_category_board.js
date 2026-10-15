@@ -327,6 +327,42 @@ export class DailyWorkCategoryBoard extends Component {
         );
     }
 
+    /** Thêm công việc con cho hạng mục đã có (điền sẵn Hạng mục / Phòng ban / Team / Quản lý). */
+    async onAddSubTask(dept, team, cat, ev) {
+        ev?.stopPropagation?.();
+        if (!this.canCreate) {
+            this.notification.add(_t("Bạn không có quyền thêm hạng mục."), { type: "warning" });
+            return;
+        }
+        const first = (cat.tasks || [])[0] || {};
+        const deptId = parseInt(String(dept.id || "").replace("dept-", ""), 10) || false;
+        const ctx = {
+            form_view_initial_mode: "edit",
+            default_name: cat.name || "",
+        };
+        if (deptId) {
+            ctx.default_department_id = deptId;
+        }
+        if (first.team_id) {
+            ctx.default_team_id = first.team_id;
+        }
+        const managers = (cat.managers || []).map((m) => m.id);
+        if (managers.length) {
+            ctx.default_category_manager_ids = [[6, 0, managers]];
+        }
+        await this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                name: _t("Thêm công việc con: ") + (cat.name || ""),
+                res_model: "daily.task.work.group",
+                views: [[false, "form"]],
+                target: "new",
+                context: ctx,
+            },
+            { onClose: () => this.load() }
+        );
+    }
+
     async onOpenList() {
         await this.action.doAction("daily_work_task.action_daily_task_work_group_list");
     }

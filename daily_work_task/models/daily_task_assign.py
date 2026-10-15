@@ -151,6 +151,12 @@ class DailyTaskAssign(models.Model):
         index=True,
         help="Chọn nhóm hạng mục (Camera, Email…). Không phải dòng công việc con.",
     )
+    category_head_id = fields.Many2one(
+        "daily.task.work.group",
+        string="Nhóm hạng mục",
+        related="category_group_id.category_head_id",
+        help="Nhóm hạng mục (cùng team + cùng tên, bỏ số thứ tự) — lọc Tên chi tiết hạng mục.",
+    )
     category_name = fields.Char(
         string="Tên hạng mục",
         related="category_group_id.name",
@@ -889,6 +895,11 @@ class DailyTaskAssign(models.Model):
         domain = [("active", "=", True)]
         if self.department_id:
             domain.append(("department_id", "=", self.department_id.id))
+        head = self.category_group_id.category_head_id
+        if head:
+            # Cùng nhóm hạng mục với trang Hạng mục: «II. MÁY VI TÍNH» + «MÁY VI TÍNH»
+            domain.append(("category_head_id", "=", head.id))
+            return domain
         cat_name = (self.category_name or "").strip()
         if not cat_name and self.category_group_id:
             cat_name = (self.category_group_id.name or "").strip()

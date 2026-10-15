@@ -1061,9 +1061,9 @@ class DailyTaskWorkGroup(models.Model):
             label = (rec.name or "").strip()
             task = (rec.task_name or "").strip()
             if show_task:
-                rec.display_name = task or label
+                rec.display_name = task or self._norm_category_name(label)
             elif short:
-                rec.display_name = label
+                rec.display_name = self._norm_category_name(label)
             else:
                 dept = rec.department_id.display_name if rec.department_id else ""
                 rec.display_name = (
@@ -1094,11 +1094,14 @@ class DailyTaskWorkGroup(models.Model):
             seen = set()
             result = []
             for rec in rows:
-                key = ((rec.name or "").strip().casefold(), rec.department_id.id)
+                clean = self._norm_category_name(rec.name)
+                # «II. MÁY VI TÍNH» = «MÁY VI TÍNH» (cùng team) → 1 dòng, giống trang Hạng mục
+                key = (clean.casefold(), rec.department_id.id, rec.team_id.id or 0)
                 if not key[0] or key in seen:
                     continue
                 seen.add(key)
-                result.append((rec.id, (rec.name or "").strip()))
+                head = rec.category_head_id or rec
+                result.append((head.id, clean))
                 if limit and len(result) >= limit:
                     break
             return result

@@ -533,6 +533,7 @@ class DailyTaskWorkGroup(models.Model):
             for tkey in ordered_teams:
                 team = dept["teams"][tkey]
                 cats_out = []
+                global_cat_idx = 0  # mỗi team đánh lại I, II, III…
                 ordered_cats = sorted(
                     team["cat_order"],
                     key=lambda k: (
@@ -749,8 +750,11 @@ class DailyTaskWorkGroup(models.Model):
                 if target.department_id:
                     vals["department_id"] = target.department_id.id
             old_cat = self._norm_category_name(row.name)
-            if not (row.task_name or "").strip() and old_cat.casefold() != clean_target:
+            task = (row.task_name or "").strip()
+            if not task and old_cat.casefold() != clean_target:
                 vals["task_name"] = old_cat
+            elif task and self._norm_category_name(task) != task:
+                vals["task_name"] = self._norm_category_name(task)  # bỏ số thứ tự «1. …»
             if managers:
                 vals["category_manager_ids"] = [(6, 0, managers.ids)]
             row.with_context(skip_link_users=True, skip_cat_manager_sync=True).write(vals)

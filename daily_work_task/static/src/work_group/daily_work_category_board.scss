@@ -624,3 +624,20 @@ tr:has(> td > .o_dcb_section_btn) {
     &:hover { background: #f1f5f9; }
     &.is-picked { background: #ede9fe; font-weight: 700; }
 }
+
+// Gộp nhiều hạng mục: ô tích trên dòng hạng mục + nút trên thanh công cụ
+.o_dcb_merge_pick {
+    margin: 0 8px 0 0;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    cursor: pointer;
+}
+.o_dcb_btn_merge_many {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #fff;
+    font-weight: 700;
+
+    &:hover { background: #075985; color: #fff; }
+}

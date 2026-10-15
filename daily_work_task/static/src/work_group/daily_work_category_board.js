@@ -28,6 +28,8 @@ export class DailyWorkCategoryBoard extends Component {
             /** nodeId -> boolean */
             openMap: {},
             access: { view: true, create: false, write: false, unlink: false },
+            /** Hạng mục đã tích để gộp nhiều: cat.id -> cat */
+            mergeSel: {},
             editor: null,
         });
         onWillStart(() => this.load());
@@ -381,20 +383,63 @@ export class DailyWorkCategoryBoard extends Component {
         });
     }
 
+    isMergePicked(cat) {
+        return Boolean(this.state.mergeSel[cat.id]);
+    }
+
+    toggleMergePick(cat, ev) {
+        ev?.stopPropagation?.();
+        const sel = { ...this.state.mergeSel };
+        if (sel[cat.id]) {
+            delete sel[cat.id];
+        } else {
+            sel[cat.id] = cat;
+        }
+        this.state.mergeSel = sel;
+    }
+
+    get mergePickedCount() {
+        return Object.keys(this.state.mergeSel || {}).length;
+    }
+
+    clearMergePick() {
+        this.state.mergeSel = {};
+    }
+
+    /** Gộp nhiều hạng mục đã tích vào 1 hạng mục cha. */
+    onMergePicked() {
+        const cats = Object.values(this.state.mergeSel || {});
+        if (!cats.length) {
+            return;
+        }
+        const tasks = cats.flatMap((c) => c.tasks || []);
+        const source = {
+            id: "__multi__",
+            name: cats.length === 1 ? cats[0].name : `${cats.length} hạng mục đã chọn`,
+            tasks,
+        };
+        this._openMergeDialog(null, source, new Set(cats.map((c) => c.id)));
+    }
+
     /** Gộp hạng mục này vào hạng mục khác (vd «6. CHECK CAMERA…» → Camera). */
     onMergeCategory(dept, team, cat, ev) {
         ev?.stopPropagation?.();
+        this._openMergeDialog(dept, cat, new Set([cat.id]));
+    }
+
+    _openMergeDialog(dept, cat, excludeIds) {
         const targets = [];
         for (const d of this.state.departments || []) {
             for (const t of d.teams || []) {
                 for (const c of t.categories || []) {
-                    if (c.id === cat.id || !(c.tasks || []).length) {
+                    if (excludeIds.has(c.id) || !(c.tasks || []).length) {
                         continue;
                     }
+                    const sameDept = !dept || d.id === dept.id;
                     targets.push({
                         id: c.tasks[0].id,
-                        label: `${c.name} — ${t.name}${d.id === dept.id ? "" : " (" + d.name + ")"}`,
-                        sameDept: d.id === dept.id,
+                        label: `${c.name} — ${t.name}${sameDept ? "" : " (" + d.name + ")"}`,
+                        sameDept,
                     });
                 }
             }
@@ -412,6 +457,7 @@ export class DailyWorkCategoryBoard extends Component {
                 this.notification.add(`Đã gộp ${res.moved} công việc vào hạng mục «${res.name}».`, {
                     type: "success",
                 });
+                this.state.mergeSel = {};
                 await this.load();
             },
         });

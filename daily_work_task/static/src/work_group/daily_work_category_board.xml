@@ -22,6 +22,12 @@
                                             <i class="fa fa-list"/> Nhập danh sách
                                         </button>
                                     </t>
+                                    <t t-if="canWrite and mergePickedCount">
+                                        <button type="button" class="btn o_dcb_btn_merge_many" t-on-click="onMergePicked">
+                                            <i class="fa fa-compress"/> Gộp <t t-esc="mergePickedCount"/> hạng mục đã chọn
+                                        </button>
+                                        <button type="button" class="btn o_dcb_btn_toggle" t-on-click="clearMergePick">Bỏ chọn</button>
+                                    </t>
                                     <button type="button" class="btn o_dcb_btn_toggle" t-on-click="onExpandAll">Mở hết</button>
                                     <button type="button" class="btn o_dcb_btn_toggle" t-on-click="onCollapseAll">Đóng hết</button>
                                     <div class="o_dcb_search">
@@ -98,6 +104,10 @@
                                                         <t t-foreach="team.categories" t-as="cat" t-key="cat.id">
                                                             <tr t-att-class="cat.rowClass" t-on-click="() => this.onToggle(cat.id)">
                                                                 <td colspan="7">
+                                                                    <input t-if="canWrite" type="checkbox" class="form-check-input o_dcb_merge_pick"
+                                                                           title="Tích để gộp nhiều hạng mục cùng lúc"
+                                                                           t-att-checked="isMergePicked(cat)"
+                                                                           t-on-click.stop="(ev) => this.toggleMergePick(cat, ev)"/>
                                                                     <button type="button" class="o_dcb_section_btn o_dcb_indent_2">
                                                                         <span t-att-class="cat.chevronClass" aria-hidden="true"></span>
                                                                         <span class="o_dcb_section_title" t-esc="cat.title"/>

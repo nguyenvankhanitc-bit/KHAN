@@ -139,7 +139,7 @@
                                      placeholder="Tự lấy theo user đăng nhập..."/>
                             <field name="category_group_id" widget="dwt_category_checklist"
                                      options="{'no_create': True, 'no_open': True}"
-                                     context="{'work_group_unique_category': 1, 'work_group_short_name': 1}"
+                                     context="{'work_group_unique_category': 1, 'work_group_short_name': 1, 'work_group_team_scope': 1}"
                                      domain="[('department_id', '=', department_id)]"
                                      placeholder="Chọn hạng mục (Camera, Email…)…"/>
                             <field name="category_name" invisible="1"/>
@@ -147,7 +147,7 @@
                                      widget="dwt_collapsible_checkboxes"
                                      options="{'unit': 'mục chi tiết'}"
                                      placeholder="Bấm để chọn tên chi tiết hạng mục..."
-                                     context="{'work_group_show_task_name': 1}"
+                                     context="{'work_group_show_task_name': 1, 'work_group_team_scope': 1}"
                                      domain="[('department_id', '=', department_id), ('name', '=', category_name)]"
                                      invisible="not category_name"/>
                             <field name="work_group_id" invisible="1" force_save="1"/>

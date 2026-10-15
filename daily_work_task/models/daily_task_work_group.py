@@ -1073,6 +1073,15 @@ class DailyTaskWorkGroup(models.Model):
     @api.model
     def name_search(self, name="", domain=None, operator="ilike", limit=100):
         """Dropdown Hạng mục: mỗi tên hạng mục chỉ hiện 1 lần."""
+        if self.env.context.get("work_group_team_scope"):
+            # Thêm phân công: chỉ hạng mục của Team mình (Cài đặt → Bộ phận → Team);
+            # user chưa thuộc Team nào → giữ lọc theo phòng ban như cũ.
+            uid = self.env.uid
+            teams = self.env["daily.task.team"].sudo().search(
+                [("active", "=", True), "|", ("manager_ids", "in", uid), ("member_ids", "in", uid)]
+            )
+            if teams:
+                domain = list(domain or []) + [("team_id", "in", teams.ids)]
         if self.env.context.get("work_group_unique_category"):
             search_domain = list(domain or [])
             if name:

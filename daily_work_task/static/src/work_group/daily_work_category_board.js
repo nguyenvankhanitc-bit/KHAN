@@ -4,6 +4,7 @@
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
+import { Dialog } from "@web/core/dialog/dialog";
 import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
@@ -380,6 +381,42 @@ export class DailyWorkCategoryBoard extends Component {
         });
     }
 
+    /** Gộp hạng mục này vào hạng mục khác (vd «6. CHECK CAMERA…» → Camera). */
+    onMergeCategory(dept, team, cat, ev) {
+        ev?.stopPropagation?.();
+        const targets = [];
+        for (const d of this.state.departments || []) {
+            for (const t of d.teams || []) {
+                for (const c of t.categories || []) {
+                    if (c.id === cat.id || !(c.tasks || []).length) {
+                        continue;
+                    }
+                    targets.push({
+                        id: c.tasks[0].id,
+                        label: `${c.name} — ${t.name}${d.id === dept.id ? "" : " (" + d.name + ")"}`,
+                        sameDept: d.id === dept.id,
+                    });
+                }
+            }
+        }
+        targets.sort((a, b) => Number(b.sameDept) - Number(a.sameDept) || a.label.localeCompare(b.label));
+        this.dialog.add(DwgMergeCategoryDialog, {
+            source: cat,
+            targets,
+            onConfirm: async (targetId, newName) => {
+                const res = await this.orm.call("daily.task.work.group", "merge_category", [
+                    (cat.tasks || []).map((t) => t.id),
+                    targetId || false,
+                    newName || false,
+                ]);
+                this.notification.add(`Đã gộp ${res.moved} công việc vào hạng mục «${res.name}».`, {
+                    type: "success",
+                });
+                await this.load();
+            },
+        });
+    }
+
     async onAddSubTask(dept, team, cat, ev) {
         ev?.stopPropagation?.();
         if (!this.canCreate) {
@@ -596,3 +633,57 @@ export class DailyWorkCategoryBoard extends Component {
 }
 
 registry.category("actions").add("daily_work_category_board", DailyWorkCategoryBoard);
+
+/** Hộp thoại «Gộp vào hạng mục…». */
+export class DwgMergeCategoryDialog extends Component {
+    static template = "daily_work_task.DwgMergeCategoryDialog";
+    static components = { Dialog };
+    static props = {
+        source: Object,
+        targets: Array,
+        onConfirm: Function,
+        close: Function,
+    };
+
+    setup() {
+        this.state = useState({ query: "", targetId: 0, newName: "", busy: false });
+    }
+
+    get filtered() {
+        const q = (this.state.query || "").trim().toLowerCase();
+        return q ? this.props.targets.filter((t) => t.label.toLowerCase().includes(q)) : this.props.targets;
+    }
+
+    pick(id) {
+        this.state.targetId = id;
+        this.state.newName = "";
+    }
+
+    onQuery(ev) {
+        this.state.query = ev.target.value || "";
+    }
+
+    onNewName(ev) {
+        this.state.newName = ev.target.value || "";
+        if (this.state.newName.trim()) {
+            this.state.targetId = 0;
+        }
+    }
+
+    get canConfirm() {
+        return Boolean(this.state.targetId || this.state.newName.trim()) && !this.state.busy;
+    }
+
+    async confirm() {
+        if (!this.canConfirm) {
+            return;
+        }
+        this.state.busy = true;
+        try {
+            await this.props.onConfirm(this.state.targetId, this.state.newName.trim());
+            this.props.close();
+        } finally {
+            this.state.busy = false;
+        }
+    }
+}

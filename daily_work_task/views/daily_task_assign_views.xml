@@ -127,7 +127,7 @@
                 </header>
                 <sheet>
                     <div class="alert alert-info" role="alert">
-                        Chọn <b>Hạng mục</b> → tích một hoặc nhiều <b>Tên công việc</b>.
+                        Chọn <b>Hạng mục</b> → tích một hoặc nhiều <b>Tên chi tiết hạng mục</b>.
                         Gắn <b>Người phụ trách</b> → bấm Lưu (mỗi tên CV = 1 dòng phân công).
                     </div>
                     <group>
@@ -143,8 +143,10 @@
                                      domain="[('department_id', '=', department_id)]"
                                      placeholder="Chọn hạng mục (Camera, Email…)…"/>
                             <field name="category_name" invisible="1"/>
-                            <field name="work_group_ids" string="Tên công việc"
+                            <field name="work_group_ids" string="Tên chi tiết hạng mục"
                                      widget="dwt_collapsible_checkboxes"
+                                     options="{'unit': 'mục chi tiết'}"
+                                     placeholder="Bấm để chọn tên chi tiết hạng mục..."
                                      context="{'work_group_show_task_name': 1}"
                                      domain="[('department_id', '=', department_id), ('name', '=', category_name)]"
                                      invisible="not category_name"/>

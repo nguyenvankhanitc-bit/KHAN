@@ -723,6 +723,42 @@ class DailyTaskWorkGroup(models.Model):
         return res
 
     @api.model
+    def merge_category(self, source_ids, target_id=None, new_name=None):
+        """Gộp hạng mục: dồn các dòng của hạng mục nguồn vào hạng mục đích (hoặc tên hạng mục mới).
+
+        Dòng chưa có Tên công việc → lấy tên hạng mục cũ (bỏ số thứ tự) làm Tên công việc,
+        để «6. CHECK CAMERA ĐỐI CHIẾU…» thành công việc con của «Camera».
+        """
+        self.env["daily.task.assign.access"].check("category", "write")
+        rows = self.sudo().browse([int(i) for i in source_ids or []]).exists()
+        if not rows:
+            raise UserError("Không có dòng hạng mục để gộp.")
+        target = self.sudo().browse(int(target_id)).exists() if target_id else self.sudo().browse()
+        name = (target.name if target else (new_name or "")).strip()
+        if not name:
+            raise UserError("Vui lòng chọn hạng mục đích hoặc nhập tên hạng mục mới.")
+        clean_target = self._norm_category_name(name).casefold()
+        managers = target._category_siblings().mapped("category_manager_ids") if target else self.env["res.users"]
+        moved = 0
+        for row in rows:
+            if target and row == target:
+                continue
+            vals = {"name": name}
+            if target:
+                vals["team_id"] = target.team_id.id or False
+                if target.department_id:
+                    vals["department_id"] = target.department_id.id
+            old_cat = self._norm_category_name(row.name)
+            if not (row.task_name or "").strip() and old_cat.casefold() != clean_target:
+                vals["task_name"] = old_cat
+            if managers:
+                vals["category_manager_ids"] = [(6, 0, managers.ids)]
+            row.with_context(skip_link_users=True, skip_cat_manager_sync=True).write(vals)
+            moved += 1
+        self.env["daily.task"]._req_cache_clear()
+        return {"moved": moved, "name": name}
+
+    @api.model
     def delete_category(self, group_ids):
         """Nút «Xoá» trên dòng hạng mục: xoá mọi công việc con của hạng mục."""
         rows = self.sudo().browse([int(i) for i in group_ids or []]).exists()

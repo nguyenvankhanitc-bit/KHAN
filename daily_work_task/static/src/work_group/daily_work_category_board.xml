@@ -109,6 +109,11 @@
                                                                             t-on-click.stop="(ev) => this.onAddSubTask(dept, team, cat, ev)">
                                                                         <i class="fa fa-plus"/> Thêm CV con
                                                                     </button>
+                                                                    <button t-if="canWrite" type="button" class="btn btn-sm o_dcb_merge_cat"
+                                                                            title="Gộp hạng mục này vào hạng mục khác (vd hạng mục lẻ → hạng mục cha)"
+                                                                            t-on-click.stop="(ev) => this.onMergeCategory(dept, team, cat, ev)">
+                                                                        <i class="fa fa-compress"/> Gộp vào…
+                                                                    </button>
                                                                     <button t-if="canDeleteCat(team, cat)" type="button" class="btn btn-sm o_dcb_del_cat"
                                                                             title="Xoá hạng mục này (vd hạng mục bị trùng)"
                                                                             t-on-click.stop="(ev) => this.onDeleteCategory(cat, ev)">
@@ -213,5 +218,37 @@
                 </div>
             </DailyWorkAppShell>
         </div>
+    </t>
+
+    <t t-name="daily_work_task.DwgMergeCategoryDialog">
+        <Dialog title="'Gộp hạng mục «' + (props.source.name or '') + '»'" size="'md'">
+            <div class="o_dcb_merge">
+                <p class="mb-2">
+                    Dồn <b t-esc="(props.source.tasks or []).length"/> công việc của hạng mục
+                    <b t-esc="props.source.name"/> vào hạng mục khác. Dòng chưa có tên công việc sẽ lấy tên hạng mục cũ
+                    làm tên công việc con. Công việc đã giao không bị mất.
+                </p>
+                <input type="search" class="form-control mb-2" placeholder="Tìm hạng mục đích..."
+                       t-att-value="state.query" t-on-input="onQuery"/>
+                <div class="o_dcb_merge_list">
+                    <label t-foreach="filtered" t-as="t" t-key="t.id"
+                           t-att-class="'o_dcb_merge_item' + (state.targetId === t.id ? ' is-picked' : '')">
+                        <input type="radio" name="dcb_merge_target" t-att-checked="state.targetId === t.id"
+                               t-on-change="() => this.pick(t.id)"/>
+                        <span t-esc="t.label"/>
+                    </label>
+                    <div t-if="!filtered.length" class="text-muted p-2">Không có hạng mục phù hợp.</div>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label mb-1">Hoặc gộp vào hạng mục mới (nhập tên):</label>
+                    <input type="text" class="form-control" placeholder="Vd: CAMERA"
+                           t-att-value="state.newName" t-on-input="onNewName"/>
+                </div>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!canConfirm" t-on-click="confirm">Gộp</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Huỷ</button>
+            </t>
+        </Dialog>
     </t>
 </templates>

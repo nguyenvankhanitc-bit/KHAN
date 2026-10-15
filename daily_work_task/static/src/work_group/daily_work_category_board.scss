@@ -591,3 +591,36 @@ tr:has(> td > .o_dcb_section_btn) {
     display: inline;
     width: auto;
 }
+
+// Nút «Gộp vào…» + hộp thoại gộp hạng mục
+.o_dcb_merge_cat {
+    margin-left: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px dashed #0369a1;
+    background: #fff;
+    color: #0369a1;
+    font-size: 12px;
+    font-weight: 700;
+    vertical-align: middle;
+
+    &:hover { background: #e0f2fe; }
+}
+.o_dcb_merge_list {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #d6dce8;
+    border-radius: 8px;
+    padding: 4px;
+}
+.o_dcb_merge_item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+
+    &:hover { background: #f1f5f9; }
+    &.is-picked { background: #ede9fe; font-weight: 700; }
+}

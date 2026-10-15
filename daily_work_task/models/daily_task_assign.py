@@ -1183,9 +1183,7 @@ class DailyTaskAssign(models.Model):
                 inferred = set()
                 for u in r._responsible_users():
                     inferred |= user_teams.get(u.id, set())
-                if inferred:
-                    return bool(inferred & scope["teams"])
-                return WorkGroup._in_team_scope(scope, False, dept_id)
+                return bool(inferred & scope["teams"])
 
             records = records.filtered(visible)
         records.mapped("work_group_id").mapped("display_stt")

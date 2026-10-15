@@ -355,23 +355,44 @@ class DailyTaskWorkGroup(models.Model):
 
     @api.model
     def _team_scope(self):
-        """Phạm vi xem theo Cài đặt → Bộ phận → Team.
+        """Phạm vi xem hạng mục — 1 luật chung cho mọi trang (Cài đặt → Bộ phận → Team).
 
-        None → Quản lý module: xem tất cả.
-        Ngược lại {"teams": set|None, "depts": set}:
-        - teams: Team mà user là User quản lý team hoặc nằm trong User Group (None = chưa thuộc team nào)
-        - depts: phòng ban của user (dòng chưa gán Team của phòng ban mình vẫn thấy)
+        - User đã được gán Team (User quản lý team / User Group): CHỈ hạng mục của Team đó
+          (kể cả Quản lý module; dòng chưa gán Team không hiện).
+        - User chưa thuộc Team nào: Quản lý module → tất cả (None); người khác → theo phòng ban.
+        Trả về None hoặc {"teams": set|None, "depts": set}.
         """
-        if self.env["daily.task.assign.access"]._is_manager():
+        if self.env.su:
             return None
         uid = self.env.uid
         teams = self.env["daily.task.team"].sudo().search(
             [("active", "=", True), "|", ("manager_ids", "in", uid), ("member_ids", "in", uid)]
         )
         depts = set(d for d in self.env["daily.task"].rule_team_department_ids() if d)
-        if not teams:
-            return {"teams": None, "depts": depts}
-        return {"teams": set(teams.ids), "depts": depts | set(teams.mapped("department_id").ids)}
+        if teams:
+            return {"teams": set(teams.ids), "depts": depts | set(teams.mapped("department_id").ids)}
+        if self.env["daily.task.assign.access"]._is_manager():
+            return None
+        return {"teams": None, "depts": depts}
+
+    @api.model
+    def _team_scope_domain(self):
+        """Domain lọc hạng mục theo _team_scope (None = không lọc)."""
+        scope = self._team_scope()
+        if scope is None:
+            return None
+        if scope["teams"] is not None:
+            return [("team_id", "in", list(scope["teams"]))]
+        return [("department_id", "in", list(scope["depts"]) or [0])]
+
+    @api.model
+    def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
+        # Trang / ô chọn có context work_group_team_scope → chỉ hạng mục trong phạm vi Team của user
+        if self.env.context.get("work_group_team_scope") and not self.env.su:
+            extra = self._team_scope_domain()
+            if extra:
+                domain = list(domain or []) + extra
+        return super()._search(domain, offset=offset, limit=limit, order=order, **kwargs)
 
     @api.model
     def _in_team_scope(self, scope, team_id, dept_id):
@@ -379,9 +400,8 @@ class DailyTaskWorkGroup(models.Model):
             return True
         if scope["teams"] is None:
             return bool(dept_id) and dept_id in scope["depts"]
-        if team_id:
-            return team_id in scope["teams"]
-        return bool(dept_id) and dept_id in scope["depts"]
+        # Đã được gán Team: chỉ hạng mục của Team mình (dòng chưa gán Team không hiện)
+        return bool(team_id) and team_id in scope["teams"]
 
     @api.model
     def get_category_board_view(self, search=""):
@@ -1073,15 +1093,6 @@ class DailyTaskWorkGroup(models.Model):
     @api.model
     def name_search(self, name="", domain=None, operator="ilike", limit=100):
         """Dropdown Hạng mục: mỗi tên hạng mục chỉ hiện 1 lần."""
-        if self.env.context.get("work_group_team_scope"):
-            # Thêm phân công: chỉ hạng mục của Team mình (Cài đặt → Bộ phận → Team);
-            # user chưa thuộc Team nào → giữ lọc theo phòng ban như cũ.
-            uid = self.env.uid
-            teams = self.env["daily.task.team"].sudo().search(
-                [("active", "=", True), "|", ("manager_ids", "in", uid), ("member_ids", "in", uid)]
-            )
-            if teams:
-                domain = list(domain or []) + [("team_id", "in", teams.ids)]
         if self.env.context.get("work_group_unique_category"):
             search_domain = list(domain or [])
             if name:

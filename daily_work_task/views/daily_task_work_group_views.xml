@@ -55,7 +55,7 @@
                             <field name="pick_category_id" string="Chọn hạng mục có sẵn"
                                      invisible="id"
                                      domain="department_id and [('department_id', '=', department_id), ('active', '=', True)] or [('active', '=', True)]"
-                                     context="{'work_group_unique_category': 1, 'work_group_category_label': False, 'work_group_short_name': 1}"
+                                     context="{'work_group_unique_category': 1, 'work_group_category_label': False, 'work_group_short_name': 1, 'work_group_team_scope': 1}"
                                      options="{'no_create': True, 'no_open': True}"
                                      placeholder="Hạng mục đã có (vd: INTERNET) → chọn để thêm CV con..."/>
                             <field name="name" string="Hạng mục" placeholder="Vd: Camera... (hoặc gõ hạng mục mới)"/>
@@ -150,7 +150,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True, 'work_group_team_scope': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Tạo hạng mục cha</p>
             <p>Nhập <b>Hạng mục</b> + <b>Tên công việc</b>. Cùng tên hạng mục sẽ gom thành
@@ -163,7 +163,7 @@
         <field name="res_model">daily.task.work.group</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_daily_task_work_group_search"/>
-        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True}</field>
+        <field name="context">{'search_default_group_dept': 1, 'search_default_group_by_team': 2, 'work_group_category_label': True, 'dwg_unfold_all': True, 'work_group_team_scope': 1}</field>
     </record>
 
     <record id="action_daily_task_work_group_assign" model="ir.actions.act_window">

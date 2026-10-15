@@ -340,13 +340,27 @@ class DailyTaskAssign(models.Model):
         "line_id",
         string="Ô kế hoạch theo ngày",
     )
+    plan_date_from = fields.Date(
+        string="Kế hoạch từ ngày",
+        help="Người dùng tự chọn: đánh 'x' từ ngày này đến «Đến ngày». Để trống → lấy Bắt đầu → Deadline.",
+    )
+    plan_date_to = fields.Date(
+        string="Đến ngày",
+        help="Ngày cuối đánh 'x' (trống → bằng «Từ ngày»).",
+    )
     plan_days_label = fields.Char(
-        string="Ngày kế hoạch (x)",
+        string="Xem trước ngày 'x'",
         compute="_compute_plan_days_label",
         help="Xem trước các ngày được đánh 'x' theo Bắt đầu → Deadline (kể cả hôm nay nếu nằm trong dải).",
     )
 
-    @api.depends("date_start", "deadline", "plan_daily")
+    @api.constrains("plan_date_from", "plan_date_to")
+    def _check_plan_date_range(self):
+        for rec in self:
+            if rec.plan_date_from and rec.plan_date_to and rec.plan_date_to < rec.plan_date_from:
+                raise ValidationError("Ngày kế hoạch: «Đến ngày» phải sau hoặc bằng «Từ ngày».")
+
+    @api.depends("date_start", "deadline", "plan_daily", "plan_date_from", "plan_date_to")
     def _compute_plan_days_label(self):
         PlanDay = self.env["daily.task.plan.day"]
         today = fields.Date.context_today(self)
@@ -807,6 +821,8 @@ class DailyTaskAssign(models.Model):
             "deadline",
             "note",
             "plan_daily",
+            "plan_date_from",
+            "plan_date_to",
         }
         if sync_fields & set(vals):
             self._sync_personal_daily_tasks()

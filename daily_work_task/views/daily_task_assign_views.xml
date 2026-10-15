@@ -192,6 +192,13 @@
                             <field name="date_start"/>
                             <field name="deadline"/>
                             <field name="plan_daily"/>
+                            <label for="plan_date_from" string="Ngày kế hoạch (x)"/>
+                            <div class="o_row o_dwt_plan_range">
+                                <span>Từ</span>
+                                <field name="plan_date_from" placeholder="dd/mm/yyyy"/>
+                                <span>đến</span>
+                                <field name="plan_date_to" placeholder="dd/mm/yyyy"/>
+                            </div>
                             <field name="plan_days_label" readonly="1" invisible="not plan_days_label"/>
                             <field name="note" placeholder="Ghi chú..."/>
                             <field name="active"/>

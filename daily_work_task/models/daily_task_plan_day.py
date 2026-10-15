@@ -79,6 +79,9 @@ class DailyTaskPlanDay(models.Model):
 
     @api.model
     def _planned_dates(self, line):
+        # Người dùng tự chọn Ngày kế hoạch Từ ngày → Đến ngày
+        if line.plan_date_from or line.plan_date_to:
+            return self._dates_between(line.plan_date_from, line.plan_date_to, skip_sunday=line.plan_daily)
         return self._dates_between(line.date_start, line.deadline, skip_sunday=line.plan_daily)
 
     @api.model
@@ -101,8 +104,9 @@ class DailyTaskPlanDay(models.Model):
             existing = PlanDay.search([("line_id", "=", line.id)])
             # Người không còn phụ trách → bỏ hết ô của họ
             existing.filtered(lambda d, u=users: d.user_id not in u).unlink()
+            existing = existing.exists()
             for user in users:
-                mine = existing.filtered(lambda d, u=user: d.user_id == u and d.exists())
+                mine = existing.exists().filtered(lambda d, u=user: d.user_id == u)
                 self._resync(mine, wanted, {"line_id": line.id, "user_id": user.id})
 
     @api.model

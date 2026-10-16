@@ -94,6 +94,7 @@ export class DwtCollapsibleCheckboxesField extends Many2ManyCheckboxesField {
         ...Many2ManyCheckboxesField.props,
         unit: { type: String, optional: true },
         placeholder: { type: String, optional: true },
+        multiPick: { type: Boolean, optional: true },
     };
 
     setup() {
@@ -114,13 +115,45 @@ export class DwtCollapsibleCheckboxesField extends Many2ManyCheckboxesField {
         });
     }
 
-    /** Tích xong → tự thu gọn sau 1,2 giây (còn tích tiếp thì đợi tiếp). */
+    /** Tích xong → tự thu gọn sau 1,2 giây (còn tích tiếp thì đợi tiếp).
+     *  multi_pick (Tên chi tiết hạng mục): giữ danh sách mở để tích nhiều mục, bấm ra ngoài mới đóng. */
     onChange(resId, checked) {
         super.onChange(resId, checked);
         clearTimeout(this._closeTimer);
+        if (this.props.multiPick) {
+            return;
+        }
         this._closeTimer = setTimeout(() => {
             this.state.open = false;
         }, 1200);
+    }
+
+    /** Chọn tất cả / bỏ chọn tất cả các mục đang hiện. */
+    toggleAll() {
+        const ids = (this.items || []).map((it) => it[0]);
+        const current = new Set(this.props.record.data[this.props.name]?.currentIds || []);
+        const allPicked = ids.length && ids.every((id) => current.has(id));
+        for (const id of ids) {
+            if (allPicked && current.has(id)) {
+                super.onChange(id, false);
+            } else if (!allPicked && !current.has(id)) {
+                super.onChange(id, true);
+            }
+        }
+        this.commitChanges();
+    }
+
+    get allPicked() {
+        const ids = (this.items || []).map((it) => it[0]);
+        const current = new Set(this.props.record.data[this.props.name]?.currentIds || []);
+        return Boolean(ids.length) && ids.every((id) => current.has(id));
+    }
+
+    /** Các mục đã chọn (hiện bên dưới ô khi thu gọn). */
+    get selectedItems() {
+        const ids = this.props.record.data[this.props.name]?.currentIds || [];
+        const map = new Map((this.items || []).map((it) => [it[0], it[1]]));
+        return ids.map((id) => ({ id, name: map.get(id) })).filter((x) => x.name);
     }
 
     /** Tên các mục đã chọn (hiện trên ô khi thu gọn). */
@@ -147,6 +180,7 @@ registry.category("fields").add("dwt_collapsible_checkboxes", {
             ...many2ManyCheckboxesField.extractProps(fieldInfo, dynamicInfo),
             unit: fieldInfo.options?.unit || "công việc",
             placeholder: fieldInfo.placeholder || "",
+            multiPick: Boolean(fieldInfo.options?.multi_pick),
         };
     },
 });

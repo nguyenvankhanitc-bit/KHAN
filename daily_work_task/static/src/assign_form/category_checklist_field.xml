@@ -41,8 +41,18 @@
                 <i t-att-class="'fa ' + (state.open ? 'fa-chevron-up' : 'fa-chevron-down')"/>
             </button>
             <div t-if="state.open" class="o_dwt_catlist_box">
+                <div t-if="props.multiPick and items and items.length &gt; 1" class="o_dwt_pick_all">
+                    <button type="button" class="btn btn-link btn-sm p-0" t-on-click="toggleAll">
+                        <i t-att-class="'fa ' + (allPicked ? 'fa-square-o' : 'fa-check-square-o')"/>
+                        <t t-esc="allPicked ? ' Bỏ chọn tất cả' : ' Chọn tất cả'"/>
+                    </button>
+                    <span class="text-muted ms-2">Tích nhiều mục để giao 1 lần</span>
+                </div>
                 <t t-call="web.Many2ManyCheckboxesField"/>
             </div>
+            <ul t-if="props.multiPick and !state.open and selectedItems.length" class="o_dwt_picked_list">
+                <li t-foreach="selectedItems" t-as="it" t-key="it.id"><i class="fa fa-check"/> <t t-esc="it.name"/></li>
+            </ul>
         </div>
     </t>
 </templates>

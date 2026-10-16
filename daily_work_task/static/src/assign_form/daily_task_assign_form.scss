@@ -205,3 +205,26 @@
 
     .o_dwt_catlist_value { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
+
+// Tên chi tiết hạng mục: chọn nhiều
+.o_dwt_pick_all {
+    display: flex;
+    align-items: center;
+    padding: 2px 4px 6px;
+    margin-bottom: 4px;
+    border-bottom: 1px dashed #d6dce8;
+    font-size: 12px;
+}
+.o_dwt_picked_list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 10px;
+    border-left: 3px solid #7c3aed;
+    background: #f5f3ff;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #4c1d95;
+
+    li { padding: 1px 0; }
+    .fa { color: #7c3aed; }
+}

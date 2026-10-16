@@ -146,7 +146,7 @@
                             <field name="category_head_id" invisible="1"/>
                             <field name="work_group_ids" string="Tên chi tiết hạng mục"
                                      widget="dwt_collapsible_checkboxes"
-                                     options="{'unit': 'mục chi tiết'}"
+                                     options="{'unit': 'mục chi tiết', 'multi_pick': True}"
                                      placeholder="Bấm để chọn tên chi tiết hạng mục..."
                                      context="{'work_group_show_task_name': 1, 'work_group_team_scope': 1}"
                                      domain="category_head_id and [('category_head_id', '=', category_head_id)] or [('department_id', '=', department_id), ('name', '=', category_name)]"

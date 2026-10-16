@@ -1856,6 +1856,18 @@ class DailyTask(models.Model):
         self.sudo().unlink()
         return True
 
+    @api.model
+    def delete_many_from_manager(self, task_ids):
+        """Xem CV NV: tích chọn nhiều việc rồi xóa 1 lần — cùng quyền với nút xóa từng việc."""
+        tasks = self.browse([int(i) for i in task_ids or []]).exists()
+        if not tasks:
+            return 0
+        if not all(t._can_delete_task() for t in tasks):
+            raise ValidationError("Chỉ tài khoản Administrator mới được xóa công việc.")
+        count = len(tasks)
+        tasks.sudo().unlink()
+        return count
+
     def delete_from_employee(self):
         """Xóa việc từ danh sách Nhân viên nhập CV."""
         self.ensure_one()

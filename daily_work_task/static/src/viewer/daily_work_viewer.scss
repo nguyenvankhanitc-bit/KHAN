@@ -498,3 +498,24 @@
 .o_dwv_mobile_list {
     display: none;
 }
+
+// Xem CV NV: tích chọn nhiều việc để xóa 1 lần
+.o_dwv_col_pick {
+    width: 36px;
+    text-align: center;
+
+    .form-check-input { width: 17px; height: 17px; margin: 0; cursor: pointer; }
+}
+.o_dwv_table tr.is-picked > td { background: #fee2e2 !important; }
+.o_dwv_bulkbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0 8px;
+    padding: 8px 12px;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    background: #fff1f2;
+    color: #991b1b;
+    font-size: 13px;
+}

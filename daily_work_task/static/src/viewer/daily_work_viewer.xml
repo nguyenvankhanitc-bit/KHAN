@@ -173,10 +173,22 @@
                                                                 </section>
                                                             </t>
                                                         </div>
+                                                        <div t-if="panel.canDelete and pickedCount(emp.id)" class="o_dwv_bulkbar">
+                                                            <span><i class="fa fa-check-square"/> Đã chọn <b t-esc="pickedCount(emp.id)"/> việc</span>
+                                                            <button type="button" class="btn btn-sm btn-danger" t-on-click="() => this.onDeletePicked(emp.id)">
+                                                                <i class="fa fa-trash"/> Xóa <t t-esc="pickedCount(emp.id)"/> việc đã chọn
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-light" t-on-click="() => this.clearPick(emp.id)">Bỏ chọn</button>
+                                                        </div>
                                                         <div class="o_dwv_table_wrap">
                                                             <table class="o_dwv_table">
                                                                 <thead>
                                                                     <tr>
+                                                                        <th t-if="panel.canDelete" class="o_dwv_col_pick">
+                                                                            <input type="checkbox" class="form-check-input" title="Chọn tất cả"
+                                                                                   t-att-checked="allPicked(emp.id)"
+                                                                                   t-on-change="() => this.togglePickAll(emp.id)"/>
+                                                                        </th>
                                                                         <th class="o_dwv_col_stt">STT</th>
                                                                         <th class="o_dwv_col_name">Tên công việc</th>
                                                                         <th class="o_dwv_col_assign_date">Ngày giao việc</th>
@@ -193,7 +205,7 @@
                                                                 <tbody>
                                                                     <t t-if="!panel.tasks.length">
                                                                         <tr>
-                                                                            <td t-att-colspan="panel.canDelete ? 11 : 10"
+                                                                            <td t-att-colspan="panel.canDelete ? 12 : 10"
                                                                                 class="text-center text-muted py-4"
                                                                                 style="white-space: normal;">
                                                                                 Không có công việc trong tháng này.
@@ -202,7 +214,7 @@
                                                                     </t>
                                                                     <t t-foreach="taskGroupsOf(emp.id)" t-as="group" t-key="group.key">
                                                                         <tr class="o_dwv_group_row">
-                                                                            <td t-att-colspan="panel.canDelete ? 11 : 10">
+                                                                            <td t-att-colspan="panel.canDelete ? 12 : 10">
                                                                                 <span class="o_dwv_group_name">
                                                                                     <i class="fa fa-folder-open-o"/>
                                                                                     <t t-esc="group.label"/>
@@ -214,7 +226,12 @@
                                                                             </td>
                                                                         </tr>
                                                                         <t t-foreach="group.rows" t-as="task" t-key="task.id">
-                                                                            <tr t-att-class="monthRowClass(task)">
+                                                                            <tr t-att-class="monthRowClass(task) + (isPicked(emp.id, task) ? ' is-picked' : '')">
+                                                                                <td t-if="panel.canDelete" class="o_dwv_col_pick">
+                                                                                    <input type="checkbox" class="form-check-input"
+                                                                                           t-att-checked="isPicked(emp.id, task)"
+                                                                                           t-on-change="() => this.togglePick(emp.id, task)"/>
+                                                                                </td>
                                                                                 <td class="o_dwv_col_stt" t-esc="task.stt"/>
                                                                                 <td class="o_dwv_col_name" t-att-title="task.name" t-esc="task.name"/>
                                                                                 <td class="o_dwv_col_assign_date"

@@ -42,6 +42,8 @@ export class DailyWorkViewer extends Component {
         const now = new Date();
         const year = now.getFullYear();
         this.state = useState({
+            /** Tích chọn để xóa nhiều: empId -> {taskId: true} */
+            delSel: {},
             loading: true,
             employees: [],
             states: [],
@@ -396,6 +398,68 @@ export class DailyWorkViewer extends Component {
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không thể cập nhật."), { type: "danger" });
             await this.loadTasksFor(empId);
+        }
+    }
+
+    selOf(empId) {
+        return this.state.delSel[empId] || {};
+    }
+
+    isPicked(empId, task) {
+        return Boolean(this.selOf(empId)[task.id]);
+    }
+
+    pickedCount(empId) {
+        return Object.keys(this.selOf(empId)).length;
+    }
+
+    togglePick(empId, task) {
+        const sel = { ...this.selOf(empId) };
+        if (sel[task.id]) {
+            delete sel[task.id];
+        } else {
+            sel[task.id] = true;
+        }
+        this.state.delSel = { ...this.state.delSel, [empId]: sel };
+    }
+
+    allPicked(empId) {
+        const tasks = this.panelOf(empId).tasks || [];
+        return Boolean(tasks.length) && tasks.every((t) => this.selOf(empId)[t.id]);
+    }
+
+    togglePickAll(empId) {
+        const tasks = this.panelOf(empId).tasks || [];
+        const sel = {};
+        if (!this.allPicked(empId)) {
+            for (const t of tasks) {
+                sel[t.id] = true;
+            }
+        }
+        this.state.delSel = { ...this.state.delSel, [empId]: sel };
+    }
+
+    clearPick(empId) {
+        this.state.delSel = { ...this.state.delSel, [empId]: {} };
+    }
+
+    /** Xóa 1 lần các việc đã tích. */
+    async onDeletePicked(empId) {
+        const panel = this.panelOf(empId);
+        const ids = Object.keys(this.selOf(empId)).map((id) => parseInt(id, 10));
+        if (!panel.canDelete || !ids.length) {
+            return;
+        }
+        if (!confirm(`Xóa ${ids.length} công việc đã chọn? Không khôi phục được.`)) {
+            return;
+        }
+        try {
+            const n = await this.orm.call("daily.task", "delete_many_from_manager", [ids]);
+            this.clearPick(empId);
+            await this.loadTasksFor(empId);
+            this.notification.add(`Đã xóa ${n} công việc.`, { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể xóa."), { type: "danger" });
         }
     }
 

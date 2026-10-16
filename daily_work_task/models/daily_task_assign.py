@@ -1596,6 +1596,17 @@ class DailyTaskAssign(models.Model):
                 "today": day == today,
             })
 
+        # Tự bổ sung ô 'x' còn thiếu: việc cá nhân có sẵn từ trước (nhập dữ liệu / bản cũ) chưa từng có
+        # ô kế hoạch → tạo theo Ngày bắt đầu → Deadline, để Plan cá nhân / Plan tổng hiện x và màu trạng thái.
+        if single_tasks:
+            have = {r["task_id"][0] for r in PlanDay.search_read(
+                [("task_id", "in", single_tasks.ids)], ["task_id"]) if r["task_id"]}
+            missing = single_tasks.filtered(
+                lambda t: t.id not in have and (t.assign_date or t.deadline) and t.assignee_user_id
+            )
+            if missing:
+                PlanDay.sync_tasks(missing)
+
         month_domain = [("date", ">=", first), ("date", "<=", last), ("planned", "=", True)]
         task_days = PlanDay.search(month_domain + [("task_id", "in", single_tasks.ids)])
         own_view = user == self.env.user

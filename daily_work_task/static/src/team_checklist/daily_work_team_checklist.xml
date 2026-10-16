@@ -60,11 +60,9 @@
                     </t>
                 </select>
                 <select class="form-select form-select-sm" t-model="state.stateFilter" t-on-change="onFilterChange">
-                    <option value="">Trạng thái: Tất cả</option>
-                    <option value="done">Đã làm</option>
-                    <option value="not_started">Chưa làm</option>
-                    <option value="in_progress">Đang làm</option>
-                    <option value="overdue">Quá hạn</option>
+                    <option value="">Đã hoàn thành: Tất cả</option>
+                    <option value="ontime">Hoàn thành đúng hạn</option>
+                    <option value="overdue">Hoàn thành trễ hạn</option>
                 </select>
                 <input type="text" class="form-control form-control-sm o_tcl_search"
                        placeholder="Tìm công việc, cửa hàng, khu vực..."
@@ -83,7 +81,7 @@
                 </div>
                 <div class="o_tcl_kpi4_card is-late">
                     <span class="o_tcl_kpi4_ico"><i class="fa fa-exclamation-triangle"/></span>
-                    <div><small>Quá hạn</small><b t-esc="chartData.totals.late"/></div>
+                    <div><small>Hoàn thành trễ hạn</small><b t-esc="chartData.totals.late"/></div>
                 </div>
                 <div class="o_tcl_kpi4_card is-done">
                     <span class="o_tcl_kpi4_ico"><i class="fa fa-check"/></span>
@@ -101,7 +99,7 @@
                     </div>
                     <div class="o_tcl_sec_stats">
                         <span class="o_tcl_sec_stat is-todo"><small><i class="fa fa-clock-o"/> Chưa kiểm tra</small><b t-esc="sumUnchecked"/></span>
-                        <span class="o_tcl_sec_stat is-late"><small><i class="fa fa-exclamation-triangle"/> Quá hạn</small><b t-esc="sumUncheckedLate"/></span>
+                        <span class="o_tcl_sec_stat is-late"><small><i class="fa fa-exclamation-triangle"/> Trễ hạn</small><b t-esc="sumUncheckedLate"/></span>
                     </div>
                     <button type="button" class="o_tcl_sec_btn" t-on-click="() => this.toggleSection('unchecked')">
                         <t t-esc="state.secOpen.unchecked ? 'Thu gọn' : 'Xem chi tiết'"/>
@@ -125,9 +123,8 @@
                                     <b t-esc="emp.name"/>
                                     <em t-esc="emp.total + ' việc'"/>
                                     <span class="o_tcl_sub o_tcl_udrop_sub">
-                                        <span class="is-done"><i class="fa fa-circle"/> <t t-esc="emp.done_count"/> đã làm</span>
-                                        <span class="is-todo"><i class="fa fa-circle"/> <t t-esc="emp.todo_count"/> chưa làm</span>
-                                        <span class="is-overdue"><i class="fa fa-circle"/> <t t-esc="emp.overdue_count"/> quá hạn</span>
+                                        <span class="is-done"><i class="fa fa-circle"/> <t t-esc="emp.done_count"/> đã hoàn thành</span>
+                                        <span t-if="emp.overdue_count" class="is-overdue"><i class="fa fa-circle"/> <t t-esc="emp.overdue_count"/> trễ hạn</span>
                                     </span>
                                 </span>
                                 <span class="o_tcl_udrop_right">
@@ -306,10 +303,9 @@
                                     </div>
                                 </t>
                             </div>
-                            <t t-if="emp.todo_count or emp.overdue_count">
+                            <t t-if="emp.overdue_count">
                                 <div class="o_tcl_foot">
-                                    <i class="fa fa-info-circle"/> Còn <t t-esc="emp.todo_count"/> việc chưa làm
-                                    <t t-if="emp.overdue_count"> · <t t-esc="emp.overdue_count"/> việc quá hạn</t>
+                                    <i class="fa fa-info-circle"/> <t t-esc="emp.overdue_count"/> việc hoàn thành trễ hạn
                                 </div>
                             </t>
                             </div>

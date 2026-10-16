@@ -617,7 +617,7 @@ export class DailyWorkTeamChecklist extends Component {
 
     get sumUncheckedLate() {
         return (this.state.employees || []).reduce(
-            (n, e) => n + (e.tasks || []).filter((t) => t.is_overdue && !t.is_done).length,
+            (n, e) => n + (e.tasks || []).filter((t) => t.is_overdue).length,
             0
         );
     }
@@ -636,10 +636,11 @@ export class DailyWorkTeamChecklist extends Component {
                 people.push(index[key]);
             }
             const p = index[key];
-            if (task.is_done || task.state === "done") {
-                p.done += 1;
-            } else if (task.is_overdue) {
+            if (task.is_overdue) {
+                // Hoàn thành trễ hạn (hoặc chưa xong mà quá hạn)
                 p.late += 1;
+            } else if (task.is_done || task.state === "done") {
+                p.done += 1;
             } else if (task.state === "in_progress") {
                 p.doing += 1;
             } else {

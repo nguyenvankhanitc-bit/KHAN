@@ -141,6 +141,8 @@ class DailyTaskTeamChecklist(models.Model):
         month_start = target.replace(day=1)
         domain = [
             ("manager_confirmed", "=", False),
+            # Kiểm tra CV: chỉ việc «Đã hoàn thành» (việc chưa xong không cần quản lý kiểm tra)
+            ("state", "=", "done"),
             # Việc QL đã «Trả task» → nằm bên nhân viên phụ trách; làm xong lại (Hoàn thành) mới quay về đây
             ("manager_returned", "=", False),
             "|",
@@ -184,11 +186,12 @@ class DailyTaskTeamChecklist(models.Model):
             tasks = tasks.filtered(_team_match)
 
         def _is_overdue(task):
-            return bool(
-                task.deadline
-                and not task._is_work_completed()
-                and task.deadline < target
-            )
+            """Việc đã hoàn thành nhưng xong sau Hạn hoàn thành (hoàn thành trễ hạn)."""
+            if not task.deadline:
+                return False
+            if task.state == "done" or task._is_work_completed():
+                return bool(task.date_done and task.date_done > task.deadline)
+            return task.deadline < target
 
         def _is_todo(task):
             return task.state == "not_started" and not _is_overdue(task)
@@ -196,7 +199,9 @@ class DailyTaskTeamChecklist(models.Model):
         def _is_doing(task):
             return task.state == "in_progress" and not _is_overdue(task)
 
-        if state_f == "done":
+        if state_f == "ontime":
+            tasks = tasks.filtered(lambda t: not _is_overdue(t))
+        elif state_f == "done":
             tasks = tasks.filtered(lambda t: t.state == "done")
         elif state_f == "not_started":
             tasks = tasks.filtered(_is_todo)

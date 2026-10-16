@@ -753,6 +753,33 @@ class DailyTaskWorkGroup(models.Model):
         return res
 
     @api.model
+    def rename_category(self, group_ids, new_name):
+        """Nút «Sửa» trên dòng hạng mục: đổi tên hạng mục cho mọi công việc chi tiết của nó.
+
+        Chỉ user có quyền «Chỉnh sửa» ở dòng Hạng mục (Cài đặt → Phân quyền phân công công việc).
+        """
+        self.env["daily.task.assign.access"].check("category", "write")
+        name = " ".join((new_name or "").split())
+        if not name:
+            raise UserError("Vui lòng nhập tên hạng mục.")
+        rows = self.sudo().browse([int(i) for i in group_ids or []]).exists()
+        if not rows:
+            raise UserError("Không có hạng mục để sửa.")
+        # Trùng tên với hạng mục khác cùng Team → dùng «Gộp vào…» thay vì đổi tên
+        team_ids = set(rows.mapped("team_id").ids) or {False}
+        clash = self.sudo().search([("id", "not in", rows.ids), ("active", "=", True)]).filtered(
+            lambda g: (g.team_id.id or False) in team_ids
+            and self._norm_category_name(g.name).casefold() == self._norm_category_name(name).casefold()
+        )
+        if clash:
+            raise UserError(
+                "Team đã có hạng mục «%s». Dùng nút «Gộp vào…» để dồn vào hạng mục đó." % clash[:1].name
+            )
+        rows.with_context(skip_link_users=True, skip_cat_manager_sync=True).write({"name": name})
+        self.env["daily.task"]._req_cache_clear()
+        return {"name": name, "count": len(rows)}
+
+    @api.model
     def merge_category(self, source_ids, target_id=None, new_name=None):
         """Gộp hạng mục: dồn các dòng của hạng mục nguồn vào hạng mục đích (hoặc tên hạng mục mới).
 

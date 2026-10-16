@@ -641,3 +641,18 @@ tr:has(> td > .o_dcb_section_btn) {
 
     &:hover { background: #075985; color: #fff; }
 }
+
+// Nút «Sửa» hạng mục
+.o_dcb_edit_cat {
+    margin-left: 6px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px dashed #b45309;
+    background: #fff;
+    color: #b45309;
+    font-size: 12px;
+    font-weight: 700;
+    vertical-align: middle;
+
+    &:hover { background: #fef3c7; }
+}

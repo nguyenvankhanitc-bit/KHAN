@@ -383,6 +383,27 @@ export class DailyWorkCategoryBoard extends Component {
         });
     }
 
+    /** Nút «Sửa»: đổi tên hạng mục (quyền Chỉnh sửa ở dòng Hạng mục). */
+    onRenameCategory(cat, ev) {
+        ev?.stopPropagation?.();
+        if (!this.canWrite) {
+            this.notification.add(_t("Bạn không có quyền chỉnh sửa hạng mục."), { type: "warning" });
+            return;
+        }
+        this.dialog.add(DwgRenameCategoryDialog, {
+            name: cat.name || "",
+            count: (cat.tasks || []).length,
+            onConfirm: async (newName) => {
+                const res = await this.orm.call("daily.task.work.group", "rename_category", [
+                    (cat.tasks || []).map((t) => t.id),
+                    newName,
+                ]);
+                this.notification.add(`Đã đổi tên hạng mục thành «${res.name}».`, { type: "success" });
+                await this.load();
+            },
+        });
+    }
+
     isMergePicked(cat) {
         return Boolean(this.state.mergeSel[cat.id]);
     }
@@ -727,6 +748,50 @@ export class DwgMergeCategoryDialog extends Component {
         this.state.busy = true;
         try {
             await this.props.onConfirm(this.state.targetId, this.state.newName.trim());
+            this.props.close();
+        } finally {
+            this.state.busy = false;
+        }
+    }
+}
+
+/** Hộp thoại «Sửa hạng mục» (đổi tên). */
+export class DwgRenameCategoryDialog extends Component {
+    static template = "daily_work_task.DwgRenameCategoryDialog";
+    static components = { Dialog };
+    static props = {
+        name: String,
+        count: Number,
+        onConfirm: Function,
+        close: Function,
+    };
+
+    setup() {
+        this.state = useState({ name: this.props.name, busy: false });
+    }
+
+    onInput(ev) {
+        this.state.name = ev.target.value || "";
+    }
+
+    onKeydown(ev) {
+        if (ev.key === "Enter") {
+            this.confirm();
+        }
+    }
+
+    get canConfirm() {
+        const v = (this.state.name || "").trim();
+        return Boolean(v) && v !== this.props.name && !this.state.busy;
+    }
+
+    async confirm() {
+        if (!this.canConfirm) {
+            return;
+        }
+        this.state.busy = true;
+        try {
+            await this.props.onConfirm(this.state.name.trim());
             this.props.close();
         } finally {
             this.state.busy = false;

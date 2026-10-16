@@ -119,6 +119,11 @@
                                                                             t-on-click.stop="(ev) => this.onAddSubTask(dept, team, cat, ev)">
                                                                         <i class="fa fa-plus"/> Thêm CV con
                                                                     </button>
+                                                                    <button t-if="canWrite" type="button" class="btn btn-sm o_dcb_edit_cat"
+                                                                            title="Sửa tên hạng mục (cần quyền Chỉnh sửa)"
+                                                                            t-on-click.stop="(ev) => this.onRenameCategory(cat, ev)">
+                                                                        <i class="fa fa-pencil"/> Sửa
+                                                                    </button>
                                                                     <button t-if="canWrite" type="button" class="btn btn-sm o_dcb_merge_cat"
                                                                             title="Gộp hạng mục này vào hạng mục khác (vd hạng mục lẻ → hạng mục cha)"
                                                                             t-on-click.stop="(ev) => this.onMergeCategory(dept, team, cat, ev)">
@@ -257,6 +262,22 @@
             </div>
             <t t-set-slot="footer">
                 <button class="btn btn-primary" t-att-disabled="!canConfirm" t-on-click="confirm">Gộp</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Huỷ</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-name="daily_work_task.DwgRenameCategoryDialog">
+        <Dialog title="'Sửa hạng mục'" size="'md'">
+            <label class="form-label mb-1">Tên hạng mục</label>
+            <input type="text" class="form-control" t-att-value="state.name"
+                   t-on-input="onInput" t-on-keydown="onKeydown" autofocus="autofocus"/>
+            <p class="text-muted small mt-2 mb-0">
+                Áp dụng cho <b t-esc="props.count"/> công việc chi tiết của hạng mục «<t t-esc="props.name"/>».
+                Công việc đã giao vẫn giữ nguyên.
+            </p>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!canConfirm" t-on-click="confirm">Lưu</button>
                 <button class="btn btn-secondary" t-on-click="props.close">Huỷ</button>
             </t>
         </Dialog>

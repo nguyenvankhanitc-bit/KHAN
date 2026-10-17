@@ -100,6 +100,7 @@ class DailyTaskDashboard(models.AbstractModel):
             "can_see_performance": self.env[
                 "daily.task.performance.access"
             ].user_can_view(),
+            "report_view": self.env["daily.task.report.perm"].view_map(),
             "user_name": self.env.user.name or "",
             "company_name": self.env.company.name or "",
         }
@@ -147,6 +148,7 @@ class DailyTaskDashboard(models.AbstractModel):
                 "can_view_others": bool(opts.get("can_view_others")),
                 "can_view_checklist": bool(opts.get("can_view_checklist")),
                 "can_see_performance": bool(opts.get("can_see_performance")),
+                "report_view": opts.get("report_view") or {},
                 "user_name": opts.get("user_name") or "",
                 "company_name": opts.get("company_name") or "",
                 "assign_access": assign_access,

@@ -9,8 +9,14 @@ import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
 const GROUPS = [
+    { key: "summary_report", label: "Báo cáo tổng" },
+    { key: "personal", label: "Báo cáo cá nhân" },
     { key: "catrep", label: "Báo cáo CV theo hạng mục" },
     { key: "summary", label: "Báo cáo tổng hợp theo hạng mục" },
+    { key: "monthly", label: "Báo cáo công việc tháng" },
+    { key: "team", label: "Báo cáo CV chi tiết team" },
+    { key: "performance", label: "Báo cáo hiệu suất" },
+    { key: "kpi", label: "Báo cáo KPI" },
 ];
 
 const PERMS = [

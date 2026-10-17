@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Cài đặt → Phân quyền báo cáo (ma trận giống Phân quyền phân công công việc).
 
-Nhóm: Báo cáo CV theo hạng mục (catrep) · Báo cáo tổng hợp theo hạng mục (summary).
+Nhóm: mọi mục con của BÁO CÁO (Báo cáo tổng, cá nhân, theo hạng mục, tổng hợp theo hạng mục,
+công việc tháng, CV chi tiết team, hiệu suất, KPI).
 Quyền: Xem · Xem NV khác · Chỉnh sửa · Xuất Excel.
 - Quản lý module: đủ quyền.
 - User chưa có dòng phân quyền: dùng như trước (xem / sửa / xuất báo cáo của chính mình;
@@ -12,9 +13,20 @@ Quyền: Xem · Xem NV khác · Chỉnh sửa · Xuất Excel.
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
-GROUPS = ("catrep", "summary")
+GROUP_LIST = [
+    ("summary_report", "Báo cáo tổng"),
+    ("personal", "Báo cáo cá nhân"),
+    ("catrep", "Báo cáo CV theo hạng mục"),
+    ("summary", "Báo cáo tổng hợp theo hạng mục"),
+    ("monthly", "Báo cáo công việc tháng"),
+    ("team", "Báo cáo CV chi tiết team"),
+    ("performance", "Báo cáo hiệu suất"),
+    ("kpi", "Báo cáo KPI"),
+]
+GROUPS = tuple(k for k, _l in GROUP_LIST)
 PERMS = ("view", "others", "write", "export")
-LABELS = {"catrep": "Báo cáo CV theo hạng mục", "summary": "Báo cáo tổng hợp theo hạng mục"}
+PERM_LABELS = {"view": "Xem", "others": "Xem NV khác", "write": "Chỉnh sửa", "export": "Xuất Excel"}
+LABELS = dict(GROUP_LIST)
 ACTS = {"view": "xem", "others": "xem báo cáo của nhân viên khác ở", "write": "chỉnh sửa", "export": "xuất Excel"}
 
 
@@ -29,16 +41,24 @@ class DailyTaskReportPerm(models.Model):
     user_id = fields.Many2one("res.users", related="employee_id.user_id", store=True, readonly=True, index=True)
     active = fields.Boolean(default=True)
 
-    perm_catrep_view = fields.Boolean(string="BC theo hạng mục: Xem")
-    perm_catrep_others = fields.Boolean(string="BC theo hạng mục: Xem NV khác")
-    perm_catrep_write = fields.Boolean(string="BC theo hạng mục: Chỉnh sửa")
-    perm_catrep_export = fields.Boolean(string="BC theo hạng mục: Xuất Excel")
-    perm_summary_view = fields.Boolean(string="BC tổng hợp: Xem")
-    perm_summary_others = fields.Boolean(string="BC tổng hợp: Xem NV khác")
-    perm_summary_write = fields.Boolean(string="BC tổng hợp: Chỉnh sửa")
-    perm_summary_export = fields.Boolean(string="BC tổng hợp: Xuất Excel")
+    # perm_<nhóm>_<quyền> cho mọi nhóm báo cáo
+    for _g, _gl in GROUP_LIST:
+        for _p in PERMS:
+            locals()["perm_%s_%s" % (_g, _p)] = fields.Boolean(string="%s: %s" % (_gl, PERM_LABELS[_p]))
+    del _g, _gl, _p
 
     _employee_uniq = models.Constraint("UNIQUE(employee_id)", "Mỗi nhân viên chỉ có 1 dòng phân quyền báo cáo.")
+
+    def init(self):
+        """Dòng tạo trước khi có nhóm báo cáo mới: nhóm mới (cột còn NULL) giữ quyền như cũ
+        (Xem / Chỉnh sửa / Xuất Excel). Chỉ chạy với ô chưa từng đặt — không ghi đè lựa chọn đã lưu."""
+        super().init()
+        for g in GROUPS:
+            self.env.cr.execute(
+                "UPDATE daily_task_report_perm SET perm_%(g)s_view = TRUE, perm_%(g)s_write = TRUE,"
+                " perm_%(g)s_export = TRUE, perm_%(g)s_others = COALESCE(perm_%(g)s_others, FALSE)"
+                " WHERE perm_%(g)s_view IS NULL" % {"g": g}
+            )
 
     @api.constrains("employee_id")
     def _check_employee_user(self):
@@ -62,6 +82,12 @@ class DailyTaskReportPerm(models.Model):
         if not line:
             return {g: {"view": True, "others": None, "write": True, "export": True} for g in GROUPS} | {"configured": False}
         return {g: {p: bool(line["perm_%s_%s" % (g, p)]) for p in PERMS} for g in GROUPS} | {"configured": True}
+
+    @api.model
+    def view_map(self):
+        """{nhóm: có được Xem} — ẩn / hiện mục trên thanh bên."""
+        pmap = self.get_map()
+        return {g: bool(pmap[g]["view"]) for g in GROUPS}
 
     @api.model
     def check(self, group, perm):
@@ -157,7 +183,8 @@ class DailyTask(models.Model):
         filters = dict(filters or {})
         if filters.get("employee_id"):
             filters["employee_id"] = self._report_perm_employee("catrep", filters["employee_id"])
-        data = super().get_category_report(year=year, month=month, filters=filters)
+        data = super(DailyTask, self.with_context(skip_report_perm=True)).get_category_report(
+            year=year, month=month, filters=filters)
         return self._report_perm_apply("catrep", data)
 
     @api.model
@@ -187,3 +214,85 @@ class DailyTask(models.Model):
     def export_user_summary_excel(self, year=None, month=None, employee_id=None):
         self.env["daily.task.report.perm"].check("summary", "export")
         return super().export_user_summary_excel(year=year, month=month, employee_id=employee_id)
+
+    # --- Báo cáo cá nhân / Báo cáo CV chi tiết team (cùng get_report_overview; team khi filters.team)
+    @api.model
+    def _overview_group(self, filters):
+        return "team" if (filters or {}).get("team") else "personal"
+
+    @api.model
+    def get_report_overview(self, year=None, month=None, filters=None):
+        if self.env.context.get("skip_report_perm"):
+            return super().get_report_overview(year=year, month=month, filters=filters)
+        group = self._overview_group(filters)
+        self.env["daily.task.report.perm"].check(group, "view")
+        filters = dict(filters or {})
+        if group == "personal" and filters.get("employee_id"):
+            filters["employee_id"] = self._report_perm_employee("personal", filters["employee_id"])
+        data = super().get_report_overview(year=year, month=month, filters=filters)
+        return self._report_perm_apply(group, data) if isinstance(data, dict) else data
+
+    @api.model
+    def export_personal_report_excel(self, year=None, month=None, filters=None, chart_images=None):
+        self.env["daily.task.report.perm"].check(self._overview_group(filters), "export")
+        return super().export_personal_report_excel(year=year, month=month, filters=filters, chart_images=chart_images)
+
+    @api.model
+    def export_personal_report_pdf(self, year=None, month=None, filters=None, chart_images=None):
+        self.env["daily.task.report.perm"].check(self._overview_group(filters), "export")
+        return super().export_personal_report_pdf(year=year, month=month, filters=filters, chart_images=chart_images)
+
+    # --- Báo cáo tổng
+    @api.model
+    def get_summary_report(self, year=None, month=None):
+        if not self.env.context.get("skip_report_perm"):
+            self.env["daily.task.report.perm"].check("summary_report", "view")
+        return super().get_summary_report(year=year, month=month)
+
+    @api.model
+    def export_summary_report_excel(self, year=None, month=None):
+        self.env["daily.task.report.perm"].check("summary_report", "export")
+        return super(DailyTask, self.with_context(skip_report_perm=True)).export_summary_report_excel(year=year, month=month)
+
+
+class DailyTaskMonthlyReport(models.AbstractModel):
+    _inherit = "daily.task.monthly.report"
+
+    @api.model
+    def get_report(self, year=None, month=None, employee_id=None):
+        if not self.env.context.get("skip_report_perm"):
+            self.env["daily.task.report.perm"].check("monthly", "view")
+            employee_id = self.env["daily.task"]._report_perm_employee("monthly", employee_id)
+        data = super(DailyTaskMonthlyReport, self.with_context(skip_report_perm=True)).get_report(
+            year=year, month=month, employee_id=employee_id)
+        if isinstance(data, dict):
+            others = self.env["daily.task.report.perm"].get_map()["monthly"]["others"]
+            if others is False:
+                data["can_pick_employee"] = False
+            data["report_perm"] = {k: (v if v is not None else True)
+                                   for k, v in self.env["daily.task.report.perm"].get_map()["monthly"].items()}
+        return data
+
+    @api.model
+    def export_excel(self, year=None, month=None, employee_id=None):
+        self.env["daily.task.report.perm"].check("monthly", "export")
+        employee_id = self.env["daily.task"]._report_perm_employee("monthly", employee_id)
+        return super(DailyTaskMonthlyReport, self.with_context(skip_report_perm=True)).export_excel(
+            year=year, month=month, employee_id=employee_id)
+
+
+class DailyTaskPerformanceReport(models.AbstractModel):
+    _inherit = "daily.task.performance.report"
+
+    @api.model
+    def get_performance_report(self, year=None, month=None, employee_id=None, department_id=None):
+        if not self.env.context.get("skip_report_perm"):
+            self.env["daily.task.report.perm"].check("performance", "view")
+        return super().get_performance_report(year=year, month=month, employee_id=employee_id,
+                                              department_id=department_id)
+
+    @api.model
+    def export_excel(self, year=None, month=None, department_id=None):
+        self.env["daily.task.report.perm"].check("performance", "export")
+        return super(DailyTaskPerformanceReport, self.with_context(skip_report_perm=True)).export_excel(
+            year=year, month=month, department_id=department_id)

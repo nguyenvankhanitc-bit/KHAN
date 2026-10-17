@@ -95,6 +95,7 @@ export class DailyWorkAppShell extends Component {
                 this.state.canViewOthers = Boolean(opts.can_view_others);
                 this.state.canViewChecklist = Boolean(opts.can_view_checklist);
                 this.state.canSeePerformance = Boolean(opts.can_see_performance);
+                this.state.reportView = opts.report_view || {};
                 this.state.canAssignAdd = Boolean(opts.can_assign_add);
                 this.state.canAssignList = Boolean(opts.can_assign_list);
                 this.state.canAssignPersonnel = Boolean(opts.can_assign_personnel);
@@ -262,6 +263,11 @@ export class DailyWorkAppShell extends Component {
         }
         this.state.sidebarResizing = false;
         document.body.classList.remove("o_dwd_sidebar_resizing");
+    }
+
+    /** Phân quyền báo cáo: ẩn mục báo cáo trên thanh bên khi không có quyền Xem. */
+    rv(key) {
+        return (this.state.reportView || {})[key] !== false;
     }
 
     async openNav(key) {

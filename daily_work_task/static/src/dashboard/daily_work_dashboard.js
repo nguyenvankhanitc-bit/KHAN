@@ -149,6 +149,7 @@ export class DailyWorkDashboard extends Component {
                 this.state.canViewOthers = Boolean(opts.can_view_others);
                 this.state.canViewChecklist = Boolean(opts.can_view_checklist);
                 this.state.canSeePerformance = Boolean(opts.can_see_performance);
+                this.state.reportView = opts.report_view || {};
                 this.state.userName = opts.user_name || "";
                 this.state.companyName = opts.company_name || "";
                 this.state.data = boot?.data || this.state.data;
@@ -644,6 +645,11 @@ export class DailyWorkDashboard extends Component {
                 el.scrollIntoView({ behavior: "smooth", block: "start" });
             }
         });
+    }
+
+    /** Phân quyền báo cáo: ẩn mục báo cáo trên thanh bên khi không có quyền Xem. */
+    rv(key) {
+        return (this.state.reportView || {})[key] !== false;
     }
 
     async openNav(key) {

@@ -180,8 +180,7 @@ class DailyTask(models.Model):
                 "left": wb.add_format(base),
                 "center": wb.add_format(dict(base, align="center")),
             }
-        team_label = (data.get("team_name") or "").upper()
-        ws.merge_range(0, 0, 0, last, "BÁO CÁO CÔNG VIỆC NV %s" % team_label if team_label else "BÁO CÁO CÔNG VIỆC NV", title)
+        ws.merge_range(0, 0, 0, last, "BÁO CÁO CÔNG VIỆC", title)
         ws.set_row(0, 30)
         ws.write(1, 0, "Tháng: %s     Năm: %s     Team: %s" % (data["month"], data["year"], data.get("team_name") or ""), sub)
         hr = 3

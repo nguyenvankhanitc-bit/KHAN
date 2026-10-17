@@ -9,7 +9,6 @@
                         <div class="o_dkr_head_side"/>
                         <div class="o_dkr_head_center">
                             <h2 class="o_dkr_head_title" t-esc="title"/>
-                            <div class="o_dkr_head_line">Team: <b t-esc="state.teamName || '—'"/></div>
                             <div class="o_dkr_head_sub" t-esc="subLine"/>
                             <div class="o_dkr_head_line" t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>
                         </div>

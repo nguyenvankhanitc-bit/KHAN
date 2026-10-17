@@ -77,7 +77,7 @@ export class DailyWorkKhoReport extends Component {
     }
 
     get title() {
-        return `BÁO CÁO CÔNG VIỆC NV ${(this.state.teamName || "").toUpperCase()}`.trim();
+        return "BÁO CÁO CÔNG VIỆC";
     }
 
     /** Dòng phụ: nhân viên đang xem · phòng ban của Team. */

@@ -39,6 +39,18 @@ export const REPORT_GROUPS = [
     },
 ];
 
+/** Thanh tab đầu trang báo cáo: mọi loại báo cáo (cùng thứ tự thanh bên), lọc theo phân quyền. */
+export const REPORT_TABS = [
+    { nav: "report", label: "Báo cáo tổng", icon: "fa-bar-chart", perm: "summary_report", need: "canViewOthers" },
+    { nav: "overview", label: "Báo cáo cá nhân", icon: "fa-user-o", perm: "personal" },
+    { nav: "category_report", label: "Báo cáo CV theo hạng mục", icon: "fa-sitemap", perm: "catrep" },
+    { nav: "user_summary", label: "Báo cáo tổng hợp theo hạng mục", icon: "fa-id-card-o", perm: "summary" },
+    { nav: "monthly_report", label: "Báo cáo công việc tháng", icon: "fa-file-text-o", perm: "monthly" },
+    { nav: "team_report", label: "Báo cáo CV chi tiết team", icon: "fa-users", perm: "team" },
+    { nav: "performance", label: "Báo cáo hiệu suất", icon: "fa-line-chart", perm: "performance", need: "canSeePerformance" },
+    { nav: "kpi", label: "Báo cáo KPI", icon: "fa-trophy", perm: "kpi", need: "isManager" },
+];
+
 const REPORT_OPEN_KEY = "daily_work_sidebar_report_open";
 
 /** Mục BÁO CÁO trên thanh bên đang mở (nhớ theo trình duyệt). */
@@ -57,6 +69,12 @@ export const reportGroupsMixin = {
         return group.items.filter(
             (it) => reportView[it.perm] !== false && (!it.need || this.state[it.need])
         );
+    },
+    get reportTabs() {
+        return this.reportItems({ items: REPORT_TABS });
+    },
+    get activeReportTab() {
+        return this.reportTabs.find((it) => it.nav === this.activeNav) || null;
     },
     get reportGroups() {
         return REPORT_GROUPS.filter((g) => this.reportItems(g).length);

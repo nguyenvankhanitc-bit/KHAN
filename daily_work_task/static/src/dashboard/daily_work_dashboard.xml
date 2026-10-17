@@ -285,13 +285,13 @@
 
                     <!-- Main -->
                     <main class="o_dwd_main">
-                        <div t-if="activeReportGroup" class="o_dwr_hub">
+                        <div t-if="activeReportTab" class="o_dwr_hub">
                             <h1 class="o_dwr_hub_title">
-                                <i t-att-class="'fa ' + activeReportGroup.icon"/>
-                                <span t-esc="activeReportGroup.heading"/>
+                                <i t-att-class="'fa ' + activeReportTab.icon"/>
+                                <span t-esc="activeReportTab.label.toUpperCase()"/>
                             </h1>
                             <div class="o_dwr_hub_tabs" role="tablist">
-                                <t t-foreach="reportItems(activeReportGroup)" t-as="it" t-key="it.nav">
+                                <t t-foreach="reportTabs" t-as="it" t-key="it.nav">
                                     <button type="button" role="tab"
                                             t-att-class="'o_dwr_hub_tab' + (activeNav === it.nav ? ' active' : '')"
                                             t-on-click="() => this.openNav(it.nav)">

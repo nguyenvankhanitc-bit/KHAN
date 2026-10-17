@@ -591,8 +591,10 @@
                                                     <th class="o_dro_excel_stt">STT</th>
                                                     <th>Tên công việc</th>
                                                     <th t-if="teamReport">Người phụ trách</th>
-                                                    <th>Ngày giao việc</th>
-                                                    <th>Hạn hoàn thành</th>
+                                                    <!-- Lấy từ Danh sách công việc cá nhân: Ngày bắt đầu · Deadline · Ngày hoàn thành -->
+                                                    <th>Ngày bắt đầu</th>
+                                                    <th>Deadline</th>
+                                                    <th>Ngày hoàn thành</th>
                                                     <th>Mức ưu tiên</th>
                                                     <th>Trạng thái</th>
                                                     <th>Phút</th>
@@ -609,7 +611,7 @@
                                                         role="button"
                                                         t-att-aria-expanded="group.collapsed ? 'false' : 'true'"
                                                         t-att-title="group.collapsed ? 'Bấm để mở' : 'Bấm để thu gọn'">
-                                                        <td t-att-colspan="teamReport ? 12 : 11">
+                                                        <td t-att-colspan="teamReport ? 13 : 12">
                                                             <span class="o_dro_excel_group_toggle">
                                                                 <i t-att-class="group.collapsed ? 'fa fa-chevron-right' : 'fa fa-chevron-down'"/>
                                                             </span>
@@ -635,6 +637,7 @@
                                                                     t-att-class="'o_dro_excel_day' + (row.day_span &gt; 1 ? ' is-merged' : '')"
                                                                     t-esc="row.assign_date_display || '—'"/>
                                                                 <td t-esc="row.deadline_display || '—'"/>
+                                                                <td t-esc="row.date_done_display || '—'"/>
                                                                 <td>
                                                                     <span t-att-class="'o_dro_excel_badge ' + excelPriorityClass(row.priority)"
                                                                           t-esc="row.priority_label"/>
@@ -660,7 +663,7 @@
                                                     </t>
                                                 </t>
                                                 <tr class="o_dro_excel_total" t-if="excelGroups.length">
-                                                    <td t-att-colspan="teamReport ? 12 : 11">
+                                                    <td t-att-colspan="teamReport ? 13 : 12">
                                                         Tổng % hoàn thành công việc trong tháng
                                                         (AVERAGE các hạng mục):
                                                         <strong t-esc="formatMonthAvg()"/>%

@@ -107,7 +107,6 @@
                                             <th class="o_dus_pname">Tên công việc</th>
                                             <th>Ngày bắt đầu</th>
                                             <th>Deadline</th>
-                                            <th>Ngày hoàn thành</th>
                                             <th>Mức ưu tiên</th>
                                             <th>Trạng thái công việc</th>
                                             <th class="o_dus_pcause">Nguyên nhân <small>(user tự đánh giá)</small></th>
@@ -122,7 +121,6 @@
                                             </td>
                                             <td class="o_dus_c" t-esc="p.start || '—'"/>
                                             <td class="o_dus_c" t-esc="p.deadline || '—'"/>
-                                            <td class="o_dus_c" t-esc="p.date_done || '—'"/>
                                             <td class="o_dus_c"><span class="o_dus_prio" t-esc="p.priority_label"/></td>
                                             <td class="o_dus_c">
                                                 <span t-if="p.is_overdue" class="o_dus_status is-late"><i class="fa fa-exclamation-triangle"/> Trễ hạn (<t t-esc="p.overdue_days"/>)</span>
@@ -134,7 +132,7 @@
                                             </td>
                                         </tr>
                                         <tr t-if="!state.pending.length">
-                                            <td colspan="8" class="text-center text-muted py-3">Không có công việc tồn đọng trong tháng.</td>
+                                            <td colspan="7" class="text-center text-muted py-3">Không có công việc tồn đọng trong tháng.</td>
                                         </tr>
                                     </tbody>
                                 </table>

@@ -278,8 +278,8 @@ class DailyTask(models.Model):
         r += 4
         ws.write(r, 0, "Tồn tại / nguyên nhân:", lbl)
         r += 1
-        p_heads = [(0, 0, "STT"), (1, 2, "Tên công việc"), (3, 3, "Ngày bắt đầu"), (4, 4, "Deadline"),
-                   (5, 5, "Ngày hoàn thành"), (6, 6, "Mức ưu tiên"), (7, 8, "Trạng thái công việc"),
+        p_heads = [(0, 0, "STT"), (1, 3, "Tên công việc"), (4, 4, "Ngày bắt đầu"), (5, 5, "Deadline"),
+                   (6, 6, "Mức ưu tiên"), (7, 8, "Trạng thái công việc"),
                    (9, last, "Nguyên nhân (user tự đánh giá)")]
         ws.set_row(r, 30)
         for c0, c1, h in p_heads:
@@ -292,10 +292,9 @@ class DailyTask(models.Model):
             ws.set_row(r, 30)
             status = ("Trễ hạn (%s)" % p["overdue_days"]) if p["is_overdue"] else p["state_label"]
             ws.write(r, 0, i, c)
-            ws.merge_range(r, 1, r, 2, p["name"], fmt(text_wrap=True))
-            ws.write(r, 3, p["start"] or "—", c)
-            ws.write(r, 4, p["deadline"] or "—", c)
-            ws.write(r, 5, p["date_done"] or "—", c)
+            ws.merge_range(r, 1, r, 3, p["name"], fmt(text_wrap=True))
+            ws.write(r, 4, p["start"] or "—", c)
+            ws.write(r, 5, p["deadline"] or "—", c)
             ws.write(r, 6, p["priority_label"], c)
             ws.merge_range(r, 7, r, 8, status, red if p["is_overdue"] else c)
             ws.merge_range(r, 9, r, last, p["cause"], box)

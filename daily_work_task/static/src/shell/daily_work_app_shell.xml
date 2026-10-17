@@ -167,6 +167,12 @@
                             <i class="fa fa-user-circle"/><span>Báo cáo cá nhân</span>
                         </button>
                         <button type="button"
+                                t-att-class="'o_dwd_side_item' + (isActive('category_report') ? ' active' : '')"
+                                title="Báo cáo CV theo hạng mục"
+                                t-on-click="() => this.openNav('category_report')">
+                            <i class="fa fa-sitemap"/><span>Báo cáo CV theo hạng mục</span>
+                        </button>
+                        <button type="button"
                                 t-att-class="'o_dwd_side_item' + (isActive('monthly_report') ? ' active' : '')"
                                 title="Báo cáo công việc tháng"
                                 t-on-click="() => this.openNav('monthly_report')">

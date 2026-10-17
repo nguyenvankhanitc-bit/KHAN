@@ -694,6 +694,10 @@ export class DailyWorkDashboard extends Component {
             await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
             return;
         }
+        if (key === "category_report") {
+            await this._doNavAction("daily_work_task.action_daily_work_category_report", asPopup);
+            return;
+        }
         if (key === "team_assign" || key === "team_assign_list") {
             await this._doNavAction("daily_work_task.action_daily_work_assign_board", asPopup);
             return;

@@ -144,6 +144,10 @@
                                     t-on-click="() => this.openNav('overview')">
                                 <i class="fa fa-user-circle"/><span>Báo cáo cá nhân</span>
                             </button>
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo CV theo hạng mục"
+                                    t-on-click="() => this.openNav('category_report')">
+                                <i class="fa fa-sitemap"/><span>Báo cáo CV theo hạng mục</span>
+                            </button>
                             <button type="button" class="o_dwd_side_item" title="Báo cáo công việc tháng"
                                     t-on-click="() => this.openNav('monthly_report')">
                                 <i class="fa fa-file-text-o"/><span>Báo cáo công việc tháng</span>

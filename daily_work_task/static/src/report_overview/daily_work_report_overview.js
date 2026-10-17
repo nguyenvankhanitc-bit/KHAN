@@ -33,6 +33,8 @@ export class DailyWorkReportOverview extends Component {
             this.props.action?.context?.daily_work_team_report
             || this.props.action?.tag === "daily_work_team_report"
         );
+        // Báo cáo CV theo hạng mục: cùng nguồn Báo cáo cá nhân, bảng nhóm theo hạng mục
+        this.categoryReport = Boolean(this.props.action?.context?.daily_work_category_report);
         this.teamAssign = Boolean(
             this.props.action?.context?.daily_work_team_assign
             || this.props.action?.tag === "daily_work_team_assign"
@@ -123,7 +125,9 @@ export class DailyWorkReportOverview extends Component {
             ? "Danh sách phân công việc"
             : this.teamReport
               ? "Báo cáo CV chi tiết team"
-              : "BÁO CÁO CÔNG VIỆC CÁ NHÂN";
+              : this.categoryReport
+                ? "BÁO CÁO CÔNG VIỆC THEO HẠNG MỤC"
+                : "BÁO CÁO CÔNG VIỆC CÁ NHÂN";
     }
 
     get shellActiveNav() {
@@ -131,7 +135,9 @@ export class DailyWorkReportOverview extends Component {
             ? "team_assign_list"
             : this.teamReport
               ? "team_report"
-              : "overview";
+              : this.categoryReport
+                ? "category_report"
+                : "overview";
     }
 
     get visibleGroups() {
@@ -326,7 +332,8 @@ export class DailyWorkReportOverview extends Component {
     async load() {
         this.state.loading = true;
         try {
-            const data = await this.orm.call("daily.task", "get_report_overview", [], {
+            const method = this.categoryReport ? "get_category_report" : "get_report_overview";
+            const data = await this.orm.call("daily.task", method, [], {
                 year: Number(this.state.monthYear),
                 month: Number(this.state.monthMonth),
                 filters: this.filtersPayload(),
@@ -361,6 +368,7 @@ export class DailyWorkReportOverview extends Component {
             this.state.rows = data.rows || [];
             this.state.assignRows = data.assign_rows || [];
             this.state.groups = data.groups || [];
+            this.state.catGroups = data.cat_groups || [];
             this.state.filterOptions = data.filters || { employees: [], work_groups: [] };
             this.state.canDelete = Boolean(data.can_delete);
             this.state.canPickEmployee = this.teamReport ? false : Boolean(data.can_pick_employee);
@@ -836,7 +844,50 @@ export class DailyWorkReportOverview extends Component {
         };
     }
 
+    /** Số giờ 2 chữ số thập phân (vd 2,33). */
+    fmt2(value) {
+        return (Number(value) || 0).toFixed(2).replace(".", ",");
+    }
+
+    /** Báo cáo CV theo hạng mục: mở/thu gọn nhóm. */
+    toggleCatGroup(key) {
+        this.state.catCollapsed = { ...(this.state.catCollapsed || {}), [key]: !(this.state.catCollapsed || {})[key] };
+    }
+
+    isCatOpen(key) {
+        return !(this.state.catCollapsed || {})[key];
+    }
+
+    catRatingClass(rating) {
+        return {
+            "Xuất sắc": "is-excellent",
+            "Tốt": "is-good",
+            "Đạt": "is-ok",
+        }[rating] || "is-weak";
+    }
+
+    async onExportCategoryExcel() {
+        try {
+            const result = await this.orm.call("daily.task", "export_category_report_excel", [], {
+                year: Number(this.state.monthYear),
+                month: Number(this.state.monthMonth),
+                filters: this.filtersPayload(),
+            });
+            this._downloadBase64File(
+                result,
+                "bao_cao_theo_hang_muc.xlsx",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            );
+            this.notification.add(_t("Đã xuất Excel."), { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không xuất được Excel."), { type: "danger" });
+        }
+    }
+
     async onExportExcel() {
+        if (this.categoryReport) {
+            return this.onExportCategoryExcel();
+        }
         try {
             const chart_images = await this._captureChartImages();
             const result = await this.orm.call("daily.task", "export_personal_report_excel", [], {

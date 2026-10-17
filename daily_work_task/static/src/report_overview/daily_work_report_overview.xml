@@ -19,7 +19,7 @@
                                 <t t-if="personalLayout">
                                     <div class="o_dro_top_spacer"/>
                                     <div class="o_dro_center_title">
-                                        <h1>BÁO CÁO CÔNG VIỆC CÁ NHÂN</h1>
+                                        <h1 t-esc="reportTitle"/>
                                         <div>Họ và tên: <b t-esc="state.profile.name || state.userName"/></div>
                                         <div class="o_dro_center_sub">
                                             <t t-esc="state.profile.job_title || 'Nhân viên'"/>
@@ -89,7 +89,7 @@
                                     <button type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
                                         <i class="fa fa-file-excel-o"/> Xuất Excel
                                     </button>
-                                    <button t-if="!teamAssign" type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">
+                                    <button t-if="!teamAssign and !categoryReport" type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">
                                         <i class="fa fa-file-pdf-o"/> Xuất PDF
                                     </button>
                                 </div>
@@ -574,8 +574,90 @@
                                 </div>
                             </div>
 
+                            <!-- Báo cáo CV theo hạng mục: bảng nhóm theo hạng mục (I, II…) + hiệu suất từng hạng mục -->
+                            <div t-if="categoryReport" class="o_dro_bottom">
+                                <div class="o_dro_card o_dro_table_card">
+                                    <div class="o_dro_card_head">
+                                        <h3><i class="fa fa-sitemap"/> Công việc theo hạng mục</h3>
+                                        <span class="o_dro_muted"><t t-esc="(state.catGroups || []).length"/> hạng mục · <t t-esc="state.kpi.total || 0"/> công việc</span>
+                                    </div>
+                                    <div t-if="!(state.catGroups || []).length" class="text-center text-muted py-4">Không có dữ liệu.</div>
+                                    <div t-else="" class="o_dro_excel_wrap">
+                                        <table class="o_dcr_table">
+                                            <thead>
+                                                <tr>
+                                                    <th>STT</th>
+                                                    <th class="o_dcr_name">Tên công việc</th>
+                                                    <th>Tần suất</th>
+                                                    <th>Mức ưu tiên</th>
+                                                    <th>Ngày bắt đầu</th>
+                                                    <th>Deadline</th>
+                                                    <th>Ngày hoàn thành</th>
+                                                    <th>Trạng thái</th>
+                                                    <th>Phút</th>
+                                                    <th>Giờ</th>
+                                                    <th>% Tiến độ</th>
+                                                    <th>% QL đánh giá</th>
+                                                    <th>Số ngày trễ</th>
+                                                    <th>Quá hạn</th>
+                                                    <th class="o_dcr_note">Ghi chú</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.catGroups" t-as="g" t-key="g.key">
+                                                    <tr class="o_dcr_group" t-on-click="() => this.toggleCatGroup(g.key)" role="button">
+                                                        <td class="o_dcr_code">
+                                                            <i t-att-class="'fa ' + (isCatOpen(g.key) ? 'fa-caret-down' : 'fa-caret-right')"/>
+                                                            <t t-esc="g.code"/>
+                                                        </td>
+                                                        <td class="o_dcr_name"><b t-esc="g.label"/></td>
+                                                        <td colspan="6" class="o_dcr_meta">
+                                                            <t t-esc="g.count"/> việc · <t t-esc="g.done"/> hoàn thành ·
+                                                            <t t-esc="g.doing"/> đang xử lý · <t t-esc="g.overdue"/> quá hạn
+                                                        </td>
+                                                        <td><b t-esc="g.minutes"/></td>
+                                                        <td><b t-esc="fmt2(g.hours)"/></td>
+                                                        <td><b t-esc="g.progress + '%'"/></td>
+                                                        <td><b t-esc="g.ql + '%'"/></td>
+                                                        <td/>
+                                                        <td colspan="2">
+                                                            <span t-att-class="'o_dcr_rating ' + catRatingClass(g.rating)">Hiệu suất: <t t-esc="g.rating"/></span>
+                                                        </td>
+                                                    </tr>
+                                                    <t t-if="isCatOpen(g.key)">
+                                                        <tr t-foreach="g.rows" t-as="row" t-key="row.id"
+                                                            t-att-class="'o_dcr_row' + (row.late_kind === 'active' ? ' is-late' : '')">
+                                                            <td t-esc="row.stt"/>
+                                                            <td class="o_dcr_name" t-esc="row.name"/>
+                                                            <td t-esc="row.freq_label"/>
+                                                            <td t-esc="row.priority_label"/>
+                                                            <td t-esc="row.assign_date_display || '—'"/>
+                                                            <td t-esc="row.deadline_display || '—'"/>
+                                                            <td t-esc="row.date_done_display || '—'"/>
+                                                            <td>
+                                                                <span t-att-class="'o_dcr_state ' + (row.state === 'done' ? 'is-done' : row.state === 'in_progress' ? 'is-doing' : 'is-todo')"
+                                                                      t-esc="row.state_label"/>
+                                                            </td>
+                                                            <td t-esc="row.duration_minutes || 0"/>
+                                                            <td t-esc="fmt2(row.duration_hours)"/>
+                                                            <td t-esc="(row.progress || 0) + '%'"/>
+                                                            <td t-esc="row.manager_eval_percent !== null and row.manager_eval_percent !== undefined ? row.manager_eval_percent + '%' : ''"/>
+                                                            <td t-esc="row.late_days"/>
+                                                            <td>
+                                                                <span t-if="row.late_kind" t-att-class="'o_dcr_late ' + (row.late_kind === 'active' ? 'is-active' : 'is-done')"
+                                                                      t-esc="row.overdue_label"/>
+                                                            </td>
+                                                            <td class="o_dcr_note" t-esc="row.note || ''"/>
+                                                        </tr>
+                                                    </t>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
                             <!-- Table grouped by hạng mục — kiểu Excel (giữ như cũ) -->
-                            <div class="o_dro_bottom">
+                            <div t-else="" class="o_dro_bottom">
                                 <div class="o_dro_card o_dro_table_card">
                                     <div class="o_dro_card_head">
                                         <h3><i class="fa fa-list-alt"/> Danh sách công việc</h3>

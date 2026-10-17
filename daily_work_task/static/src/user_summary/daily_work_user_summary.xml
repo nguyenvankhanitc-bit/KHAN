@@ -104,27 +104,37 @@
                                     <thead>
                                         <tr>
                                             <th class="o_dus_stt">STT</th>
-                                            <th>Tồn tại <small>(công việc chưa hoàn thành)</small></th>
-                                            <th>Nguyên nhân <small>(user tự đánh giá)</small></th>
+                                            <th class="o_dus_pname">Tên công việc</th>
+                                            <th>Ngày bắt đầu</th>
+                                            <th>Deadline</th>
+                                            <th>Ngày hoàn thành</th>
+                                            <th>Mức ưu tiên</th>
+                                            <th>Trạng thái công việc</th>
+                                            <th class="o_dus_pcause">Nguyên nhân <small>(user tự đánh giá)</small></th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr t-foreach="state.pending" t-as="p" t-key="p.id">
                                             <td class="o_dus_stt" t-esc="p_index + 1"/>
-                                            <td>
-                                                <div class="o_dus_task"><span class="o_dus_task_cat" t-esc="p.category"/> <b t-esc="p.name"/></div>
-                                                <div class="o_dus_task_meta">
-                                                    Deadline <t t-esc="p.deadline || '—'"/> · <t t-esc="p.state_label"/>
-                                                    <span t-if="p.overdue_label" class="o_dus_red"> · <t t-esc="p.overdue_label"/></span>
-                                                </div>
+                                            <td t-att-class="'o_dus_pname' + (p.is_overdue ? ' is-late' : '')">
+                                                <div class="o_dus_task_cat" t-esc="p.category"/>
+                                                <div t-esc="p.name"/>
                                             </td>
-                                            <td>
+                                            <td class="o_dus_c" t-esc="p.start || '—'"/>
+                                            <td class="o_dus_c" t-esc="p.deadline || '—'"/>
+                                            <td class="o_dus_c" t-esc="p.date_done || '—'"/>
+                                            <td class="o_dus_c"><span class="o_dus_prio" t-esc="p.priority_label"/></td>
+                                            <td class="o_dus_c">
+                                                <span t-if="p.is_overdue" class="o_dus_status is-late"><i class="fa fa-exclamation-triangle"/> Trễ hạn (<t t-esc="p.overdue_days"/>)</span>
+                                                <span t-else="" class="o_dus_status" t-esc="p.state_label"/>
+                                            </td>
+                                            <td class="o_dus_pcause">
                                                 <textarea class="o_dus_box o_dus_cause" rows="2" placeholder="Nguyên nhân chưa hoàn thành / quá hạn..."
                                                           t-att-readonly="!state.canEditSelf" t-on-input="(ev) => this.onCause(p, ev)" t-esc="p.cause"/>
                                             </td>
                                         </tr>
                                         <tr t-if="!state.pending.length">
-                                            <td colspan="3" class="text-center text-muted py-3">Không có công việc tồn đọng trong tháng.</td>
+                                            <td colspan="8" class="text-center text-muted py-3">Không có công việc tồn đọng trong tháng.</td>
                                         </tr>
                                     </tbody>
                                 </table>

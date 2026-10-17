@@ -69,4 +69,17 @@
             small { font-style: italic; color: #64748b; }
         }
     }
+
+    .o_dus_pending {
+        min-width: 1100px;
+        thead th { background: #dcfce7; }
+        .o_dus_c { text-align: center; white-space: nowrap; }
+        .o_dus_pname { min-width: 240px; }
+        td.o_dus_pname.is-late { background: #fde2e2; color: #991b1b; font-weight: 600; }
+        .o_dus_task_cat { margin: 0 0 3px; }
+        .o_dus_pcause { min-width: 280px; }
+        .o_dus_prio { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 12px; }
+        .o_dus_status { display: inline-block; padding: 2px 10px; border-radius: 4px; background: #f1f5f9; color: #475569; font-weight: 700; font-size: 12px;
+            &.is-late { background: #fde2e2; color: #c00000; border: 1px solid #f5a3a3; } }
+    }
 }

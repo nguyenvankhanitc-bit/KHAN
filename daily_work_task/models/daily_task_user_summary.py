@@ -119,6 +119,11 @@ class DailyTask(models.Model):
                     "id": r["id"],
                     "category": g["label"],
                     "name": r.get("name") or "",
+                    "start": r.get("assign_date_display") or "",
+                    "date_done": r.get("date_done_display") or "",
+                    "priority_label": r.get("priority_label") or "",
+                    "priority": r.get("priority") or "",
+                    "overdue_days": int(r.get("overdue_days") or 0),
                     "deadline": r.get("deadline_display") or "",
                     "state_label": r.get("state_label") or "",
                     "overdue_label": r.get("overdue_label") or "",
@@ -273,18 +278,27 @@ class DailyTask(models.Model):
         r += 4
         ws.write(r, 0, "Tồn tại / nguyên nhân:", lbl)
         r += 1
-        ws.write(r, 0, "STT", head)
-        ws.merge_range(r, 1, r, 6, "Tồn tại (công việc chưa hoàn thành)", head)
-        ws.merge_range(r, 7, r, last, "Nguyên nhân (user tự đánh giá)", head)
+        p_heads = [(0, 0, "STT"), (1, 2, "Tên công việc"), (3, 3, "Ngày bắt đầu"), (4, 4, "Deadline"),
+                   (5, 5, "Ngày hoàn thành"), (6, 6, "Mức ưu tiên"), (7, 8, "Trạng thái công việc"),
+                   (9, last, "Nguyên nhân (user tự đánh giá)")]
+        ws.set_row(r, 30)
+        for c0, c1, h in p_heads:
+            if c0 == c1:
+                ws.write(r, c0, h, head)
+            else:
+                ws.merge_range(r, c0, r, c1, h, head)
         for i, p in enumerate(data["pending"], start=1):
             r += 1
-            text = "%s — %s (Deadline %s · %s%s)" % (
-                p["category"], p["name"], p["deadline"] or "—", p["state_label"],
-                (" · " + p["overdue_label"]) if p["overdue_label"] else "")
             ws.set_row(r, 30)
+            status = ("Trễ hạn (%s)" % p["overdue_days"]) if p["is_overdue"] else p["state_label"]
             ws.write(r, 0, i, c)
-            ws.merge_range(r, 1, r, 6, text, fmt(text_wrap=True))
-            ws.merge_range(r, 7, r, last, p["cause"], box)
+            ws.merge_range(r, 1, r, 2, p["name"], fmt(text_wrap=True))
+            ws.write(r, 3, p["start"] or "—", c)
+            ws.write(r, 4, p["deadline"] or "—", c)
+            ws.write(r, 5, p["date_done"] or "—", c)
+            ws.write(r, 6, p["priority_label"], c)
+            ws.merge_range(r, 7, r, 8, status, red if p["is_overdue"] else c)
+            ws.merge_range(r, 9, r, last, p["cause"], box)
         if not data["pending"]:
             r += 1
             ws.merge_range(r, 0, r, last, "Không có công việc tồn đọng.", c)

@@ -160,3 +160,8 @@
     color: #4c1d95;
     font-size: 13px;
 }
+
+// Cài đặt → Xếp loại hiệu suất: mức bỏ tích hiện chữ xám, gạch ngang
+.o_dwt_rating_tier_list tr.text-muted td:not(.o_list_record_selector) {
+    text-decoration: line-through;
+}

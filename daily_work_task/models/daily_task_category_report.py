@@ -94,7 +94,7 @@ class DailyTaskCategoryReport(models.Model):
                 "hours": round(minutes / 60.0, 2),
                 "progress": progress,
                 "ql": ql,
-                "rating": _rating(ql),
+                "rating": self.env["daily.task.rating.tier"].rate(ql) or _rating(ql),
                 "rows": out_rows,
             })
         return groups

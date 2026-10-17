@@ -244,6 +244,10 @@
                                             t-on-click="() => this.openNav('self_review')">
                                         <i class="fa fa-user-circle-o"/><span>Phân quyền tự kiểm tra CV</span>
                                     </button>
+                                    <button type="button" class="o_dwd_side_item sub" title="Xếp loại hiệu suất"
+                                            t-on-click="() => this.openNav('rating_tier')">
+                                        <i class="fa fa-star-half-o"/><span>Xếp loại hiệu suất</span>
+                                    </button>
                                     <button type="button" class="o_dwd_side_item sub" title="Phân quyền Báo cáo tổng"
                                             t-on-click="() => this.openNav('report_access')">
                                         <i class="fa fa-shield"/><span>Phân quyền Báo cáo tổng</span>

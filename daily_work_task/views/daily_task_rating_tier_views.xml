@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Thang mặc định (Quản lý sửa được; không ghi đè khi upgrade) -->
+    <data noupdate="1">
+        <record id="rating_tier_need_improve" model="daily.task.rating.tier">
+            <field name="from_percent">0</field>
+            <field name="name">Cần cải thiện</field>
+        </record>
+        <record id="rating_tier_not_pass" model="daily.task.rating.tier">
+            <field name="from_percent">85</field>
+            <field name="name">Chưa đạt</field>
+        </record>
+        <record id="rating_tier_pass" model="daily.task.rating.tier">
+            <field name="from_percent">100</field>
+            <field name="name">Đạt</field>
+        </record>
+    </data>
+
+    <record id="view_daily_task_rating_tier_list" model="ir.ui.view">
+        <field name="name">daily.task.rating.tier.list</field>
+        <field name="model">daily.task.rating.tier</field>
+        <field name="arch" type="xml">
+            <list string="Xếp loại hiệu suất" editable="bottom" default_order="from_percent, id"
+                  decoration-muted="not apply" class="o_dwt_rating_tier_list">
+                <field name="apply" string="Áp dụng" widget="boolean_toggle" width="90px"/>
+                <field name="from_percent" string="Từ %" width="110px"/>
+                <field name="to_label" string="Đến % (tự tính)" width="140px"/>
+                <field name="name" string="Xếp loại"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_daily_task_rating_tier" model="ir.actions.act_window">
+        <field name="name">Xếp loại hiệu suất</field>
+        <field name="res_model">daily.task.rating.tier</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm mức xếp loại hiệu suất</p>
+            <p>Nhập <b>Từ %</b> và <b>Xếp loại</b>, tích <b>Áp dụng</b>. Cột <b>Đến %</b> tự tính theo các mức đang tích.</p>
+        </field>
+    </record>
+
+    <menuitem id="menu_daily_task_rating_tier"
+              name="Xếp loại hiệu suất"
+              parent="menu_daily_work_config"
+              action="action_daily_task_rating_tier"
+              sequence="40"
+              groups="daily_work_task.group_daily_work_manager"/>
+</odoo>

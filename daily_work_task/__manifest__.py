@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.89.0",
+    "version": "19.0.1.90.0",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -55,6 +55,7 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
         "views/daily_work_notebook_views.xml",
         "views/daily_work_note_views.xml",
         "views/daily_task_menus.xml",
+        "views/daily_task_rating_tier_views.xml",
         "views/res_users_views.xml",
         "views/webclient_templates.xml",
     ],

@@ -410,6 +410,10 @@ export class DailyWorkAppShell extends Component {
             await this._doNavAction("daily_work_task.action_daily_task_report_access", asPopup);
             return;
         }
+        if (key === "rating_tier") {
+            await this._doNavAction("daily_work_task.action_daily_task_rating_tier", asPopup);
+            return;
+        }
         if (key === "self_review") {
             await this._doNavAction("daily_work_task.action_daily_task_self_review", asPopup);
             return;

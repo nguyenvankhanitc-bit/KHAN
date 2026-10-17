@@ -862,7 +862,9 @@ export class DailyWorkReportOverview extends Component {
         return {
             "Xuất sắc": "is-excellent",
             "Tốt": "is-good",
-            "Đạt": "is-ok",
+            "Đạt": "is-excellent",
+            "Khá": "is-good",
+            "Chưa đạt": "is-ok",
         }[rating] || "is-weak";
     }
 

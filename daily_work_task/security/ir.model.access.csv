@@ -49,3 +49,5 @@ access_daily_task_team_plan_access_user,daily.task.team.plan.access user,model_d
 access_daily_task_team_plan_access_manager,daily.task.team.plan.access manager,model_daily_task_team_plan_access,group_daily_work_manager,1,1,1,1
 access_daily_task_self_review_user,daily.task.self.review user,model_daily_task_self_review,group_daily_work_user,1,0,0,0
 access_daily_task_self_review_manager,daily.task.self.review manager,model_daily_task_self_review,group_daily_work_manager,1,1,1,1
+access_daily_task_rating_tier_user,daily.task.rating.tier user,model_daily_task_rating_tier,group_daily_work_user,1,0,0,0
+access_daily_task_rating_tier_manager,daily.task.rating.tier manager,model_daily_task_rating_tier,group_daily_work_manager,1,1,1,1

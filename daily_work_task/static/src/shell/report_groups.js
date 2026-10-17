@@ -90,6 +90,14 @@ export const reportGroupsMixin = {
             /* ignore */
         }
     },
+    /** «Các loại báo cáo»: mở Báo cáo cá nhân (nếu được xem), không thì báo cáo đầu tiên được phép. */
+    openReportMenu() {
+        const tabs = this.reportTabs;
+        const first = tabs.find((it) => it.nav === "overview") || tabs[0];
+        if (first) {
+            this.openNav(first.nav);
+        }
+    },
     openReportGroup(group) {
         const first = this.reportItems(group)[0];
         if (first) {

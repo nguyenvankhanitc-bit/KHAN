@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkRatingTier">
+        <div class="o_daily_work_dashboard o_daily_work_rating_tier o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_drt_shell">
+                    <header class="o_drt_header">
+                        <div>
+                            <h1>Xếp loại hiệu suất</h1>
+                            <p class="o_drt_sub">
+                                Tích <b>Áp dụng</b> để dùng mức khi xếp loại · <b>Đến %</b> tự tính theo các mức đang tích ·
+                                dùng cho «Hiệu suất» ở Báo cáo CV theo hạng mục
+                            </p>
+                        </div>
+                        <div t-if="state.canEdit" class="o_drt_actions">
+                            <button type="button" class="btn btn-light" t-att-disabled="state.saving or !state.dirty" t-on-click="onCancel">
+                                <i class="fa fa-times"/> Hủy
+                            </button>
+                            <button type="button" class="btn btn-primary" t-att-disabled="state.saving or !state.dirty" t-on-click="onSave">
+                                <i class="fa fa-save"/> <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu'"/>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div t-if="state.loading" class="text-center text-muted py-5">Đang tải...</div>
+                    <div t-else="" class="o_drt_card">
+                        <table class="o_drt_table">
+                            <thead>
+                                <tr>
+                                    <th class="o_drt_apply">Áp dụng</th>
+                                    <th class="o_drt_from">Từ %</th>
+                                    <th class="o_drt_to">Đến % (tự tính)</th>
+                                    <th>Xếp loại</th>
+                                    <th t-if="state.canEdit" class="o_drt_del"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="viewRows" t-as="r" t-key="r.key" t-att-class="r.apply ? '' : 'is-off'">
+                                    <td class="o_drt_apply">
+                                        <input type="checkbox" class="form-check-input" t-att-checked="r.apply"
+                                               t-att-disabled="!state.canEdit" t-on-change="(ev) => this.onApply(r.key, ev)"/>
+                                    </td>
+                                    <td class="o_drt_from">
+                                        <input t-if="state.canEdit" type="number" min="0" max="100" step="1" class="form-control form-control-sm"
+                                               t-att-value="r.from_percent" t-on-change="(ev) => this.onFrom(r.key, ev)"/>
+                                        <t t-else=""><t t-esc="r.from_percent"/>%</t>
+                                    </td>
+                                    <td class="o_drt_to" t-esc="r.to"/>
+                                    <td>
+                                        <input t-if="state.canEdit" type="text" class="form-control form-control-sm" placeholder="Vd: Đạt"
+                                               t-att-value="r.name" t-on-input="(ev) => this.onName(r.key, ev)"/>
+                                        <t t-else="" t-esc="r.name"/>
+                                    </td>
+                                    <td t-if="state.canEdit" class="o_drt_del">
+                                        <button type="button" class="btn btn-link text-danger p-0" title="Xoá mức này"
+                                                t-on-click="() => this.onRemove(r.key)">
+                                            <i class="fa fa-trash"/>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr t-if="!viewRows.length">
+                                    <td colspan="5" class="text-center text-muted py-4">Chưa có mức xếp loại nào.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <button t-if="state.canEdit" type="button" class="btn btn-link o_drt_add" t-on-click="onAdd">
+                            <i class="fa fa-plus"/> Thêm mức
+                        </button>
+                        <p t-if="!state.canEdit" class="text-muted small mt-2 mb-0">Chỉ Quản lý (Administrator) được sửa bảng này.</p>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

@@ -6,7 +6,7 @@ Chỉ mức được tích «Áp dụng» mới dùng để xếp loại.
 """
 
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import AccessError, ValidationError
 
 
 class DailyTaskRatingTier(models.Model):
@@ -40,6 +40,44 @@ class DailyTaskRatingTier(models.Model):
         for rec in self:
             if rec.from_percent < 0 or rec.from_percent > 100:
                 raise ValidationError("«Từ %» phải nằm trong khoảng 0 – 100.")
+
+    @api.model
+    def _can_edit_tiers(self):
+        return self.env.su or self.env.user.has_group("daily_work_task.group_daily_work_manager")
+
+    @api.model
+    def get_tiers(self):
+        """Trang Xếp loại hiệu suất (client action có thanh bên)."""
+        tiers = self.sudo().search([], order="from_percent, id")
+        return {
+            "can_edit": self._can_edit_tiers(),
+            "tiers": [
+                {"id": t.id, "apply": t.apply, "from_percent": t.from_percent, "name": t.name or ""}
+                for t in tiers
+            ],
+        }
+
+    @api.model
+    def save_tiers(self, rows, deleted_ids=None):
+        """Lưu cả bảng: cập nhật / thêm dòng, xoá dòng đã bỏ. Chỉ Quản lý."""
+        if not self._can_edit_tiers():
+            raise AccessError("Chỉ Quản lý (Administrator) được sửa Xếp loại hiệu suất.")
+        Tier = self.sudo()
+        if deleted_ids:
+            Tier.browse([int(i) for i in deleted_ids]).exists().unlink()
+        for row in rows or []:
+            vals = {
+                "apply": bool(row.get("apply")),
+                "from_percent": float(row.get("from_percent") or 0),
+                "name": (row.get("name") or "").strip(),
+            }
+            if not vals["name"]:
+                raise ValidationError("Vui lòng nhập Xếp loại cho mọi dòng.")
+            if row.get("id"):
+                Tier.browse(int(row["id"])).exists().write(vals)
+            else:
+                Tier.create(vals)
+        return True
 
     @api.model
     def rate(self, percent):

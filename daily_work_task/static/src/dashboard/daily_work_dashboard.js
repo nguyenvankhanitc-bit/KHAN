@@ -803,7 +803,7 @@ export class DailyWorkDashboard extends Component {
             return;
         }
         if (key === "rating_tier") {
-            await this._doNavAction("daily_work_task.action_daily_task_rating_tier", asPopup);
+            await this._doNavAction("daily_work_task.action_daily_work_rating_tier", asPopup);
             return;
         }
         if (key === "self_review") {

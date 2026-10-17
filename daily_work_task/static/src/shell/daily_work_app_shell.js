@@ -70,7 +70,9 @@ export class DailyWorkAppShell extends Component {
             sidebarResizing: false,
             mobileNavOpen: false,
             isMobile: false,
-            configOpen: false,
+            // Đang ở trang Cài đặt → mở sẵn nhóm Cài đặt trên thanh bên
+            configOpen: ["rating_tier", "assign_access", "self_review", "team_plan_access", "report_access",
+                "performance_access", "access", "team", "recurring", "employees"].includes(this.props.activeNav),
         });
         this._onMqChange = this._onMqChange.bind(this);
         useBus(this.env.bus, "daily_work_task:OPEN_WORK_NAV", () => {
@@ -411,7 +413,7 @@ export class DailyWorkAppShell extends Component {
             return;
         }
         if (key === "rating_tier") {
-            await this._doNavAction("daily_work_task.action_daily_task_rating_tier", asPopup);
+            await this._doNavAction("daily_work_task.action_daily_work_rating_tier", asPopup);
             return;
         }
         if (key === "self_review") {

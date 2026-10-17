@@ -1,0 +1,59 @@
+.o_daily_work_rating_tier {
+    .o_drt_shell {
+        padding: 18px 24px 32px;
+        display: grid;
+        gap: 16px;
+        max-width: 980px;
+    }
+    .o_drt_header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 12px;
+
+        h1 { font-size: 22px; font-weight: 800; margin: 0 0 4px; }
+    }
+    .o_drt_sub { margin: 0; color: #64748b; font-size: 13px; }
+    .o_drt_actions { display: flex; gap: 8px; }
+    .o_drt_card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 6px 6px 10px;
+        overflow-x: auto;
+    }
+    .o_drt_table {
+        width: 100%;
+        min-width: 560px;
+        border-collapse: collapse;
+
+        th {
+            text-align: left;
+            font-size: 13px;
+            font-weight: 800;
+            color: #334155;
+            padding: 10px 12px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+        .o_drt_apply { width: 90px; text-align: center; }
+        .o_drt_apply .form-check-input { width: 18px; height: 18px; float: none; margin: 0; }
+        .o_drt_from { width: 130px; }
+        .o_drt_to { width: 150px; font-variant-numeric: tabular-nums; color: #334155; font-weight: 600; }
+        .o_drt_del { width: 44px; text-align: center; }
+
+        /* Mức bỏ tích: chữ xám, gạch ngang */
+        tr.is-off td:not(.o_drt_apply):not(.o_drt_del) {
+            color: #94a3b8;
+            text-decoration: line-through;
+
+            .form-control { color: #94a3b8; text-decoration: line-through; }
+        }
+    }
+    .o_drt_add { margin-top: 6px; font-weight: 700; }
+}

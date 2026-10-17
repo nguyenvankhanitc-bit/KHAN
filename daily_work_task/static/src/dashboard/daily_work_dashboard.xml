@@ -264,7 +264,7 @@
                                     <button type="button" role="tab"
                                             t-att-class="'o_dwr_hub_tab' + (activeNav === it.nav ? ' active' : '')"
                                             t-on-click="() => this.openNav(it.nav)">
-                                        <i t-att-class="'fa ' + it.icon"/><span t-esc="(it_index + 1) + '. ' + it.label"/>
+                                        <i t-att-class="'fa ' + it.icon"/><span t-esc="it.label"/>
                                     </button>
                                 </t>
                             </div>

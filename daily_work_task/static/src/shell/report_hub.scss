@@ -27,11 +27,7 @@
         display: flex;
         flex-wrap: wrap;
         align-items: center;
-        gap: 4px;
-        padding: 6px;
-        border: 1px solid #e6e8f2;
-        border-radius: 12px;
-        background: #fff;
+        gap: 10px;
     }
 
     .o_dwr_hub_tab {
@@ -40,9 +36,10 @@
         align-items: center;
         gap: 8px;
         padding: 8px 14px;
-        border: 0;
+        border: 1px solid #d9dcea;
         border-radius: 10px;
-        background: transparent;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(30, 27, 75, 0.05);
         color: #334155;
         font-size: 0.92rem;
         font-weight: 500;
@@ -55,22 +52,15 @@
             color: #475569;
         }
 
-        & + .o_dwr_hub_tab::before {
-            content: "";
-            position: absolute;
-            left: -3px;
-            top: 25%;
-            height: 50%;
-            border-left: 1px solid #e2e8f0;
-        }
-
         &:hover {
             background: #f5f3ff;
+            border-color: #c4b5fd;
             color: #4338ca;
         }
 
         &.active {
             background: #ede9fe;
+            border-color: #6366f1;
             color: #4338ca;
             font-weight: 700;
 
@@ -100,9 +90,6 @@
         .o_dwr_hub_tabs {
             flex-wrap: nowrap;
             overflow-x: auto;
-        }
-        .o_dwr_hub_tab + .o_dwr_hub_tab::before {
-            display: none;
         }
     }
 }

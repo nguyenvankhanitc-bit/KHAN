@@ -30,6 +30,7 @@ export class DailyWorkKhoReport extends Component {
             canPick: false,
             showEmployee: false,
             rows: [],
+            closed: {},
             canExport: true,
             exporting: false,
         });
@@ -75,6 +76,50 @@ export class DailyWorkKhoReport extends Component {
 
     get title() {
         return `BÁO CÁO CV NV ${(this.state.teamName || "").toUpperCase()}`.trim();
+    }
+
+    /** Nhóm dòng theo hạng mục (giữ thứ tự I, II, III…). */
+    get groups() {
+        const out = [];
+        const byKey = {};
+        for (const r of this.state.rows) {
+            const key = r.category || "—";
+            if (!byKey[key]) {
+                byKey[key] = { key, label: key, rows: [], minutes: 0, pass: 0, average: 0, fail: 0 };
+                out.push(byKey[key]);
+            }
+            const g = byKey[key];
+            g.rows.push(r);
+            g.minutes += Number(r.minutes) || 0;
+            const k = { "Đạt": "pass", "Trung bình": "average", "Không đạt": "fail" }[r.rating];
+            if (k) {
+                g[k] += 1;
+            }
+        }
+        return out;
+    }
+
+    isOpen(group) {
+        return !this.state.closed[group.key];
+    }
+
+    toggleGroup(group) {
+        this.state.closed[group.key] = this.isOpen(group);
+    }
+
+    get allOpen() {
+        return this.groups.every((g) => this.isOpen(g));
+    }
+
+    toggleAll() {
+        const close = this.allOpen;
+        const closed = {};
+        if (close) {
+            for (const g of this.groups) {
+                closed[g.key] = true;
+            }
+        }
+        this.state.closed = closed;
     }
 
     get totalMinutes() {

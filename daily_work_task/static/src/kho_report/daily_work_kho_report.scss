@@ -91,12 +91,44 @@
             color: #1e293b;
         }
 
-        tbody tr:nth-child(even) td {
+        tbody tr.o_dkr_row:nth-child(even) td {
             background: #f3f6fa;
         }
 
-        tbody tr:hover td {
+        tbody tr.o_dkr_row:hover td {
             background: #eef2ff;
+        }
+
+        // Dòng hạng mục (dropdown)
+        tr.o_dkr_group td {
+            background: #e8e1f5;
+            border-color: #c9bde6;
+            cursor: pointer;
+            padding: 9px 12px;
+            font-weight: 700;
+            color: #3b2470;
+            user-select: none;
+        }
+
+        tr.o_dkr_group:hover td {
+            background: #ddd3f0;
+        }
+
+        .o_dkr_group_chev {
+            width: 1rem;
+            margin-right: 6px;
+            color: #5b3a8c;
+        }
+
+        .o_dkr_group_meta {
+            margin-left: 12px;
+            font-weight: 500;
+            font-size: 0.82rem;
+            color: #475569;
+
+            .is-pass { color: #15803d; }
+            .is-average { color: #b45309; }
+            .is-fail { color: #b91c1c; }
         }
 
         .o_dkr_c_stt { width: 52px; }

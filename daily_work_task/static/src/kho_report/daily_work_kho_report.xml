@@ -30,6 +30,10 @@
                             </t>
                         </select>
                         <span class="o_dkr_spacer"/>
+                        <button t-if="state.rows.length" type="button" class="btn btn-light btn-sm" t-on-click="toggleAll">
+                            <i t-att-class="'fa ' + (allOpen ? 'fa-compress' : 'fa-expand')"/>
+                            <t t-esc="allOpen ? ' Thu gọn tất cả' : ' Mở tất cả'"/>
+                        </button>
                         <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.load()">
                             <i class="fa fa-refresh"/> Làm mới
                         </button>
@@ -71,18 +75,36 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr t-foreach="state.rows" t-as="r" t-key="r.id">
-                                        <td class="text-center" t-esc="r.stt"/>
-                                        <td t-esc="r.category"/>
-                                        <td t-esc="r.detail"/>
-                                        <td t-esc="r.name"/>
-                                        <td t-if="state.showEmployee" t-esc="r.employee"/>
-                                        <td class="text-center" t-esc="r.start"/>
-                                        <td class="text-center" t-esc="r.deadline"/>
-                                        <td class="text-center" t-esc="r.minutes"/>
-                                        <td class="text-center"><span t-att-class="ratingClass(r.rating)" t-esc="r.rating"/></td>
-                                        <td class="o_dkr_note" t-esc="r.note"/>
-                                    </tr>
+                                    <t t-foreach="groups" t-as="g" t-key="g.key">
+                                        <!-- Hạng mục: bấm để mở / thu gọn -->
+                                        <tr class="o_dkr_group" t-on-click="() => this.toggleGroup(g)" role="button"
+                                            t-att-aria-expanded="isOpen(g) ? 'true' : 'false'">
+                                            <td t-att-colspan="state.showEmployee ? 10 : 9">
+                                                <i t-att-class="'fa o_dkr_group_chev ' + (isOpen(g) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                <span class="o_dkr_group_name" t-esc="g.label"/>
+                                                <span class="o_dkr_group_meta">
+                                                    <t t-esc="g.rows.length"/> việc · <t t-esc="g.minutes"/> phút
+                                                    <t t-if="g.pass"> · <b class="is-pass">Đạt <t t-esc="g.pass"/></b></t>
+                                                    <t t-if="g.average"> · <b class="is-average">Trung bình <t t-esc="g.average"/></b></t>
+                                                    <t t-if="g.fail"> · <b class="is-fail">Không đạt <t t-esc="g.fail"/></b></t>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <t t-if="isOpen(g)">
+                                            <tr t-foreach="g.rows" t-as="r" t-key="r.id" class="o_dkr_row">
+                                                <td class="text-center" t-esc="r.stt"/>
+                                                <td t-esc="r.category"/>
+                                                <td t-esc="r.detail"/>
+                                                <td t-esc="r.name"/>
+                                                <td t-if="state.showEmployee" t-esc="r.employee"/>
+                                                <td class="text-center" t-esc="r.start"/>
+                                                <td class="text-center" t-esc="r.deadline"/>
+                                                <td class="text-center" t-esc="r.minutes"/>
+                                                <td class="text-center"><span t-att-class="ratingClass(r.rating)" t-esc="r.rating"/></td>
+                                                <td class="o_dkr_note" t-esc="r.note"/>
+                                            </tr>
+                                        </t>
+                                    </t>
                                     <tr t-if="!state.rows.length">
                                         <td t-att-colspan="state.showEmployee ? 10 : 9" class="text-center text-muted py-4">
                                             Không có công việc trong tháng này.

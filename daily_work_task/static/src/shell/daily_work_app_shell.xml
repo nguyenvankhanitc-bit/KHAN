@@ -153,13 +153,53 @@
                         </button>
                     </div>
                     <div class="o_dwd_side_section">
-                        <div class="o_dwd_side_label" t-if="reportGroups.length">📊 BÁO CÁO</div>
-                        <t t-foreach="reportGroups" t-as="g" t-key="g.key">
-                            <button type="button"
-                                    t-att-class="'o_dwd_side_item' + (activeReportGroup and activeReportGroup.key === g.key ? ' active' : '')"
-                                    t-att-title="g.title"
-                                    t-on-click="() => this.openReportGroup(g)">
-                                <i t-att-class="'fa ' + g.icon"/><span t-esc="(g_index + 1) + '. ' + g.title"/>
+                        <div class="o_dwd_side_label" t-if="anyReport()">📊 BÁO CÁO</div>
+                        <t t-if="state.canViewOthers">
+                            <button type="button" t-if="rv('summary_report')" t-att-class="'o_dwd_side_item' + (isActive('report') ? ' active' : '')" title="Báo cáo tổng"
+                                    t-on-click="() => this.openNav('report')">
+                                <i class="fa fa-bar-chart"/><span>Báo cáo tổng</span>
+                            </button>
+                        </t>
+                        <button type="button" t-if="rv('personal')"
+                                t-att-class="'o_dwd_side_item' + (isActive('overview') ? ' active' : '')"
+                                title="Báo cáo cá nhân"
+                                t-on-click="() => this.openNav('overview')">
+                            <i class="fa fa-user-circle"/><span>Báo cáo cá nhân</span>
+                        </button>
+                        <button type="button" t-if="rv('catrep')"
+                                t-att-class="'o_dwd_side_item' + (isActive('category_report') ? ' active' : '')"
+                                title="Báo cáo CV theo hạng mục"
+                                t-on-click="() => this.openNav('category_report')">
+                            <i class="fa fa-sitemap"/><span>Báo cáo CV theo hạng mục</span>
+                        </button>
+                        <button type="button" t-if="rv('summary')"
+                                t-att-class="'o_dwd_side_item' + (isActive('user_summary') ? ' active' : '')"
+                                title="Báo cáo tổng hợp theo hạng mục"
+                                t-on-click="() => this.openNav('user_summary')">
+                            <i class="fa fa-id-card-o"/><span>Báo cáo tổng hợp theo hạng mục</span>
+                        </button>
+                        <button type="button" t-if="rv('monthly')"
+                                t-att-class="'o_dwd_side_item' + (isActive('monthly_report') ? ' active' : '')"
+                                title="Báo cáo công việc tháng"
+                                t-on-click="() => this.openNav('monthly_report')">
+                            <i class="fa fa-file-text-o"/><span>Báo cáo công việc tháng</span>
+                        </button>
+                        <button type="button" t-if="rv('team')"
+                                t-att-class="'o_dwd_side_item' + (isActive('team_report') ? ' active' : '')"
+                                title="Báo cáo CV chi tiết team"
+                                t-on-click="() => this.openNav('team_report')">
+                            <i class="fa fa-users"/><span>Báo cáo CV chi tiết team</span>
+                        </button>
+                        <t t-if="state.canSeePerformance">
+                            <button type="button" t-if="rv('performance')" t-att-class="'o_dwd_side_item' + (isActive('performance') ? ' active' : '')" title="Báo cáo hiệu suất"
+                                    t-on-click="() => this.openNav('performance')">
+                                <i class="fa fa-line-chart"/><span>Báo cáo hiệu suất</span>
+                            </button>
+                        </t>
+                        <t t-if="state.isManager">
+                            <button type="button" t-if="rv('kpi')" class="o_dwd_side_item" title="Báo cáo KPI"
+                                    t-on-click="() => this.openNav('kpi')">
+                                <i class="fa fa-trophy"/><span>Báo cáo KPI</span>
                             </button>
                         </t>
                     </div>

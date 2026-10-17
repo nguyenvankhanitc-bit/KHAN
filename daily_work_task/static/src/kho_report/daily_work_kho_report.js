@@ -50,6 +50,7 @@ export class DailyWorkKhoReport extends Component {
         this.years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
         this.ratingRef = useRef("ratingChart");
         this.perfRef = useRef("perfChart");
+        this.timeRef = useRef("timeChart");
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -79,38 +80,32 @@ export class DailyWorkKhoReport extends Component {
         }));
     }
 
-    /** Đánh giá hiệu suất tháng — giống Báo cáo cá nhân: % QL đánh giá TB trên MỌI việc
-     * (việc chưa đánh giá tính 0%); xếp loại theo Cài đặt → Xếp loại đạt. */
+    /** Hiệu suất công việc — giống Báo cáo cá nhân: % QL đánh giá TB trên MỌI việc
+     * (việc chưa đánh giá tính 0%). */
     get perf() {
         const rows = this.state.rows;
         const total = rows.length;
         const sum = rows.reduce((s, r) => s + (r.evaluated ? Number(r.eval_percent) || 0 : 0), 0);
-        const score = total ? Math.round((sum / total) * 10) / 10 : 0;
         return {
-            score,
+            score: total ? Math.round((sum / total) * 10) / 10 : 0,
+            evaluated: rows.filter((r) => r.evaluated).length,
             total,
-            done: rows.filter((r) => r.is_done).length,
-            overdue: rows.filter((r) => r.is_overdue).length,
-            hours: Math.round((this.totalMinutes / 60) * 10) / 10,
-            label: total ? this.rateEval(score) : "—",
-            stars: score ? Math.min(5, Math.round((score / 20) * 2) / 2) : 0,
         };
     }
 
-    get starList() {
-        const stars = this.perf.stars;
-        return [1, 2, 3, 4, 5].map((i) => (stars >= i ? "full" : stars >= i - 0.5 ? "half" : "empty"));
+    /** Tổng thời gian (giờ) và giờ theo từng hạng mục. */
+    get totalHours() {
+        return Math.round((this.totalMinutes / 60) * 10) / 10;
     }
 
-    rateEval(pct) {
-        const tiers = [...(this.state.evalTiers || [])].sort((a, b) => b.from_percent - a.from_percent);
-        const hit = tiers.find((t) => pct >= t.from_percent) || tiers[tiers.length - 1];
-        return hit ? hit.name : "";
+    get timeByCat() {
+        return this.groups
+            .map((g) => ({ label: g.label, hours: Math.round((g.minutes / 60) * 100) / 100 }))
+            .filter((c) => c.hours > 0);
     }
 
-    perfClass(label) {
-        const k = { "Đạt": "is-pass", "Trung bình": "is-average", "Không đạt": "is-fail" }[label];
-        return `o_dkr_perf_label ${k || ""}`;
+    get timeBoxStyle() {
+        return `height:${Math.max(150, this.timeByCat.length * 28 + 40)}px`;
     }
 
     destroyCharts() {
@@ -172,6 +167,43 @@ export class DailyWorkKhoReport extends Component {
                 options: {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                },
+            }));
+        }
+        if (this.timeRef.el) {
+            const cats = this.timeByCat;
+            this.charts.push(new Chart(this.timeRef.el, {
+                type: "bar",
+                data: {
+                    labels: cats.map((c) => c.label.replace(/^[IVXLCDM]+\.\s*/, "")),
+                    datasets: [{
+                        label: "Giờ",
+                        data: cats.map((c) => c.hours),
+                        backgroundColor: "#0ea5e9",
+                        borderRadius: 4,
+                        barThickness: 14,
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: { callback: (v) => `${v}h`, color: "#64748b" },
+                            grid: { color: "#eef2f7" },
+                        },
+                        y: { ticks: { color: "#334155", font: { size: 11 } }, grid: { display: false } },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => cats[items[0].dataIndex].label,
+                                label: (ctx) => ` ${cats[ctx.dataIndex].hours} giờ`,
+                            },
+                        },
+                    },
                 },
             }));
         }

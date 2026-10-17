@@ -200,7 +200,7 @@
 .o_daily_work_kho_report {
     .o_dkr_charts {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
 
         @media (max-width: 1280px) {
@@ -411,6 +411,37 @@
         }
         strong.text-danger {
             color: #dc2626 !important;
+        }
+    }
+}
+
+// Hiệu suất công việc · Tổng thời gian
+.o_daily_work_kho_report {
+    .o_dkr_eval {
+        justify-content: center;
+    }
+
+    .o_dkr_card_note {
+        margin: 10px 0 0;
+        font-size: 0.78rem;
+        text-align: center;
+    }
+
+    .o_dkr_time_total {
+        margin-bottom: 8px;
+        color: #0f172a;
+
+        strong {
+            font-size: 1.7rem;
+            font-weight: 800;
+        }
+        span {
+            font-weight: 600;
+        }
+        em {
+            font-style: normal;
+            font-size: 0.82rem;
+            margin-left: 4px;
         }
     }
 }

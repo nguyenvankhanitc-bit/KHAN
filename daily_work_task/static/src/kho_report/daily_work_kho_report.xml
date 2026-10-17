@@ -77,30 +77,31 @@
                                 </div>
                             </div>
                         </div>
+                        <!-- Hiệu suất công việc: % QL đánh giá TB (chưa đánh giá = 0%) -->
                         <div class="o_dkr_card">
-                            <h3>Đánh giá hiệu suất tháng</h3>
+                            <h3>Hiệu suất công việc</h3>
                             <div class="o_dkr_eval">
                                 <div class="o_dkr_eval_ring">
                                     <canvas t-ref="perfChart"/>
                                     <div class="o_dkr_eval_center"><strong t-esc="perf.score + '%'"/></div>
                                 </div>
-                                <div class="o_dkr_eval_side">
-                                    <div class="o_dkr_stars">
-                                        <t t-foreach="starList" t-as="st" t-key="st_index">
-                                            <i t-att-class="st === 'full' ? 'fa fa-star' : (st === 'half' ? 'fa fa-star-half-o' : 'fa fa-star-o')"/>
-                                        </t>
-                                    </div>
-                                    <div class="o_dkr_eval_rating">
-                                        Đánh giá: <strong t-att-class="perfClass(perf.label)" t-esc="perf.label"/>
-                                    </div>
-                                    <div class="o_dkr_eval_stats">
-                                        <div><span>Tổng công việc</span><strong t-esc="perf.total"/></div>
-                                        <div><span>Hoàn thành</span><strong t-esc="perf.done"/></div>
-                                        <div><span>Quá hạn</span><strong class="text-danger" t-esc="perf.overdue"/></div>
-                                        <div><span>Tổng thời gian</span><strong t-esc="perf.hours + ' giờ'"/></div>
-                                    </div>
-                                </div>
                             </div>
+                            <p class="o_dkr_muted o_dkr_card_note">
+                                % Hoàn thành quản lý đánh giá ở Kiểm tra CV · đã đánh giá
+                                <b t-esc="perf.evaluated + '/' + perf.total"/> việc
+                            </p>
+                        </div>
+                        <!-- Tổng thời gian: tổng giờ + giờ theo hạng mục -->
+                        <div class="o_dkr_card">
+                            <h3>Tổng thời gian</h3>
+                            <div class="o_dkr_time_total">
+                                <strong t-esc="totalHours"/> <span>giờ</span>
+                                <em class="o_dkr_muted" t-esc="'(' + totalMinutes + ' phút)'"/>
+                            </div>
+                            <div t-if="timeByCat.length" class="o_dkr_bar_box" t-att-style="timeBoxStyle">
+                                <canvas t-ref="timeChart"/>
+                            </div>
+                            <div t-else="" class="o_dkr_muted text-center py-3">Chưa có thời gian thực hiện.</div>
                         </div>
                     </div>
 

@@ -8,7 +8,7 @@ import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, us
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
-import { applyReportGroups } from "@daily_work_task/shell/report_groups";
+import { applyReportGroups, readReportOpen } from "@daily_work_task/shell/report_groups";
 const SIDEBAR_WIDTH_KEY = "daily_work_sidebar_width";
 const SIDEBAR_COLLAPSED_KEY = "daily_work_sidebar_collapsed";
 const SIDEBAR_WIDTH_DEFAULT = 250;
@@ -52,6 +52,7 @@ export class DailyWorkDashboard extends Component {
         this.charts = [];
         this._sidebarResize = null;
         this.state = useState({
+            reportOpen: readReportOpen(),
             loading: true,
             data: {
                 kpi: {},

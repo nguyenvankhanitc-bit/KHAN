@@ -39,6 +39,17 @@ export const REPORT_GROUPS = [
     },
 ];
 
+const REPORT_OPEN_KEY = "daily_work_sidebar_report_open";
+
+/** Mục BÁO CÁO trên thanh bên đang mở (nhớ theo trình duyệt). */
+export function readReportOpen() {
+    try {
+        return window.localStorage.getItem(REPORT_OPEN_KEY) !== "0";
+    } catch (_e) {
+        return true;
+    }
+}
+
 /** Gắn các hàm nhóm báo cáo vào component có state + rv() + openNav() (shell / dashboard). */
 export const reportGroupsMixin = {
     reportItems(group) {
@@ -52,6 +63,14 @@ export const reportGroupsMixin = {
     },
     reportGroupOf(nav) {
         return this.reportGroups.find((g) => g.items.some((it) => it.nav === nav)) || null;
+    },
+    toggleReportSection() {
+        this.state.reportOpen = !this.state.reportOpen;
+        try {
+            window.localStorage.setItem(REPORT_OPEN_KEY, this.state.reportOpen ? "1" : "0");
+        } catch (_e) {
+            /* ignore */
+        }
     },
     openReportGroup(group) {
         const first = this.reportItems(group)[0];

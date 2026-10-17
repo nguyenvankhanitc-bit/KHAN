@@ -3,7 +3,7 @@
 import { useBus, useService } from "@web/core/utils/hooks";
 import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { _t } from "@web/core/l10n/translation";
-import { applyReportGroups } from "@daily_work_task/shell/report_groups";
+import { applyReportGroups, readReportOpen } from "@daily_work_task/shell/report_groups";
 
 const SIDEBAR_WIDTH_KEY = "daily_work_sidebar_width";
 const SIDEBAR_COLLAPSED_KEY = "daily_work_sidebar_collapsed";
@@ -50,6 +50,7 @@ export class DailyWorkAppShell extends Component {
         this.notification = useService("notification");
         this._sidebarResize = null;
         this.state = useState({
+            reportOpen: readReportOpen(),
             loading: true,
             isManager: false,
             canAssign: false,

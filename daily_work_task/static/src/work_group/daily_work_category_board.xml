@@ -45,7 +45,7 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="2" class="o_dcb_col_stt" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">STT</th>
-                                            <th rowspan="2" class="o_dcb_col_name" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">Tên công việc / Hạng mục</th>
+                                            <th rowspan="2" class="o_dcb_col_name" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">Tên chi tiết hạng mục / Hạng mục</th>
                                             <th colspan="3" class="o_dcb_col_freq_head" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">Tần suất</th>
                                             <th rowspan="2" class="o_dcb_col_users" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">User phụ trách</th>
                                             <th rowspan="2" class="o_dcb_col_users" style="background:#fff !important;color:#000 !important;font-weight:800 !important;">User kiểm tra</th>

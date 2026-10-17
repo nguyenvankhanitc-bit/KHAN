@@ -56,7 +56,7 @@
                                     <thead>
                                         <tr>
                                             <th class="o_dab_col_stt" rowspan="2">STT</th>
-                                            <th class="o_dab_col_name" rowspan="2">Tên công việc / Hạng mục</th>
+                                            <th class="o_dab_col_name" rowspan="2">Tên chi tiết hạng mục / Hạng mục</th>
                                             <th class="o_dab_col_freq_head" colspan="3">Tần suất</th>
                                             <th rowspan="2">Miền Nam</th>
                                             <th rowspan="2">Miền ĐTT</th>

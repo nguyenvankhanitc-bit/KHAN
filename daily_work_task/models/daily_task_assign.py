@@ -168,8 +168,8 @@ class DailyTaskAssign(models.Model):
         "daily_task_assign_work_group_sel_rel",
         "assign_id",
         "work_group_id",
-        string="Tên công việc",
-        help="Chọn một hoặc nhiều tên công việc (checkbox). Lưu sẽ tạo từng dòng phân công.",
+        string="Tên chi tiết hạng mục",
+        help="Chọn một hoặc nhiều tên chi tiết hạng mục (checkbox). Lưu sẽ tạo từng dòng phân công.",
     )
     department_id = fields.Many2one(
         "hr.department",
@@ -600,6 +600,16 @@ class DailyTaskAssign(models.Model):
                             other.deadline.strftime("%d/%m/%Y") if other.deadline else "…",
                         )
                     )
+
+    def _detail_name(self):
+        """Tên chi tiết hạng mục của dòng phân công (theo trang Hạng mục, bỏ số thứ tự «1. »)."""
+        self.ensure_one()
+        WG = self.env["daily.task.work.group"]
+        wg = self.work_group_id
+        if wg:
+            return (wg.task_name or "").strip() and WG._norm_category_name(wg.task_name) \
+                or WG._norm_category_name(wg.name)
+        return WG._norm_category_name(self.name or "")
 
     def _expand_vals_by_work_groups(self, vals_list):
         """Nhiều tên CV (checkbox) → nhiều dòng phân công (1 dòng / 1 công việc)."""
@@ -1222,7 +1232,8 @@ class DailyTaskAssign(models.Model):
                 "id": rec.id,
                 "stt": rec.stt,
                 "wg_stt": wg.display_stt if wg else "",
-                "name": rec.name or "",
+                # Tên chi tiết hạng mục — lấy từ trang Hạng mục (liên kết), không dùng tên gõ riêng
+                "name": rec._detail_name(),
                 "category": cat,
                 "note": rec.note or "",
                 # Tần suất = đúng ô người dùng tích trên Thêm phân công (không tích → để trống)
@@ -1316,7 +1327,7 @@ class DailyTaskAssign(models.Model):
 
         headers = [
             "STT",
-            "Tên công việc / Hạng mục",
+            "Tên chi tiết hạng mục / Hạng mục",
             "Ngày",
             "Tuần",
             "Tháng",

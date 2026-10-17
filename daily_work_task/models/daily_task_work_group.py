@@ -26,7 +26,7 @@ class DailyTaskWorkGroup(models.Model):
     )
     name = fields.Char(string="Hạng mục", required=True, index=True)
     task_name = fields.Char(
-        string="Tên công việc",
+        string="Tên chi tiết hạng mục",
         index=True,
         help="Tên công việc mẫu của hạng mục. Phân công con sẽ lấy làm nội dung mặc định.",
     )
@@ -668,6 +668,8 @@ class DailyTaskWorkGroup(models.Model):
         res = super().write(vals)
         if {"name", "team_id", "active", "sequence", "department_id"} & set(vals):
             self._refresh_category_heads(list(set(old_teams + self.mapped("team_id").ids)) or None)
+        if {"name", "task_name"} & set(vals) and not self.env.context.get("skip_detail_name_sync"):
+            self._sync_detail_name_to_assign()
         if "category_manager_ids" in vals and not self.env.context.get("skip_cat_manager_sync"):
             # Quản lý áp dụng cho cả hạng mục (mọi dòng cùng team + cùng tên hạng mục)
             for rec in self:
@@ -719,6 +721,25 @@ class DailyTaskWorkGroup(models.Model):
             for group in groups:
                 group.setdefault("__fold", False)
         return groups
+
+    def _sync_detail_name_to_assign(self):
+        """Tên chi tiết hạng mục đổi → dòng phân công đang dùng (và việc cá nhân của nó) đổi tên theo."""
+        Assign = self.env["daily.task.assign"].sudo()
+        for rec in self:
+            detail = self._norm_category_name(rec.task_name) if (rec.task_name or "").strip() \
+                else self._norm_category_name(rec.name)
+            if not detail:
+                continue
+            lines = Assign.search([("work_group_id", "=", rec.id), ("active", "=", True)])
+            if not lines:
+                continue
+            lines.filtered(lambda ln: ln.name != detail).write({"name": detail})
+            # Mẫu việc lặp + việc chưa hoàn thành đổi theo; việc đã hoàn thành giữ tên cũ (lịch sử)
+            Rec = self.env["daily.task.recurring"].sudo()
+            Rec.search([("assign_line_id", "in", lines.ids), ("name", "!=", detail)]).write({"name": detail})
+            self.env["daily.task"].sudo().with_context(from_daily_task_assign=True).search([
+                ("assign_line_id", "in", lines.ids), ("state", "!=", "done"), ("name", "!=", detail),
+            ]).write({"name": detail})
 
     def _used_ids(self):
         """Dòng hạng mục đang được công việc / phân công / việc lặp dùng (không xoá cứng được)."""

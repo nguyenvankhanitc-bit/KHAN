@@ -38,16 +38,36 @@ def _rating(pct):
 class DailyTaskCategoryReport(models.Model):
     _inherit = "daily.task"
 
+    @api.model
+    def _work_group_freq_map(self):
+        """{work_group_id: 'day'|'week'|'month'|'adhoc'} — đúng như cột Tần suất trên trang Hạng mục
+        (ô Tần suất đã tích trên dòng phân công của tên chi tiết hạng mục)."""
+        def compute():
+            out = {}
+            for line in self.env["daily.task.assign"].sudo().search(
+                [("active", "=", True), ("work_group_id", "!=", False)], order="stt, id"
+            ):
+                key = line._frequency_key()
+                if key:
+                    out.setdefault(line.work_group_id.id, key)
+            return out
+        return self._req_cache(("wg_freq_map",), compute)
+
     def _freq_label(self):
-        """Tần suất của việc: ô Tần suất trên dòng phân công → mẫu lặp → mặc định Tháng/lần."""
+        """Tần suất của việc: theo Hạng mục (tên chi tiết); việc không gắn hạng mục → dòng phân công → mẫu lặp."""
         self.ensure_one()
-        line = self.sudo().assign_line_id
-        key = line._frequency_key() if line else False
-        if not key and line and line.plan_daily:
-            key = "day"
-        if not key and self.recurring_id:
-            key = {"daily": "day", "weekly": "week"}.get(self.sudo().recurring_id.recurrence_type, "month")
-        return _FREQ_LABELS.get(key or "month", "Tháng/lần")
+        task = self.sudo()
+        if task.work_group_id:
+            # Có hạng mục → đúng cột Tần suất trên trang Hạng mục (trống thì để trống)
+            key = self._work_group_freq_map().get(task.work_group_id.id)
+            return _FREQ_LABELS.get(key, "") if key else ""
+        key = False
+        line = task.assign_line_id
+        if not key and line:
+            key = line._frequency_key() or ("day" if line.plan_daily else False)
+        if not key and task.recurring_id:
+            key = {"daily": "day", "weekly": "week"}.get(task.recurring_id.recurrence_type, "month")
+        return _FREQ_LABELS.get(key, "") if key else ""
 
     def _to_manager_dict(self):
         data = super()._to_manager_dict()

@@ -116,7 +116,8 @@ class DailyTaskMonthlyReport(models.AbstractModel):
             if freq:
                 # Tần suất tích trên Thêm phân công công việc (Ngày / Tuần / Tháng)
                 label, col = {"day": ("Mỗi ngày", "day"), "week": ("Mỗi tuần", "week"),
-                              "month": ("Tháng/lần", "month")}[freq]
+                              "month": ("Tháng/lần", "month"),
+                              "adhoc": ("Phát sinh", "adhoc")}.get(freq, ("Tháng/lần", "month"))
             elif tpl:
                 label, col = self._PERIOD.get(tpl.recurrence_type or "daily", ("Mỗi ngày", "day"))
             else:

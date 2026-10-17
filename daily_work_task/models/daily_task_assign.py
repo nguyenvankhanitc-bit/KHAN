@@ -53,6 +53,7 @@ class DailyTaskAssign(models.Model):
     freq_day = fields.Boolean(string="Ngày")
     freq_week = fields.Boolean(string="Tuần")
     freq_month = fields.Boolean(string="Tháng")
+    freq_adhoc = fields.Boolean(string="Phát sinh", help="Việc phát sinh — không theo chu kỳ Ngày / Tuần / Tháng.")
     # Số ngày người dùng nhập — cột SỐ NGÀY của Báo cáo công việc tháng (để trống = tự đếm ngày hoàn thành)
     freq_days = fields.Integer(
         string="Số ngày",
@@ -63,17 +64,22 @@ class DailyTaskAssign(models.Model):
     @api.onchange("freq_day")
     def _onchange_freq_day(self):
         if self.freq_day:
-            self.freq_week = self.freq_month = False
+            self.freq_week = self.freq_month = self.freq_adhoc = False
 
     @api.onchange("freq_week")
     def _onchange_freq_week(self):
         if self.freq_week:
-            self.freq_day = self.freq_month = False
+            self.freq_day = self.freq_month = self.freq_adhoc = False
 
     @api.onchange("freq_month")
     def _onchange_freq_month(self):
         if self.freq_month:
-            self.freq_day = self.freq_week = False
+            self.freq_day = self.freq_week = self.freq_adhoc = False
+
+    @api.onchange("freq_adhoc")
+    def _onchange_freq_adhoc(self):
+        if self.freq_adhoc:
+            self.freq_day = self.freq_week = self.freq_month = False
 
     @api.model
     def _effective_frequencies(self, lines, first, last):
@@ -110,9 +116,15 @@ class DailyTaskAssign(models.Model):
         return out
 
     def _frequency_key(self):
-        """'day' / 'week' / 'month' hoặc False nếu chưa tích."""
+        """'day' / 'week' / 'month' / 'adhoc' (Phát sinh) hoặc False nếu chưa tích."""
         self.ensure_one()
-        return "day" if self.freq_day else "week" if self.freq_week else "month" if self.freq_month else False
+        if self.freq_day:
+            return "day"
+        if self.freq_week:
+            return "week"
+        if self.freq_month:
+            return "month"
+        return "adhoc" if self.freq_adhoc else False
 
     dept_locked = fields.Boolean(
         compute="_compute_dept_locked",
@@ -1331,6 +1343,7 @@ class DailyTaskAssign(models.Model):
             "Ngày",
             "Tuần",
             "Tháng",
+            "Phát sinh",
             "Miền Nam",
             "Miền ĐTT",
             "Miền Bắc",
@@ -1340,13 +1353,13 @@ class DailyTaskAssign(models.Model):
             "User tham gia / phối hợp",
             "Ghi chú",
         ]
-        widths = [8, 48, 7, 7, 7, 18, 18, 18, 16, 18, 18, 24, 16]
+        widths = [8, 48, 7, 7, 7, 9, 18, 18, 18, 16, 18, 18, 24, 16]
         for col, w in enumerate(widths):
             ws.set_column(col, col, w)
 
-        ws.merge_range(0, 0, 0, 12, "DANH SÁCH PHÂN CÔNG CÔNG VIỆC", title_fmt)
-        ws.merge_range(1, 0, 1, 12, data.get("month_label") or "", sub_fmt)
-        ws.merge_range(2, 0, 2, 12, "Chế độ: Chỉ xem", sub_fmt)
+        ws.merge_range(0, 0, 0, 13, "DANH SÁCH PHÂN CÔNG CÔNG VIỆC", title_fmt)
+        ws.merge_range(1, 0, 1, 13, data.get("month_label") or "", sub_fmt)
+        ws.merge_range(2, 0, 2, 13, "Chế độ: Chỉ xem", sub_fmt)
 
         row = 4
         for col, h in enumerate(headers):
@@ -1357,22 +1370,22 @@ class DailyTaskAssign(models.Model):
             return ", ".join(u["name"] for u in (users or []) if u.get("name")) or "—"
 
         for section in data.get("sections") or []:
-            ws.merge_range(row, 0, row, 12, section.get("title") or "", section_fmt)
+            ws.merge_range(row, 0, row, 13, section.get("title") or "", section_fmt)
             row += 1
             for task in section.get("tasks") or []:
                 label = "%s — %s" % (task.get("category") or "", task.get("name") or "")
                 ws.write(row, 0, task.get("display_stt") or "", center_fmt)
                 ws.write(row, 1, label, cell_fmt)
-                for i, key in enumerate(("day", "week", "month")):
+                for i, key in enumerate(("day", "week", "month", "adhoc")):
                     ws.write(row, 2 + i, "X" if task.get("freq") == key else "", center_fmt)
-                ws.write(row, 5, names(task.get("south")), cell_fmt)
-                ws.write(row, 6, names(task.get("dtt")), cell_fmt)
-                ws.write(row, 7, names(task.get("north")), cell_fmt)
-                ws.write(row, 8, names(task.get("office")), cell_fmt)
-                ws.write(row, 9, names(task.get("assignee")), cell_fmt)
-                ws.write(row, 10, names(task.get("checker")), cell_fmt)
-                ws.write(row, 11, names(task.get("collab")), cell_fmt)
-                ws.write(row, 12, task.get("note") or "—", cell_fmt)
+                ws.write(row, 6, names(task.get("south")), cell_fmt)
+                ws.write(row, 7, names(task.get("dtt")), cell_fmt)
+                ws.write(row, 8, names(task.get("north")), cell_fmt)
+                ws.write(row, 9, names(task.get("office")), cell_fmt)
+                ws.write(row, 10, names(task.get("assignee")), cell_fmt)
+                ws.write(row, 11, names(task.get("checker")), cell_fmt)
+                ws.write(row, 12, names(task.get("collab")), cell_fmt)
+                ws.write(row, 13, task.get("note") or "—", cell_fmt)
                 row += 1
 
         wb.close()

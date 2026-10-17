@@ -57,7 +57,7 @@
                                         <tr>
                                             <th class="o_dab_col_stt" rowspan="2">STT</th>
                                             <th class="o_dab_col_name" rowspan="2">Tên chi tiết hạng mục / Hạng mục</th>
-                                            <th class="o_dab_col_freq_head" colspan="3">Tần suất</th>
+                                            <th class="o_dab_col_freq_head" colspan="4">Tần suất</th>
                                             <th rowspan="2">Miền Nam</th>
                                             <th rowspan="2">Miền ĐTT</th>
                                             <th rowspan="2">Miền Bắc</th>
@@ -71,12 +71,13 @@
                                             <th class="o_dab_col_freq">Ngày</th>
                                             <th class="o_dab_col_freq">Tuần</th>
                                             <th class="o_dab_col_freq">Tháng</th>
+                                            <th class="o_dab_col_freq">Phát sinh</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <t t-foreach="visibleSections" t-as="section" t-key="section.id">
                                             <tr t-att-class="'o_dab_section' + (section.tone === 'alt' ? ' o_dab_section_alt' : '')">
-                                                <td colspan="13" t-esc="section.title"/>
+                                                <td colspan="14" t-esc="section.title"/>
                                             </tr>
                                             <t t-foreach="section.tasks" t-as="task" t-key="task.id">
                                                 <tr class="o_dab_task">
@@ -89,7 +90,7 @@
                                                             <span class="o_dab_task_name" t-esc="task.name"/>
                                                         </button>
                                                     </td>
-                                                    <t t-foreach="['day', 'week', 'month']" t-as="fk" t-key="fk">
+                                                    <t t-foreach="['day', 'week', 'month', 'adhoc']" t-as="fk" t-key="fk">
                                                         <td t-att-class="'o_dab_col_freq' + (task.freq === fk ? ' is-on' : '')"
                                                             t-esc="task.freq === fk ? 'X' : ''"/>
                                                     </t>
@@ -144,7 +145,7 @@
                                         </t>
                                         <t t-if="!visibleSections.length">
                                             <tr>
-                                                <td colspan="13" class="o_dab_empty_row">
+                                                <td colspan="14" class="o_dab_empty_row">
                                                     Không tìm thấy công việc hoặc nhân sự phù hợp.
                                                 </td>
                                             </tr>

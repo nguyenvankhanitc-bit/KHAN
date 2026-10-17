@@ -158,7 +158,8 @@
                             <div class="o_row o_assign_freq">
                                 <field name="freq_day" nolabel="1"/><span class="me-3">Ngày</span>
                                 <field name="freq_week" nolabel="1"/><span class="me-3">Tuần</span>
-                                <field name="freq_month" nolabel="1"/><span>Tháng</span>
+                                <field name="freq_month" nolabel="1"/><span class="me-3">Tháng</span>
+                                <field name="freq_adhoc" nolabel="1"/><span>Phát sinh</span>
                             </div>
                             <field name="freq_days" string="Số ngày" class="o_assign_freq_days"
                                      placeholder="Vd: 26"/>

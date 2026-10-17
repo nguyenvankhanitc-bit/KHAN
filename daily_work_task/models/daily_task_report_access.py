@@ -165,6 +165,10 @@ class DailyTaskReportAccess(models.Model):
             ]
         )
         emp_ids = set(lines.mapped("target_ids").ids)
+        # Phân quyền xem / giao / sửa / xóa: tick «Xem báo cáo NV» → xem báo cáo của «Xem việc của»
+        emp_ids.update(self.env["daily.task.access"].sudo().search([
+            ("active", "=", True), ("user_id", "=", user.id), ("perm_report", "=", True),
+        ]).mapped("target_ids").ids)
         dept_ids = list(set(lines.mapped("department_ids").ids))
         if dept_ids:
             self.env.cr.execute(

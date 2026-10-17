@@ -38,6 +38,12 @@ class DailyTaskAccess(models.Model):
         string="Xem việc của (chọn nhiều)",
         help="Các nhân viên B (vd: Hùng, Phú, Thành) — việc của họ sẽ hiện cho A.",
     )
+    perm_report = fields.Boolean(
+        string="Xem báo cáo NV",
+        default=False,
+        help="Xem báo cáo (BC cá nhân, BC tháng, BC theo hạng mục, BC tổng hợp…) "
+             "của các nhân viên ở «Xem việc của».",
+    )
     perm_view = fields.Boolean(string="Xem", default=True)
     perm_checklist = fields.Boolean(
         string="Kiểm tra CV",
@@ -177,6 +183,7 @@ class DailyTaskAccess(models.Model):
                 or line.perm_edit
                 or line.perm_delete
                 or line.perm_assign
+                or line.perm_report
                 for line in lines
             )
 

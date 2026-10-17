@@ -15,6 +15,7 @@
                          widget="many2many_tags"
                          options="{'no_create': True}"
                          placeholder="Vd: Hùng, Phú, Thành..."/>
+                <field name="perm_report" string="Xem BC NV"/>
                 <field name="perm_view" string="Xem"/>
                 <field name="perm_checklist" string="Kiểm tra CV"/>
                 <field name="perm_assign" string="Giao"/>
@@ -46,6 +47,7 @@
                             <field name="user_id" readonly="1"/>
                         </group>
                         <group string="Mô tả quyền">
+                            <field name="perm_report" string="Xem báo cáo NV"/>
                             <field name="perm_view" string="Xem"/>
                             <field name="perm_checklist" string="Kiểm tra CV"/>
                             <field name="perm_assign" string="Giao"/>

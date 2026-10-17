@@ -3975,6 +3975,12 @@ class DailyTask(models.Model):
                 emp_id = my.id
             elif emp_ids:
                 emp_id = emp_ids[0]
+        elif emp_id not in emp_ids:
+            # NV ngoài phạm vi được xem (Phân quyền Báo cáo tổng / «Xem báo cáo NV») → về NV của mình
+            if my and my.id in emp_ids:
+                emp_id = my.id
+            else:
+                emp_id = emp_ids[0] if emp_ids else 0
 
         profile = self._report_profile_for_employee(emp_id)
 

@@ -373,14 +373,23 @@ export class DailyWorkTeamChecklist extends Component {
     /** Lưu ngay % Hoàn thành / Ghi chú quản lý đánh giá (không tải lại để giữ ô đã tick chờ Lưu). */
     /** Ô % Hoàn thành: đã tick Xác nhận QL (chờ Lưu / đã xác nhận) → 100%. */
     evalPercentShown(task) {
-        if (this.isDraft(task) || task.manager_confirmed) {
-            return 100;
-        }
         const draft = this.state.evalDraft[task.id];
         if (draft && "manager_eval_percent" in draft) {
             return draft.manager_eval_percent;
         }
+        if (this.isDraft(task) || (task.manager_confirmed && !task.manager_eval_percent)) {
+            return 100;
+        }
         return task.manager_eval_percent || 0;
+    }
+
+    /** % Hoàn thành ứng với xếp loại (= «Từ %» của mức đó trong Cài đặt → Xếp loại đạt). */
+    percentOfRating(key) {
+        const hits = this.evalTiers.filter((t) => t.rating_key === key);
+        if (!hits.length) {
+            return null;
+        }
+        return Math.max(...hits.map((t) => Number(t.from_percent) || 0));
     }
 
     get ratingOptions() {
@@ -417,18 +426,34 @@ export class DailyWorkTeamChecklist extends Component {
             return;
         }
         const value = this.ratingShown(task) === key ? "" : key;
+        // Tick xếp loại → % Hoàn thành tương ứng (bỏ tick: giữ nguyên %)
+        const pct = value ? this.percentOfRating(value) : null;
         if (!task.manager_confirmed) {
             const draft = this.state.evalDraft[task.id] || {};
             draft.manager_rating = value;
+            if (pct !== null) {
+                draft.manager_eval_percent = pct;
+                if (task.can_tick) {
+                    this.state.selectedConfirm[task.id] = pct === 100;
+                }
+            }
             this.state.evalDraft[task.id] = draft;
             return;
         }
-        const old = task.manager_rating;
+        const old = { rating: task.manager_rating, pct: task.manager_eval_percent };
+        const vals = { manager_rating: value };
+        if (pct !== null) {
+            vals.manager_eval_percent = pct;
+        }
         task.manager_rating = value;
+        if (pct !== null) {
+            task.manager_eval_percent = pct;
+        }
         try {
-            await this.orm.call("daily.task", "set_manager_evaluation", [[task.id], { manager_rating: value }]);
+            await this.orm.call("daily.task", "set_manager_evaluation", [[task.id], vals]);
         } catch (e) {
-            task.manager_rating = old;
+            task.manager_rating = old.rating;
+            task.manager_eval_percent = old.pct;
             this.notification.add(e?.data?.message || _t("Không lưu được đánh giá."), { type: "danger" });
         }
     }

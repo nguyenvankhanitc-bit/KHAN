@@ -599,7 +599,7 @@
                                                     <th>Trạng thái</th>
                                                     <th>Phút</th>
                                                     <th>Giờ</th>
-                                                    <th title="% Hoàn thành công việc">% HT CV</th>
+                                                    <th title="Cùng dữ liệu với cột % hoàn thành CV ở Danh sách công việc cá nhân">% hoàn thành CV</th>
                                                     <th>Ghi chú</th>
                                                     <th>Quá hạn</th>
                                                 </tr>

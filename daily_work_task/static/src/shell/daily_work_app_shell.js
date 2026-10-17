@@ -71,7 +71,7 @@ export class DailyWorkAppShell extends Component {
             mobileNavOpen: false,
             isMobile: false,
             // Đang ở trang Cài đặt → mở sẵn nhóm Cài đặt trên thanh bên
-            configOpen: ["rating_tier", "assign_access", "self_review", "team_plan_access", "report_access",
+            configOpen: ["rating_tier", "report_perm", "assign_access", "self_review", "team_plan_access", "report_access",
                 "performance_access", "access", "team", "recurring", "employees"].includes(this.props.activeNav),
         });
         this._onMqChange = this._onMqChange.bind(this);
@@ -414,6 +414,10 @@ export class DailyWorkAppShell extends Component {
         }
         if (key === "report_access") {
             await this._doNavAction("daily_work_task.action_daily_task_report_access", asPopup);
+            return;
+        }
+        if (key === "report_perm") {
+            await this._doNavAction("daily_work_task.action_daily_work_report_perm", asPopup);
             return;
         }
         if (key === "rating_tier") {

@@ -86,7 +86,7 @@
                                             title="Làm mới">
                                         <i class="fa fa-refresh"/> Làm mới
                                     </button>
-                                    <button type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
+                                    <button t-if="!categoryReport or !state.reportPerm or state.reportPerm.export" type="button" class="btn btn-success btn-sm" t-on-click="onExportExcel">
                                         <i class="fa fa-file-excel-o"/> Xuất Excel
                                     </button>
                                     <button t-if="!teamAssign and !categoryReport" type="button" class="btn btn-danger btn-sm" t-on-click="onExportPdf">

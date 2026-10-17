@@ -53,3 +53,5 @@ access_daily_task_rating_tier_user,daily.task.rating.tier user,model_daily_task_
 access_daily_task_rating_tier_manager,daily.task.rating.tier manager,model_daily_task_rating_tier,group_daily_work_manager,1,1,1,1
 access_daily_task_user_summary_user,daily.task.user.summary user,model_daily_task_user_summary,group_daily_work_user,1,0,0,0
 access_daily_task_user_summary_manager,daily.task.user.summary manager,model_daily_task_user_summary,group_daily_work_manager,1,1,1,1
+access_daily_task_report_perm_user,daily.task.report.perm user,model_daily_task_report_perm,group_daily_work_user,1,0,0,0
+access_daily_task_report_perm_manager,daily.task.report.perm manager,model_daily_task_report_perm,group_daily_work_manager,1,1,1,1

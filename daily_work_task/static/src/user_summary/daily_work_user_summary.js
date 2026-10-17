@@ -63,6 +63,7 @@ export class DailyWorkUserSummary extends Component {
         this.state.canEditSelf = Boolean(data.can_edit_self);
         this.state.canEditManager = Boolean(data.can_edit_manager);
         this.state.reportDate = data.report_date || "";
+        this.state.canExport = !data.report_perm || data.report_perm.export !== false;
         this.state.employees = (data.filters && data.filters.employees) || [];
         this.state.canPick = Boolean(data.can_pick_employee);
         this.state.employeeId = Number(data.selected_employee_id || this.state.employeeId) || 0;

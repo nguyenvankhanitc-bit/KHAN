@@ -369,6 +369,7 @@ export class DailyWorkReportOverview extends Component {
             this.state.assignRows = data.assign_rows || [];
             this.state.groups = data.groups || [];
             this.state.catGroups = data.cat_groups || [];
+            this.state.reportPerm = data.report_perm || null;
             this.state.filterOptions = data.filters || { employees: [], work_groups: [] };
             this.state.canDelete = Boolean(data.can_delete);
             this.state.canPickEmployee = this.teamReport ? false : Boolean(data.can_pick_employee);

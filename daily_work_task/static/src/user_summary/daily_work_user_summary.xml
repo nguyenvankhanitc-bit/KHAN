@@ -26,7 +26,7 @@
                                 t-att-disabled="state.saving or !state.dirty" t-on-click="onSave">
                             <i class="fa fa-save"/> <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu'"/>
                         </button>
-                        <button type="button" class="btn btn-success btn-sm" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                        <button t-if="state.canExport" type="button" class="btn btn-success btn-sm" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                     </div>
 
                     <div t-if="state.loading" class="text-center text-muted py-5">Đang tải...</div>

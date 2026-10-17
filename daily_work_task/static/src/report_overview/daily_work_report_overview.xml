@@ -599,7 +599,7 @@
                                                     <th>Trạng thái</th>
                                                     <th>Phút</th>
                                                     <th>Giờ</th>
-                                                    <th>% Hoàn thành CV</th>
+                                                    <th title="% Hoàn thành công việc">% HT CV</th>
                                                     <th>Ghi chú</th>
                                                     <th>Quá hạn</th>
                                                 </tr>

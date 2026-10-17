@@ -861,12 +861,18 @@
         /* Tên công việc / Ghi chú căn trái (class trên ô, không phụ thuộc thứ tự cột) */
         tbody td.o_dro_excel_left {
             text-align: left;
-            min-width: 160px;
+            min-width: 180px;
+            max-width: 260px;
+            /* Tên công việc / Ghi chú: tự xuống dòng theo độ rộng cột, giãn dòng dễ đọc */
+            white-space: normal;
+            overflow-wrap: anywhere;
+            word-break: normal;
+            line-height: 1.5;
         }
 
         /* BC cá nhân: STT · Tên · Ngày bắt đầu · Deadline · Ngày hoàn thành · Ưu tiên · Trạng thái
            · Phút · Giờ · % HT · Ghi chú · Quá hạn */
-        thead th:nth-child(2) { min-width: 180px; }
+        thead th:nth-child(2) { min-width: 180px; width: 240px; }
         thead th:nth-child(3),
         thead th:nth-child(4),
         thead th:nth-child(5) { min-width: 104px; }
@@ -874,8 +880,8 @@
         thead th:nth-child(7) { min-width: 128px; }
         thead th:nth-child(8),
         thead th:nth-child(9) { min-width: 64px; }
-        thead th:nth-child(10) { min-width: 110px; }
-        thead th:nth-child(11) { min-width: 150px; }
+        thead th:nth-child(10) { min-width: 64px; width: 72px; }   /* % HT: hẹp lại */
+        thead th:nth-child(11) { min-width: 180px; width: 240px; }
         thead th:nth-child(12) { min-width: 130px; }
 
         /* Nhãn trạng thái / ưu tiên / quá hạn: không bẻ từng chữ */

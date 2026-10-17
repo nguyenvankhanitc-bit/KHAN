@@ -33,7 +33,7 @@
                     <div t-elif="state.message" class="alert alert-warning" t-esc="state.message"/>
                     <div t-else="" class="o_dus_sheet">
                         <header class="o_dus_head">
-                            <h1>BÁO CÁO CÔNG VIỆC TỔNG HỢP THEO USER</h1>
+                            <h1>BÁO CÁO CÔNG VIỆC TỔNG HỢP</h1>
                             <div class="o_dus_who">Họ và tên: <b t-esc="state.profile.name"/>
                                 <t t-if="state.profile.department"> · <t t-esc="state.profile.department"/></t></div>
                             <div class="o_dus_month" t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>

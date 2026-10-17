@@ -7,7 +7,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
-/** Báo cáo tổng hợp theo user (mục BÁO CÁO). */
+/** Báo cáo tổng hợp theo hạng mục (mục BÁO CÁO). */
 export class DailyWorkUserSummary extends Component {
     static template = "daily_work_task.DailyWorkUserSummary";
     static components = { DailyWorkAppShell };

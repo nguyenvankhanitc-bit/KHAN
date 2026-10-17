@@ -117,7 +117,7 @@
               groups="daily_work_task.group_daily_work_user"/>
 
     <menuitem id="menu_daily_work_user_summary"
-              name="Báo cáo tổng hợp theo user"
+              name="Báo cáo tổng hợp theo hạng mục"
               parent="menu_daily_work_cat_reports"
               action="action_daily_work_user_summary"
               sequence="2"

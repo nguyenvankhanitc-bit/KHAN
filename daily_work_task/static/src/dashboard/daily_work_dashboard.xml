@@ -148,9 +148,9 @@
                                     t-on-click="() => this.openNav('category_report')">
                                 <i class="fa fa-sitemap"/><span>Báo cáo CV theo hạng mục</span>
                             </button>
-                            <button type="button" class="o_dwd_side_item" title="Báo cáo tổng hợp theo user"
+                            <button type="button" class="o_dwd_side_item" title="Báo cáo tổng hợp theo hạng mục"
                                     t-on-click="() => this.openNav('user_summary')">
-                                <i class="fa fa-id-card-o"/><span>Báo cáo tổng hợp theo user</span>
+                                <i class="fa fa-id-card-o"/><span>Báo cáo tổng hợp theo hạng mục</span>
                             </button>
                             <button type="button" class="o_dwd_side_item" title="Báo cáo công việc tháng"
                                     t-on-click="() => this.openNav('monthly_report')">

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Báo cáo tổng hợp theo user (mục BÁO CÁO).
+"""Báo cáo tổng hợp theo hạng mục (mục BÁO CÁO).
 
 Bảng hạng mục lấy từ danh sách công việc cá nhân của user (cùng nguồn Báo cáo cá nhân / theo hạng mục).
 Phần Đánh giá chung: Kết quả nổi bật · Tồn tại (tự liệt kê việc chưa hoàn thành) + Nguyên nhân (user tự
@@ -17,7 +17,7 @@ from odoo.exceptions import AccessError, ValidationError
 
 class DailyTaskUserSummary(models.Model):
     _name = "daily.task.user.summary"
-    _description = "Báo cáo tổng hợp theo user (đánh giá tháng)"
+    _description = "Báo cáo tổng hợp theo hạng mục (đánh giá tháng)"
     _order = "year desc, month desc, user_id"
 
     user_id = fields.Many2one("res.users", string="User", required=True, index=True, ondelete="cascade")
@@ -38,7 +38,7 @@ class DailyTask(models.Model):
 
     overdue_cause = fields.Text(
         string="Nguyên nhân (user tự đánh giá)",
-        help="Nguyên nhân việc chưa hoàn thành / quá hạn — người phụ trách tự nhập ở Báo cáo tổng hợp theo user.",
+        help="Nguyên nhân việc chưa hoàn thành / quá hạn — người phụ trách tự nhập ở Báo cáo tổng hợp theo hạng mục.",
     )
 
     # ------------------------------------------------------------------
@@ -226,7 +226,7 @@ class DailyTask(models.Model):
         for i, w in enumerate(widths):
             ws.set_column(i, i, w)
         last = len(widths) - 1
-        ws.merge_range(0, 0, 0, last, "BÁO CÁO CÔNG VIỆC TỔNG HỢP THEO USER", title)
+        ws.merge_range(0, 0, 0, last, "BÁO CÁO CÔNG VIỆC TỔNG HỢP", title)
         ws.merge_range(1, 0, 1, last, "Họ và tên: %s · %s" % (profile.get("name") or "", profile.get("department") or ""), sub)
         ws.merge_range(2, 0, 2, last, "Tháng %s Năm %s" % (month, year), sub)
         ws.merge_range(3, 0, 3, last, "Số liệu chốt đến ngày %s · Nguồn: danh sách công việc cá nhân" % data["report_date"], note)

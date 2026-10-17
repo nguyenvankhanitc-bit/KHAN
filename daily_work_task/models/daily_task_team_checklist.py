@@ -567,6 +567,10 @@ class DailyTaskTeamChecklist(models.Model):
         if "manager_rating" in (vals or {}):
             rating = vals.get("manager_rating") or False
             clean["manager_rating"] = rating if rating in ("pass", "average", "fail") else False
+        elif "manager_eval_percent" in clean:
+            # Không chọn tay → xếp loại theo Cài đặt → Xếp loại đạt
+            clean["manager_rating"] = self.env["daily.task.rating.tier"].rate_eval(
+                clean["manager_eval_percent"]) or False
         if not clean:
             return True
         for rec in self:
@@ -606,6 +610,13 @@ class DailyTaskTeamChecklist(models.Model):
                     **({"manager_eval_percent": 100, "manager_returned": False} if confirmed else {}),
                 )
             )
+        if confirmed:
+            # Chưa chọn Đạt / Trung bình / Không đạt → theo Xếp loại đạt của 100%
+            key = self.env["daily.task.rating.tier"].rate_eval(100)
+            if key:
+                self.filtered(lambda r: not r.manager_rating).sudo().with_context(
+                    tracking_disable=True, mail_notrack=True, mail_create_nolog=True,
+                ).write({"manager_rating": key})
         return True
 
     def action_manager_return(self):

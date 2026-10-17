@@ -19,17 +19,33 @@ export class DailyWorkRatingTier extends Component {
     setup() {
         this.orm = useService("orm");
         this.notification = useService("notification");
-        this.state = useState({ loading: true, saving: false, rows: [], deleted: [], canEdit: false, dirty: false });
+        this.state = useState({
+            loading: true, saving: false, rows: [], deleted: [], canEdit: false, dirty: false, ratings: [],
+        });
         onWillStart(() => this.load());
     }
 
+    /** performance = Xếp loại hiệu suất · eval = Xếp loại đạt (Kiểm tra CV). */
+    get kind() {
+        return this.props.action?.context?.tier_kind === "eval" ? "eval" : "performance";
+    }
+
+    get isEval() {
+        return this.kind === "eval";
+    }
+
+    get pageTitle() {
+        return this.isEval ? "Xếp loại đạt" : "Xếp loại hiệu suất";
+    }
+
     get shellActiveNav() {
-        return "rating_tier";
+        return this.isEval ? "eval_tier" : "rating_tier";
     }
 
     async load() {
         this.state.loading = true;
-        const data = await this.orm.call("daily.task.rating.tier", "get_tiers", []);
+        const data = await this.orm.call("daily.task.rating.tier", "get_tiers", [], { kind: this.kind });
+        this.state.ratings = data.ratings || [];
         this.state.rows = (data.tiers || []).map((t) => ({ ...t, key: `id-${t.id}` }));
         this.state.canEdit = Boolean(data.can_edit);
         this.state.deleted = [];
@@ -71,9 +87,22 @@ export class DailyWorkRatingTier extends Component {
         this.state.dirty = true;
     }
 
+    onRatingKey(key, ev) {
+        const row = this.rowOf(key);
+        row.rating_key = ev.target.value;
+        row.name = (this.state.ratings.find((r) => r.key === row.rating_key) || {}).label || "";
+        this.state.dirty = true;
+    }
+
+    ratingClass(rkey) {
+        return rkey ? `o_drt_rk is-${rkey}` : "o_drt_rk";
+    }
+
     onAdd() {
         const max = Math.max(0, ...this.state.rows.map((r) => Number(r.from_percent) || 0));
-        this.state.rows.push({ key: newKey(), id: false, apply: true, from_percent: Math.min(100, max + 1), name: "" });
+        this.state.rows.push({
+            key: newKey(), id: false, apply: true, from_percent: Math.min(100, max + 1), name: "", rating_key: "",
+        });
         this.state.dirty = true;
     }
 
@@ -93,6 +122,12 @@ export class DailyWorkRatingTier extends Component {
     async onSave() {
         for (const r of this.state.rows) {
             const v = Number(r.from_percent);
+            if (this.isEval && !r.rating_key) {
+                this.notification.add(_t("Vui lòng chọn Xếp loại (Đạt / Trung bình / Không đạt) cho mọi dòng."), {
+                    type: "warning",
+                });
+                return;
+            }
             if (!(r.name || "").trim()) {
                 this.notification.add(_t("Vui lòng nhập Xếp loại cho mọi dòng."), { type: "warning" });
                 return;
@@ -110,10 +145,11 @@ export class DailyWorkRatingTier extends Component {
                     apply: Boolean(r.apply),
                     from_percent: Number(r.from_percent) || 0,
                     name: (r.name || "").trim(),
+                    rating_key: r.rating_key || false,
                 })),
                 this.state.deleted,
-            ]);
-            this.notification.add(_t("Đã lưu xếp loại hiệu suất."), { type: "success" });
+            ], { kind: this.kind });
+            this.notification.add(_t("Đã lưu %s.", this.pageTitle.toLowerCase()), { type: "success" });
             await this.load();
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không lưu được."), { type: "danger" });

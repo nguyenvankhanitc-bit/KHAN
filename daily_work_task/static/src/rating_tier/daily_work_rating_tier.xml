@@ -6,8 +6,12 @@
                 <div class="o_drt_shell">
                     <header class="o_drt_header">
                         <div>
-                            <h1>Xếp loại hiệu suất</h1>
-                            <p class="o_drt_sub">
+                            <h1 t-esc="pageTitle"/>
+                            <p class="o_drt_sub" t-if="isEval">
+                                Tích <b>Áp dụng</b> để dùng mức khi xếp loại · <b>Đến %</b> tự tính theo các mức đang tích ·
+                                dùng cho cột <b>Đạt / Trung bình / Không đạt</b> ở Kiểm tra CV (theo % Hoàn thành QL đánh giá)
+                            </p>
+                            <p class="o_drt_sub" t-else="">
                                 Tích <b>Áp dụng</b> để dùng mức khi xếp loại · <b>Đến %</b> tự tính theo các mức đang tích ·
                                 dùng cho «Hiệu suất» ở Báo cáo CV theo hạng mục
                             </p>
@@ -46,7 +50,17 @@
                                         <t t-else=""><t t-esc="r.from_percent"/>%</t>
                                     </td>
                                     <td class="o_drt_to" t-esc="r.to"/>
-                                    <td>
+                                    <td t-if="isEval">
+                                        <select t-if="state.canEdit" t-att-class="'form-select form-select-sm ' + ratingClass(r.rating_key)"
+                                                t-on-change="(ev) => this.onRatingKey(r.key, ev)">
+                                            <option value="" t-att-selected="!r.rating_key">— Chọn xếp loại —</option>
+                                            <t t-foreach="state.ratings" t-as="ro" t-key="ro.key">
+                                                <option t-att-value="ro.key" t-att-selected="r.rating_key === ro.key" t-esc="ro.label"/>
+                                            </t>
+                                        </select>
+                                        <span t-else="" t-att-class="ratingClass(r.rating_key)" t-esc="r.name"/>
+                                    </td>
+                                    <td t-else="">
                                         <input t-if="state.canEdit" type="text" class="form-control form-control-sm" placeholder="Vd: Đạt"
                                                t-att-value="r.name" t-on-input="(ev) => this.onName(r.key, ev)"/>
                                         <t t-else="" t-esc="r.name"/>

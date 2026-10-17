@@ -831,6 +831,10 @@ export class DailyWorkDashboard extends Component {
             await this._doNavAction("daily_work_task.action_daily_work_report_perm", asPopup);
             return;
         }
+        if (key === "eval_tier") {
+            await this._doNavAction("daily_work_task.action_daily_work_eval_tier", asPopup);
+            return;
+        }
         if (key === "rating_tier") {
             await this._doNavAction("daily_work_task.action_daily_work_rating_tier", asPopup);
             return;

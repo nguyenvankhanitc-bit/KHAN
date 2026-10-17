@@ -16,6 +16,28 @@
         </record>
     </data>
 
+    <!-- Xếp loại đạt (Kiểm tra CV): 0% Không đạt · 79% Trung bình · 100% Đạt -->
+    <data noupdate="1">
+        <record id="eval_tier_fail" model="daily.task.rating.tier">
+            <field name="kind">eval</field>
+            <field name="from_percent">0</field>
+            <field name="rating_key">fail</field>
+            <field name="name">Không đạt</field>
+        </record>
+        <record id="eval_tier_average" model="daily.task.rating.tier">
+            <field name="kind">eval</field>
+            <field name="from_percent">79</field>
+            <field name="rating_key">average</field>
+            <field name="name">Trung bình</field>
+        </record>
+        <record id="eval_tier_pass" model="daily.task.rating.tier">
+            <field name="kind">eval</field>
+            <field name="from_percent">100</field>
+            <field name="rating_key">pass</field>
+            <field name="name">Đạt</field>
+        </record>
+    </data>
+
     <record id="view_daily_task_rating_tier_list" model="ir.ui.view">
         <field name="name">daily.task.rating.tier.list</field>
         <field name="model">daily.task.rating.tier</field>
@@ -34,6 +56,7 @@
         <field name="name">Xếp loại hiệu suất</field>
         <field name="res_model">daily.task.rating.tier</field>
         <field name="view_mode">list</field>
+        <field name="domain">[('kind', '=', 'performance')]</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Thêm mức xếp loại hiệu suất</p>
             <p>Nhập <b>Từ %</b> và <b>Xếp loại</b>, tích <b>Áp dụng</b>. Cột <b>Đến %</b> tự tính theo các mức đang tích.</p>
@@ -45,6 +68,19 @@
         <field name="name">Xếp loại hiệu suất</field>
         <field name="tag">daily_work_rating_tier</field>
     </record>
+
+    <record id="action_daily_work_eval_tier" model="ir.actions.client">
+        <field name="name">Xếp loại đạt</field>
+        <field name="tag">daily_work_rating_tier</field>
+        <field name="context">{'tier_kind': 'eval'}</field>
+    </record>
+
+    <menuitem id="menu_daily_work_eval_tier"
+              name="Xếp loại đạt"
+              parent="menu_daily_work_config"
+              action="action_daily_work_eval_tier"
+              sequence="40"
+              groups="daily_work_task.group_daily_work_manager"/>
 
     <record id="action_daily_work_report_perm" model="ir.actions.client">
         <field name="name">Phân quyền báo cáo</field>

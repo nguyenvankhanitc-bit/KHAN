@@ -265,6 +265,10 @@
                                             t-on-click="() => this.openNav('rating_tier')">
                                         <i class="fa fa-star-half-o"/><span>Xếp loại hiệu suất</span>
                                     </button>
+                                    <button type="button" t-att-class="'o_dwd_side_item sub' + (isActive('eval_tier') ? ' active' : '')" title="Xếp loại đạt"
+                                            t-on-click="() => this.openNav('eval_tier')">
+                                        <i class="fa fa-check-square-o"/><span>Xếp loại đạt</span>
+                                    </button>
                                     <button type="button" t-att-class="'o_dwd_side_item sub' + (isActive('report_perm') ? ' active' : '')" title="Phân quyền báo cáo"
                                             t-on-click="() => this.openNav('report_perm')">
                                         <i class="fa fa-key"/><span>Phân quyền báo cáo</span>

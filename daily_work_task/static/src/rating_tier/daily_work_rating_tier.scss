@@ -57,3 +57,12 @@
     }
     .o_drt_add { margin-top: 6px; font-weight: 700; }
 }
+
+// Xếp loại đạt: màu theo kết quả
+.o_daily_work_rating_tier .o_drt_rk {
+    font-weight: 600;
+
+    &.is-pass { color: #15803d; }
+    &.is-average { color: #b45309; }
+    &.is-fail { color: #b91c1c; }
+}

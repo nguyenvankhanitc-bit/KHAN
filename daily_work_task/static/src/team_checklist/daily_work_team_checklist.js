@@ -86,8 +86,15 @@ export class DailyWorkTeamChecklist extends Component {
         this.busService.subscribe("daily_task/discussion", this._discussionBusCb);
         onWillUnmount(() => this.busService.unsubscribe("daily_task/discussion", this._discussionBusCb));
         this.chart = null;
+        this.evalTiers = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
+            try {
+                const tiers = await this.orm.call("daily.task.rating.tier", "get_tiers", [], { kind: "eval" });
+                this.evalTiers = (tiers.tiers || []).filter((t) => t.apply && t.rating_key);
+            } catch {
+                this.evalTiers = [];
+            }
             await this.load();
         });
         useEffect(
@@ -384,12 +391,24 @@ export class DailyWorkTeamChecklist extends Component {
         ];
     }
 
+    /** Cài đặt → Xếp loại đạt: % → pass / average / fail. */
+    rateEval(pct) {
+        const v = Number(pct) || 0;
+        const tiers = [...this.evalTiers].sort((a, b) => b.from_percent - a.from_percent);
+        const hit = tiers.find((t) => v >= t.from_percent) || tiers[tiers.length - 1];
+        return hit ? hit.rating_key : "";
+    }
+
     ratingShown(task) {
         const draft = this.state.evalDraft[task.id];
         if (draft && "manager_rating" in draft) {
             return draft.manager_rating || "";
         }
-        return task.manager_rating || "";
+        if (task.manager_rating) {
+            return task.manager_rating;
+        }
+        // Đang tick Xác nhận QL (chờ Lưu) = 100% → hiện xếp loại tương ứng
+        return this.isDraft(task) ? this.rateEval(100) : "";
     }
 
     /** Tick Đạt / Trung bình / Không đạt — chỉ 1 ô; bấm lại ô đang chọn để bỏ. */
@@ -568,6 +587,9 @@ export class DailyWorkTeamChecklist extends Component {
             // Việc chưa kiểm tra: giữ lại, bấm «Lưu» mới ghi. Nhập 100% = đồng ý → tự tick Xác nhận QL
             const draft = this.state.evalDraft[task.id] || {};
             draft[field] = value;
+            if (field === "manager_eval_percent" && this.evalTiers.length) {
+                draft.manager_rating = this.rateEval(value);
+            }
             this.state.evalDraft[task.id] = draft;
             if (field === "manager_eval_percent" && task.can_tick) {
                 this.state.selectedConfirm[task.id] = value === 100;
@@ -577,6 +599,9 @@ export class DailyWorkTeamChecklist extends Component {
         try {
             await this.orm.call("daily.task", "set_manager_evaluation", [[task.id], { [field]: value }]);
             task[field] = value;
+            if (field === "manager_eval_percent" && this.evalTiers.length) {
+                task.manager_rating = this.rateEval(value);
+            }
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không lưu được đánh giá."), { type: "danger" });
             ev.target.value = task[field] ?? "";

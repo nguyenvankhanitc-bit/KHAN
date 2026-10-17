@@ -195,15 +195,16 @@
                                      placeholder="Gõ tên để tìm user bất kỳ..."/>
                             <field name="date_start"/>
                             <field name="deadline"/>
-                            <field name="plan_daily"/>
-                            <label for="plan_date_from" string="Ngày kế hoạch (x)"/>
-                            <div class="o_row o_dwt_plan_range">
+                            <!-- Ẩn: Lặp hằng ngày / Ngày kế hoạch (x) / Xem trước — giữ field để tính toán -->
+                            <field name="plan_daily" invisible="1"/>
+                            <label for="plan_date_from" string="Ngày kế hoạch (x)" invisible="1"/>
+                            <div class="o_row o_dwt_plan_range" invisible="1">
                                 <span>Từ</span>
                                 <field name="plan_date_from" placeholder="dd/mm/yyyy"/>
                                 <span>đến</span>
                                 <field name="plan_date_to" placeholder="dd/mm/yyyy"/>
                             </div>
-                            <field name="plan_days_label" readonly="1" invisible="not plan_days_label"/>
+                            <field name="plan_days_label" readonly="1" invisible="1"/>
                             <field name="note" placeholder="Ghi chú..."/>
                             <field name="active"/>
                         </group>

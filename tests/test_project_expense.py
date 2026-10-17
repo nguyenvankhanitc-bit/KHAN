@@ -53,6 +53,15 @@ class MockModel:
     def unlink(self):
         return True
 
+    def sudo(self):
+        return self
+
+    def with_context(self, *args, **kwargs):
+        return self
+
+    def ensure_one(self):
+        return self
+
 
 mock_models.Model = MockModel
 mock_models.Constraint = MagicMock()

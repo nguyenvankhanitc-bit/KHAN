@@ -277,6 +277,7 @@
                 <field name="lug_priority"/>
                 <field name="lug_deadline"/>
                 <field name="lug_supply_date"/>
+                <field name="lug_daily_task_id" readonly="1" string="Công việc hàng ngày" invisible="not lug_daily_task_id"/>
             </xpath>
             <xpath expr="//field[@name='tag_ids']/following-sibling::field[@name='company_id']" position="attributes">
                 <attribute name="string">Đơn vị</attribute>

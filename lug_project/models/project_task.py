@@ -277,75 +277,80 @@ class ProjectTask(models.Model):
                     task.with_context(lug_sync_lock=True).write({"lug_todo_task_id": todo_task.id})
 
             # 2. Sync to Daily Task (daily.task in daily_work_task) for ALL assigned users
-            DailyTaskModel = task.env.get("daily.task")
-            if DailyTaskModel and users:
-                daily_state = (
-                    "done"
-                    if task.lug_status == "done"
-                    else ("in_progress" if task.lug_status in ("progress", "review") else "not_started")
-                )
-                daily_priority = (
-                    "high"
-                    if task.project_id.lug_priority == "high"
-                    else ("low" if task.project_id.lug_priority == "low" else "medium")
-                )
-                deadline = (
-                    task.date_deadline
-                    or task.project_id.lug_deadline
-                    or task.project_id.date
-                    or fields.Date.context_today(task)
-                )
-                assign_date = task.lug_execution_date or fields.Date.context_today(task)
-                assigned_by_id = task.project_id.user_id.id or task.project_id.lug_pic_id.id or task.env.user.id
+            try:
+                DailyTaskModel = task.env.get("daily.task")
+                if DailyTaskModel and users:
+                    DailyTaskModel = DailyTaskModel.sudo()
+                    daily_state = (
+                        "done"
+                        if task.lug_status == "done"
+                        else ("in_progress" if task.lug_status in ("progress", "review") else "not_started")
+                    )
+                    daily_priority = (
+                        "high"
+                        if task.project_id.lug_priority == "high"
+                        else ("low" if task.project_id.lug_priority == "low" else "medium")
+                    )
+                    deadline = (
+                        task.date_deadline
+                        or task.project_id.lug_deadline
+                        or task.project_id.date
+                        or fields.Date.context_today(task)
+                    )
+                    assign_date = task.lug_execution_date or fields.Date.context_today(task)
+                    assigned_by_id = task.project_id.user_id.id or task.project_id.lug_pic_id.id or task.env.user.id
 
-                active_daily_emps = {}
-                for u in users:
-                    emp = task._lug_get_or_create_daily_employee(u)
-                    if emp:
-                        active_daily_emps[emp.id] = (u, emp)
+                    active_daily_emps = {}
+                    for u in users:
+                        emp = task._lug_get_or_create_daily_employee(u)
+                        if emp:
+                            active_daily_emps[emp.id] = (u, emp)
 
-                existing_daily_tasks = task.lug_daily_task_ids.exists() if (hasattr(task, "lug_daily_task_ids") and hasattr(task.lug_daily_task_ids, "exists")) else []
-                if not existing_daily_tasks and hasattr(task, "lug_daily_task_id") and task.lug_daily_task_id and hasattr(task.lug_daily_task_id, "exists"):
-                    existing_daily_tasks = task.lug_daily_task_id.exists()
-                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+                    existing_daily_tasks = task.lug_daily_task_ids.exists() if (hasattr(task, "lug_daily_task_ids") and hasattr(task.lug_daily_task_ids, "exists")) else []
+                    if not existing_daily_tasks and hasattr(task, "lug_daily_task_id") and task.lug_daily_task_id and hasattr(task.lug_daily_task_id, "exists"):
+                        existing_daily_tasks = task.lug_daily_task_id.exists()
+                    existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
 
-                created_first_dt = False
-                for emp_id, (u, emp) in active_daily_emps.items():
-                    daily_vals = {
-                        "name": sync_name,
-                        "deadline": deadline,
-                        "assign_date": assign_date,
-                        "state": daily_state,
-                        "priority": daily_priority,
-                    }
-                    if daily_state == "done":
-                        daily_vals["date_done"] = task.lug_done_date or fields.Date.context_today(task)
+                    created_first_dt = False
+                    for emp_id, (u, emp) in active_daily_emps.items():
+                        daily_vals = {
+                            "name": sync_name,
+                            "deadline": deadline,
+                            "assign_date": assign_date,
+                            "state": daily_state,
+                            "priority": daily_priority,
+                        }
+                        if daily_state == "done":
+                            daily_vals["date_done"] = task.lug_done_date or fields.Date.context_today(task)
 
-                    if emp_id in existing_by_emp:
-                        existing_by_emp[emp_id].with_context(lug_sync_lock=True).write(daily_vals)
-                        if not created_first_dt:
-                            created_first_dt = existing_by_emp[emp_id]
-                    else:
-                        daily_vals.update({
-                            "assignee_id": emp.id,
-                            "assigned_by_id": assigned_by_id,
-                            "department_id": emp.department_id.id or task.project_id.lug_department_id.id or False,
-                            "lug_origin_project_task_id": task.id,
-                        })
-                        new_dt = DailyTaskModel.with_context(lug_sync_lock=True).create(daily_vals)
-                        if not created_first_dt:
-                            created_first_dt = new_dt
+                        if emp_id in existing_by_emp:
+                            existing_by_emp[emp_id].with_context(lug_sync_lock=True).sudo().write(daily_vals)
+                            if not created_first_dt:
+                                created_first_dt = existing_by_emp[emp_id]
+                        else:
+                            daily_vals.update({
+                                "assignee_id": emp.id,
+                                "assigned_by_id": assigned_by_id,
+                                "department_id": emp.department_id.id or task.project_id.lug_department_id.id or False,
+                                "lug_origin_project_task_id": task.id,
+                            })
+                            new_dt = DailyTaskModel.with_context(lug_sync_lock=True).create(daily_vals)
+                            if not created_first_dt:
+                                created_first_dt = new_dt
 
-                if created_first_dt and task.lug_daily_task_id != created_first_dt:
-                    task.with_context(lug_sync_lock=True).write({"lug_daily_task_id": created_first_dt.id})
+                    if created_first_dt and task.lug_daily_task_id != created_first_dt:
+                        task.with_context(lug_sync_lock=True).write({"lug_daily_task_id": created_first_dt.id})
 
-                # Unlink daily tasks for removed assignees
-                for emp_id, dt in existing_by_emp.items():
-                    if emp_id not in active_daily_emps:
-                        try:
-                            dt.with_context(lug_sync_lock=True).unlink()
-                        except Exception:
-                            pass
+                    # Unlink daily tasks for removed assignees
+                    for emp_id, dt in existing_by_emp.items():
+                        if emp_id not in active_daily_emps:
+                            try:
+                                dt.with_context(lug_sync_lock=True).sudo().unlink()
+                            except Exception:
+                                pass
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning("Error syncing project task %s to daily task: %s", task.id, e)
 
     def _lug_sync_from_todo_to_project(self, vals):
         for rec in self:

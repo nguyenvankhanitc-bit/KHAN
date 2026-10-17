@@ -61,6 +61,9 @@ class MockModel:
     def with_context(self, *args, **kwargs):
         return self
 
+    def ensure_one(self):
+        return self
+
 
 mock_models.Model = MockModel
 mock_exceptions = MagicMock()
@@ -100,6 +103,7 @@ sys.modules["dateutil.relativedelta"] = mock_relativedelta
 from lug_project.models.project_stage_task import ProjectStageTask
 from lug_project.models.project_task import ProjectTask
 from lug_project.models.daily_task import DailyTask
+from lug_project.models.project_project import ProjectProject
 
 
 class TestDuanToDailyTaskSync(unittest.TestCase):
@@ -223,6 +227,79 @@ class TestDuanToDailyTaskSync(unittest.TestCase):
         # Confirm neither origin task has write called
         mock_stage_origin.with_context.assert_not_called()
         mock_proj_origin.with_context.assert_not_called()
+
+    def test_project_sync_to_daily(self):
+        """Verify that creating a new duan (project.project) creates a linked daily.task."""
+        project = ProjectProject()
+        project.id = 505
+        project.name = "Siêu thị LUG GO Bà Rịa"
+        project.lug_content = "Cải tạo và khai trương LUG GO Bà Rịa"
+        project.lug_pic_id = self.mock_user1
+        project.user_id = self.mock_pm
+        project.lug_assignee_ids = []
+        project.lug_deadline = "2026-11-20"
+        project.date_start = "2026-10-15"
+        project.date = False
+        project.lug_priority = "high"
+        project.lug_workflow_state = "todo"
+        project.lug_department_id = MagicMock()
+        project.lug_department_id.id = 5
+        project.lug_approver_id = False
+        project.daily_task_ids = MagicMock()
+        project.daily_task_ids.exists.return_value = []
+        project.lug_daily_task_id = False
+
+        mock_daily_model = MagicMock()
+        created_records = []
+
+        def fake_create(vals):
+            rec = MagicMock()
+            rec.id = 900 + len(created_records)
+            rec.assignee_id.id = vals.get("assignee_id")
+            created_records.append(vals)
+            return rec
+
+        mock_daily_model.sudo.return_value = mock_daily_model
+        mock_daily_model.with_context.return_value = mock_daily_model
+        mock_daily_model.create.side_effect = fake_create
+
+        mock_env_obj = MagicMock()
+        mock_env_obj.get.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
+        mock_env_obj.user = self.mock_pm
+        project.env = mock_env_obj
+
+        project._lug_get_or_create_daily_employee = MagicMock(return_value=self.mock_emp1)
+        project.write = MagicMock()
+        project.sudo = MagicMock(return_value=project)
+        project.with_context = MagicMock(return_value=project)
+
+        project._lug_sync_to_daily()
+
+        # Should create 1 daily task for mock_user1
+        self.assertEqual(len(created_records), 1)
+        r = created_records[0]
+        self.assertEqual(r["name"], "[Dự án] Cải tạo và khai trương LUG GO Bà Rịa")
+        self.assertEqual(r["assignee_id"], 101)
+        self.assertEqual(r["deadline"], "2026-11-20")
+        self.assertEqual(r["assign_date"], "2026-10-15")
+        self.assertEqual(r["state"], "in_progress")
+        self.assertEqual(r["priority"], "high")
+        self.assertEqual(r["lug_origin_project_id"], 505)
+
+    def test_project_unlink_cleans_daily_task(self):
+        """Verify that deleting a project deletes linked daily.task records."""
+        project = ProjectProject()
+        mock_dt = MagicMock()
+        project.daily_task_ids = MagicMock()
+        project.daily_task_ids.exists.return_value = [mock_dt]
+        project.lug_daily_task_id = False
+
+        # Mock super().unlink
+        with unittest.mock.patch.object(MockModel, "unlink", return_value=True):
+            ProjectProject.unlink(project)
+
+        mock_dt.with_context.assert_called_with(lug_sync_lock=True)
+        mock_dt.with_context.return_value.sudo.return_value.unlink.assert_called_once()
 
 
 if __name__ == "__main__":

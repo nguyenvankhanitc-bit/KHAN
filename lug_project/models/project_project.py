@@ -193,6 +193,18 @@ class ProjectProject(models.Model):
         string="Số phiếu chi phí",
         compute="_compute_lug_total_expense",
     )
+    lug_daily_task_id = fields.Many2one(
+        "daily.task",
+        string="Công việc hàng ngày liên kết",
+        ondelete="set null",
+        copy=False,
+        index=True,
+    )
+    daily_task_ids = fields.One2many(
+        "daily.task",
+        "lug_origin_project_id",
+        string="Danh sách công việc hàng ngày liên kết",
+    )
     _lug_code_uniq = models.Constraint(
         "unique(lug_code)",
         "Mã dự án phải duy nhất.",
@@ -602,6 +614,161 @@ class ProjectProject(models.Model):
 
         return code
 
+    def _lug_get_or_create_daily_employee(self, user):
+        if not user:
+            return False
+        DailyEmp = self.env.get("daily.task.employee")
+        if not DailyEmp:
+            return False
+        # Direct SQL search on hr_employee to bypass HR visibility restrictions
+        self.env.cr.execute(
+            """
+            SELECT id FROM hr_employee
+             WHERE user_id = %s
+             LIMIT 1
+            """,
+            (user.id,),
+        )
+        row = self.env.cr.fetchone()
+        hr_emp_id = row[0] if row else False
+        if not hr_emp_id:
+            mail = (user.email or user.login or "").strip()
+            if mail:
+                self.env.cr.execute(
+                    """
+                    SELECT id FROM hr_employee
+                     WHERE LOWER(work_email) = LOWER(%s)
+                        OR LOWER(private_email) = LOWER(%s)
+                     LIMIT 1
+                    """,
+                    (mail, mail),
+                )
+                row = self.env.cr.fetchone()
+                if row:
+                    hr_emp_id = row[0]
+        if not hr_emp_id and user.name:
+            self.env.cr.execute(
+                """
+                SELECT id FROM hr_employee
+                 WHERE LOWER(name) = LOWER(%s)
+                 LIMIT 1
+                """,
+                (user.name.strip(),),
+            )
+            row = self.env.cr.fetchone()
+            if row:
+                hr_emp_id = row[0]
+
+        if hr_emp_id:
+            return DailyEmp.sudo().get_or_create_from_hr(hr_emp_id)
+
+        mail = (user.email or user.login or "").strip()
+        domain = [("email", "=", mail)] if mail else [("name", "=ilike", user.name)]
+        existing = DailyEmp.sudo().search(domain, limit=1)
+        if existing:
+            return existing
+        return DailyEmp.sudo().create({
+            "name": user.name,
+            "email": mail or False,
+        })
+
+    def _lug_sync_to_daily(self):
+        DailyTaskModel = self.env.get("daily.task")
+        if not DailyTaskModel:
+            return
+        DailyTaskModel = DailyTaskModel.sudo()
+        for project in self:
+            try:
+                users = []
+                for u in (project.lug_assignee_ids or []):
+                    if u and u not in users:
+                        users.append(u)
+                primary_user = project.lug_pic_id or project.user_id
+                if primary_user and primary_user not in users:
+                    users.append(primary_user)
+                if not users:
+                    continue
+
+                proj_title = project._lug_project_title()
+                sync_name = f"[Dự án] {proj_title}"
+                daily_state = (
+                    "done"
+                    if project.lug_workflow_state == "done"
+                    else ("in_progress" if project.lug_workflow_state in ("progress", "todo", "pause") else "not_started")
+                )
+                daily_priority = (
+                    "high"
+                    if project.lug_priority == "high"
+                    else ("low" if project.lug_priority == "low" else "medium")
+                )
+                deadline = (
+                    project.lug_deadline
+                    or project.date
+                    or fields.Date.context_today(project)
+                )
+                assign_date = project.date_start or fields.Date.context_today(project)
+                assigned_by_id = (
+                    (project.lug_approver_id and project.lug_approver_id.id)
+                    or (project.user_id and project.user_id.id)
+                    or project.env.user.id
+                )
+
+                active_daily_emps = {}
+                for user in users:
+                    emp = project._lug_get_or_create_daily_employee(user)
+                    if emp:
+                        active_daily_emps[emp.id] = (user, emp)
+
+                proj_rec = project.sudo() if hasattr(project, "sudo") else project
+                existing_daily_tasks = (
+                    proj_rec.daily_task_ids.exists()
+                    if (hasattr(proj_rec, "daily_task_ids") and hasattr(proj_rec.daily_task_ids, "exists"))
+                    else []
+                )
+                if not existing_daily_tasks and hasattr(proj_rec, "lug_daily_task_id") and proj_rec.lug_daily_task_id and hasattr(proj_rec.lug_daily_task_id, "exists"):
+                    existing_daily_tasks = proj_rec.lug_daily_task_id.exists()
+                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+
+                created_first_dt = False
+                for emp_id, (user, emp) in active_daily_emps.items():
+                    daily_vals = {
+                        "name": sync_name,
+                        "deadline": deadline,
+                        "assign_date": assign_date,
+                        "state": daily_state,
+                        "priority": daily_priority,
+                    }
+                    if daily_state == "done":
+                        daily_vals["date_done"] = fields.Date.context_today(project)
+
+                    if emp_id in existing_by_emp:
+                        existing_by_emp[emp_id].with_context(lug_sync_lock=True).sudo().write(daily_vals)
+                        if not created_first_dt:
+                            created_first_dt = existing_by_emp[emp_id]
+                    else:
+                        daily_vals.update({
+                            "assignee_id": emp.id,
+                            "assigned_by_id": assigned_by_id,
+                            "department_id": emp.department_id.id or (project.lug_department_id and project.lug_department_id.id) or False,
+                            "lug_origin_project_id": project.id,
+                        })
+                        new_dt = DailyTaskModel.with_context(lug_sync_lock=True).sudo().create(daily_vals)
+                        if not created_first_dt:
+                            created_first_dt = new_dt
+
+                if created_first_dt and project.lug_daily_task_id != created_first_dt:
+                    project.with_context(lug_sync_lock=True).sudo().write({"lug_daily_task_id": created_first_dt.id})
+
+                for emp_id, dt in existing_by_emp.items():
+                    if emp_id not in active_daily_emps:
+                        try:
+                            dt.with_context(lug_sync_lock=True).sudo().unlink()
+                        except Exception:
+                            pass
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).warning("Error syncing project %s to daily task: %s", project.id, e)
+
     @api.model_create_multi
     def create(self, vals_list):
         used_codes = set()
@@ -623,6 +790,8 @@ class ProjectProject(models.Model):
         records._lug_fill_stt()
         records._lug_ensure_stages()
         records._lug_ensure_stage_lines()
+        if not self.env.context.get("lug_sync_lock"):
+            records._lug_sync_to_daily()
         return records
 
     def write(self, vals):
@@ -644,7 +813,40 @@ class ProjectProject(models.Model):
             vals = dict(vals, lug_archived_date=fields.Date.context_today(self))
         if vals.get("active") is True:
             vals = dict(vals, lug_archived_date=False)
-        return super().write(vals)
+        res = super().write(vals)
+        if not self.env.context.get("lug_sync_lock"):
+            sync_fields = {
+                "name",
+                "lug_content",
+                "lug_pic_id",
+                "user_id",
+                "lug_assignee_ids",
+                "date_start",
+                "lug_deadline",
+                "date",
+                "lug_priority",
+                "lug_workflow_state",
+                "lug_department_id",
+            }
+            if any(f in vals for f in sync_fields):
+                self._lug_sync_to_daily()
+        return res
+
+    def unlink(self):
+        for rec in self:
+            daily_tasks = (
+                rec.daily_task_ids.exists()
+                if (hasattr(rec, "daily_task_ids") and hasattr(rec.daily_task_ids, "exists"))
+                else []
+            )
+            if not daily_tasks and hasattr(rec, "lug_daily_task_id") and rec.lug_daily_task_id and hasattr(rec.lug_daily_task_id, "exists"):
+                daily_tasks = rec.lug_daily_task_id.exists()
+            for dt in daily_tasks:
+                try:
+                    dt.with_context(lug_sync_lock=True).sudo().unlink()
+                except Exception:
+                    pass
+        return super().unlink()
 
     def lug_action_open_form(self):
         self.ensure_one()
@@ -765,6 +967,8 @@ class ProjectProject(models.Model):
         super().init()
         try:
             self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
+            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_daily_task_id INTEGER")
+            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_id INTEGER")
         except Exception:
             pass
 
@@ -772,9 +976,11 @@ class ProjectProject(models.Model):
         super()._register_hook()
         try:
             self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
+            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_daily_task_id INTEGER")
             self.env.cr.execute("ALTER TABLE project_stage_task ADD COLUMN IF NOT EXISTS execution_date DATE")
             self.env.cr.execute("ALTER TABLE project_task ADD COLUMN IF NOT EXISTS lug_execution_date DATE")
             self.env.cr.execute("ALTER TABLE hr_expense ADD COLUMN IF NOT EXISTS project_id INTEGER")
+            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_id INTEGER")
             self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_task_id INTEGER")
             self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_stage_task_id INTEGER")
         except Exception:

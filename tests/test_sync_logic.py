@@ -119,6 +119,7 @@ class TestSyncLogic(unittest.TestCase):
         # Mock env
         mock_todo_model = MagicMock()
         mock_daily_model = MagicMock()
+        mock_daily_model.sudo.return_value = mock_daily_model
         mock_emp_model = MagicMock()
 
         mock_env = {

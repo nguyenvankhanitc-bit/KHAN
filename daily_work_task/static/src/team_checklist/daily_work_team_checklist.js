@@ -436,6 +436,10 @@ export class DailyWorkTeamChecklist extends Component {
                 if (task.can_tick) {
                     this.state.selectedConfirm[task.id] = pct === 100;
                 }
+            } else if (!value) {
+                // Bỏ tick xếp loại → bỏ luôn % đã tự điền và Xác nhận QL đi kèm
+                delete draft.manager_eval_percent;
+                delete this.state.selectedConfirm[task.id];
             }
             this.state.evalDraft[task.id] = draft;
             return;

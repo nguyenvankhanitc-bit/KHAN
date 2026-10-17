@@ -1,0 +1,108 @@
+// Đầu trang BÁO CÁO: tiêu đề nhóm + thanh tab các báo cáo cùng nhóm (giống hình mẫu)
+.o_daily_work_dashboard .o_dwr_hub {
+    background: #fff;
+    border: 1px solid #e6e8f2;
+    border-radius: 14px;
+    padding: 18px 20px 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(30, 27, 75, 0.05);
+
+    .o_dwr_hub_title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin: 0 0 14px;
+        font-size: 1.65rem;
+        font-weight: 800;
+        letter-spacing: 0.01em;
+        color: #1e1b4b;
+
+        > .fa {
+            font-size: 1.5rem;
+            color: #1e1b4b;
+        }
+    }
+
+    .o_dwr_hub_tabs {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 4px;
+        padding: 6px;
+        border: 1px solid #e6e8f2;
+        border-radius: 12px;
+        background: #fff;
+    }
+
+    .o_dwr_hub_tab {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 9px 18px;
+        border: 0;
+        border-radius: 10px;
+        background: transparent;
+        color: #334155;
+        font-size: 0.92rem;
+        font-weight: 500;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background 0.15s, color 0.15s;
+
+        > .fa {
+            font-size: 1rem;
+            color: #475569;
+        }
+
+        & + .o_dwr_hub_tab::before {
+            content: "";
+            position: absolute;
+            left: -3px;
+            top: 25%;
+            height: 50%;
+            border-left: 1px solid #e2e8f0;
+        }
+
+        &:hover {
+            background: #f5f3ff;
+            color: #4338ca;
+        }
+
+        &.active {
+            background: #ede9fe;
+            color: #4338ca;
+            font-weight: 700;
+
+            > .fa {
+                color: #4338ca;
+            }
+
+            &::after {
+                content: "";
+                position: absolute;
+                left: 14px;
+                right: 14px;
+                bottom: 2px;
+                height: 3px;
+                border-radius: 3px;
+                background: #4f46e5;
+            }
+        }
+    }
+
+    @media (max-width: 768px) {
+        padding: 12px;
+
+        .o_dwr_hub_title {
+            font-size: 1.25rem;
+        }
+        .o_dwr_hub_tabs {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+        }
+        .o_dwr_hub_tab + .o_dwr_hub_tab::before {
+            display: none;
+        }
+    }
+}

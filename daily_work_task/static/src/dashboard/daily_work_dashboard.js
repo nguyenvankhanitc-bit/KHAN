@@ -8,6 +8,7 @@ import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, us
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+import { applyReportGroups } from "@daily_work_task/shell/report_groups";
 const SIDEBAR_WIDTH_KEY = "daily_work_sidebar_width";
 const SIDEBAR_COLLAPSED_KEY = "daily_work_sidebar_collapsed";
 const SIDEBAR_WIDTH_DEFAULT = 250;
@@ -648,6 +649,14 @@ export class DailyWorkDashboard extends Component {
     }
 
     /** Phân quyền báo cáo: ẩn mục báo cáo trên thanh bên khi không có quyền Xem. */
+    get activeNav() {
+        return "kpi";
+    }
+
+    get activeReportGroup() {
+        return this.state.isManager ? this.reportGroupOf("kpi") : null;
+    }
+
     anyReport() {
         const keys = ["summary_report", "personal", "catrep", "summary", "monthly", "team", "performance", "kpi"];
         return keys.some((k) => this.rv(k));
@@ -876,4 +885,5 @@ export class DailyWorkDashboard extends Component {
     }
 }
 
+applyReportGroups(DailyWorkDashboard);
 registry.category("actions").add("daily_work_dashboard", DailyWorkDashboard);

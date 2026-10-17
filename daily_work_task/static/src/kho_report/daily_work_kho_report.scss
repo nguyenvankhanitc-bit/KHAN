@@ -1,0 +1,121 @@
+// Báo cáo NV Kho — dạng bảng tính giống mẫu Excel
+.o_daily_work_kho_report {
+    .o_dkr_shell {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_dkr_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+
+        .form-select {
+            width: auto;
+            min-width: 110px;
+        }
+        .o_dkr_team,
+        .o_dkr_emp {
+            min-width: 190px;
+        }
+        .o_dkr_spacer {
+            flex: 1;
+        }
+    }
+
+    .o_dkr_sheet {
+        background: #fff;
+        border: 1px solid #dfe3ec;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .o_dkr_title {
+        background: #5b3a8c;
+        color: #fff;
+        text-align: center;
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 12px 16px;
+    }
+
+    .o_dkr_meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 22px;
+        padding: 8px 14px;
+        font-style: italic;
+        color: #475569;
+        font-size: 0.86rem;
+
+        .o_dkr_meta_sum {
+            margin-left: auto;
+            font-style: normal;
+        }
+        .is-pass { color: #15803d; }
+        .is-average { color: #b45309; }
+        .is-fail { color: #b91c1c; }
+    }
+
+    .o_dkr_table_wrap {
+        overflow: auto;
+        max-height: calc(100vh - 290px);
+    }
+
+    .o_dkr_table {
+        width: 100%;
+        min-width: 1100px;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #d9ead3;
+            color: #1e293b;
+            font-weight: 700;
+            text-align: center;
+            padding: 8px 6px;
+            border: 1px solid #a9b8c8;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 9px 8px;
+            border: 1px solid #c9d3df;
+            vertical-align: middle;
+            color: #1e293b;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f3f6fa;
+        }
+
+        tbody tr:hover td {
+            background: #eef2ff;
+        }
+
+        .o_dkr_c_stt { width: 52px; }
+        .o_dkr_c_cat { width: 190px; }
+        .o_dkr_c_detail { width: 190px; }
+        .o_dkr_c_emp { width: 160px; }
+        .o_dkr_c_date { width: 112px; }
+        .o_dkr_c_min { width: 120px; }
+        .o_dkr_c_rate { width: 110px; }
+        .o_dkr_c_name { width: 22%; }
+        .o_dkr_c_note { width: 20%; min-width: 200px; }
+        .o_dkr_note { white-space: pre-line; }
+    }
+
+    .o_dkr_rate {
+        font-weight: 600;
+
+        &.is-pass { color: #15803d; }
+        &.is-average { color: #b45309; }
+        &.is-fail { color: #b91c1c; }
+    }
+}

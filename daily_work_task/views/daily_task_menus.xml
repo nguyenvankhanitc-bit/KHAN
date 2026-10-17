@@ -123,6 +123,13 @@
               sequence="2"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <menuitem id="menu_daily_work_kho_report"
+              name="Báo cáo NV Kho"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_kho_report"
+              sequence="3"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_monthly_report"
               name="Báo cáo công việc tháng"
               parent="menu_daily_work_cat_reports"

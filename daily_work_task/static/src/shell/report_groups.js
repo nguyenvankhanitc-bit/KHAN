@@ -49,6 +49,7 @@ export const REPORT_TABS = [
     { nav: "team_report", label: "Báo cáo CV chi tiết team", icon: "fa-users", perm: "team" },
     { nav: "performance", label: "Báo cáo hiệu suất", icon: "fa-line-chart", perm: "performance", need: "canSeePerformance" },
     { nav: "kpi", label: "Báo cáo KPI", icon: "fa-trophy", perm: "kpi", need: "isManager" },
+    { nav: "kho_report", label: "Báo cáo NV Kho", icon: "fa-cubes", perm: "kho" },
 ];
 
 const REPORT_OPEN_KEY = "daily_work_sidebar_report_open";

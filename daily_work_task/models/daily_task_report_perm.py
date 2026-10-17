@@ -22,6 +22,7 @@ GROUP_LIST = [
     ("team", "Báo cáo CV chi tiết team"),
     ("performance", "Báo cáo hiệu suất"),
     ("kpi", "Báo cáo KPI"),
+    ("kho", "Báo cáo NV Kho"),
 ]
 GROUPS = tuple(k for k, _l in GROUP_LIST)
 PERMS = ("view", "others", "write", "export")

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkKhoReport">
+        <div class="o_daily_work_dashboard o_daily_work_kho_report o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dkr_shell">
+                    <!-- Bộ lọc -->
+                    <div class="o_dkr_toolbar">
+                        <select class="form-select form-select-sm" t-on-change="(ev) => this.onFilter('month', ev)">
+                            <t t-foreach="months" t-as="m" t-key="m">
+                                <option t-att-value="m" t-att-selected="m === state.month" t-esc="'Tháng ' + m"/>
+                            </t>
+                        </select>
+                        <select class="form-select form-select-sm" t-on-change="(ev) => this.onFilter('year', ev)">
+                            <t t-foreach="years" t-as="y" t-key="y">
+                                <option t-att-value="y" t-att-selected="y === state.year" t-esc="y"/>
+                            </t>
+                        </select>
+                        <select class="form-select form-select-sm o_dkr_team" t-on-change="(ev) => this.onFilter('teamId', ev)"
+                                t-att-disabled="state.teams.length &lt; 2">
+                            <t t-foreach="state.teams" t-as="tm" t-key="tm.id">
+                                <option t-att-value="tm.id" t-att-selected="tm.id === state.teamId" t-esc="'Team: ' + tm.name"/>
+                            </t>
+                        </select>
+                        <select t-if="state.canPick" class="form-select form-select-sm o_dkr_emp"
+                                t-on-change="(ev) => this.onFilter('employeeId', ev)">
+                            <option value="0" t-att-selected="!state.employeeId">Tất cả nhân viên</option>
+                            <t t-foreach="state.employees" t-as="e" t-key="e.id">
+                                <option t-att-value="e.id" t-att-selected="e.id === state.employeeId" t-esc="e.name"/>
+                            </t>
+                        </select>
+                        <span class="o_dkr_spacer"/>
+                        <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.load()">
+                            <i class="fa fa-refresh"/> Làm mới
+                        </button>
+                        <button t-if="state.canExport" type="button" class="btn btn-success btn-sm"
+                                t-att-disabled="state.exporting or !state.rows.length" t-on-click="onExport">
+                            <i class="fa fa-file-excel-o"/> Xuất Excel
+                        </button>
+                    </div>
+
+                    <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                    <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
+                    <div t-else="" class="o_dkr_sheet">
+                        <div class="o_dkr_title" t-esc="title"/>
+                        <div class="o_dkr_meta">
+                            <span>Tháng: <t t-esc="state.month"/></span>
+                            <span>Năm: <t t-esc="state.year"/></span>
+                            <span>Team: <t t-esc="state.teamName"/></span>
+                            <span class="o_dkr_meta_sum">
+                                <t t-esc="state.rows.length"/> việc · <t t-esc="totalMinutes"/> phút ·
+                                <b class="is-pass">Đạt <t t-esc="ratingCount.pass"/></b> ·
+                                <b class="is-average">Trung bình <t t-esc="ratingCount.average"/></b> ·
+                                <b class="is-fail">Không đạt <t t-esc="ratingCount.fail"/></b>
+                            </span>
+                        </div>
+                        <div class="o_dkr_table_wrap">
+                            <table class="o_dkr_table">
+                                <thead>
+                                    <tr>
+                                        <th class="o_dkr_c_stt">STT</th>
+                                        <th class="o_dkr_c_cat">Hạng mục</th>
+                                        <th class="o_dkr_c_detail">Tên chi tiết hạng mục</th>
+                                        <th class="o_dkr_c_name">Tên công việc</th>
+                                        <th t-if="state.showEmployee" class="o_dkr_c_emp">Nhân viên</th>
+                                        <th class="o_dkr_c_date">Ngày bắt đầu</th>
+                                        <th class="o_dkr_c_date">Deadline</th>
+                                        <th class="o_dkr_c_min">Thời gian (phút)</th>
+                                        <th class="o_dkr_c_rate">Xếp loại</th>
+                                        <th class="o_dkr_c_note">Ghi chú</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.rows" t-as="r" t-key="r.id">
+                                        <td class="text-center" t-esc="r.stt"/>
+                                        <td t-esc="r.category"/>
+                                        <td t-esc="r.detail"/>
+                                        <td t-esc="r.name"/>
+                                        <td t-if="state.showEmployee" t-esc="r.employee"/>
+                                        <td class="text-center" t-esc="r.start"/>
+                                        <td class="text-center" t-esc="r.deadline"/>
+                                        <td class="text-center" t-esc="r.minutes"/>
+                                        <td class="text-center"><span t-att-class="ratingClass(r.rating)" t-esc="r.rating"/></td>
+                                        <td class="o_dkr_note" t-esc="r.note"/>
+                                    </tr>
+                                    <tr t-if="!state.rows.length">
+                                        <td t-att-colspan="state.showEmployee ? 10 : 9" class="text-center text-muted py-4">
+                                            Không có công việc trong tháng này.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

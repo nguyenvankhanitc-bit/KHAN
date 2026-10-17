@@ -5,3 +5,19 @@
     flex-direction: column;
     background: #fff;
 }
+
+// Phân quyền xem / giao / sửa / xóa: viền ô tick đậm, dễ nhìn
+.o_dwt_access_list .o_data_cell .form-check-input,
+.o_dwt_access_list .o_field_boolean .form-check-input {
+    border: 2px solid #64748b;
+
+    &,
+    &:disabled {
+        opacity: 1;
+    }
+
+    &:checked {
+        background-color: #714b67;
+        border-color: #714b67;
+    }
+}

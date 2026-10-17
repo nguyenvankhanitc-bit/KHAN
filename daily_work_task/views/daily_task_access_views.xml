@@ -4,7 +4,7 @@
         <field name="name">daily.task.access.list</field>
         <field name="model">daily.task.access</field>
         <field name="arch" type="xml">
-            <list js_class="daily_work_shell_list" string="Phân quyền công việc" editable="bottom">
+            <list js_class="daily_work_shell_list" string="Phân quyền công việc" editable="bottom" class="o_dwt_access_list">
                 <field name="employee_id"
                          string="User được phân quyền"
                          options="{'no_create': True}"

@@ -376,6 +376,44 @@ export class DailyWorkTeamChecklist extends Component {
         return task.manager_eval_percent || 0;
     }
 
+    get ratingOptions() {
+        return [
+            { key: "pass", label: "Đạt" },
+            { key: "average", label: "Trung bình" },
+            { key: "fail", label: "Không đạt" },
+        ];
+    }
+
+    ratingShown(task) {
+        const draft = this.state.evalDraft[task.id];
+        if (draft && "manager_rating" in draft) {
+            return draft.manager_rating || "";
+        }
+        return task.manager_rating || "";
+    }
+
+    /** Tick Đạt / Trung bình / Không đạt — chỉ 1 ô; bấm lại ô đang chọn để bỏ. */
+    async onRatingClick(task, key) {
+        if (!task.can_confirm) {
+            return;
+        }
+        const value = this.ratingShown(task) === key ? "" : key;
+        if (!task.manager_confirmed) {
+            const draft = this.state.evalDraft[task.id] || {};
+            draft.manager_rating = value;
+            this.state.evalDraft[task.id] = draft;
+            return;
+        }
+        const old = task.manager_rating;
+        task.manager_rating = value;
+        try {
+            await this.orm.call("daily.task", "set_manager_evaluation", [[task.id], { manager_rating: value }]);
+        } catch (e) {
+            task.manager_rating = old;
+            this.notification.add(e?.data?.message || _t("Không lưu được đánh giá."), { type: "danger" });
+        }
+    }
+
     evalNoteShown(task) {
         const draft = this.state.evalDraft[task.id];
         if (draft && "manager_eval_note" in draft) {

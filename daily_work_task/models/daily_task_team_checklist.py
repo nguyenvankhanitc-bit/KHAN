@@ -86,6 +86,12 @@ class DailyTaskTeamChecklist(models.Model):
     manager_returned = fields.Boolean(string="QL trả lại", default=False, copy=False, index=True)
     manager_returned_date = fields.Datetime(string="Ngày QL trả lại", copy=False)
     manager_returned_uid = fields.Many2one("res.users", string="QL trả lại bởi", copy=False)
+    manager_rating = fields.Selection(
+        [("pass", "Đạt"), ("average", "Trung bình"), ("fail", "Không đạt")],
+        string="Xếp loại QL",
+        copy=False,
+        help="Quản lý đánh giá Đạt / Trung bình / Không đạt trên Kiểm tra CV.",
+    )
     manager_eval_note = fields.Text(
         string="Ghi chú QL",
         copy=False,
@@ -314,6 +320,7 @@ class DailyTaskTeamChecklist(models.Model):
                 "manager_confirmed": bool(t.manager_confirmed),
                 "manager_eval_percent": int(t.manager_eval_percent or 0),
                 "manager_eval_note": t.manager_eval_note or "",
+                "manager_rating": t.manager_rating or "",
                 "manager_returned": bool(t.manager_returned),
                 "can_confirm": t._can_manager_confirm(),
                 # Xác nhận QL chỉ cho việc đã hoàn thành
@@ -557,6 +564,9 @@ class DailyTaskTeamChecklist(models.Model):
             clean["manager_eval_percent"] = max(0, min(100, pct))
         if "manager_eval_note" in (vals or {}):
             clean["manager_eval_note"] = (vals.get("manager_eval_note") or "").strip() or False
+        if "manager_rating" in (vals or {}):
+            rating = vals.get("manager_rating") or False
+            clean["manager_rating"] = rating if rating in ("pass", "average", "fail") else False
         if not clean:
             return True
         for rec in self:

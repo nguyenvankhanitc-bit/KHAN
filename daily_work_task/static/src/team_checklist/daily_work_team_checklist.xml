@@ -149,6 +149,9 @@
                                     <col style="width:108px"/>
                                     <col style="width:96px"/>
                                     <col style="width:220px"/>
+                                    <col style="width:64px"/>
+                                    <col style="width:82px"/>
+                                    <col style="width:78px"/>
                                     <col style="width:100px"/>
                                     <col style="width:86px"/>
                                     <col style="width:80px"/>
@@ -160,11 +163,14 @@
                                         <th rowspan="2">Hạn hoàn thành</th>
                                         <th rowspan="2">Mức ưu tiên</th>
                                         <th rowspan="2">Trạng thái</th>
-                                        <th colspan="5" class="o_tcl_th_group">QUẢN LÝ ĐÁNH GIÁ</th>
+                                        <th colspan="8" class="o_tcl_th_group">QUẢN LÝ ĐÁNH GIÁ</th>
                                     </tr>
                                     <tr class="o_tcl_head2">
                                         <th class="o_tcl_th_eval">% Hoàn thành</th>
                                         <th class="o_tcl_th_note">Ghi chú</th>
+                                        <th class="o_tcl_th_rate is-pass">Đạt</th>
+                                        <th class="o_tcl_th_rate is-average">Trung bình</th>
+                                        <th class="o_tcl_th_rate is-fail">Không đạt</th>
                                         <th class="o_tcl_th_confirm">
                                             Xác nhận QL
                                             <label class="o_tcl_confirm_all" t-on-click.stop="">
@@ -182,7 +188,7 @@
                                 <tbody>
                                     <t t-foreach="empGroups(emp)" t-as="group" t-key="group.key">
                                         <tr class="o_tcl_group">
-                                            <td colspan="7">
+                                            <td colspan="10">
                                                 <button type="button" class="o_tcl_group_btn"
                                                         t-on-click="() => this.toggleEmpGroup(emp, group)">
                                                     <i t-att-class="'fa ' + (isEmpGroupOpen(emp, group) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
@@ -352,11 +358,14 @@
                                         <th rowspan="2">Công việc</th>
                                         <th rowspan="2">Hạn</th>
                                         <th rowspan="2">Trạng thái</th>
-                                        <th colspan="5" class="o_tcl_th_group">QUẢN LÝ ĐÁNH GIÁ</th>
+                                        <th colspan="8" class="o_tcl_th_group">QUẢN LÝ ĐÁNH GIÁ</th>
                                     </tr>
                                     <tr class="o_tcl_head2">
                                         <th class="o_tcl_th_eval">% Hoàn thành</th>
                                         <th class="o_tcl_th_note">Ghi chú</th>
+                                        <th class="o_tcl_th_rate is-pass">Đạt</th>
+                                        <th class="o_tcl_th_rate is-average">Trung bình</th>
+                                        <th class="o_tcl_th_rate is-fail">Không đạt</th>
                                         <th>Xác nhận QL</th>
                                         <th class="o_tcl_th_return">Trả task</th>
                                         <th class="o_tcl_th_discuss">Thảo luận</th>
@@ -606,5 +615,15 @@
                       t-on-click.stop=""
                       t-on-change="(ev) => this.onEvalChange(etask, 'manager_eval_note', ev)"/>
         </td>
+        <!-- Xếp loại QL: Đạt / Trung bình / Không đạt (chọn 1, bấm lại để bỏ) -->
+        <t t-foreach="ratingOptions" t-as="ro" t-key="ro.key">
+            <td t-att-class="'o_tcl_td_rate is-' + ro.key">
+                <input type="checkbox" class="form-check-input o_tcl_rate"
+                       t-att-checked="ratingShown(etask) === ro.key"
+                       t-att-disabled="!etask.can_confirm"
+                       t-att-title="ro.label"
+                       t-on-click.stop.prevent="() => this.onRatingClick(etask, ro.key)"/>
+            </td>
+        </t>
     </t>
 </templates>

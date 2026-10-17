@@ -1517,3 +1517,37 @@
         background-color: #e2e8f0;
     }
 }
+
+// Xếp loại QL: Đạt / Trung bình / Không đạt
+.o_daily_work_team_checklist {
+    .o_tcl_th_rate {
+        text-align: center !important;
+        white-space: nowrap;
+
+        &.is-pass { color: #15803d !important; }
+        &.is-average { color: #b45309 !important; }
+        &.is-fail { color: #b91c1c !important; }
+    }
+
+    .o_tcl_td_rate {
+        text-align: center !important;
+        vertical-align: middle;
+
+        .o_tcl_rate {
+            width: 1.15rem;
+            height: 1.15rem;
+            margin: 0;
+            border: 2px solid #64748b;
+            cursor: pointer;
+
+            &:disabled {
+                cursor: not-allowed;
+                opacity: 0.45;
+            }
+        }
+
+        &.is-pass .o_tcl_rate:checked { background-color: #16a34a; border-color: #16a34a; }
+        &.is-average .o_tcl_rate:checked { background-color: #f59e0b; border-color: #f59e0b; }
+        &.is-fail .o_tcl_rate:checked { background-color: #dc2626; border-color: #dc2626; }
+    }
+}

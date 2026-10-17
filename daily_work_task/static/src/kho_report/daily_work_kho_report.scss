@@ -200,7 +200,7 @@
 .o_daily_work_kho_report {
     .o_dkr_charts {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 14px;
 
         @media (max-width: 1280px) {
@@ -348,5 +348,69 @@
 
     .o_dkr_bar_box {
         position: relative;
+    }
+}
+
+// Đánh giá hiệu suất tháng (giống Báo cáo cá nhân)
+.o_daily_work_kho_report {
+    .o_dkr_eval {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+    }
+
+    .o_dkr_eval_ring {
+        position: relative;
+        width: 170px;
+        height: 170px;
+        flex: 0 0 170px;
+    }
+
+    .o_dkr_eval_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+
+        strong {
+            font-size: 1.7rem;
+            font-weight: 800;
+            color: #14532d;
+        }
+    }
+
+    .o_dkr_eval_side {
+        flex: 1;
+        min-width: 0;
+        font-size: 0.9rem;
+        color: #334155;
+    }
+
+    .o_dkr_stars {
+        color: #f59e0b;
+        font-size: 1.25rem;
+        letter-spacing: 2px;
+        margin-bottom: 6px;
+    }
+
+    .o_dkr_eval_rating {
+        padding-bottom: 10px;
+        margin-bottom: 8px;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    .o_dkr_eval_stats > div {
+        display: flex;
+        justify-content: space-between;
+        padding: 4px 0;
+
+        strong {
+            color: #0f172a;
+        }
+        strong.text-danger {
+            color: #dc2626 !important;
+        }
     }
 }

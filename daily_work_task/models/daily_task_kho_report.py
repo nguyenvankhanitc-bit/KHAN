@@ -12,7 +12,7 @@ Xếp loại = Kiểm tra CV → Quản lý đánh giá (Đạt / Trung bình / 
 import base64
 import io
 
-from odoo import api, models
+from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
 from .daily_task_category_report import _roman
@@ -131,6 +131,7 @@ class DailyTask(models.Model):
             })
             g["tasks"].append(t)
         rows = []
+        today = fields.Date.context_today(self)
         for g_idx, g in enumerate(sorted(groups.values(), key=lambda x: x["order"]), start=1):
             cat = "%s. %s" % (_roman(g_idx), g["label"])
             for d_idx, t in enumerate(g["tasks"], start=1):
@@ -146,6 +147,8 @@ class DailyTask(models.Model):
                     "minutes": int(t.duration_minutes or 0),
                     "rating": t._kho_rating(),
                     "rating_key": t.manager_rating or "",
+                    "is_done": t.state == "done",
+                    "is_overdue": t.state != "done" and bool(t.deadline) and t.deadline < today,
                     # % QL đánh giá (Kiểm tra CV) — chỉ tính việc đã đánh giá
                     "evaluated": bool(t.manager_rating or t.manager_confirmed or t.manager_eval_percent),
                     "eval_percent": int(t.manager_eval_percent or (100 if t.manager_confirmed else 0)),

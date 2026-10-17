@@ -78,33 +78,29 @@
                             </div>
                         </div>
                         <div class="o_dkr_card">
-                            <h3>Hiệu suất (QL đánh giá)</h3>
-                            <div class="o_dkr_perf">
-                                <div class="o_dkr_gauge">
+                            <h3>Đánh giá hiệu suất tháng</h3>
+                            <div class="o_dkr_eval">
+                                <div class="o_dkr_eval_ring">
                                     <canvas t-ref="perfChart"/>
-                                    <div class="o_dkr_gauge_center">
-                                        <strong t-esc="perf.score + '%'"/>
-                                        <span>% Hoàn thành TB</span>
-                                    </div>
+                                    <div class="o_dkr_eval_center"><strong t-esc="perf.score + '%'"/></div>
                                 </div>
-                                <div class="o_dkr_perf_side">
-                                    <div class="o_dkr_perf_rate">Xếp loại: <span t-att-class="perfClass(perf.label)" t-esc="perf.label"/></div>
-                                    <div class="o_dkr_perf_stats">
-                                        <div><span>Đã đánh giá</span><strong t-esc="perf.evaluated + ' / ' + perf.total"/></div>
-                                        <t t-foreach="ratingLegend" t-as="leg" t-key="'p-' + leg.key">
-                                            <div t-if="leg.key !== 'none'"><span t-esc="leg.label"/><strong t-esc="leg.count"/></div>
+                                <div class="o_dkr_eval_side">
+                                    <div class="o_dkr_stars">
+                                        <t t-foreach="starList" t-as="st" t-key="st_index">
+                                            <i t-att-class="st === 'full' ? 'fa fa-star' : (st === 'half' ? 'fa fa-star-half-o' : 'fa fa-star-o')"/>
                                         </t>
                                     </div>
-                                    <p class="o_dkr_muted o_dkr_perf_note">Lấy từ % Hoàn thành quản lý đánh giá ở Kiểm tra CV.</p>
+                                    <div class="o_dkr_eval_rating">
+                                        Đánh giá: <strong t-att-class="perfClass(perf.label)" t-esc="perf.label"/>
+                                    </div>
+                                    <div class="o_dkr_eval_stats">
+                                        <div><span>Tổng công việc</span><strong t-esc="perf.total"/></div>
+                                        <div><span>Hoàn thành</span><strong t-esc="perf.done"/></div>
+                                        <div><span>Quá hạn</span><strong class="text-danger" t-esc="perf.overdue"/></div>
+                                        <div><span>Tổng thời gian</span><strong t-esc="perf.hours + ' giờ'"/></div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                        <div class="o_dkr_card">
-                            <h3>Hiệu suất theo hạng mục</h3>
-                            <div t-if="catPerf.length" class="o_dkr_bar_box" t-att-style="catBoxStyle">
-                                <canvas t-ref="catChart"/>
-                            </div>
-                            <div t-else="" class="o_dkr_muted text-center py-4">Chưa có việc nào được quản lý đánh giá.</div>
                         </div>
                     </div>
 

@@ -50,7 +50,6 @@ export class DailyWorkKhoReport extends Component {
         this.years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
         this.ratingRef = useRef("ratingChart");
         this.perfRef = useRef("perfChart");
-        this.catRef = useRef("catChart");
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -80,23 +79,27 @@ export class DailyWorkKhoReport extends Component {
         }));
     }
 
-    _avgEval(rows) {
-        const done = rows.filter((r) => r.evaluated);
-        const avg = done.length
-            ? Math.round((done.reduce((s, r) => s + (Number(r.eval_percent) || 0), 0) / done.length) * 10) / 10
-            : null;
-        return { avg, n: done.length };
+    /** Đánh giá hiệu suất tháng — giống Báo cáo cá nhân: % QL đánh giá TB trên MỌI việc
+     * (việc chưa đánh giá tính 0%); xếp loại theo Cài đặt → Xếp loại đạt. */
+    get perf() {
+        const rows = this.state.rows;
+        const total = rows.length;
+        const sum = rows.reduce((s, r) => s + (r.evaluated ? Number(r.eval_percent) || 0 : 0), 0);
+        const score = total ? Math.round((sum / total) * 10) / 10 : 0;
+        return {
+            score,
+            total,
+            done: rows.filter((r) => r.is_done).length,
+            overdue: rows.filter((r) => r.is_overdue).length,
+            hours: Math.round((this.totalMinutes / 60) * 10) / 10,
+            label: total ? this.rateEval(score) : "—",
+            stars: score ? Math.min(5, Math.round((score / 20) * 2) / 2) : 0,
+        };
     }
 
-    /** Hiệu suất = % Hoàn thành TB quản lý đánh giá (chỉ việc đã đánh giá). */
-    get perf() {
-        const { avg, n } = this._avgEval(this.state.rows);
-        return {
-            score: avg || 0,
-            evaluated: n,
-            total: this.state.rows.length,
-            label: n ? this.rateEval(avg) : "—",
-        };
+    get starList() {
+        const stars = this.perf.stars;
+        return [1, 2, 3, 4, 5].map((i) => (stars >= i ? "full" : stars >= i - 0.5 ? "half" : "empty"));
     }
 
     rateEval(pct) {
@@ -108,17 +111,6 @@ export class DailyWorkKhoReport extends Component {
     perfClass(label) {
         const k = { "Đạt": "is-pass", "Trung bình": "is-average", "Không đạt": "is-fail" }[label];
         return `o_dkr_perf_label ${k || ""}`;
-    }
-
-    /** % TB QL đánh giá theo hạng mục (chỉ hạng mục có việc đã đánh giá). */
-    get catPerf() {
-        return this.groups
-            .map((g) => ({ label: g.label, ...this._avgEval(g.rows) }))
-            .filter((c) => c.avg !== null);
-    }
-
-    get catBoxStyle() {
-        return `height:${Math.max(160, this.catPerf.length * 30 + 40)}px`;
     }
 
     destroyCharts() {
@@ -170,52 +162,16 @@ export class DailyWorkKhoReport extends Component {
                 type: "doughnut",
                 data: {
                     labels: ["Hiệu suất", ""],
-                    datasets: [{ data: [score, 100 - score], backgroundColor: ["#6366f1", "#e5e7eb"], borderWidth: 0 }],
-                },
-                options: {
-                    rotation: -90,
-                    circumference: 180,
-                    cutout: "74%",
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                },
-            }));
-        }
-        if (this.catRef.el) {
-            const cats = this.catPerf;
-            this.charts.push(new Chart(this.catRef.el, {
-                type: "bar",
-                data: {
-                    labels: cats.map((c) => c.label.replace(/^[IVXLCDM]+\.\s*/, "")),
                     datasets: [{
-                        label: "% QL đánh giá",
-                        data: cats.map((c) => c.avg),
-                        backgroundColor: "#6366f1",
-                        borderRadius: 4,
-                        barThickness: 14,
+                        data: [score, 100 - score],
+                        backgroundColor: ["#16a34a", "#e8efe9"],
+                        borderWidth: 0,
+                        cutout: "78%",
                     }],
                 },
                 options: {
-                    indexAxis: "y",
                     maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            min: 0,
-                            max: 100,
-                            ticks: { callback: (v) => `${v}%`, color: "#64748b" },
-                            grid: { color: "#eef2f7" },
-                        },
-                        y: { ticks: { color: "#334155", font: { size: 11 } }, grid: { display: false } },
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: (items) => cats[items[0].dataIndex].label,
-                                label: (ctx) => ` ${cats[ctx.dataIndex].avg}% · ${cats[ctx.dataIndex].n} việc đã đánh giá`,
-                            },
-                        },
-                    },
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
                 },
             }));
         }

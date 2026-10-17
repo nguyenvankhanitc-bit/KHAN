@@ -83,3 +83,16 @@
             &.is-late { background: #fde2e2; color: #c00000; border: 1px solid #f5a3a3; } }
     }
 }
+
+// Cố định khối tiêu đề báo cáo khi cuộn
+.o_daily_work_user_summary .o_dus_sheet .o_dus_head {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background: #fff;
+    padding: 10px 0 8px;
+    margin: -10px 0 0;
+    border-bottom: 2px solid #fecaca;
+    /* phủ dải trống phía trên (khoảng đệm của khung cuộn) để nội dung không lộ ra */
+    box-shadow: 0 -24px 0 0 #fff, 0 6px 10px -8px rgba(15, 23, 42, .35);
+}

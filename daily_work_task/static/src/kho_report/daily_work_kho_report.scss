@@ -445,3 +445,99 @@
         }
     }
 }
+
+// Hàng chỉ số + biểu đồ (giống Báo cáo cá nhân)
+.o_daily_work_kho_report {
+    .o_dkr_kpis {
+        display: grid;
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+        gap: 12px;
+
+        @media (max-width: 1400px) {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
+        @media (max-width: 768px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .o_dkr_kpi {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        background: #fff;
+        border: 1px solid #dfe3ec;
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-width: 0;
+    }
+
+    .o_dkr_kpi_ico {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+
+        &.is-blue { background: #dbeafe; color: #2563eb; }
+        &.is-green { background: #dcfce7; color: #16a34a; }
+        &.is-amber { background: #fef3c7; color: #d97706; }
+        &.is-red { background: #fee2e2; color: #dc2626; }
+        &.is-violet { background: #ede9fe; color: #7c3aed; }
+        &.is-cyan { background: #cffafe; color: #0891b2; }
+    }
+
+    .o_dkr_kpi_lbl {
+        font-size: 0.74rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: #475569;
+    }
+
+    .o_dkr_kpi_val {
+        font-size: 1.45rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+
+    .o_dkr_kpi_sub {
+        font-size: 0.76rem;
+        color: #64748b;
+    }
+
+    .o_dkr_kpi_prog {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .o_dkr_prog_bar {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+        margin-top: 4px;
+
+        span {
+            display: block;
+            height: 100%;
+            background: #22c55e;
+            border-radius: 999px;
+        }
+    }
+
+    .o_dkr_line_box {
+        position: relative;
+        height: 220px;
+    }
+
+    .o_dkr_eval {
+        justify-content: flex-start;
+    }
+}

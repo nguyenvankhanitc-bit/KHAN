@@ -8,14 +8,14 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
-/** Màu xếp loại (cùng quy ước Kiểm tra CV): Đạt · Trung bình · Không đạt · Chưa đánh giá. */
-const RATING_META = [
-    { key: "pass", label: "Đạt", color: "#22c55e" },
-    { key: "average", label: "Trung bình", color: "#f59e0b" },
-    { key: "fail", label: "Không đạt", color: "#ef4444" },
-    { key: "none", label: "Chưa đánh giá", color: "#94a3b8" },
+/** Màu trạng thái (giống Báo cáo cá nhân). */
+const STATE_META = [
+    { key: "done", label: "Hoàn thành", color: "#22c55e" },
+    { key: "in_progress", label: "Đang thực hiện", color: "#eab308" },
+    { key: "overdue", label: "Quá hạn", color: "#ef4444" },
+    { key: "not_started", label: "Chưa bắt đầu", color: "#94a3b8" },
 ];
-const LABEL_TO_KEY = { "Đạt": "pass", "Trung bình": "average", "Không đạt": "fail" };
+const pct1 = (n, total) => (total ? Math.round((n * 1000) / total) / 10 : 0);
 
 /** Báo cáo NV Kho (BÁO CÁO → Các loại báo cáo). */
 export class DailyWorkKhoReport extends Component {
@@ -48,9 +48,9 @@ export class DailyWorkKhoReport extends Component {
         });
         this.months = Array.from({ length: 12 }, (_, i) => i + 1);
         this.years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
-        this.ratingRef = useRef("ratingChart");
-        this.perfRef = useRef("perfChart");
-        this.timeRef = useRef("timeChart");
+        this.stateRef = useRef("stateChart");
+        this.weeklyRef = useRef("weeklyChart");
+        this.evalRef = useRef("evalChart");
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -65,47 +65,91 @@ export class DailyWorkKhoReport extends Component {
         onWillUnmount(() => this.destroyCharts());
     }
 
-    // ------------------------------------------------------------ biểu đồ
-    /** Đếm theo xếp loại (Đạt / Trung bình / Không đạt / Chưa đánh giá). */
-    get ratingLegend() {
-        const counts = { pass: 0, average: 0, fail: 0, none: 0 };
-        for (const r of this.state.rows) {
-            counts[LABEL_TO_KEY[r.rating] || "none"] += 1;
-        }
-        const total = this.state.rows.length || 0;
-        return RATING_META.map((m) => ({
-            ...m,
-            count: counts[m.key],
-            pct: total ? Math.round((counts[m.key] * 1000) / total) / 10 : 0,
-        }));
-    }
-
-    /** Hiệu suất công việc — giống Báo cáo cá nhân: % QL đánh giá TB trên MỌI việc
-     * (việc chưa đánh giá tính 0%). */
-    get perf() {
+    // ------------------------------------------------------------ chỉ số (giống Báo cáo cá nhân)
+    /** KPI: Tổng · Hoàn thành · Đang thực hiện · Quá hạn · Tổng thời gian · Hiệu suất · Tiến độ. */
+    get kpi() {
         const rows = this.state.rows;
         const total = rows.length;
-        const sum = rows.reduce((s, r) => s + (r.evaluated ? Number(r.eval_percent) || 0 : 0), 0);
+        const done = rows.filter((r) => r.state === "done").length;
+        const inProgress = rows.filter((r) => r.state === "in_progress").length;
+        const overdue = rows.filter((r) => r.is_overdue).length;
+        // Tổng thời gian = phút của việc ĐÃ HOÀN THÀNH (như Báo cáo cá nhân)
+        const doneMinutes = rows.filter((r) => r.state === "done").reduce((s, r) => s + (Number(r.minutes) || 0), 0);
+        // Hiệu suất = TB % QL đánh giá trên mọi việc (chưa đánh giá = 0%)
+        const evalSum = rows.reduce((s, r) => s + (r.evaluated ? Number(r.eval_percent) || 0 : 0), 0);
+        const progSum = rows.reduce((s, r) => s + (Number(r.progress) || 0), 0);
+        const efficiency = total ? Math.round((evalSum / total) * 10) / 10 : 0;
         return {
-            score: total ? Math.round((sum / total) * 10) / 10 : 0,
-            evaluated: rows.filter((r) => r.evaluated).length,
             total,
+            done,
+            inProgress,
+            overdue,
+            donePct: pct1(done, total),
+            inProgressPct: pct1(inProgress, total),
+            overduePct: pct1(overdue, total),
+            hours: Math.round((doneMinutes / 60) * 10) / 10,
+            efficiency,
+            progress: total ? Math.round((progSum / total) * 10) / 10 : 0,
         };
     }
 
-    /** Tổng thời gian (giờ) và giờ theo từng hạng mục. */
-    get totalHours() {
-        return Math.round((this.totalMinutes / 60) * 10) / 10;
+    get progressBarStyle() {
+        return `width:${Math.max(0, Math.min(100, this.kpi.progress))}%`;
     }
 
-    get timeByCat() {
-        return this.groups
-            .map((g) => ({ label: g.label, hours: Math.round((g.minutes / 60) * 100) / 100 }))
-            .filter((c) => c.hours > 0);
+    /** Donut trạng thái: Quá hạn ưu tiên hơn trạng thái chưa xong. */
+    get stateLegend() {
+        const rows = this.state.rows;
+        const counts = {
+            done: rows.filter((r) => r.state === "done").length,
+            in_progress: rows.filter((r) => r.state === "in_progress" && !r.is_overdue).length,
+            overdue: rows.filter((r) => r.is_overdue).length,
+            not_started: rows.filter((r) => r.state === "not_started" && !r.is_overdue).length,
+        };
+        return STATE_META.map((m) => ({ ...m, count: counts[m.key], pct: pct1(counts[m.key], rows.length) }));
     }
 
-    get timeBoxStyle() {
-        return `height:${Math.max(150, this.timeByCat.length * 28 + 40)}px`;
+    /** Xu hướng hoàn thành theo tuần: % hoàn thành TB của việc trong từng tuần (theo deadline). */
+    get weekly() {
+        const buckets = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+        for (const r of this.state.rows) {
+            if (!r.day) {
+                continue;
+            }
+            const w = Math.min(5, Math.max(1, Math.floor((r.day - 1) / 7) + 1));
+            buckets[w].push(Number(r.progress) || 0);
+        }
+        return [1, 2, 3, 4, 5].map((w) =>
+            buckets[w].length ? Math.round((buckets[w].reduce((s, v) => s + v, 0) / buckets[w].length) * 10) / 10 : 0
+        );
+    }
+
+    /** Đánh giá hiệu suất tháng (giống Báo cáo cá nhân). */
+    get evaluation() {
+        const k = this.kpi;
+        const score = k.efficiency;
+        let rating = "Trung bình";
+        if (score >= 85) {
+            rating = "Tốt";
+        } else if (score >= 70) {
+            rating = "Khá";
+        } else if (score < 50) {
+            rating = "Cần cải thiện";
+        }
+        return {
+            score,
+            rating,
+            stars: score ? Math.min(5, Math.round((score / 20) * 2) / 2) : 0,
+            total: k.total,
+            done: k.done,
+            overdue: k.overdue,
+            hours: k.hours,
+        };
+    }
+
+    get starList() {
+        const stars = this.evaluation.stars;
+        return [1, 2, 3, 4, 5].map((i) => (stars >= i ? "full" : stars >= i - 0.5 ? "half" : "empty"));
     }
 
     destroyCharts() {
@@ -121,15 +165,15 @@ export class DailyWorkKhoReport extends Component {
         if (this.state.loading || !Chart) {
             return;
         }
-        if (this.ratingRef.el) {
-            const data = this.ratingLegend.filter((l) => l.count);
-            this.charts.push(new Chart(this.ratingRef.el, {
+        if (this.stateRef.el) {
+            const legend = this.stateLegend.filter((l) => l.count);
+            this.charts.push(new Chart(this.stateRef.el, {
                 type: "doughnut",
                 data: {
-                    labels: data.map((l) => l.label),
+                    labels: legend.map((l) => l.label),
                     datasets: [{
-                        data: data.map((l) => l.count),
-                        backgroundColor: data.map((l) => l.color),
+                        data: legend.map((l) => l.count),
+                        backgroundColor: legend.map((l) => l.color),
                         borderColor: "#ffffff",
                         borderWidth: 2,
                     }],
@@ -142,7 +186,7 @@ export class DailyWorkKhoReport extends Component {
                         tooltip: {
                             callbacks: {
                                 label: (ctx) => {
-                                    const l = data[ctx.dataIndex];
+                                    const l = legend[ctx.dataIndex];
                                     return ` ${l.label}: ${l.count} việc (${l.pct}%)`;
                                 },
                             },
@@ -151,9 +195,44 @@ export class DailyWorkKhoReport extends Component {
                 },
             }));
         }
-        if (this.perfRef.el) {
-            const score = Math.max(0, Math.min(100, this.perf.score));
-            this.charts.push(new Chart(this.perfRef.el, {
+        if (this.weeklyRef.el) {
+            this.charts.push(new Chart(this.weeklyRef.el, {
+                type: "line",
+                data: {
+                    labels: ["Tuần 1", "Tuần 2", "Tuần 3", "Tuần 4", "Tuần 5"],
+                    datasets: [{
+                        label: "% hoàn thành",
+                        data: this.weekly,
+                        borderColor: "#16a34a",
+                        backgroundColor: "rgba(34, 197, 94, 0.15)",
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: "#16a34a",
+                    }],
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: { stepSize: 20, callback: (v) => `${v}%`, color: "#64748b" },
+                            grid: { color: "#eef2f7" },
+                        },
+                        x: { ticks: { color: "#64748b" }, grid: { display: false } },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: (ctx) => ` ${ctx.parsed.y}% hoàn thành` } },
+                    },
+                },
+            }));
+        }
+        if (this.evalRef.el) {
+            const score = Math.max(0, Math.min(100, this.evaluation.score));
+            this.charts.push(new Chart(this.evalRef.el, {
                 type: "doughnut",
                 data: {
                     labels: ["Hiệu suất", ""],
@@ -167,43 +246,6 @@ export class DailyWorkKhoReport extends Component {
                 options: {
                     maintainAspectRatio: false,
                     plugins: { legend: { display: false }, tooltip: { enabled: false } },
-                },
-            }));
-        }
-        if (this.timeRef.el) {
-            const cats = this.timeByCat;
-            this.charts.push(new Chart(this.timeRef.el, {
-                type: "bar",
-                data: {
-                    labels: cats.map((c) => c.label.replace(/^[IVXLCDM]+\.\s*/, "")),
-                    datasets: [{
-                        label: "Giờ",
-                        data: cats.map((c) => c.hours),
-                        backgroundColor: "#0ea5e9",
-                        borderRadius: 4,
-                        barThickness: 14,
-                    }],
-                },
-                options: {
-                    indexAxis: "y",
-                    maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            ticks: { callback: (v) => `${v}h`, color: "#64748b" },
-                            grid: { color: "#eef2f7" },
-                        },
-                        y: { ticks: { color: "#334155", font: { size: 11 } }, grid: { display: false } },
-                    },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                title: (items) => cats[items[0].dataIndex].label,
-                                label: (ctx) => ` ${cats[ctx.dataIndex].hours} giờ`,
-                            },
-                        },
-                    },
                 },
             }));
         }

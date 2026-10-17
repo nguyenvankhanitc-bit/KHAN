@@ -148,6 +148,12 @@ class DailyTask(models.Model):
                     "rating": t._kho_rating(),
                     "rating_key": t.manager_rating or "",
                     "is_done": t.state == "done",
+                    "state": t.state or "",
+                    # % hoàn thành CV (như Báo cáo cá nhân: đã HT → tối thiểu 100)
+                    "progress": int(t.completion_percent or 0) if t.state != "done"
+                    else max(int(t.completion_percent or 0), 100),
+                    # Ngày trong tháng (deadline, không có thì ngày giao) — chia Tuần 1..5
+                    "day": (t.deadline or t.assign_date).day if (t.deadline or t.assign_date) else 0,
                     "is_overdue": t.state != "done" and bool(t.deadline) and t.deadline < today,
                     # % QL đánh giá (Kiểm tra CV) — chỉ tính việc đã đánh giá
                     "evaluated": bool(t.manager_rating or t.manager_confirmed or t.manager_eval_percent),

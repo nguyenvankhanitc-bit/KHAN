@@ -53,57 +53,120 @@
 
                     <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                     <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
-                    <!-- Biểu đồ (giống Báo cáo cá nhân): Xếp loại · Hiệu suất QL đánh giá · Hiệu suất theo hạng mục -->
-                    <div t-if="!state.loading and !state.message" class="o_dkr_charts">
-                        <div class="o_dkr_card">
-                            <h3>Tỷ lệ xếp loại công việc</h3>
-                            <div class="o_dkr_donut_wrap">
-                                <div class="o_dkr_donut_box">
-                                    <canvas t-ref="ratingChart"/>
-                                    <div class="o_dkr_donut_center">
-                                        <strong t-esc="state.rows.length"/>
-                                        <span>Tổng việc</span>
+                    <!-- Chỉ số + biểu đồ: giống Báo cáo cá nhân -->
+                    <t t-if="!state.loading and !state.message">
+                        <div class="o_dkr_kpis">
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-blue"><i class="fa fa-briefcase"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Tổng công việc</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.total"/>
+                                    <div class="o_dkr_kpi_sub">100%</div>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-green"><i class="fa fa-check-circle"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Hoàn thành</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.done"/>
+                                    <div class="o_dkr_kpi_sub" t-esc="kpi.donePct + '%'"/>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-amber"><i class="fa fa-hourglass-half"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Đang thực hiện</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.inProgress"/>
+                                    <div class="o_dkr_kpi_sub" t-esc="kpi.inProgressPct + '%'"/>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-red"><i class="fa fa-clock-o"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Quá hạn</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.overdue"/>
+                                    <div class="o_dkr_kpi_sub" t-esc="kpi.overduePct + '%'"/>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-violet"><i class="fa fa-hourglass"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Tổng thời gian</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.hours + ' giờ'"/>
+                                    <div class="o_dkr_kpi_sub">Trong tháng</div>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi">
+                                <span class="o_dkr_kpi_ico is-cyan"><i class="fa fa-line-chart"/></span>
+                                <div>
+                                    <div class="o_dkr_kpi_lbl">Hiệu suất</div>
+                                    <div class="o_dkr_kpi_val" t-esc="kpi.efficiency + '%'"/>
+                                    <div class="o_dkr_kpi_sub">Theo QL đánh giá</div>
+                                </div>
+                            </div>
+                            <div class="o_dkr_kpi o_dkr_kpi_prog">
+                                <div class="o_dkr_kpi_lbl">Tiến độ hoàn thành</div>
+                                <div class="o_dkr_kpi_val" t-esc="kpi.progress + '%'"/>
+                                <div class="o_dkr_prog_bar"><span t-att-style="progressBarStyle"/></div>
+                            </div>
+                        </div>
+
+                        <div class="o_dkr_charts">
+                            <div class="o_dkr_card">
+                                <h3>Tỷ lệ trạng thái công việc</h3>
+                                <div class="o_dkr_donut_wrap">
+                                    <div class="o_dkr_donut_box">
+                                        <canvas t-ref="stateChart"/>
+                                        <div class="o_dkr_donut_center">
+                                            <strong t-esc="kpi.total"/>
+                                            <span>Tổng việc</span>
+                                        </div>
+                                    </div>
+                                    <div class="o_dkr_legend">
+                                        <t t-foreach="stateLegend" t-as="leg" t-key="leg.key">
+                                            <div class="o_dkr_legend_item">
+                                                <span class="o_dkr_legend_dot" t-att-style="'background:' + leg.color"/>
+                                                <span class="o_dkr_legend_label" t-esc="leg.label"/>
+                                                <strong t-esc="leg.count"/>
+                                                <span class="o_dkr_muted" t-esc="'(' + leg.pct + '%)'"/>
+                                            </div>
+                                        </t>
                                     </div>
                                 </div>
-                                <div class="o_dkr_legend">
-                                    <t t-foreach="ratingLegend" t-as="leg" t-key="leg.key">
-                                        <div class="o_dkr_legend_item">
-                                            <span class="o_dkr_legend_dot" t-att-style="'background:' + leg.color"/>
-                                            <span class="o_dkr_legend_label" t-esc="leg.label"/>
-                                            <strong t-esc="leg.count"/>
-                                            <span class="o_dkr_muted" t-esc="'(' + leg.pct + '%)'"/>
+                            </div>
+                            <div class="o_dkr_card">
+                                <h3>Xu hướng hoàn thành công việc (theo tuần)</h3>
+                                <div class="o_dkr_line_box">
+                                    <canvas t-ref="weeklyChart"/>
+                                </div>
+                            </div>
+                            <div class="o_dkr_card">
+                                <h3>Đánh giá hiệu suất tháng</h3>
+                                <div class="o_dkr_eval">
+                                    <div class="o_dkr_eval_ring">
+                                        <canvas t-ref="evalChart"/>
+                                        <div class="o_dkr_eval_center"><strong t-esc="evaluation.score + '%'"/></div>
+                                    </div>
+                                    <div class="o_dkr_eval_side">
+                                        <div class="o_dkr_stars">
+                                            <t t-foreach="starList" t-as="st" t-key="st_index">
+                                                <i t-att-class="st === 'full' ? 'fa fa-star' : (st === 'half' ? 'fa fa-star-half-o' : 'fa fa-star-o')"/>
+                                            </t>
                                         </div>
-                                    </t>
+                                        <div class="o_dkr_eval_rating">
+                                            Đánh giá: <strong t-esc="evaluation.rating"/>
+                                        </div>
+                                        <div class="o_dkr_eval_stats">
+                                            <div><span>Tổng công việc</span><strong t-esc="evaluation.total"/></div>
+                                            <div><span>Hoàn thành</span><strong t-esc="evaluation.done"/></div>
+                                            <div><span>Quá hạn</span><strong class="text-danger" t-esc="evaluation.overdue"/></div>
+                                            <div><span>Tổng thời gian</span><strong t-esc="evaluation.hours + ' giờ'"/></div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Hiệu suất công việc: % QL đánh giá TB (chưa đánh giá = 0%) -->
-                        <div class="o_dkr_card">
-                            <h3>Hiệu suất công việc</h3>
-                            <div class="o_dkr_eval">
-                                <div class="o_dkr_eval_ring">
-                                    <canvas t-ref="perfChart"/>
-                                    <div class="o_dkr_eval_center"><strong t-esc="perf.score + '%'"/></div>
-                                </div>
-                            </div>
-                            <p class="o_dkr_muted o_dkr_card_note">
-                                % Hoàn thành quản lý đánh giá ở Kiểm tra CV · đã đánh giá
-                                <b t-esc="perf.evaluated + '/' + perf.total"/> việc
-                            </p>
-                        </div>
-                        <!-- Tổng thời gian: tổng giờ + giờ theo hạng mục -->
-                        <div class="o_dkr_card">
-                            <h3>Tổng thời gian</h3>
-                            <div class="o_dkr_time_total">
-                                <strong t-esc="totalHours"/> <span>giờ</span>
-                                <em class="o_dkr_muted" t-esc="'(' + totalMinutes + ' phút)'"/>
-                            </div>
-                            <div t-if="timeByCat.length" class="o_dkr_bar_box" t-att-style="timeBoxStyle">
-                                <canvas t-ref="timeChart"/>
-                            </div>
-                            <div t-else="" class="o_dkr_muted text-center py-3">Chưa có thời gian thực hiện.</div>
-                        </div>
-                    </div>
+                    </t>
 
                     <div t-if="!state.loading and !state.message" class="o_dkr_sheet">
                         <div class="o_dkr_meta">

@@ -24,6 +24,7 @@ export class DailyWorkKhoReport extends Component {
             year: now.getFullYear(),
             teamId: 0,
             teamName: "",
+            teamDept: "",
             teams: [],
             employeeId: 0,
             employees: [],
@@ -60,6 +61,7 @@ export class DailyWorkKhoReport extends Component {
             this.state.teams = data.teams || [];
             this.state.teamId = data.team_id || 0;
             this.state.teamName = data.team_name || "";
+            this.state.teamDept = data.team_dept || "";
             this.state.employees = data.employees || [];
             this.state.employeeId = data.employee_id || 0;
             this.state.canPick = Boolean(data.can_pick_employee);
@@ -75,7 +77,14 @@ export class DailyWorkKhoReport extends Component {
     }
 
     get title() {
-        return `BÁO CÁO CV NV ${(this.state.teamName || "").toUpperCase()}`.trim();
+        return `BÁO CÁO CÔNG VIỆC NV ${(this.state.teamName || "").toUpperCase()}`.trim();
+    }
+
+    /** Dòng phụ: nhân viên đang xem · phòng ban của Team. */
+    get subLine() {
+        const emp = this.state.employees.find((e) => e.id === this.state.employeeId);
+        const who = emp ? emp.name : "Tất cả nhân viên";
+        return [who, this.state.teamDept].filter(Boolean).join(" · ");
     }
 
     /** Nhóm dòng theo hạng mục (giữ thứ tự I, II, III…). */

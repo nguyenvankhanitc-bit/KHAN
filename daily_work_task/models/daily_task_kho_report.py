@@ -56,6 +56,7 @@ class DailyTask(models.Model):
             "teams": [{"id": t.id, "name": t.name or ""} for t in teams],
             "team_id": team.id if team else False,
             "team_name": team.name if team else "",
+            "team_dept": (team.department_id.name or "") if team else "",
             "employees": [],
             "employee_id": False,
             "can_pick_employee": False,
@@ -180,7 +181,7 @@ class DailyTask(models.Model):
                 "center": wb.add_format(dict(base, align="center")),
             }
         team_label = (data.get("team_name") or "").upper()
-        ws.merge_range(0, 0, 0, last, "BÁO CÁO CV NV %s" % team_label if team_label else "BÁO CÁO CV NV", title)
+        ws.merge_range(0, 0, 0, last, "BÁO CÁO CÔNG VIỆC NV %s" % team_label if team_label else "BÁO CÁO CÔNG VIỆC NV", title)
         ws.set_row(0, 30)
         ws.write(1, 0, "Tháng: %s     Năm: %s     Team: %s" % (data["month"], data["year"], data.get("team_name") or ""), sub)
         hr = 3

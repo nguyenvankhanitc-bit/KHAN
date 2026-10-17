@@ -53,7 +53,62 @@
 
                     <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                     <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
-                    <div t-else="" class="o_dkr_sheet">
+                    <!-- Biểu đồ (giống Báo cáo cá nhân): Xếp loại · Hiệu suất QL đánh giá · Hiệu suất theo hạng mục -->
+                    <div t-if="!state.loading and !state.message" class="o_dkr_charts">
+                        <div class="o_dkr_card">
+                            <h3>Tỷ lệ xếp loại công việc</h3>
+                            <div class="o_dkr_donut_wrap">
+                                <div class="o_dkr_donut_box">
+                                    <canvas t-ref="ratingChart"/>
+                                    <div class="o_dkr_donut_center">
+                                        <strong t-esc="state.rows.length"/>
+                                        <span>Tổng việc</span>
+                                    </div>
+                                </div>
+                                <div class="o_dkr_legend">
+                                    <t t-foreach="ratingLegend" t-as="leg" t-key="leg.key">
+                                        <div class="o_dkr_legend_item">
+                                            <span class="o_dkr_legend_dot" t-att-style="'background:' + leg.color"/>
+                                            <span class="o_dkr_legend_label" t-esc="leg.label"/>
+                                            <strong t-esc="leg.count"/>
+                                            <span class="o_dkr_muted" t-esc="'(' + leg.pct + '%)'"/>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_dkr_card">
+                            <h3>Hiệu suất (QL đánh giá)</h3>
+                            <div class="o_dkr_perf">
+                                <div class="o_dkr_gauge">
+                                    <canvas t-ref="perfChart"/>
+                                    <div class="o_dkr_gauge_center">
+                                        <strong t-esc="perf.score + '%'"/>
+                                        <span>% Hoàn thành TB</span>
+                                    </div>
+                                </div>
+                                <div class="o_dkr_perf_side">
+                                    <div class="o_dkr_perf_rate">Xếp loại: <span t-att-class="perfClass(perf.label)" t-esc="perf.label"/></div>
+                                    <div class="o_dkr_perf_stats">
+                                        <div><span>Đã đánh giá</span><strong t-esc="perf.evaluated + ' / ' + perf.total"/></div>
+                                        <t t-foreach="ratingLegend" t-as="leg" t-key="'p-' + leg.key">
+                                            <div t-if="leg.key !== 'none'"><span t-esc="leg.label"/><strong t-esc="leg.count"/></div>
+                                        </t>
+                                    </div>
+                                    <p class="o_dkr_muted o_dkr_perf_note">Lấy từ % Hoàn thành quản lý đánh giá ở Kiểm tra CV.</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_dkr_card">
+                            <h3>Hiệu suất theo hạng mục</h3>
+                            <div t-if="catPerf.length" class="o_dkr_bar_box" t-att-style="catBoxStyle">
+                                <canvas t-ref="catChart"/>
+                            </div>
+                            <div t-else="" class="o_dkr_muted text-center py-4">Chưa có việc nào được quản lý đánh giá.</div>
+                        </div>
+                    </div>
+
+                    <div t-if="!state.loading and !state.message" class="o_dkr_sheet">
                         <div class="o_dkr_meta">
                             <span class="o_dkr_meta_sum">
                                 <t t-esc="state.rows.length"/> việc · <t t-esc="totalMinutes"/> phút ·

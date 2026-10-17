@@ -2,10 +2,20 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
+import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
+
+/** Màu xếp loại (cùng quy ước Kiểm tra CV): Đạt · Trung bình · Không đạt · Chưa đánh giá. */
+const RATING_META = [
+    { key: "pass", label: "Đạt", color: "#22c55e" },
+    { key: "average", label: "Trung bình", color: "#f59e0b" },
+    { key: "fail", label: "Không đạt", color: "#ef4444" },
+    { key: "none", label: "Chưa đánh giá", color: "#94a3b8" },
+];
+const LABEL_TO_KEY = { "Đạt": "pass", "Trung bình": "average", "Không đạt": "fail" };
 
 /** Báo cáo NV Kho (BÁO CÁO → Các loại báo cáo). */
 export class DailyWorkKhoReport extends Component {
@@ -32,12 +42,183 @@ export class DailyWorkKhoReport extends Component {
             showEmployee: false,
             rows: [],
             closed: {},
+            evalTiers: [],
             canExport: true,
             exporting: false,
         });
         this.months = Array.from({ length: 12 }, (_, i) => i + 1);
         this.years = [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1];
-        onWillStart(() => this.load());
+        this.ratingRef = useRef("ratingChart");
+        this.perfRef = useRef("perfChart");
+        this.catRef = useRef("catChart");
+        this.charts = [];
+        onWillStart(async () => {
+            await loadBundle("web.chartjs_lib");
+            await this.load();
+        });
+        useEffect(
+            () => {
+                this.renderCharts();
+            },
+            () => [this.state.loading, this.state.rows]
+        );
+        onWillUnmount(() => this.destroyCharts());
+    }
+
+    // ------------------------------------------------------------ biểu đồ
+    /** Đếm theo xếp loại (Đạt / Trung bình / Không đạt / Chưa đánh giá). */
+    get ratingLegend() {
+        const counts = { pass: 0, average: 0, fail: 0, none: 0 };
+        for (const r of this.state.rows) {
+            counts[LABEL_TO_KEY[r.rating] || "none"] += 1;
+        }
+        const total = this.state.rows.length || 0;
+        return RATING_META.map((m) => ({
+            ...m,
+            count: counts[m.key],
+            pct: total ? Math.round((counts[m.key] * 1000) / total) / 10 : 0,
+        }));
+    }
+
+    _avgEval(rows) {
+        const done = rows.filter((r) => r.evaluated);
+        const avg = done.length
+            ? Math.round((done.reduce((s, r) => s + (Number(r.eval_percent) || 0), 0) / done.length) * 10) / 10
+            : null;
+        return { avg, n: done.length };
+    }
+
+    /** Hiệu suất = % Hoàn thành TB quản lý đánh giá (chỉ việc đã đánh giá). */
+    get perf() {
+        const { avg, n } = this._avgEval(this.state.rows);
+        return {
+            score: avg || 0,
+            evaluated: n,
+            total: this.state.rows.length,
+            label: n ? this.rateEval(avg) : "—",
+        };
+    }
+
+    rateEval(pct) {
+        const tiers = [...(this.state.evalTiers || [])].sort((a, b) => b.from_percent - a.from_percent);
+        const hit = tiers.find((t) => pct >= t.from_percent) || tiers[tiers.length - 1];
+        return hit ? hit.name : "";
+    }
+
+    perfClass(label) {
+        const k = { "Đạt": "is-pass", "Trung bình": "is-average", "Không đạt": "is-fail" }[label];
+        return `o_dkr_perf_label ${k || ""}`;
+    }
+
+    /** % TB QL đánh giá theo hạng mục (chỉ hạng mục có việc đã đánh giá). */
+    get catPerf() {
+        return this.groups
+            .map((g) => ({ label: g.label, ...this._avgEval(g.rows) }))
+            .filter((c) => c.avg !== null);
+    }
+
+    get catBoxStyle() {
+        return `height:${Math.max(160, this.catPerf.length * 30 + 40)}px`;
+    }
+
+    destroyCharts() {
+        for (const c of this.charts) {
+            c.destroy();
+        }
+        this.charts = [];
+    }
+
+    renderCharts() {
+        this.destroyCharts();
+        const Chart = window.Chart;
+        if (this.state.loading || !Chart) {
+            return;
+        }
+        if (this.ratingRef.el) {
+            const data = this.ratingLegend.filter((l) => l.count);
+            this.charts.push(new Chart(this.ratingRef.el, {
+                type: "doughnut",
+                data: {
+                    labels: data.map((l) => l.label),
+                    datasets: [{
+                        data: data.map((l) => l.count),
+                        backgroundColor: data.map((l) => l.color),
+                        borderColor: "#ffffff",
+                        borderWidth: 2,
+                    }],
+                },
+                options: {
+                    cutout: "70%",
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    const l = data[ctx.dataIndex];
+                                    return ` ${l.label}: ${l.count} việc (${l.pct}%)`;
+                                },
+                            },
+                        },
+                    },
+                },
+            }));
+        }
+        if (this.perfRef.el) {
+            const score = Math.max(0, Math.min(100, this.perf.score));
+            this.charts.push(new Chart(this.perfRef.el, {
+                type: "doughnut",
+                data: {
+                    labels: ["Hiệu suất", ""],
+                    datasets: [{ data: [score, 100 - score], backgroundColor: ["#6366f1", "#e5e7eb"], borderWidth: 0 }],
+                },
+                options: {
+                    rotation: -90,
+                    circumference: 180,
+                    cutout: "74%",
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                },
+            }));
+        }
+        if (this.catRef.el) {
+            const cats = this.catPerf;
+            this.charts.push(new Chart(this.catRef.el, {
+                type: "bar",
+                data: {
+                    labels: cats.map((c) => c.label.replace(/^[IVXLCDM]+\.\s*/, "")),
+                    datasets: [{
+                        label: "% QL đánh giá",
+                        data: cats.map((c) => c.avg),
+                        backgroundColor: "#6366f1",
+                        borderRadius: 4,
+                        barThickness: 14,
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            min: 0,
+                            max: 100,
+                            ticks: { callback: (v) => `${v}%`, color: "#64748b" },
+                            grid: { color: "#eef2f7" },
+                        },
+                        y: { ticks: { color: "#334155", font: { size: 11 } }, grid: { display: false } },
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (items) => cats[items[0].dataIndex].label,
+                                label: (ctx) => ` ${cats[ctx.dataIndex].avg}% · ${cats[ctx.dataIndex].n} việc đã đánh giá`,
+                            },
+                        },
+                    },
+                },
+            }));
+        }
     }
 
     get shellActiveNav() {
@@ -67,6 +248,7 @@ export class DailyWorkKhoReport extends Component {
             this.state.canPick = Boolean(data.can_pick_employee);
             this.state.showEmployee = Boolean(data.show_employee);
             this.state.rows = data.rows || [];
+            this.state.evalTiers = data.eval_tiers || [];
             this.state.canExport = !data.report_perm || data.report_perm.export !== false;
         } catch (e) {
             this.state.message = e?.data?.message || _t("Không tải được báo cáo.");

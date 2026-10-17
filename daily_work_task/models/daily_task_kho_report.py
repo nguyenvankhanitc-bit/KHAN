@@ -62,6 +62,10 @@ class DailyTask(models.Model):
             "can_pick_employee": False,
             "rows": [],
             "report_perm": {k: (v if v is not None else True) for k, v in pmap.items()},
+            "eval_tiers": [
+                {"from_percent": t["from_percent"], "rating_key": t["rating_key"], "name": t["name"]}
+                for t in self.env["daily.task.rating.tier"].get_tiers(kind="eval")["tiers"] if t["apply"]
+            ],
         }
         if not team:
             base["message"] = "Bạn chưa thuộc Team nào. Vào Cài đặt → Bộ phận để gán Team."
@@ -142,6 +146,9 @@ class DailyTask(models.Model):
                     "minutes": int(t.duration_minutes or 0),
                     "rating": t._kho_rating(),
                     "rating_key": t.manager_rating or "",
+                    # % QL đánh giá (Kiểm tra CV) — chỉ tính việc đã đánh giá
+                    "evaluated": bool(t.manager_rating or t.manager_confirmed or t.manager_eval_percent),
+                    "eval_percent": int(t.manager_eval_percent or (100 if t.manager_confirmed else 0)),
                     "note": t.note or "",
                     "employee": (t.assignee_id.name or "") if show_employee else "",
                 })

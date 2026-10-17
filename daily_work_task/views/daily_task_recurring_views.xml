@@ -4,7 +4,7 @@
         <field name="name">daily.task.recurring.list</field>
         <field name="model">daily.task.recurring</field>
         <field name="arch" type="xml">
-            <list string="Công việc lặp lại" default_order="active desc, name">
+            <list js_class="daily_work_shell_list" string="Công việc lặp lại" default_order="active desc, name">
                 <field name="name"/>
                 <field name="user_id"/>
                 <field name="employee_id"/>

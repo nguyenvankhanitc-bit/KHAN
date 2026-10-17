@@ -4,7 +4,7 @@
         <field name="name">daily.task.employee.list</field>
         <field name="model">daily.task.employee</field>
         <field name="arch" type="xml">
-            <list string="Danh sách nhân viên">
+            <list js_class="daily_work_shell_list" string="Danh sách nhân viên">
                 <field name="employee_id"/>
                 <field name="name"/>
                 <field name="email"/>

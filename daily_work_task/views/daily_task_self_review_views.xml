@@ -4,7 +4,7 @@
         <field name="name">daily.task.self.review.list</field>
         <field name="model">daily.task.self.review</field>
         <field name="arch" type="xml">
-            <list string="Phân quyền tự kiểm tra CV" editable="bottom">
+            <list js_class="daily_work_shell_list" string="Phân quyền tự kiểm tra CV" editable="bottom">
                 <field name="user_id" options="{'no_create': True}" width="240px"/>
                 <field name="employee_id" readonly="1" optional="show"/>
                 <field name="department_id" readonly="1" optional="show"/>

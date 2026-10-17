@@ -6,6 +6,7 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 function normalizeText(text) {
     return String(text || "")
         .normalize("NFD")
@@ -16,6 +17,7 @@ function normalizeText(text) {
 
 export class DailyWorkSummaryReport extends Component {
     static template = "daily_work_task.DailyWorkSummaryReport";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {

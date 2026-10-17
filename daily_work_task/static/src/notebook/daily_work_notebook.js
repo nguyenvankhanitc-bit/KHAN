@@ -6,6 +6,7 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 const EMPTY_FORM = {
     id: 0,
     name: "",
@@ -20,6 +21,7 @@ const EMPTY_FORM = {
 
 export class DailyWorkNotebook extends Component {
     static template = "daily_work_task.DailyWorkNotebook";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {

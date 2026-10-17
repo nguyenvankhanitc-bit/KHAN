@@ -133,7 +133,7 @@
                             </button>
                         </div>
                         <div class="o_dwd_side_section">
-                            <div class="o_dwd_side_label">📊 BÁO CÁO</div>
+                            <div class="o_dwd_side_label" t-if="anyReport()">📊 BÁO CÁO</div>
                             <t t-if="state.canViewOthers">
                                 <button type="button" t-if="rv('summary_report')" class="o_dwd_side_item" title="Báo cáo tổng"
                                         t-on-click="() => this.openNav('report')">

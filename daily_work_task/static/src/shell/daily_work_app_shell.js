@@ -266,6 +266,11 @@ export class DailyWorkAppShell extends Component {
     }
 
     /** Phân quyền báo cáo: ẩn mục báo cáo trên thanh bên khi không có quyền Xem. */
+    anyReport() {
+        const keys = ["summary_report", "personal", "catrep", "summary", "monthly", "team", "performance", "kpi"];
+        return keys.some((k) => this.rv(k));
+    }
+
     rv(key) {
         return (this.state.reportView || {})[key] !== false;
     }

@@ -4,7 +4,7 @@
         <field name="name">daily.task.team.list</field>
         <field name="model">daily.task.team</field>
         <field name="arch" type="xml">
-            <list string="Team" editable="bottom" default_order="department_id, sequence, name"
+            <list js_class="daily_work_shell_list" string="Team" editable="bottom" default_order="department_id, sequence, name"
                   class="o_daily_task_team_list">
                 <field name="sequence" string="STT" widget="handle"/>
                 <field name="name" string="Tên Team" width="170px"

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.ShellListView">
+        <t t-if="env.inDialog">
+            <t t-call="web.ListView"/>
+        </t>
+        <div t-else="" class="o_daily_work_dashboard o_dwt_shell_list o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellNav }">
+                <t t-call="web.ListView"/>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

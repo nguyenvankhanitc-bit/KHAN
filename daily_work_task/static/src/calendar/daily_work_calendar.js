@@ -6,6 +6,7 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 const WEEKDAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
 const MONTH_NAMES = [
     "",
@@ -25,6 +26,7 @@ const MONTH_NAMES = [
 
 export class DailyWorkCalendar extends Component {
     static template = "daily_work_task.DailyWorkCalendar";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {

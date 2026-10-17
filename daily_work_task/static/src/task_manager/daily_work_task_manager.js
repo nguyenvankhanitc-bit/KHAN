@@ -6,6 +6,7 @@ import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } fr
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 
+import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 const SIDEBAR_STORAGE_KEY = "daily_work_task.manager.sidebarWidth";
 const SIDEBAR_MIN = 240;
 const SIDEBAR_MAX = 560;
@@ -13,6 +14,7 @@ const SIDEBAR_DEFAULT = 320;
 
 export class DailyWorkTaskManager extends Component {
     static template = "daily_work_task.DailyWorkTaskManager";
+    static components = { DailyWorkAppShell };
     static props = { ...standardActionServiceProps };
 
     setup() {

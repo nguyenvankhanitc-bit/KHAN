@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý công việc hàng ngày",
-    "version": "19.0.1.99.0",
+    "version": "19.0.1.100.0",
     "category": "Operations",
     "summary": "Kế hoạch công việc hàng ngày — Dashboard, Calendar, nhắc quá hạn",
     "description": """
@@ -123,6 +123,9 @@ Không phụ thuộc / không sửa module gốc hay module custom khác.
             "daily_work_task/static/src/user_summary/daily_work_user_summary.js",
             "daily_work_task/static/src/report_perm/daily_work_report_perm.xml",
             "daily_work_task/static/src/report_perm/daily_work_report_perm.js",
+            "daily_work_task/static/src/shell_list/daily_work_shell_list.xml",
+            "daily_work_task/static/src/shell_list/daily_work_shell_list.scss",
+            "daily_work_task/static/src/shell_list/daily_work_shell_list.js",
             "daily_work_task/static/src/team_plan/team_plan_access.xml",
             "daily_work_task/static/src/team_plan/team_plan_access.js",
             "daily_work_task/static/src/monthly_report/daily_work_monthly_report.scss",

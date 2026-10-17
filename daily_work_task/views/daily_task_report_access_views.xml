@@ -4,7 +4,7 @@
         <field name="name">daily.task.report.access.list</field>
         <field name="model">daily.task.report.access</field>
         <field name="arch" type="xml">
-            <list string="Phân quyền Báo cáo tổng"
+            <list js_class="daily_work_shell_list" string="Phân quyền Báo cáo tổng"
                   editable="bottom"
                   class="o_daily_task_report_access_list">
                 <field name="employee_id"

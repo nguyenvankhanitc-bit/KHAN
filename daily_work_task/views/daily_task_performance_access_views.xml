@@ -4,7 +4,7 @@
         <field name="name">daily.task.performance.access.list</field>
         <field name="model">daily.task.performance.access</field>
         <field name="arch" type="xml">
-            <list string="Phân quyền Báo cáo hiệu suất" editable="bottom">
+            <list js_class="daily_work_shell_list" string="Phân quyền Báo cáo hiệu suất" editable="bottom">
                 <field name="employee_id"
                          string="User được xem"
                          options="{'no_create': True}"/>

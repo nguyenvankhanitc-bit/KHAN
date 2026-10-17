@@ -1,0 +1,72 @@
+.o_daily_work_user_summary {
+    .o_dus_page { padding: 16px 22px 32px; display: grid; gap: 14px; }
+    .o_dus_toolbar {
+        display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        select { width: auto; min-width: 110px; }
+        .o_dus_emp { min-width: 220px; }
+        .o_dus_spacer { flex: 1 1 auto; }
+    }
+    .o_dus_sheet {
+        background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 18px 18px 26px; display: grid; gap: 16px; min-width: 0;
+    }
+    .o_dus_head {
+        text-align: center; display: grid; gap: 2px;
+        h1 { color: #e00000; font-size: 24px; font-weight: 800; margin: 0 0 4px; font-family: "Times New Roman", serif; }
+        .o_dus_who, .o_dus_month { font-weight: 700; }
+        .o_dus_note { font-style: italic; color: #64748b; font-size: 13px; }
+    }
+    .o_dus_scroll { overflow-x: auto; min-width: 0; }
+    .o_dus_table, .o_dus_pending {
+        width: 100%; border-collapse: collapse; font-size: 13px;
+        th, td { border: 1px solid #a6a6a6; padding: 6px 8px; vertical-align: middle; }
+        thead th { background: #fce4d6; font-weight: 800; text-align: center; line-height: 1.25; }
+    }
+    .o_dus_table {
+        min-width: 1150px;
+        td { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
+        .o_dus_cat { text-align: left; min-width: 200px; white-space: normal; }
+        .o_dus_note_col { text-align: left; min-width: 220px; white-space: normal; }
+        .o_dus_red { color: #c00000; font-weight: 800; }
+        .o_dus_eff { position: relative; min-width: 84px; }
+        .o_dus_bar { position: absolute; left: 0; top: 4px; bottom: 4px; background: linear-gradient(90deg, #5b9bd5, #bdd7ee); opacity: .55; }
+        .o_dus_eff_v { position: relative; }
+        .o_dus_rating {
+            display: inline-block; padding: 2px 10px; border-radius: 4px; font-weight: 800;
+            &.is-excellent { background: #c6efce; color: #006100; }
+            &.is-good { background: #ddebf7; color: #1f4e79; }
+            &.is-ok { background: #ffeb9c; color: #9c5700; }
+            &.is-weak { background: #ffc7ce; color: #9c0006; }
+        }
+        tr.o_dus_total td { background: #ffff00; font-weight: 800; }
+        .o_dus_input { width: 100%; border: 1px solid #e2e8f0; border-radius: 4px; padding: 3px 6px; background: #fffbea; }
+    }
+    .o_dus_section {
+        display: grid; gap: 8px;
+        h2 { margin: 6px 0 0; padding: 8px 12px; background: #d9e1f2; border: 1px solid #a6a6a6; font-size: 15px; font-weight: 800; }
+    }
+    .o_dus_label { font-weight: 800; margin-top: 4px; }
+    .o_dus_box {
+        width: 100%; border: 1px solid #a6a6a6; background: #fff2cc; padding: 8px 10px;
+        border-radius: 2px; resize: vertical; font-size: 13px;
+        &[readonly] { background: #fbf7ea; }
+    }
+    .o_dus_pending {
+        min-width: 760px;
+        .o_dus_stt { width: 52px; text-align: center; }
+        td { background: #fff; }
+        .o_dus_task_cat { display: inline-block; font-size: 11px; font-weight: 700; color: #1f4e79; background: #ddebf7; border-radius: 4px; padding: 0 6px; margin-right: 4px; }
+        .o_dus_task_meta { color: #64748b; font-size: 12px; margin-top: 2px; }
+        .o_dus_red { color: #c00000; font-weight: 700; }
+        .o_dus_cause { min-height: 46px; }
+    }
+    .o_dus_sign {
+        margin-top: 12px; display: grid; gap: 6px;
+        .o_dus_sign_date { text-align: right; font-style: italic; padding-right: 6%; }
+        .o_dus_sign_row {
+            display: grid; grid-template-columns: repeat(3, 1fr); text-align: center; gap: 12px; min-height: 90px;
+            div { display: grid; align-content: start; gap: 2px; }
+            small { font-style: italic; color: #64748b; }
+        }
+    }
+}

@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkUserSummary">
+        <div class="o_daily_work_dashboard o_daily_work_user_summary o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dus_page">
+                    <div class="o_dus_toolbar">
+                        <select class="form-select form-select-sm" t-on-change="(ev) => this.onFilter('month', ev)">
+                            <t t-foreach="months" t-as="m" t-key="m">
+                                <option t-att-value="m" t-att-selected="m === state.month" t-esc="'Tháng ' + m"/>
+                            </t>
+                        </select>
+                        <select class="form-select form-select-sm" t-on-change="(ev) => this.onFilter('year', ev)">
+                            <t t-foreach="years" t-as="y" t-key="y">
+                                <option t-att-value="y" t-att-selected="y === state.year" t-esc="y"/>
+                            </t>
+                        </select>
+                        <select t-if="state.canPick" class="form-select form-select-sm o_dus_emp" t-on-change="(ev) => this.onFilter('employeeId', ev)">
+                            <t t-foreach="state.employees" t-as="e" t-key="e.id">
+                                <option t-att-value="e.id" t-att-selected="e.id === state.employeeId" t-esc="e.name"/>
+                            </t>
+                        </select>
+                        <span class="o_dus_spacer"/>
+                        <button type="button" class="btn btn-light btn-sm" t-on-click="() => this.load()"><i class="fa fa-refresh"/> Làm mới</button>
+                        <button t-if="state.canEditSelf or state.canEditManager" type="button" class="btn btn-primary btn-sm"
+                                t-att-disabled="state.saving or !state.dirty" t-on-click="onSave">
+                            <i class="fa fa-save"/> <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu'"/>
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    </div>
+
+                    <div t-if="state.loading" class="text-center text-muted py-5">Đang tải...</div>
+                    <div t-elif="state.message" class="alert alert-warning" t-esc="state.message"/>
+                    <div t-else="" class="o_dus_sheet">
+                        <header class="o_dus_head">
+                            <h1>BÁO CÁO CÔNG VIỆC TỔNG HỢP THEO USER</h1>
+                            <div class="o_dus_who">Họ và tên: <b t-esc="state.profile.name"/>
+                                <t t-if="state.profile.department"> · <t t-esc="state.profile.department"/></t></div>
+                            <div class="o_dus_month" t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>
+                            <div class="o_dus_note">Số liệu chốt đến ngày <t t-esc="state.reportDate"/> · Nguồn: danh sách công việc cá nhân</div>
+                        </header>
+
+                        <div class="o_dus_scroll">
+                            <table class="o_dus_table">
+                                <thead>
+                                    <tr>
+                                        <th>STT</th><th class="o_dus_cat">Hạng mục</th><th>Tổng CV</th><th>Hoàn thành</th>
+                                        <th>Đang xử lý</th><th>Chưa bắt đầu</th><th>Quá hạn</th><th>% HT (số lượng)</th>
+                                        <th>Giờ thực hiện</th><th>Tiến độ TB</th><th>Hiệu suất</th><th>Xếp loại</th>
+                                        <th class="o_dus_note_col">Ghi chú / Nhận xét QL</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.rows" t-as="r" t-key="r.key">
+                                        <td t-esc="r.code"/>
+                                        <td class="o_dus_cat"><b t-esc="r.label"/></td>
+                                        <td t-esc="r.total"/>
+                                        <td t-esc="r.done"/>
+                                        <td t-esc="r.doing"/>
+                                        <td t-esc="r.not_started"/>
+                                        <td t-att-class="r.overdue ? 'o_dus_red' : ''" t-esc="r.overdue"/>
+                                        <td t-esc="fmtPct(r.done_pct)"/>
+                                        <td t-esc="fmt1(r.hours)"/>
+                                        <td t-esc="fmtPct(r.progress)"/>
+                                        <td class="o_dus_eff">
+                                            <span class="o_dus_bar" t-att-style="barStyle(r.efficiency)"/>
+                                            <span class="o_dus_eff_v" t-esc="fmtPct(r.efficiency)"/>
+                                        </td>
+                                        <td><span t-att-class="'o_dus_rating ' + ratingClass(r.rating)" t-esc="r.rating"/></td>
+                                        <td class="o_dus_note_col">
+                                            <input t-if="state.canEditManager" type="text" class="o_dus_input" placeholder="Nhận xét của QL..."
+                                                   t-att-value="r.note" t-on-input="(ev) => this.onNote(r, ev)"/>
+                                            <t t-else="" t-esc="r.note"/>
+                                        </td>
+                                    </tr>
+                                    <tr class="o_dus_total">
+                                        <td colspan="2">TỔNG CỘNG</td>
+                                        <td t-esc="state.total.total"/>
+                                        <td t-esc="state.total.done"/>
+                                        <td t-esc="state.total.doing"/>
+                                        <td t-esc="state.total.not_started"/>
+                                        <td t-esc="state.total.overdue"/>
+                                        <td t-esc="fmtPct(state.total.done_pct)"/>
+                                        <td t-esc="fmt1(state.total.hours)"/>
+                                        <td t-esc="fmtPct(state.total.progress)"/>
+                                        <td t-esc="fmtPct(state.total.efficiency)"/>
+                                        <td t-esc="state.total.rating"/>
+                                        <td/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <section class="o_dus_section">
+                            <h2>III. ĐÁNH GIÁ CHUNG &amp; KIẾN NGHỊ</h2>
+
+                            <label class="o_dus_label" for="dus_highlights">Kết quả nổi bật:</label>
+                            <textarea id="dus_highlights" class="o_dus_box" rows="3" placeholder="Nhập kết quả nổi bật trong tháng..."
+                                      t-att-readonly="!state.canEditSelf" t-on-input="(ev) => this.onText('highlights', ev)" t-esc="state.highlights"/>
+
+                            <div class="o_dus_label">Tồn tại / nguyên nhân:</div>
+                            <div class="o_dus_scroll">
+                                <table class="o_dus_pending">
+                                    <thead>
+                                        <tr>
+                                            <th class="o_dus_stt">STT</th>
+                                            <th>Tồn tại <small>(công việc chưa hoàn thành)</small></th>
+                                            <th>Nguyên nhân <small>(user tự đánh giá)</small></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="state.pending" t-as="p" t-key="p.id">
+                                            <td class="o_dus_stt" t-esc="p_index + 1"/>
+                                            <td>
+                                                <div class="o_dus_task"><span class="o_dus_task_cat" t-esc="p.category"/> <b t-esc="p.name"/></div>
+                                                <div class="o_dus_task_meta">
+                                                    Deadline <t t-esc="p.deadline || '—'"/> · <t t-esc="p.state_label"/>
+                                                    <span t-if="p.overdue_label" class="o_dus_red"> · <t t-esc="p.overdue_label"/></span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <textarea class="o_dus_box o_dus_cause" rows="2" placeholder="Nguyên nhân chưa hoàn thành / quá hạn..."
+                                                          t-att-readonly="!state.canEditSelf" t-on-input="(ev) => this.onCause(p, ev)" t-esc="p.cause"/>
+                                            </td>
+                                        </tr>
+                                        <tr t-if="!state.pending.length">
+                                            <td colspan="3" class="text-center text-muted py-3">Không có công việc tồn đọng trong tháng.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <label class="o_dus_label" for="dus_solutions">Đề xuất / giải pháp khắc phục:</label>
+                            <textarea id="dus_solutions" class="o_dus_box" rows="3" placeholder="Nhập đề xuất / giải pháp khắc phục..."
+                                      t-att-readonly="!state.canEditSelf" t-on-input="(ev) => this.onText('solutions', ev)" t-esc="state.solutions"/>
+                        </section>
+
+                        <footer class="o_dus_sign">
+                            <div class="o_dus_sign_date" t-esc="signDate"/>
+                            <div class="o_dus_sign_row">
+                                <div><b>Người lập</b><small>(Ký, ghi rõ họ tên)</small></div>
+                                <div><b>Trưởng phòng HCNS</b><small>(Ký, ghi rõ họ tên)</small></div>
+                                <div><b>Ban Giám đốc</b><small>(Ký, ghi rõ họ tên)</small></div>
+                            </div>
+                        </footer>
+                    </div>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

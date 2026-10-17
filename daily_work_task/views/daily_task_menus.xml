@@ -116,6 +116,13 @@
               sequence="2"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <menuitem id="menu_daily_work_user_summary"
+              name="Báo cáo tổng hợp theo user"
+              parent="menu_daily_work_cat_reports"
+              action="action_daily_work_user_summary"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_monthly_report"
               name="Báo cáo công việc tháng"
               parent="menu_daily_work_cat_reports"

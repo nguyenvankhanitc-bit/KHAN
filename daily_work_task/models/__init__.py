@@ -24,5 +24,6 @@ from . import daily_work_note
 from . import daily_task_self_review
 from . import daily_task_category_report
 from . import daily_task_rating_tier
+from . import daily_task_user_summary
 from . import ir_ui_menu
 from . import ir_http

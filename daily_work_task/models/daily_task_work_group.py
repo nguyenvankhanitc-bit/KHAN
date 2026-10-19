@@ -216,6 +216,10 @@ class DailyTaskWorkGroup(models.Model):
         for (idx,) in self.env.cr.fetchall():
             self.env.cr.execute('DROP INDEX IF EXISTS "%s"' % idx)
         try:
+            self._backfill_team_from_creator()
+        except Exception:  # noqa: BLE001 — chưa đủ bảng Team lúc cài mới
+            pass
+        try:
             self.sudo()._refresh_category_heads()
         except Exception:  # noqa: BLE001 — chưa đủ cột lúc cài mới
             pass
@@ -642,10 +646,54 @@ class DailyTaskWorkGroup(models.Model):
             },
         }
 
+    def _backfill_team_from_creator(self):
+        """Hạng mục chưa gán Team (bị ẩn với mọi người trong Team) → gán Team của người tạo,
+        chỉ khi người tạo thuộc đúng 1 Team đang hoạt động cùng phòng ban."""
+        self.env.cr.execute(
+            """
+            SELECT g.id, MIN(t.id), COUNT(DISTINCT t.id)
+              FROM daily_task_work_group g
+              JOIN (SELECT team_id, user_id FROM daily_task_team_manager_rel
+                    UNION SELECT team_id, user_id FROM daily_task_team_member_rel) r
+                ON r.user_id = g.create_uid
+              JOIN daily_task_team t ON t.id = r.team_id AND COALESCE(t.active, TRUE)
+             WHERE g.team_id IS NULL
+               AND (g.department_id IS NULL OR t.department_id IS NULL OR t.department_id = g.department_id)
+          GROUP BY g.id
+            """
+        )
+        by_team = {}
+        for gid, team_id, n in self.env.cr.fetchall():
+            if n == 1:
+                by_team.setdefault(team_id, []).append(gid)
+        for team_id, gids in by_team.items():
+            self.sudo().browse(gids).with_context(
+                skip_link_users=True, skip_cat_manager_sync=True
+            ).write({"team_id": team_id})
+
+    @api.model
+    def _fill_team_on_create(self, vals):
+        """Tạo hạng mục mà chưa có Team → gán Team của người tạo (để cả Team cùng thấy)."""
+        if vals.get("team_id"):
+            return
+        dept = self.env["hr.department"].browse(vals["department_id"]) if vals.get("department_id") else None
+        team = self._team_from_user(self.env.user, dept)
+        if not team and dept is not None:
+            team = self._team_from_user(self.env.user, None)
+            if team and team.department_id and dept and team.department_id != dept:
+                team = self.env["daily.task.team"]
+        if team:
+            vals["team_id"] = team.id
+            if not vals.get("department_id") and team.department_id:
+                vals["department_id"] = team.department_id.id
+
     @api.model_create_multi
     def create(self, vals_list):
         self.env["daily.task"]._req_cache_clear()
         self.env["daily.task.assign.access"].check("category", "create")
+        vals_list = [dict(v) for v in vals_list]
+        for vals in vals_list:
+            self._fill_team_on_create(vals)
         records = super().create(vals_list)
         self._refresh_category_heads(records.mapped("team_id").ids or None)
         for rec, vals in zip(records, vals_list):
@@ -1192,7 +1240,8 @@ class DailyTaskWorkGroup(models.Model):
                 continue
             key_cat = " ".join(self._norm_category_name(rec.name).split()).casefold()
             key_task = " ".join((rec.task_name or "").split()).casefold()
-            others = self.search([
+            # sudo: xét trùng trên toàn bộ dữ liệu, không phụ thuộc phạm vi Team người tạo nhìn thấy
+            others = self.sudo().search([
                 ("id", "!=", rec.id),
                 ("department_id", "=", rec.department_id.id),
                 ("active", "=", True),

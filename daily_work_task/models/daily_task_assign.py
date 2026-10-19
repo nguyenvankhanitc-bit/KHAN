@@ -1348,7 +1348,13 @@ class DailyTaskAssign(models.Model):
         """
         Access = self.env["daily.task.assign.access"]
         Access.check("personnel", "view")
-        only_self = not Access._is_manager()
+        # Xem nhân viên khác: Quản lý module, hoặc được phân quyền Hạng mục «Thêm» / «Chỉnh sửa»
+        # (phạm vi vẫn theo Team — dữ liệu lấy từ bảng phân công đã lọc theo Team)
+        only_self = not (
+            Access._is_manager()
+            or Access.can("category", "create")
+            or Access.can("category", "write")
+        )
         current_uid = self.env.uid
         board = self.with_context(
             daily_work_assign_feature="list"

@@ -138,7 +138,7 @@ export class DailyWorkAssignBoard extends Component {
         await this.action.doAction(
             {
                 type: "ir.actions.act_window",
-                name: _t("Thêm phân công công việc"),
+                name: _t("Phân công hạng mục"),
                 res_model: "daily.task.assign",
                 views: [[false, "form"]],
                 target: "new",

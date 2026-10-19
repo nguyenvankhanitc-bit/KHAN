@@ -171,7 +171,7 @@
                     <t t-if="state.canAssignSection">
                         <div class="o_dwd_side_section">
                             <div class="o_dwd_side_label">📋 PHÂN CÔNG CÔNG VIỆC</div>
-                            <!-- Đã bỏ: dùng nút «Thêm công việc phân công» trên Danh sách phân công -->
+                            <!-- Đã bỏ: dùng nút «Phân công hạng mục» trên Danh sách phân công -->
                             <t t-if="false">
                                 <button type="button"
                                         t-att-class="'o_dwd_side_item' + (isActive('team_assign_add') ? ' active' : '')"

@@ -14,10 +14,10 @@
                                 <span t-att-class="isEditMode ? 'o_dab_edit_badge' : 'o_dab_readonly_badge'"
                                       t-esc="modeBadge"/>
                                 <div class="o_dab_toolbar no-print">
-                                    <!-- Thêm công việc phân công: luôn hiện khi có quyền thêm -->
+                                    <!-- Phân công hạng mục: luôn hiện khi có quyền thêm -->
                                     <t t-if="canCreate">
                                         <button type="button" class="btn o_dab_btn_new" t-on-click="onCreateTask">
-                                            <i class="fa fa-plus"/> Thêm công việc phân công
+                                            <i class="fa fa-plus"/> Phân công hạng mục
                                         </button>
                                     </t>
                                     <button type="button"

@@ -467,75 +467,17 @@ class DailyTaskAssign(models.Model):
         )
 
     def _sync_personal_daily_tasks(self):
-        """Tạo/cập nhật công việc cá nhân từ dòng phân công → người phụ trách."""
+        """Dòng phân công CHỈ áp hạng mục cho user (user tự chọn hạng mục khi nhập công việc).
+
+        Không tự tạo công việc vào danh sách cá nhân của người phụ trách. Hạng mục đã gán cho user
+        qua _push_users_to_work_group; trang Nhập công việc lấy danh sách từ get_groups_for_user.
+        """
         # Ô 'x' Plan công việc theo dải Bắt đầu → Deadline (luôn đồng bộ)
         self.env["daily.task.plan.day"].sync_lines(self)
         if self.env.context.get("skip_assign_personal_sync"):
             return
-        Task = self.env["daily.task"].sudo().with_context(
-            skip_work_group_user_check=True,
-            from_daily_task_assign=True,
-            mail_notrack=True,
-            tracking_disable=True,
-        )
-        EmpBridge = self.env["daily.task.employee"].sudo()
-        HrEmployee = self.env["hr.employee"].sudo()
-        today = fields.Date.context_today(self)
+        # «Lặp hằng ngày» là lựa chọn riêng của dòng phân công → vẫn sinh việc theo Công việc lặp
         self._sync_plan_recurring()
-        for rec in self:
-            if rec.plan_daily:
-                # Việc hằng ngày do Công việc lặp sinh — không tạo 1 việc cả kỳ
-                continue
-            users = rec._responsible_users()
-            existing = Task.search([("assign_line_id", "=", rec.id), ("recurring_id", "=", False)])
-            kept = Task.browse()
-            for user in users:
-                hr = HrEmployee.search([("user_id", "=", user.id)], limit=1)
-                if not hr:
-                    continue
-                bridge = EmpBridge.get_or_create_from_hr(hr.id)
-                # Ưu tiên phòng ban của hạng mục để khớp ràng buộc phòng ban
-                wg = rec.work_group_id
-                dept = (
-                    wg.department_id.id
-                    if wg and wg.department_id
-                    else (
-                        rec.department_id.id
-                        if rec.department_id
-                        else (hr.department_id.id if hr.department_id else False)
-                    )
-                )
-                task_vals = {
-                    "name": rec.name or (wg.task_name if wg else "") or "/",
-                    "work_group_id": wg.id if wg else False,
-                    "department_id": dept,
-                    "assignee_id": bridge.id,
-                    "assign_line_id": rec.id,
-                    "assign_date": rec.date_start or today,
-                    "deadline": rec.deadline or today,
-                    "note": rec.note or "",
-                    "assigned_by_id": self.env.uid,
-                }
-                task = existing.filtered(lambda t, b=bridge: t.assignee_id.id == b.id)[:1]
-                if task:
-                    update_vals = dict(task_vals)
-                    if not rec.note:
-                        # Không xóa ghi chú nhân viên tự nhập ở bảng cá nhân
-                        update_vals.pop("note", None)
-                    task.with_context(
-                        skip_work_group_user_check=True,
-                        from_daily_task_assign=True,
-                    ).write(update_vals)
-                    kept |= task
-                else:
-                    kept |= Task.create(
-                        {
-                            **task_vals,
-                            "state": "not_started",
-                            "priority": "medium",
-                        }
-                    )
-            # Không xóa việc cá nhân cũ — chỉ tạo/cập nhật theo người phụ trách hiện tại
 
     def _sync_plan_recurring(self):
         """Dòng 'Lặp hằng ngày' → mỗi người phụ trách 1 mẫu Công việc lặp (trừ CN) trong kỳ plan."""

@@ -44,6 +44,7 @@ export class DailyWorkViewer extends Component {
         this.state = useState({
             canRestore: false,
             trash: { open: false, loading: false, rows: [] },
+            lastDeleted: {},
             /** Tích chọn để xóa nhiều: empId -> {taskId: true} */
             delSel: {},
             loading: true,
@@ -467,8 +468,28 @@ export class DailyWorkViewer extends Component {
     }
 
     // ---- Hoàn tác / Thùng rác (Administrator) ----
-    /** Thông báo sau khi xoá, kèm nút Hoàn tác. */
+    lastDeletedOf(empId) {
+        return this.state.lastDeleted[empId] || [];
+    }
+
+    dismissUndo(empId) {
+        this.state.lastDeleted = { ...this.state.lastDeleted, [empId]: [] };
+    }
+
+    async undoLast(empId) {
+        const ids = this.lastDeletedOf(empId);
+        if (!ids.length) {
+            return;
+        }
+        this.dismissUndo(empId);
+        await this.restoreTasks(ids, empId);
+    }
+
+    /** Thông báo sau khi xoá, kèm nút Hoàn tác (+ thanh Hoàn tác cố định trong khung nhân viên). */
     notifyUndo(message, ids, empId) {
+        if (this.state.canRestore) {
+            this.state.lastDeleted = { ...this.state.lastDeleted, [empId]: ids };
+        }
         let close = null;
         close = this.notification.add(message, {
             type: "success",
@@ -482,6 +503,7 @@ export class DailyWorkViewer extends Component {
                         if (close) {
                             close();
                         }
+                        this.dismissUndo(empId);
                         await this.restoreTasks(ids, empId);
                     },
                 }]

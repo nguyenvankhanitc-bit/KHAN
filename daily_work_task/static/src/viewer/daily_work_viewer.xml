@@ -178,12 +178,28 @@
                                                                 </section>
                                                             </t>
                                                         </div>
+                                                        <!-- Vừa xoá → thanh Hoàn tác cố định (Administrator) -->
+                                                        <div t-if="state.canRestore and lastDeletedOf(emp.id).length" class="o_dwv_undobar">
+                                                            <span><i class="fa fa-info-circle"/> Đã xóa <b t-esc="lastDeletedOf(emp.id).length"/> việc</span>
+                                                            <button type="button" class="btn btn-sm btn-warning" t-on-click="() => this.undoLast(emp.id)">
+                                                                <i class="fa fa-undo"/> Hoàn tác
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-light" t-on-click="openTrash">
+                                                                <i class="fa fa-trash-o"/> Thùng rác
+                                                            </button>
+                                                            <button type="button" class="btn btn-sm btn-link text-muted" title="Ẩn"
+                                                                    t-on-click="() => this.dismissUndo(emp.id)"><i class="fa fa-times"/></button>
+                                                        </div>
                                                         <div t-if="panel.canDelete and pickedCount(emp.id)" class="o_dwv_bulkbar">
                                                             <span><i class="fa fa-check-square"/> Đã chọn <b t-esc="pickedCount(emp.id)"/> việc</span>
                                                             <button type="button" class="btn btn-sm btn-danger" t-on-click="() => this.onDeletePicked(emp.id)">
                                                                 <i class="fa fa-trash"/> Xóa <t t-esc="pickedCount(emp.id)"/> việc đã chọn
                                                             </button>
                                                             <button type="button" class="btn btn-sm btn-light" t-on-click="() => this.clearPick(emp.id)">Bỏ chọn</button>
+                                                            <button t-if="state.canRestore" type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+                                                                    t-on-click="openTrash" title="Việc đã xoá — Hoàn tác / khôi phục">
+                                                                <i class="fa fa-undo"/> Hoàn tác / Thùng rác
+                                                            </button>
                                                         </div>
                                                         <div class="o_dwv_table_wrap">
                                                             <table class="o_dwv_table">

@@ -42,6 +42,8 @@ export class DailyWorkViewer extends Component {
         const now = new Date();
         const year = now.getFullYear();
         this.state = useState({
+            canRestore: false,
+            trash: { open: false, loading: false, rows: [] },
             /** Tích chọn để xóa nhiều: empId -> {taskId: true} */
             delSel: {},
             loading: true,
@@ -264,6 +266,7 @@ export class DailyWorkViewer extends Component {
             const data = await this.orm.call("daily.task", "get_viewer_bootstrap", []);
             this.state.employees = data.employees || [];
             this.state.states = data.states || [];
+            this.state.canRestore = Boolean(data.can_restore);
             this.state.message = data.message || false;
             this.state.openDepts = {};
             this.state.panels = {};
@@ -450,16 +453,83 @@ export class DailyWorkViewer extends Component {
         if (!panel.canDelete || !ids.length) {
             return;
         }
-        if (!confirm(`Xóa ${ids.length} công việc đã chọn? Không khôi phục được.`)) {
+        if (!confirm(`Xóa ${ids.length} công việc đã chọn? (Có thể Hoàn tác / khôi phục ở Thùng rác)`)) {
             return;
         }
         try {
             const n = await this.orm.call("daily.task", "delete_many_from_manager", [ids]);
             this.clearPick(empId);
             await this.loadTasksFor(empId);
-            this.notification.add(`Đã xóa ${n} công việc.`, { type: "success" });
+            this.notifyUndo(`Đã xóa ${n} công việc.`, ids, empId);
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không thể xóa."), { type: "danger" });
+        }
+    }
+
+    // ---- Hoàn tác / Thùng rác (Administrator) ----
+    /** Thông báo sau khi xoá, kèm nút Hoàn tác. */
+    notifyUndo(message, ids, empId) {
+        let close = null;
+        close = this.notification.add(message, {
+            type: "success",
+            autocloseDelay: 10000,
+            buttons: this.state.canRestore
+                ? [{
+                    name: _t("Hoàn tác"),
+                    icon: "fa-undo",
+                    primary: true,
+                    onClick: async () => {
+                        if (close) {
+                            close();
+                        }
+                        await this.restoreTasks(ids, empId);
+                    },
+                }]
+                : [],
+        });
+    }
+
+    async restoreTasks(ids, empId = null) {
+        try {
+            const n = await this.orm.call("daily.task", "restore_deleted_tasks", [ids]);
+            if (empId) {
+                await this.loadTasksFor(empId);
+            } else {
+                for (const key of Object.keys(this.state.panels)) {
+                    if (this.state.panels[key]?.open) {
+                        await this.loadTasksFor(isNaN(key) ? key : Number(key));
+                    }
+                }
+            }
+            if (this.state.trash.open) {
+                await this.loadTrash();
+            }
+            this.notification.add(`Đã khôi phục ${n} công việc.`, { type: "success" });
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không khôi phục được."), { type: "danger" });
+        }
+    }
+
+    async openTrash() {
+        this.state.trash.open = true;
+        await this.loadTrash();
+    }
+
+    closeTrash() {
+        this.state.trash.open = false;
+    }
+
+    restoreAllTrash() {
+        return this.restoreTasks(this.state.trash.rows.map((r) => r.id));
+    }
+
+    async loadTrash() {
+        this.state.trash.loading = true;
+        try {
+            const data = await this.orm.call("daily.task", "get_deleted_tasks", []);
+            this.state.trash.rows = data.rows || [];
+        } finally {
+            this.state.trash.loading = false;
         }
     }
 
@@ -475,7 +545,7 @@ export class DailyWorkViewer extends Component {
         try {
             await this.orm.call("daily.task", "delete_from_manager", [[task.id]]);
             await this.loadTasksFor(empId);
-            this.notification.add(_t("Đã xóa."), { type: "success" });
+            this.notifyUndo(`Đã xóa «${task.name || ""}».`, [task.id], empId);
         } catch (e) {
             this.notification.add(e?.data?.message || _t("Không thể xóa."), { type: "danger" });
         }

@@ -46,6 +46,11 @@
                                 title="Kiểm tra công việc team">
                             <i class="fa fa-check-square-o"/> Kiểm tra CV
                         </button>
+                        <button t-if="state.canRestore" type="button" class="btn btn-outline-secondary btn-sm align-self-end"
+                                t-on-click="openTrash"
+                                title="Việc đã xoá — khôi phục (Administrator)">
+                            <i class="fa fa-trash-o"/> Thùng rác
+                        </button>
                     </div>
                 </div>
 
@@ -292,6 +297,54 @@
                         </t>
                     </div>
                 </t>
+            </div>
+            <!-- Thùng rác: việc đã xoá (Administrator) — Khôi phục từng việc / tất cả -->
+            <div t-if="state.trash.open" class="o_dwv_trash_backdrop" t-on-click.self="closeTrash">
+                <div class="o_dwv_trash" role="dialog" aria-label="Thùng rác">
+                    <div class="o_dwv_trash_head">
+                        <h3><i class="fa fa-trash-o"/> Thùng rác — công việc đã xoá</h3>
+                        <button type="button" class="btn btn-sm btn-success" t-if="state.trash.rows.length"
+                                t-on-click="restoreAllTrash">
+                            <i class="fa fa-undo"/> Khôi phục tất cả (<t t-esc="state.trash.rows.length"/>)
+                        </button>
+                        <button type="button" class="btn btn-sm btn-light" t-on-click="closeTrash" title="Đóng">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+                    <div class="o_dwv_trash_body">
+                        <div t-if="state.trash.loading" class="text-center text-muted py-4"><i class="fa fa-spinner fa-spin"/></div>
+                        <div t-elif="!state.trash.rows.length" class="text-center text-muted py-4">Thùng rác trống.</div>
+                        <table t-else="" class="o_dwv_trash_table">
+                            <thead>
+                                <tr>
+                                    <th>Tên công việc</th>
+                                    <th>Nhân viên</th>
+                                    <th>Hạn hoàn thành</th>
+                                    <th>Trạng thái</th>
+                                    <th>Xoá lúc</th>
+                                    <th>Người xoá</th>
+                                    <th/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="state.trash.rows" t-as="r" t-key="r.id">
+                                    <td t-esc="r.name"/>
+                                    <td t-esc="r.employee"/>
+                                    <td t-esc="r.deadline"/>
+                                    <td t-esc="r.state"/>
+                                    <td t-esc="r.deleted_at"/>
+                                    <td t-esc="r.deleted_by"/>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-success"
+                                                t-on-click="() => this.restoreTasks([r.id])">
+                                            <i class="fa fa-undo"/> Khôi phục
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             </DailyWorkAppShell>
         </div>

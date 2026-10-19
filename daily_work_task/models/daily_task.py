@@ -110,6 +110,10 @@ class DailyTask(models.Model):
         copy=False,
     )
     note = fields.Text(string="Ghi chú")
+    # Xoá mềm (Administrator xoá ở Xem CV NV → có thể Hoàn tác / khôi phục từ Thùng rác)
+    active = fields.Boolean(default=True, index=True)
+    deleted_by_id = fields.Many2one("res.users", string="Người xoá", copy=False, readonly=True)
+    deleted_date = fields.Datetime(string="Thời điểm xoá", copy=False, readonly=True)
     assign_line_id = fields.Many2one(
         "daily.task.assign",
         string="Dòng phân công",
@@ -1847,26 +1851,75 @@ class DailyTask(models.Model):
             return False
         return True
 
+    def _soft_delete(self):
+        """Xoá mềm: ẩn việc (active=False), gỡ ô Plan — khôi phục được bằng Hoàn tác / Thùng rác."""
+        tasks = self.sudo().with_context(tracking_disable=True, mail_notrack=True)
+        self.env["daily.task.plan.day"].sudo().search([("task_id", "in", tasks.ids)]).unlink()
+        tasks.write({"active": False, "deleted_by_id": self.env.uid, "deleted_date": fields.Datetime.now()})
+        self._req_cache_clear()
+
     def delete_from_manager(self):
         self.ensure_one()
         if not self._can_delete_task():
             raise ValidationError(
                 "Chỉ tài khoản Administrator mới được xóa công việc."
             )
-        self.sudo().unlink()
-        return True
+        self._soft_delete()
+        return [self.id]
 
     @api.model
     def delete_many_from_manager(self, task_ids):
-        """Xem CV NV: tích chọn nhiều việc rồi xóa 1 lần — cùng quyền với nút xóa từng việc."""
+        """Xem CV NV: tích chọn nhiều việc rồi xóa 1 lần — cùng quyền với nút xóa từng việc.
+        Xoá mềm → trả về số việc đã xoá (Hoàn tác bằng restore_deleted_tasks)."""
         tasks = self.browse([int(i) for i in task_ids or []]).exists()
         if not tasks:
             return 0
         if not all(t._can_delete_task() for t in tasks):
             raise ValidationError("Chỉ tài khoản Administrator mới được xóa công việc.")
         count = len(tasks)
-        tasks.sudo().unlink()
+        tasks._soft_delete()
         return count
+
+    @api.model
+    def restore_deleted_tasks(self, task_ids):
+        """Hoàn tác / khôi phục việc đã xoá (chỉ Administrator)."""
+        if not self._is_system_admin():
+            raise ValidationError("Chỉ tài khoản Administrator mới được khôi phục công việc.")
+        tasks = self.sudo().with_context(active_test=False).browse([int(i) for i in task_ids or []]).exists()
+        tasks = tasks.filtered(lambda t: not t.active)
+        if not tasks:
+            return 0
+        tasks.with_context(tracking_disable=True, mail_notrack=True).write(
+            {"active": True, "deleted_by_id": False, "deleted_date": False}
+        )
+        self.env["daily.task.plan.day"].sudo().sync_tasks(tasks)
+        self._req_cache_clear()
+        return len(tasks)
+
+    @api.model
+    def get_deleted_tasks(self, limit=300):
+        """Thùng rác (Xem CV NV): việc đã xoá mềm, mới nhất trước — chỉ Administrator."""
+        if not self._is_system_admin():
+            return {"rows": [], "can_restore": False}
+        tasks = self.sudo().with_context(active_test=False).search(
+            [("active", "=", False), ("deleted_date", "!=", False)],
+            order="deleted_date desc, id desc", limit=int(limit or 300),
+        )
+        fmt = lambda d: d.strftime("%d/%m/%Y") if d else ""
+        return {
+            "can_restore": True,
+            "rows": [{
+                "id": t.id,
+                "name": t.name or "",
+                "employee": t.assignee_id.name or "",
+                "department": t.department_id.display_name or "",
+                "deadline": fmt(t.deadline),
+                "state": dict(self._fields["state"].selection).get(t.state, ""),
+                "deleted_at": fields.Datetime.context_timestamp(self, t.deleted_date).strftime("%d/%m/%Y %H:%M")
+                if t.deleted_date else "",
+                "deleted_by": t.deleted_by_id.name or "",
+            } for t in tasks],
+        }
 
     def delete_from_employee(self):
         """Xóa việc từ danh sách Nhân viên nhập CV."""
@@ -3503,6 +3556,7 @@ class DailyTask(models.Model):
         return {
             "is_manager": self._is_manager(),
             "can_edit_all": self._is_manager(),
+            "can_restore": self._is_system_admin(),
             "employees": result_emps,
             "states": states,
             "message": False

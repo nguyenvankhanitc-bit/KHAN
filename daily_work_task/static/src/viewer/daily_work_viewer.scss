@@ -519,3 +519,71 @@
     color: #991b1b;
     font-size: 13px;
 }
+
+// Thùng rác (Administrator)
+.o_daily_work_viewer {
+    .o_dwv_trash_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        background: rgba(15, 23, 42, 0.35);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 6vh 16px;
+    }
+
+    .o_dwv_trash {
+        width: 1000px;
+        max-width: 100%;
+        max-height: 82vh;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+        overflow: hidden;
+    }
+
+    .o_dwv_trash_head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-bottom: 1px solid #e5e7eb;
+
+        h3 {
+            flex: 1;
+            margin: 0;
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+    }
+
+    .o_dwv_trash_body {
+        overflow: auto;
+        padding: 8px 16px 16px;
+    }
+
+    .o_dwv_trash_table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+
+        th {
+            position: sticky;
+            top: 0;
+            background: #f8fafc;
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+    }
+}

@@ -555,6 +555,61 @@ class DailyTaskAssign(models.Model):
                         )
                     )
 
+    def _detail_key(self):
+        """Khoá chi tiết hạng mục: (Team, tên hạng mục chuẩn hoá, tên chi tiết) — «III. CAMERA» = «CAMERA»."""
+        self.ensure_one()
+        wg = self.work_group_id
+        WG = self.env["daily.task.work.group"]
+        cat = " ".join(WG._norm_category_name(wg.name or "").split()).casefold() if wg else ""
+        detail = " ".join(((wg.task_name if wg else "") or self.name or "").split()).casefold()
+        return (self.team_id.id or (wg.team_id.id if wg else 0) or 0, cat, detail)
+
+    @api.constrains(
+        "work_group_id", "name", "date_start", "deadline", "active",
+        "assignee_user_ids", "south_user_ids", "dtt_user_ids", "north_user_ids", "office_user_ids",
+    )
+    def _check_duplicate_person(self):
+        """Cảnh báo trùng: 1 nhân sự đã được phân cùng chi tiết hạng mục ở dòng phân công khác
+        đang hoạt động → không cho lưu, báo rõ dòng đang có (thêm / sửa ở dòng đó)."""
+        for rec in self:
+            if not rec.active or not rec.work_group_id:
+                continue
+            people = rec.assignee_user_ids | rec.south_user_ids | rec.dtt_user_ids | rec.north_user_ids | rec.office_user_ids
+            if not people:
+                continue
+            key = rec._detail_key()
+            if not key[2]:
+                continue
+            others = self.sudo().search([
+                ("id", "!=", rec.id),
+                ("active", "=", True),
+                "|", "|", "|", "|",
+                ("assignee_user_ids", "in", people.ids),
+                ("south_user_ids", "in", people.ids),
+                ("dtt_user_ids", "in", people.ids),
+                ("north_user_ids", "in", people.ids),
+                ("office_user_ids", "in", people.ids),
+            ])
+            for other in others:
+                if other._detail_key() != key:
+                    continue
+                o_people = (other.assignee_user_ids | other.south_user_ids | other.dtt_user_ids
+                            | other.north_user_ids | other.office_user_ids)
+                dup = people & o_people
+                if dup:
+                    raise ValidationError(
+                        "Trùng phân công: %s đã được phân chi tiết «%s» (hạng mục «%s») ở dòng STT %s "
+                        "(%s → %s).\nMỗi nhân sự chỉ được phân 1 lần cho mỗi chi tiết hạng mục — sửa ở dòng đang có."
+                        % (
+                            ", ".join(dup.mapped("name")),
+                            other.work_group_id.task_name or other.name or "",
+                            self.env["daily.task.work.group"]._norm_category_name(other.work_group_id.name or ""),
+                            other.stt or other.id,
+                            other.date_start.strftime("%d/%m/%Y") if other.date_start else "…",
+                            other.deadline.strftime("%d/%m/%Y") if other.deadline else "…",
+                        )
+                    )
+
     def _detail_name(self):
         """Tên chi tiết hạng mục của dòng phân công (theo trang Hạng mục, bỏ số thứ tự «1. »)."""
         self.ensure_one()
@@ -1393,12 +1448,29 @@ class DailyTaskAssign(models.Model):
             ]
             return ", ".join(on_row)
 
+        # User được phân TRỰC TIẾP trên dòng (không tính user kế thừa từ hạng mục)
+        def _direct_users(rec, role_key):
+            if role_key == "checker":
+                return rec.check_user_ids | rec.check_user_id
+            return (rec.assignee_user_ids | rec.assignee_user_id | rec.south_user_ids
+                    | rec.dtt_user_ids | rec.north_user_ids | rec.office_user_ids)
+
+        direct_keys = set()
+        for rec in records.values():
+            dkey = rec._detail_key()
+            for role_key in ("assignee", "checker"):
+                for u in _direct_users(rec, role_key):
+                    direct_keys.add((u.id, dkey, role_key))
+
         def _push(user, role_key, role_label, section, task, rec):
             user_id = user.get("id") if isinstance(user, dict) else user.id
             user_name = user.get("name") if isinstance(user, dict) else user.name
             if not user_id:
                 return
             if only_self and user_id != current_uid:
+                return
+            # Chỉ kế thừa từ hạng mục mà đã có dòng phân trực tiếp cùng chi tiết → không hiện trùng
+            if user_id not in _direct_users(rec, role_key).ids and (user_id, rec._detail_key(), role_key) in direct_keys:
                 return
             key = (user_id, rec.id, role_key)
             if key in seen:

@@ -1964,7 +1964,10 @@ class DailyTask(models.Model):
         if only_done:
             domain.append(("state", "=", "done"))
         else:
-            domain.append(("state", "!=", "done"))
+            # Việc chưa xong + việc vừa hoàn thành HÔM NAY (không «biến mất» ngay khi bấm Hoàn thành;
+            # sang ngày sau mới chuyển xuống bảng tổng tháng)
+            today = fields.Date.context_today(self)
+            domain += ["|", ("state", "!=", "done"), ("date_done", ">=", today)]
         tasks = self.search(domain, order="deadline asc, id desc")
         self._refresh_overdue_flags(tasks)
         priorities = [

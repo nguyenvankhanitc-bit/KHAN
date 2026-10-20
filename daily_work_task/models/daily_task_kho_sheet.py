@@ -129,6 +129,22 @@ class DailyTaskKhoSheetLine(models.Model):
             "note": rec.note or "",
             "task_id": rec.task_id.id or False,
             "linked": bool(rec.task_id),
+            "eval": self._eval_vals(rec.task_id),
+        }
+
+    @api.model
+    def _eval_vals(self, task):
+        """QUẢN LÝ ĐÁNH GIÁ (nhập trên Kiểm tra CV) của công việc liên kết — chỉ xem."""
+        if not task:
+            return {}
+        task = task.sudo()
+        rated = bool(task.manager_rating or task.manager_confirmed or task.manager_eval_percent
+                     or (task.manager_eval_note or "").strip())
+        return {
+            "percent": int(task.manager_eval_percent or 0) if rated else None,
+            "note": task.manager_eval_note or "",
+            "rating": task.manager_rating or "",
+            "confirmed": bool(task.manager_confirmed),
         }
 
     @api.model

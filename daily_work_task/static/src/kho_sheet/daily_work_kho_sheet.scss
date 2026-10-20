@@ -451,3 +451,56 @@
         white-space: nowrap;
     }
 }
+
+// QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — giữ màu nền như bảng Kiểm tra CV
+.o_daily_work_kho_sheet .o_dks_table {
+    min-width: 1900px;
+
+    thead tr.o_dks_th_eval_row th {
+        top: 39px;
+    }
+
+    th.o_dks_th_eval_group,
+    th.o_dks_th_eval {
+        background: #fce4d6;
+        color: #0f172a;
+        font-weight: 800;
+        border-color: #f5c9ad;
+    }
+
+    th.o_dks_th_eval_group {
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+
+    th.o_dks_th_eval {
+        &.is-pass { color: #15803d; }
+        &.is-average { color: #b45309; }
+        &.is-fail { color: #b91c1c; }
+    }
+
+    .c-eval-pct { width: 90px; }
+    .c-eval-note { min-width: 180px; }
+    .c-eval-rate { width: 80px; }
+    .c-eval-confirm { width: 95px; }
+
+    th.c-note { min-width: 160px; }
+
+    tbody tr td.o_dks_eval {
+        background: #fff7ed;
+        border-right-color: #fde3cf;
+    }
+
+    .o_dks_eval_note {
+        white-space: pre-line;
+        font-size: 0.82rem;
+    }
+
+    .o_dks_rate {
+        font-size: 1.15rem;
+
+        &.is-pass { color: #16a34a; }
+        &.is-average { color: #f59e0b; }
+        &.is-fail { color: #dc2626; }
+    }
+}

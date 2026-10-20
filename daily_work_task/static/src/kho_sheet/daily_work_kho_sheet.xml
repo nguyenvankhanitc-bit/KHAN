@@ -115,19 +115,28 @@
                             <table t-att-class="'o_dks_table' + (state.editing ? ' is-editing' : '')">
                                 <thead>
                                     <tr>
-                                        <th class="c-stt">STT</th>
-                                        <th class="c-week">Tuần</th>
-                                        <th class="c-day">Ngày</th>
-                                        <th class="c-kind">Hạng mục</th>
-                                        <th class="c-name">Nội dung công việc</th>
-                                        <th class="c-person">Người phụ trách</th>
-                                        <th class="c-date2">Ngày bắt đầu</th>
-                                        <th class="c-date2">Deadline</th>
-                                        <th class="c-hours">Tổng TG (giờ)</th>
-                                        <th class="c-state">Trạng thái</th>
-                                        <th class="c-person">Kiểm soát</th>
-                                        <th class="c-note">Ghi chú</th>
-                                        <th t-if="state.editing" class="c-del"/>
+                                        <th rowspan="2" class="c-stt">STT</th>
+                                        <th rowspan="2" class="c-week">Tuần</th>
+                                        <th rowspan="2" class="c-day">Ngày</th>
+                                        <th rowspan="2" class="c-kind">Hạng mục</th>
+                                        <th rowspan="2" class="c-name">Nội dung công việc</th>
+                                        <th rowspan="2" class="c-person">Người phụ trách</th>
+                                        <th rowspan="2" class="c-date2">Ngày bắt đầu</th>
+                                        <th rowspan="2" class="c-date2">Deadline</th>
+                                        <th rowspan="2" class="c-hours">Tổng TG (giờ)</th>
+                                        <th rowspan="2" class="c-state">Trạng thái</th>
+                                        <th rowspan="2" class="c-person">Kiểm soát</th>
+                                        <th rowspan="2" class="c-note">Ghi chú</th>
+                                        <th colspan="6" class="o_dks_th_eval_group">QUẢN LÝ ĐÁNH GIÁ</th>
+                                        <th t-if="state.editing" rowspan="2" class="c-del"/>
+                                    </tr>
+                                    <tr class="o_dks_th_eval_row">
+                                        <th class="o_dks_th_eval c-eval-pct">% Hoàn thành</th>
+                                        <th class="o_dks_th_eval c-eval-note">Ghi chú</th>
+                                        <th class="o_dks_th_eval c-eval-rate is-pass">Đạt</th>
+                                        <th class="o_dks_th_eval c-eval-rate is-average">Trung bình</th>
+                                        <th class="o_dks_th_eval c-eval-rate is-fail">Không đạt</th>
+                                        <th class="o_dks_th_eval c-eval-confirm">Xác nhận QL</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -153,6 +162,23 @@
                                             </td>
                                             <td t-esc="r.controller"/>
                                             <td t-esc="r.note"/>
+                                            <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
+                                            <td class="o_dks_eval text-center">
+                                                <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
+                                            </td>
+                                            <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
+                                            </td>
                                         </t>
                                         <!-- Chế độ nhập tay -->
                                         <t t-else="">
@@ -232,6 +258,23 @@
                                                        t-att-value="r.controller" t-on-change="(ev) => this.onField(r, 'controller', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm"
                                                        t-att-value="r.note" t-on-change="(ev) => this.onField(r, 'note', ev)"/></td>
+                                            <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
+                                            <td class="o_dks_eval text-center">
+                                                <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
+                                            </td>
+                                            <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
+                                            </td>
+                                            <td class="o_dks_eval text-center">
+                                                <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
+                                            </td>
                                             <td class="text-center">
                                                 <button t-if="!r.linked" type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
                                                         t-on-click="() => this.onRemove(r)"><i class="fa fa-trash"/></button>
@@ -239,7 +282,7 @@
                                         </t>
                                     </tr>
                                     <tr t-if="!visibleRows.length">
-                                        <td t-att-colspan="state.editing ? 13 : 12" class="text-center text-muted py-4">
+                                        <td t-att-colspan="state.editing ? 19 : 18" class="text-center text-muted py-4">
                                             Chưa có công việc. <t t-if="state.canWrite">Bấm «Thêm công việc» để nhập.</t>
                                         </td>
                                     </tr>

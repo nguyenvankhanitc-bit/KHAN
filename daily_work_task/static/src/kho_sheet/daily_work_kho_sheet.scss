@@ -608,3 +608,34 @@
         }
     }
 }
+
+// Khung bảng cuộn riêng: tiêu đề cố định khi cuộn dọc, thanh trượt ngang luôn ở đáy màn hình
+.o_daily_work_kho_sheet .o_dks_table_wrap {
+    max-height: calc(100vh - 150px);
+    overflow: auto;
+    overscroll-behavior: contain;
+
+    .o_dks_table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 3;
+    }
+
+    .o_dks_table thead tr.o_dks_th_eval_row th {
+        top: var(--dks-head1, 42px);
+    }
+
+    &::-webkit-scrollbar {
+        height: 12px;
+        width: 10px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #94a3b8;
+        border-radius: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #e2e8f0;
+    }
+}

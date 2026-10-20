@@ -68,6 +68,14 @@ export class DailyWorkKhoSheet extends Component {
             },
             () => [this.state.timePick && this.state.timePick.key]
         );
+        // Tiêu đề 2 hàng cố định: hàng 2 (% Hoàn thành…) dính ngay dưới hàng «QUẢN LÝ ĐÁNH GIÁ»
+        useEffect(() => {
+            const wrap = document.querySelector(".o_daily_work_kho_sheet .o_dks_table_wrap");
+            const th = wrap?.querySelector("th.o_dks_th_eval_group");
+            if (th) {
+                wrap.style.setProperty("--dks-head1", `${th.getBoundingClientRect().height}px`);
+            }
+        });
     }
 
     get shellActiveNav() {

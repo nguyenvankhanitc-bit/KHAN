@@ -87,18 +87,26 @@
                             </div>
                             <div class="o_dks_chart_card">
                                 <div class="o_dks_chart_title"><i class="fa fa-clock-o"/> 3. THỜI GIAN VÀ HIỆU SUẤT</div>
-                                <div class="o_dks_cl">
-                                    <div class="o_dks_cl_donut">
-                                        <canvas t-ref="perfChart"/>
-                                        <div class="o_dks_cl_center"><b t-esc="perfHoursLabel"/><span>giờ</span></div>
+                                <div class="o_dks_tp">
+                                    <div class="o_dks_tp_hours">
+                                        <div class="o_dks_tp_hours_lbl">TỔNG THỜI GIAN</div>
+                                        <div class="o_dks_tp_hours_val"><t t-esc="perfHoursLabel"/> giờ</div>
+                                        <div class="o_dks_tp_hours_sub"><i class="fa fa-clock-o"/> đã ghi nhận</div>
                                     </div>
-                                    <div class="o_dks_cl_legend">
-                                        <div t-foreach="perfLegend" t-as="l" t-key="l.key" class="o_dks_cl_item">
-                                            <span class="o_dks_cl_dot" t-att-style="'background:' + l.color"/>
-                                            <div>
-                                                <div class="o_dks_cl_label" t-esc="l.label"/>
-                                                <div class="o_dks_cl_val"><t t-esc="l.value"/></div>
+                                    <div class="o_dks_tp_bars">
+                                        <div class="o_dks_tp_bar is-self">
+                                            <div class="o_dks_tp_bar_head">
+                                                <span>NV tự đánh giá</span>
+                                                <b t-esc="fmtPct(perfStats.self)"/>
                                             </div>
+                                            <div class="o_dks_tp_track"><div class="o_dks_tp_fill" t-att-style="'width:' + barWidth(perfStats.self)"/></div>
+                                        </div>
+                                        <div class="o_dks_tp_bar is-manager">
+                                            <div class="o_dks_tp_bar_head">
+                                                <span>QL đánh giá</span>
+                                                <b t-esc="fmtPct(perfStats.manager)"/>
+                                            </div>
+                                            <div class="o_dks_tp_track"><div class="o_dks_tp_fill" t-att-style="'width:' + barWidth(perfStats.manager)"/></div>
                                         </div>
                                         <div class="o_dks_cl_note" t-esc="perfGapText"/>
                                     </div>

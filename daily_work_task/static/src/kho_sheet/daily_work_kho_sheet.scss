@@ -1203,3 +1203,94 @@
         }
     }
 }
+
+// Biểu đồ 3 (giống mẫu): ô Tổng thời gian · 2 thanh hiệu suất
+.o_daily_work_kho_sheet {
+    .o_dks_tp {
+        display: flex;
+        align-items: stretch;
+        gap: 18px;
+        padding: 10px 4px 4px;
+    }
+
+    .o_dks_tp_hours {
+        flex: 0 0 42%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 18px 10px;
+        border-radius: 12px;
+        background: #ede9fe;
+        text-align: center;
+    }
+
+    .o_dks_tp_hours_lbl {
+        font-size: 0.86rem;
+        font-weight: 800;
+        color: #1f2937;
+        letter-spacing: 0.02em;
+    }
+
+    .o_dks_tp_hours_val {
+        margin: 4px 0;
+        font-size: 2.3rem;
+        font-weight: 800;
+        line-height: 1.1;
+        color: #6d28d9;
+    }
+
+    .o_dks_tp_hours_sub {
+        font-size: 0.86rem;
+        color: #374151;
+
+        i {
+            margin-right: 3px;
+        }
+    }
+
+    .o_dks_tp_bars {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 16px;
+        min-width: 0;
+    }
+
+    .o_dks_tp_bar_head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 6px;
+
+        span {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #111827;
+        }
+
+        b {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #111827;
+        }
+    }
+
+    .o_dks_tp_track {
+        height: 14px;
+        border-radius: 999px;
+        background: #e5e7eb;
+        overflow: hidden;
+    }
+
+    .o_dks_tp_fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.3s;
+    }
+
+    .o_dks_tp_bar.is-self .o_dks_tp_fill { background: #2563eb; }
+    .o_dks_tp_bar.is-manager .o_dks_tp_fill { background: #16a34a; }
+}

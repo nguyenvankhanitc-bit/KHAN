@@ -201,6 +201,11 @@ export class DailyWorkKhoSheet extends Component {
         ];
     }
 
+    /** Độ rộng thanh tiến độ (0–100%). */
+    barWidth(v) {
+        return `${Math.max(0, Math.min(100, Number(v) || 0))}%`;
+    }
+
     get perfHoursLabel() {
         return String(this.perfStats.hours).replace(".", ",");
     }

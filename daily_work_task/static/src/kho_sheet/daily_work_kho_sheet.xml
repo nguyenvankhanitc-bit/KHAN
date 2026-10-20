@@ -129,7 +129,10 @@
                                         <t t-if="!state.editing">
                                             <td t-esc="dayLabel(r.date)"/>
                                             <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
-                                            <td t-esc="r.name"/>
+                                            <td>
+                                                <i t-if="r.linked" class="fa fa-link o_dks_link" title="Từ Phân công việc team"/>
+                                                <t t-esc="r.name"/>
+                                            </td>
                                             <td t-esc="r.responsible"/>
                                             <td class="text-center" t-esc="r.time_in || '—'"/>
                                             <td class="text-center" t-esc="r.time_out || '—'"/>
@@ -144,6 +147,16 @@
                                         </t>
                                         <!-- Chế độ nhập tay -->
                                         <t t-else="">
+                                            <t t-if="r.linked">
+                                                <!-- Dòng từ Phân công việc team: chỉ nhập Giờ vào / Giờ ra / Ghi chú -->
+                                                <td class="o_dks_locked" t-esc="dayLabel(r.date)"/>
+                                                <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
+                                                <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
+                                                    <i class="fa fa-link o_dks_link"/> <t t-esc="r.name"/>
+                                                </td>
+                                                <td class="o_dks_locked" t-esc="r.responsible"/>
+                                            </t>
+                                            <t t-else="">
                                             <td>
                                                 <!-- Ngày dd/mm/yyyy: gõ tay hoặc bấm lịch -->
                                                 <div class="o_dks_date">
@@ -167,6 +180,7 @@
                                                        t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
+                                            </t>
                                             <td><input type="text" class="form-control form-control-sm text-center o_dks_time_input" placeholder="HH:MM"
                                                        maxlength="5" autocomplete="off" t-att-value="r.time_in"
                                                        t-on-focus="(ev) => this.openTime(ev, r, 'time_in')"
@@ -182,19 +196,25 @@
                                                        t-on-keydown="(ev) => this.onTimeKey(ev, r, 'time_out')"
                                                        t-on-change="(ev) => this.onTimeText(r, 'time_out', ev)"/></td>
                                             <td class="text-center o_dks_hours" title="= Giờ ra − Giờ vào" t-esc="hoursOf(r)"/>
-                                            <td>
+                                            <td t-if="r.linked" class="text-center o_dks_locked">
+                                                <span t-att-class="'o_dks_state is-' + r.state">
+                                                    <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
+                                                </span>
+                                            </td>
+                                            <td t-else="">
                                                 <select t-att-class="'form-select form-select-sm o_dks_state_sel is-' + r.state" t-on-change="(ev) => this.onField(r, 'state', ev)">
                                                     <t t-foreach="state.states" t-as="s" t-key="s.key">
                                                         <option t-att-value="s.key" t-att-selected="s.key === r.state" t-esc="s.label"/>
                                                     </t>
                                                 </select>
                                             </td>
-                                            <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
+                                            <td t-if="r.linked" class="o_dks_locked" t-esc="r.controller"/>
+                                            <td t-else=""><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.controller" t-on-change="(ev) => this.onField(r, 'controller', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm"
                                                        t-att-value="r.note" t-on-change="(ev) => this.onField(r, 'note', ev)"/></td>
                                             <td class="text-center">
-                                                <button type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
+                                                <button t-if="!r.linked" type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
                                                         t-on-click="() => this.onRemove(r)"><i class="fa fa-trash"/></button>
                                             </td>
                                         </t>

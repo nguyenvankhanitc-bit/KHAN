@@ -45,6 +45,9 @@ class DailyTaskKhoSheetLine(models.Model):
     state = fields.Selection(STATE_SELECTION, string="Trạng thái", default="not_started")
     controller = fields.Char(string="Kiểm soát")
     note = fields.Char(string="Ghi chú")
+    # Dòng tự sinh từ «Phân công việc team» — Ngày/Hạng mục/Nội dung/Người phụ trách/Trạng thái/Kiểm soát
+    # lấy theo công việc đã phân (chỉ nhập tay Giờ vào / Giờ ra / Ghi chú)
+    task_id = fields.Many2one("daily.task", string="Công việc phân công", index=True, ondelete="cascade")
 
     # ------------------------------------------------------------------ quyền
     @api.model
@@ -122,7 +125,58 @@ class DailyTaskKhoSheetLine(models.Model):
             "state": rec.state or "not_started",
             "controller": rec.controller or "",
             "note": rec.note or "",
+            "task_id": rec.task_id.id or False,
+            "linked": bool(rec.task_id),
         }
+
+    @api.model
+    def _task_vals(self, task):
+        """Giá trị dòng lấy theo công việc đã phân (Phân công việc team)."""
+        wg = task.work_group_id
+        head = (wg.category_head_id or wg) if wg else wg
+        states = dict(STATE_SELECTION)
+        done = task.date_done
+        return {
+            "date": task.assign_date or task.deadline,
+            "work_group_id": head.id if head else False,
+            "name": task.name or "",
+            "responsible": task.assignee_id.name or "",
+            "deadline": task.deadline,
+            "date_done": done.date() if hasattr(done, "date") else done or False,
+            "state": task.state if task.state in states else "not_started",
+            "controller": task.team_work_checker_id.name or task.team_work_coordinator_id.name or "",
+        }
+
+    @api.model
+    def _sync_team_work(self, team, year, month):
+        """Đồng bộ dòng từ «Phân công việc team» của Team trong tháng: thêm việc mới, cập nhật
+        việc đã có, bỏ dòng khi công việc bị xoá / chuyển khỏi tháng."""
+        if not team:
+            return
+        Line = self.sudo()
+        _y, _m, date_from, date_to = self.env["daily.task"]._month_date_bounds(year=year, month=month)
+        tasks = self.env["daily.task"].sudo().search([
+            ("team_work_team_id", "=", team.id),
+            "|", "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
+            "&", "&", ("assign_date", "=", False), ("deadline", ">=", date_from), ("deadline", "<=", date_to),
+        ])
+        scope = [("year", "=", year), ("month", "=", month), ("team_id", "=", team.id)]
+        linked = Line.search(scope + [("task_id", "!=", False)])
+        by_task = {l.task_id.id: l for l in linked}
+        stale = linked.filtered(lambda l: l.task_id not in tasks)
+        if stale:
+            stale.unlink()
+        for task in tasks:
+            vals = self._task_vals(task)
+            line = by_task.get(task.id)
+            if line:
+                changed = {k: v for k, v in vals.items() if line[k] != v and not (
+                    k == "work_group_id" and line.work_group_id.id == v)}
+                if changed:
+                    line.write(changed)
+            else:
+                Line.create(dict(vals, year=year, month=month, team_id=team.id, task_id=task.id,
+                                 kind="daily", note=task.note or "", sequence=0))
 
     @api.model
     def get_kho_sheet(self, year=None, month=None, team_id=None):
@@ -133,6 +187,7 @@ class DailyTaskKhoSheetLine(models.Model):
         teams = self._teams()
         team = teams.filtered(lambda t: t.id == int(team_id or 0))[:1] or self.env["daily.task"]._kho_default_team(teams)
         domain = [("year", "=", year), ("month", "=", month), ("team_id", "=", team.id or False)]
+        self._sync_team_work(team, year, month)
         rows = self.sudo().search(domain)
         # Gợi ý tên (Người phụ trách / Kiểm soát): thành viên Team
         names = sorted({u.name for u in (team.manager_ids | team.member_ids)} if team else set())
@@ -176,7 +231,8 @@ class DailyTaskKhoSheetLine(models.Model):
         Line = self.sudo()
         scope = [("year", "=", year), ("month", "=", month), ("team_id", "=", team.id or False)]
         if deleted_ids:
-            Line.search(scope + [("id", "in", [int(i) for i in deleted_ids])]).unlink()
+            # Dòng từ Phân công việc team không xoá ở đây (xoá công việc bên phân công)
+            Line.search(scope + [("id", "in", [int(i) for i in deleted_ids]), ("task_id", "=", False)]).unlink()
         kinds = dict(KIND_SELECTION)
         states = dict(STATE_SELECTION)
         for seq, row in enumerate(rows or [], start=1):
@@ -214,6 +270,10 @@ class DailyTaskKhoSheetLine(models.Model):
                 continue  # dòng trống
             rid = int(row.get("id") or 0)
             rec = Line.search(scope + [("id", "=", rid)]) if rid else Line.browse()
+            if rec and rec.task_id:
+                # Dòng liên kết phân công: chỉ nhận Giờ vào / Giờ ra / Tổng TG / Ghi chú
+                rec.write({k: vals[k] for k in ("sequence", "time_in", "time_out", "hours", "note")})
+                continue
             if rec:
                 rec.write(vals)
             else:

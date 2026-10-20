@@ -398,3 +398,15 @@
         }
     }
 }
+
+// Dòng liên kết «Phân công việc team»
+.o_daily_work_kho_sheet {
+    .o_dks_link {
+        color: #6366f1;
+        margin-right: 4px;
+    }
+    td.o_dks_locked {
+        background: #f8fafc;
+        color: #334155;
+    }
+}

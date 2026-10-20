@@ -719,3 +719,23 @@
         color: #64748b;
     }
 }
+
+// Bỏ cột Hạng mục / Người phụ trách: tên người phụ trách (QL xem cả Team) dưới nội dung
+.o_daily_work_kho_sheet .o_dks_table {
+    min-width: 1650px;
+
+    .o_dks_who {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.74rem;
+    }
+
+    td.o_dks_name_edit {
+        min-width: 260px;
+
+        > * + * {
+            margin-top: 4px;
+        }
+    }
+}

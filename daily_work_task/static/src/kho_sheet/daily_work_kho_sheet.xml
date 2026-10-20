@@ -131,9 +131,7 @@
                                         <th rowspan="2" class="c-stt">STT</th>
                                         <th rowspan="2" class="c-week">Tuần</th>
                                         <th rowspan="2" class="c-day">Ngày</th>
-                                        <th rowspan="2" class="c-kind">Hạng mục</th>
                                         <th rowspan="2" class="c-name">Nội dung công việc</th>
-                                        <th rowspan="2" class="c-person">Người phụ trách</th>
                                         <th rowspan="2" class="c-date2">Ngày bắt đầu</th>
                                         <th rowspan="2" class="c-date2">Deadline</th>
                                         <th rowspan="2" class="c-hours">Tổng TG (giờ)</th>
@@ -172,12 +170,11 @@
                                             <!-- Chế độ xem -->
                                             <t t-if="!state.editing">
                                                 <td class="o_dks_day" t-esc="dayLabel(r.date)"/>
-                                                <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                                 <td>
                                                     <i t-if="r.linked" class="fa fa-link o_dks_link" title="Từ Phân công việc team"/>
                                                     <t t-esc="r.name"/>
+                                                    <small t-if="state.wholeTeam and r.responsible" class="o_dks_who"><i class="fa fa-user-o"/> <t t-esc="r.responsible"/></small>
                                                 </td>
-                                                <td t-esc="r.responsible"/>
                                                 <td class="text-center" t-esc="fmt(r.date_start) || '—'"/>
                                                 <td class="text-center" t-esc="fmt(r.deadline) || '—'"/>
                                                 <td class="text-center" t-esc="hoursOf(r)"/>
@@ -211,11 +208,10 @@
                                                 <t t-if="r.linked">
                                                     <!-- Dòng từ Phân công việc team: chỉ nhập Ghi chú (ngày / TG theo công việc đã phân) -->
                                                     <td class="o_dks_locked o_dks_day" t-esc="dayLabel(r.date)"/>
-                                                    <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                                     <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
                                                         <i class="fa fa-link o_dks_link"/> <t t-esc="r.name"/>
+                                                        <small t-if="state.wholeTeam and r.responsible" class="o_dks_who"><i class="fa fa-user-o"/> <t t-esc="r.responsible"/></small>
                                                     </td>
-                                                    <td class="o_dks_locked" t-esc="r.responsible"/>
                                                 </t>
                                                 <t t-else="">
                                                 <td>
@@ -229,18 +225,19 @@
                                                                t-on-change="(ev) => this.onField(r, 'date', ev)"/>
                                                     </div>
                                                 </td>
-                                                <td>
-                                                    <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
+                                                <td class="o_dks_name_edit">
+                                                    <select class="form-select form-select-sm" title="Hạng mục" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
                                                         <option value="" t-att-selected="!r.work_group_id">— Chọn hạng mục —</option>
                                                         <t t-foreach="categoryOptions(r)" t-as="c" t-key="c.id">
                                                             <option t-att-value="c.id" t-att-selected="c.id === r.work_group_id" t-esc="c.name"/>
                                                         </t>
                                                     </select>
+                                                    <input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
+                                                           t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/>
+                                                    <input t-if="state.wholeTeam" type="text" class="form-control form-control-sm" list="o_dks_people"
+                                                           placeholder="Người phụ trách" title="Người phụ trách"
+                                                           t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/>
                                                 </td>
-                                                <td><input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
-                                                           t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
-                                                <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
-                                                           t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
                                                 </t>
                                                 <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.date_start) || '—'"/>
                                                 <td t-else="">

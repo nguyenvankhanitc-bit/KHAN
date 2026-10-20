@@ -253,6 +253,8 @@ class DailyTaskKhoSheetLine(models.Model):
             "people": names,
             "categories": self._category_options(team),
             "me": self.env.user.name or "",
+            # Quản lý xem cả Team → hiện tên người phụ trách dưới nội dung công việc
+            "whole_team": self._sees_whole_team(team),
             # Đầu báo cáo (giống Báo cáo cá nhân): chức danh · phòng ban của user đang đăng nhập
             "me_job": (self.env.user.employee_id.sudo().job_title or self.env.user.employee_id.sudo().job_id.name or ""),
             "me_dept": self.env.user.employee_id.sudo().department_id.name or "",

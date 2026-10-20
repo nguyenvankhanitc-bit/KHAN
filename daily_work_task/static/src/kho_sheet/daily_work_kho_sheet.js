@@ -52,6 +52,7 @@ export class DailyWorkKhoSheet extends Component {
             categories: [],
             me: "",
             meJob: "",
+            wholeTeam: false,
             meDept: "",
             timePick: null,
             canWrite: false,
@@ -230,7 +231,7 @@ export class DailyWorkKhoSheet extends Component {
     }
 
     get colCount() {
-        return this.state.editing ? 19 : 18;
+        return this.state.editing ? 17 : 16;
     }
 
     /** Dòng hiển thị theo tuần đang lọc (dòng mới chưa lưu luôn hiện để nhập). */
@@ -333,6 +334,7 @@ export class DailyWorkKhoSheet extends Component {
         this.state.rows = (data.rows || []).map((r) => ({ ...r, key: `id-${r.id}` }));
         this.state.people = data.people || [];
         this.state.meJob = data.me_job || "";
+        this.state.wholeTeam = Boolean(data.whole_team);
         this.state.meDept = data.me_dept || "";
         this.state.kinds = data.kinds || [];
         this.state.categories = data.categories || [];

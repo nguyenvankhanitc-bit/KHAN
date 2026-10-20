@@ -261,8 +261,14 @@ export class DailyWorkKhoSheet extends Component {
         const doing = count("in_progress");
         const todo = count("not_started");
         const hours = rows.reduce((s, r) => s + this.hoursOf(r), 0);
+        // HIỆU SUẤT (giống Báo cáo cá nhân): TB % Hoàn thành do QL đánh giá trên Kiểm tra CV,
+        // tính trên các công việc (dòng liên kết); việc chưa đánh giá = 0%
+        const tasks = rows.filter((r) => r.linked);
+        const evalSum = tasks.reduce((s, r) => s + (Number(r.eval && r.eval.percent) || 0), 0);
+        const efficiency = tasks.length ? Math.round((evalSum * 10) / tasks.length) / 10 : 0;
         return {
             total,
+            efficiency,
             done,
             doing,
             todo,

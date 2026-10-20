@@ -696,3 +696,26 @@
         font-size: 0.75rem;
     }
 }
+
+// Ô HIỆU SUẤT (giống Báo cáo cá nhân)
+.o_daily_work_kho_sheet {
+    .o_dks_kpis {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+
+        @media (max-width: 1100px) {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+    }
+
+    .o_dks_weeks {
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .o_dks_kpi_ico.is-teal { background: #0891b2; }
+    .o_dks_kpi_lbl.is-teal { color: #0e7490; }
+
+    .o_dks_kpi_sub {
+        font-size: 0.68rem;
+        color: #64748b;
+    }
+}

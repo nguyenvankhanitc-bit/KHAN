@@ -69,6 +69,14 @@
                                 <span class="o_dks_kpi_ico is-violet"><i class="fa fa-clock-o"/></span>
                                 <div><div class="o_dks_kpi_lbl is-violet">TỔNG THỜI GIAN (giờ)</div><div class="o_dks_kpi_val" t-esc="kpi.hours"/></div>
                             </div>
+                            <div class="o_dks_kpi">
+                                <span class="o_dks_kpi_ico is-teal"><i class="fa fa-line-chart"/></span>
+                                <div>
+                                    <div class="o_dks_kpi_lbl is-teal">HIỆU SUẤT</div>
+                                    <div class="o_dks_kpi_val" t-esc="kpi.efficiency + '%'"/>
+                                    <div class="o_dks_kpi_sub">Theo QL đánh giá</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Tuần -->

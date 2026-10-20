@@ -460,11 +460,11 @@ class DailyTaskKhoSheetLine(models.Model):
         buf = io.BytesIO()
         wb = xlsxwriter.Workbook(buf, {"in_memory": True})
         ws = wb.add_worksheet("Bao cao CV NV Kho")
-        F = lambda **kw: wb.add_format(dict({"font_name": "Times New Roman", "font_size": 10, "valign": "vcenter"}, **kw))
-        f_title = F(bold=True, font_size=16, align="center")
+        F = lambda **kw: wb.add_format(dict({"font_name": "Times New Roman", "font_size": 12, "valign": "vcenter"}, **kw))
+        f_title = F(bold=True, font_size=12, align="center")
         f_center = F(align="center")
         f_sub = F(align="center", italic=True, font_color="#475569")
-        f_kpi_lbl = F(bold=True, align="center", border=1, bg_color="#e2e8f0", text_wrap=True, font_size=9)
+        f_kpi_lbl = F(bold=True, align="center", border=1, bg_color="#e2e8f0", text_wrap=True, font_size=12)
         f_kpi_val = F(bold=True, align="center", border=1, font_size=12)
         f_head = F(bold=True, align="center", border=1, bg_color="#0f4c9c", font_color="#ffffff", text_wrap=True)
         f_head_eval = F(bold=True, align="center", border=1, bg_color="#fce4d6", text_wrap=True)
@@ -494,14 +494,14 @@ class DailyTaskKhoSheetLine(models.Model):
             return fi if v == int(v) else f1
 
         # Cột (độ rộng ký tự) — tổng vừa A4 ngang khi co 1 trang chiều ngang
-        cols = [("STT", 5), ("Tuần", 7), ("Nội dung công việc", 46)]
+        cols = [("STT", 6), ("Tuần", 9), ("Nội dung công việc", 58)]
         if whole:
-            cols.append(("Người phụ trách", 18))
-        cols += [("Ngày bắt đầu", 13), ("Deadline", 11), ("Tổng TG (giờ)", 8), ("Trạng thái", 13),
-                 ("Kiểm soát", 16), ("Ghi chú", 20)]
+            cols.append(("Người phụ trách", 22))
+        cols += [("Ngày bắt đầu", 16), ("Deadline", 14), ("Tổng TG (giờ)", 10), ("Trạng thái", 16),
+                 ("Kiểm soát", 20), ("Ghi chú", 25)]
         n_main = len(cols)
-        eval_cols = [("% Hoàn thành", 9, f_head_eval), ("Ghi chú", 20, f_head_eval), ("Đạt", 6, f_head_pass),
-                     ("Trung bình", 8, f_head_avg), ("Không đạt", 8, f_head_fail), ("Xác nhận QL", 9, f_head_eval)]
+        eval_cols = [("% Hoàn thành", 11, f_head_eval), ("Ghi chú", 25, f_head_eval), ("Đạt", 8, f_head_pass),
+                     ("Trung bình", 10, f_head_avg), ("Không đạt", 10, f_head_fail), ("Xác nhận QL", 11, f_head_eval)]
         last_col = n_main + len(eval_cols) - 1
         for i, (_l, w) in enumerate(cols):
             ws.set_column(i, i, w)
@@ -511,10 +511,10 @@ class DailyTaskKhoSheetLine(models.Model):
         # Đầu báo cáo (giống Báo cáo cá nhân)
         r = 0
         ws.merge_range(r, 0, r, last_col, "BÁO CÁO CÔNG VIỆC", f_title)
-        ws.set_row(r, 26)
+        ws.set_row(r, 22)
         r += 1
         who = ("Team: %s" % data.get("team_name")) if whole else ("Họ và tên: %s" % (data.get("me") or ""))
-        ws.merge_range(r, 0, r, last_col, who, F(align="center", bold=True, font_size=11))
+        ws.merge_range(r, 0, r, last_col, who, F(align="center", bold=True, font_size=12))
         r += 1
         sub = " · ".join(x for x in (data.get("me_job"), data.get("me_dept")) if x) if not whole else ""
         if sub:
@@ -546,12 +546,12 @@ class DailyTaskKhoSheetLine(models.Model):
             return out
 
         px = lambda c0, c1: sum(int(w * 7 + 5) for w in widths[c0:c1 + 1])
-        f_sec = F(bold=True, font_size=11, font_color="#0b2a5b", bottom=2, bottom_color="#1d4ed8")
-        f_lh = F(bold=True, border=1, bg_color="#f1f5f9", font_color="#0b2a5b", align="center", font_size=9)
+        f_sec = F(bold=True, font_size=12, font_color="#0b2a5b", bottom=2, bottom_color="#1d4ed8")
+        f_lh = F(bold=True, border=1, bg_color="#f1f5f9", font_color="#0b2a5b", align="center", font_size=12)
         f_ll = F(border=1)
         f_lb = F(border=1, bold=True)
         f_lc = F(border=1, align="center", bold=True)
-        CH = 12  # số dòng vùng biểu đồ
+        CH = 13  # số dòng vùng biểu đồ
         blocks = split(3)
         sec = r
         chart_top = sec + 1
@@ -610,27 +610,27 @@ class DailyTaskKhoSheetLine(models.Model):
                     "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
                     "values": ["Bao cao CV NV Kho", first, c1 - 1, last, c1 - 1],
                     "points": [{"fill": {"color": cl}, "border": {"color": "#ffffff"}} for cl in colors],
-                    "data_labels": {"value": True, "font": {"bold": True, "color": "#ffffff", "size": 9}},
+                    "data_labels": {"value": True, "font": {"bold": True, "color": "#ffffff", "size": 12}},
                 })
                 ch.set_hole_size(55)
-                ch.set_legend({"position": "right", "font": {"size": 9, "name": "Times New Roman"}})
+                ch.set_legend({"position": "right", "font": {"size": 12, "name": "Times New Roman"}})
             else:
                 ch = wb.add_chart({"type": "bar"})
                 ch.add_series({
                     "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
                     "values": ["Bao cao CV NV Kho", first, c1, last, c1],
                     "points": [{"fill": {"color": cl}} for cl in colors],
-                    "data_labels": {"value": True, "num_format": "0.0%", "font": {"bold": True, "size": 10}},
+                    "data_labels": {"value": True, "num_format": "0.0%", "font": {"bold": True, "size": 12}},
                     "gap": 60,
                 })
                 ch.set_x_axis({"min": 0, "max": 1, "num_format": "0%", "major_gridlines": {"visible": True,
-                               "line": {"color": "#e5e7eb"}}, "num_font": {"size": 8}})
-                ch.set_y_axis({"reverse": True, "num_font": {"size": 9, "name": "Times New Roman"}})
+                               "line": {"color": "#e5e7eb"}}, "num_font": {"size": 12}})
+                ch.set_y_axis({"reverse": True, "num_font": {"size": 12, "name": "Times New Roman"}})
                 ch.set_legend({"none": True})
                 ch.set_title({"name": "Tổng thời gian: %s giờ" % hours,
-                              "name_font": {"size": 11, "bold": True, "color": "#6d28d9", "name": "Times New Roman"}})
+                              "name_font": {"size": 12, "bold": True, "color": "#6d28d9", "name": "Times New Roman"}})
             ch.set_chartarea({"border": {"none": True}})
-            ch.set_size({"width": max(px(c0, c1) - 12, 160), "height": CH * 20 - 6})
+            ch.set_size({"width": max(px(c0, c1) - 12, 160), "height": CH * 20})
             ws.insert_chart(chart_top, c0, ch, {"x_offset": 6, "y_offset": 3, "object_position": 1})
         r = tbl + 8
         # Tiêu đề bảng (2 hàng) — lặp lại ở đầu mỗi trang in
@@ -640,8 +640,8 @@ class DailyTaskKhoSheetLine(models.Model):
         ws.merge_range(h1, n_main, h1, last_col, "QUẢN LÝ ĐÁNH GIÁ", f_head_eval)
         for j, (lbl, _w, fm) in enumerate(eval_cols):
             ws.write(h1 + 1, n_main + j, lbl, fm)
-        ws.set_row(h1, 20)
-        ws.set_row(h1 + 1, 28)
+        ws.set_row(h1, 22)
+        ws.set_row(h1 + 1, 34)
         r = h1 + 2
         ws.repeat_rows(h1, h1 + 1)
 
@@ -705,7 +705,6 @@ class DailyTaskKhoSheetLine(models.Model):
         ws.fit_to_pages(1, 0)
         ws.center_horizontally()
         ws.set_margins(left=0.4, right=0.4, top=0.55, bottom=0.6)
-        ws.set_page_view()  # mở file là thấy đúng trang A4 + lề
         ws.set_footer('&L&"Times New Roman"&8Báo cáo CV NV Kho – Tháng %s/%s&R&"Times New Roman"&8Trang &P / &N' % (month, year))
         ws.print_area(0, 0, r, last_col)
         wb.close()

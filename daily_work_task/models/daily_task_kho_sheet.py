@@ -130,6 +130,9 @@ class DailyTaskKhoSheetLine(models.Model):
             "task_id": rec.task_id.id or False,
             "linked": bool(rec.task_id),
             "eval": self._eval_vals(rec.task_id),
+            # % hoàn thành CV (giống Danh sách công việc); dòng nhập tay: Hoàn thành = 100%
+            "completion": int(rec.task_id.sudo().completion_percent or 0) if rec.task_id
+            else (100 if rec.state == "done" else 0),
         }
 
     @api.model
@@ -190,9 +193,8 @@ class DailyTaskKhoSheetLine(models.Model):
         _y, _m, date_from, date_to = self.env["daily.task"]._month_date_bounds(year=year, month=month)
         users = team.manager_ids | team.member_ids
         tasks = self.env["daily.task"].sudo().search([
-            "|", ("team_work_team_id", "=", team.id),
-            "&", ("assignee_user_id", "in", users.ids),
-            "|", ("work_group_id", "=", False), ("work_group_id.team_id", "in", [team.id, False]),
+            # Giống Danh sách công việc: mọi việc của nhân sự Team (kể cả hạng mục của Team khác)
+            "|", ("team_work_team_id", "=", team.id), ("assignee_user_id", "in", users.ids),
             "|", "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
             "&", "&", ("assign_date", "=", False), ("deadline", ">=", date_from), ("deadline", "<=", date_to),
         ])

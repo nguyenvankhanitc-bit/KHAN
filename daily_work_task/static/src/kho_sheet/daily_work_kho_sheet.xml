@@ -140,149 +140,169 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr t-foreach="visibleRows" t-as="r" t-key="r.key">
-                                        <td class="text-center" t-esc="r_index + 1"/>
-                                        <td class="text-center o_dks_day" t-esc="weekOf(r.date)"/>
-                                        <!-- Chế độ xem -->
-                                        <t t-if="!state.editing">
-                                            <td class="o_dks_day" t-esc="dayLabel(r.date)"/>
-                                            <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
-                                            <td>
-                                                <i t-if="r.linked" class="fa fa-link o_dks_link" title="Từ Phân công việc team"/>
-                                                <t t-esc="r.name"/>
-                                            </td>
-                                            <td t-esc="r.responsible"/>
-                                            <td class="text-center" t-esc="fmt(r.date_start) || '—'"/>
-                                            <td class="text-center" t-esc="fmt(r.deadline) || '—'"/>
-                                            <td class="text-center" t-esc="hoursOf(r)"/>
-                                            <td class="text-center">
-                                                <span t-att-class="'o_dks_state is-' + r.state">
-                                                    <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
+                                    <t t-foreach="groups" t-as="g" t-key="g.key">
+                                        <!-- Hạng mục (group giống Danh sách công việc) -->
+                                        <tr class="o_dks_group" t-on-click="() => this.toggleGroup(g)">
+                                            <td t-att-colspan="colCount">
+                                                <i t-att-class="'fa o_dks_group_caret ' + (isGroupOpen(g) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
+                                                <i class="fa fa-folder-o o_dks_group_icon"/>
+                                                <b t-esc="g.label"/>
+                                                <span class="o_dks_group_meta">
+                                                    <t t-esc="g.count"/> việc · <t t-esc="g.hours"/> giờ · % Hoàn thành CV TB hạng mục (AVERAGE): <b t-esc="g.avg + '%'"/>
                                                 </span>
                                             </td>
-                                            <td t-esc="r.controller"/>
-                                            <td t-esc="r.note"/>
-                                            <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
-                                            <td class="o_dks_eval text-center">
-                                                <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
-                                            </td>
-                                            <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
-                                            </td>
-                                        </t>
-                                        <!-- Chế độ nhập tay -->
-                                        <t t-else="">
-                                            <t t-if="r.linked">
-                                                <!-- Dòng từ Phân công việc team: chỉ nhập Ghi chú (ngày / TG theo công việc đã phân) -->
-                                                <td class="o_dks_locked o_dks_day" t-esc="dayLabel(r.date)"/>
-                                                <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
-                                                <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
-                                                    <i class="fa fa-link o_dks_link"/> <t t-esc="r.name"/>
+                                        </tr>
+                                        <t t-if="isGroupOpen(g)">
+                                        <tr t-foreach="g.rows" t-as="r" t-key="r.key">
+                                            <td class="text-center" t-esc="r_index + 1"/>
+                                            <td class="text-center o_dks_day" t-esc="weekOf(r.date)"/>
+                                            <!-- Chế độ xem -->
+                                            <t t-if="!state.editing">
+                                                <td class="o_dks_day" t-esc="dayLabel(r.date)"/>
+                                                <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
+                                                <td>
+                                                    <i t-if="r.linked" class="fa fa-link o_dks_link" title="Từ Phân công việc team"/>
+                                                    <t t-esc="r.name"/>
                                                 </td>
-                                                <td class="o_dks_locked" t-esc="r.responsible"/>
+                                                <td t-esc="r.responsible"/>
+                                                <td class="text-center" t-esc="fmt(r.date_start) || '—'"/>
+                                                <td class="text-center" t-esc="fmt(r.deadline) || '—'"/>
+                                                <td class="text-center" t-esc="hoursOf(r)"/>
+                                                <td class="text-center">
+                                                    <span t-att-class="'o_dks_state is-' + r.state">
+                                                        <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
+                                                    </span>
+                                                </td>
+                                                <td t-esc="r.controller"/>
+                                                <td t-esc="r.note"/>
+                                                <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
+                                                <td class="o_dks_eval text-center">
+                                                    <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
+                                                </td>
+                                                <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
+                                                </td>
                                             </t>
+                                            <!-- Chế độ nhập tay -->
                                             <t t-else="">
-                                            <td>
-                                                <!-- Ngày dd/mm/yyyy: gõ tay hoặc bấm lịch -->
-                                                <div class="o_dks_date">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
-                                                           t-att-value="fmt(r.date)" t-on-change="(ev) => this.onDateText(r, ev)"/>
-                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
-                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
-                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date"
-                                                           t-on-change="(ev) => this.onField(r, 'date', ev)"/>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
-                                                    <option value="" t-att-selected="!r.work_group_id">— Chọn hạng mục —</option>
-                                                    <t t-foreach="categoryOptions(r)" t-as="c" t-key="c.id">
-                                                        <option t-att-value="c.id" t-att-selected="c.id === r.work_group_id" t-esc="c.name"/>
-                                                    </t>
-                                                </select>
-                                            </td>
-                                            <td><input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
-                                                       t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
-                                            <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
-                                                       t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
+                                                <t t-if="r.linked">
+                                                    <!-- Dòng từ Phân công việc team: chỉ nhập Ghi chú (ngày / TG theo công việc đã phân) -->
+                                                    <td class="o_dks_locked o_dks_day" t-esc="dayLabel(r.date)"/>
+                                                    <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
+                                                    <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
+                                                        <i class="fa fa-link o_dks_link"/> <t t-esc="r.name"/>
+                                                    </td>
+                                                    <td class="o_dks_locked" t-esc="r.responsible"/>
+                                                </t>
+                                                <t t-else="">
+                                                <td>
+                                                    <!-- Ngày dd/mm/yyyy: gõ tay hoặc bấm lịch -->
+                                                    <div class="o_dks_date">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                               t-att-value="fmt(r.date)" t-on-change="(ev) => this.onDateText(r, ev)"/>
+                                                        <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                                t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                        <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date"
+                                                               t-on-change="(ev) => this.onField(r, 'date', ev)"/>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
+                                                        <option value="" t-att-selected="!r.work_group_id">— Chọn hạng mục —</option>
+                                                        <t t-foreach="categoryOptions(r)" t-as="c" t-key="c.id">
+                                                            <option t-att-value="c.id" t-att-selected="c.id === r.work_group_id" t-esc="c.name"/>
+                                                        </t>
+                                                    </select>
+                                                </td>
+                                                <td><input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
+                                                           t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
+                                                <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
+                                                           t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
+                                                </t>
+                                                <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.date_start) || '—'"/>
+                                                <td t-else="">
+                                                    <div class="o_dks_date">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                               t-att-value="fmt(r.date_start)" t-on-change="(ev) => this.onDateText(r, ev, 'date_start')"/>
+                                                        <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                                t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                        <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date_start"
+                                                               t-on-change="(ev) => this.ondate_startield(r, 'date_start', ev)"/>
+                                                    </div>
+                                                </td>
+                                                <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.deadline) || '—'"/>
+                                                <td t-else="">
+                                                    <div class="o_dks_date">
+                                                        <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                               t-att-value="fmt(r.deadline)" t-on-change="(ev) => this.onDateText(r, ev, 'deadline')"/>
+                                                        <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                                t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                        <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.deadline"
+                                                               t-on-change="(ev) => this.ondeadlineield(r, 'deadline', ev)"/>
+                                                    </div>
+                                                </td>
+                                                <td t-if="r.linked" class="text-center o_dks_hours o_dks_locked" title="Theo Tổng TG ở Danh sách công việc" t-esc="hoursOf(r)"/>
+                                                <td t-else=""><input type="number" min="0" step="0.5" class="form-control form-control-sm text-center"
+                                                           t-att-value="r.hours" t-on-change="(ev) => this.onField(r, 'hours', ev)"/></td>
+                                                <td t-if="r.linked" class="text-center o_dks_locked">
+                                                    <span t-att-class="'o_dks_state is-' + r.state">
+                                                        <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
+                                                    </span>
+                                                </td>
+                                                <td t-else="">
+                                                    <select t-att-class="'form-select form-select-sm o_dks_state_sel is-' + r.state" t-on-change="(ev) => this.onField(r, 'state', ev)">
+                                                        <t t-foreach="state.states" t-as="s" t-key="s.key">
+                                                            <option t-att-value="s.key" t-att-selected="s.key === r.state" t-esc="s.label"/>
+                                                        </t>
+                                                    </select>
+                                                </td>
+                                                <td t-if="r.linked" class="o_dks_locked" t-esc="r.controller"/>
+                                                <td t-else=""><input type="text" class="form-control form-control-sm" list="o_dks_people"
+                                                           t-att-value="r.controller" t-on-change="(ev) => this.onField(r, 'controller', ev)"/></td>
+                                                <td><input type="text" class="form-control form-control-sm"
+                                                           t-att-value="r.note" t-on-change="(ev) => this.onField(r, 'note', ev)"/></td>
+                                                <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
+                                                <td class="o_dks_eval text-center">
+                                                    <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
+                                                </td>
+                                                <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
+                                                </td>
+                                                <td class="o_dks_eval text-center">
+                                                    <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
+                                                </td>
+                                                <td class="text-center">
+                                                    <button t-if="!r.linked" type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
+                                                            t-on-click="() => this.onRemove(r)"><i class="fa fa-trash"/></button>
+                                                </td>
                                             </t>
-                                            <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.date_start) || '—'"/>
-                                            <td t-else="">
-                                                <div class="o_dks_date">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
-                                                           t-att-value="fmt(r.date_start)" t-on-change="(ev) => this.onDateText(r, ev, 'date_start')"/>
-                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
-                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
-                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date_start"
-                                                           t-on-change="(ev) => this.ondate_startield(r, 'date_start', ev)"/>
-                                                </div>
-                                            </td>
-                                            <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.deadline) || '—'"/>
-                                            <td t-else="">
-                                                <div class="o_dks_date">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
-                                                           t-att-value="fmt(r.deadline)" t-on-change="(ev) => this.onDateText(r, ev, 'deadline')"/>
-                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
-                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
-                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.deadline"
-                                                           t-on-change="(ev) => this.ondeadlineield(r, 'deadline', ev)"/>
-                                                </div>
-                                            </td>
-                                            <td t-if="r.linked" class="text-center o_dks_hours o_dks_locked" title="Theo Tổng TG ở Danh sách công việc" t-esc="hoursOf(r)"/>
-                                            <td t-else=""><input type="number" min="0" step="0.5" class="form-control form-control-sm text-center"
-                                                       t-att-value="r.hours" t-on-change="(ev) => this.onField(r, 'hours', ev)"/></td>
-                                            <td t-if="r.linked" class="text-center o_dks_locked">
-                                                <span t-att-class="'o_dks_state is-' + r.state">
-                                                    <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
-                                                </span>
-                                            </td>
-                                            <td t-else="">
-                                                <select t-att-class="'form-select form-select-sm o_dks_state_sel is-' + r.state" t-on-change="(ev) => this.onField(r, 'state', ev)">
-                                                    <t t-foreach="state.states" t-as="s" t-key="s.key">
-                                                        <option t-att-value="s.key" t-att-selected="s.key === r.state" t-esc="s.label"/>
-                                                    </t>
-                                                </select>
-                                            </td>
-                                            <td t-if="r.linked" class="o_dks_locked" t-esc="r.controller"/>
-                                            <td t-else=""><input type="text" class="form-control form-control-sm" list="o_dks_people"
-                                                       t-att-value="r.controller" t-on-change="(ev) => this.onField(r, 'controller', ev)"/></td>
-                                            <td><input type="text" class="form-control form-control-sm"
-                                                       t-att-value="r.note" t-on-change="(ev) => this.onField(r, 'note', ev)"/></td>
-                                            <!-- QUẢN LÝ ĐÁNH GIÁ (từ Kiểm tra CV) — chỉ xem -->
-                                            <td class="o_dks_eval text-center">
-                                                <t t-if="r.eval and r.eval.percent !== null and r.eval.percent !== undefined" t-esc="r.eval.percent + '%'"/>
-                                            </td>
-                                            <td class="o_dks_eval o_dks_eval_note" t-esc="r.eval and r.eval.note or ''"/>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'pass'" class="fa fa-check-square o_dks_rate is-pass" title="Đạt"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'average'" class="fa fa-check-square o_dks_rate is-average" title="Trung bình"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.rating === 'fail'" class="fa fa-check-square o_dks_rate is-fail" title="Không đạt"/>
-                                            </td>
-                                            <td class="o_dks_eval text-center">
-                                                <i t-if="r.eval and r.eval.confirmed" class="fa fa-check-circle o_dks_rate is-pass" title="Quản lý đã xác nhận"/>
-                                            </td>
-                                            <td class="text-center">
-                                                <button t-if="!r.linked" type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
-                                                        t-on-click="() => this.onRemove(r)"><i class="fa fa-trash"/></button>
-                                            </td>
+                                        </tr>
                                         </t>
+                                    </t>
+                                    <tr t-if="groups.length" class="o_dks_group_total">
+                                        <td t-att-colspan="colCount">
+                                            Tổng % hoàn thành công việc trong tháng (AVERAGE các hạng mục): <b t-esc="groupsAvg + '%'"/>
+                                        </td>
                                     </tr>
                                     <tr t-if="!visibleRows.length">
-                                        <td t-att-colspan="state.editing ? 19 : 18" class="text-center text-muted py-4">
+                                        <td t-att-colspan="colCount" class="text-center text-muted py-4">
                                             Chưa có công việc. <t t-if="state.canWrite">Bấm «Thêm công việc» để nhập.</t>
                                         </td>
                                     </tr>

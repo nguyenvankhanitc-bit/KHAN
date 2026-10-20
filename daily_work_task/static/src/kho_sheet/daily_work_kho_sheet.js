@@ -38,6 +38,7 @@ export class DailyWorkKhoSheet extends Component {
             editing: false,
             dirty: false,
             weekNo: 0, // 0 = cả tháng; bấm ô Tuần để lọc
+            openGroups: {}, // hạng mục đang mở (group giống Danh sách công việc)
             year: now.getFullYear(),
             month: now.getMonth() + 1,
             teamId: 0,
@@ -136,6 +137,57 @@ export class DailyWorkKhoSheet extends Component {
     /** Bấm ô Tuần → lọc danh sách theo tuần; bấm lại → cả tháng. */
     onWeek(no) {
         this.state.weekNo = this.state.weekNo === no ? 0 : no;
+    }
+
+    /** Group theo Hạng mục (giống Danh sách công việc): số việc · giờ · % hoàn thành TB. */
+    get groups() {
+        const map = new Map();
+        for (const r of this.visibleRows) {
+            const label = this.categoryLabel(r) || "";
+            const key = label || "__none__";
+            if (!map.has(key)) {
+                map.set(key, { key, label: label || "Chưa có hạng mục", rows: [] });
+            }
+            map.get(key).rows.push(r);
+        }
+        const out = [...map.values()].map((g) => {
+            const hours = g.rows.reduce((s, r) => s + this.hoursOf(r), 0);
+            const pct = g.rows.reduce((s, r) => s + (Number(r.completion) || 0), 0);
+            return {
+                ...g,
+                count: g.rows.length,
+                hours: Math.round(hours * 10) / 10,
+                avg: g.rows.length ? Math.round((pct * 10) / g.rows.length) / 10 : 0,
+            };
+        });
+        out.sort((a, b) => {
+            if (a.key === "__none__" || b.key === "__none__") {
+                return a.key === "__none__" ? 1 : -1;
+            }
+            return a.label.localeCompare(b.label, "vi");
+        });
+        return out;
+    }
+
+    /** Tổng % hoàn thành công việc trong tháng (AVERAGE các hạng mục). */
+    get groupsAvg() {
+        const gs = this.groups;
+        if (!gs.length) {
+            return 0;
+        }
+        return Math.round((gs.reduce((s, g) => s + g.avg, 0) * 10) / gs.length) / 10;
+    }
+
+    isGroupOpen(g) {
+        return this.state.editing || Boolean(this.state.openGroups[g.key]);
+    }
+
+    toggleGroup(g) {
+        this.state.openGroups[g.key] = !this.state.openGroups[g.key];
+    }
+
+    get colCount() {
+        return this.state.editing ? 19 : 18;
     }
 
     /** Dòng hiển thị theo tuần đang lọc (dòng mới chưa lưu luôn hiện để nhập). */

@@ -504,3 +504,41 @@
         &.is-fail { color: #dc2626; }
     }
 }
+
+// Group theo Hạng mục (giống Danh sách công việc)
+.o_daily_work_kho_sheet .o_dks_table {
+    tbody tr.o_dks_group td {
+        background: #b4c7e7;
+        color: #0f172a;
+        padding: 9px 12px;
+        border-bottom: 1px solid #8ea9d8;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    tbody tr.o_dks_group:hover td {
+        background: #a5bbe0;
+    }
+
+    .o_dks_group_caret {
+        width: 14px;
+        margin-right: 6px;
+    }
+
+    .o_dks_group_icon {
+        margin-right: 6px;
+    }
+
+    .o_dks_group_meta {
+        margin-left: 10px;
+        font-size: 0.84rem;
+    }
+
+    tbody tr.o_dks_group_total td {
+        background: #b4c7e7;
+        color: #0f172a;
+        font-weight: 600;
+        padding: 9px 12px;
+        border-top: 2px solid #6b8cc7;
+    }
+}

@@ -426,6 +426,29 @@ class DailyTaskKhoSheetLine(models.Model):
         pct = lambda n: num(n * 100.0 / total) if total else 0
         hours = num(sum(float(r["hours"] or 0) for r in rows))
         eff = num(self._final_manager_eval(rows, data.get("manager_perf") or {}))
+        today_iso = fields.Date.context_today(self).isoformat()
+        st = {"done": 0, "doing": 0, "todo": 0, "overdue": 0}
+        for x in rows:
+            if x["state"] == "done":
+                st["done"] += 1
+            elif x.get("deadline") and x["deadline"] < today_iso:
+                st["overdue"] += 1
+            elif x["state"] == "in_progress":
+                st["doing"] += 1
+            else:
+                st["todo"] += 1
+        rt = {"pass": 0, "average": 0, "fail": 0}
+        unrated = 0
+        for x in rows:
+            k = (x.get("eval") or {}).get("rating")
+            if k in rt:
+                rt[k] += 1
+            elif x.get("linked"):
+                unrated += 1
+        rated = sum(rt.values())
+        self_eval = num(sum(int(x.get("completion") or 0) for x in rows) / len(rows)) if rows else 0
+        mperf = data.get("manager_perf") or {}
+        locked = any(str(x.get("assignee_uid") or 0) in mperf for x in rows if x.get("linked"))
 
         # Group theo hạng mục
         groups = {}
@@ -460,6 +483,15 @@ class DailyTaskKhoSheetLine(models.Model):
             "not_started": F(border=1, align="center", font_color="#4b5563"),
         }
         f_total = F(bold=True, border=1, bg_color="#b4c7e7")
+        f_pct_i = F(border=1, align="center", num_format="0%")
+        f_pct_1 = F(border=1, align="center", num_format="0.0%")
+        f_eval_pi = F(border=1, align="center", bg_color="#fff7ed", num_format="0%")
+        f_eval_p1 = F(border=1, align="center", bg_color="#fff7ed", num_format="0.0%")
+        f_num = F(border=1, align="center")  # General: 147 · 0,5 (không thừa dấu phẩy)
+
+        def pfmt(v, fi, f1):
+            v = round(float(v or 0), 1)
+            return fi if v == int(v) else f1
 
         # Cột (độ rộng ký tự) — tổng vừa A4 ngang khi co 1 trang chiều ngang
         cols = [("STT", 5), ("Tuần", 7), ("Nội dung công việc", 46)]
@@ -494,35 +526,113 @@ class DailyTaskKhoSheetLine(models.Model):
         ws.merge_range(r, 0, r, last_col, period, f_center)
         r += 2
 
-        # 6 ô chỉ số
-        kpis = [("TỔNG CÔNG VIỆC", str(total)), ("HOÀN THÀNH", "%s (%s%%)" % (cnt("done"), pct(cnt("done")))),
-                ("ĐANG THỰC HIỆN", "%s (%s%%)" % (cnt("in_progress"), pct(cnt("in_progress")))),
-                ("CHƯA BẮT ĐẦU", "%s (%s%%)" % (cnt("not_started"), pct(cnt("not_started")))),
-                ("TỔNG THỜI GIAN (giờ)", str(hours)), ("HIỆU SUẤT (QL đánh giá)", "%s%%" % eff)]
-        # Chia 6 ô theo độ rộng thật của cột (cột STT / Tuần hẹp) → các ô rộng gần bằng nhau
+        # 3 biểu đồ (giống màn hình) + bảng số liệu dưới mỗi biểu đồ
         widths = [w for _l, w in cols] + [w for _l, w, _f in eval_cols]
-        target = sum(widths) / float(len(kpis))
-        c0 = 0
-        for i, (lbl, val) in enumerate(kpis):
-            if i == len(kpis) - 1:
-                c1 = last_col
-            else:
-                c1, acc = c0, widths[c0]
-                remain_blocks = len(kpis) - i - 1
-                while c1 + 1 <= last_col - remain_blocks and acc + widths[c1 + 1] / 2.0 <= target:
+
+        def split(n):
+            """Chia cột thành n khối có độ rộng gần bằng nhau (cột STT / Tuần hẹp)."""
+            target = sum(widths) / float(n)
+            out, c0 = [], 0
+            for i in range(n):
+                if i == n - 1:
+                    out.append((c0, last_col))
+                    break
+                c1, acc = c0 + 2, sum(widths[c0:c0 + 3])  # tối thiểu 3 cột / khối
+                while c1 + 1 <= last_col - 3 * (n - i - 1) and acc + widths[c1 + 1] / 2.0 <= target:
                     c1 += 1
                     acc += widths[c1]
-            if c1 > c0:
-                ws.merge_range(r, c0, r, c1, lbl, f_kpi_lbl)
-                ws.merge_range(r + 1, c0, r + 1, c1, val, f_kpi_val)
-            else:
-                ws.write(r, c0, lbl, f_kpi_lbl)
-                ws.write(r + 1, c0, val, f_kpi_val)
-            c0 = c1 + 1
-        ws.set_row(r, 28)  # nhãn dài (TỔNG CÔNG VIỆC) tự xuống dòng
-        ws.set_row(r + 1, 22)
-        r += 3
+                out.append((c0, c1))
+                c0 = c1 + 1
+            return out
 
+        px = lambda c0, c1: sum(int(w * 7 + 5) for w in widths[c0:c1 + 1])
+        f_sec = F(bold=True, font_size=11, font_color="#0b2a5b", bottom=2, bottom_color="#1d4ed8")
+        f_lh = F(bold=True, border=1, bg_color="#f1f5f9", font_color="#0b2a5b", align="center", font_size=9)
+        f_ll = F(border=1)
+        f_lb = F(border=1, bold=True)
+        f_lc = F(border=1, align="center", bold=True)
+        CH = 12  # số dòng vùng biểu đồ
+        blocks = split(3)
+        sec = r
+        chart_top = sec + 1
+        tbl = chart_top + CH + 1
+        titles = ["1. TỔNG CÔNG VIỆC", "2. KẾT QUẢ ĐÁNH GIÁ QUẢN LÝ", "3. THỜI GIAN VÀ HIỆU SUẤT"]
+        total_tasks = sum(st.values())
+        p_of = lambda n, t: (n / float(t)) if t else 0
+        legends = [
+            [("Hoàn thành", st["done"], p_of(st["done"], total_tasks), "#16a34a"),
+             ("Đang thực hiện", st["doing"], p_of(st["doing"], total_tasks), "#f59e0b"),
+             ("Chưa bắt đầu", st["todo"], p_of(st["todo"], total_tasks), "#94a3b8"),
+             ("Quá hạn", st["overdue"], p_of(st["overdue"], total_tasks), "#dc2626")],
+            [("Đạt", rt["pass"], p_of(rt["pass"], rated), "#16a34a"),
+             ("Trung bình", rt["average"], p_of(rt["average"], rated), "#f59e0b"),
+             ("Không đạt", rt["fail"], p_of(rt["fail"], rated), "#dc2626")],
+            [("NV tự đánh giá", None, self_eval / 100.0, "#2563eb"),
+             ("QL đánh giá" + (" (QL chốt)" if locked else ""), None, eff / 100.0, "#16a34a")],
+        ]
+        foot = [("Tổng công việc", total_tasks), ("Đã đánh giá", rated), ("Tổng thời gian (giờ)", hours)]
+        heads = [("Trạng thái", "Số CV", "Tỷ lệ"), ("Xếp loại", "Số CV", "Tỷ lệ"), ("Tiêu chí", "", "Giá trị")]
+        for bi, (c0, c1) in enumerate(blocks):
+            lc1 = c1 - 2  # nhãn: c0..c1-2 · số: c1-1 · %: c1
+            ws.merge_range(sec, c0, sec, c1, titles[bi], f_sec)
+            # bảng số liệu
+            t = tbl
+            h = heads[bi]
+            (ws.merge_range(t, c0, t, lc1, h[0], f_lh) if lc1 > c0 else ws.write(t, c0, h[0], f_lh))
+            ws.write(t, c1 - 1, h[1], f_lh)
+            ws.write(t, c1, h[2], f_lh)
+            first = t + 1
+            for k, (lbl, n, p, _color) in enumerate(legends[bi]):
+                rr = first + k
+                (ws.merge_range(rr, c0, rr, lc1, lbl, f_ll) if lc1 > c0 else ws.write(rr, c0, lbl, f_ll))
+                if n is None:
+                    ws.write_blank(rr, c1 - 1, None, f_ll)
+                else:
+                    ws.write_number(rr, c1 - 1, n, f_num)
+                ws.write_number(rr, c1, p, pfmt(p * 100, f_pct_i, f_pct_1))
+            last = first + len(legends[bi]) - 1
+            fr = last + 1
+            flbl, fval = foot[bi]
+            (ws.merge_range(fr, c0, fr, lc1, flbl, f_lb) if lc1 > c0 else ws.write(fr, c0, flbl, f_lb))
+            if bi == 2:
+                ws.merge_range(fr, c1 - 1, fr, c1, "%s giờ" % fval, f_lc)
+            else:
+                ws.write_number(fr, c1 - 1, fval, f_lc)
+                ws.write_blank(fr, c1, None, f_lc)
+            if bi == 1 and unrated:
+                ws.merge_range(fr + 1, c0, fr + 1, c1, "%s việc chưa được đánh giá" % unrated,
+                               F(italic=True, font_color="#475569"))
+            # biểu đồ
+            colors = [x[3] for x in legends[bi]]
+            if bi < 2:
+                ch = wb.add_chart({"type": "doughnut"})
+                ch.add_series({
+                    "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
+                    "values": ["Bao cao CV NV Kho", first, c1 - 1, last, c1 - 1],
+                    "points": [{"fill": {"color": cl}, "border": {"color": "#ffffff"}} for cl in colors],
+                    "data_labels": {"value": True, "font": {"bold": True, "color": "#ffffff", "size": 9}},
+                })
+                ch.set_hole_size(55)
+                ch.set_legend({"position": "right", "font": {"size": 9, "name": "Times New Roman"}})
+            else:
+                ch = wb.add_chart({"type": "bar"})
+                ch.add_series({
+                    "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
+                    "values": ["Bao cao CV NV Kho", first, c1, last, c1],
+                    "points": [{"fill": {"color": cl}} for cl in colors],
+                    "data_labels": {"value": True, "num_format": "0.0%", "font": {"bold": True, "size": 10}},
+                    "gap": 60,
+                })
+                ch.set_x_axis({"min": 0, "max": 1, "num_format": "0%", "major_gridlines": {"visible": True,
+                               "line": {"color": "#e5e7eb"}}, "num_font": {"size": 8}})
+                ch.set_y_axis({"reverse": True, "num_font": {"size": 9, "name": "Times New Roman"}})
+                ch.set_legend({"none": True})
+                ch.set_title({"name": "Tổng thời gian: %s giờ" % hours,
+                              "name_font": {"size": 11, "bold": True, "color": "#6d28d9", "name": "Times New Roman"}})
+            ch.set_chartarea({"border": {"none": True}})
+            ch.set_size({"width": max(px(c0, c1) - 12, 160), "height": CH * 20 - 6})
+            ws.insert_chart(chart_top, c0, ch, {"x_offset": 6, "y_offset": 3, "object_position": 1})
+        r = tbl + 8
         # Tiêu đề bảng (2 hàng) — lặp lại ở đầu mỗi trang in
         h1 = r
         for i, (lbl, _w) in enumerate(cols):
@@ -534,7 +644,6 @@ class DailyTaskKhoSheetLine(models.Model):
         ws.set_row(h1 + 1, 28)
         r = h1 + 2
         ws.repeat_rows(h1, h1 + 1)
-        ws.freeze_panes(r, 0)
 
         # Dữ liệu theo nhóm hạng mục
         avgs = []
@@ -552,10 +661,11 @@ class DailyTaskKhoSheetLine(models.Model):
                 if whole:
                     vals.append((it.get("responsible") or "", f_cell))
                 vals += [(day_label(it.get("date_start")) or "", f_cell_c), (fmt(it.get("deadline")), f_cell_c),
-                         (num(it["hours"]), f_cell_c), (states.get(it["state"], ""), f_state.get(it["state"], f_cell_c)),
+                         (num(it["hours"]), f_num), (states.get(it["state"], ""), f_state.get(it["state"], f_cell_c)),
                          (it.get("controller") or "", f_cell), (it.get("note") or "", f_cell)]
                 p = ev.get("percent")
-                vals += [("%s%%" % p if p is not None else "", f_eval), (ev.get("note") or "", f_eval_l),
+                vals += [((p / 100.0, pfmt(p, f_eval_pi, f_eval_p1)) if p is not None else ("", f_eval)),
+                         (ev.get("note") or "", f_eval_l),
                          ("✓" if ev.get("rating") == "pass" else "", f_tick),
                          ("✓" if ev.get("rating") == "average" else "", f_tick),
                          ("✓" if ev.get("rating") == "fail" else "", f_tick),
@@ -594,7 +704,8 @@ class DailyTaskKhoSheetLine(models.Model):
         ws.set_landscape()
         ws.fit_to_pages(1, 0)
         ws.center_horizontally()
-        ws.set_margins(left=0.3, right=0.3, top=0.5, bottom=0.55)
+        ws.set_margins(left=0.4, right=0.4, top=0.55, bottom=0.6)
+        ws.set_page_view()  # mở file là thấy đúng trang A4 + lề
         ws.set_footer('&L&"Times New Roman"&8Báo cáo CV NV Kho – Tháng %s/%s&R&"Times New Roman"&8Trang &P / &N' % (month, year))
         ws.print_area(0, 0, r, last_col)
         wb.close()

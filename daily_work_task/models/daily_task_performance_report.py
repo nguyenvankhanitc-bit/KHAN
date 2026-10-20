@@ -152,7 +152,7 @@ class DailyTaskPerformanceReport(models.AbstractModel):
             "dept_chart": dept_chart,
             "trend": trend,
             "staff": staff,
-            "staff_groups": self._staff_groups(staff),
+            "staff_groups": self._staff_groups(self._attach_manager_perf(staff, year, month)),
             "departments": dept_opts,
             "tree": tree,
             "selected_employee_id": selected.id,
@@ -392,6 +392,21 @@ class DailyTaskPerformanceReport(models.AbstractModel):
             })
         rows.sort(key=lambda r: (r["total"] == 0, -r["efficiency"], -r["total"], r["name"].casefold()))
         return rows
+
+    @api.model
+    def _attach_manager_perf(self, staff, year, month):
+        """Gắn «QL đánh giá tổng» (đã chốt) + quyền nhập vào từng dòng nhân sự."""
+        Perf = self.env["daily.task.manager.perf"]
+        pmap = Perf.get_map(year, month, employee_ids=[r["id"] for r in staff])
+        Emp = self.env["hr.employee"].sudo()
+        for r in staff:
+            r["manager_perf"] = pmap.get(r["id"])
+            r["can_rate"] = Perf._can_rate(Emp.browse(r["id"]))
+        return staff
+
+    @api.model
+    def set_manager_perf(self, employee_id, year, month, percent=None):
+        return self.env["daily.task.manager.perf"].set_manager_perf(employee_id, year, month, percent)
 
     @api.model
     def _staff_groups(self, staff):

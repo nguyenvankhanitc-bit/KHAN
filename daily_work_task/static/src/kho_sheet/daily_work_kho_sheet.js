@@ -54,6 +54,7 @@ export class DailyWorkKhoSheet extends Component {
             me: "",
             meJob: "",
             wholeTeam: false,
+            managerPerf: {},
             canExport: false,
             exporting: false,
             meDept: "",
@@ -168,9 +169,32 @@ export class DailyWorkKhoSheet extends Component {
         const hours = round1(rows.reduce((s, r) => s + this.hoursOf(r), 0));
         // NV tự đánh giá = TB «% hoàn thành CV» nhân viên nhập ở Danh sách công việc
         const self = rows.length ? round1(rows.reduce((s, r) => s + (Number(r.completion) || 0), 0) / rows.length) : 0;
-        // QL đánh giá = TB % Hoàn thành QL chấm trên Kiểm tra CV (việc chưa đánh giá = 0%) — giống Hiệu suất
-        const manager = this.kpi.efficiency || 0;
-        return { hours, self, manager, gap: round1(manager - self) };
+        // QL đánh giá: theo từng nhân viên = «QL đánh giá tổng» đã chốt (Báo cáo hiệu suất) nếu có,
+        // không thì TB % QL chấm trên Kiểm tra CV; gộp nhiều nhân viên = TB có trọng số theo số việc
+        const ov = this.state.managerPerf || {};
+        const per = {};
+        for (const r of rows) {
+            if (!r.linked) {
+                continue;
+            }
+            const uid = String(r.assignee_uid || 0);
+            per[uid] = per[uid] || [0, 0];
+            per[uid][0] += Number(r.eval && r.eval.percent) || 0;
+            per[uid][1] += 1;
+        }
+        let total = 0;
+        let count = 0;
+        let locked = false;
+        for (const [uid, [sm, n]] of Object.entries(per)) {
+            const val = ov[uid];
+            if (val !== undefined && val !== null) {
+                locked = true;
+            }
+            total += (val !== undefined && val !== null ? Number(val) : sm / n) * n;
+            count += n;
+        }
+        const manager = count ? round1(total / count) : 0;
+        return { hours, self, manager, locked, gap: round1(manager - self) };
     }
 
     get perfRows() {
@@ -651,6 +675,7 @@ export class DailyWorkKhoSheet extends Component {
         this.state.people = data.people || [];
         this.state.meJob = data.me_job || "";
         this.state.wholeTeam = Boolean(data.whole_team);
+        this.state.managerPerf = data.manager_perf || {};
         this.state.meDept = data.me_dept || "";
         this.state.kinds = data.kinds || [];
         this.state.categories = data.categories || [];

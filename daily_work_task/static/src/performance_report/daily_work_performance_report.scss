@@ -707,3 +707,27 @@
 
 .o_dpr_root .o_dpr_staff tr.o_dpr_dept_row:hover td { background: #a5b9e0; }
 .o_dpr_root .o_dpr_staff tr:not(.o_dpr_dept_row) td:first-child { padding-left: 32px; }
+
+// QL đánh giá tổng (quản lý chốt % hiệu suất tháng)
+.o_dpr_staff {
+    th.o_dpr_mgr_th {
+        white-space: nowrap;
+    }
+
+    .o_dpr_mgr_input {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+
+        input {
+            width: 78px;
+            text-align: right;
+            font-weight: 700;
+        }
+
+        input::placeholder {
+            font-weight: 400;
+            color: #94a3b8;
+        }
+    }
+}

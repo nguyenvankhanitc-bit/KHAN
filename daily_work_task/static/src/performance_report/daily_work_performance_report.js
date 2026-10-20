@@ -118,6 +118,33 @@ export class DailyWorkPerformanceReport extends Component {
         return ((parts[0][0] || "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
     }
 
+    /** QL đánh giá tổng: lưu ngay khi đổi; để trống = dùng giá trị tính tự động. */
+    async onManagerPerf(r, ev) {
+        const raw = String(ev.target.value || "").trim().replace(",", ".");
+        const value = raw === "" ? null : Number(raw);
+        if (value !== null && (Number.isNaN(value) || value < 0 || value > 100)) {
+            this.notification.add(_t("% QL đánh giá tổng phải từ 0 đến 100."), { type: "warning" });
+            ev.target.value = r.manager_perf ?? "";
+            return;
+        }
+        try {
+            const res = await this.orm.call("daily.task.performance.report", "set_manager_perf", [
+                r.id, this.state.year, this.state.month, value,
+            ]);
+            r.manager_perf = res.percent;
+            ev.target.value = res.percent ?? "";
+            this.notification.add(
+                res.percent === null
+                    ? _t("Đã bỏ QL đánh giá tổng — dùng giá trị tính tự động.")
+                    : `Đã chốt QL đánh giá tổng ${res.percent}% cho ${r.name}.`,
+                { type: "success" }
+            );
+        } catch (e) {
+            ev.target.value = r.manager_perf ?? "";
+            this.notification.add(e?.data?.message || _t("Không lưu được QL đánh giá tổng."), { type: "danger" });
+        }
+    }
+
     effClass(v) {
         const n = Number(v) || 0;
         return n >= 85 ? "is-good" : n >= 70 ? "is-ok" : n >= 50 ? "is-mid" : "is-bad";

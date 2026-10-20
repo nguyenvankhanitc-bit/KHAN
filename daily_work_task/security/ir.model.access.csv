@@ -57,3 +57,5 @@ access_daily_task_report_perm_user,daily.task.report.perm user,model_daily_task_
 access_daily_task_report_perm_manager,daily.task.report.perm manager,model_daily_task_report_perm,group_daily_work_manager,1,1,1,1
 access_daily_task_kho_sheet_line_user,daily.task.kho.sheet.line user,model_daily_task_kho_sheet_line,group_daily_work_user,1,0,0,0
 access_daily_task_kho_sheet_line_manager,daily.task.kho.sheet.line manager,model_daily_task_kho_sheet_line,group_daily_work_manager,1,1,1,1
+access_daily_task_manager_perf_user,daily.task.manager.perf user,model_daily_task_manager_perf,group_daily_work_user,1,0,0,0
+access_daily_task_manager_perf_manager,daily.task.manager.perf manager,model_daily_task_manager_perf,group_daily_work_manager,1,1,1,1

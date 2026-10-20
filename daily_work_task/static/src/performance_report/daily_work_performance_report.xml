@@ -92,6 +92,7 @@
                                 <th class="num">Chưa làm</th>
                                 <th class="num">Trễ hạn</th>
                                 <th class="num">Hiệu suất</th>
+                                <th class="num o_dpr_mgr_th" title="Quản lý chốt % hiệu suất tháng — là kết quả cuối cùng «QL đánh giá» trên Báo cáo CV NV Kho. Để trống = dùng giá trị tính tự động.">QL đánh giá tổng</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -111,6 +112,7 @@
                                     <td class="num">
                                         <span t-att-class="'o_dpr_eff ' + effClass(g.efficiency)" t-esc="g.efficiency + '%'"/>
                                     </td>
+                                    <td class="num"/>
                                 </tr>
                             <t t-if="isDeptOpen(g)">
                             <t t-foreach="g.rows" t-as="r" t-key="g.key + '-' + r.id">
@@ -130,12 +132,26 @@
                                     <td class="num">
                                         <span t-att-class="'o_dpr_eff ' + effClass(r.efficiency)" t-esc="r.efficiency + '%'"/>
                                     </td>
+                                    <td class="num o_dpr_mgr_cell">
+                                        <div t-if="r.can_rate" class="o_dpr_mgr_input">
+                                            <input type="number" min="0" max="100" step="0.1"
+                                                   class="form-control form-control-sm"
+                                                   t-att-value="(r.manager_perf === null or r.manager_perf === undefined) ? '' : r.manager_perf"
+                                                   t-att-placeholder="r.efficiency"
+                                                   t-att-title="'Để trống = dùng ' + r.efficiency + '% (tính tự động)'"
+                                                   t-on-change="(ev) => this.onManagerPerf(r, ev)"/>
+                                            <span>%</span>
+                                        </div>
+                                        <span t-elif="r.manager_perf !== null and r.manager_perf !== undefined"
+                                              t-att-class="'o_dpr_eff ' + effClass(r.manager_perf)" t-esc="r.manager_perf + '%'"/>
+                                        <span t-else="" class="text-muted">—</span>
+                                    </td>
                                 </tr>
                             </t>
                             </t>
                             </t>
                             <tr t-if="!(state.data.staff || []).length">
-                                <td colspan="7" class="text-muted text-center">Chưa có dữ liệu nhân sự.</td>
+                                <td colspan="8" class="text-muted text-center">Chưa có dữ liệu nhân sự.</td>
                             </tr>
                         </tbody>
                     </table>

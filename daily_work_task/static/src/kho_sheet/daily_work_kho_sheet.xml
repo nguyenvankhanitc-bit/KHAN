@@ -103,7 +103,7 @@
                                         </div>
                                         <div class="o_dks_tp_bar is-manager">
                                             <div class="o_dks_tp_bar_head">
-                                                <span>QL đánh giá</span>
+                                                <span>QL đánh giá <small t-if="perfStats.locked" class="o_dks_tp_locked" title="Quản lý đã chốt «QL đánh giá tổng» trên Báo cáo hiệu suất"><i class="fa fa-lock"/> QL chốt</small></span>
                                                 <b t-esc="fmtPct(perfStats.manager)"/>
                                             </div>
                                             <div class="o_dks_tp_track"><div class="o_dks_tp_fill" t-att-style="'width:' + barWidth(perfStats.manager)"/></div>

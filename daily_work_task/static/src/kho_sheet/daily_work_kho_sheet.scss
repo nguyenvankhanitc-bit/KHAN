@@ -1294,3 +1294,14 @@
     .o_dks_tp_bar.is-self .o_dks_tp_fill { background: #2563eb; }
     .o_dks_tp_bar.is-manager .o_dks_tp_fill { background: #16a34a; }
 }
+
+.o_daily_work_kho_sheet .o_dks_tp_locked {
+    margin-left: 6px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 0.66rem;
+    font-weight: 700;
+    vertical-align: 2px;
+}

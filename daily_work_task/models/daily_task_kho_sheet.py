@@ -130,6 +130,7 @@ class DailyTaskKhoSheetLine(models.Model):
             "task_id": rec.task_id.id or False,
             "linked": bool(rec.task_id),
             "eval": self._eval_vals(rec.task_id),
+            "assignee_uid": rec.task_id.assignee_user_id.id or False,
             # % hoàn thành CV (giống Danh sách công việc); dòng nhập tay: Hoàn thành = 100%
             "completion": int(rec.task_id.sudo().completion_percent or 0) if rec.task_id
             else (100 if rec.state == "done" else 0),
@@ -255,6 +256,9 @@ class DailyTaskKhoSheetLine(models.Model):
             "me": self.env.user.name or "",
             # Quản lý xem cả Team → hiện tên người phụ trách dưới nội dung công việc
             "whole_team": self._sees_whole_team(team),
+            # QL đánh giá tổng đã chốt (Báo cáo hiệu suất) theo user — kết quả cuối cùng «QL đánh giá»
+            "manager_perf": {str(k): v for k, v in self.env["daily.task.manager.perf"].get_map(
+                year, month, user_ids=(team.manager_ids | team.member_ids).ids if team else [self.env.uid]).items()},
             # Đầu báo cáo (giống Báo cáo cá nhân): chức danh · phòng ban của user đang đăng nhập
             "me_job": (self.env.user.employee_id.sudo().job_title or self.env.user.employee_id.sudo().job_id.name or ""),
             "me_dept": self.env.user.employee_id.sudo().department_id.name or "",
@@ -342,6 +346,25 @@ class DailyTaskKhoSheetLine(models.Model):
 
     # ------------------------------------------------------------------ Xuất Excel (A4)
     @api.model
+    def _final_manager_eval(self, rows, overrides):
+        """QL đánh giá cuối cùng: theo từng nhân viên = QL đánh giá tổng đã chốt (nếu có), không thì
+        TB % QL chấm trên Kiểm tra CV; gộp nhiều nhân viên = TB có trọng số theo số việc."""
+        per = {}
+        for r in rows:
+            if not r.get("linked"):
+                continue
+            uid = str(r.get("assignee_uid") or 0)
+            s = per.setdefault(uid, [0, 0])
+            s[0] += int((r.get("eval") or {}).get("percent") or 0)
+            s[1] += 1
+        total = count = 0
+        for uid, (sm, n) in per.items():
+            val = overrides.get(uid)
+            total += (val if val is not None else sm / float(n)) * n
+            count += n
+        return total / count if count else 0
+
+    @api.model
     def _month_weeks(self, year, month):
         """Tuần trong tháng: Thứ 2 → Chủ nhật (tuần đầu / cuối cắt theo tháng) — giống màn hình."""
         from calendar import monthrange
@@ -402,8 +425,7 @@ class DailyTaskKhoSheetLine(models.Model):
         cnt = lambda k: sum(1 for r in rows if r["state"] == k)
         pct = lambda n: num(n * 100.0 / total) if total else 0
         hours = num(sum(float(r["hours"] or 0) for r in rows))
-        linked = [r for r in rows if r.get("linked")]
-        eff = num(sum(int((r.get("eval") or {}).get("percent") or 0) for r in linked) / len(linked)) if linked else 0
+        eff = num(self._final_manager_eval(rows, data.get("manager_perf") or {}))
 
         # Group theo hạng mục
         groups = {}

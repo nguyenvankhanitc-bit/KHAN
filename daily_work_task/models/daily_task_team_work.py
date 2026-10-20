@@ -46,6 +46,29 @@ class DailyTask(models.Model):
         return out
 
     @api.model
+    def _teamwork_task_names(self, team, members):
+        """Gợi ý «Tên công việc» từ Quản lý công việc cá nhân: tên việc nhân sự trong Team đã nhập
+        (6 tháng gần nhất), theo chi tiết hạng mục → {work_group_id: [tên, ...]} (mới nhất trước)."""
+        user_ids = [m["user_id"] for m in members]
+        if not user_ids:
+            return {}
+        since = fields.Date.subtract(fields.Date.context_today(self), months=6)
+        tasks = self.sudo().search(
+            [("assignee_user_id", "in", user_ids), ("work_group_id.team_id", "=", team.id),
+             ("assign_date", ">=", since)],
+            order="assign_date desc, id desc", limit=2000,
+        )
+        out = {}
+        for t in tasks:
+            name = " ".join((t.name or "").split())
+            if not name:
+                continue
+            bucket = out.setdefault(str(t.work_group_id.id), [])
+            if name not in bucket and len(bucket) < 30:
+                bucket.append(name)
+        return out
+
+    @api.model
     def _teamwork_members(self, team):
         users = (team.manager_ids | team.member_ids).filtered("active")
         emps = self.env["hr.employee"].sudo().search([("user_id", "in", users.ids)], order="name")
@@ -62,7 +85,9 @@ class DailyTask(models.Model):
         for t in teams:
             d = t.department_id
             depts.setdefault(d.id or 0, {"id": d.id or 0, "name": d.display_name if d else "Chưa có phòng ban"})
+        members = self._teamwork_members(team) if team else []
         return {
+            "task_names": self._teamwork_task_names(team, members) if team else {},
             "departments": list(depts.values()),
             "teams": [{"id": t.id, "name": t.name or "", "department_id": t.department_id.id or 0} for t in teams],
             "team_id": team.id or False,

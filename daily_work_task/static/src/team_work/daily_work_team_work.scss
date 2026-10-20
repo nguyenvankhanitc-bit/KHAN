@@ -105,7 +105,7 @@
 
     .o_dtw_cat {
         display: grid;
-        grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr);
+        grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1.4fr);
         gap: 16px;
 
         @media (max-width: 900px) {
@@ -266,5 +266,62 @@
         height: 1px;
         opacity: 0;
         pointer-events: none;
+    }
+}
+
+// Tên chi tiết hạng mục: tick chọn nhiều
+.o_daily_work_team_work {
+    .o_dtw_details {
+        margin-top: 14px;
+    }
+
+    .o_dtw_details_head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        label {
+            margin: 0;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+
+            .fa {
+                margin-right: 4px;
+                color: #64748b;
+            }
+        }
+        .o_dtw_count {
+            font-weight: 400;
+            color: #64748b;
+            margin-left: 4px;
+        }
+    }
+
+    .o_dtw_details_list {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 2px 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        margin-top: 6px;
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dtw_row_detail {
+        display: block;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 0.75rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 190px;
     }
 }

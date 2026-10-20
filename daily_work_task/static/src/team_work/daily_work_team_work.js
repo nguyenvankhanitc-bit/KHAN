@@ -44,7 +44,9 @@ export class DailyWorkTeamWork extends Component {
             year: now.getFullYear(),
             month: now.getMonth() + 1,
             catId: 0,
-            detailId: 0,
+            detailPicked: {},
+            taskName: "",
+            taskNames: {},
             query: "",
             picked: {},
             rows: [],
@@ -74,7 +76,8 @@ export class DailyWorkTeamWork extends Component {
                 this.state.coordinatorId = (this.state.members.find((m) => m.user_id === data.me) || this.state.members[0] || {}).user_id || 0;
             }
             this.state.catId = (this.state.categories[0] || {}).id || 0;
-            this.state.detailId = (this.currentCat?.details[0] || {}).id || 0;
+            this.state.detailPicked = {};
+            this.state.taskNames = data.task_names || {};
             this.state.picked = {};
             this.state.message = false;
         } catch (e) {
@@ -153,11 +156,7 @@ export class DailyWorkTeamWork extends Component {
 
     onCat(ev) {
         this.state.catId = Number(ev.target.value) || 0;
-        this.state.detailId = (this.currentCat?.details[0] || {}).id || 0;
-    }
-
-    onDetail(ev) {
-        this.state.detailId = Number(ev.target.value) || 0;
+        this.state.detailPicked = {};
     }
 
     catLabel(catId) {
@@ -208,28 +207,85 @@ export class DailyWorkTeamWork extends Component {
         return inMonth ? isoOf(now) : `${this.state.year}-${pad(this.state.month)}-01`;
     }
 
-    /** Thêm công việc: mỗi nhân sự đã chọn 1 dòng (hạng mục + tên chi tiết đang chọn). */
+    // ------------------------------------------------------------ chi tiết hạng mục (tick nhiều)
+    get catDetails() {
+        return (this.currentCat && this.currentCat.details) || [];
+    }
+
+    get pickedDetails() {
+        return this.catDetails.filter((d) => this.state.detailPicked[d.id]);
+    }
+
+    get allDetailsPicked() {
+        return this.catDetails.length > 0 && this.catDetails.every((d) => this.state.detailPicked[d.id]);
+    }
+
+    toggleDetail(d) {
+        this.state.detailPicked = { ...this.state.detailPicked, [d.id]: !this.state.detailPicked[d.id] };
+    }
+
+    toggleAllDetails() {
+        const on = !this.allDetailsPicked;
+        const picked = {};
+        for (const d of this.catDetails) {
+            picked[d.id] = on;
+        }
+        this.state.detailPicked = picked;
+    }
+
+    /** Gợi ý «Tên công việc» (Quản lý công việc cá nhân) theo chi tiết đang tick / cả hạng mục. */
+    get nameSuggestions() {
+        const map = this.state.taskNames || {};
+        const ids = (this.pickedDetails.length ? this.pickedDetails : this.catDetails).map((d) => d.id);
+        if (this.state.catId) {
+            ids.push(this.state.catId);
+        }
+        const out = [];
+        for (const id of ids) {
+            for (const n of map[String(id)] || []) {
+                if (!out.includes(n)) {
+                    out.push(n);
+                }
+            }
+        }
+        return out.slice(0, 50);
+    }
+
+    /** Thêm công việc: mỗi nhân sự × mỗi chi tiết hạng mục đã tick → 1 dòng. */
     onAddRows() {
         const people = this.pickedMembers;
         if (!people.length) {
             this.notification.add(_t("Chọn ít nhất 1 nhân sự ở «Người phụ trách»."), { type: "warning" });
             return;
         }
-        const wgId = this.state.detailId || this.state.catId || false;
-        const name = this.detailName(this.state.detailId) || (this.currentCat || {}).name || "";
+        if (!this.state.catId) {
+            this.notification.add(_t("Chọn Hạng mục trước."), { type: "warning" });
+            return;
+        }
+        let details = this.pickedDetails;
+        if (!details.length) {
+            if (this.catDetails.length) {
+                this.notification.add(_t("Tick ít nhất 1 «Tên chi tiết hạng mục»."), { type: "warning" });
+                return;
+            }
+            details = [{ id: this.state.catId, name: (this.currentCat || {}).name || "" }];
+        }
+        const taskName = (this.state.taskName || "").trim();
         const day = this._defaultDay();
         for (const m of people) {
-            this.state.rows.push({
-                key: `r-${Date.now()}-${seq++}`,
-                user_id: m.user_id,
-                cat_id: this.state.catId || 0,
-                work_group_id: wgId,
-                name,
-                date_start: day,
-                deadline: day,
-                checker_id: this.state.coordinatorId || 0,
-                note: "",
-            });
+            for (const d of details) {
+                this.state.rows.push({
+                    key: `r-${Date.now()}-${seq++}`,
+                    user_id: m.user_id,
+                    cat_id: this.state.catId || 0,
+                    work_group_id: d.id,
+                    name: taskName || d.name,
+                    date_start: day,
+                    deadline: day,
+                    checker_id: this.state.coordinatorId || 0,
+                    note: "",
+                });
+            }
         }
     }
 

@@ -219,9 +219,8 @@ class DailyTaskKhoSheetLine(models.Model):
 
     @api.model
     def _sees_whole_team(self, team):
-        """Quản lý (hệ thống / quản lý Team) xem việc của cả Team."""
-        return bool(self.env.su or self.env["daily.task"]._is_manager()
-                    or (team and self.env.user in team.manager_ids))
+        """Báo cáo luôn theo user đăng nhập (giống Quản lý công việc) — kể cả quản lý."""
+        return False
 
     @api.model
     def get_kho_sheet(self, year=None, month=None, team_id=None):

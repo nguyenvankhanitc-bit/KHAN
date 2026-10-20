@@ -803,3 +803,162 @@
         color: #475569;
     }
 }
+
+// Biểu đồ giống hình mẫu: 1. Tổng công việc · 2. Kết quả đánh giá QL
+.o_daily_work_kho_sheet {
+    .o_dks_charts {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+        gap: 12px;
+        margin-top: 10px;
+
+        @media (max-width: 1100px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dks_chart_card {
+        background: #fff;
+        border: 1px solid #dbe4f0;
+        border-radius: 10px;
+        padding: 14px 18px 16px;
+    }
+
+    .o_dks_chart_title {
+        font-size: 0.95rem;
+        font-weight: 800;
+        color: #0b2a5b;
+        padding-bottom: 10px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid #eef2f7;
+
+        i {
+            color: #1d4ed8;
+            margin-right: 6px;
+        }
+    }
+
+    .o_dks_donut {
+        position: relative;
+        height: 250px;
+        max-width: 420px;
+        margin: 0 auto;
+    }
+
+    .o_dks_donut_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        color: #0b2a5b;
+
+        b {
+            font-size: 1.9rem;
+            line-height: 1.1;
+        }
+
+        small {
+            font-size: 0.68rem;
+            font-weight: 600;
+        }
+    }
+
+    .o_dks_legend {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 10px;
+        padding: 10px 14px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        color: #334155;
+
+        small {
+            color: #475569;
+        }
+    }
+
+    .o_dks_legend_item {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .o_dks_dot {
+        display: inline-block;
+        width: 11px;
+        height: 11px;
+        flex: 0 0 11px;
+        border-radius: 50%;
+        margin-top: 3px;
+
+        &.is-pass { background: #16a34a; }
+        &.is-average { background: #f59e0b; }
+        &.is-fail { background: #dc2626; }
+    }
+
+    .o_dks_eval_body {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+        align-items: center;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dks_rate_table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.84rem;
+        border: 1px solid #e2e8f0;
+
+        th {
+            background: #f1f5f9;
+            color: #0b2a5b;
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 9px 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #eef2f7;
+            border-left: 1px solid #eef2f7;
+            color: #1e293b;
+
+            .o_dks_dot {
+                margin-right: 6px;
+                vertical-align: -1px;
+            }
+        }
+    }
+
+    .o_dks_rate_info {
+        margin-top: 12px;
+        padding: 9px 12px;
+        background: #eef4ff;
+        border: 1px solid #dbe6fb;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        color: #334155;
+
+        i {
+            color: #2563eb;
+            margin-right: 6px;
+        }
+    }
+}
+
+.o_daily_work_kho_sheet .o_dks_donut_center small {
+    font-size: 0.6rem;
+    white-space: nowrap;
+}

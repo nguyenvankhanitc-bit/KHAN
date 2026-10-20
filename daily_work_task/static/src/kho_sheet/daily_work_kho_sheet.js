@@ -62,7 +62,8 @@ export class DailyWorkKhoSheet extends Component {
             message: false,
         });
         // 3 biểu đồ xếp loại QL đánh giá: Đạt / Trung bình / Không đạt (số lượng việc)
-        this.rateRefs = { pass: useRef("ratePass"), average: useRef("rateAverage"), fail: useRef("rateFail") };
+        this.stateChartRef = useRef("stateChart");
+        this.rateChartRef = useRef("rateChart");
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -74,7 +75,9 @@ export class DailyWorkKhoSheet extends Component {
             },
             () => {
                 const r = this.rateStats;
-                return [this.state.loading, r.pass, r.average, r.fail, r.rated];
+                const t = this.stateStats;
+                return [this.state.loading, r.pass, r.average, r.fail, r.rated,
+                    t.done, t.doing, t.todo, t.overdue];
             }
         );
         onWillUnmount(() => this.destroyCharts());
@@ -101,24 +104,63 @@ export class DailyWorkKhoSheet extends Component {
     /** Số lượng việc theo xếp loại QL (Kiểm tra CV) — theo Tuần đang lọc. */
     get rateStats() {
         const out = { pass: 0, average: 0, fail: 0 };
+        let unrated = 0;
         for (const r of this.visibleRows) {
             const k = r.eval && r.eval.rating;
             if (k && k in out) {
                 out[k] += 1;
+            } else if (r.linked) {
+                unrated += 1;
             }
         }
         const rated = out.pass + out.average + out.fail;
         const pct = (n) => (rated ? Math.round((n * 1000) / rated) / 10 : 0);
-        return { ...out, rated, passPct: pct(out.pass), averagePct: pct(out.average), failPct: pct(out.fail) };
+        return { ...out, rated, unrated, passPct: pct(out.pass), averagePct: pct(out.average), failPct: pct(out.fail) };
     }
 
-    get rateCards() {
+    /** Bảng xếp loại (bên phải biểu đồ 2). */
+    get rateRows() {
         const s = this.rateStats;
         return [
-            { key: "pass", label: "ĐẠT", count: s.pass, pct: s.passPct, ref: "ratePass" },
-            { key: "average", label: "TRUNG BÌNH", count: s.average, pct: s.averagePct, ref: "rateAverage" },
-            { key: "fail", label: "KHÔNG ĐẠT", count: s.fail, pct: s.failPct, ref: "rateFail" },
+            { key: "pass", label: "Đạt", count: s.pass, pct: s.passPct },
+            { key: "average", label: "Trung bình", count: s.average, pct: s.averagePct },
+            { key: "fail", label: "Không đạt", count: s.fail, pct: s.failPct },
         ];
+    }
+
+    /** Biểu đồ 1: Hoàn thành / Đang thực hiện / Chưa bắt đầu / Quá hạn (chưa xong & quá Deadline). */
+    get stateStats() {
+        const today = new Date();
+        const todayIso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+        const out = { done: 0, doing: 0, todo: 0, overdue: 0 };
+        for (const r of this.visibleRows) {
+            if (r.state === "done") {
+                out.done += 1;
+            } else if (r.deadline && r.deadline < todayIso) {
+                out.overdue += 1;
+            } else if (r.state === "in_progress") {
+                out.doing += 1;
+            } else {
+                out.todo += 1;
+            }
+        }
+        out.total = out.done + out.doing + out.todo + out.overdue;
+        return out;
+    }
+
+    get stateLegend() {
+        const s = this.stateStats;
+        const pct = (n) => (s.total ? Math.round((n * 1000) / s.total) / 10 : 0);
+        return [
+            { key: "done", label: "Hoàn thành", count: s.done, pct: pct(s.done), color: "#16a34a" },
+            { key: "doing", label: "Đang thực hiện", count: s.doing, pct: pct(s.doing), color: "#f59e0b" },
+            { key: "todo", label: "Chưa bắt đầu", count: s.todo, pct: pct(s.todo), color: "#94a3b8" },
+            { key: "overdue", label: "Quá hạn", count: s.overdue, pct: pct(s.overdue), color: "#dc2626" },
+        ];
+    }
+
+    fmtPct(v) {
+        return `${String(v).replace(".", ",")}%`;
     }
 
     destroyCharts() {
@@ -128,41 +170,96 @@ export class DailyWorkKhoSheet extends Component {
         this.charts = [];
     }
 
+    /** Plugin vẽ nhãn ngoài vòng (số lượng + %) có đường chỉ — giống hình mẫu. */
+    _calloutPlugin(items) {
+        return {
+            id: "dksCallout",
+            afterDraw(chart) {
+                const meta = chart.getDatasetMeta(0);
+                const ctx = chart.ctx;
+                const total = items.reduce((s, it) => s + it.count, 0);
+                if (!total) {
+                    return;
+                }
+                ctx.save();
+                meta.data.forEach((arc, i) => {
+                    const it = items[i];
+                    if (!it || !it.count) {
+                        return;
+                    }
+                    const angle = (arc.startAngle + arc.endAngle) / 2;
+                    const cos = Math.cos(angle);
+                    const sin = Math.sin(angle);
+                    const r = arc.outerRadius;
+                    const x0 = arc.x + cos * r;
+                    const y0 = arc.y + sin * r;
+                    const x1 = arc.x + cos * (r + 14);
+                    const y1 = arc.y + sin * (r + 14);
+                    const right = cos >= 0;
+                    const x2 = x1 + (right ? 16 : -16);
+                    ctx.strokeStyle = it.color;
+                    ctx.fillStyle = it.color;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(x0, y0);
+                    ctx.lineTo(x1, y1);
+                    ctx.lineTo(x2, y1);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.arc(x2, y1, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.textAlign = right ? "left" : "right";
+                    ctx.textBaseline = "bottom";
+                    ctx.font = "800 17px sans-serif";
+                    const tx = x2 + (right ? 4 : -4);
+                    ctx.fillText(String(it.count), tx, y1 + 2);
+                    ctx.font = "600 11px sans-serif";
+                    ctx.textBaseline = "top";
+                    ctx.fillText(`(${String(it.pct).replace(".", ",")}%)`, tx, y1 + 4);
+                });
+                ctx.restore();
+            },
+        };
+    }
+
+    _doughnut(el, items) {
+        const Chart = window.Chart;
+        const total = items.reduce((s, it) => s + it.count, 0);
+        return new Chart(el, {
+            type: "doughnut",
+            data: {
+                labels: items.map((it) => it.label),
+                datasets: [{
+                    data: total ? items.map((it) => it.count) : [1],
+                    backgroundColor: total ? items.map((it) => it.color) : ["#e5e7eb"],
+                    borderWidth: total ? 1 : 0,
+                    borderColor: "#ffffff",
+                }],
+            },
+            options: {
+                cutout: "62%",
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                layout: { padding: { top: 34, bottom: 34, left: 70, right: 70 } },
+                plugins: { legend: { display: false }, tooltip: { enabled: Boolean(total) } },
+            },
+            plugins: [this._calloutPlugin(items)],
+        });
+    }
+
     renderRateCharts() {
         this.destroyCharts();
-        const Chart = window.Chart;
-        if (!Chart || this.state.loading) {
+        if (!window.Chart || this.state.loading) {
             return;
         }
-        const colors = { pass: "#16a34a", average: "#f59e0b", fail: "#dc2626" };
-        const s = this.rateStats;
-        for (const key of ["pass", "average", "fail"]) {
-            const el = this.rateRefs[key].el;
-            if (!el) {
-                continue;
-            }
-            const rest = Math.max(s.rated - s[key], 0);
-            this.charts.push(new Chart(el, {
-                type: "doughnut",
-                data: {
-                    labels: ["Số lượng", "Mức khác"],
-                    datasets: [{
-                        data: s.rated ? [s[key], rest] : [0, 1],
-                        backgroundColor: [colors[key], "#e5e7eb"],
-                        borderWidth: 0,
-                    }],
-                },
-                options: {
-                    cutout: "72%",
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    animation: { duration: 300 },
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: { enabled: Boolean(s.rated) },
-                    },
-                },
-            }));
+        if (this.stateChartRef.el) {
+            this.charts.push(this._doughnut(this.stateChartRef.el, this.stateLegend));
+        }
+        if (this.rateChartRef.el) {
+            const colors = { pass: "#16a34a", average: "#f59e0b", fail: "#dc2626" };
+            const items = this.rateRows.map((r) => ({ ...r, color: colors[r.key] }));
+            this.charts.push(this._doughnut(this.rateChartRef.el, items));
         }
     }
 

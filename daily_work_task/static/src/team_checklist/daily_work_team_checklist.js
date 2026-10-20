@@ -433,12 +433,15 @@ export class DailyWorkTeamChecklist extends Component {
             draft.manager_rating = value;
             if (pct !== null) {
                 draft.manager_eval_percent = pct;
-                if (task.can_tick) {
-                    this.state.selectedConfirm[task.id] = pct === 100;
-                }
             } else if (!value) {
-                // Bỏ tick xếp loại → bỏ luôn % đã tự điền và Xác nhận QL đi kèm
+                // Bỏ tick xếp loại → bỏ luôn % đã tự điền
                 delete draft.manager_eval_percent;
+            }
+            // Tick Đạt / Trung bình / Không đạt = đã kiểm tra → tự tick Xác nhận QL;
+            // bấm «Lưu» chuyển việc xuống «Danh sách công việc đã kiểm tra»
+            if (value && task.can_tick) {
+                this.state.selectedConfirm[task.id] = true;
+            } else if (!value) {
                 delete this.state.selectedConfirm[task.id];
             }
             this.state.evalDraft[task.id] = draft;
@@ -621,7 +624,8 @@ export class DailyWorkTeamChecklist extends Component {
             }
             this.state.evalDraft[task.id] = draft;
             if (field === "manager_eval_percent" && task.can_tick) {
-                this.state.selectedConfirm[task.id] = value === 100;
+                // Nhập % → có xếp loại → coi như đã kiểm tra (Lưu → xuống danh sách đã kiểm tra)
+                this.state.selectedConfirm[task.id] = Boolean(draft.manager_rating) || value === 100;
             }
             return;
         }

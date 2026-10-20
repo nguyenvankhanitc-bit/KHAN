@@ -606,8 +606,10 @@ class DailyTaskTeamChecklist(models.Model):
                         "manager_confirmed_uid": self.env.uid if confirmed else False,
                         "manager_confirmed_date": fields.Datetime.now() if confirmed else False,
                     },
-                    # Tick Xác nhận QL = đồng ý 100% Hoàn thành (QUẢN LÝ ĐÁNH GIÁ)
-                    **({"manager_eval_percent": 100, "manager_returned": False} if confirmed else {}),
+                    # Tick Xác nhận QL = đồng ý 100% Hoàn thành (QUẢN LÝ ĐÁNH GIÁ);
+                    # đã xếp loại (Đạt / Trung bình / Không đạt) → giữ % đã đánh giá
+                    **({"manager_returned": False} if confirmed else {}),
+                    **({"manager_eval_percent": 100} if confirmed and not rec.manager_rating else {}),
                 )
             )
         if confirmed:

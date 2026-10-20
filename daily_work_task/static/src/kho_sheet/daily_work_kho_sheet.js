@@ -268,7 +268,7 @@ export class DailyWorkKhoSheet extends Component {
     }
 
     get colCount() {
-        return this.state.editing ? 17 : 16;
+        return this.state.editing ? 16 : 15;
     }
 
     /** Dòng hiển thị theo tuần đang lọc (dòng mới chưa lưu luôn hiện để nhập). */
@@ -474,6 +474,7 @@ export class DailyWorkKhoSheet extends Component {
         }
         row[field] = `${y}-${pad(mo)}-${pad(d)}`;
         ev.target.value = fmtDate(row[field]);
+        this._syncDay(row, field);
         this.state.dirty = true;
     }
 
@@ -602,7 +603,19 @@ export class DailyWorkKhoSheet extends Component {
             value = Math.max(Number(String(value).replace(",", ".")) || 0, 0);
         }
         row[field] = value;
+        this._syncDay(row, field);
         this.state.dirty = true;
+    }
+
+    /** Bỏ cột «Ngày»: Ngày bắt đầu (thuộc tháng đang xem) quyết định Ngày / Tuần của dòng nhập tay. */
+    _syncDay(row, field) {
+        if (field !== "date_start" || !row.date_start) {
+            return;
+        }
+        const d = parseIso(row.date_start);
+        if (d.getFullYear() === this.state.year && d.getMonth() + 1 === this.state.month) {
+            row.date = row.date_start;
+        }
     }
 
     onRemove(row) {

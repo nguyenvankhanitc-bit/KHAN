@@ -440,10 +440,10 @@ class DailyTaskKhoSheetLine(models.Model):
         f_total = F(bold=True, border=1, bg_color="#b4c7e7")
 
         # Cột (độ rộng ký tự) — tổng vừa A4 ngang khi co 1 trang chiều ngang
-        cols = [("STT", 5), ("Tuần", 7), ("Ngày", 13), ("Nội dung công việc", 40)]
+        cols = [("STT", 5), ("Tuần", 7), ("Nội dung công việc", 46)]
         if whole:
             cols.append(("Người phụ trách", 18))
-        cols += [("Ngày bắt đầu", 11), ("Deadline", 11), ("Tổng TG (giờ)", 8), ("Trạng thái", 13),
+        cols += [("Ngày bắt đầu", 13), ("Deadline", 11), ("Tổng TG (giờ)", 8), ("Trạng thái", 13),
                  ("Kiểm soát", 16), ("Ghi chú", 20)]
         n_main = len(cols)
         eval_cols = [("% Hoàn thành", 9, f_head_eval), ("Ghi chú", 20, f_head_eval), ("Đạt", 6, f_head_pass),
@@ -526,11 +526,10 @@ class DailyTaskKhoSheetLine(models.Model):
             r += 1
             for i, it in enumerate(items, start=1):
                 ev = it.get("eval") or {}
-                vals = [(i, f_cell_c), (week_of(it["date"]), f_cell_c), (day_label(it["date"]), f_cell_c),
-                        (it["name"] or "", f_cell)]
+                vals = [(i, f_cell_c), (week_of(it["date"]), f_cell_c), (it["name"] or "", f_cell)]
                 if whole:
                     vals.append((it.get("responsible") or "", f_cell))
-                vals += [(fmt(it.get("date_start")), f_cell_c), (fmt(it.get("deadline")), f_cell_c),
+                vals += [(day_label(it.get("date_start")) or "", f_cell_c), (fmt(it.get("deadline")), f_cell_c),
                          (num(it["hours"]), f_cell_c), (states.get(it["state"], ""), f_state.get(it["state"], f_cell_c)),
                          (it.get("controller") or "", f_cell), (it.get("note") or "", f_cell)]
                 p = ev.get("percent")

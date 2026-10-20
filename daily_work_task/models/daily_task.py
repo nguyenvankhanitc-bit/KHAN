@@ -6,6 +6,7 @@ from html import escape
 from markupsafe import Markup
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
+from odoo.service.model import PG_CONCURRENCY_EXCEPTIONS_TO_RETRY
 
 _logger = logging.getLogger(__name__)
 
@@ -769,54 +770,57 @@ class DailyTask(models.Model):
         self._ensure_assign_bot_avatar(bot_user)
         bot_partner = bot_user.partner_id
         try:
-            chat = (
-                self.env["discuss.channel"]
-                .sudo()
-                .with_user(recipient_user)
-                ._get_or_create_chat([bot_partner.id], pin=True)
-            )
-            # Ghim chat cho người nhận + cập nhật interest để hiện trên Discuss
-            member = chat.sudo().channel_member_ids.filtered(
-                lambda m: m.partner_id == recipient_user.partner_id
-            )[:1]
-            if member:
-                member.write(
-                    {
-                        "unpin_dt": False,
-                        "last_interest_dt": fields.Datetime.now(),
-                    }
+            with self.env.cr.savepoint():
+                chat = (
+                    self.env["discuss.channel"]
+                    .sudo()
+                    .with_user(recipient_user)
+                    ._get_or_create_chat([bot_partner.id], pin=True)
                 )
-            msg = (
-                chat.with_user(bot_user)
-                .sudo()
-                .with_context(business_bot_skip_apply_logic=True)
-                .message_post(
-                    body=body,
-                    message_type="comment",
-                    subtype_xmlid="mail.mt_comment",
-                    author_id=bot_partner.id,
-                )
-            )
-            # Broadcast để systray/Discuss nhận tin ngay (kể cả user đang online)
-            chat.sudo()._broadcast(recipient_user.partner_id.ids)
-            if member:
-                try:
-                    from odoo.addons.mail.tools.discuss import Store
-
-                    payload = {
-                        "channel_id": chat.id,
-                        "data": Store(bus_channel=member._bus_channel())
-                        .add(chat)
-                        .add(member, "unpin_dt")
-                        .get_result(),
-                    }
-                    member._bus_send("discuss.channel/joined", payload)
-                except Exception:
-                    _logger.debug(
-                        "daily_work_task: bus joined skip channel=%s", chat.id,
-                        exc_info=True,
+                # Ghim chat cho người nhận + cập nhật interest để hiện trên Discuss
+                member = chat.sudo().channel_member_ids.filtered(
+                    lambda m: m.partner_id == recipient_user.partner_id
+                )[:1]
+                if member:
+                    member.write(
+                        {
+                            "unpin_dt": False,
+                            "last_interest_dt": fields.Datetime.now(),
+                        }
                     )
-            return msg
+                msg = (
+                    chat.with_user(bot_user)
+                    .sudo()
+                    .with_context(business_bot_skip_apply_logic=True)
+                    .message_post(
+                        body=body,
+                        message_type="comment",
+                        subtype_xmlid="mail.mt_comment",
+                        author_id=bot_partner.id,
+                    )
+                )
+                # Broadcast để systray/Discuss nhận tin ngay (kể cả user đang online)
+                chat.sudo()._broadcast(recipient_user.partner_id.ids)
+                if member:
+                    try:
+                        from odoo.addons.mail.tools.discuss import Store
+
+                        payload = {
+                            "channel_id": chat.id,
+                            "data": Store(bus_channel=member._bus_channel())
+                            .add(chat)
+                            .add(member, "unpin_dt")
+                            .get_result(),
+                        }
+                        member._bus_send("discuss.channel/joined", payload)
+                    except Exception:
+                        _logger.debug(
+                            "daily_work_task: bus joined skip channel=%s", chat.id,
+                            exc_info=True,
+                        )
+                return msg
+        except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+            raise
         except Exception:
             _logger.exception(
                 "daily_work_task: Discuss DM giao việc thất bại user_id=%s",
@@ -843,84 +847,90 @@ class DailyTask(models.Model):
 
     def _notify_assignee_assigned(self):
         """Thông báo Discuss/Inbox/Activity khi giao việc (giống OdooBot Duyệt đơn)."""
-        for task in self:
+        # Email đưa vào hàng đợi (cron gửi) — không gửi SMTP ngay làm chậm nút Lưu
+        for task in self.with_context(mail_notify_force_send=False):
             try:
-                recipient = task._assignee_user()
-                assigner = task.assigned_by_id or self.env.user
-                if not recipient or not recipient.partner_id:
-                    _logger.warning(
-                        "daily_work_task: bỏ qua notify task_id=%s — NV chưa gắn User",
-                        task.id,
+                # Savepoint: lỗi thông báo không làm hỏng transaction lưu việc
+                with self.env.cr.savepoint():
+                    recipient = task._assignee_user()
+                    assigner = task.assigned_by_id or self.env.user
+                    if not recipient or not recipient.partner_id:
+                        _logger.warning(
+                            "daily_work_task: bỏ qua notify task_id=%s — NV chưa gắn User",
+                            task.id,
+                        )
+                        continue
+
+                    assigner_name = assigner.name or "—"
+                    deadline = (
+                        task.deadline.strftime("%d/%m/%Y") if task.deadline else "—"
                     )
-                    continue
-
-                assigner_name = assigner.name or "—"
-                deadline = (
-                    task.deadline.strftime("%d/%m/%Y") if task.deadline else "—"
-                )
-                assign_date = (
-                    task.assign_date.strftime("%d/%m/%Y")
-                    if task.assign_date
-                    else "—"
-                )
-                priority = dict(task._fields["priority"].selection).get(
-                    task.priority, ""
-                ) or "—"
-                note = (task.note or "").strip() or "—"
-                dept = (
-                    task.department_id.display_name if task.department_id else "—"
-                )
-                detail_btn = task._assign_task_detail_button_markup("Xem chi tiết")
-
-                body_assignee = Markup(
-                    "<b>CÔNG VIỆC ĐƯỢC GIAO</b><br/>"
-                    "Người giao: <b>{assigner}</b><br/>"
-                    "Công việc: <b>{name}</b><br/>"
-                    "Ngày giao: <b>{assign_date}</b><br/>"
-                    "Hạn hoàn thành: <b>{deadline}</b><br/>"
-                    "Ưu tiên: <b>{priority}</b><br/>"
-                    "Bộ phận: <b>{dept}</b><br/>"
-                    "Ghi chú: <b>{note}</b><br/><br/>"
-                    "Vào menu <b>Công việc hàng ngày → Nhân viên nhập CV</b> "
-                    "để xử lý, hoặc mở trực tiếp bên dưới.<br/>"
-                    "{detail_btn}"
-                ).format(
-                    assigner=escape(str(assigner_name)),
-                    name=escape(str(task.name or "")),
-                    assign_date=escape(assign_date),
-                    deadline=escape(deadline),
-                    priority=escape(str(priority)),
-                    dept=escape(str(dept)),
-                    note=escape(str(note)),
-                    detail_btn=detail_btn,
-                )
-
-                # Chỉ người được giao nhận Discuss / Inbox / Activity
-                # (không gửi tin xác nhận cho người giao hay user khác)
-                task._post_assign_bot_discuss_message(recipient, body_assignee)
-                bot_user = task._get_assign_bot_user()
-                task.sudo().message_post(
-                    body=body_assignee,
-                    partner_ids=recipient.partner_id.ids,
-                    message_type="notification",
-                    subtype_xmlid="mail.mt_note",
-                    author_id=bot_user.partner_id.id
-                    if bot_user and bot_user.partner_id
-                    else None,
-                )
-                act_type = self.env.ref(
-                    "daily_work_task.mail_act_daily_task_assigned",
-                    raise_if_not_found=False,
-                )
-                if act_type:
-                    task.sudo().activity_schedule(
-                        act_type_xmlid="daily_work_task.mail_act_daily_task_assigned",
-                        user_id=recipient.id,
-                        summary="Công việc được giao: %s" % (task.name or ""),
-                        note=body_assignee,
-                        date_deadline=task.deadline
-                        or fields.Date.context_today(task),
+                    assign_date = (
+                        task.assign_date.strftime("%d/%m/%Y")
+                        if task.assign_date
+                        else "—"
                     )
+                    priority = dict(task._fields["priority"].selection).get(
+                        task.priority, ""
+                    ) or "—"
+                    note = (task.note or "").strip() or "—"
+                    dept = (
+                        task.department_id.display_name if task.department_id else "—"
+                    )
+                    detail_btn = task._assign_task_detail_button_markup("Xem chi tiết")
+
+                    body_assignee = Markup(
+                        "<b>CÔNG VIỆC ĐƯỢC GIAO</b><br/>"
+                        "Người giao: <b>{assigner}</b><br/>"
+                        "Công việc: <b>{name}</b><br/>"
+                        "Ngày giao: <b>{assign_date}</b><br/>"
+                        "Hạn hoàn thành: <b>{deadline}</b><br/>"
+                        "Ưu tiên: <b>{priority}</b><br/>"
+                        "Bộ phận: <b>{dept}</b><br/>"
+                        "Ghi chú: <b>{note}</b><br/><br/>"
+                        "Vào menu <b>Công việc hàng ngày → Nhân viên nhập CV</b> "
+                        "để xử lý, hoặc mở trực tiếp bên dưới.<br/>"
+                        "{detail_btn}"
+                    ).format(
+                        assigner=escape(str(assigner_name)),
+                        name=escape(str(task.name or "")),
+                        assign_date=escape(assign_date),
+                        deadline=escape(deadline),
+                        priority=escape(str(priority)),
+                        dept=escape(str(dept)),
+                        note=escape(str(note)),
+                        detail_btn=detail_btn,
+                    )
+
+                    # Chỉ người được giao nhận Discuss / Inbox / Activity
+                    # (không gửi tin xác nhận cho người giao hay user khác)
+                    task._post_assign_bot_discuss_message(recipient, body_assignee)
+                    bot_user = task._get_assign_bot_user()
+                    task.sudo().message_post(
+                        body=body_assignee,
+                        partner_ids=recipient.partner_id.ids,
+                        message_type="notification",
+                        subtype_xmlid="mail.mt_note",
+                        author_id=bot_user.partner_id.id
+                        if bot_user and bot_user.partner_id
+                        else None,
+                    )
+                    act_type = self.env.ref(
+                        "daily_work_task.mail_act_daily_task_assigned",
+                        raise_if_not_found=False,
+                    )
+                    if act_type:
+                        task.sudo().activity_schedule(
+                            act_type_xmlid="daily_work_task.mail_act_daily_task_assigned",
+                            user_id=recipient.id,
+                            summary="Công việc được giao: %s" % (task.name or ""),
+                            note=body_assignee,
+                            date_deadline=task.deadline
+                            or fields.Date.context_today(task),
+                        )
+            except PG_CONCURRENCY_EXCEPTIONS_TO_RETRY:
+                # Xung đột cập nhật đồng thời (Discuss) → để Odoo tự thử lại request
+                raise
             except Exception:
                 _logger.exception(
                     "daily_work_task: thông báo giao việc thất bại task_id=%s",

@@ -44,91 +44,63 @@
                     <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                     <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
                     <t t-else="">
-                        <!-- Biểu đồ (giống hình mẫu): 1. Tổng công việc · 2. Kết quả đánh giá QL -->
+                        <!-- 3 biểu đồ gọn: vòng tròn bên trái · chú thích bên phải -->
                         <div class="o_dks_charts">
                             <div class="o_dks_chart_card">
                                 <div class="o_dks_chart_title"><i class="fa fa-bar-chart"/> 1. TỔNG CÔNG VIỆC</div>
-                                <div class="o_dks_donut">
-                                    <canvas t-ref="stateChart"/>
-                                    <div class="o_dks_donut_center">
-                                        <b t-esc="stateStats.total"/>
-                                        <small>TỔNG CÔNG VIỆC</small>
+                                <div class="o_dks_cl">
+                                    <div class="o_dks_cl_donut">
+                                        <canvas t-ref="stateChart"/>
+                                        <div class="o_dks_cl_center"><b t-esc="stateStats.total"/><span>công việc</span></div>
                                     </div>
-                                </div>
-                                <div class="o_dks_legend">
-                                    <div t-foreach="stateLegend" t-as="l" t-key="l.key" class="o_dks_legend_item">
-                                        <span class="o_dks_dot" t-att-style="'background:' + l.color"/>
-                                        <div>
-                                            <div t-esc="l.label"/>
-                                            <small><b t-esc="l.count"/> (<t t-esc="fmtPct(l.pct)"/>)</small>
+                                    <div class="o_dks_cl_legend">
+                                        <div t-foreach="stateLegend" t-as="l" t-key="l.key" class="o_dks_cl_item">
+                                            <span class="o_dks_cl_dot" t-att-style="'background:' + l.color"/>
+                                            <div>
+                                                <div class="o_dks_cl_label" t-esc="l.label"/>
+                                                <div class="o_dks_cl_val"><t t-esc="l.count"/> <small t-esc="'(' + fmtPct(l.pct) + ')'"/></div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             <div class="o_dks_chart_card">
-                                <div class="o_dks_chart_title"><i class="fa fa-bullseye"/> 2. KẾT QUẢ ĐÁNH GIÁ QUẢN LÝ CÔNG VIỆC</div>
-                                <div class="o_dks_eval_body">
-                                    <div class="o_dks_donut">
+                                <div class="o_dks_chart_title"><i class="fa fa-bullseye"/> 2. KẾT QUẢ ĐÁNH GIÁ QUẢN LÝ</div>
+                                <div class="o_dks_cl">
+                                    <div class="o_dks_cl_donut">
                                         <canvas t-ref="rateChart"/>
-                                        <div class="o_dks_donut_center">
-                                            <b t-esc="rateStats.rated"/>
-                                            <small>ĐÃ ĐƯỢC ĐÁNH GIÁ</small>
-                                        </div>
+                                        <div class="o_dks_cl_center"><b t-esc="rateStats.rated"/><span>đã đánh giá</span></div>
                                     </div>
-                                    <div class="o_dks_rate_side">
-                                        <table class="o_dks_rate_table">
-                                            <thead>
-                                                <tr><th>XẾP LOẠI</th><th>SỐ CÔNG VIỆC</th><th>TỶ LỆ</th></tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr t-foreach="rateRows" t-as="rr" t-key="rr.key">
-                                                    <td><span t-att-class="'o_dks_dot is-' + rr.key"/> <t t-esc="rr.label"/></td>
-                                                    <td t-esc="rr.count"/>
-                                                    <td t-esc="fmtPct(rr.pct)"/>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <div class="o_dks_rate_info">
-                                            <i class="fa fa-info-circle"/>
-                                            <t t-esc="rateStats.unrated"/> công việc chưa được đánh giá
+                                    <div class="o_dks_cl_legend">
+                                        <div t-foreach="rateLegend" t-as="l" t-key="l.key" class="o_dks_cl_item">
+                                            <span class="o_dks_cl_dot" t-att-style="'background:' + l.color"/>
+                                            <div>
+                                                <div class="o_dks_cl_label" t-esc="l.label"/>
+                                                <div class="o_dks_cl_val"><t t-esc="l.count"/> <small t-esc="'(' + fmtPct(l.pct) + ')'"/></div>
+                                            </div>
+                                        </div>
+                                        <div t-if="rateStats.unrated" class="o_dks_cl_note">
+                                            <i class="fa fa-info-circle"/> <t t-esc="rateStats.unrated"/> việc chưa đánh giá
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <!-- 3. Thời gian và hiệu suất (giống mẫu biểu đồ 2) -->
-                            <div class="o_dks_chart_card o_dks_chart_wide">
+                            <div class="o_dks_chart_card">
                                 <div class="o_dks_chart_title"><i class="fa fa-clock-o"/> 3. THỜI GIAN VÀ HIỆU SUẤT</div>
-                                <div class="o_dks_eval_body">
-                                    <div>
-                                        <div class="o_dks_donut o_dks_donut_perf">
-                                            <canvas t-ref="perfChart"/>
-                                            <div class="o_dks_donut_center">
-                                                <b t-esc="perfHoursLabel"/>
-                                                <small>GIỜ</small>
+                                <div class="o_dks_cl">
+                                    <div class="o_dks_cl_donut">
+                                        <canvas t-ref="perfChart"/>
+                                        <div class="o_dks_cl_center"><b t-esc="perfHoursLabel"/><span>giờ</span></div>
+                                    </div>
+                                    <div class="o_dks_cl_legend">
+                                        <div t-foreach="perfLegend" t-as="l" t-key="l.key" class="o_dks_cl_item">
+                                            <span class="o_dks_cl_dot" t-att-style="'background:' + l.color"/>
+                                            <div>
+                                                <div class="o_dks_cl_label" t-esc="l.label"/>
+                                                <div class="o_dks_cl_val"><t t-esc="l.value"/></div>
                                             </div>
                                         </div>
-                                        <div class="o_dks_perf_legend">
-                                            <span><span class="o_dks_dot is-self"/> NV tự đánh giá <b t-esc="fmtPct(perfStats.self)"/></span>
-                                            <span><span class="o_dks_dot is-manager"/> QL đánh giá <b t-esc="fmtPct(perfStats.manager)"/></span>
-                                        </div>
-                                    </div>
-                                    <div class="o_dks_rate_side">
-                                        <table class="o_dks_rate_table">
-                                            <thead>
-                                                <tr><th>TIÊU CHÍ</th><th>GIÁ TRỊ</th><th>DIỄN GIẢI</th></tr>
-                                            </thead>
-                                            <tbody>
-                                                <tr t-foreach="perfRows" t-as="pr" t-key="pr.key">
-                                                    <td><span t-att-class="'o_dks_dot is-' + pr.key"/> <t t-esc="pr.label"/></td>
-                                                    <td class="o_dks_perf_val" t-esc="pr.value"/>
-                                                    <td class="o_dks_perf_note" t-esc="pr.note"/>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                        <div class="o_dks_rate_info">
-                                            <i class="fa fa-info-circle"/>
-                                            <t t-esc="perfGapText"/>
-                                        </div>
+                                        <div class="o_dks_cl_note" t-esc="perfGapText"/>
                                     </div>
                                 </div>
                             </div>

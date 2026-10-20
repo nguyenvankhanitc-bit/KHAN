@@ -185,6 +185,22 @@ export class DailyWorkKhoSheet extends Component {
         ];
     }
 
+    /** Chú thích biểu đồ 2 (bên phải vòng tròn). */
+    get rateLegend() {
+        const colors = { pass: "#16a34a", average: "#f59e0b", fail: "#dc2626" };
+        return this.rateRows.map((r) => ({ ...r, color: colors[r.key] }));
+    }
+
+    /** Chú thích biểu đồ 3 (bên phải vòng tròn). */
+    get perfLegend() {
+        const s = this.perfStats;
+        return [
+            { key: "hours", label: "Tổng thời gian", value: `${this.perfHoursLabel} giờ`, color: "#8b5cf6" },
+            { key: "self", label: "NV tự đánh giá", value: this.fmtPct(s.self), color: "#2563eb" },
+            { key: "manager", label: "QL đánh giá", value: this.fmtPct(s.manager), color: "#16a34a" },
+        ];
+    }
+
     get perfHoursLabel() {
         return String(this.perfStats.hours).replace(".", ",");
     }
@@ -215,11 +231,11 @@ export class DailyWorkKhoSheet extends Component {
                 datasets: [ring(s.self, "#2563eb"), ring(s.manager, "#16a34a")],
             },
             options: {
-                cutout: "56%",
+                cutout: "62%",
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 300 },
-                layout: { padding: 6 },
+                layout: { padding: 2 },
                 plugins: {
                     legend: { display: false },
                     tooltip: {
@@ -311,14 +327,13 @@ export class DailyWorkKhoSheet extends Component {
                 }],
             },
             options: {
-                cutout: "62%",
+                cutout: "72%",
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 300 },
-                layout: { padding: { top: 26, bottom: 26, left: 52, right: 52 } },
+                layout: { padding: 2 },
                 plugins: { legend: { display: false }, tooltip: { enabled: Boolean(total) } },
             },
-            plugins: [this._calloutPlugin(items)],
         });
     }
 

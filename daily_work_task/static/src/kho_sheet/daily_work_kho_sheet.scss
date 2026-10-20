@@ -639,3 +639,60 @@
         background: #e2e8f0;
     }
 }
+
+// Gọn lại: ô chỉ số + ô Tuần
+.o_daily_work_kho_sheet {
+    .o_dks_kpis,
+    .o_dks_weeks {
+        gap: 8px;
+    }
+
+    .o_dks_kpi {
+        gap: 10px;
+        padding: 7px 12px;
+        border-radius: 8px;
+    }
+
+    .o_dks_kpi_ico {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        font-size: 0.85rem;
+
+        i { font-size: 0.85rem; }
+    }
+
+    .o_dks_kpi_lbl {
+        font-size: 0.7rem;
+    }
+
+    .o_dks_kpi_val {
+        font-size: 1.15rem;
+        line-height: 1.15;
+
+        small { font-size: 0.72rem; }
+    }
+
+    .o_dks_week {
+        gap: 8px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        font-size: 0.76rem;
+        line-height: 1.25;
+
+        b { font-size: 0.8rem; }
+        small { font-size: 0.68rem; }
+    }
+
+    .o_dks_week_cal {
+        font-size: 1rem;
+    }
+
+    .o_dks_week_no {
+        width: 22px;
+        height: 22px;
+        flex: 0 0 22px;
+        border-radius: 5px;
+        font-size: 0.75rem;
+    }
+}

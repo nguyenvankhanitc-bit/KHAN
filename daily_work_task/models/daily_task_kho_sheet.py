@@ -192,12 +192,13 @@ class DailyTaskKhoSheetLine(models.Model):
             return
         Line = self.sudo()
         _y, _m, date_from, date_to = self.env["daily.task"]._month_date_bounds(year=year, month=month)
-        users = team.manager_ids | team.member_ids
+        users = team.manager_ids | team.member_ids | self.env.user
         tasks = self.env["daily.task"].sudo().search([
             # Giống Danh sách công việc: mọi việc của nhân sự Team (kể cả hạng mục của Team khác)
             "|", ("team_work_team_id", "=", team.id), ("assignee_user_id", "in", users.ids),
-            "|", "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
-            "&", "&", ("assign_date", "=", False), ("deadline", ">=", date_from), ("deadline", "<=", date_to),
+            # Cùng phạm vi tháng với Báo cáo cá nhân: Deadline HOẶC Ngày bắt đầu trong tháng
+            "|", "&", ("deadline", ">=", date_from), ("deadline", "<=", date_to),
+            "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
         ])
         scope = [("year", "=", year), ("month", "=", month), ("team_id", "=", team.id)]
         linked = Line.search(scope + [("task_id", "!=", False)])
@@ -207,6 +208,9 @@ class DailyTaskKhoSheetLine(models.Model):
             stale.unlink()
         for task in tasks:
             vals = self._task_vals(task)
+            # Ngày (→ Tuần) phải thuộc tháng: việc bắt đầu tháng trước, Deadline tháng này → lấy Deadline
+            if vals["date"] and not (date_from <= vals["date"] <= date_to):
+                vals["date"] = task.deadline or vals["date"]
             line = by_task.get(task.id)
             if line:
                 current = lambda k: line.work_group_id.id or False if k == "work_group_id" else line[k]
@@ -423,7 +427,8 @@ class DailyTaskKhoSheetLine(models.Model):
         total = len(rows)
         cnt = lambda k: sum(1 for r in rows if r["state"] == k)
         pct = lambda n: num(n * 100.0 / total) if total else 0
-        hours = num(sum(float(r["hours"] or 0) for r in rows))
+        # Tổng thời gian = giờ của việc ĐÃ HOÀN THÀNH (giống Báo cáo cá nhân)
+        hours = num(sum(float(r["hours"] or 0) for r in rows if r.get("linked") and r["state"] == "done"))
         eff = num(self._final_manager_eval(rows, data.get("manager_perf") or {}))
         today_iso = fields.Date.context_today(self).isoformat()
         st = {"done": 0, "doing": 0, "todo": 0, "overdue": 0}

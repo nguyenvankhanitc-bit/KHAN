@@ -166,7 +166,8 @@ export class DailyWorkKhoSheet extends Component {
     get perfStats() {
         const rows = this.visibleRows;
         const round1 = (v) => Math.round(v * 10) / 10;
-        const hours = round1(rows.reduce((s, r) => s + this.hoursOf(r), 0));
+        // Tổng thời gian = giờ của việc ĐÃ HOÀN THÀNH (giống Báo cáo cá nhân)
+        const hours = round1(rows.filter((r) => r.linked && r.state === "done").reduce((s, r) => s + this.hoursOf(r), 0));
         // NV tự đánh giá = TB «% hoàn thành CV» nhân viên nhập ở Danh sách công việc
         const self = rows.length ? round1(rows.reduce((s, r) => s + (Number(r.completion) || 0), 0) / rows.length) : 0;
         // QL đánh giá: theo từng nhân viên = «QL đánh giá tổng» đã chốt (Báo cáo hiệu suất) nếu có,

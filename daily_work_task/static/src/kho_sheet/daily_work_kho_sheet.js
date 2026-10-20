@@ -154,20 +154,9 @@ export class DailyWorkKhoSheet extends Component {
         };
     }
 
-    /** Tổng TG (giờ) = Giờ ra − Giờ vào (qua nửa đêm → +24h). */
+    /** Tổng TG (giờ): dòng phân công lấy theo Danh sách công việc, dòng nhập tay gõ trực tiếp. */
     hoursOf(row) {
-        if (!row.time_in || !row.time_out) {
-            return 0;
-        }
-        const toH = (t) => {
-            const [h, m] = t.split(":").map(Number);
-            return h + m / 60;
-        };
-        let diff = toH(row.time_out) - toH(row.time_in);
-        if (diff < 0) {
-            diff += 24;
-        }
-        return Math.round(diff * 100) / 100;
+        return Math.round((Number(row.hours) || 0) * 100) / 100;
     }
 
     categoryLabel(row) {
@@ -278,8 +267,8 @@ export class DailyWorkKhoSheet extends Component {
             category: (this.state.categories[0] || {}).name || "",
             name: "",
             responsible: this.state.me,
-            time_in: "",
-            time_out: "",
+            date_start: iso,
+            deadline: iso,
             hours: 0,
             state: "not_started",
             controller: "",
@@ -290,10 +279,10 @@ export class DailyWorkKhoSheet extends Component {
     }
 
     /** Ngày gõ tay dd/mm/yyyy (chấp nhận d/m/yyyy, d-m-yyyy, ddmmyyyy). */
-    onDateText(row, ev) {
+    onDateText(row, ev, field = "date") {
         const raw = (ev.target.value || "").trim();
         if (!raw) {
-            row.date = "";
+            row[field] = "";
             this.state.dirty = true;
             return;
         }
@@ -307,16 +296,16 @@ export class DailyWorkKhoSheet extends Component {
         const valid = m && mo >= 1 && mo <= 12 && d >= 1 && d <= new Date(y, mo, 0).getDate();
         if (!valid) {
             this.notification.add(_t("Ngày không hợp lệ — nhập theo dạng dd/mm/yyyy."), { type: "warning" });
-            ev.target.value = fmtDate(row.date);
+            ev.target.value = fmtDate(row[field]);
             return;
         }
-        if (y !== this.state.year || mo !== this.state.month) {
+        if (field === "date" && (y !== this.state.year || mo !== this.state.month)) {
             this.notification.add(`Ngày phải thuộc tháng ${this.monthLabel}.`, { type: "warning" });
             ev.target.value = fmtDate(row.date);
             return;
         }
-        row.date = `${y}-${pad(mo)}-${pad(d)}`;
-        ev.target.value = fmtDate(row.date);
+        row[field] = `${y}-${pad(mo)}-${pad(d)}`;
+        ev.target.value = fmtDate(row[field]);
         this.state.dirty = true;
     }
 
@@ -441,10 +430,10 @@ export class DailyWorkKhoSheet extends Component {
             value = Number(value) || false;
             row.category = (this.state.categories.find((c) => c.id === value) || {}).name || "";
         }
-        row[field] = value;
-        if (field === "time_in" || field === "time_out") {
-            row.hours = this.hoursOf(row);
+        if (field === "hours") {
+            value = Math.max(Number(String(value).replace(",", ".")) || 0, 0);
         }
+        row[field] = value;
         this.state.dirty = true;
     }
 
@@ -476,8 +465,9 @@ export class DailyWorkKhoSheet extends Component {
                     work_group_id: r.work_group_id || false,
                     name: r.name,
                     responsible: r.responsible,
-                    time_in: r.time_in || false,
-                    time_out: r.time_out || false,
+                    date_start: r.date_start || false,
+                    deadline: r.deadline || false,
+                    hours: Number(r.hours) || 0,
                     state: r.state,
                     controller: r.controller,
                     note: r.note,

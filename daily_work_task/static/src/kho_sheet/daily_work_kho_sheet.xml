@@ -112,8 +112,8 @@
                                         <th class="c-kind">Hạng mục</th>
                                         <th class="c-name">Nội dung công việc</th>
                                         <th class="c-person">Người phụ trách</th>
-                                        <th class="c-time">Giờ vào</th>
-                                        <th class="c-time">Giờ ra</th>
+                                        <th class="c-date2">Ngày bắt đầu</th>
+                                        <th class="c-date2">Deadline</th>
                                         <th class="c-hours">Tổng TG (giờ)</th>
                                         <th class="c-state">Trạng thái</th>
                                         <th class="c-person">Kiểm soát</th>
@@ -134,8 +134,8 @@
                                                 <t t-esc="r.name"/>
                                             </td>
                                             <td t-esc="r.responsible"/>
-                                            <td class="text-center" t-esc="r.time_in || '—'"/>
-                                            <td class="text-center" t-esc="r.time_out || '—'"/>
+                                            <td class="text-center" t-esc="fmt(r.date_start) || '—'"/>
+                                            <td class="text-center" t-esc="fmt(r.deadline) || '—'"/>
                                             <td class="text-center" t-esc="hoursOf(r)"/>
                                             <td class="text-center">
                                                 <span t-att-class="'o_dks_state is-' + r.state">
@@ -148,7 +148,7 @@
                                         <!-- Chế độ nhập tay -->
                                         <t t-else="">
                                             <t t-if="r.linked">
-                                                <!-- Dòng từ Phân công việc team: chỉ nhập Giờ vào / Giờ ra / Ghi chú -->
+                                                <!-- Dòng từ Phân công việc team: chỉ nhập Ghi chú (ngày / TG theo công việc đã phân) -->
                                                 <td class="o_dks_locked" t-esc="dayLabel(r.date)"/>
                                                 <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                                 <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
@@ -181,21 +181,31 @@
                                             <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
                                             </t>
-                                            <td><input type="text" class="form-control form-control-sm text-center o_dks_time_input" placeholder="HH:MM"
-                                                       maxlength="5" autocomplete="off" t-att-value="r.time_in"
-                                                       t-on-focus="(ev) => this.openTime(ev, r, 'time_in')"
-                                                       t-on-click="(ev) => this.openTime(ev, r, 'time_in')"
-                                                       t-on-blur="() => this.closeTime()"
-                                                       t-on-keydown="(ev) => this.onTimeKey(ev, r, 'time_in')"
-                                                       t-on-change="(ev) => this.onTimeText(r, 'time_in', ev)"/></td>
-                                            <td><input type="text" class="form-control form-control-sm text-center o_dks_time_input" placeholder="HH:MM"
-                                                       maxlength="5" autocomplete="off" t-att-value="r.time_out"
-                                                       t-on-focus="(ev) => this.openTime(ev, r, 'time_out')"
-                                                       t-on-click="(ev) => this.openTime(ev, r, 'time_out')"
-                                                       t-on-blur="() => this.closeTime()"
-                                                       t-on-keydown="(ev) => this.onTimeKey(ev, r, 'time_out')"
-                                                       t-on-change="(ev) => this.onTimeText(r, 'time_out', ev)"/></td>
-                                            <td class="text-center o_dks_hours" title="= Giờ ra − Giờ vào" t-esc="hoursOf(r)"/>
+                                            <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.date_start) || '—'"/>
+                                            <td t-else="">
+                                                <div class="o_dks_date">
+                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                           t-att-value="fmt(r.date_start)" t-on-change="(ev) => this.onDateText(r, ev, 'date_start')"/>
+                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date_start"
+                                                           t-on-change="(ev) => this.ondate_startield(r, 'date_start', ev)"/>
+                                                </div>
+                                            </td>
+                                            <td t-if="r.linked" class="text-center o_dks_locked" t-esc="fmt(r.deadline) || '—'"/>
+                                            <td t-else="">
+                                                <div class="o_dks_date">
+                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                           t-att-value="fmt(r.deadline)" t-on-change="(ev) => this.onDateText(r, ev, 'deadline')"/>
+                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.deadline"
+                                                           t-on-change="(ev) => this.ondeadlineield(r, 'deadline', ev)"/>
+                                                </div>
+                                            </td>
+                                            <td t-if="r.linked" class="text-center o_dks_hours o_dks_locked" title="Theo Tổng TG ở Danh sách công việc" t-esc="hoursOf(r)"/>
+                                            <td t-else=""><input type="number" min="0" step="0.5" class="form-control form-control-sm text-center"
+                                                       t-att-value="r.hours" t-on-change="(ev) => this.onField(r, 'hours', ev)"/></td>
                                             <td t-if="r.linked" class="text-center o_dks_locked">
                                                 <span t-att-class="'o_dks_state is-' + r.state">
                                                     <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>

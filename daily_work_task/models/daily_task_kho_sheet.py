@@ -39,6 +39,7 @@ class DailyTaskKhoSheetLine(models.Model):
     time_out = fields.Float(string="Giờ ra")
     name = fields.Char(string="Nội dung công việc")
     responsible = fields.Char(string="Người phụ trách")
+    date_start = fields.Date(string="Ngày bắt đầu")
     deadline = fields.Date(string="Deadline")
     date_done = fields.Date(string="Ngày hoàn thành")
     hours = fields.Float(string="Tổng TG (giờ)", digits=(10, 2), help="= Giờ ra − Giờ vào")
@@ -119,6 +120,7 @@ class DailyTaskKhoSheetLine(models.Model):
             "time_out": self._hhmm(rec.time_out) if rec.time_in or rec.time_out else "",
             "name": rec.name or "",
             "responsible": rec.responsible or "",
+            "date_start": rec.date_start.isoformat() if rec.date_start else "",
             "deadline": rec.deadline.isoformat() if rec.deadline else "",
             "date_done": rec.date_done.isoformat() if rec.date_done else "",
             "hours": rec.hours or 0.0,
@@ -141,7 +143,10 @@ class DailyTaskKhoSheetLine(models.Model):
             "work_group_id": head.id if head else False,
             "name": task.name or "",
             "responsible": task.assignee_id.name or "",
+            # Ngày bắt đầu / Deadline / Tổng TG: cùng nguồn với Danh sách công việc
+            "date_start": task.assign_date,
             "deadline": task.deadline,
+            "hours": round(task.duration_hours or 0.0, 2),
             "date_done": done.date() if hasattr(done, "date") else done or False,
             "state": task.state if task.state in states else "not_started",
             "controller": task.team_work_checker_id.name or task.team_work_coordinator_id.name or "",
@@ -170,8 +175,8 @@ class DailyTaskKhoSheetLine(models.Model):
             vals = self._task_vals(task)
             line = by_task.get(task.id)
             if line:
-                changed = {k: v for k, v in vals.items() if line[k] != v and not (
-                    k == "work_group_id" and line.work_group_id.id == v)}
+                current = lambda k: line.work_group_id.id or False if k == "work_group_id" else line[k]
+                changed = {k: v for k, v in vals.items() if current(k) != v}
                 if changed:
                     line.write(changed)
             else:
@@ -242,11 +247,14 @@ class DailyTaskKhoSheetLine(models.Model):
                 raise ValidationError(
                     "Ngày %s không thuộc tháng %02d/%s (dòng «%s»)." % (d.strftime("%d/%m/%Y"), month, year, name)
                 )
-            t_in = self._parse_hhmm(row.get("time_in"))
-            t_out = self._parse_hhmm(row.get("time_out"))
-            hours = 0.0
-            if row.get("time_in") and row.get("time_out"):
-                hours = t_out - t_in if t_out >= t_in else t_out + 24 - t_in  # qua nửa đêm
+            d_start = self._clean_date(row.get("date_start"))
+            d_end = self._clean_date(row.get("deadline"))
+            if d_start and d_end and d_end < d_start:
+                raise ValidationError("Deadline phải sau hoặc bằng Ngày bắt đầu (dòng «%s»)." % name)
+            try:
+                hours = max(float(row.get("hours") or 0), 0.0)
+            except (TypeError, ValueError):
+                raise ValidationError("Tổng TG không hợp lệ (dòng «%s»)." % name)
             vals = {
                 "year": year,
                 "month": month,
@@ -254,12 +262,11 @@ class DailyTaskKhoSheetLine(models.Model):
                 "sequence": seq,
                 "date": d,
                 "work_group_id": int(row.get("work_group_id") or 0) or False,
-                "time_in": t_in,
-                "time_out": t_out,
                 "kind": row.get("kind") if row.get("kind") in kinds else "daily",
                 "name": name,
                 "responsible": (row.get("responsible") or "").strip(),
-                "deadline": self._clean_date(row.get("deadline")),
+                "date_start": d_start,
+                "deadline": d_end,
                 "date_done": self._clean_date(row.get("date_done")),
                 "hours": round(hours, 2),
                 "state": row.get("state") if row.get("state") in states else "not_started",
@@ -271,8 +278,8 @@ class DailyTaskKhoSheetLine(models.Model):
             rid = int(row.get("id") or 0)
             rec = Line.search(scope + [("id", "=", rid)]) if rid else Line.browse()
             if rec and rec.task_id:
-                # Dòng liên kết phân công: chỉ nhận Giờ vào / Giờ ra / Tổng TG / Ghi chú
-                rec.write({k: vals[k] for k in ("sequence", "time_in", "time_out", "hours", "note")})
+                # Dòng liên kết phân công: chỉ nhận Ghi chú (còn lại theo công việc đã phân)
+                rec.write({k: vals[k] for k in ("sequence", "note")})
                 continue
             if rec:
                 rec.write(vals)

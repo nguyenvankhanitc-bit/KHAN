@@ -165,19 +165,34 @@ class DailyTaskKhoSheetLine(models.Model):
             "hours": round(task.duration_hours or 0.0, 2),
             "date_done": done.date() if hasattr(done, "date") else done or False,
             "state": task.state if task.state in states else "not_started",
-            "controller": task.team_work_checker_id.name or task.team_work_coordinator_id.name or "",
+            "controller": self._controller_name(task),
         }
 
     @api.model
+    def _controller_name(self, task):
+        """Kiểm soát: Người kiểm tra / điều phối (Phân công việc team) → QL đã xác nhận → người giao
+        (bỏ qua OdooBot của việc sinh tự động)."""
+        root = self.env.ref("base.user_root", raise_if_not_found=False)
+        for user in (task.team_work_checker_id, task.team_work_coordinator_id,
+                     task.manager_confirmed_uid, task.assigned_by_id):
+            if user and user != root:
+                return user.name or ""
+        return ""
+
+    @api.model
     def _sync_team_work(self, team, year, month):
-        """Đồng bộ dòng từ «Phân công việc team» của Team trong tháng: thêm việc mới, cập nhật
-        việc đã có, bỏ dòng khi công việc bị xoá / chuyển khỏi tháng."""
+        """Đồng bộ dòng từ Danh sách công việc của nhân sự trong Team (Phân công việc team, Plan tổng,
+        việc cá nhân...) trong tháng: thêm việc mới, cập nhật việc đã có, bỏ dòng khi công việc bị
+        xoá / chuyển khỏi tháng / chuyển sang hạng mục Team khác."""
         if not team:
             return
         Line = self.sudo()
         _y, _m, date_from, date_to = self.env["daily.task"]._month_date_bounds(year=year, month=month)
+        users = team.manager_ids | team.member_ids
         tasks = self.env["daily.task"].sudo().search([
-            ("team_work_team_id", "=", team.id),
+            "|", ("team_work_team_id", "=", team.id),
+            "&", ("assignee_user_id", "in", users.ids),
+            "|", ("work_group_id", "=", False), ("work_group_id.team_id", "in", [team.id, False]),
             "|", "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
             "&", "&", ("assign_date", "=", False), ("deadline", ">=", date_from), ("deadline", "<=", date_to),
         ])
@@ -200,6 +215,12 @@ class DailyTaskKhoSheetLine(models.Model):
                                  kind="daily", note=task.note or "", sequence=0))
 
     @api.model
+    def _sees_whole_team(self, team):
+        """Quản lý (hệ thống / quản lý Team) xem việc của cả Team."""
+        return bool(self.env.su or self.env["daily.task"]._is_manager()
+                    or (team and self.env.user in team.manager_ids))
+
+    @api.model
     def get_kho_sheet(self, year=None, month=None, team_id=None):
         self.env["daily.task.report.perm"].check("khocv", "view")
         today = fields.Date.context_today(self)
@@ -210,6 +231,13 @@ class DailyTaskKhoSheetLine(models.Model):
         domain = [("year", "=", year), ("month", "=", month), ("team_id", "=", team.id or False)]
         self._sync_team_work(team, year, month)
         rows = self.sudo().search(domain)
+        # Theo user đang đăng nhập: quản lý xem cả Team, nhân viên chỉ xem việc của mình
+        if not self._sees_whole_team(team):
+            me = self.env.user
+            rows = rows.filtered(
+                lambda r: r.task_id.assignee_user_id == me if r.task_id
+                else (r.create_uid == me or (r.responsible or "").strip().casefold() == (me.name or "").casefold())
+            )
         # Gợi ý tên (Người phụ trách / Kiểm soát): thành viên Team
         names = sorted({u.name for u in (team.manager_ids | team.member_ids)} if team else set())
         pmap = self._perm()

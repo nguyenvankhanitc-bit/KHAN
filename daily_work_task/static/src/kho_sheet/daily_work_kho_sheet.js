@@ -47,6 +47,8 @@ export class DailyWorkKhoSheet extends Component {
             people: [],
             kinds: [],
             states: [],
+            categories: [],
+            me: "",
             canWrite: false,
             message: false,
         });
@@ -128,7 +130,7 @@ export class DailyWorkKhoSheet extends Component {
         const done = count("done");
         const doing = count("in_progress");
         const todo = count("not_started");
-        const hours = rows.reduce((s, r) => s + (Number(r.hours) || 0), 0);
+        const hours = rows.reduce((s, r) => s + this.hoursOf(r), 0);
         return {
             total,
             done,
@@ -141,8 +143,34 @@ export class DailyWorkKhoSheet extends Component {
         };
     }
 
-    kindLabel(key) {
-        return (this.state.kinds.find((k) => k.key === key) || {}).label || "";
+    /** Tổng TG (giờ) = Giờ ra − Giờ vào (qua nửa đêm → +24h). */
+    hoursOf(row) {
+        if (!row.time_in || !row.time_out) {
+            return 0;
+        }
+        const toH = (t) => {
+            const [h, m] = t.split(":").map(Number);
+            return h + m / 60;
+        };
+        let diff = toH(row.time_out) - toH(row.time_in);
+        if (diff < 0) {
+            diff += 24;
+        }
+        return Math.round(diff * 100) / 100;
+    }
+
+    categoryLabel(row) {
+        const c = this.state.categories.find((x) => x.id === row.work_group_id);
+        return c ? c.name : row.category || "";
+    }
+
+    /** Ô chọn Hạng mục: hạng mục đã phân cho user + hạng mục đang lưu trên dòng (nếu khác). */
+    categoryOptions(row) {
+        const opts = [...this.state.categories];
+        if (row.work_group_id && !opts.some((c) => c.id === row.work_group_id)) {
+            opts.push({ id: row.work_group_id, name: row.category || "" });
+        }
+        return opts;
     }
 
     stateLabel(key) {
@@ -180,6 +208,8 @@ export class DailyWorkKhoSheet extends Component {
         this.state.rows = (data.rows || []).map((r) => ({ ...r, key: `id-${r.id}` }));
         this.state.people = data.people || [];
         this.state.kinds = data.kinds || [];
+        this.state.categories = data.categories || [];
+        this.state.me = data.me || "";
         this.state.states = data.states || [];
         this.state.canWrite = Boolean(data.can_write);
         this.state.deleted = [];
@@ -233,10 +263,12 @@ export class DailyWorkKhoSheet extends Component {
             id: false,
             date: iso,
             kind: "daily",
+            work_group_id: (this.state.categories[0] || {}).id || false,
+            category: (this.state.categories[0] || {}).name || "",
             name: "",
-            responsible: "",
-            deadline: iso,
-            date_done: "",
+            responsible: this.state.me,
+            time_in: "",
+            time_out: "",
             hours: 0,
             state: "not_started",
             controller: "",
@@ -248,14 +280,13 @@ export class DailyWorkKhoSheet extends Component {
 
     onField(row, field, ev) {
         let value = ev.target.value;
-        if (field === "hours") {
-            value = Math.max(0, Number(value) || 0);
+        if (field === "work_group_id") {
+            value = Number(value) || false;
+            row.category = (this.state.categories.find((c) => c.id === value) || {}).name || "";
         }
         row[field] = value;
-        // Trạng thái Hoàn thành mà chưa có ngày hoàn thành → điền hôm nay
-        if (field === "state" && value === "done" && !row.date_done) {
-            const t = new Date();
-            row.date_done = `${t.getFullYear()}-${pad(t.getMonth() + 1)}-${pad(t.getDate())}`;
+        if (field === "time_in" || field === "time_out") {
+            row.hours = this.hoursOf(row);
         }
         this.state.dirty = true;
     }
@@ -285,11 +316,11 @@ export class DailyWorkKhoSheet extends Component {
                     id: r.id || false,
                     date: r.date || false,
                     kind: r.kind,
+                    work_group_id: r.work_group_id || false,
                     name: r.name,
                     responsible: r.responsible,
-                    deadline: r.deadline || false,
-                    date_done: r.date_done || false,
-                    hours: Number(r.hours) || 0,
+                    time_in: r.time_in || false,
+                    time_out: r.time_out || false,
                     state: r.state,
                     controller: r.controller,
                     note: r.note,

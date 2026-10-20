@@ -294,3 +294,27 @@
         &.is-not_started { background: #e5e7eb; color: #475569; }
     }
 }
+
+// Hạng mục (liên kết Phân công công việc) · Giờ vào / Giờ ra
+.o_daily_work_kho_sheet {
+    .o_dks_cat {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: #e0ecff;
+        color: #1e3a8a;
+        font-size: 0.78rem;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .o_dks_table .c-time {
+        width: 105px;
+    }
+
+    .o_dks_hours {
+        font-weight: 700;
+        color: #0f172a;
+        background: #f1f5f9;
+    }
+}

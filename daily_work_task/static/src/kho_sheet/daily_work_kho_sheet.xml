@@ -112,8 +112,8 @@
                                         <th class="c-kind">Hạng mục</th>
                                         <th class="c-name">Nội dung công việc</th>
                                         <th class="c-person">Người phụ trách</th>
-                                        <th class="c-date">Deadline</th>
-                                        <th class="c-date">Ngày hoàn thành</th>
+                                        <th class="c-time">Giờ vào</th>
+                                        <th class="c-time">Giờ ra</th>
                                         <th class="c-hours">Tổng TG (giờ)</th>
                                         <th class="c-state">Trạng thái</th>
                                         <th class="c-person">Kiểm soát</th>
@@ -128,12 +128,12 @@
                                         <!-- Chế độ xem -->
                                         <t t-if="!state.editing">
                                             <td t-esc="dayLabel(r.date)"/>
-                                            <td class="text-center"><span t-att-class="'o_dks_kind is-' + r.kind" t-esc="kindLabel(r.kind)"/></td>
+                                            <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                             <td t-esc="r.name"/>
                                             <td t-esc="r.responsible"/>
-                                            <td class="text-center" t-esc="fmt(r.deadline)"/>
-                                            <td class="text-center" t-esc="r.date_done ? fmt(r.date_done) : '—/—/—'"/>
-                                            <td class="text-center" t-esc="r.hours"/>
+                                            <td class="text-center" t-esc="r.time_in || '—'"/>
+                                            <td class="text-center" t-esc="r.time_out || '—'"/>
+                                            <td class="text-center" t-esc="hoursOf(r)"/>
                                             <td class="text-center">
                                                 <span t-att-class="'o_dks_state is-' + r.state">
                                                     <i t-att-class="'fa ' + stateIcon(r.state)"/> <t t-esc="stateLabel(r.state)"/>
@@ -147,9 +147,10 @@
                                             <td><input type="date" class="form-control form-control-sm" t-att-value="r.date"
                                                        t-on-change="(ev) => this.onField(r, 'date', ev)"/></td>
                                             <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'kind', ev)">
-                                                    <t t-foreach="state.kinds" t-as="k" t-key="k.key">
-                                                        <option t-att-value="k.key" t-att-selected="k.key === r.kind" t-esc="k.label"/>
+                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
+                                                    <option value="" t-att-selected="!r.work_group_id">— Chọn hạng mục —</option>
+                                                    <t t-foreach="categoryOptions(r)" t-as="c" t-key="c.id">
+                                                        <option t-att-value="c.id" t-att-selected="c.id === r.work_group_id" t-esc="c.name"/>
                                                     </t>
                                                 </select>
                                             </td>
@@ -157,12 +158,11 @@
                                                        t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
-                                            <td><input type="date" class="form-control form-control-sm" t-att-value="r.deadline"
-                                                       t-on-change="(ev) => this.onField(r, 'deadline', ev)"/></td>
-                                            <td><input type="date" class="form-control form-control-sm" t-att-value="r.date_done"
-                                                       t-on-change="(ev) => this.onField(r, 'date_done', ev)"/></td>
-                                            <td><input type="number" min="0" step="0.5" class="form-control form-control-sm text-center"
-                                                       t-att-value="r.hours" t-on-change="(ev) => this.onField(r, 'hours', ev)"/></td>
+                                            <td><input type="time" class="form-control form-control-sm" t-att-value="r.time_in"
+                                                       t-on-change="(ev) => this.onField(r, 'time_in', ev)"/></td>
+                                            <td><input type="time" class="form-control form-control-sm" t-att-value="r.time_out"
+                                                       t-on-change="(ev) => this.onField(r, 'time_out', ev)"/></td>
+                                            <td class="text-center o_dks_hours" title="= Giờ ra − Giờ vào" t-esc="hoursOf(r)"/>
                                             <td>
                                                 <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'state', ev)">
                                                     <t t-foreach="state.states" t-as="s" t-key="s.key">

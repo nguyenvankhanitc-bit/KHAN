@@ -32,12 +32,16 @@ class DailyTaskKhoSheetLine(models.Model):
     team_id = fields.Many2one("daily.task.team", string="Team", index=True, ondelete="set null")
     sequence = fields.Integer(default=10)
     date = fields.Date(string="Ngày")
-    kind = fields.Selection(KIND_SELECTION, string="Hạng mục", default="daily")
+    kind = fields.Selection(KIND_SELECTION, string="Loại", default="daily")
+    # Hạng mục: liên kết Phân công công việc → Hạng mục (dòng đại diện của hạng mục)
+    work_group_id = fields.Many2one("daily.task.work.group", string="Hạng mục", ondelete="set null")
+    time_in = fields.Float(string="Giờ vào")
+    time_out = fields.Float(string="Giờ ra")
     name = fields.Char(string="Nội dung công việc")
     responsible = fields.Char(string="Người phụ trách")
     deadline = fields.Date(string="Deadline")
     date_done = fields.Date(string="Ngày hoàn thành")
-    hours = fields.Float(string="Tổng TG (giờ)", digits=(10, 2))
+    hours = fields.Float(string="Tổng TG (giờ)", digits=(10, 2), help="= Giờ ra − Giờ vào")
     state = fields.Selection(STATE_SELECTION, string="Trạng thái", default="not_started")
     controller = fields.Char(string="Kiểm soát")
     note = fields.Char(string="Ghi chú")
@@ -58,11 +62,58 @@ class DailyTaskKhoSheetLine(models.Model):
 
     # ------------------------------------------------------------------ đọc
     @api.model
+    def _hhmm(self, value):
+        if value is None or value is False:
+            return ""
+        total = int(round(float(value) * 60))
+        return "%02d:%02d" % (total // 60 % 24, total % 60)
+
+    @api.model
+    def _parse_hhmm(self, value):
+        if not value:
+            return 0.0
+        try:
+            h, m = str(value).split(":")[:2]
+            return int(h) + int(m) / 60.0
+        except (TypeError, ValueError):
+            raise ValidationError("Giờ không hợp lệ: %s" % value)
+
+    @api.model
+    def _category_label(self, wg):
+        WG = self.env["daily.task.work.group"]
+        return WG._norm_category_name(wg.name or "").upper() if wg else ""
+
+    @api.model
+    def _category_options(self, team):
+        """Hạng mục cho ô chọn: các hạng mục đã phân cho user đang nhập (Công việc theo nhân sự);
+        chưa được phân hạng mục nào → toàn bộ hạng mục của Team."""
+        WG = self.env["daily.task.work.group"].sudo()
+        groups = WG.browse([g["id"] for g in WG.with_user(self.env.user).get_groups_for_user(user_id=self.env.uid)])
+        if team:
+            in_team = groups.filtered(lambda g: g.team_id == team)
+            groups = in_team or groups
+        if not groups and team:
+            groups = WG.search([("active", "=", True), ("team_id", "=", team.id)])
+        seen, out = set(), []
+        for g in groups.sorted(lambda g: (g.sequence, g.id)):
+            head = g.category_head_id or g
+            label = self._category_label(head)
+            if not label or label in seen:
+                continue
+            seen.add(label)
+            out.append({"id": head.id, "name": label})
+        return out
+
+    @api.model
     def _row(self, rec):
         return {
             "id": rec.id,
             "date": rec.date.isoformat() if rec.date else "",
             "kind": rec.kind or "",
+            "work_group_id": rec.work_group_id.id or False,
+            "category": self._category_label(rec.work_group_id),
+            "time_in": self._hhmm(rec.time_in) if rec.time_in or rec.time_out else "",
+            "time_out": self._hhmm(rec.time_out) if rec.time_in or rec.time_out else "",
             "name": rec.name or "",
             "responsible": rec.responsible or "",
             "deadline": rec.deadline.isoformat() if rec.deadline else "",
@@ -94,6 +145,8 @@ class DailyTaskKhoSheetLine(models.Model):
             "team_name": team.name or "",
             "rows": [self._row(r) for r in rows],
             "people": names,
+            "categories": self._category_options(team),
+            "me": self.env.user.name or "",
             "kinds": [{"key": k, "label": l} for k, l in KIND_SELECTION],
             "states": [{"key": k, "label": l} for k, l in STATE_SELECTION],
             "can_write": self._can_write(),
@@ -133,18 +186,26 @@ class DailyTaskKhoSheetLine(models.Model):
                 raise ValidationError(
                     "Ngày %s không thuộc tháng %02d/%s (dòng «%s»)." % (d.strftime("%d/%m/%Y"), month, year, name)
                 )
+            t_in = self._parse_hhmm(row.get("time_in"))
+            t_out = self._parse_hhmm(row.get("time_out"))
+            hours = 0.0
+            if row.get("time_in") and row.get("time_out"):
+                hours = t_out - t_in if t_out >= t_in else t_out + 24 - t_in  # qua nửa đêm
             vals = {
                 "year": year,
                 "month": month,
                 "team_id": team.id or False,
                 "sequence": seq,
                 "date": d,
+                "work_group_id": int(row.get("work_group_id") or 0) or False,
+                "time_in": t_in,
+                "time_out": t_out,
                 "kind": row.get("kind") if row.get("kind") in kinds else "daily",
                 "name": name,
                 "responsible": (row.get("responsible") or "").strip(),
                 "deadline": self._clean_date(row.get("deadline")),
                 "date_done": self._clean_date(row.get("date_done")),
-                "hours": max(0.0, float(row.get("hours") or 0)),
+                "hours": round(hours, 2),
                 "state": row.get("state") if row.get("state") in states else "not_started",
                 "controller": (row.get("controller") or "").strip(),
                 "note": (row.get("note") or "").strip(),

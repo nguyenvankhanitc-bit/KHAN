@@ -1027,3 +1027,89 @@
         }
     }
 }
+
+// 3 biểu đồ nằm ngang (1/3 mỗi khung), thu nhỏ
+.o_daily_work_kho_sheet {
+    .o_dks_charts {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+
+        @media (max-width: 1200px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dks_chart_card {
+        padding: 10px 12px 12px;
+    }
+
+    .o_dks_chart_wide {
+        grid-column: auto;
+    }
+
+    .o_dks_chart_title {
+        font-size: 0.8rem;
+        padding-bottom: 7px;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .o_dks_eval_body,
+    .o_dks_chart_wide .o_dks_eval_body {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .o_dks_donut {
+        height: 190px;
+        max-width: 300px;
+    }
+
+    .o_dks_donut_perf {
+        height: 170px;
+        max-width: 170px;
+    }
+
+    .o_dks_donut_center {
+        b { font-size: 1.45rem; }
+        small { font-size: 0.55rem; }
+    }
+
+    .o_dks_legend {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+        padding: 7px 10px;
+        font-size: 0.74rem;
+        margin-top: 6px;
+    }
+
+    .o_dks_rate_table {
+        font-size: 0.74rem;
+
+        th {
+            font-size: 0.64rem;
+            padding: 6px 8px;
+        }
+
+        td {
+            padding: 6px 8px;
+        }
+    }
+
+    .o_dks_perf_note {
+        font-size: 0.66rem;
+    }
+
+    .o_dks_rate_info {
+        margin-top: 6px;
+        padding: 6px 10px;
+        font-size: 0.72rem;
+    }
+
+    .o_dks_perf_legend {
+        font-size: 0.72rem;
+        margin-top: 4px;
+    }
+}

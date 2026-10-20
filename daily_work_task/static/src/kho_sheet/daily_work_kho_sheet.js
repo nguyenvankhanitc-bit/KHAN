@@ -315,7 +315,7 @@ export class DailyWorkKhoSheet extends Component {
                 responsive: true,
                 maintainAspectRatio: false,
                 animation: { duration: 300 },
-                layout: { padding: { top: 34, bottom: 34, left: 70, right: 70 } },
+                layout: { padding: { top: 26, bottom: 26, left: 52, right: 52 } },
                 plugins: { legend: { display: false }, tooltip: { enabled: Boolean(total) } },
             },
             plugins: [this._calloutPlugin(items)],

@@ -380,7 +380,7 @@ class DailyTaskKhoSheetLine(models.Model):
 
     @api.model
     def export_kho_sheet_excel(self, year=None, month=None, team_id=None, week_no=0):
-        """Xuất Báo cáo CV NV Kho ra Excel: khổ A4 ngang, vừa 1 trang chiều ngang, canh lề, lặp tiêu đề."""
+        """Xuất Báo cáo CV NV Kho ra Excel: khổ A4 dọc, vừa 1 trang chiều ngang, canh lề, lặp tiêu đề."""
         self.env["daily.task.report.perm"].check("khocv", "export")
         try:
             import xlsxwriter
@@ -699,13 +699,13 @@ class DailyTaskKhoSheetLine(models.Model):
         r += 5
         ws.merge_range(r, 0, r, third - 1, data.get("me") or "", F(align="left"))
 
-        # In: A4 ngang, vừa 1 trang chiều ngang, canh giữa, lề hẹp, đánh số trang
+        # In: A4 dọc, lề 0,3 cm, vừa 1 trang chiều ngang, canh giữa, lề hẹp, đánh số trang
         ws.set_paper(9)
-        ws.set_landscape()
+        ws.set_portrait()  # A4 dọc
         ws.fit_to_pages(1, 0)
         ws.center_horizontally()
-        ws.set_margins(left=0.4, right=0.4, top=0.55, bottom=0.6)
-        ws.set_footer('&L&"Times New Roman"&8Báo cáo CV NV Kho – Tháng %s/%s&R&"Times New Roman"&8Trang &P / &N' % (month, year))
+        ws.set_margins(left=0.12, right=0.12, top=0.12, bottom=0.3)  # 0,3 cm (chừa chỗ chân trang)
+        ws.set_footer('&L&"Times New Roman"&8Báo cáo CV NV Kho – Tháng %s/%s&R&"Times New Roman"&8Trang &P / &N' % (month, year), {"margin": 0.12})
         ws.print_area(0, 0, r, last_col)
         wb.close()
 

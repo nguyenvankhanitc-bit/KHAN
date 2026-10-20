@@ -552,6 +552,8 @@ class DailyTaskKhoSheetLine(models.Model):
         f_lb = F(border=1, bold=True)
         f_lc = F(border=1, align="center", bold=True)
         CH = 13  # số dòng vùng biểu đồ
+        helper_col = last_col + 3  # cột phụ (ẩn, ngoài vùng in) cho nhãn chú thích biểu đồ
+        ws.set_column(helper_col, helper_col + 3, 28, None, {"hidden": True})
         blocks = split(3)
         sec = r
         chart_top = sec + 1
@@ -602,35 +604,56 @@ class DailyTaskKhoSheetLine(models.Model):
             if bi == 1 and unrated:
                 ws.merge_range(fr + 1, c0, fr + 1, c1, "%s việc chưa được đánh giá" % unrated,
                                F(italic=True, font_color="#475569"))
-            # biểu đồ
+            # biểu đồ (giống phần mềm): vòng tròn + số giữa vòng, chú thích bên phải có số lượng (tỷ lệ)
             colors = [x[3] for x in legends[bi]]
+            W = max(px(c0, c1) - 12, 160)
+            H = CH * 20
+            hc = helper_col + 2 * bi  # mỗi biểu đồ một cặp cột phụ riêng
             if bi < 2:
+                # Nhãn chú thích «Hoàn thành: 147 (99,3%)» ở cột phụ ẩn (không in)
+                for k, (lbl, n, p, _cl) in enumerate(legends[bi]):
+                    pct_txt = ("%s" % num(p * 100)).replace(".", ",")
+                    ws.write_string(first + k, hc, "%s: %s (%s%%)" % (lbl, n, pct_txt))
+                    ws.write_number(first + k, hc + 1, n)
+                total_n = sum(x[1] for x in legends[bi])
                 ch = wb.add_chart({"type": "doughnut"})
                 ch.add_series({
-                    "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
-                    "values": ["Bao cao CV NV Kho", first, c1 - 1, last, c1 - 1],
+                    "categories": ["Bao cao CV NV Kho", first, hc, last, hc],
+                    "values": ["Bao cao CV NV Kho", first, hc + 1, last, hc + 1],
                     "points": [{"fill": {"color": cl}, "border": {"color": "#ffffff"}} for cl in colors],
-                    "data_labels": {"value": True, "font": {"bold": True, "color": "#ffffff", "size": 12}},
                 })
-                ch.set_hole_size(55)
-                ch.set_legend({"position": "right", "font": {"size": 12, "name": "Times New Roman"}})
+                ch.set_hole_size(62)
+                ch.show_hidden_data()
+                ch.set_plotarea({"layout": {"x": 0.03, "y": 0.06, "width": 0.46, "height": 0.88}})
+                ch.set_legend({"position": "right", "font": {"size": 11, "name": "Times New Roman"}})
+                # Số giữa vòng tròn (giống phần mềm)
+                tw, th = 110, 46
+                cx = 6 + W * (0.03 + 0.23)
+                cy = 3 + H * 0.5
+                ws.insert_textbox(chart_top, c0, "%s\n%s" % (total_n, "công việc" if bi == 0 else "đã đánh giá"), {
+                    "x_offset": int(cx - tw / 2), "y_offset": int(cy - th / 2), "width": tw, "height": th,
+                    "font": {"name": "Times New Roman", "size": 12, "bold": True, "color": "#0b2a5b"},
+                    "align": {"horizontal": "center", "vertical": "middle"},
+                    "fill": {"none": True}, "line": {"none": True}, "object_position": 1,
+                })
             else:
                 ch = wb.add_chart({"type": "bar"})
                 ch.add_series({
                     "categories": ["Bao cao CV NV Kho", first, c0, last, c0],
                     "values": ["Bao cao CV NV Kho", first, c1, last, c1],
                     "points": [{"fill": {"color": cl}} for cl in colors],
-                    "data_labels": {"value": True, "num_format": "0.0%", "font": {"bold": True, "size": 12}},
+                    "data_labels": {"value": True, "num_format": "0.0%", "position": "inside_end",
+                                    "font": {"bold": True, "size": 12, "color": "#ffffff"}},
                     "gap": 60,
                 })
                 ch.set_x_axis({"min": 0, "max": 1, "num_format": "0%", "major_gridlines": {"visible": True,
-                               "line": {"color": "#e5e7eb"}}, "num_font": {"size": 12}})
-                ch.set_y_axis({"reverse": True, "num_font": {"size": 12, "name": "Times New Roman"}})
+                               "line": {"color": "#e5e7eb"}}, "num_font": {"size": 10}})
+                ch.set_y_axis({"reverse": True, "num_font": {"size": 11, "name": "Times New Roman"}})
                 ch.set_legend({"none": True})
                 ch.set_title({"name": "Tổng thời gian: %s giờ" % hours,
                               "name_font": {"size": 12, "bold": True, "color": "#6d28d9", "name": "Times New Roman"}})
             ch.set_chartarea({"border": {"none": True}})
-            ch.set_size({"width": max(px(c0, c1) - 12, 160), "height": CH * 20})
+            ch.set_size({"width": W, "height": H})
             ws.insert_chart(chart_top, c0, ch, {"x_offset": 6, "y_offset": 3, "object_position": 1})
         r = tbl + 8
         # Tiêu đề bảng (2 hàng) — lặp lại ở đầu mỗi trang in

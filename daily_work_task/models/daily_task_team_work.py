@@ -164,3 +164,81 @@ class DailyTask(models.Model):
                 task.message_subscribe(partner_ids=partners.ids)
             created |= task
         return {"count": len(created), "ids": created.ids}
+
+    # ------------------------------------------------------------------ Excel
+    @api.model
+    def export_team_work_excel(self, team_id, coordinator_id, year, month, rows):
+        """Xuất Excel danh sách công việc phân công (đang soạn trên trang Phân công việc team)."""
+        import base64
+        import io
+
+        try:
+            import xlsxwriter
+        except ImportError as exc:
+            raise ValidationError("Thiếu thư viện xlsxwriter. Cài đặt: pip install xlsxwriter") from exc
+        self.env["daily.task.assign.access"].check("teamwork", "view")
+        team = self._teamwork_teams().filtered(lambda t: t.id == int(team_id or 0))[:1]
+        if not team:
+            raise AccessError("Bạn không được phân công cho Team này.")
+        Users = self.env["res.users"].sudo()
+        WG = self.env["daily.task.work.group"].sudo()
+        coordinator = Users.browse(int(coordinator_id or 0)).exists()
+        cats = {c["id"]: c for c in self._teamwork_categories(team)}
+
+        def cat_label(wg_id):
+            wg = WG.browse(int(wg_id or 0)).exists()
+            if not wg:
+                return "", ""
+            head = wg.category_head_id or wg
+            c = cats.get(head.id)
+            return (c["label"] if c else WG._norm_category_name(head.name or "").upper()), (wg.task_name or "")
+
+        def dmy(iso):
+            if not iso:
+                return ""
+            d = fields.Date.to_date(iso)
+            return d.strftime("%d/%m/%Y") if d else ""
+
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, {"in_memory": True})
+        ws = wb.add_worksheet("Phân công việc team")
+        title = wb.add_format({"bold": True, "font_size": 15, "font_color": "#FFFFFF", "bg_color": "#2B3A67",
+                               "align": "center", "valign": "vcenter"})
+        lbl = wb.add_format({"bold": True, "font_color": "#334155"})
+        head = wb.add_format({"bold": True, "bg_color": "#E0E7FF", "border": 1, "border_color": "#A5B4FC",
+                              "align": "center", "valign": "vcenter", "text_wrap": True})
+        cell = wb.add_format({"border": 1, "border_color": "#CBD5E1", "valign": "vcenter", "text_wrap": True})
+        center = wb.add_format({"border": 1, "border_color": "#CBD5E1", "valign": "vcenter", "align": "center"})
+        cols = [("STT", 6), ("Nhân sự", 24), ("Hạng mục", 24), ("Tên chi tiết hạng mục", 30),
+                ("Nội dung công việc", 40), ("Ngày thực hiện", 15), ("Deadline", 15), ("Người kiểm tra", 22), ("Ghi chú", 30)]
+        last = len(cols) - 1
+        ws.merge_range(0, 0, 0, last, "PHÂN CÔNG CÔNG VIỆC TEAM %s" % (team.name or "").upper(), title)
+        ws.set_row(0, 28)
+        ws.write(2, 0, "Phòng ban:", lbl)
+        ws.write(2, 2, team.department_id.display_name or "")
+        ws.write(2, 4, "Người điều phối:", lbl)
+        ws.write(2, 5, coordinator.name or "")
+        ws.write(3, 0, "Team:", lbl)
+        ws.write(3, 2, team.name or "")
+        ws.write(3, 4, "Tháng kế hoạch:", lbl)
+        ws.write(3, 5, "%02d/%s" % (int(month or 0), year or ""))
+        hr = 5
+        for c, (label, width) in enumerate(cols):
+            ws.write(hr, c, label, head)
+            ws.set_column(c, c, width)
+        r = hr + 1
+        for i, row in enumerate(rows or [], start=1):
+            cat, detail = cat_label(row.get("work_group_id"))
+            person = Users.browse(int(row.get("user_id") or 0)).exists()
+            checker = Users.browse(int(row.get("checker_id") or 0)).exists()
+            vals = [(i, center), (person.name or "", cell), (cat, cell), (detail, cell), (row.get("name") or "", cell),
+                    (dmy(row.get("date_start")), center), (dmy(row.get("deadline")), center),
+                    (checker.name or "", cell), (row.get("note") or "", cell)]
+            for c, (v, f) in enumerate(vals):
+                ws.write(r, c, v, f)
+            r += 1
+        ws.autofilter(hr, 0, max(r - 1, hr), last)
+        ws.freeze_panes(hr + 1, 0)
+        wb.close()
+        name = "phan_cong_viec_team_%s_%s_%02d.xlsx" % ((team.name or "team").replace(" ", "_"), year, int(month or 0))
+        return {"file_base64": base64.b64encode(buf.getvalue()).decode(), "filename": name}

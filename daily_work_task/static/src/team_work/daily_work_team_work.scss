@@ -325,3 +325,15 @@
         max-width: 190px;
     }
 }
+
+.o_daily_work_team_work .o_dtw_btn_excel {
+    background: #16a34a;
+    color: #fff;
+    font-weight: 600;
+    padding: 8px 16px;
+
+    &:hover {
+        background: #15803d;
+        color: #fff;
+    }
+}

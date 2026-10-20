@@ -12,7 +12,10 @@
                             <i class="fa fa-calendar"/>
                             <div><small>Tháng kế hoạch</small><b t-esc="monthLabel"/></div>
                         </div>
-                        <button type="button" class="btn o_dtw_btn_save" t-att-disabled="state.saving or !state.rows.length or !state.canCreate"
+                        <button type="button" class="btn o_dtw_btn_excel" t-att-disabled="state.exporting" t-on-click="onExport">
+                            <i class="fa fa-file-excel-o"/> Xuất Excel
+                        </button>
+                        <button type="button" class="btn o_dtw_btn_save" t-att-disabled="state.saving"
                                 t-on-click="onSave">
                             <i class="fa fa-paper-plane"/> <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu'"/>
                         </button>
@@ -148,7 +151,10 @@
                                 <button type="button" class="btn btn-sm btn-primary" t-on-click="onAddRows">
                                     <i class="fa fa-plus"/> Thêm công việc
                                 </button>
-                                <button type="button" class="btn btn-sm o_dtw_btn_light" t-att-disabled="state.saving or !state.rows.length or !state.canCreate"
+                                <button type="button" class="btn btn-sm btn-success" t-att-disabled="state.exporting" t-on-click="onExport">
+                                    <i class="fa fa-file-excel-o"/> Xuất Excel
+                                </button>
+                                <button type="button" class="btn btn-sm o_dtw_btn_light" t-att-disabled="state.saving"
                                         t-on-click="onSave">
                                     <i class="fa fa-user-plus"/> Tạo công việc cá nhân
                                 </button>

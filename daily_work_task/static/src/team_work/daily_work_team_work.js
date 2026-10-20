@@ -31,6 +31,7 @@ export class DailyWorkTeamWork extends Component {
         this.state = useState({
             loading: true,
             saving: false,
+            exporting: false,
             message: false,
             departments: [],
             teams: [],
@@ -253,20 +254,24 @@ export class DailyWorkTeamWork extends Component {
 
     /** Thêm công việc: mỗi nhân sự × mỗi chi tiết hạng mục đã tick → 1 dòng. */
     onAddRows() {
+        return this._addRows();
+    }
+
+    _addRows() {
         const people = this.pickedMembers;
         if (!people.length) {
             this.notification.add(_t("Chọn ít nhất 1 nhân sự ở «Người phụ trách»."), { type: "warning" });
-            return;
+            return false;
         }
         if (!this.state.catId) {
             this.notification.add(_t("Chọn Hạng mục trước."), { type: "warning" });
-            return;
+            return false;
         }
         let details = this.pickedDetails;
         if (!details.length) {
             if (this.catDetails.length) {
                 this.notification.add(_t("Tick ít nhất 1 «Tên chi tiết hạng mục»."), { type: "warning" });
-                return;
+                return false;
             }
             details = [{ id: this.state.catId, name: (this.currentCat || {}).name || "" }];
         }
@@ -287,6 +292,7 @@ export class DailyWorkTeamWork extends Component {
                 });
             }
         }
+        return true;
     }
 
     onRow(row, field, ev) {
@@ -335,6 +341,54 @@ export class DailyWorkTeamWork extends Component {
         row[field] = ev.target.value;
     }
 
+    _payloadRows(rows) {
+        return rows.map((r) => ({
+            user_id: r.user_id,
+            work_group_id: r.work_group_id || false,
+            name: r.name,
+            date_start: r.date_start || false,
+            deadline: r.deadline || false,
+            checker_id: r.checker_id || false,
+            note: r.note,
+        }));
+    }
+
+    /** Xuất Excel danh sách công việc phân công (chưa có dòng → lấy theo lựa chọn hiện tại). */
+    async onExport() {
+        if (!this.state.rows.length && !this._addRows()) {
+            return;
+        }
+        this.state.exporting = true;
+        try {
+            const res = await this.orm.call("daily.task", "export_team_work_excel", [
+                this.state.teamId,
+                this.state.coordinatorId || false,
+                this.state.year,
+                this.state.month,
+                this._payloadRows(this.state.rows),
+            ]);
+            const bin = atob(res.file_base64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) {
+                bytes[i] = bin.charCodeAt(i);
+            }
+            const url = URL.createObjectURL(new Blob([bytes], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = res.filename || "phan_cong_viec_team.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không xuất được Excel."), { type: "danger" });
+        } finally {
+            this.state.exporting = false;
+        }
+    }
+
     removeRow(row) {
         this.state.rows = this.state.rows.filter((r) => r.key !== row.key);
     }
@@ -351,8 +405,8 @@ export class DailyWorkTeamWork extends Component {
             this.notification.add(_t("Bạn không có quyền Phân công việc team (Thêm)."), { type: "warning" });
             return;
         }
-        if (!this.state.rows.length) {
-            this.notification.add(_t("Chưa có công việc — chọn nhân sự rồi bấm «Thêm công việc»."), { type: "warning" });
+        // Chưa bấm «Thêm công việc» mà đã chọn hạng mục / chi tiết / nhân sự → tự tạo dòng rồi lưu
+        if (!this.state.rows.length && !this._addRows()) {
             return;
         }
         this.state.saving = true;

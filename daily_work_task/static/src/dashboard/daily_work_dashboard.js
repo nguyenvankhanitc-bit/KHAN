@@ -659,7 +659,7 @@ export class DailyWorkDashboard extends Component {
     }
 
     anyReport() {
-        const keys = ["summary_report", "personal", "catrep", "summary", "monthly", "team", "performance", "kpi", "kho"];
+        const keys = ["summary_report", "personal", "catrep", "summary", "monthly", "team", "performance", "kpi", "kho", "khocv"];
         return keys.some((k) => this.rv(k));
     }
 
@@ -713,6 +713,10 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "team_report") {
             await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
+            return;
+        }
+        if (key === "kho_sheet") {
+            await this._doNavAction("daily_work_task.action_daily_work_kho_sheet", asPopup);
             return;
         }
         if (key === "kho_report") {

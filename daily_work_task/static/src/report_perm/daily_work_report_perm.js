@@ -18,6 +18,7 @@ const GROUPS = [
     { key: "performance", label: "Báo cáo hiệu suất" },
     { key: "kpi", label: "Báo cáo KPI" },
     { key: "kho", label: "Báo cáo NV Kho" },
+    { key: "khocv", label: "Báo cáo CV NV Kho" },
 ];
 
 const PERMS = [

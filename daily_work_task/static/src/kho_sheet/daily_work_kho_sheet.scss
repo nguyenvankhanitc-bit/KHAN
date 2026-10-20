@@ -1,0 +1,296 @@
+// Báo cáo CV NV Kho — giống mẫu (thanh tiêu đề xanh đậm, ô chỉ số, ô tuần, bảng)
+.o_daily_work_kho_sheet {
+    .o_dks {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_dks_banner {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+        padding: 16px 20px;
+        border-radius: 12px;
+        color: #fff;
+        background: linear-gradient(90deg, #0b2a5b 0%, #123c7c 60%, #0f3a75 100%);
+
+        h1 {
+            margin: 0 0 4px;
+            font-size: 1.6rem;
+            font-weight: 800;
+            letter-spacing: 0.01em;
+            color: #fff;
+        }
+        p {
+            margin: 0;
+            color: #dbe7ff;
+            font-size: 0.92rem;
+
+            span {
+                margin: 0 6px;
+            }
+        }
+    }
+
+    .o_dks_banner_ico {
+        font-size: 2.6rem;
+        width: 64px;
+        text-align: center;
+    }
+
+    .o_dks_banner_text {
+        flex: 1;
+        min-width: 260px;
+    }
+
+    .o_dks_banner_month {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 16px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 10px;
+
+        > .fa {
+            font-size: 1.8rem;
+        }
+        small {
+            display: block;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        b {
+            font-size: 1.4rem;
+        }
+    }
+
+    .o_dks_banner_pick {
+        padding: 8px 12px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 10px;
+        min-width: 200px;
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            margin-bottom: 4px;
+        }
+        .form-select {
+            color: #0f172a;
+            background-color: #fff;
+            font-weight: 600;
+        }
+    }
+
+    // Ô chỉ số
+    .o_dks_kpis {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 12px;
+
+        @media (max-width: 1100px) {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    .o_dks_kpi {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 14px 16px;
+        background: #fff;
+        border: 1px solid #d6e2f3;
+        border-radius: 10px;
+    }
+
+    .o_dks_kpi_ico {
+        width: 46px;
+        height: 46px;
+        flex: 0 0 46px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 1.25rem;
+
+        &.is-blue { background: #1d6fe0; }
+        &.is-green { background: #16a34a; }
+        &.is-sky { background: #2563eb; }
+        &.is-gray { background: #94a3b8; }
+        &.is-violet { background: #8b5cf6; }
+    }
+
+    .o_dks_kpi_lbl {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: #1e293b;
+
+        &.is-green { color: #15803d; }
+        &.is-sky { color: #1d4ed8; }
+        &.is-violet { color: #6d28d9; }
+    }
+
+    .o_dks_kpi_val {
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.2;
+
+        small {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #475569;
+            margin-left: 8px;
+        }
+    }
+
+    // Ô tuần
+    .o_dks_weeks {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 12px;
+    }
+
+    .o_dks_week {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #f2f7ff;
+        border: 1px solid #d6e2f3;
+        border-radius: 10px;
+        color: #1e293b;
+        font-size: 0.86rem;
+
+        b {
+            font-size: 0.95rem;
+        }
+        small {
+            color: #64748b;
+        }
+    }
+
+    .o_dks_week_cal {
+        font-size: 1.4rem;
+        color: #1d4ed8;
+    }
+
+    .o_dks_week_no {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        border-radius: 6px;
+        background: #0b2a5b;
+        color: #fff;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    // Nút
+    .o_dks_actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        .o_dks_spacer {
+            flex: 1;
+        }
+        .o_dks_team {
+            color: #334155;
+        }
+    }
+
+    // Bảng
+    .o_dks_table_wrap {
+        overflow: auto;
+        background: #fff;
+        border: 1px solid #c9d6ea;
+        border-radius: 10px;
+    }
+
+    .o_dks_table {
+        width: 100%;
+        min-width: 1300px;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+
+        th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #0f4c9c;
+            color: #fff;
+            font-weight: 700;
+            text-align: center;
+            padding: 10px 6px;
+            border: 1px solid #1d5bb0;
+            white-space: nowrap;
+        }
+
+        td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #e3eaf5;
+            border-right: 1px solid #eef2f8;
+            color: #1e293b;
+            vertical-align: middle;
+        }
+
+        tbody tr:nth-child(even) td {
+            background: #f7faff;
+        }
+
+        &.is-editing td {
+            padding: 4px;
+        }
+
+        &.is-editing .form-select {
+            min-width: 135px;
+        }
+
+        .c-stt { width: 48px; }
+        .c-week { width: 72px; }
+        .c-day { width: 150px; }
+        .c-kind { width: 120px; }
+        .c-person { width: 140px; }
+        .c-date { width: 120px; }
+        .c-hours { width: 95px; }
+        .c-state { width: 150px; }
+        .c-note { width: 200px; }
+        .c-del { width: 40px; }
+        .c-name { min-width: 260px; }
+    }
+
+    .o_dks_kind {
+        display: inline-block;
+        min-width: 92px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+
+        &.is-daily { background: #dcfce7; color: #166534; }
+        &.is-weekly { background: #dbeafe; color: #1e40af; }
+        &.is-monthly { background: #ede9fe; color: #5b21b6; }
+        &.is-adhoc { background: #fef3c7; color: #92400e; }
+    }
+
+    .o_dks_state {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 120px;
+        padding: 3px 12px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+
+        &.is-done { background: #dcfce7; color: #166534; }
+        &.is-in_progress { background: #dbeafe; color: #1d4ed8; }
+        &.is-not_started { background: #e5e7eb; color: #475569; }
+    }
+}

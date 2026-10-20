@@ -2248,8 +2248,8 @@ export class DailyWorkEmployeeWs extends Component {
                 { completion_percent: pct },
             ]);
             if (updated.state === "done") {
-                // Giữ dòng tại chỗ để thấy Ngày hoàn thành tự điền; tải lại sẽ chuyển xuống bảng tổng tháng
-                this._replaceTaskRow(task, updated);
+                // Hoàn thành → ẩn khỏi Danh sách công việc ngay (xem ở bảng tổng tháng / việc đã hoàn thành)
+                this._removeDoneRow(task, updated);
                 this._refreshCompletionAvg();
                 await this.loadMonthlySummary();
                 this.notification.add(
@@ -2318,6 +2318,17 @@ export class DailyWorkEmployeeWs extends Component {
         }
     }
 
+    /** Việc vừa hoàn thành: bỏ khỏi Danh sách công việc, đánh lại STT, cập nhật số việc đã hoàn thành. */
+    _removeDoneRow(task, updated) {
+        this.state.tasks = this.state.tasks
+            .filter((t) => t.id !== task.id)
+            .map((t, i) => ({ ...t, stt: i + 1 }));
+        this.state.doneCount = (this.state.doneCount || 0) + 1;
+        if (Array.isArray(this.state.doneTasks) && updated) {
+            this.state.doneTasks = [updated, ...this.state.doneTasks.filter((t) => t.id !== updated.id)];
+        }
+    }
+
     async onStateChange(task, ev) {
         const stateVal = ev.target.value;
         if (stateVal === "__late") {
@@ -2330,8 +2341,8 @@ export class DailyWorkEmployeeWs extends Component {
                 { state: stateVal },
             ]);
             if (stateVal === "done") {
-                // Giữ dòng tại chỗ để thấy Ngày hoàn thành tự điền; tải lại sẽ chuyển xuống bảng tổng tháng
-                this._replaceTaskRow(task, updated);
+                // Hoàn thành → ẩn khỏi Danh sách công việc ngay (xem ở bảng tổng tháng / việc đã hoàn thành)
+                this._removeDoneRow(task, updated);
                 this._refreshCompletionAvg();
                 await this.loadMonthlySummary();
                 this.notification.add(

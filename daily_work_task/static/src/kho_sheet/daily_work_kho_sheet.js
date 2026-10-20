@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onWillStart, useEffect, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
@@ -49,10 +49,21 @@ export class DailyWorkKhoSheet extends Component {
             states: [],
             categories: [],
             me: "",
+            timePick: null,
             canWrite: false,
             message: false,
         });
         onWillStart(() => this.load());
+        // Mở danh sách giờ → cuộn tới mốc đang chọn / gần nhất
+        useEffect(
+            () => {
+                if (this.state.timePick) {
+                    const near = document.querySelector(".o_dks_time_list .is-near");
+                    near?.scrollIntoView({ block: "center" });
+                }
+            },
+            () => [this.state.timePick && this.state.timePick.key]
+        );
     }
 
     get shellActiveNav() {
@@ -315,6 +326,80 @@ export class DailyWorkKhoSheet extends Component {
             picker.showPicker();
         } else {
             picker?.click();
+        }
+    }
+
+    // ---- Chọn giờ (combobox: danh sách mốc 30 phút + gõ tay) ----
+    get timeSlots() {
+        const out = [];
+        for (let h = 0; h < 24; h++) {
+            out.push(`${pad(h)}:00`, `${pad(h)}:30`);
+        }
+        return out;
+    }
+
+    get timePickValue() {
+        const tp = this.state.timePick;
+        if (!tp) {
+            return "";
+        }
+        const row = this.state.rows.find((r) => r.key === tp.rowKey);
+        return (row && row[tp.field]) || "";
+    }
+
+    /** Mốc gần nhất với giờ đang có (chưa có → giờ hiện tại). */
+    get timePickNear() {
+        let v = this.timePickValue;
+        if (!v) {
+            const now = new Date();
+            v = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+        }
+        const [h, m] = v.split(":").map(Number);
+        const mins = Math.round((h * 60 + m) / 30) * 30;
+        const n = Math.min(mins, 23 * 60 + 30);
+        return `${pad(Math.floor(n / 60))}:${pad(n % 60)}`;
+    }
+
+    get timeListStyle() {
+        const tp = this.state.timePick;
+        return tp ? `top:${tp.top}px;left:${tp.left}px;width:${tp.width}px;` : "";
+    }
+
+    openTime(ev, row, field) {
+        const rect = ev.target.getBoundingClientRect();
+        const below = window.innerHeight - rect.bottom;
+        const height = 260;
+        this.state.timePick = {
+            key: `${row.key}-${field}`,
+            rowKey: row.key,
+            field,
+            left: rect.left,
+            width: Math.max(rect.width, 110),
+            top: below < height + 8 ? Math.max(8, rect.top - height - 2) : rect.bottom + 2,
+        };
+    }
+
+    closeTime() {
+        this.state.timePick = null;
+    }
+
+    pickTime(slot) {
+        const tp = this.state.timePick;
+        const row = tp && this.state.rows.find((r) => r.key === tp.rowKey);
+        if (row) {
+            row[tp.field] = slot;
+            row.hours = this.hoursOf(row);
+            this.state.dirty = true;
+        }
+        this.closeTime();
+    }
+
+    /** Esc đóng danh sách; Enter / Tab chấp nhận giờ đang gõ. */
+    onTimeKey(ev, row, field) {
+        if (ev.key === "Escape") {
+            this.closeTime();
+        } else if (ev.key === "Enter") {
+            ev.target.blur();
         }
     }
 

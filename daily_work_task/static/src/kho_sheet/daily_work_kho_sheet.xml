@@ -167,10 +167,20 @@
                                                        t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
-                                            <td><input type="text" class="form-control form-control-sm text-center" placeholder="HH:MM"
-                                                       maxlength="5" t-att-value="r.time_in" t-on-change="(ev) => this.onTimeText(r, 'time_in', ev)"/></td>
-                                            <td><input type="text" class="form-control form-control-sm text-center" placeholder="HH:MM"
-                                                       maxlength="5" t-att-value="r.time_out" t-on-change="(ev) => this.onTimeText(r, 'time_out', ev)"/></td>
+                                            <td><input type="text" class="form-control form-control-sm text-center o_dks_time_input" placeholder="HH:MM"
+                                                       maxlength="5" autocomplete="off" t-att-value="r.time_in"
+                                                       t-on-focus="(ev) => this.openTime(ev, r, 'time_in')"
+                                                       t-on-click="(ev) => this.openTime(ev, r, 'time_in')"
+                                                       t-on-blur="() => this.closeTime()"
+                                                       t-on-keydown="(ev) => this.onTimeKey(ev, r, 'time_in')"
+                                                       t-on-change="(ev) => this.onTimeText(r, 'time_in', ev)"/></td>
+                                            <td><input type="text" class="form-control form-control-sm text-center o_dks_time_input" placeholder="HH:MM"
+                                                       maxlength="5" autocomplete="off" t-att-value="r.time_out"
+                                                       t-on-focus="(ev) => this.openTime(ev, r, 'time_out')"
+                                                       t-on-click="(ev) => this.openTime(ev, r, 'time_out')"
+                                                       t-on-blur="() => this.closeTime()"
+                                                       t-on-keydown="(ev) => this.onTimeKey(ev, r, 'time_out')"
+                                                       t-on-change="(ev) => this.onTimeText(r, 'time_out', ev)"/></td>
                                             <td class="text-center o_dks_hours" title="= Giờ ra − Giờ vào" t-esc="hoursOf(r)"/>
                                             <td>
                                                 <select t-att-class="'form-select form-select-sm o_dks_state_sel is-' + r.state" t-on-change="(ev) => this.onField(r, 'state', ev)">
@@ -202,6 +212,15 @@
                         </div>
                     </t>
                 </div>
+                <!-- Danh sách giờ (mốc 30 phút) — chọn nhanh, vẫn gõ tay được trong ô -->
+                <ul t-if="state.timePick" class="o_dks_time_list" t-att-style="timeListStyle" role="listbox">
+                    <t t-foreach="timeSlots" t-as="slot" t-key="slot">
+                        <li t-att-class="(slot === timePickValue ? 'is-active ' : '') + (slot === timePickNear ? 'is-near' : '')"
+                            role="option"
+                            t-on-mousedown.prevent="() => this.pickTime(slot)"
+                            t-esc="slot"/>
+                    </t>
+                </ul>
             </DailyWorkAppShell>
         </div>
     </t>

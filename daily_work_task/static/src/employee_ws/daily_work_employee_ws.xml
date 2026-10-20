@@ -448,7 +448,13 @@
                                                         <small t-if="taskDetail(task)" class="o_ews_cat_detail" t-esc="taskDetail(task)"/>
                                                     </td>
                                                     <td t-att-class="'o_ews_col_name' + (isTaskOverdue(task) ? ' o_ews_name_overdue' : '')">
-                                                        <t t-esc="task.name"/>
+                                                        <textarea t-if="task.can_edit_note !== false"
+                                                                  class="form-control form-control-sm o_ews_name_input"
+                                                                  rows="2"
+                                                                  placeholder="Nhập tên công việc..."
+                                                                  t-att-value="task.name || ''"
+                                                                  t-on-change="(ev) => this.onNameChange(task, ev)"/>
+                                                        <t t-else="" t-esc="task.name"/>
                                                         <span t-if="task.is_from_recurring" class="o_ews_recurring_tag" title="Sinh từ mẫu lặp">
                                                             <i class="fa fa-refresh"/> Lặp
                                                         </span>

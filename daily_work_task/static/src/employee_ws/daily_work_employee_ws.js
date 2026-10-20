@@ -2190,6 +2190,36 @@ export class DailyWorkEmployeeWs extends Component {
         }
     }
 
+    async onNameChange(task, ev) {
+        const name = String(ev.target.value || "").trim();
+        if (!name) {
+            this.notification.add(_t("Tên công việc không được để trống."), { type: "warning" });
+            ev.target.value = task.name || "";
+            return;
+        }
+        if (name === (task.name || "").trim()) {
+            return;
+        }
+        try {
+            const updated = await this.orm.call("daily.task", "update_from_manager", [
+                [task.id],
+                { name },
+            ]);
+            const idx = this.state.tasks.findIndex((t) => t.id === task.id);
+            if (idx >= 0) {
+                this.state.tasks[idx] = {
+                    ...updated,
+                    stt: this.state.tasks[idx].stt || idx + 1,
+                };
+            }
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không thể cập nhật tên công việc."), {
+                type: "danger",
+            });
+            await this.load();
+        }
+    }
+
     async onNoteChange(task, ev) {
         if (task?.can_edit_note === false) {
             this.notification.add(_t("Bạn không có quyền sửa ghi chú công việc này."), {
@@ -2325,6 +2355,10 @@ export class DailyWorkEmployeeWs extends Component {
     }
 
     taskDetail(task) {
+        // Phân công theo hạng mục (không chọn chi tiết): chỉ hiện hạng mục
+        if (task.team_work_no_detail) {
+            return "";
+        }
         const d = (task.work_group_task_name || "").trim();
         return d && d.toLowerCase() !== (task.name || "").trim().toLowerCase() ? d : "";
     }

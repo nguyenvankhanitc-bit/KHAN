@@ -1364,6 +1364,17 @@
             padding: 6px 8px;
         }
 
+        .o_ews_name_input {
+            width: 100%;
+            min-height: 52px;
+            resize: vertical;
+            font-size: 0.82rem;
+            font-weight: 600;
+            line-height: 1.35;
+            padding: 6px 8px;
+            color: inherit;
+        }
+
         .o_ews_note_readonly {
             display: block;
             color: #64748b;

@@ -1296,6 +1296,7 @@ class DailyTask(models.Model):
             "work_group_label": (wg.name or "") if wg else "",
             "category_name": (wg.name or "") if wg else "",
             "work_group_task_name": (wg.task_name or "") if wg else "",
+            "team_work_no_detail": bool(self.team_work_no_detail),
             "user_detail_ids": user_detail_ids,
             "user_detail_names": user_detail_names,
             "user_check_ids": check_users.ids,
@@ -5709,7 +5710,8 @@ class DailyTask(models.Model):
         # Việc được giao bởi người khác: người nhận chỉ cập nhật tiến độ (TT / %), không sửa phiếu
         can_edit_content = self._can_edit_task_details()
         can_edit_progress = is_own or has_edit or is_manager
-        if "name" in vals and can_edit_content:
+        # Người phụ trách được nhập Tên công việc (giống Ghi chú), kể cả việc được giao
+        if "name" in vals and (can_edit_content or can_edit_progress):
             name = (vals.get("name") or "").strip()
             if not name:
                 raise ValidationError("Tên công việc không được để trống.")

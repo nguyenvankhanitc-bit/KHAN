@@ -318,3 +318,50 @@
         background: #f1f5f9;
     }
 }
+
+// Ngày dd/mm/yyyy + lịch · Màu trạng thái: Hoàn thành xanh lá · Đang thực hiện vàng cam · Chưa bắt đầu xám
+.o_daily_work_kho_sheet {
+    .o_dks_date {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .form-control {
+            padding-right: 26px;
+            min-width: 128px;
+        }
+    }
+
+    .o_dks_date_btn {
+        position: absolute;
+        right: 7px;
+        color: #475569;
+    }
+
+    .o_dks_date_picker {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    .o_dks_kpi_ico.is-amber { background: #f59e0b; }
+    .o_dks_kpi_lbl.is-amber { color: #b45309; }
+
+    .o_dks_state {
+        &.is-done { background: #dcfce7; color: #15803d; }
+        &.is-in_progress { background: #fef3c7; color: #b45309; }
+        &.is-not_started { background: #e5e7eb; color: #4b5563; }
+    }
+
+    .o_dks_state_sel {
+        font-weight: 600;
+
+        &.is-done { background-color: #dcfce7; color: #15803d; border-color: #86efac; }
+        &.is-in_progress { background-color: #fef3c7; color: #b45309; border-color: #fcd34d; }
+        &.is-not_started { background-color: #f1f5f9; color: #4b5563; border-color: #cbd5e1; }
+    }
+}

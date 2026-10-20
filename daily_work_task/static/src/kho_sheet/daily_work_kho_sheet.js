@@ -278,6 +278,78 @@ export class DailyWorkKhoSheet extends Component {
         this.state.dirty = true;
     }
 
+    /** Ngày gõ tay dd/mm/yyyy (chấp nhận d/m/yyyy, d-m-yyyy, ddmmyyyy). */
+    onDateText(row, ev) {
+        const raw = (ev.target.value || "").trim();
+        if (!raw) {
+            row.date = "";
+            this.state.dirty = true;
+            return;
+        }
+        let m = raw.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})$/);
+        if (!m && /^\d{8}$/.test(raw)) {
+            m = [raw, raw.slice(0, 2), raw.slice(2, 4), raw.slice(4)];
+        }
+        const d = m && Number(m[1]);
+        const mo = m && Number(m[2]);
+        const y = m && Number(m[3]);
+        const valid = m && mo >= 1 && mo <= 12 && d >= 1 && d <= new Date(y, mo, 0).getDate();
+        if (!valid) {
+            this.notification.add(_t("Ngày không hợp lệ — nhập theo dạng dd/mm/yyyy."), { type: "warning" });
+            ev.target.value = fmtDate(row.date);
+            return;
+        }
+        if (y !== this.state.year || mo !== this.state.month) {
+            this.notification.add(`Ngày phải thuộc tháng ${this.monthLabel}.`, { type: "warning" });
+            ev.target.value = fmtDate(row.date);
+            return;
+        }
+        row.date = `${y}-${pad(mo)}-${pad(d)}`;
+        ev.target.value = fmtDate(row.date);
+        this.state.dirty = true;
+    }
+
+    openPicker(ev) {
+        const picker = ev.currentTarget.parentElement.querySelector(".o_dks_date_picker");
+        if (picker?.showPicker) {
+            picker.showPicker();
+        } else {
+            picker?.click();
+        }
+    }
+
+    /** Giờ 24h gõ tay: 8 → 08:00 · 830 → 08:30 · 8h30 / 8.30 / 8:30 → 08:30. */
+    onTimeText(row, field, ev) {
+        const raw = (ev.target.value || "").trim().toLowerCase();
+        let value = "";
+        if (raw) {
+            let h;
+            let mi = 0;
+            const m = raw.match(/^(\d{1,2})\s*[:h.]\s*(\d{1,2})?$/);
+            if (m) {
+                h = Number(m[1]);
+                mi = Number(m[2] || 0);
+            } else if (/^\d{1,4}$/.test(raw)) {
+                if (raw.length <= 2) {
+                    h = Number(raw);
+                } else {
+                    h = Number(raw.slice(0, raw.length - 2));
+                    mi = Number(raw.slice(-2));
+                }
+            }
+            if (h === undefined || h > 23 || mi > 59) {
+                this.notification.add(_t("Giờ không hợp lệ — nhập dạng 24h HH:MM (vd 08:00, 17:30)."), { type: "warning" });
+                ev.target.value = row[field] || "";
+                return;
+            }
+            value = `${pad(h)}:${pad(mi)}`;
+        }
+        row[field] = value;
+        ev.target.value = value;
+        row.hours = this.hoursOf(row);
+        this.state.dirty = true;
+    }
+
     onField(row, field, ev) {
         let value = ev.target.value;
         if (field === "work_group_id") {

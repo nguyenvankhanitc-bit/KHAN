@@ -47,9 +47,9 @@
                                 </div>
                             </div>
                             <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-sky"><i class="fa fa-clock-o"/></span>
+                                <span class="o_dks_kpi_ico is-amber"><i class="fa fa-clock-o"/></span>
                                 <div>
-                                    <div class="o_dks_kpi_lbl is-sky">ĐANG THỰC HIỆN</div>
+                                    <div class="o_dks_kpi_lbl is-amber">ĐANG THỰC HIỆN</div>
                                     <div class="o_dks_kpi_val"><t t-esc="kpi.doing"/> <small t-esc="'(' + kpi.doingPct + '%)'"/></div>
                                 </div>
                             </div>
@@ -144,8 +144,17 @@
                                         </t>
                                         <!-- Chế độ nhập tay -->
                                         <t t-else="">
-                                            <td><input type="date" class="form-control form-control-sm" t-att-value="r.date"
-                                                       t-on-change="(ev) => this.onField(r, 'date', ev)"/></td>
+                                            <td>
+                                                <!-- Ngày dd/mm/yyyy: gõ tay hoặc bấm lịch -->
+                                                <div class="o_dks_date">
+                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                           t-att-value="fmt(r.date)" t-on-change="(ev) => this.onDateText(r, ev)"/>
+                                                    <button type="button" class="btn btn-link p-0 o_dks_date_btn" title="Chọn ngày"
+                                                            t-on-click="(ev) => this.openPicker(ev)"><i class="fa fa-calendar"/></button>
+                                                    <input type="date" class="o_dks_date_picker" tabindex="-1" t-att-value="r.date"
+                                                           t-on-change="(ev) => this.onField(r, 'date', ev)"/>
+                                                </div>
+                                            </td>
                                             <td>
                                                 <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'work_group_id', ev)">
                                                     <option value="" t-att-selected="!r.work_group_id">— Chọn hạng mục —</option>
@@ -158,13 +167,13 @@
                                                        t-att-value="r.name" t-on-change="(ev) => this.onField(r, 'name', ev)"/></td>
                                             <td><input type="text" class="form-control form-control-sm" list="o_dks_people"
                                                        t-att-value="r.responsible" t-on-change="(ev) => this.onField(r, 'responsible', ev)"/></td>
-                                            <td><input type="time" class="form-control form-control-sm" t-att-value="r.time_in"
-                                                       t-on-change="(ev) => this.onField(r, 'time_in', ev)"/></td>
-                                            <td><input type="time" class="form-control form-control-sm" t-att-value="r.time_out"
-                                                       t-on-change="(ev) => this.onField(r, 'time_out', ev)"/></td>
+                                            <td><input type="text" class="form-control form-control-sm text-center" placeholder="HH:MM"
+                                                       maxlength="5" t-att-value="r.time_in" t-on-change="(ev) => this.onTimeText(r, 'time_in', ev)"/></td>
+                                            <td><input type="text" class="form-control form-control-sm text-center" placeholder="HH:MM"
+                                                       maxlength="5" t-att-value="r.time_out" t-on-change="(ev) => this.onTimeText(r, 'time_out', ev)"/></td>
                                             <td class="text-center o_dks_hours" title="= Giờ ra − Giờ vào" t-esc="hoursOf(r)"/>
                                             <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onField(r, 'state', ev)">
+                                                <select t-att-class="'form-select form-select-sm o_dks_state_sel is-' + r.state" t-on-change="(ev) => this.onField(r, 'state', ev)">
                                                     <t t-foreach="state.states" t-as="s" t-key="s.key">
                                                         <option t-att-value="s.key" t-att-selected="s.key === r.state" t-esc="s.label"/>
                                                     </t>

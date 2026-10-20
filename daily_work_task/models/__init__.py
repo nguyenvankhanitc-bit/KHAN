@@ -28,5 +28,6 @@ from . import daily_task_user_summary
 from . import daily_task_report_perm
 from . import daily_task_kho_report
 from . import daily_task_kho_sheet
+from . import daily_task_team_work
 from . import ir_ui_menu
 from . import ir_http

@@ -84,6 +84,7 @@ export class DailyWorkDashboard extends Component {
             canViewOthers: false,
             canViewChecklist: false,
             canSeePerformance: false,
+            canTeamwork: false,
             userName: "",
             companyName: "",
             sidebarCollapsed: readStoredSidebarCollapsed(),
@@ -151,6 +152,7 @@ export class DailyWorkDashboard extends Component {
                 this.state.canViewOthers = Boolean(opts.can_view_others);
                 this.state.canViewChecklist = Boolean(opts.can_view_checklist);
                 this.state.canSeePerformance = Boolean(opts.can_see_performance);
+                this.state.canTeamwork = Boolean(opts.can_teamwork);
                 this.state.reportView = opts.report_view || {};
                 this.state.userName = opts.user_name || "";
                 this.state.companyName = opts.company_name || "";
@@ -713,6 +715,10 @@ export class DailyWorkDashboard extends Component {
         }
         if (key === "team_report") {
             await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
+            return;
+        }
+        if (key === "team_work") {
+            await this._doNavAction("daily_work_task.action_daily_work_team_work", asPopup);
             return;
         }
         if (key === "kho_sheet") {

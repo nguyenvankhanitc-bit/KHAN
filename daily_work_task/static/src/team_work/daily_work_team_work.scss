@@ -1,0 +1,270 @@
+// Phân công việc team (theo mẫu)
+.o_daily_work_team_work {
+    .o_dtw {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .o_dtw_banner {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        padding: 12px 18px;
+        border-radius: 10px;
+        background: #2b3a67;
+        color: #fff;
+
+        h1 {
+            flex: 1;
+            margin: 0;
+            font-size: 1.45rem;
+            font-weight: 800;
+            color: #fff;
+        }
+    }
+
+    .o_dtw_banner_ico {
+        font-size: 1.8rem;
+    }
+
+    .o_dtw_banner_month {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 6px 14px;
+        border: 1px solid rgba(255, 255, 255, 0.35);
+        border-radius: 8px;
+
+        > .fa {
+            font-size: 1.3rem;
+        }
+        small {
+            display: block;
+            font-size: 0.72rem;
+            color: #dbe4ff;
+        }
+        b {
+            font-size: 1rem;
+        }
+    }
+
+    .o_dtw_btn_save {
+        background: #6366f1;
+        color: #fff;
+        font-weight: 600;
+        padding: 8px 18px;
+
+        &:hover {
+            background: #4f46e5;
+            color: #fff;
+        }
+    }
+
+    .o_dtw_card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 14px 16px;
+    }
+
+    .o_dtw_title {
+        margin: 0 0 12px;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #3730a3;
+
+        .fa {
+            margin-right: 6px;
+        }
+    }
+
+    .o_dtw_field {
+        min-width: 0;
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+
+            .fa {
+                margin-right: 4px;
+                color: #64748b;
+            }
+        }
+    }
+
+    .o_dtw_filters {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 24px;
+    }
+
+    .o_dtw_cat {
+        display: grid;
+        grid-template-columns: 220px minmax(0, 1fr) minmax(0, 1fr);
+        gap: 16px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dtw_people {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 20px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 6px;
+        }
+    }
+
+    .o_dtw_search {
+        position: relative;
+
+        .fa {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        .form-control {
+            padding-left: 30px;
+        }
+    }
+
+    .o_dtw_people_list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 2px 16px;
+        max-height: 220px;
+        overflow-y: auto;
+        margin-top: 6px;
+        padding: 6px 10px;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+    }
+
+    .o_dtw_person {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        font-weight: 400 !important;
+        cursor: pointer;
+    }
+
+    .o_dtw_chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .o_dtw_chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: #eef2ff;
+        color: #3730a3;
+        font-size: 0.85rem;
+
+        .btn {
+            color: #475569;
+            font-size: 1rem;
+            line-height: 1;
+        }
+    }
+
+    .o_dtw_list_head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 10px;
+
+        .o_dtw_title {
+            margin: 0;
+        }
+        .o_dtw_spacer {
+            flex: 1;
+        }
+    }
+
+    .o_dtw_btn_light {
+        background: #eef2ff;
+        color: #3730a3;
+        border: 1px solid #c7d2fe;
+    }
+
+    .o_dtw_table_wrap {
+        overflow-x: auto;
+    }
+
+    .o_dtw_table {
+        width: 100%;
+        min-width: 1150px;
+        border-collapse: collapse;
+        font-size: 0.86rem;
+
+        th {
+            background: #f1f5f9;
+            color: #334155;
+            font-weight: 700;
+            padding: 9px 6px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #eef2f7;
+            vertical-align: middle;
+        }
+
+        .c-stt { width: 48px; text-align: center; }
+        .c-person { width: 170px; }
+        .c-cat { width: 190px; }
+        .c-date { width: 140px; }
+        .c-note { width: 190px; }
+        .c-del { width: 36px; }
+    }
+
+    .o_dtw_date {
+        position: relative;
+        display: flex;
+        align-items: center;
+
+        .form-control {
+            padding-right: 26px;
+            min-width: 120px;
+        }
+    }
+
+    .o_dtw_date_btn {
+        position: absolute;
+        right: 7px;
+        color: #475569;
+    }
+
+    .o_dtw_date_picker {
+        position: absolute;
+        right: 0;
+        bottom: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
+}

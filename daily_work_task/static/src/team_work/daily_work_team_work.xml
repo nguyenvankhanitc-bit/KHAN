@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="daily_work_task.DailyWorkTeamWork">
+        <div class="o_daily_work_dashboard o_daily_work_team_work o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
+                <div class="o_dtw">
+                    <!-- Thanh tiêu đề -->
+                    <div class="o_dtw_banner">
+                        <i class="fa fa-clipboard o_dtw_banner_ico"/>
+                        <h1>PHÂN CÔNG CÔNG VIỆC TEAM <t t-esc="(state.teamName || '').toUpperCase()"/></h1>
+                        <div class="o_dtw_banner_month">
+                            <i class="fa fa-calendar"/>
+                            <div><small>Tháng kế hoạch</small><b t-esc="monthLabel"/></div>
+                        </div>
+                        <button type="button" class="btn o_dtw_btn_save" t-att-disabled="state.saving or !state.rows.length or !state.canCreate"
+                                t-on-click="onSave">
+                            <i class="fa fa-paper-plane"/> <t t-esc="state.saving ? 'Đang lưu...' : 'Lưu'"/>
+                        </button>
+                    </div>
+
+                    <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                    <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
+                    <t t-else="">
+                        <!-- Phòng ban / Team / Người điều phối / Tháng -->
+                        <div class="o_dtw_card o_dtw_filters">
+                            <div class="o_dtw_field">
+                                <label><i class="fa fa-building-o"/> Phòng ban</label>
+                                <select class="form-select" t-on-change="onDept">
+                                    <t t-foreach="state.departments" t-as="d" t-key="d.id">
+                                        <option t-att-value="d.id" t-att-selected="d.id === state.departmentId" t-esc="d.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_dtw_field">
+                                <label><i class="fa fa-user-o"/> Người điều phối</label>
+                                <select class="form-select" t-on-change="onCoordinator">
+                                    <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                        <option t-att-value="m.user_id" t-att-selected="m.user_id === state.coordinatorId" t-esc="m.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_dtw_field">
+                                <label><i class="fa fa-users"/> <t t-esc="'Team'"/></label>
+                                <select class="form-select" t-on-change="onTeam">
+                                    <t t-foreach="teamsOfDept" t-as="t" t-key="t.id">
+                                        <option t-att-value="t.id" t-att-selected="t.id === state.teamId" t-esc="t.name"/>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="o_dtw_field">
+                                <label><i class="fa fa-calendar"/> Tháng kế hoạch</label>
+                                <select class="form-select" t-on-change="onMonth">
+                                    <t t-foreach="monthOptions" t-as="mo" t-key="mo.key">
+                                        <option t-att-value="mo.key" t-att-selected="mo.key === monthKey" t-esc="mo.label"/>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Hạng mục cha -->
+                        <div class="o_dtw_card">
+                            <h3 class="o_dtw_title"><i class="fa fa-list-alt"/> HẠNG MỤC CHA</h3>
+                            <div class="o_dtw_cat">
+                                <div class="o_dtw_field o_dtw_stt">
+                                    <label># STT</label>
+                                    <input type="text" class="form-control" readonly="readonly" t-att-value="nextStt"/>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-folder-o"/> Hạng mục</label>
+                                    <select class="form-select" t-on-change="onCat">
+                                        <option value="0" t-att-selected="!state.catId">— Chọn hạng mục —</option>
+                                        <t t-foreach="state.categories" t-as="c" t-key="c.id">
+                                            <option t-att-value="c.id" t-att-selected="c.id === state.catId" t-esc="c.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-list-ul"/> Tên chi tiết hạng mục</label>
+                                    <select class="form-select" t-on-change="onDetail">
+                                        <option value="0" t-att-selected="!state.detailId">— (không chọn chi tiết) —</option>
+                                        <t t-foreach="(currentCat and currentCat.details) or []" t-as="d" t-key="d.id">
+                                            <option t-att-value="d.id" t-att-selected="d.id === state.detailId" t-esc="d.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Người phụ trách -->
+                        <div class="o_dtw_card">
+                            <h3 class="o_dtw_title"><i class="fa fa-users"/> NGƯỜI PHỤ TRÁCH (XUỐNG CÔNG VIỆC CÁ NHÂN)</h3>
+                            <div class="o_dtw_people">
+                                <div class="o_dtw_people_pick">
+                                    <label>Chọn nhân sự</label>
+                                    <div class="o_dtw_search">
+                                        <i class="fa fa-search"/>
+                                        <input type="text" class="form-control" placeholder="Tìm kiếm và chọn nhiều nhân sự..."
+                                               t-model="state.query"/>
+                                    </div>
+                                    <div class="o_dtw_people_list">
+                                        <label t-foreach="filteredMembers" t-as="m" t-key="m.user_id" class="o_dtw_person">
+                                            <input type="checkbox" class="form-check-input" t-att-checked="state.picked[m.user_id]"
+                                                   t-on-change="() => this.togglePick(m)"/>
+                                            <span t-esc="m.name"/>
+                                        </label>
+                                        <div t-if="!filteredMembers.length" class="text-muted small p-2">Không có nhân sự phù hợp.</div>
+                                    </div>
+                                </div>
+                                <div class="o_dtw_people_chosen">
+                                    <label>Đã chọn <b t-esc="pickedMembers.length"/> nhân sự</label>
+                                    <div class="o_dtw_chips">
+                                        <span t-foreach="pickedMembers" t-as="m" t-key="m.user_id" class="o_dtw_chip">
+                                            <t t-esc="m.name"/>
+                                            <button type="button" class="btn btn-link p-0" t-on-click="() => this.unpick(m)">×</button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Danh sách công việc phân công -->
+                        <div class="o_dtw_card">
+                            <div class="o_dtw_list_head">
+                                <h3 class="o_dtw_title"><i class="fa fa-tasks"/> DANH SÁCH CÔNG VIỆC PHÂN CÔNG</h3>
+                                <span class="o_dtw_spacer"/>
+                                <button type="button" class="btn btn-sm btn-primary" t-on-click="onAddRows">
+                                    <i class="fa fa-plus"/> Thêm công việc
+                                </button>
+                                <button type="button" class="btn btn-sm o_dtw_btn_light" t-att-disabled="state.saving or !state.rows.length or !state.canCreate"
+                                        t-on-click="onSave">
+                                    <i class="fa fa-user-plus"/> Tạo công việc cá nhân
+                                </button>
+                                <button type="button" class="btn btn-sm btn-light" t-on-click="onCancel">
+                                    <i class="fa fa-trash-o"/> Hủy
+                                </button>
+                            </div>
+                            <div class="o_dtw_table_wrap">
+                                <table class="o_dtw_table">
+                                    <thead>
+                                        <tr>
+                                            <th class="c-stt">STT</th>
+                                            <th class="c-person">Nhân sự</th>
+                                            <th class="c-cat">Hạng mục</th>
+                                            <th>Nội dung công việc</th>
+                                            <th class="c-date">Ngày thực hiện</th>
+                                            <th class="c-date">Deadline</th>
+                                            <th class="c-person">Người kiểm tra</th>
+                                            <th class="c-note">Ghi chú</th>
+                                            <th class="c-del"/>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="state.rows" t-as="r" t-key="r.key">
+                                            <td class="text-center" t-esc="r_index + 1"/>
+                                            <td>
+                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'user_id', ev)">
+                                                    <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                                        <option t-att-value="m.user_id" t-att-selected="m.user_id === r.user_id" t-esc="m.name"/>
+                                                    </t>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'cat_id', ev)">
+                                                    <option value="0" t-att-selected="!r.cat_id">—</option>
+                                                    <t t-foreach="state.categories" t-as="c" t-key="c.id">
+                                                        <option t-att-value="c.id" t-att-selected="c.id === r.cat_id" t-esc="c.label"/>
+                                                    </t>
+                                                </select>
+                                            </td>
+                                            <td><input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
+                                                       t-att-value="r.name" t-on-change="(ev) => this.onRow(r, 'name', ev)"/></td>
+                                            <td t-foreach="['date_start', 'deadline']" t-as="f" t-key="f">
+                                                <div class="o_dtw_date">
+                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
+                                                           t-att-value="fmt(r[f])" t-on-change="(ev) => this.onRowDate(r, f, ev)"/>
+                                                    <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
+                                                        <i class="fa fa-calendar"/>
+                                                    </button>
+                                                    <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="r[f]"
+                                                           t-on-change="(ev) => this.onPicker(r, f, ev)"/>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'checker_id', ev)">
+                                                    <option value="0" t-att-selected="!r.checker_id">—</option>
+                                                    <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                                        <option t-att-value="m.user_id" t-att-selected="m.user_id === r.checker_id" t-esc="m.name"/>
+                                                    </t>
+                                                </select>
+                                            </td>
+                                            <td><textarea rows="1" class="form-control form-control-sm" placeholder="Ghi chú..."
+                                                          t-att-value="r.note" t-on-change="(ev) => this.onRow(r, 'note', ev)"/></td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
+                                                        t-on-click="() => this.removeRow(r)"><i class="fa fa-trash"/></button>
+                                            </td>
+                                        </tr>
+                                        <tr t-if="!state.rows.length">
+                                            <td colspan="9" class="text-center text-muted py-4">
+                                                Chọn Hạng mục, tick nhân sự ở «Người phụ trách» rồi bấm «Thêm công việc».
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </DailyWorkAppShell>
+        </div>
+    </t>
+</templates>

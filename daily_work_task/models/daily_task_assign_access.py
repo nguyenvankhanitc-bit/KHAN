@@ -67,6 +67,12 @@ class DailyTaskAssignAccess(models.Model):
     perm_personnel_write = fields.Boolean(string="CV nhân sự: Chỉnh sửa", default=False)
     perm_personnel_unlink = fields.Boolean(string="CV nhân sự: Xóa", default=False)
 
+    # Phân công việc team (Quản lý công việc → Phân công việc team)
+    perm_teamwork_view = fields.Boolean(string="Phân công việc team: Xem", default=False)
+    perm_teamwork_create = fields.Boolean(string="Phân công việc team: Thêm", default=False)
+    perm_teamwork_write = fields.Boolean(string="Phân công việc team: Chỉnh sửa", default=False)
+    perm_teamwork_unlink = fields.Boolean(string="Phân công việc team: Xóa", default=False)
+
     _sql_constraints = [
         (
             "daily_task_assign_access_employee_uniq",
@@ -81,6 +87,7 @@ class DailyTaskAssignAccess(models.Model):
         "perm_list_view",
         "perm_category_view",
         "perm_personnel_view",
+        "perm_teamwork_view",
     )
     def _compute_name(self):
         for rec in self:
@@ -104,6 +111,8 @@ class DailyTaskAssignAccess(models.Model):
                 or rec.perm_personnel_unlink
             ):
                 parts.append("CV nhân sự")
+            if rec.perm_teamwork_view or rec.perm_teamwork_create:
+                parts.append("Phân công việc team")
             rec.name = "%s → [%s]" % (who, ", ".join(parts) or "chưa tick quyền")
 
     @api.onchange(
@@ -185,6 +194,8 @@ class DailyTaskAssignAccess(models.Model):
             or vals.get("perm_personnel_unlink")
         ):
             vals["perm_personnel_view"] = True
+        if vals.get("perm_teamwork_create") or vals.get("perm_teamwork_write") or vals.get("perm_teamwork_unlink"):
+            vals["perm_teamwork_view"] = True
 
     # ------------------------------------------------------------------
     # Helpers
@@ -215,6 +226,7 @@ class DailyTaskAssignAccess(models.Model):
             "list": {"view": True, "create": True, "write": True, "unlink": True},
             "category": {"view": True, "create": True, "write": True, "unlink": True},
             "personnel": {"view": True, "create": True, "write": True, "unlink": True},
+            "teamwork": {"view": True, "create": True, "write": True, "unlink": True},
         }
         if self._is_manager(user):
             return full
@@ -226,6 +238,7 @@ class DailyTaskAssignAccess(models.Model):
                 "list": dict(empty),
                 "category": dict(empty),
                 "personnel": dict(empty),
+                "teamwork": dict(empty),
             }
         return {
             "add": {
@@ -252,6 +265,12 @@ class DailyTaskAssignAccess(models.Model):
                 "write": bool(line.perm_personnel_write),
                 "unlink": bool(line.perm_personnel_unlink),
             },
+            "teamwork": {
+                "view": bool(line.perm_teamwork_view),
+                "create": bool(line.perm_teamwork_create),
+                "write": bool(line.perm_teamwork_write),
+                "unlink": bool(line.perm_teamwork_unlink),
+            },
         }
 
     @api.model
@@ -274,6 +293,7 @@ class DailyTaskAssignAccess(models.Model):
                 "list": "Danh sách công việc",
                 "category": "Hạng mục",
                 "personnel": "Công việc theo nhân sự",
+                "teamwork": "Phân công việc team",
             }
             acts = {
                 "view": "xem",
@@ -294,6 +314,7 @@ class DailyTaskAssignAccess(models.Model):
             or amap["list"]["view"]
             or amap["category"]["view"]
             or amap["personnel"]["view"]
+            or amap["teamwork"]["view"]
         )
 
     @api.model
@@ -347,11 +368,17 @@ class DailyTaskAssignAccess(models.Model):
                 "write": bool(line.perm_personnel_write),
                 "unlink": bool(line.perm_personnel_unlink),
             }
+            teamwork = {
+                "view": bool(line.perm_teamwork_view),
+                "create": bool(line.perm_teamwork_create),
+                "write": bool(line.perm_teamwork_write),
+                "unlink": bool(line.perm_teamwork_unlink),
+            }
 
             def _sig(g):
                 return tuple(bool(g.get(k)) for k in ("view", "create", "write", "unlink"))
 
-            key = (dept_id, _sig(add), _sig(lst), _sig(cat), _sig(personnel))
+            key = (dept_id, _sig(add), _sig(lst), _sig(cat), _sig(personnel), _sig(teamwork))
             if key not in grouped:
                 grouped[key] = {
                     "id": line.id,
@@ -367,6 +394,7 @@ class DailyTaskAssignAccess(models.Model):
                     "list": lst,
                     "category": cat,
                     "personnel": personnel,
+                    "teamwork": teamwork,
                 }
             bucket = grouped[key]
             if emp.id not in bucket["employee_ids"]:
@@ -412,6 +440,7 @@ class DailyTaskAssignAccess(models.Model):
         lst = row.get("list") or {}
         cat = row.get("category") or {}
         personnel = row.get("personnel") or {}
+        teamwork = row.get("teamwork") or {}
 
         def _norm(group):
             view = bool(group.get("view"))
@@ -428,7 +457,12 @@ class DailyTaskAssignAccess(models.Model):
         lv, lc, lw, lu = _norm(lst)
         cv, cc, cw, cu = _norm(cat)
         pv, pc, pw, pu = _norm(personnel)
+        tv, tc, tw, tu = _norm(teamwork)
         return {
+            "perm_teamwork_view": tv,
+            "perm_teamwork_create": tc,
+            "perm_teamwork_write": tw,
+            "perm_teamwork_unlink": tu,
             "perm_add_view": av,
             "perm_add_create": ac,
             "perm_add_write": aw,

@@ -124,6 +124,10 @@
                                 t-on-click="() => this.openNav('employee_ws')">
                             <i class="fa fa-pencil-square-o"/><span>Quản lý công việc</span>
                         </button>
+                        <button t-if="state.canTeamwork" type="button" t-att-class="'o_dwd_side_item' + (isActive('team_work') ? ' active' : '')" title="Phân công việc team"
+                                t-on-click="() => this.openNav('team_work')">
+                            <i class="fa fa-share-alt"/><span>Phân công việc team</span>
+                        </button>
                         <button type="button"
                                 t-att-class="'o_dwd_side_item' + (isActive('plan') ? ' active' : '')"
                                 title="Plan CV cá nhân"

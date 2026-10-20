@@ -13,6 +13,7 @@ const GROUPS = [
     { key: "list", label: "Danh sách công việc" },
     { key: "category", label: "Hạng mục" },
     { key: "personnel", label: "Công việc theo nhân sự" },
+    { key: "teamwork", label: "Phân công việc team" },
 ];
 
 const PERMS = [
@@ -52,16 +53,17 @@ function emptyRow(stt = 1) {
         list: emptyPerms(),
         category: emptyPerms(),
         personnel: emptyPerms(),
+        teamwork: emptyPerms(),
         dirty: true,
     };
 }
 
-function permSignature(add, list, category, personnel) {
+function permSignature(add, list, category, personnel, teamwork) {
     const pack = (g) =>
         [g?.view, g?.create, g?.write, g?.unlink]
             .map((v) => (v ? "1" : "0"))
             .join("");
-    return `${pack(add)}|${pack(list)}|${pack(category)}|${pack(personnel)}`;
+    return `${pack(add)}|${pack(list)}|${pack(category)}|${pack(personnel)}|${pack(teamwork)}`;
 }
 
 export class DailyWorkAssignAccessMatrix extends Component {
@@ -178,6 +180,7 @@ export class DailyWorkAssignAccessMatrix extends Component {
                 const list = { ...emptyPerms(), ...clonePerms(r.list) };
                 const category = { ...emptyPerms(), ...clonePerms(r.category) };
                 const personnel = { ...emptyPerms(), ...clonePerms(r.personnel) };
+                const teamwork = { ...emptyPerms(), ...clonePerms(r.teamwork) };
                 let ids = (r.employee_ids || [])
                     .map(Number)
                     .filter(Boolean);
@@ -192,7 +195,7 @@ export class DailyWorkAssignAccessMatrix extends Component {
                         this.state.empById[ids[0]]?.department_id ||
                         0
                 );
-                const key = `${deptKey}::${permSignature(add, list, category, personnel)}`;
+                const key = `${deptKey}::${permSignature(add, list, category, personnel, teamwork)}`;
                 if (!merged.has(key)) {
                     merged.set(key, {
                         key: `grp-${key}`,
@@ -206,6 +209,7 @@ export class DailyWorkAssignAccessMatrix extends Component {
                         list,
                         category,
                         personnel,
+                        teamwork,
                         dirty: false,
                     });
                 }
@@ -408,6 +412,7 @@ export class DailyWorkAssignAccessMatrix extends Component {
                     list: clonePerms(row.list),
                     category: clonePerms(row.category),
                     personnel: clonePerms(row.personnel),
+                    teamwork: clonePerms(row.teamwork),
                 });
             }
         }

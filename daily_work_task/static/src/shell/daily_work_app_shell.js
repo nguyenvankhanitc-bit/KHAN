@@ -57,6 +57,7 @@ export class DailyWorkAppShell extends Component {
             canViewOthers: false,
             canViewChecklist: false,
             canSeePerformance: false,
+            canTeamwork: false,
             canAssignAdd: false,
             canAssignList: false,
             canAssignPersonnel: false,
@@ -97,6 +98,7 @@ export class DailyWorkAppShell extends Component {
                 this.state.canViewOthers = Boolean(opts.can_view_others);
                 this.state.canViewChecklist = Boolean(opts.can_view_checklist);
                 this.state.canSeePerformance = Boolean(opts.can_see_performance);
+                this.state.canTeamwork = Boolean(opts.can_teamwork);
                 this.state.reportView = opts.report_view || {};
                 this.state.canAssignAdd = Boolean(opts.can_assign_add);
                 this.state.canAssignList = Boolean(opts.can_assign_list);
@@ -321,6 +323,10 @@ export class DailyWorkAppShell extends Component {
         };
         if (key === "team_report") {
             await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
+            return;
+        }
+        if (key === "team_work") {
+            await this._doNavAction("daily_work_task.action_daily_work_team_work", asPopup);
             return;
         }
         if (key === "kho_sheet") {

@@ -25,6 +25,13 @@
               sequence="1"
               groups="daily_work_task.group_daily_work_user"/>
 
+    <menuitem id="menu_daily_work_team_work"
+              name="Phân công việc team"
+              parent="menu_daily_work_cat_tasks"
+              action="action_daily_work_team_work"
+              sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
     <menuitem id="menu_daily_work_plan"
               name="Plan CV cá nhân"
               parent="menu_daily_work_cat_tasks"

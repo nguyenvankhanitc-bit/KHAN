@@ -415,6 +415,7 @@
                                         <thead>
                                             <tr>
                                                 <th class="o_ews_col_stt">STT</th>
+                                                <th class="o_ews_col_cat">Hạng mục</th>
                                                 <th class="o_ews_col_name">Tên công việc</th>
                                                 <th class="o_ews_col_date">Ngày bắt đầu</th>
                                                 <th class="o_ews_col_date">Deadline</th>
@@ -432,7 +433,7 @@
                                         <tbody>
                                             <t t-if="!filteredTasks.length">
                                                 <tr>
-                                                    <td colspan="13" class="text-center text-muted py-4">
+                                                    <td colspan="14" class="text-center text-muted py-4">
                                                         <t t-if="listFilterActive">Không có công việc khớp bộ lọc.</t>
                                                         <t t-else="">Chưa có công việc. Bấm «Tạo công việc» để thêm việc mới.</t>
                                                     </td>
@@ -441,6 +442,11 @@
                                             <t t-foreach="filteredTasks" t-as="task" t-key="task.id">
                                                 <tr t-att-class="{'o_ews_row_editing': state.editingTaskId === task.id, 'o_ews_row_returned': task.manager_returned}">
                                                     <td class="o_ews_col_stt" t-esc="task.stt"/>
+                                                    <td class="o_ews_col_cat">
+                                                        <span t-if="taskCategory(task)" class="o_ews_cat_tag" t-esc="taskCategory(task)"/>
+                                                        <span t-else="" class="text-muted">—</span>
+                                                        <small t-if="taskDetail(task)" class="o_ews_cat_detail" t-esc="taskDetail(task)"/>
+                                                    </td>
                                                     <td t-att-class="'o_ews_col_name' + (isTaskOverdue(task) ? ' o_ews_name_overdue' : '')">
                                                         <t t-esc="task.name"/>
                                                         <span t-if="task.is_from_recurring" class="o_ews_recurring_tag" title="Sinh từ mẫu lặp">

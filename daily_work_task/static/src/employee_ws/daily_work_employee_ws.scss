@@ -4144,3 +4144,35 @@ body.o_ews_resizing {
         padding-bottom: 96px !important;
     }
 }
+
+// Danh sách công việc: cột Hạng mục
+.o_daily_work_employee_ws .o_ews_table {
+    .o_ews_col_cat {
+        width: 150px;
+        min-width: 130px;
+        max-width: 180px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    thead th.o_ews_col_cat {
+        text-align: center;
+    }
+    .o_ews_cat_tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #e0ecff;
+        color: #1e3a8a;
+        font-size: 0.75rem;
+        font-weight: 600;
+        white-space: normal;
+        line-height: 1.3;
+    }
+    .o_ews_cat_detail {
+        display: block;
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 0.72rem;
+        line-height: 1.25;
+    }
+}

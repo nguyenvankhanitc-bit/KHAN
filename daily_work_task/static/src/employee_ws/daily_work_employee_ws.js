@@ -2318,6 +2318,17 @@ export class DailyWorkEmployeeWs extends Component {
         }
     }
 
+    /** Cột Hạng mục: tên hạng mục (bỏ số thứ tự «1.» / «III.») + tên chi tiết hạng mục. */
+    taskCategory(task) {
+        const raw = (task.work_group_label || task.category_name || "").trim();
+        return raw.replace(new RegExp("^(?:(?:\\d+|[IVXLCDM]+)[.)]\\s+)+"), "").toUpperCase();
+    }
+
+    taskDetail(task) {
+        const d = (task.work_group_task_name || "").trim();
+        return d && d.toLowerCase() !== (task.name || "").trim().toLowerCase() ? d : "";
+    }
+
     /** Việc vừa hoàn thành: bỏ khỏi Danh sách công việc, đánh lại STT, cập nhật số việc đã hoàn thành. */
     _removeDoneRow(task, updated) {
         this.state.tasks = this.state.tasks

@@ -265,16 +265,24 @@ class DailyTask(models.Model):
                 ("assignee_id", "=", rec.assignee_id.id),
                 ("name", "ilike", first_word),
             ])
+            today = fields.Date.context_today(self)
+            states = dict(self._fields["state"].selection)
             for other in others:
                 if norm(other.name) != key:
+                    continue
+                # Việc đã hoàn thành → vẫn cho phân lịch lại
+                if other.state == "done":
                     continue
                 o_start = other.assign_date or other.deadline
                 o_end = other.deadline or other.assign_date
                 overlap = not (start and end and o_start and o_end) or (start <= o_end and o_start <= end)
                 if overlap:
                     src = "Plan tổng" if other.assign_line_id else ("Công việc lặp" if other.recurring_id else "bảng cá nhân")
+                    state_label = states.get(other.state, "")
+                    if other.deadline and other.deadline < today:
+                        state_label += " · Trễ hạn"
                     raise ValidationError(
-                        "Trùng công việc: «%s» đã có trong %s của %s (%s → %s).\n"
+                        "Trùng công việc: «%s» đã có trong %s của %s (%s → %s) — trạng thái: %s.\n"
                         "Không thêm việc trùng nội dung — hãy cập nhật việc có sẵn."
                         % (
                             rec.name,
@@ -282,6 +290,7 @@ class DailyTask(models.Model):
                             rec.assignee_id.name or "",
                             o_start.strftime("%d/%m/%Y") if o_start else "…",
                             o_end.strftime("%d/%m/%Y") if o_end else "…",
+                            state_label,
                         )
                     )
 

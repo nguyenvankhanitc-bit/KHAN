@@ -44,22 +44,6 @@
                     <div t-if="state.loading" class="text-center text-muted py-5"><i class="fa fa-spinner fa-spin fa-2x"/></div>
                     <div t-elif="state.message" class="alert alert-warning m-0" t-esc="state.message"/>
                     <t t-else="">
-                        <!-- Chỉ số -->
-                        <div class="o_dks_kpis">
-                            <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-violet"><i class="fa fa-clock-o"/></span>
-                                <div><div class="o_dks_kpi_lbl is-violet">TỔNG THỜI GIAN (giờ)</div><div class="o_dks_kpi_val" t-esc="kpi.hours"/></div>
-                            </div>
-                            <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-teal"><i class="fa fa-line-chart"/></span>
-                                <div>
-                                    <div class="o_dks_kpi_lbl is-teal">HIỆU SUẤT</div>
-                                    <div class="o_dks_kpi_val" t-esc="kpi.efficiency + '%'"/>
-                                    <div class="o_dks_kpi_sub">Theo QL đánh giá</div>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Biểu đồ (giống hình mẫu): 1. Tổng công việc · 2. Kết quả đánh giá QL -->
                         <div class="o_dks_charts">
                             <div class="o_dks_chart_card">

@@ -253,6 +253,9 @@ class DailyTaskKhoSheetLine(models.Model):
             "people": names,
             "categories": self._category_options(team),
             "me": self.env.user.name or "",
+            # Đầu báo cáo (giống Báo cáo cá nhân): chức danh · phòng ban của user đang đăng nhập
+            "me_job": (self.env.user.employee_id.sudo().job_title or self.env.user.employee_id.sudo().job_id.name or ""),
+            "me_dept": self.env.user.employee_id.sudo().department_id.name or "",
             "kinds": [{"key": k, "label": l} for k, l in KIND_SELECTION],
             "states": [{"key": k, "label": l} for k, l in STATE_SELECTION],
             "can_write": self._can_write(),

@@ -51,6 +51,8 @@ export class DailyWorkKhoSheet extends Component {
             states: [],
             categories: [],
             me: "",
+            meJob: "",
+            meDept: "",
             timePick: null,
             canWrite: false,
             message: false,
@@ -82,6 +84,39 @@ export class DailyWorkKhoSheet extends Component {
             }
         }
         return out;
+    }
+
+    get monthNums() {
+        return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    }
+
+    get yearNums() {
+        const y = new Date().getFullYear();
+        return [y - 1, y, y + 1];
+    }
+
+    /** Dòng phụ dưới «Họ và tên»: chức danh · phòng ban. */
+    get meSub() {
+        return [this.state.meJob, this.state.meDept].filter(Boolean).join(" · ");
+    }
+
+    /** Đổi Tháng / Năm trên thanh công cụ (giống Báo cáo cá nhân). */
+    async onPeriod(field, ev) {
+        const value = Number(ev.target.value);
+        if (!this._confirmDiscard()) {
+            ev.target.value = String(this.state[field]);
+            return;
+        }
+        this.state[field] = value;
+        this.state.weekNo = 0;
+        await this.load();
+    }
+
+    async onRefresh() {
+        if (!this._confirmDiscard()) {
+            return;
+        }
+        await this.load();
     }
 
     get monthKey() {
@@ -283,6 +318,8 @@ export class DailyWorkKhoSheet extends Component {
         this.state.teamName = data.team_name || "";
         this.state.rows = (data.rows || []).map((r) => ({ ...r, key: `id-${r.id}` }));
         this.state.people = data.people || [];
+        this.state.meJob = data.me_job || "";
+        this.state.meDept = data.me_dept || "";
         this.state.kinds = data.kinds || [];
         this.state.categories = data.categories || [];
         this.state.me = data.me || "";

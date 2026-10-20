@@ -4,29 +4,34 @@
         <div class="o_daily_work_dashboard o_daily_work_kho_sheet o_action">
             <DailyWorkAppShell t-props="{ activeNav: shellActiveNav }">
                 <div class="o_dks">
-                    <!-- Thanh tiêu đề -->
-                    <div class="o_dks_banner">
-                        <div class="o_dks_banner_ico"><i class="fa fa-cubes"/></div>
-                        <div class="o_dks_banner_text">
-                            <h1>BÁO CÁO CÔNG VIỆC KHO – THÁNG <t t-esc="monthLabel"/></h1>
-                            <p>Chủ động kế hoạch <span>•</span> Phân công rõ ràng <span>•</span> Kiểm soát hiệu quả</p>
+                    <!-- Đầu báo cáo (giống Báo cáo cá nhân): tiêu đề giữa · bộ lọc + nút bên phải -->
+                    <div class="o_dks_head">
+                        <div class="o_dks_head_side"/>
+                        <div class="o_dks_head_center">
+                            <h2 class="o_dks_head_title">BÁO CÁO CÔNG VIỆC KHO</h2>
+                            <div class="o_dks_head_line">Họ và tên: <b t-esc="state.me"/></div>
+                            <div t-if="meSub" class="o_dks_head_sub" t-esc="meSub"/>
+                            <div class="o_dks_head_line" t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>
                         </div>
-                        <div class="o_dks_banner_month">
-                            <i class="fa fa-calendar"/>
-                            <div><small>THÁNG</small><b t-esc="monthLabel"/></div>
-                        </div>
-                        <div class="o_dks_banner_pick">
-                            <label>Chọn tháng</label>
-                            <select class="form-select form-select-sm" t-on-change="onMonth">
-                                <t t-foreach="monthOptions" t-as="mo" t-key="mo.key">
-                                    <option t-att-value="mo.key" t-att-selected="mo.key === monthKey" t-esc="mo.label"/>
+                        <div class="o_dks_toolbar">
+                            <select class="form-select form-select-sm" t-on-change="(ev) => this.onPeriod('month', ev)">
+                                <t t-foreach="monthNums" t-as="m" t-key="m">
+                                    <option t-att-value="m" t-att-selected="m === state.month" t-esc="'Tháng ' + m"/>
                                 </t>
                             </select>
-                            <select t-if="state.teams.length &gt; 1" class="form-select form-select-sm mt-1" t-on-change="onTeam">
+                            <select class="form-select form-select-sm" t-on-change="(ev) => this.onPeriod('year', ev)">
+                                <t t-foreach="yearNums" t-as="y" t-key="y">
+                                    <option t-att-value="y" t-att-selected="y === state.year" t-esc="y"/>
+                                </t>
+                            </select>
+                            <select t-if="state.teams.length &gt; 1" class="form-select form-select-sm" t-on-change="onTeam">
                                 <t t-foreach="state.teams" t-as="tm" t-key="tm.id">
                                     <option t-att-value="tm.id" t-att-selected="tm.id === state.teamId" t-esc="'Team: ' + tm.name"/>
                                 </t>
                             </select>
+                            <button type="button" class="btn btn-light btn-sm o_dks_refresh" t-on-click="onRefresh">
+                                <i class="fa fa-refresh"/> Làm mới
+                            </button>
                         </div>
                     </div>
 

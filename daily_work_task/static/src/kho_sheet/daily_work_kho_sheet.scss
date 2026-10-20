@@ -542,3 +542,69 @@
         border-top: 2px solid #6b8cc7;
     }
 }
+
+// Đầu báo cáo giống Báo cáo cá nhân
+.o_daily_work_kho_sheet {
+    .o_dks_head {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        align-items: start;
+        gap: 16px;
+        padding: 6px 0 4px;
+        margin-bottom: 14px;
+    }
+
+    .o_dks_head_center {
+        text-align: center;
+        color: #1e293b;
+        line-height: 1.45;
+    }
+
+    .o_dks_head_title {
+        margin: 0 0 6px;
+        font-size: 1.9rem;
+        font-weight: 900;
+        letter-spacing: 0.02em;
+        color: #0f172a;
+    }
+
+    .o_dks_head_line {
+        font-size: 1rem;
+    }
+
+    .o_dks_head_sub {
+        font-size: 0.9rem;
+        color: #64748b;
+    }
+
+    .o_dks_toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        align-content: flex-start;
+        gap: 8px;
+
+        .form-select {
+            width: auto;
+            min-width: 110px;
+        }
+    }
+
+    .o_dks_refresh {
+        border: 1px solid #d1d5db;
+        background: #fff;
+    }
+
+    @media (max-width: 1280px) {
+        .o_dks_head {
+            grid-template-columns: 1fr;
+        }
+        .o_dks_head_side {
+            display: none;
+        }
+        .o_dks_toolbar {
+            justify-content: center;
+        }
+    }
+}

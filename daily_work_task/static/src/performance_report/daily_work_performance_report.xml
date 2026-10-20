@@ -80,8 +80,26 @@
 
                 <!-- Bảng hiệu suất nhân sự -->
                 <div class="o_dpr_chart_card o_dpr_staff_card">
-                    <h3>Hiệu suất nhân sự</h3>
-                    <p>Số liệu công việc trong tháng theo từng nhân sự</p>
+                    <div class="o_dpr_staff_head">
+                        <div>
+                            <h3>Hiệu suất nhân sự</h3>
+                            <p>Số liệu công việc trong tháng theo từng nhân sự</p>
+                        </div>
+                        <div class="o_dpr_staff_actions">
+                            <span t-if="perfDirtyCount" class="o_dpr_perf_pending">
+                                <i class="fa fa-pencil"/> <t t-esc="perfDirtyCount"/> thay đổi chưa lưu
+                            </span>
+                            <button t-if="perfDirtyCount" type="button" class="btn btn-sm btn-light"
+                                    t-att-disabled="state.perfSaving" t-on-click="onCancelPerf">
+                                <i class="fa fa-times"/> Hủy
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success"
+                                    t-att-disabled="!perfDirtyCount or state.perfSaving" t-on-click="onSavePerf"
+                                    title="Áp dụng QL đánh giá tổng đã nhập">
+                                <i class="fa fa-save"/> <t t-esc="state.perfSaving ? 'Đang lưu...' : 'Lưu'"/>
+                            </button>
+                        </div>
+                    </div>
                     <table class="o_dpr_staff">
                         <thead>
                             <tr>
@@ -133,10 +151,10 @@
                                         <span t-att-class="'o_dpr_eff ' + effClass(r.efficiency)" t-esc="r.efficiency + '%'"/>
                                     </td>
                                     <td class="num o_dpr_mgr_cell">
-                                        <div t-if="r.can_rate" class="o_dpr_mgr_input">
+                                        <div t-if="r.can_rate" t-att-class="'o_dpr_mgr_input' + (isPerfDirty(r) ? ' is-dirty' : '')">
                                             <input type="number" min="0" max="100" step="0.1"
                                                    class="form-control form-control-sm"
-                                                   t-att-value="(r.manager_perf === null or r.manager_perf === undefined) ? '' : r.manager_perf"
+                                                   t-att-value="perfShown(r)"
                                                    t-att-placeholder="r.efficiency"
                                                    t-att-title="'Để trống = dùng ' + r.efficiency + '% (tính tự động)'"
                                                    t-on-change="(ev) => this.onManagerPerf(r, ev)"/>

@@ -580,6 +580,7 @@
 
         h3 { margin: 0; font-size: 15px; font-weight: 700; color: #0f172a; }
         > p { margin: 2px 0 10px; font-size: 12px; color: #64748b; }
+        .o_dpr_staff_head p { margin: 2px 0 10px; font-size: 12px; color: #64748b; }
     }
 
     .o_dpr_chart_box {
@@ -730,4 +731,30 @@
             color: #94a3b8;
         }
     }
+}
+
+// Hiệu suất nhân sự: nút Lưu QL đánh giá tổng
+.o_dpr_staff_head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.o_dpr_staff_actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.o_dpr_perf_pending {
+    font-size: 0.8rem;
+    color: #b45309;
+}
+
+.o_dpr_staff .o_dpr_mgr_input.is-dirty input {
+    background: #fef9c3;
+    border-color: #f59e0b;
 }

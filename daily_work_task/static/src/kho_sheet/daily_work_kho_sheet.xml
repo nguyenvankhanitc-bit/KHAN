@@ -47,31 +47,6 @@
                         <!-- Chỉ số -->
                         <div class="o_dks_kpis">
                             <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-blue"><i class="fa fa-clipboard"/></span>
-                                <div><div class="o_dks_kpi_lbl">TỔNG CÔNG VIỆC</div><div class="o_dks_kpi_val" t-esc="kpi.total"/></div>
-                            </div>
-                            <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-green"><i class="fa fa-check"/></span>
-                                <div>
-                                    <div class="o_dks_kpi_lbl is-green">HOÀN THÀNH</div>
-                                    <div class="o_dks_kpi_val"><t t-esc="kpi.done"/> <small t-esc="'(' + kpi.donePct + '%)'"/></div>
-                                </div>
-                            </div>
-                            <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-amber"><i class="fa fa-clock-o"/></span>
-                                <div>
-                                    <div class="o_dks_kpi_lbl is-amber">ĐANG THỰC HIỆN</div>
-                                    <div class="o_dks_kpi_val"><t t-esc="kpi.doing"/> <small t-esc="'(' + kpi.doingPct + '%)'"/></div>
-                                </div>
-                            </div>
-                            <div class="o_dks_kpi">
-                                <span class="o_dks_kpi_ico is-gray"><i class="fa fa-pause"/></span>
-                                <div>
-                                    <div class="o_dks_kpi_lbl">CHƯA BẮT ĐẦU</div>
-                                    <div class="o_dks_kpi_val"><t t-esc="kpi.todo"/> <small t-esc="'(' + kpi.todoPct + '%)'"/></div>
-                                </div>
-                            </div>
-                            <div class="o_dks_kpi">
                                 <span class="o_dks_kpi_ico is-violet"><i class="fa fa-clock-o"/></span>
                                 <div><div class="o_dks_kpi_lbl is-violet">TỔNG THỜI GIAN (giờ)</div><div class="o_dks_kpi_val" t-esc="kpi.hours"/></div>
                             </div>

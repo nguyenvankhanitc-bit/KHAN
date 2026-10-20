@@ -962,3 +962,8 @@
     font-size: 0.6rem;
     white-space: nowrap;
 }
+
+// Chỉ còn 2 ô: Tổng thời gian · Hiệu suất (4 ô trạng thái đã có trong biểu đồ 1)
+.o_daily_work_kho_sheet .o_dks_kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}

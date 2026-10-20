@@ -101,6 +101,49 @@
                             </div>
                         </div>
 
+                        <!-- 3 biểu đồ xếp loại QL đánh giá (Kiểm tra CV): số lượng việc -->
+                        <div class="o_dks_rates">
+                            <div t-att-class="'o_dks_rate_card is-' + rateCards[0].key">
+                                <div class="o_dks_rate_title" t-esc="rateCards[0].label"/>
+                                <div class="o_dks_rate_chart">
+                                    <canvas t-ref="ratePass"/>
+                                    <div class="o_dks_rate_center">
+                                        <b t-esc="rateCards[0].count"/>
+                                        <small>việc</small>
+                                    </div>
+                                </div>
+                                <div class="o_dks_rate_foot">
+                                    <t t-esc="rateCards[0].pct + '%'"/> / <t t-esc="rateStats.rated"/> việc đã đánh giá
+                                </div>
+                            </div>
+                            <div t-att-class="'o_dks_rate_card is-' + rateCards[1].key">
+                                <div class="o_dks_rate_title" t-esc="rateCards[1].label"/>
+                                <div class="o_dks_rate_chart">
+                                    <canvas t-ref="rateAverage"/>
+                                    <div class="o_dks_rate_center">
+                                        <b t-esc="rateCards[1].count"/>
+                                        <small>việc</small>
+                                    </div>
+                                </div>
+                                <div class="o_dks_rate_foot">
+                                    <t t-esc="rateCards[1].pct + '%'"/> / <t t-esc="rateStats.rated"/> việc đã đánh giá
+                                </div>
+                            </div>
+                            <div t-att-class="'o_dks_rate_card is-' + rateCards[2].key">
+                                <div class="o_dks_rate_title" t-esc="rateCards[2].label"/>
+                                <div class="o_dks_rate_chart">
+                                    <canvas t-ref="rateFail"/>
+                                    <div class="o_dks_rate_center">
+                                        <b t-esc="rateCards[2].count"/>
+                                        <small>việc</small>
+                                    </div>
+                                </div>
+                                <div class="o_dks_rate_foot">
+                                    <t t-esc="rateCards[2].pct + '%'"/> / <t t-esc="rateStats.rated"/> việc đã đánh giá
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Nút -->
                         <div class="o_dks_actions">
                             <span class="o_dks_team" t-if="state.teamName">Team: <b t-esc="state.teamName"/></span>

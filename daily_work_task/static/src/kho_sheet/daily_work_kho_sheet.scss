@@ -739,3 +739,67 @@
         }
     }
 }
+
+// 3 biểu đồ: Đạt / Trung bình / Không đạt (số lượng)
+.o_daily_work_kho_sheet {
+    .o_dks_rates {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin-top: 8px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dks_rate_card {
+        background: #fff;
+        border: 1px solid #d6e2f3;
+        border-radius: 8px;
+        padding: 8px 12px 10px;
+        text-align: center;
+
+        &.is-pass { border-top: 3px solid #16a34a; .o_dks_rate_title, .o_dks_rate_center b { color: #15803d; } }
+        &.is-average { border-top: 3px solid #f59e0b; .o_dks_rate_title, .o_dks_rate_center b { color: #b45309; } }
+        &.is-fail { border-top: 3px solid #dc2626; .o_dks_rate_title, .o_dks_rate_center b { color: #b91c1c; } }
+    }
+
+    .o_dks_rate_title {
+        font-size: 0.78rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+    }
+
+    .o_dks_rate_chart {
+        position: relative;
+        height: 120px;
+        margin: 4px auto;
+        max-width: 160px;
+    }
+
+    .o_dks_rate_center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+
+        b {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        small {
+            color: #64748b;
+            font-size: 0.7rem;
+        }
+    }
+
+    .o_dks_rate_foot {
+        font-size: 0.74rem;
+        color: #475569;
+    }
+}

@@ -2,7 +2,8 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useEffect, useState } from "@odoo/owl";
+import { Component, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
+import { loadBundle } from "@web/core/assets";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
@@ -60,7 +61,23 @@ export class DailyWorkKhoSheet extends Component {
             canWrite: false,
             message: false,
         });
-        onWillStart(() => this.load());
+        // 3 biểu đồ xếp loại QL đánh giá: Đạt / Trung bình / Không đạt (số lượng việc)
+        this.rateRefs = { pass: useRef("ratePass"), average: useRef("rateAverage"), fail: useRef("rateFail") };
+        this.charts = [];
+        onWillStart(async () => {
+            await loadBundle("web.chartjs_lib");
+            await this.load();
+        });
+        useEffect(
+            () => {
+                this.renderRateCharts();
+            },
+            () => {
+                const r = this.rateStats;
+                return [this.state.loading, r.pass, r.average, r.fail, r.rated];
+            }
+        );
+        onWillUnmount(() => this.destroyCharts());
         // Mở danh sách giờ → cuộn tới mốc đang chọn / gần nhất
         useEffect(
             () => {
@@ -79,6 +96,74 @@ export class DailyWorkKhoSheet extends Component {
                 wrap.style.setProperty("--dks-head1", `${th.getBoundingClientRect().height}px`);
             }
         });
+    }
+
+    /** Số lượng việc theo xếp loại QL (Kiểm tra CV) — theo Tuần đang lọc. */
+    get rateStats() {
+        const out = { pass: 0, average: 0, fail: 0 };
+        for (const r of this.visibleRows) {
+            const k = r.eval && r.eval.rating;
+            if (k && k in out) {
+                out[k] += 1;
+            }
+        }
+        const rated = out.pass + out.average + out.fail;
+        const pct = (n) => (rated ? Math.round((n * 1000) / rated) / 10 : 0);
+        return { ...out, rated, passPct: pct(out.pass), averagePct: pct(out.average), failPct: pct(out.fail) };
+    }
+
+    get rateCards() {
+        const s = this.rateStats;
+        return [
+            { key: "pass", label: "ĐẠT", count: s.pass, pct: s.passPct, ref: "ratePass" },
+            { key: "average", label: "TRUNG BÌNH", count: s.average, pct: s.averagePct, ref: "rateAverage" },
+            { key: "fail", label: "KHÔNG ĐẠT", count: s.fail, pct: s.failPct, ref: "rateFail" },
+        ];
+    }
+
+    destroyCharts() {
+        for (const c of this.charts || []) {
+            c.destroy();
+        }
+        this.charts = [];
+    }
+
+    renderRateCharts() {
+        this.destroyCharts();
+        const Chart = window.Chart;
+        if (!Chart || this.state.loading) {
+            return;
+        }
+        const colors = { pass: "#16a34a", average: "#f59e0b", fail: "#dc2626" };
+        const s = this.rateStats;
+        for (const key of ["pass", "average", "fail"]) {
+            const el = this.rateRefs[key].el;
+            if (!el) {
+                continue;
+            }
+            const rest = Math.max(s.rated - s[key], 0);
+            this.charts.push(new Chart(el, {
+                type: "doughnut",
+                data: {
+                    labels: ["Số lượng", "Mức khác"],
+                    datasets: [{
+                        data: s.rated ? [s[key], rest] : [0, 1],
+                        backgroundColor: [colors[key], "#e5e7eb"],
+                        borderWidth: 0,
+                    }],
+                },
+                options: {
+                    cutout: "72%",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 300 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: Boolean(s.rated) },
+                    },
+                },
+            }));
+        }
     }
 
     get shellActiveNav() {

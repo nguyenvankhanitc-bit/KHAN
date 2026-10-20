@@ -8,7 +8,7 @@
                     <div class="o_dks_head">
                         <div class="o_dks_head_side"/>
                         <div class="o_dks_head_center">
-                            <h2 class="o_dks_head_title">BÁO CÁO CÔNG VIỆC KHO</h2>
+                            <h2 class="o_dks_head_title">BÁO CÁO CÔNG VIỆC</h2>
                             <div class="o_dks_head_line">Họ và tên: <b t-esc="state.me"/></div>
                             <div t-if="meSub" class="o_dks_head_sub" t-esc="meSub"/>
                             <div class="o_dks_head_line" t-esc="'Tháng ' + state.month + ' Năm ' + state.year"/>

@@ -478,7 +478,7 @@ class DailyTaskKhoSheetLine(models.Model):
 
         # Đầu báo cáo (giống Báo cáo cá nhân)
         r = 0
-        ws.merge_range(r, 0, r, last_col, "BÁO CÁO CÔNG VIỆC KHO", f_title)
+        ws.merge_range(r, 0, r, last_col, "BÁO CÁO CÔNG VIỆC", f_title)
         ws.set_row(r, 26)
         r += 1
         who = ("Team: %s" % data.get("team_name")) if whole else ("Họ và tên: %s" % (data.get("me") or ""))

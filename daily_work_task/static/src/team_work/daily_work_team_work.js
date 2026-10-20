@@ -51,6 +51,9 @@ export class DailyWorkTeamWork extends Component {
             query: "",
             picked: {},
             rows: [],
+            listRows: [],
+            listLoading: false,
+            form: { date_start: "", deadline: "", checker_id: 0, note: "" },
         });
         onWillStart(() => this.load());
     }
@@ -81,6 +84,8 @@ export class DailyWorkTeamWork extends Component {
             this.state.taskNames = data.task_names || {};
             this.state.picked = {};
             this.state.message = false;
+            this._resetForm();
+            await this.loadList();
         } catch (e) {
             this.state.message = e?.data?.message || _t("Không tải được dữ liệu.");
         } finally {
@@ -136,10 +141,53 @@ export class DailyWorkTeamWork extends Component {
         await this.load(Number(ev.target.value) || null);
     }
 
-    onMonth(ev) {
+    async onMonth(ev) {
         const [y, m] = ev.target.value.split("-").map(Number);
         this.state.year = y;
         this.state.month = m;
+        this._resetForm();
+        await this.loadList();
+    }
+
+    /** Ngày thực hiện / Deadline / Người kiểm tra mặc định theo tháng kế hoạch + người điều phối. */
+    _resetForm() {
+        const day = this._defaultDay();
+        this.state.form = {
+            date_start: day,
+            deadline: day,
+            checker_id: this.state.coordinatorId || 0,
+            note: "",
+        };
+    }
+
+    onForm(field, ev) {
+        let v = ev.target.value;
+        if (field === "checker_id") {
+            v = Number(v) || 0;
+        }
+        this.state.form[field] = v;
+    }
+
+    /** Danh sách công việc đã phân của Team trong tháng (chỉ xem). */
+    async loadList() {
+        if (!this.state.teamId) {
+            this.state.listRows = [];
+            return;
+        }
+        this.state.listLoading = true;
+        try {
+            const res = await this.orm.call("daily.task", "get_team_work_list", [this.state.teamId], {
+                year: this.state.year,
+                month: this.state.month,
+            });
+            this.state.listRows = res.rows || [];
+        } finally {
+            this.state.listLoading = false;
+        }
+    }
+
+    stateClass(state) {
+        return `o_dtw_state is-${state || "not_started"}`;
     }
 
     onCoordinator(ev) {
@@ -152,7 +200,7 @@ export class DailyWorkTeamWork extends Component {
     }
 
     get nextStt() {
-        return this.state.rows.length + 1;
+        return this.state.listRows.length + 1;
     }
 
     onCat(ev) {
@@ -276,7 +324,7 @@ export class DailyWorkTeamWork extends Component {
             details = [{ id: this.state.catId, name: (this.currentCat || {}).name || "" }];
         }
         const taskName = (this.state.taskName || "").trim();
-        const day = this._defaultDay();
+        const form = this.state.form;
         for (const m of people) {
             for (const d of details) {
                 this.state.rows.push({
@@ -285,10 +333,10 @@ export class DailyWorkTeamWork extends Component {
                     cat_id: this.state.catId || 0,
                     work_group_id: d.id,
                     name: taskName || d.name,
-                    date_start: day,
-                    deadline: day,
-                    checker_id: this.state.coordinatorId || 0,
-                    note: "",
+                    date_start: form.date_start,
+                    deadline: form.deadline,
+                    checker_id: form.checker_id || 0,
+                    note: form.note || "",
                 });
             }
         }
@@ -355,7 +403,8 @@ export class DailyWorkTeamWork extends Component {
 
     /** Xuất Excel danh sách công việc phân công (chưa có dòng → lấy theo lựa chọn hiện tại). */
     async onExport() {
-        if (!this.state.rows.length && !this._addRows()) {
+        if (!this.state.listRows.length) {
+            this.notification.add(_t("Chưa có công việc đã phân trong tháng này để xuất."), { type: "warning" });
             return;
         }
         this.state.exporting = true;
@@ -365,7 +414,6 @@ export class DailyWorkTeamWork extends Component {
                 this.state.coordinatorId || false,
                 this.state.year,
                 this.state.month,
-                this._payloadRows(this.state.rows),
             ]);
             const bin = atob(res.file_base64);
             const bytes = new Uint8Array(bin.length);
@@ -405,8 +453,9 @@ export class DailyWorkTeamWork extends Component {
             this.notification.add(_t("Bạn không có quyền Phân công việc team (Thêm)."), { type: "warning" });
             return;
         }
-        // Chưa bấm «Thêm công việc» mà đã chọn hạng mục / chi tiết / nhân sự → tự tạo dòng rồi lưu
-        if (!this.state.rows.length && !this._addRows()) {
+        // Lưu: mỗi nhân sự × mỗi chi tiết hạng mục đã tick → 1 công việc cá nhân
+        this.state.rows = [];
+        if (!this._addRows()) {
             return;
         }
         this.state.saving = true;
@@ -426,10 +475,14 @@ export class DailyWorkTeamWork extends Component {
             ]);
             this.state.rows = [];
             this.state.picked = {};
+            this.state.detailPicked = {};
+            this.state.taskName = "";
+            await this.loadList();
             this.notification.add(`Đã phân ${res.count} công việc — đã xuống danh sách công việc cá nhân của từng nhân sự.`, {
                 type: "success",
             });
         } catch (e) {
+            this.state.rows = [];
             this.notification.add(e?.data?.message || _t("Không lưu được."), { type: "danger" });
         } finally {
             this.state.saving = false;

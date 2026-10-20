@@ -109,6 +109,46 @@
                                     Hạng mục này chưa có chi tiết — công việc sẽ gắn thẳng vào hạng mục.
                                 </div>
                             </div>
+                            <div class="o_dtw_plan">
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-calendar"/> Ngày thực hiện</label>
+                                    <div class="o_dtw_date">
+                                        <input type="text" class="form-control" placeholder="dd/mm/yyyy"
+                                               t-att-value="fmt(state.form.date_start)" t-on-change="(ev) => this.onRowDate(state.form, 'date_start', ev)"/>
+                                        <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
+                                            <i class="fa fa-calendar"/>
+                                        </button>
+                                        <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="state.form.date_start"
+                                               t-on-change="(ev) => this.onPicker(state.form, 'date_start', ev)"/>
+                                    </div>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-calendar"/> Deadline</label>
+                                    <div class="o_dtw_date">
+                                        <input type="text" class="form-control" placeholder="dd/mm/yyyy"
+                                               t-att-value="fmt(state.form.deadline)" t-on-change="(ev) => this.onRowDate(state.form, 'deadline', ev)"/>
+                                        <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
+                                            <i class="fa fa-calendar"/>
+                                        </button>
+                                        <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="state.form.deadline"
+                                               t-on-change="(ev) => this.onPicker(state.form, 'deadline', ev)"/>
+                                    </div>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-user-o"/> Người kiểm tra</label>
+                                    <select class="form-select" t-on-change="(ev) => this.onForm('checker_id', ev)">
+                                        <option value="0" t-att-selected="!state.form.checker_id">—</option>
+                                        <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                            <option t-att-value="m.user_id" t-att-selected="m.user_id === state.form.checker_id" t-esc="m.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label><i class="fa fa-sticky-note-o"/> Ghi chú</label>
+                                    <input type="text" class="form-control" placeholder="Ghi chú..."
+                                           t-att-value="state.form.note" t-on-change="(ev) => this.onForm('note', ev)"/>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Người phụ trách -->
@@ -143,27 +183,18 @@
                             </div>
                         </div>
 
-                        <!-- Danh sách công việc phân công -->
+                        <!-- Danh sách công việc phân công: chỉ xem (việc đã phân của Team trong tháng kế hoạch) -->
                         <div class="o_dtw_card">
                             <div class="o_dtw_list_head">
                                 <h3 class="o_dtw_title"><i class="fa fa-tasks"/> DANH SÁCH CÔNG VIỆC PHÂN CÔNG</h3>
+                                <span class="o_dtw_list_meta" t-esc="'Tháng ' + monthLabel + ' · ' + state.listRows.length + ' công việc'"/>
                                 <span class="o_dtw_spacer"/>
-                                <button type="button" class="btn btn-sm btn-primary" t-on-click="onAddRows">
-                                    <i class="fa fa-plus"/> Thêm công việc
-                                </button>
                                 <button type="button" class="btn btn-sm btn-success" t-att-disabled="state.exporting" t-on-click="onExport">
                                     <i class="fa fa-file-excel-o"/> Xuất Excel
                                 </button>
-                                <button type="button" class="btn btn-sm o_dtw_btn_light" t-att-disabled="state.saving"
-                                        t-on-click="onSave">
-                                    <i class="fa fa-user-plus"/> Tạo công việc cá nhân
-                                </button>
-                                <button type="button" class="btn btn-sm btn-light" t-on-click="onCancel">
-                                    <i class="fa fa-trash-o"/> Hủy
-                                </button>
                             </div>
                             <div class="o_dtw_table_wrap">
-                                <table class="o_dtw_table">
+                                <table class="o_dtw_table is-view">
                                     <thead>
                                         <tr>
                                             <th class="c-stt">STT</th>
@@ -173,62 +204,35 @@
                                             <th class="c-date">Ngày thực hiện</th>
                                             <th class="c-date">Deadline</th>
                                             <th class="c-person">Người kiểm tra</th>
+                                            <th class="c-state">Trạng thái</th>
                                             <th class="c-note">Ghi chú</th>
-                                            <th class="c-del"/>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr t-foreach="state.rows" t-as="r" t-key="r.key">
-                                            <td class="text-center" t-esc="r_index + 1"/>
-                                            <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'user_id', ev)">
-                                                    <t t-foreach="state.members" t-as="m" t-key="m.user_id">
-                                                        <option t-att-value="m.user_id" t-att-selected="m.user_id === r.user_id" t-esc="m.name"/>
-                                                    </t>
-                                                </select>
-                                            </td>
-                                            <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'cat_id', ev)">
-                                                    <option value="0" t-att-selected="!r.cat_id">—</option>
-                                                    <t t-foreach="state.categories" t-as="c" t-key="c.id">
-                                                        <option t-att-value="c.id" t-att-selected="c.id === r.cat_id" t-esc="c.label"/>
-                                                    </t>
-                                                </select>
-                                                <small t-if="detailName(r.work_group_id)" class="o_dtw_row_detail" t-esc="detailName(r.work_group_id)"/>
-                                            </td>
-                                            <td><input type="text" class="form-control form-control-sm" placeholder="Nội dung công việc..."
-                                                       t-att-value="r.name" t-on-change="(ev) => this.onRow(r, 'name', ev)"/></td>
-                                            <td t-foreach="['date_start', 'deadline']" t-as="f" t-key="f">
-                                                <div class="o_dtw_date">
-                                                    <input type="text" class="form-control form-control-sm" placeholder="dd/mm/yyyy"
-                                                           t-att-value="fmt(r[f])" t-on-change="(ev) => this.onRowDate(r, f, ev)"/>
-                                                    <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
-                                                        <i class="fa fa-calendar"/>
-                                                    </button>
-                                                    <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="r[f]"
-                                                           t-on-change="(ev) => this.onPicker(r, f, ev)"/>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <select class="form-select form-select-sm" t-on-change="(ev) => this.onRow(r, 'checker_id', ev)">
-                                                    <option value="0" t-att-selected="!r.checker_id">—</option>
-                                                    <t t-foreach="state.members" t-as="m" t-key="m.user_id">
-                                                        <option t-att-value="m.user_id" t-att-selected="m.user_id === r.checker_id" t-esc="m.name"/>
-                                                    </t>
-                                                </select>
-                                            </td>
-                                            <td><textarea rows="1" class="form-control form-control-sm" placeholder="Ghi chú..."
-                                                          t-att-value="r.note" t-on-change="(ev) => this.onRow(r, 'note', ev)"/></td>
-                                            <td class="text-center">
-                                                <button type="button" class="btn btn-link text-danger p-0" title="Xoá dòng"
-                                                        t-on-click="() => this.removeRow(r)"><i class="fa fa-trash"/></button>
-                                            </td>
+                                        <tr t-if="state.listLoading">
+                                            <td colspan="9" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin"/></td>
                                         </tr>
-                                        <tr t-if="!state.rows.length">
-                                            <td colspan="9" class="text-center text-muted py-4">
-                                                Chọn Hạng mục, tick nhân sự ở «Người phụ trách» rồi bấm «Thêm công việc».
-                                            </td>
-                                        </tr>
+                                        <t t-else="">
+                                            <tr t-foreach="state.listRows" t-as="r" t-key="r.id">
+                                                <td class="text-center" t-esc="r_index + 1"/>
+                                                <td t-esc="r.employee"/>
+                                                <td>
+                                                    <div t-esc="r.category"/>
+                                                    <small t-if="r.detail" class="o_dtw_row_detail" t-esc="r.detail"/>
+                                                </td>
+                                                <td t-esc="r.name"/>
+                                                <td class="text-center" t-esc="fmt(r.date_start)"/>
+                                                <td class="text-center" t-esc="fmt(r.deadline)"/>
+                                                <td t-esc="r.checker"/>
+                                                <td class="text-center"><span t-att-class="stateClass(r.state)" t-esc="r.state_label"/></td>
+                                                <td class="o_dtw_note" t-esc="r.note"/>
+                                            </tr>
+                                            <tr t-if="!state.listRows.length">
+                                                <td colspan="9" class="text-center text-muted py-4">
+                                                    Chưa có công việc phân công trong tháng này. Chọn Hạng mục, tick chi tiết + nhân sự rồi bấm «Lưu».
+                                                </td>
+                                            </tr>
+                                        </t>
                                     </tbody>
                                 </table>
                             </div>

@@ -337,3 +337,50 @@
         color: #fff;
     }
 }
+
+// Ngày thực hiện / Deadline / Người kiểm tra / Ghi chú · danh sách chỉ xem
+.o_daily_work_team_work {
+    .o_dtw_plan {
+        display: grid;
+        grid-template-columns: 170px 170px minmax(0, 1fr) minmax(0, 1.5fr);
+        gap: 16px;
+        margin-top: 14px;
+
+        @media (max-width: 900px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dtw_list_meta {
+        color: #64748b;
+        font-size: 0.85rem;
+    }
+
+    .o_dtw_table.is-view {
+        td {
+            padding: 9px 8px;
+            color: #1e293b;
+        }
+        tbody tr:nth-child(even) td {
+            background: #f8fafc;
+        }
+        .c-state { width: 130px; }
+    }
+
+    .o_dtw_note {
+        white-space: pre-line;
+    }
+
+    .o_dtw_state {
+        display: inline-block;
+        min-width: 110px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+
+        &.is-done { background: #dcfce7; color: #15803d; }
+        &.is-in_progress { background: #fef3c7; color: #b45309; }
+        &.is-not_started { background: #e5e7eb; color: #4b5563; }
+    }
+}

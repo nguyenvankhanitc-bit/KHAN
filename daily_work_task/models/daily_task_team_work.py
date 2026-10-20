@@ -15,6 +15,11 @@ from odoo.exceptions import AccessError, ValidationError
 class DailyTask(models.Model):
     _inherit = "daily.task"
 
+    # Việc tạo từ «Phân công việc team» (danh sách chỉ xem + Xuất Excel)
+    team_work_team_id = fields.Many2one("daily.task.team", string="Phân công việc team", copy=False, index=True)
+    team_work_coordinator_id = fields.Many2one("res.users", string="Người điều phối", copy=False)
+    team_work_checker_id = fields.Many2one("res.users", string="Người kiểm tra (phân công team)", copy=False)
+
     # ------------------------------------------------------------------ phạm vi
     @api.model
     def _teamwork_teams(self):
@@ -157,6 +162,9 @@ class DailyTask(models.Model):
                 "state": "not_started",
                 "note": note,
                 "description": Markup("<br/>").join(escape(x) for x in desc_lines),
+                "team_work_team_id": team.id,
+                "team_work_coordinator_id": coordinator.id,
+                "team_work_checker_id": checker.id or False,
             })
             task._notify_assignee_assigned()
             partners = task._discussion_partner_ids()
@@ -165,9 +173,52 @@ class DailyTask(models.Model):
             created |= task
         return {"count": len(created), "ids": created.ids}
 
+    # ------------------------------------------------------------------ danh sách đã phân (chỉ xem)
+    @api.model
+    def _team_work_list(self, team, year, month):
+        year, month, date_from, date_to = self._month_date_bounds(year=year, month=month)
+        tasks = self.sudo().search(
+            [("team_work_team_id", "=", team.id),
+             "|", "&", ("assign_date", ">=", date_from), ("assign_date", "<=", date_to),
+             "&", ("deadline", ">=", date_from), ("deadline", "<=", date_to)],
+            order="assign_date asc, id asc",
+        )
+        cats = {c["id"]: c["label"] for c in self._teamwork_categories(team)}
+        WG = self.env["daily.task.work.group"]
+        states = dict(self._fields["state"].selection)
+        rows = []
+        for t in tasks:
+            wg = t.work_group_id
+            head = wg.category_head_id or wg
+            rows.append({
+                "id": t.id,
+                "user_id": t.assignee_user_id.id or False,
+                "employee": t.assignee_id.name or "",
+                "category": cats.get(head.id) or (WG._norm_category_name(head.name or "").upper() if wg else ""),
+                "detail": (wg.task_name or "") if wg else "",
+                "work_group_id": wg.id or False,
+                "name": t.name or "",
+                "date_start": t.assign_date.isoformat() if t.assign_date else "",
+                "deadline": t.deadline.isoformat() if t.deadline else "",
+                "checker": t.team_work_checker_id.name or "",
+                "checker_id": t.team_work_checker_id.id or False,
+                "note": t.note or "",
+                "state": t.state or "",
+                "state_label": states.get(t.state, ""),
+            })
+        return rows
+
+    @api.model
+    def get_team_work_list(self, team_id, year=None, month=None):
+        self.env["daily.task.assign.access"].check("teamwork", "view")
+        team = self._teamwork_teams().filtered(lambda t: t.id == int(team_id or 0))[:1]
+        if not team:
+            return {"rows": []}
+        return {"rows": self._team_work_list(team, year, month)}
+
     # ------------------------------------------------------------------ Excel
     @api.model
-    def export_team_work_excel(self, team_id, coordinator_id, year, month, rows):
+    def export_team_work_excel(self, team_id, coordinator_id, year, month, rows=None):
         """Xuất Excel danh sách công việc phân công (đang soạn trên trang Phân công việc team)."""
         import base64
         import io
@@ -227,6 +278,8 @@ class DailyTask(models.Model):
             ws.write(hr, c, label, head)
             ws.set_column(c, c, width)
         r = hr + 1
+        # Danh sách đã phân của Team trong tháng (giống bảng chỉ xem trên trang)
+        rows = self._team_work_list(team, year, month) if rows is None else rows
         for i, row in enumerate(rows or [], start=1):
             cat, detail = cat_label(row.get("work_group_id"))
             person = Users.browse(int(row.get("user_id") or 0)).exists()

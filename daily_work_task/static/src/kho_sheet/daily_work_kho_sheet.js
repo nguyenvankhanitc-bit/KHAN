@@ -53,6 +53,8 @@ export class DailyWorkKhoSheet extends Component {
             me: "",
             meJob: "",
             wholeTeam: false,
+            canExport: false,
+            exporting: false,
             meDept: "",
             timePick: null,
             canWrite: false,
@@ -119,6 +121,41 @@ export class DailyWorkKhoSheet extends Component {
         this.state[field] = value;
         this.state.weekNo = 0;
         await this.load();
+    }
+
+    /** Xuất Excel (A4 ngang, tự canh lề) — theo tháng / Team / Tuần đang lọc. */
+    async onExport() {
+        if (this.state.exporting) {
+            return;
+        }
+        this.state.exporting = true;
+        try {
+            const res = await this.orm.call("daily.task.kho.sheet.line", "export_kho_sheet_excel", [], {
+                year: this.state.year,
+                month: this.state.month,
+                team_id: this.state.teamId || false,
+                week_no: this.state.weekNo || 0,
+            });
+            const bin = atob(res.file_base64);
+            const bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) {
+                bytes[i] = bin.charCodeAt(i);
+            }
+            const url = URL.createObjectURL(new Blob([bytes], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            }));
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = res.filename || "bao_cao_cv_nv_kho.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 2000);
+        } catch (e) {
+            this.notification.add(e?.data?.message || _t("Không xuất được Excel."), { type: "danger" });
+        } finally {
+            this.state.exporting = false;
+        }
     }
 
     async onRefresh() {
@@ -341,6 +378,7 @@ export class DailyWorkKhoSheet extends Component {
         this.state.me = data.me || "";
         this.state.states = data.states || [];
         this.state.canWrite = Boolean(data.can_write);
+        this.state.canExport = Boolean(data.can_export);
         this.state.deleted = [];
         this.state.dirty = false;
         this.state.editing = false;

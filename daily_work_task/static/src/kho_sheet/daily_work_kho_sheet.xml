@@ -32,6 +32,12 @@
                             <button type="button" class="btn btn-light btn-sm o_dks_refresh" t-on-click="onRefresh">
                                 <i class="fa fa-refresh"/> Làm mới
                             </button>
+                            <button t-if="state.canExport" type="button" class="btn btn-success btn-sm"
+                                    t-att-disabled="state.exporting or state.loading"
+                                    title="Xuất Excel khổ A4 ngang (theo tháng / tuần đang lọc)"
+                                    t-on-click="onExport">
+                                <i class="fa fa-file-excel-o"/> <t t-esc="state.exporting ? 'Đang xuất...' : 'Xuất Excel'"/>
+                            </button>
                         </div>
                     </div>
 

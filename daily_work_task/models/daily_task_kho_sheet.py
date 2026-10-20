@@ -261,6 +261,7 @@ class DailyTaskKhoSheetLine(models.Model):
             "kinds": [{"key": k, "label": l} for k, l in KIND_SELECTION],
             "states": [{"key": k, "label": l} for k, l in STATE_SELECTION],
             "can_write": self._can_write(),
+            "can_export": bool(self.env.su or self._perm().get("export")),
             "report_perm": {k: (v if v is not None else True) for k, v in pmap.items()},
         }
 
@@ -337,3 +338,227 @@ class DailyTaskKhoSheetLine(models.Model):
             else:
                 Line.create(vals)
         return self.get_kho_sheet(year=year, month=month, team_id=team.id or False)
+
+
+    # ------------------------------------------------------------------ Xuất Excel (A4)
+    @api.model
+    def _month_weeks(self, year, month):
+        """Tuần trong tháng: Thứ 2 → Chủ nhật (tuần đầu / cuối cắt theo tháng) — giống màn hình."""
+        from calendar import monthrange
+        from datetime import date
+        last = monthrange(year, month)[1]
+        weeks, start = [], 1
+        while start <= last:
+            dow = date(year, month, start).weekday()  # 0 = Thứ 2
+            end = min(last, start + (6 - dow))
+            weeks.append((len(weeks) + 1, start, end))
+            start = end + 1
+        return weeks
+
+    @api.model
+    def export_kho_sheet_excel(self, year=None, month=None, team_id=None, week_no=0):
+        """Xuất Báo cáo CV NV Kho ra Excel: khổ A4 ngang, vừa 1 trang chiều ngang, canh lề, lặp tiêu đề."""
+        self.env["daily.task.report.perm"].check("khocv", "export")
+        try:
+            import xlsxwriter
+        except ImportError as exc:
+            raise ValidationError("Thiếu thư viện xlsxwriter. Cài đặt: pip install xlsxwriter") from exc
+        import base64
+        import io
+
+        data = self.get_kho_sheet(year=year, month=month, team_id=team_id)
+        year, month = data["year"], data["month"]
+        weeks = self._month_weeks(year, month)
+        week = next((w for w in weeks if w[0] == int(week_no or 0)), None)
+        rows = data["rows"]
+        if week:
+            rows = [r for r in rows if r["date"] and week[1] <= int(r["date"][8:10]) <= week[2]]
+        whole = bool(data.get("whole_team"))
+        states = {s["key"]: s["label"] for s in data["states"]}
+        wd = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"]
+
+        def fmt(iso):
+            return "%s/%s/%s" % (iso[8:10], iso[5:7], iso[0:4]) if iso else ""
+
+        def num(v):
+            """20.0 → 20 · 92.8 → 92.8 (giống màn hình)."""
+            v = round(float(v or 0), 1)
+            return int(v) if v == int(v) else v
+
+        def week_of(iso):
+            if not iso:
+                return ""
+            d = int(iso[8:10])
+            w = next((x for x in weeks if x[1] <= d <= x[2]), None)
+            return "Tuần %s" % w[0] if w else ""
+
+        def day_label(iso):
+            if not iso:
+                return ""
+            return "%s %s" % (fmt(iso), wd[fields.Date.to_date(iso).weekday()])
+
+        # Chỉ số (giống ô trên màn hình)
+        total = len(rows)
+        cnt = lambda k: sum(1 for r in rows if r["state"] == k)
+        pct = lambda n: num(n * 100.0 / total) if total else 0
+        hours = num(sum(float(r["hours"] or 0) for r in rows))
+        linked = [r for r in rows if r.get("linked")]
+        eff = num(sum(int((r.get("eval") or {}).get("percent") or 0) for r in linked) / len(linked)) if linked else 0
+
+        # Group theo hạng mục
+        groups = {}
+        for r in rows:
+            key = r.get("category") or ""
+            groups.setdefault(key, []).append(r)
+        order = sorted(groups, key=lambda k: (k == "", k.casefold()))
+
+        buf = io.BytesIO()
+        wb = xlsxwriter.Workbook(buf, {"in_memory": True})
+        ws = wb.add_worksheet("Bao cao CV NV Kho")
+        F = lambda **kw: wb.add_format(dict({"font_name": "Times New Roman", "font_size": 10, "valign": "vcenter"}, **kw))
+        f_title = F(bold=True, font_size=16, align="center")
+        f_center = F(align="center")
+        f_sub = F(align="center", italic=True, font_color="#475569")
+        f_kpi_lbl = F(bold=True, align="center", border=1, bg_color="#e2e8f0", text_wrap=True, font_size=9)
+        f_kpi_val = F(bold=True, align="center", border=1, font_size=12)
+        f_head = F(bold=True, align="center", border=1, bg_color="#0f4c9c", font_color="#ffffff", text_wrap=True)
+        f_head_eval = F(bold=True, align="center", border=1, bg_color="#fce4d6", text_wrap=True)
+        f_head_pass = F(bold=True, align="center", border=1, bg_color="#fce4d6", font_color="#15803d", text_wrap=True)
+        f_head_avg = F(bold=True, align="center", border=1, bg_color="#fce4d6", font_color="#b45309", text_wrap=True)
+        f_head_fail = F(bold=True, align="center", border=1, bg_color="#fce4d6", font_color="#b91c1c", text_wrap=True)
+        f_group = F(bold=True, border=1, bg_color="#b4c7e7")
+        f_cell = F(border=1, text_wrap=True)
+        f_cell_c = F(border=1, align="center", text_wrap=True)
+        f_eval = F(border=1, align="center", bg_color="#fff7ed", text_wrap=True)
+        f_eval_l = F(border=1, bg_color="#fff7ed", text_wrap=True)
+        f_tick = F(border=1, align="center", bg_color="#fff7ed", bold=True, font_color="#15803d")
+        f_state = {
+            "done": F(border=1, align="center", font_color="#15803d", bold=True),
+            "in_progress": F(border=1, align="center", font_color="#b45309", bold=True),
+            "not_started": F(border=1, align="center", font_color="#4b5563"),
+        }
+        f_total = F(bold=True, border=1, bg_color="#b4c7e7")
+
+        # Cột (độ rộng ký tự) — tổng vừa A4 ngang khi co 1 trang chiều ngang
+        cols = [("STT", 5), ("Tuần", 7), ("Ngày", 13), ("Nội dung công việc", 40)]
+        if whole:
+            cols.append(("Người phụ trách", 18))
+        cols += [("Ngày bắt đầu", 11), ("Deadline", 11), ("Tổng TG (giờ)", 8), ("Trạng thái", 13),
+                 ("Kiểm soát", 16), ("Ghi chú", 20)]
+        n_main = len(cols)
+        eval_cols = [("% Hoàn thành", 9, f_head_eval), ("Ghi chú", 20, f_head_eval), ("Đạt", 6, f_head_pass),
+                     ("Trung bình", 8, f_head_avg), ("Không đạt", 8, f_head_fail), ("Xác nhận QL", 9, f_head_eval)]
+        last_col = n_main + len(eval_cols) - 1
+        for i, (_l, w) in enumerate(cols):
+            ws.set_column(i, i, w)
+        for j, (_l, w, _f) in enumerate(eval_cols):
+            ws.set_column(n_main + j, n_main + j, w)
+
+        # Đầu báo cáo (giống Báo cáo cá nhân)
+        r = 0
+        ws.merge_range(r, 0, r, last_col, "BÁO CÁO CÔNG VIỆC KHO", f_title)
+        ws.set_row(r, 26)
+        r += 1
+        who = ("Team: %s" % data.get("team_name")) if whole else ("Họ và tên: %s" % (data.get("me") or ""))
+        ws.merge_range(r, 0, r, last_col, who, F(align="center", bold=True, font_size=11))
+        r += 1
+        sub = " · ".join(x for x in (data.get("me_job"), data.get("me_dept")) if x) if not whole else ""
+        if sub:
+            ws.merge_range(r, 0, r, last_col, sub, f_sub)
+            r += 1
+        period = "Tháng %s Năm %s" % (month, year)
+        if week:
+            period += " · Tuần %s (%02d/%02d – %02d/%02d)" % (week[0], week[1], month, week[2], month)
+        ws.merge_range(r, 0, r, last_col, period, f_center)
+        r += 2
+
+        # 6 ô chỉ số
+        kpis = [("TỔNG CÔNG VIỆC", str(total)), ("HOÀN THÀNH", "%s (%s%%)" % (cnt("done"), pct(cnt("done")))),
+                ("ĐANG THỰC HIỆN", "%s (%s%%)" % (cnt("in_progress"), pct(cnt("in_progress")))),
+                ("CHƯA BẮT ĐẦU", "%s (%s%%)" % (cnt("not_started"), pct(cnt("not_started")))),
+                ("TỔNG THỜI GIAN (giờ)", str(hours)), ("HIỆU SUẤT (QL đánh giá)", "%s%%" % eff)]
+        # Chia 6 ô theo độ rộng thật của cột (cột STT / Tuần hẹp) → các ô rộng gần bằng nhau
+        widths = [w for _l, w in cols] + [w for _l, w, _f in eval_cols]
+        target = sum(widths) / float(len(kpis))
+        c0 = 0
+        for i, (lbl, val) in enumerate(kpis):
+            if i == len(kpis) - 1:
+                c1 = last_col
+            else:
+                c1, acc = c0, widths[c0]
+                remain_blocks = len(kpis) - i - 1
+                while c1 + 1 <= last_col - remain_blocks and acc + widths[c1 + 1] / 2.0 <= target:
+                    c1 += 1
+                    acc += widths[c1]
+            if c1 > c0:
+                ws.merge_range(r, c0, r, c1, lbl, f_kpi_lbl)
+                ws.merge_range(r + 1, c0, r + 1, c1, val, f_kpi_val)
+            else:
+                ws.write(r, c0, lbl, f_kpi_lbl)
+                ws.write(r + 1, c0, val, f_kpi_val)
+            c0 = c1 + 1
+        ws.set_row(r, 18)
+        ws.set_row(r + 1, 22)
+        r += 3
+
+        # Tiêu đề bảng (2 hàng) — lặp lại ở đầu mỗi trang in
+        h1 = r
+        for i, (lbl, _w) in enumerate(cols):
+            ws.merge_range(h1, i, h1 + 1, i, lbl, f_head)
+        ws.merge_range(h1, n_main, h1, last_col, "QUẢN LÝ ĐÁNH GIÁ", f_head_eval)
+        for j, (lbl, _w, fm) in enumerate(eval_cols):
+            ws.write(h1 + 1, n_main + j, lbl, fm)
+        ws.set_row(h1, 20)
+        ws.set_row(h1 + 1, 28)
+        r = h1 + 2
+        ws.repeat_rows(h1, h1 + 1)
+        ws.freeze_panes(r, 0)
+
+        # Dữ liệu theo nhóm hạng mục
+        avgs = []
+        for key in order:
+            items = groups[key]
+            g_hours = num(sum(float(x["hours"] or 0) for x in items))
+            g_avg = num(sum(int(x.get("completion") or 0) for x in items) / len(items))
+            avgs.append(g_avg)
+            ws.merge_range(r, 0, r, last_col, "%s   —   %s việc · %s giờ · %% Hoàn thành CV TB hạng mục (AVERAGE): %s%%"
+                           % (key or "Chưa có hạng mục", len(items), g_hours, g_avg), f_group)
+            r += 1
+            for i, it in enumerate(items, start=1):
+                ev = it.get("eval") or {}
+                vals = [(i, f_cell_c), (week_of(it["date"]), f_cell_c), (day_label(it["date"]), f_cell_c),
+                        (it["name"] or "", f_cell)]
+                if whole:
+                    vals.append((it.get("responsible") or "", f_cell))
+                vals += [(fmt(it.get("date_start")), f_cell_c), (fmt(it.get("deadline")), f_cell_c),
+                         (num(it["hours"]), f_cell_c), (states.get(it["state"], ""), f_state.get(it["state"], f_cell_c)),
+                         (it.get("controller") or "", f_cell), (it.get("note") or "", f_cell)]
+                p = ev.get("percent")
+                vals += [("%s%%" % p if p is not None else "", f_eval), (ev.get("note") or "", f_eval_l),
+                         ("✓" if ev.get("rating") == "pass" else "", f_tick),
+                         ("✓" if ev.get("rating") == "average" else "", f_tick),
+                         ("✓" if ev.get("rating") == "fail" else "", f_tick),
+                         ("✓" if ev.get("confirmed") else "", f_tick)]
+                for c, (v, fm) in enumerate(vals):
+                    ws.write(r, c, v, fm)
+                r += 1
+        if not rows:
+            ws.merge_range(r, 0, r, last_col, "Không có công việc.", f_cell_c)
+            r += 1
+        month_avg = num(sum(avgs) / len(avgs)) if avgs else 0
+        ws.merge_range(r, 0, r, last_col,
+                       "Tổng %% hoàn thành công việc trong tháng (AVERAGE các hạng mục): %s%%" % month_avg, f_total)
+
+        # In: A4 ngang, vừa 1 trang chiều ngang, canh giữa, lề hẹp, đánh số trang
+        ws.set_paper(9)
+        ws.set_landscape()
+        ws.fit_to_pages(1, 0)
+        ws.center_horizontally()
+        ws.set_margins(left=0.3, right=0.3, top=0.5, bottom=0.55)
+        ws.set_footer('&L&"Times New Roman"&8Báo cáo CV NV Kho – Tháng %s/%s&R&"Times New Roman"&8Trang &P / &N' % (month, year))
+        ws.print_area(0, 0, r, last_col)
+        wb.close()
+
+        team = (data.get("team_name") or "team").replace(" ", "_")
+        name = "Bao_cao_CV_NV_Kho_%s_%02d-%s%s.xlsx" % (team, month, year, ("_Tuan%s" % week[0]) if week else "")
+        return {"file_base64": base64.b64encode(buf.getvalue()).decode(), "filename": name}

@@ -7,7 +7,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { _t } from "@web/core/l10n/translation";
 import { DailyWorkAppShell } from "@daily_work_task/shell/daily_work_app_shell";
 
-const WEEKDAYS = ["CN", "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7"];
+const WEEKDAYS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
 const pad = (n) => String(n).padStart(2, "0");
 const fmtDate = (iso) => {
     if (!iso) {
@@ -37,6 +37,7 @@ export class DailyWorkKhoSheet extends Component {
             saving: false,
             editing: false,
             dirty: false,
+            weekNo: 0, // 0 = cả tháng; bấm ô Tuần để lọc
             year: now.getFullYear(),
             month: now.getMonth() + 1,
             teamId: 0,
@@ -125,16 +126,39 @@ export class DailyWorkKhoSheet extends Component {
         if (!iso) {
             return "";
         }
-        return `${fmtDate(iso)} (${WEEKDAYS[parseIso(iso).getDay()]})`;
+        return `${fmtDate(iso)} ${WEEKDAYS[parseIso(iso).getDay()]}`;
     }
 
     fmt(iso) {
         return fmtDate(iso);
     }
 
+    /** Bấm ô Tuần → lọc danh sách theo tuần; bấm lại → cả tháng. */
+    onWeek(no) {
+        this.state.weekNo = this.state.weekNo === no ? 0 : no;
+    }
+
+    /** Dòng hiển thị theo tuần đang lọc (dòng mới chưa lưu luôn hiện để nhập). */
+    get visibleRows() {
+        const w = this.state.weekNo && this.weeks.find((x) => x.no === this.state.weekNo);
+        if (!w) {
+            return this.state.rows;
+        }
+        return this.state.rows.filter((r) => {
+            if (!r.id) {
+                return true;
+            }
+            if (!r.date) {
+                return false;
+            }
+            const day = parseIso(r.date).getDate();
+            return day >= w.start && day <= w.end;
+        });
+    }
+
     // ------------------------------------------------------------ chỉ số
     get kpi() {
-        const rows = this.state.rows;
+        const rows = this.visibleRows;
         const total = rows.length;
         const count = (k) => rows.filter((r) => r.state === k).length;
         const pct = (n) => (total ? Math.round((n * 1000) / total) / 10 : 0);
@@ -229,6 +253,7 @@ export class DailyWorkKhoSheet extends Component {
         const [y, m] = ev.target.value.split("-").map(Number);
         this.state.year = y;
         this.state.month = m;
+        this.state.weekNo = 0;
         await this.load();
     }
 

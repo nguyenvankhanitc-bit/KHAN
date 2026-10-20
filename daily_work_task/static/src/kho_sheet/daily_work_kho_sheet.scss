@@ -254,7 +254,7 @@
 
         .c-stt { width: 48px; }
         .c-week { width: 72px; }
-        .c-day { width: 150px; }
+        .c-day { width: 130px; white-space: nowrap; }
         .c-kind { width: 120px; }
         .c-person { width: 140px; }
         .c-date { width: 120px; }
@@ -414,4 +414,40 @@
 .o_daily_work_kho_sheet .c-date2 {
     width: 140px;
     min-width: 140px;
+}
+
+// Ô Tuần bấm để lọc
+.o_daily_work_kho_sheet {
+    .o_dks_week {
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+
+        &:hover {
+            border-color: #1d4ed8;
+        }
+
+        &.is-active {
+            background: #dbeafe;
+            border-color: #1d4ed8;
+            box-shadow: 0 0 0 2px rgba(29, 78, 216, 0.25);
+        }
+    }
+
+    .o_dks_week_filter {
+        margin-left: 12px;
+        padding: 2px 10px;
+        border-radius: 999px;
+        background: #dbeafe;
+        color: #1e3a8a;
+        font-size: 0.82rem;
+
+        .btn {
+            color: #1e3a8a;
+            margin-left: 4px;
+        }
+    }
+
+    .o_dks_table td.o_dks_day {
+        white-space: nowrap;
+    }
 }

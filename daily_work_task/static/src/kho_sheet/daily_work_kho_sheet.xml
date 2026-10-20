@@ -68,7 +68,10 @@
 
                         <!-- Tuần -->
                         <div class="o_dks_weeks">
-                            <div t-foreach="weeks" t-as="w" t-key="w.no" class="o_dks_week">
+                            <div t-foreach="weeks" t-as="w" t-key="w.no"
+                                 t-att-class="'o_dks_week' + (state.weekNo === w.no ? ' is-active' : '')"
+                                 role="button" t-att-title="state.weekNo === w.no ? 'Bấm để xem cả tháng' : 'Lọc công việc Tuần ' + w.no"
+                                 t-on-click="() => this.onWeek(w.no)">
                                 <i class="fa fa-calendar o_dks_week_cal"/>
                                 <span class="o_dks_week_no" t-esc="w.no"/>
                                 <div>
@@ -82,6 +85,12 @@
                         <!-- Nút -->
                         <div class="o_dks_actions">
                             <span class="o_dks_team" t-if="state.teamName">Team: <b t-esc="state.teamName"/></span>
+                            <span t-if="state.weekNo" class="o_dks_week_filter">
+                                <i class="fa fa-filter"/> Đang lọc: <b t-esc="'Tuần ' + state.weekNo"/>
+                                <button type="button" class="btn btn-link p-0" title="Bỏ lọc tuần" t-on-click="() => this.onWeek(state.weekNo)">
+                                    <i class="fa fa-times"/>
+                                </button>
+                            </span>
                             <span class="o_dks_spacer"/>
                             <t t-if="state.canWrite">
                                 <button t-if="!state.editing" type="button" class="btn btn-sm btn-outline-primary" t-on-click="onEdit">
@@ -122,12 +131,12 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr t-foreach="state.rows" t-as="r" t-key="r.key">
+                                    <tr t-foreach="visibleRows" t-as="r" t-key="r.key">
                                         <td class="text-center" t-esc="r_index + 1"/>
-                                        <td class="text-center" t-esc="weekOf(r.date)"/>
+                                        <td class="text-center o_dks_day" t-esc="weekOf(r.date)"/>
                                         <!-- Chế độ xem -->
                                         <t t-if="!state.editing">
-                                            <td t-esc="dayLabel(r.date)"/>
+                                            <td class="o_dks_day" t-esc="dayLabel(r.date)"/>
                                             <td class="text-center"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                             <td>
                                                 <i t-if="r.linked" class="fa fa-link o_dks_link" title="Từ Phân công việc team"/>
@@ -149,7 +158,7 @@
                                         <t t-else="">
                                             <t t-if="r.linked">
                                                 <!-- Dòng từ Phân công việc team: chỉ nhập Ghi chú (ngày / TG theo công việc đã phân) -->
-                                                <td class="o_dks_locked" t-esc="dayLabel(r.date)"/>
+                                                <td class="o_dks_locked o_dks_day" t-esc="dayLabel(r.date)"/>
                                                 <td class="text-center o_dks_locked"><span t-if="categoryLabel(r)" class="o_dks_cat" t-esc="categoryLabel(r)"/></td>
                                                 <td class="o_dks_locked" title="Từ Phân công việc team — sửa bên trang phân công">
                                                     <i class="fa fa-link o_dks_link"/> <t t-esc="r.name"/>
@@ -229,7 +238,7 @@
                                             </td>
                                         </t>
                                     </tr>
-                                    <tr t-if="!state.rows.length">
+                                    <tr t-if="!visibleRows.length">
                                         <td t-att-colspan="state.editing ? 13 : 12" class="text-center text-muted py-4">
                                             Chưa có công việc. <t t-if="state.canWrite">Bấm «Thêm công việc» để nhập.</t>
                                         </td>

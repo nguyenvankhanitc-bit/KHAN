@@ -317,11 +317,8 @@ export class DailyWorkTeamWork extends Component {
         }
         let details = this.pickedDetails;
         if (!details.length) {
-            if (this.catDetails.length) {
-                this.notification.add(_t("Tick ít nhất 1 «Tên chi tiết hạng mục»."), { type: "warning" });
-                return false;
-            }
-            details = [{ id: this.state.catId, name: (this.currentCat || {}).name || "" }];
+            // Không tick chi tiết → gắn thẳng vào hạng mục (Nội dung = Tên công việc / tên hạng mục)
+            details = [{ id: this.state.catId, name: (this.currentCat || {}).name || "", noDetail: true }];
         }
         const taskName = (this.state.taskName || "").trim();
         const form = this.state.form;
@@ -332,6 +329,7 @@ export class DailyWorkTeamWork extends Component {
                     user_id: m.user_id,
                     cat_id: this.state.catId || 0,
                     work_group_id: d.id,
+                    no_detail: Boolean(d.noDetail),
                     name: taskName || d.name,
                     date_start: form.date_start,
                     deadline: form.deadline,
@@ -471,6 +469,7 @@ export class DailyWorkTeamWork extends Component {
                     deadline: r.deadline || false,
                     checker_id: r.checker_id || false,
                     note: r.note,
+                    no_detail: Boolean(r.no_detail),
                 })),
             ]);
             this.state.rows = [];

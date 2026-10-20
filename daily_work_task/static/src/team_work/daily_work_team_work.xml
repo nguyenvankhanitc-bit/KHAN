@@ -93,6 +93,7 @@
                                 <div class="o_dtw_details_head">
                                     <label><i class="fa fa-list-ul"/> Tên chi tiết hạng mục
                                         <span class="o_dtw_count" t-esc="'(' + pickedDetails.length + '/' + catDetails.length + ' đã chọn)'"/>
+                                        <span class="o_dtw_count">· không tick = giao theo hạng mục</span>
                                     </label>
                                     <button t-if="catDetails.length" type="button" class="btn btn-link btn-sm p-0" t-on-click="toggleAllDetails">
                                         <t t-esc="allDetailsPicked ? 'Bỏ chọn tất cả' : 'Chọn tất cả'"/>

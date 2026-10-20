@@ -19,6 +19,7 @@ class DailyTask(models.Model):
     team_work_team_id = fields.Many2one("daily.task.team", string="Phân công việc team", copy=False, index=True)
     team_work_coordinator_id = fields.Many2one("res.users", string="Người điều phối", copy=False)
     team_work_checker_id = fields.Many2one("res.users", string="Người kiểm tra (phân công team)", copy=False)
+    team_work_no_detail = fields.Boolean(string="Giao theo hạng mục (không chọn chi tiết)", copy=False)
 
     # ------------------------------------------------------------------ phạm vi
     @api.model
@@ -165,6 +166,7 @@ class DailyTask(models.Model):
                 "team_work_team_id": team.id,
                 "team_work_coordinator_id": coordinator.id,
                 "team_work_checker_id": checker.id or False,
+                "team_work_no_detail": bool(row.get("no_detail")),
             })
             task._notify_assignee_assigned()
             partners = task._discussion_partner_ids()
@@ -195,7 +197,8 @@ class DailyTask(models.Model):
                 "user_id": t.assignee_user_id.id or False,
                 "employee": t.assignee_id.name or "",
                 "category": cats.get(head.id) or (WG._norm_category_name(head.name or "").upper() if wg else ""),
-                "detail": (wg.task_name or "") if wg else "",
+                "detail": (wg.task_name or "") if wg and not t.team_work_no_detail else "",
+                "no_detail": bool(t.team_work_no_detail),
                 "work_group_id": wg.id or False,
                 "name": t.name or "",
                 "date_start": t.assign_date.isoformat() if t.assign_date else "",
@@ -282,6 +285,8 @@ class DailyTask(models.Model):
         rows = self._team_work_list(team, year, month) if rows is None else rows
         for i, row in enumerate(rows or [], start=1):
             cat, detail = cat_label(row.get("work_group_id"))
+            if row.get("no_detail"):
+                detail = ""
             person = Users.browse(int(row.get("user_id") or 0)).exists()
             checker = Users.browse(int(row.get("checker_id") or 0)).exists()
             vals = [(i, center), (person.name or "", cell), (cat, cell), (detail, cell), (row.get("name") or "", cell),

@@ -343,6 +343,17 @@
                                 <t t-foreach="state.people" t-as="p" t-key="p"><option t-att-value="p"/></t>
                             </datalist>
                         </div>
+                        <!-- Đánh giá của cấp quản lý + chữ ký (giống Báo cáo công việc tháng) -->
+                        <div class="o_dks_eval_sign">
+                            <b>Đánh giá của cấp quản lý/ trưởng bộ phận:</b>
+                            <div class="o_dks_dots"/><div class="o_dks_dots"/><div class="o_dks_dots"/>
+                            <div class="o_dks_sign_date">Ngày............................</div>
+                            <div class="o_dks_sign">
+                                <div><b>Người lập</b><span t-esc="state.me"/></div>
+                                <div><b>Trưởng bộ phận</b></div>
+                                <div><b>Ban Giám đốc</b></div>
+                            </div>
+                        </div>
                     </t>
                 </div>
                 <!-- Danh sách giờ (mốc 30 phút) — chọn nhanh, vẫn gõ tay được trong ô -->

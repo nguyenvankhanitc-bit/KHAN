@@ -519,7 +519,7 @@ class DailyTaskKhoSheetLine(models.Model):
                 ws.write(r, c0, lbl, f_kpi_lbl)
                 ws.write(r + 1, c0, val, f_kpi_val)
             c0 = c1 + 1
-        ws.set_row(r, 18)
+        ws.set_row(r, 28)  # nhãn dài (TỔNG CÔNG VIỆC) tự xuống dòng
         ws.set_row(r + 1, 22)
         r += 3
 
@@ -569,6 +569,25 @@ class DailyTaskKhoSheetLine(models.Model):
         month_avg = num(sum(avgs) / len(avgs)) if avgs else 0
         ws.merge_range(r, 0, r, last_col,
                        "Tổng %% hoàn thành công việc trong tháng (AVERAGE các hạng mục): %s%%" % month_avg, f_total)
+
+        # Đánh giá của cấp quản lý + chữ ký (giống Báo cáo công việc tháng)
+        f_bold = F(bold=True)
+        f_dot = F(bottom=4)
+        r += 2
+        ws.write(r, 0, "Đánh giá của cấp quản lý/ trưởng bộ phận:", f_bold)
+        for k in range(1, 4):
+            ws.set_row(r + k, 20)
+            for col in range(0, last_col + 1):
+                ws.write_blank(r + k, col, None, f_dot)
+        r += 5
+        ws.write(r, 0, "Ngày............................", F())
+        r += 1
+        third = (last_col + 1) // 3
+        ws.merge_range(r, 0, r, third - 1, "Người lập", F(bold=True, align="left"))
+        ws.merge_range(r, third, r, 2 * third - 1, "Trưởng bộ phận", F(bold=True, align="center"))
+        ws.merge_range(r, 2 * third, r, last_col, "Ban Giám đốc", F(bold=True, align="center"))
+        r += 5
+        ws.merge_range(r, 0, r, third - 1, data.get("me") or "", F(align="left"))
 
         # In: A4 ngang, vừa 1 trang chiều ngang, canh giữa, lề hẹp, đánh số trang
         ws.set_paper(9)

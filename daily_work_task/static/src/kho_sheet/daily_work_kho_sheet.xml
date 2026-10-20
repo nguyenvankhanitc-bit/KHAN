@@ -111,6 +111,43 @@
                                     </div>
                                 </div>
                             </div>
+                            <!-- 3. Thời gian và hiệu suất (giống mẫu biểu đồ 2) -->
+                            <div class="o_dks_chart_card o_dks_chart_wide">
+                                <div class="o_dks_chart_title"><i class="fa fa-clock-o"/> 3. THỜI GIAN VÀ HIỆU SUẤT</div>
+                                <div class="o_dks_eval_body">
+                                    <div>
+                                        <div class="o_dks_donut o_dks_donut_perf">
+                                            <canvas t-ref="perfChart"/>
+                                            <div class="o_dks_donut_center">
+                                                <b t-esc="perfHoursLabel"/>
+                                                <small>GIỜ</small>
+                                            </div>
+                                        </div>
+                                        <div class="o_dks_perf_legend">
+                                            <span><span class="o_dks_dot is-self"/> NV tự đánh giá <b t-esc="fmtPct(perfStats.self)"/></span>
+                                            <span><span class="o_dks_dot is-manager"/> QL đánh giá <b t-esc="fmtPct(perfStats.manager)"/></span>
+                                        </div>
+                                    </div>
+                                    <div class="o_dks_rate_side">
+                                        <table class="o_dks_rate_table">
+                                            <thead>
+                                                <tr><th>TIÊU CHÍ</th><th>GIÁ TRỊ</th><th>DIỄN GIẢI</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="perfRows" t-as="pr" t-key="pr.key">
+                                                    <td><span t-att-class="'o_dks_dot is-' + pr.key"/> <t t-esc="pr.label"/></td>
+                                                    <td class="o_dks_perf_val" t-esc="pr.value"/>
+                                                    <td class="o_dks_perf_note" t-esc="pr.note"/>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="o_dks_rate_info">
+                                            <i class="fa fa-info-circle"/>
+                                            <t t-esc="perfGapText"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Tuần -->

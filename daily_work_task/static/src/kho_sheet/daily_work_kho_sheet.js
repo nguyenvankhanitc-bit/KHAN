@@ -64,6 +64,7 @@ export class DailyWorkKhoSheet extends Component {
         // 3 biểu đồ xếp loại QL đánh giá: Đạt / Trung bình / Không đạt (số lượng việc)
         this.stateChartRef = useRef("stateChart");
         this.rateChartRef = useRef("rateChart");
+        this.perfChartRef = useRef("perfChart");
         this.charts = [];
         onWillStart(async () => {
             await loadBundle("web.chartjs_lib");
@@ -77,7 +78,8 @@ export class DailyWorkKhoSheet extends Component {
                 const r = this.rateStats;
                 const t = this.stateStats;
                 return [this.state.loading, r.pass, r.average, r.fail, r.rated,
-                    t.done, t.doing, t.todo, t.overdue];
+                    t.done, t.doing, t.todo, t.overdue,
+                    this.perfStats.hours, this.perfStats.self, this.perfStats.manager];
             }
         );
         onWillUnmount(() => this.destroyCharts());
@@ -157,6 +159,78 @@ export class DailyWorkKhoSheet extends Component {
             { key: "todo", label: "Chưa bắt đầu", count: s.todo, pct: pct(s.todo), color: "#94a3b8" },
             { key: "overdue", label: "Quá hạn", count: s.overdue, pct: pct(s.overdue), color: "#dc2626" },
         ];
+    }
+
+    /** Biểu đồ 3: Tổng thời gian · Hiệu suất NV tự đánh giá · Hiệu suất QL đánh giá (theo Tuần đang lọc). */
+    get perfStats() {
+        const rows = this.visibleRows;
+        const round1 = (v) => Math.round(v * 10) / 10;
+        const hours = round1(rows.reduce((s, r) => s + this.hoursOf(r), 0));
+        // NV tự đánh giá = TB «% hoàn thành CV» nhân viên nhập ở Danh sách công việc
+        const self = rows.length ? round1(rows.reduce((s, r) => s + (Number(r.completion) || 0), 0) / rows.length) : 0;
+        // QL đánh giá = TB % Hoàn thành QL chấm trên Kiểm tra CV (việc chưa đánh giá = 0%) — giống Hiệu suất
+        const manager = this.kpi.efficiency || 0;
+        return { hours, self, manager, gap: round1(manager - self) };
+    }
+
+    get perfRows() {
+        const s = this.perfStats;
+        return [
+            { key: "hours", label: "Tổng thời gian (giờ)", value: `${String(s.hours).replace(".", ",")} giờ`,
+              note: "Tổng số giờ nhân viên đã ghi nhận" },
+            { key: "self", label: "Hiệu suất (NV tự đánh giá)", value: this.fmtPct(s.self),
+              note: "TB % hoàn thành CV nhân viên nhập" },
+            { key: "manager", label: "Quản lý đánh giá hiệu suất", value: this.fmtPct(s.manager),
+              note: "TB % hoàn thành QL chấm (Kiểm tra CV)" },
+        ];
+    }
+
+    get perfHoursLabel() {
+        return String(this.perfStats.hours).replace(".", ",");
+    }
+
+    get perfGapText() {
+        const g = this.perfStats.gap;
+        if (!g) {
+            return "Quản lý đánh giá bằng mức nhân viên tự đánh giá";
+        }
+        const v = String(Math.abs(g)).replace(".", ",");
+        return g < 0
+            ? `Quản lý đánh giá thấp hơn nhân viên tự đánh giá ${v} điểm %`
+            : `Quản lý đánh giá cao hơn nhân viên tự đánh giá ${v} điểm %`;
+    }
+
+    _perfChart(el) {
+        const Chart = window.Chart;
+        const s = this.perfStats;
+        const ring = (v, color) => ({
+            data: [v, Math.max(100 - v, 0)],
+            backgroundColor: [color, "#e5e7eb"],
+            borderWidth: 0,
+        });
+        return new Chart(el, {
+            type: "doughnut",
+            data: {
+                labels: ["Đạt được", "Còn lại"],
+                datasets: [ring(s.self, "#2563eb"), ring(s.manager, "#16a34a")],
+            },
+            options: {
+                cutout: "56%",
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                layout: { padding: 6 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (c) => `${c.datasetIndex ? "QL đánh giá" : "NV tự đánh giá"}: ${c.raw}%`,
+                        },
+                        filter: (c) => c.dataIndex === 0,
+                    },
+                },
+            },
+        });
     }
 
     fmtPct(v) {
@@ -260,6 +334,9 @@ export class DailyWorkKhoSheet extends Component {
             const colors = { pass: "#16a34a", average: "#f59e0b", fail: "#dc2626" };
             const items = this.rateRows.map((r) => ({ ...r, color: colors[r.key] }));
             this.charts.push(this._doughnut(this.rateChartRef.el, items));
+        }
+        if (this.perfChartRef.el) {
+            this.charts.push(this._perfChart(this.perfChartRef.el));
         }
     }
 

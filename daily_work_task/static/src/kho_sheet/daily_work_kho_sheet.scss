@@ -972,3 +972,58 @@
 .o_daily_work_kho_sheet .o_dks_weeks.o_dks_weeks_below {
     margin-top: 10px;
 }
+
+// Biểu đồ 3: Thời gian và hiệu suất (hàng riêng, giống biểu đồ 2)
+.o_daily_work_kho_sheet {
+    .o_dks_chart_wide {
+        grid-column: 1 / -1;
+
+        .o_dks_eval_body {
+            grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+        }
+    }
+
+    .o_dks_dot {
+        &.is-hours { background: #8b5cf6; }
+        &.is-self { background: #2563eb; }
+        &.is-manager { background: #16a34a; }
+    }
+
+    .o_dks_perf_val {
+        font-weight: 800;
+        color: #0b2a5b;
+        white-space: nowrap;
+    }
+
+    .o_dks_perf_note {
+        font-size: 0.76rem;
+        color: #64748b;
+    }
+}
+
+.o_daily_work_kho_sheet {
+    .o_dks_donut_perf {
+        height: 210px;
+        max-width: 220px;
+    }
+
+    .o_dks_perf_legend {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin-top: 8px;
+        font-size: 0.8rem;
+        color: #334155;
+
+        .o_dks_dot {
+            margin-right: 4px;
+            vertical-align: -1px;
+        }
+
+        b {
+            margin-left: 2px;
+            color: #0b2a5b;
+        }
+    }
+}

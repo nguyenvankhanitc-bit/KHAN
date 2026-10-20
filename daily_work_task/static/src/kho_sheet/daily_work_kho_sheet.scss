@@ -967,3 +967,8 @@
 .o_daily_work_kho_sheet .o_dks_kpis {
     grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+// Ô Tuần 1–5 nằm dưới biểu đồ
+.o_daily_work_kho_sheet .o_dks_weeks.o_dks_weeks_below {
+    margin-top: 10px;
+}

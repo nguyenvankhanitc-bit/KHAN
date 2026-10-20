@@ -60,22 +60,6 @@
                             </div>
                         </div>
 
-                        <!-- Tuần -->
-                        <div class="o_dks_weeks">
-                            <div t-foreach="weeks" t-as="w" t-key="w.no"
-                                 t-att-class="'o_dks_week' + (state.weekNo === w.no ? ' is-active' : '')"
-                                 role="button" t-att-title="state.weekNo === w.no ? 'Bấm để xem cả tháng' : 'Lọc công việc Tuần ' + w.no"
-                                 t-on-click="() => this.onWeek(w.no)">
-                                <i class="fa fa-calendar o_dks_week_cal"/>
-                                <span class="o_dks_week_no" t-esc="w.no"/>
-                                <div>
-                                    <b t-esc="'TUẦN ' + w.no"/>
-                                    <div t-esc="w.label"/>
-                                    <small t-esc="'(' + w.days + ' ngày)'"/>
-                                </div>
-                            </div>
-                        </div>
-
                         <!-- Biểu đồ (giống hình mẫu): 1. Tổng công việc · 2. Kết quả đánh giá QL -->
                         <div class="o_dks_charts">
                             <div class="o_dks_chart_card">
@@ -125,6 +109,22 @@
                                             <t t-esc="rateStats.unrated"/> công việc chưa được đánh giá
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tuần -->
+                        <div class="o_dks_weeks o_dks_weeks_below">
+                            <div t-foreach="weeks" t-as="w" t-key="w.no"
+                                 t-att-class="'o_dks_week' + (state.weekNo === w.no ? ' is-active' : '')"
+                                 role="button" t-att-title="state.weekNo === w.no ? 'Bấm để xem cả tháng' : 'Lọc công việc Tuần ' + w.no"
+                                 t-on-click="() => this.onWeek(w.no)">
+                                <i class="fa fa-calendar o_dks_week_cal"/>
+                                <span class="o_dks_week_no" t-esc="w.no"/>
+                                <div>
+                                    <b t-esc="'TUẦN ' + w.no"/>
+                                    <div t-esc="w.label"/>
+                                    <small t-esc="'(' + w.days + ' ngày)'"/>
                                 </div>
                             </div>
                         </div>

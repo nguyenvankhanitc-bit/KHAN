@@ -7,6 +7,7 @@ import { useBus, useService } from "@web/core/utils/hooks";
 import { Component, onMounted, onWillStart, onWillUnmount, useEffect, useRef, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { _t } from "@web/core/l10n/translation";
+import { user } from "@web/core/user";
 
 import { applyReportGroups, readReportOpen } from "@daily_work_task/shell/report_groups";
 const SIDEBAR_WIDTH_KEY = "daily_work_sidebar_width";
@@ -794,7 +795,8 @@ export class DailyWorkDashboard extends Component {
                         [false, "list"],
                         [false, "form"],
                     ],
-                    domain: [["is_overdue", "=", true]],
+                    // Chỉ việc quá hạn của user đang đăng nhập (người phụ trách)
+                    domain: [["is_overdue", "=", true], ["assignee_user_id", "=", user.userId]],
                     target: asPopup ? "new" : "current",
                 },
                 asPopup

@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """QL đánh giá tổng — % hiệu suất quản lý chốt cho từng nhân viên theo tháng.
 
-Nhập ở Báo cáo hiệu suất → «Hiệu suất nhân sự» (cột QL đánh giá tổng). Khi có giá trị, đây là
+Nhập ở Báo cáo hiệu suất → «Hiệu suất nhân sự» (cột QL đánh giá tổng); quyền theo
+Cài đặt → Phân quyền Báo cáo hiệu suất. Khi có giá trị, đây là
 kết quả cuối cùng cho «QL đánh giá» của nhân viên đó trên Báo cáo CV NV Kho; chưa nhập → giữ
 giá trị tính tự động (TB % Hoàn thành QL chấm trên Kiểm tra CV).
 """
@@ -31,22 +32,16 @@ class DailyTaskManagerPerf(models.Model):
     # ------------------------------------------------------------------ quyền
     @api.model
     def _can_rate(self, employee):
-        """Quản trị / quản lý công việc, quản lý trực tiếp (HR) hoặc quản lý Team của nhân viên."""
+        """Quyền nhập «QL đánh giá tổng» = Cài đặt → Phân quyền Báo cáo hiệu suất:
+        «User được xem» được đánh giá các nhân viên trong phạm vi của mình (Phòng ban được xem /
+        User bị xem). Quản trị / Quản lý toàn quyền: mọi nhân viên. Không tự đánh giá cho mình."""
         if self.env.su or self.env["daily.task"]._is_manager():
             return True
-        uid = self.env.uid
         emp = employee.sudo()
-        if emp.user_id and emp.user_id.id == uid:
+        if emp.user_id and emp.user_id.id == self.env.uid:
             return False  # không tự chốt cho mình
-        if emp.parent_id and emp.parent_id.user_id.id == uid:
-            return True
-        if emp.user_id:
-            teams = self.env["daily.task.team"].sudo().search([
-                "|", ("member_ids", "in", emp.user_id.ids), ("manager_ids", "in", emp.user_id.ids),
-            ])
-            if any(uid in t.manager_ids.ids for t in teams):
-                return True
-        return False
+        allowed = self.env["daily.task.performance.access"].performance_employee_ids_for_user()
+        return allowed is None or emp.id in (allowed or [])
 
     # ------------------------------------------------------------------ đọc / ghi
     @api.model

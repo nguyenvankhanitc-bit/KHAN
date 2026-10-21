@@ -110,7 +110,7 @@
                                 <th class="num">Chưa làm</th>
                                 <th class="num">Trễ hạn</th>
                                 <th class="num">Hiệu suất</th>
-                                <th class="num o_dpr_mgr_th" title="Quản lý chốt % hiệu suất tháng — là kết quả cuối cùng «QL đánh giá» trên Báo cáo CV NV Kho. Để trống = dùng giá trị tính tự động.">QL đánh giá tổng</th>
+                                <th class="num o_dpr_mgr_th" title="Quản lý chốt % hiệu suất tháng — kết quả cuối cùng «QL đánh giá» trên Báo cáo CV NV Kho. Để trống = dùng giá trị tính tự động. Quyền nhập: Cài đặt → Phân quyền Báo cáo hiệu suất (User được xem).">QL đánh giá tổng</th>
                             </tr>
                         </thead>
                         <tbody>

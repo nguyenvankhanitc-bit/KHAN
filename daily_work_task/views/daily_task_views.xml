@@ -355,8 +355,8 @@
     <record id="action_daily_task_overdue" model="ir.actions.act_window">
         <field name="name">Công việc quá hạn</field>
         <field name="res_model">daily.task</field>
-        <field name="view_mode">kanban,list,form</field>
-        <field name="view_id" ref="view_daily_task_kanban"/>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="view_id" eval="False"/>
         <field name="search_view_id" ref="view_daily_task_search"/>
         <!-- Chỉ công việc quá hạn của user đang đăng nhập (người phụ trách) -->
         <field name="domain">[('is_overdue', '=', True), ('assignee_user_id', '=', uid)]</field>

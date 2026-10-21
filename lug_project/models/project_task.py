@@ -356,6 +356,7 @@ class ProjectTask(models.Model):
                                 "assigned_by_id": assigned_by_id,
                                 "department_id": emp.department_id.id or task.project_id.lug_department_id.id or False,
                                 "lug_origin_project_task_id": task.id,
+                                "lug_origin_project_id": task.project_id.id if task.project_id else False,
                             })
                             new_dt = DailyTaskModel.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).create(daily_vals)
                             if not created_first_dt:

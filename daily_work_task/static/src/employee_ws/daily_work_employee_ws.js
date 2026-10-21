@@ -343,6 +343,10 @@ export class DailyWorkEmployeeWs extends Component {
 
     /** Tab mở trang khác trong Quản lý công việc: Công việc hôm nay / Giao việc / Xem CV NV / Checklist CV team. */
     async openWorkPage(key) {
+        if (key === "projects" || key === "project_tasks") {
+            await this.action.doAction("lug_project.action_daily_task_my_projects");
+            return;
+        }
         if (key === "today") {
             await this.action.doAction("daily_work_task.action_daily_work_today", { clearBreadcrumbs: true });
             return;

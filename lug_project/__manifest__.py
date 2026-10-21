@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nhập dự án (custom Project)",
-    "version": "19.0.1.40.5",
+    "version": "19.0.1.40.6",
     "category": "Services/Project",
     "summary": "Bổ sung form nhập dự án trên app Project chuẩn Odoo",
     "description": """
@@ -36,6 +36,7 @@ Inherit app Project native — không tạo model dự án mới.
         "views/project_project_views.xml",
         "views/project_shell_views.xml",
         "views/project_menus.xml",
+        "views/daily_task_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

@@ -41,6 +41,11 @@
                             </button>
                             <!-- Các trang thuộc Quản lý công việc (cùng thanh tab) -->
                             <span class="o_ews_tab_sep" aria-hidden="true">|</span>
+                            <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('projects')">
+                                <i class="fa fa-folder-open-o o_ews_tab_icon"/>
+                                <span>Dự án</span>
+                            </button>
+                            <span class="o_ews_tab_sep" aria-hidden="true">|</span>
                             <button type="button" class="o_ews_tab" t-on-click="() => this.openWorkPage('today')">
                                 <i class="fa fa-sun-o o_ews_tab_icon o_ews_tab_icon_today"/>
                                 <span>Công việc hôm nay</span>

@@ -341,6 +341,7 @@ class ProjectStageTask(models.Model):
                             "assigned_by_id": assigned_by_id,
                             "department_id": emp.department_id.id or (project and project.lug_department_id and project.lug_department_id.id) or False,
                             "lug_origin_stage_task_id": task.id,
+                            "lug_origin_project_id": project.id if project else False,
                         })
                         DailyTaskModel.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().create(daily_vals)
 

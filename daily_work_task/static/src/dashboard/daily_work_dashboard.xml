@@ -19,6 +19,9 @@
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('employee_ws')">
                             <i class="fa fa-pencil-square-o"/><span>Quản lý công việc</span>
                         </button>
+                        <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('projects')">
+                            <i class="fa fa-folder-open-o"/><span>Dự án</span>
+                        </button>
                         <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('today')">
                             <i class="fa fa-sun-o"/><span>Hôm nay</span>
                             <t t-if="kpi.today"><em class="o_dwd_nav_badge" t-esc="kpi.today"/></t>
@@ -109,6 +112,10 @@
                             <button type="button" class="o_dwd_side_item" title="Quản lý công việc"
                                     t-on-click="() => this.openNav('employee_ws')">
                                 <i class="fa fa-pencil-square-o"/><span>Quản lý công việc</span>
+                            </button>
+                            <button type="button" class="o_dwd_side_item" title="Dự án"
+                                    t-on-click="() => this.openNav('projects')">
+                                <i class="fa fa-folder-open-o"/><span>Dự án</span>
                             </button>
                             <button t-if="state.canTeamwork" type="button" class="o_dwd_side_item" title="Phân công việc team"
                                     t-on-click="() => this.openNav('team_work')">

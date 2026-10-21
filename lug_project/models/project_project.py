@@ -624,33 +624,39 @@ class ProjectProject(models.Model):
         self.env.cr.execute(
             """
             SELECT id FROM hr_employee
-             WHERE user_id = %s
+             WHERE user_id = %s AND active = TRUE
              LIMIT 1
             """,
             (user.id,),
         )
         row = self.env.cr.fetchone()
         hr_emp_id = row[0] if row else False
-        if not hr_emp_id:
-            mail = (user.email or user.login or "").strip()
-            if mail:
-                self.env.cr.execute(
-                    """
-                    SELECT id FROM hr_employee
-                     WHERE LOWER(work_email) = LOWER(%s)
-                        OR LOWER(private_email) = LOWER(%s)
-                     LIMIT 1
-                    """,
-                    (mail, mail),
-                )
-                row = self.env.cr.fetchone()
-                if row:
-                    hr_emp_id = row[0]
+        mail = (user.email or user.login or "").strip()
+        if not hr_emp_id and mail:
+            self.env.cr.execute(
+                """
+                SELECT id FROM hr_employee
+                 WHERE (LOWER(work_email) = LOWER(%s) OR LOWER(private_email) = LOWER(%s))
+                   AND active = TRUE
+                 LIMIT 1
+                """,
+                (mail, mail),
+            )
+            row = self.env.cr.fetchone()
+            if row:
+                hr_emp_id = row[0]
+                try:
+                    self.env.cr.execute(
+                        "UPDATE hr_employee SET user_id = %s WHERE id = %s AND user_id IS NULL",
+                        (user.id, hr_emp_id),
+                    )
+                except Exception:
+                    pass
         if not hr_emp_id and user.name:
             self.env.cr.execute(
                 """
                 SELECT id FROM hr_employee
-                 WHERE LOWER(name) = LOWER(%s)
+                 WHERE LOWER(name) = LOWER(%s) AND active = TRUE
                  LIMIT 1
                 """,
                 (user.name.strip(),),
@@ -658,14 +664,34 @@ class ProjectProject(models.Model):
             row = self.env.cr.fetchone()
             if row:
                 hr_emp_id = row[0]
+                try:
+                    self.env.cr.execute(
+                        "UPDATE hr_employee SET user_id = %s WHERE id = %s AND user_id IS NULL",
+                        (user.id, hr_emp_id),
+                    )
+                except Exception:
+                    pass
+
+        # If user has no hr.employee, automatically create one so that daily.task will be linked and visible
+        if not hr_emp_id and self.env.get("hr.employee"):
+            try:
+                emp_rec = self.env["hr.employee"].sudo().create({
+                    "name": user.name or "Nhân viên",
+                    "user_id": user.id,
+                    "work_email": mail or False,
+                })
+                hr_emp_id = emp_rec.id
+            except Exception:
+                pass
 
         if hr_emp_id:
             return DailyEmp.sudo().get_or_create_from_hr(hr_emp_id)
 
-        mail = (user.email or user.login or "").strip()
         domain = [("email", "=", mail)] if mail else [("name", "=ilike", user.name)]
-        existing = DailyEmp.sudo().search(domain, limit=1)
+        existing = DailyEmp.sudo().with_context(active_test=False).search(domain, limit=1)
         if existing:
+            if not existing.active:
+                existing.write({"active": True})
             return existing
         return DailyEmp.sudo().create({
             "name": user.name,
@@ -752,7 +778,7 @@ class ProjectProject(models.Model):
                             "department_id": emp.department_id.id or (project.lug_department_id and project.lug_department_id.id) or False,
                             "lug_origin_project_id": project.id,
                         })
-                        new_dt = DailyTaskModel.with_context(lug_sync_lock=True).sudo().create(daily_vals)
+                        new_dt = DailyTaskModel.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().create(daily_vals)
                         if not created_first_dt:
                             created_first_dt = new_dt
 
@@ -767,7 +793,7 @@ class ProjectProject(models.Model):
                             pass
             except Exception as e:
                 import logging
-                logging.getLogger(__name__).warning("Error syncing project %s to daily task: %s", project.id, e)
+                logging.getLogger(__name__).exception("Error syncing project %s to daily task: %s", project.id, e)
 
     @api.model_create_multi
     def create(self, vals_list):

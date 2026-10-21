@@ -252,7 +252,14 @@ class DailyTask(models.Model):
             return " ".join((text or "").split()).casefold()
 
         for rec in self:
-            if rec.assign_line_id or rec.recurring_id or not rec.assignee_id:
+            if (
+                rec.assign_line_id
+                or rec.recurring_id
+                or not rec.assignee_id
+                or getattr(rec, "lug_origin_project_id", False)
+                or getattr(rec, "lug_origin_stage_task_id", False)
+                or getattr(rec, "lug_origin_project_task_id", False)
+            ):
                 continue
             key = norm(rec.name)
             if not key:

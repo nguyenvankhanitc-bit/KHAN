@@ -163,7 +163,7 @@ class TestSyncLogic(unittest.TestCase):
         self.assertEqual(todo_args["lug_origin_project_task_id"], 999)
 
         # Assert Daily Task created
-        mock_daily_model.with_context.assert_called_with(lug_sync_lock=True)
+        mock_daily_model.with_context.assert_called_with(lug_sync_lock=True, daily_task_assigner_uid=1)
         daily_args = mock_daily_model.with_context.return_value.create.call_args[0][0]
         self.assertEqual(daily_args["name"], "[Dự án Nâng cấp Hệ thống] Khảo sát mặt bằng")
         self.assertEqual(daily_args["assignee_id"], 101)

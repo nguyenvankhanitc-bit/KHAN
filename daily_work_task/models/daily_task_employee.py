@@ -100,8 +100,10 @@ class DailyTaskEmployee(models.Model):
     @api.model
     def get_or_create_from_hr(self, hr_employee_id):
         hr_employee_id = int(hr_employee_id)
-        existing = self.search([("employee_id", "=", hr_employee_id)], limit=1)
+        existing = self.with_context(active_test=False).search([("employee_id", "=", hr_employee_id)], limit=1)
         if existing:
+            if not existing.active:
+                existing.write({"active": True})
             if existing.email and not self._normalize_email(existing.email):
                 existing.write({"email": False})
             return existing
@@ -125,7 +127,7 @@ class DailyTaskEmployee(models.Model):
             or self._normalize_email(user_email)
             or self._normalize_email(login)
         )
-        by_name = self.search(
+        by_name = self.with_context(active_test=False).search(
             [("name", "=ilike", hr_name), ("employee_id", "=", False)],
             limit=1,
         )
@@ -134,6 +136,7 @@ class DailyTaskEmployee(models.Model):
                 {
                     "employee_id": hr_employee_id,
                     "email": email or False,
+                    "active": True,
                 }
             )
             return by_name

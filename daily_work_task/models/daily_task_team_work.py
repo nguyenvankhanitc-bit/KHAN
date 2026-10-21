@@ -103,7 +103,48 @@ class DailyTask(models.Model):
             "categories": self._teamwork_categories(team) if team else [],
             "me": self.env.uid,
             "can_create": Access.can("teamwork", "create"),
+            "can_write": Access.can("teamwork", "write"),
         }
+
+    # ------------------------------------------------------------------ sửa 1 việc đã phân
+    @api.model
+    def update_team_work_task(self, task_id, vals):
+        """Sửa công việc trong «Danh sách công việc phân công» (bấm «Lưu» mới ghi)."""
+        if not self.env["daily.task.assign.access"].can("teamwork", "write"):
+            raise AccessError("Bạn không có quyền Phân công việc team (Chỉnh sửa).")
+        task = self.sudo().browse(int(task_id or 0)).exists()
+        if not task or not task.team_work_team_id:
+            raise ValidationError("Không tìm thấy công việc phân công.")
+        team = self._teamwork_teams().filtered(lambda t: t.id == task.team_work_team_id.id)[:1]
+        if not team:
+            raise AccessError("Bạn không được phân công cho Team này.")
+        vals = vals or {}
+        name = (vals.get("name") or "").strip()
+        if not name:
+            raise ValidationError("Vui lòng nhập Nội dung công việc.")
+        start = vals.get("date_start") or False
+        deadline = vals.get("deadline") or False
+        if not deadline:
+            raise ValidationError("Vui lòng chọn Deadline.")
+        if start and fields.Date.to_date(deadline) < fields.Date.to_date(start):
+            raise ValidationError("Deadline phải sau hoặc bằng Ngày thực hiện.")
+        members = {m["user_id"]: m for m in self._teamwork_members(team)}
+        write = {
+            "name": name,
+            "assign_date": start,
+            "deadline": deadline,
+            "note": (vals.get("note") or "").strip(),
+        }
+        checker = self.env["res.users"].sudo().browse(int(vals.get("checker_id") or 0)).exists()
+        write["team_work_checker_id"] = checker.id or False
+        uid = int(vals.get("user_id") or 0)
+        if uid and uid != task.assignee_user_id.id:
+            if uid not in members:
+                raise ValidationError("Nhân sự không thuộc Team «%s»." % team.name)
+            bridge = self.env["daily.task.employee"].sudo().get_or_create_from_hr(members[uid]["hr_id"])
+            write["assignee_id"] = bridge.id
+        task.with_context(skip_work_group_user_check=True).write(write)
+        return {"ok": True}
 
     # ------------------------------------------------------------------ ghi
     @api.model

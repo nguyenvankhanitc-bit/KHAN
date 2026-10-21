@@ -214,14 +214,23 @@
                                             <td colspan="9" class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin"/></td>
                                         </tr>
                                         <t t-else="">
-                                            <tr t-foreach="state.listRows" t-as="r" t-key="r.id">
+                                            <tr t-foreach="state.listRows" t-as="r" t-key="r.id"
+                                                t-att-class="state.canWrite ? 'o_dtw_row_link' : ''"
+                                                t-att-title="state.canWrite ? 'Bấm để sửa công việc' : ''"
+                                                t-on-click="() => this.openEdit(r)">
                                                 <td class="text-center" t-esc="r_index + 1"/>
                                                 <td t-esc="r.employee"/>
                                                 <td>
                                                     <div t-esc="r.category"/>
                                                     <small t-if="r.detail" class="o_dtw_row_detail" t-esc="r.detail"/>
                                                 </td>
-                                                <td t-esc="r.name"/>
+                                                <td>
+                                                    <a t-if="state.canWrite" href="#" class="o_dtw_name_link"
+                                                       t-on-click.prevent="() => this.openEdit(r)">
+                                                        <i class="fa fa-pencil-square-o"/> <t t-esc="r.name"/>
+                                                    </a>
+                                                    <t t-else="" t-esc="r.name"/>
+                                                </td>
                                                 <td class="text-center" t-esc="fmt(r.date_start)"/>
                                                 <td class="text-center" t-esc="fmt(r.deadline)"/>
                                                 <td t-esc="r.checker"/>
@@ -239,6 +248,80 @@
                             </div>
                         </div>
                     </t>
+                </div>
+                <!-- Sửa công việc phân công: bấm «Lưu» mới có hiệu lực -->
+                <div t-if="state.edit" class="o_dtw_modal_backdrop" t-on-click.self="closeEdit">
+                    <div class="o_dtw_modal" role="dialog">
+                        <div class="o_dtw_modal_head">
+                            <h4><i class="fa fa-pencil-square-o"/> SỬA CÔNG VIỆC PHÂN CÔNG</h4>
+                            <button type="button" class="btn btn-link p-0" title="Đóng" t-on-click="closeEdit"><i class="fa fa-times"/></button>
+                        </div>
+                        <div class="o_dtw_modal_body">
+                            <div class="o_dtw_modal_info">
+                                <span><b>Hạng mục:</b> <t t-esc="state.edit.category"/><t t-if="state.edit.detail"> · <t t-esc="state.edit.detail"/></t></span>
+                                <span><b>Trạng thái:</b> <t t-esc="state.edit.state_label"/></span>
+                            </div>
+                            <div class="o_dtw_modal_grid">
+                                <div class="o_dtw_field">
+                                    <label>Nhân sự</label>
+                                    <select class="form-select" t-on-change="(ev) => this.onEdit('user_id', ev)">
+                                        <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                            <option t-att-value="m.user_id" t-att-selected="m.user_id === state.edit.user_id" t-esc="m.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label>Người kiểm tra</label>
+                                    <select class="form-select" t-on-change="(ev) => this.onEdit('checker_id', ev)">
+                                        <option value="0" t-att-selected="!state.edit.checker_id">—</option>
+                                        <t t-foreach="state.members" t-as="m" t-key="m.user_id">
+                                            <option t-att-value="m.user_id" t-att-selected="m.user_id === state.edit.checker_id" t-esc="m.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="o_dtw_field o_dtw_span2">
+                                    <label>Nội dung công việc</label>
+                                    <input type="text" class="form-control" t-att-value="state.edit.name"
+                                           t-on-change="(ev) => this.onEdit('name', ev)"/>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label>Ngày thực hiện</label>
+                                    <div class="o_dtw_date">
+                                        <input type="text" class="form-control" placeholder="dd/mm/yyyy"
+                                               t-att-value="fmt(state.edit.date_start)" t-on-change="(ev) => this.onRowDate(state.edit, 'date_start', ev)"/>
+                                        <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
+                                            <i class="fa fa-calendar"/>
+                                        </button>
+                                        <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="state.edit.date_start"
+                                               t-on-change="(ev) => this.onPicker(state.edit, 'date_start', ev)"/>
+                                    </div>
+                                </div>
+                                <div class="o_dtw_field">
+                                    <label>Deadline</label>
+                                    <div class="o_dtw_date">
+                                        <input type="text" class="form-control" placeholder="dd/mm/yyyy"
+                                               t-att-value="fmt(state.edit.deadline)" t-on-change="(ev) => this.onRowDate(state.edit, 'deadline', ev)"/>
+                                        <button type="button" class="btn btn-link p-0 o_dtw_date_btn" t-on-click="(ev) => this.openPicker(ev)">
+                                            <i class="fa fa-calendar"/>
+                                        </button>
+                                        <input type="date" class="o_dtw_date_picker" tabindex="-1" t-att-value="state.edit.deadline"
+                                               t-on-change="(ev) => this.onPicker(state.edit, 'deadline', ev)"/>
+                                    </div>
+                                </div>
+                                <div class="o_dtw_field o_dtw_span2">
+                                    <label>Ghi chú</label>
+                                    <textarea class="form-control" rows="2" t-att-value="state.edit.note"
+                                              t-on-change="(ev) => this.onEdit('note', ev)"/>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="o_dtw_modal_foot">
+                            <button type="button" class="btn btn-light" t-att-disabled="state.editSaving" t-on-click="closeEdit">Hủy</button>
+                            <button type="button" class="btn btn-primary" t-att-disabled="state.editSaving" t-on-click="saveEdit">
+                                <i class="fa fa-save"/> <t t-esc="state.editSaving ? 'Đang lưu...' : 'Lưu'"/>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </DailyWorkAppShell>
         </div>

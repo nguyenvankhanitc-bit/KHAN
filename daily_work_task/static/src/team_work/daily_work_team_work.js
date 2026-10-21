@@ -41,6 +41,9 @@ export class DailyWorkTeamWork extends Component {
             members: [],
             categories: [],
             canCreate: false,
+            canWrite: false,
+            edit: null, // công việc đang sửa (bấm Lưu mới ghi)
+            editSaving: false,
             coordinatorId: 0,
             year: now.getFullYear(),
             month: now.getMonth() + 1,
@@ -76,6 +79,7 @@ export class DailyWorkTeamWork extends Component {
             this.state.members = data.members || [];
             this.state.categories = data.categories || [];
             this.state.canCreate = Boolean(data.can_create);
+            this.state.canWrite = Boolean(data.can_write);
             if (!this.state.members.some((m) => m.user_id === this.state.coordinatorId)) {
                 this.state.coordinatorId = (this.state.members.find((m) => m.user_id === data.me) || this.state.members[0] || {}).user_id || 0;
             }
@@ -444,6 +448,69 @@ export class DailyWorkTeamWork extends Component {
             return;
         }
         this.state.rows = [];
+    }
+
+    /** Bấm 1 dòng trong Danh sách công việc phân công → hộp Sửa (chưa ghi cho tới khi bấm Lưu). */
+    openEdit(r) {
+        if (!this.state.canWrite) {
+            this.notification.add(_t("Bạn không có quyền Phân công việc team (Chỉnh sửa)."), { type: "warning" });
+            return;
+        }
+        this.state.edit = {
+            id: r.id,
+            user_id: r.user_id || 0,
+            name: r.name || "",
+            date_start: r.date_start || "",
+            deadline: r.deadline || "",
+            checker_id: r.checker_id || 0,
+            note: r.note || "",
+            category: r.category || "",
+            detail: r.detail || "",
+            state_label: r.state_label || "",
+        };
+    }
+
+    onEdit(field, ev) {
+        let v = ev.target.value;
+        if (field === "user_id" || field === "checker_id") {
+            v = Number(v) || 0;
+        }
+        this.state.edit[field] = v;
+    }
+
+    closeEdit() {
+        if (!this.state.editSaving) {
+            this.state.edit = null;
+        }
+    }
+
+    async saveEdit() {
+        const e = this.state.edit;
+        if (!e || this.state.editSaving) {
+            return;
+        }
+        if (!(e.name || "").trim()) {
+            this.notification.add(_t("Vui lòng nhập Nội dung công việc."), { type: "warning" });
+            return;
+        }
+        this.state.editSaving = true;
+        try {
+            await this.orm.call("daily.task", "update_team_work_task", [e.id, {
+                user_id: e.user_id || false,
+                name: e.name,
+                date_start: e.date_start || false,
+                deadline: e.deadline || false,
+                checker_id: e.checker_id || false,
+                note: e.note || "",
+            }]);
+            this.state.edit = null;
+            await this.loadList();
+            this.notification.add(_t("Đã lưu công việc."), { type: "success" });
+        } catch (err) {
+            this.notification.add(err?.data?.message || _t("Không lưu được công việc."), { type: "danger" });
+        } finally {
+            this.state.editSaving = false;
+        }
     }
 
     async onSave() {

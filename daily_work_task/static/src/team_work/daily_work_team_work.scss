@@ -384,3 +384,95 @@
         &.is-not_started { background: #e5e7eb; color: #4b5563; }
     }
 }
+
+// Danh sách công việc phân công: bấm để sửa (hộp Sửa, Lưu mới ghi)
+.o_daily_work_team_work {
+    .o_dtw_row_link {
+        cursor: pointer;
+
+        &:hover td {
+            background: #eef4ff !important;
+        }
+    }
+
+    .o_dtw_name_link {
+        color: #1d4ed8;
+        font-weight: 600;
+        text-decoration: none;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+
+    .o_dtw_modal_backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1050;
+        background: rgba(15, 23, 42, 0.45);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 8vh 16px 16px;
+    }
+
+    .o_dtw_modal {
+        width: 760px;
+        max-width: 100%;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 20px 50px rgba(15, 23, 42, 0.3);
+        overflow: hidden;
+    }
+
+    .o_dtw_modal_head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        border-bottom: 1px solid #e5e7eb;
+
+        h4 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 800;
+            color: #0b2a5b;
+        }
+    }
+
+    .o_dtw_modal_body {
+        padding: 14px 18px;
+    }
+
+    .o_dtw_modal_info {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 22px;
+        margin-bottom: 12px;
+        font-size: 0.85rem;
+        color: #334155;
+    }
+
+    .o_dtw_modal_grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 16px;
+
+        @media (max-width: 640px) {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    .o_dtw_span2 {
+        grid-column: 1 / -1;
+    }
+
+    .o_dtw_modal_foot {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 18px;
+        border-top: 1px solid #e5e7eb;
+        background: #f8fafc;
+    }
+}

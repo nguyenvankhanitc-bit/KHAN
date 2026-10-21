@@ -5,10 +5,10 @@
         <field name="name">daily.task.project.search</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <search string="Tìm kiếm công việc dự án">
-                <field name="name" string="Tên công việc"/>
-                <field name="lug_project_id" string="Dự án"/>
-                <field name="assignee_id" string="Người phụ trách"/>
+            <search>
+                <field name="name"/>
+                <field name="lug_project_id"/>
+                <field name="assignee_id"/>
                 <filter string="Chưa hoàn thành" name="filter_open" domain="[('state', '!=', 'done')]"/>
                 <filter string="Đang xử lý" name="filter_in_progress" domain="[('state', '=', 'in_progress')]"/>
                 <filter string="Chưa bắt đầu" name="filter_not_started" domain="[('state', '=', 'not_started')]"/>
@@ -16,11 +16,11 @@
                 <separator/>
                 <filter string="Quá hạn" name="filter_overdue" domain="[('is_overdue', '=', True)]"/>
                 <filter string="Ưu tiên cao" name="filter_high" domain="[('priority', '=', 'high')]"/>
-                <group expand="1" string="Gom nhóm">
+                <group>
                     <filter string="Dự án" name="group_by_project" context="{'group_by': 'lug_project_id'}"/>
-                    <filter string="Trạng thái" name="group_by_state" context="{'group_by': 'state'}"/>
-                    <filter string="Mức ưu tiên" name="group_by_priority" context="{'group_by': 'priority'}"/>
-                    <filter string="Hạn chót" name="group_by_deadline" context="{'group_by': 'deadline'}"/>
+                    <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="Mức ưu tiên" name="group_priority" context="{'group_by': 'priority'}"/>
+                    <filter string="Hạn chót" name="group_deadline" context="{'group_by': 'deadline'}"/>
                 </group>
             </search>
         </field>
@@ -77,25 +77,17 @@
                                     <strong class="o_kanban_record_title text-truncate">
                                         <field name="name"/>
                                     </strong>
-                                    <small t-if="record.lug_project_id.value" class="text-primary d-block">
-                                        <i class="fa fa-folder-open-o me-1"/> <t t-esc="record.lug_project_id.value"/>
-                                    </small>
+                                    <div class="text-primary small mt-1">
+                                        <i class="fa fa-folder-open-o me-1"/><field name="lug_project_id"/>
+                                    </div>
                                 </div>
                             </div>
                             <div class="o_kanban_record_body my-1">
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <span t-if="record.deadline.value" t-attf-class="badge #{record.is_overdue.raw_value ? 'text-bg-danger' : 'text-bg-light'}">
-                                        <i class="fa fa-clock-o me-1"/> <t t-esc="record.deadline.value"/>
+                                    <span class="badge text-bg-light">
+                                        <i class="fa fa-clock-o me-1"/><field name="deadline"/>
                                     </span>
-                                    <span t-if="record.priority.value" class="badge text-bg-secondary">
-                                        <t t-esc="record.priority.value"/>
-                                    </span>
-                                </div>
-                                <div t-if="record.completion_percent.value" class="progress mt-1" style="height: 6px;">
-                                    <div class="progress-bar bg-success" role="progressbar"
-                                         t-attf-style="width: #{record.completion_percent.raw_value}%"
-                                         t-att-aria-valuenow="record.completion_percent.raw_value"
-                                         aria-valuemin="0" aria-valuemax="100"/>
+                                    <field name="priority" widget="badge"/>
                                 </div>
                             </div>
                         </main>

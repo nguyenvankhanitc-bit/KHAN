@@ -184,6 +184,8 @@ class TestDuanToDailyTaskSync(unittest.TestCase):
         mock_daily_model.create.side_effect = fake_create
 
         mock_env_obj = MagicMock()
+        mock_env_obj.__contains__.side_effect = lambda k: True
+        mock_env_obj.__getitem__.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
         mock_env_obj.get.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
         mock_env_obj.user = self.mock_pm
         task.env = mock_env_obj
@@ -264,6 +266,8 @@ class TestDuanToDailyTaskSync(unittest.TestCase):
         mock_daily_model.create.side_effect = fake_create
 
         mock_env_obj = MagicMock()
+        mock_env_obj.__contains__.side_effect = lambda k: True
+        mock_env_obj.__getitem__.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
         mock_env_obj.get.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
         mock_env_obj.user = self.mock_pm
         project.env = mock_env_obj

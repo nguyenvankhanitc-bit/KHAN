@@ -196,11 +196,9 @@ class ProjectStageTask(models.Model):
                 raise ValidationError("Vui lòng chọn Người phụ trách cho công việc.")
 
     def _lug_get_or_create_daily_employee(self, user):
-        if not user:
+        if not user or "daily.task.employee" not in self.env:
             return False
-        DailyEmp = self.env.get("daily.task.employee")
-        if not DailyEmp:
-            return False
+        DailyEmp = self.env["daily.task.employee"]
         # Direct SQL search on hr_employee to bypass HR visibility restrictions
         self.env.cr.execute(
             """
@@ -254,7 +252,7 @@ class ProjectStageTask(models.Model):
                     pass
 
         # If user has no hr.employee, automatically create one so that daily.task will be linked and visible
-        if not hr_emp_id and self.env.get("hr.employee"):
+        if not hr_emp_id and "hr.employee" in self.env:
             try:
                 emp_rec = self.env["hr.employee"].sudo().create({
                     "name": user.name or "Nhân viên",
@@ -280,10 +278,9 @@ class ProjectStageTask(models.Model):
         })
 
     def _lug_sync_to_daily(self):
-        DailyTaskModel = self.env.get("daily.task")
-        if not DailyTaskModel:
+        if "daily.task" not in self.env:
             return
-        DailyTaskModel = DailyTaskModel.sudo()
+        DailyTaskModel = self.env["daily.task"].sudo()
         for task in self:
             try:
                 project = task.project_id or (task.stage_id and task.stage_id.project_id)
@@ -418,10 +415,3 @@ class ProjectStageTask(models.Model):
             "views": [(view.id, "form")],
             "target": "new",
         }
-
-    def _register_hook(self):
-        super()._register_hook()
-        try:
-            self.env.cr.execute("ALTER TABLE project_stage_task ADD COLUMN IF NOT EXISTS execution_date DATE")
-        except Exception:
-            pass

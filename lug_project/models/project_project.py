@@ -227,12 +227,12 @@ class ProjectProject(models.Model):
     @api.depends("lug_expense_ids.total_amount", "lug_expense_ids.state")
     def _compute_lug_total_expense(self):
         VALID_STATES = ("approved", "posted", "in_payment", "paid")
-        Expense = self.env.get("hr.expense")
-        if not Expense:
+        if "hr.expense" not in self.env:
             for project in self:
                 project.lug_total_expense = 0.0
                 project.lug_expense_count = 0
             return
+        Expense = self.env["hr.expense"]
 
         for project in self:
             expenses = project.lug_expense_ids.filtered(lambda exp: exp.state in VALID_STATES)
@@ -615,11 +615,9 @@ class ProjectProject(models.Model):
         return code
 
     def _lug_get_or_create_daily_employee(self, user):
-        if not user:
+        if not user or "daily.task.employee" not in self.env:
             return False
-        DailyEmp = self.env.get("daily.task.employee")
-        if not DailyEmp:
-            return False
+        DailyEmp = self.env["daily.task.employee"]
         # Direct SQL search on hr_employee to bypass HR visibility restrictions
         self.env.cr.execute(
             """
@@ -673,7 +671,7 @@ class ProjectProject(models.Model):
                     pass
 
         # If user has no hr.employee, automatically create one so that daily.task will be linked and visible
-        if not hr_emp_id and self.env.get("hr.employee"):
+        if not hr_emp_id and "hr.employee" in self.env:
             try:
                 emp_rec = self.env["hr.employee"].sudo().create({
                     "name": user.name or "Nhân viên",
@@ -699,10 +697,9 @@ class ProjectProject(models.Model):
         })
 
     def _lug_sync_to_daily(self):
-        DailyTaskModel = self.env.get("daily.task")
-        if not DailyTaskModel:
+        if "daily.task" not in self.env:
             return
-        DailyTaskModel = DailyTaskModel.sudo()
+        DailyTaskModel = self.env["daily.task"].sudo()
         for project in self:
             try:
                 users = []
@@ -989,28 +986,8 @@ class ProjectProject(models.Model):
             if text:
                 rec.lug_content = text
 
-    def init(self):
-        super().init()
-        try:
-            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
-            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_daily_task_id INTEGER")
-            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_id INTEGER")
-        except Exception:
-            pass
-
     def _register_hook(self):
         super()._register_hook()
-        try:
-            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_total_expense NUMERIC DEFAULT 0.0")
-            self.env.cr.execute("ALTER TABLE project_project ADD COLUMN IF NOT EXISTS lug_daily_task_id INTEGER")
-            self.env.cr.execute("ALTER TABLE project_stage_task ADD COLUMN IF NOT EXISTS execution_date DATE")
-            self.env.cr.execute("ALTER TABLE project_task ADD COLUMN IF NOT EXISTS lug_execution_date DATE")
-            self.env.cr.execute("ALTER TABLE hr_expense ADD COLUMN IF NOT EXISTS project_id INTEGER")
-            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_id INTEGER")
-            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_project_task_id INTEGER")
-            self.env.cr.execute("ALTER TABLE daily_task ADD COLUMN IF NOT EXISTS lug_origin_stage_task_id INTEGER")
-        except Exception:
-            pass
         try:
             empty = self.sudo().search([("lug_stt", "=", 0)], limit=1)
             if empty:

@@ -128,6 +128,7 @@ class TestSyncLogic(unittest.TestCase):
             "project.task": mock_todo_model,
         }
         mock_env_obj = MagicMock()
+        mock_env_obj.__contains__.side_effect = lambda k: k in mock_env
         mock_env_obj.__getitem__.side_effect = lambda k: mock_env[k]
         mock_env_obj.get.side_effect = lambda k: mock_env.get(k)
         mock_env_obj.user = self.mock_pm

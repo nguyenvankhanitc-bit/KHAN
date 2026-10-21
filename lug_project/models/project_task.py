@@ -182,11 +182,9 @@ class ProjectTask(models.Model):
             self.lug_result = "Hoàn thành"
 
     def _lug_get_or_create_daily_employee(self, user):
-        if not user:
+        if not user or "daily.task.employee" not in self.env:
             return False
-        DailyEmp = self.env.get("daily.task.employee")
-        if not DailyEmp:
-            return False
+        DailyEmp = self.env["daily.task.employee"]
         # Direct SQL search on hr_employee to bypass HR visibility restrictions
         self.env.cr.execute(
             """
@@ -240,7 +238,7 @@ class ProjectTask(models.Model):
                     pass
 
         # If user has no hr.employee, automatically create one so that daily.task will be linked and visible
-        if not hr_emp_id and self.env.get("hr.employee"):
+        if not hr_emp_id and "hr.employee" in self.env:
             try:
                 emp_rec = self.env["hr.employee"].sudo().create({
                     "name": user.name or "Nhân viên",
@@ -304,9 +302,8 @@ class ProjectTask(models.Model):
 
             # 2. Sync to Daily Task (daily.task in daily_work_task) for ALL assigned users
             try:
-                DailyTaskModel = task.env.get("daily.task")
-                if DailyTaskModel and users:
-                    DailyTaskModel = DailyTaskModel.sudo()
+                if "daily.task" in task.env and users:
+                    DailyTaskModel = task.env["daily.task"].sudo()
                     daily_state = (
                         "done"
                         if task.lug_status == "done"
@@ -501,10 +498,3 @@ class ProjectTask(models.Model):
         for rec in self:
             if rec.lug_progress < 0 or rec.lug_progress > 100:
                 raise ValidationError("Tiến độ công việc phải từ 0 đến 100.")
-
-    def _register_hook(self):
-        super()._register_hook()
-        try:
-            self.env.cr.execute("ALTER TABLE project_task ADD COLUMN IF NOT EXISTS lug_execution_date DATE")
-        except Exception:
-            pass

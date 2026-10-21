@@ -33,10 +33,3 @@ class HrExpense(models.Model):
                 if hasattr(project, "account_id") and project.account_id:
                     vals["analytic_distribution"] = {str(project.account_id.id): 100.0}
         return super().create(vals_list)
-
-    def _register_hook(self):
-        super()._register_hook()
-        try:
-            self.env.cr.execute("ALTER TABLE hr_expense ADD COLUMN IF NOT EXISTS project_id INTEGER")
-        except Exception:
-            pass

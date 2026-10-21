@@ -358,7 +358,8 @@
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="view_daily_task_kanban"/>
         <field name="search_view_id" ref="view_daily_task_search"/>
-        <field name="domain">[('is_overdue', '=', True)]</field>
+        <!-- Chỉ công việc quá hạn của user đang đăng nhập (người phụ trách) -->
+        <field name="domain">[('is_overdue', '=', True), ('assignee_user_id', '=', uid)]</field>
         <field name="context">{'search_default_filter_overdue': 1}</field>
     </record>
 

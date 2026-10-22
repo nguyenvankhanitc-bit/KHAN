@@ -51,13 +51,10 @@ class DailyTaskTeam(models.Model):
         compute="_compute_work_group_count",
     )
 
-    _sql_constraints = [
-        (
-            "daily_task_team_uniq",
-            "unique(department_id, name)",
-            "Team này đã tồn tại trong phòng ban.",
-        )
-    ]
+    _team_uniq = models.Constraint(
+        "unique(department_id, name)",
+        "Team này đã tồn tại trong phòng ban.",
+    )
 
     @api.depends("name", "department_id")
     def _compute_display_name(self):

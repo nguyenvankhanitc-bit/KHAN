@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.497.0",
+    "version": "19.0.2.497.1",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """

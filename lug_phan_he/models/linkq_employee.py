@@ -2,7 +2,7 @@
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, ValidationError
-from odoo.osv import expression
+from odoo.fields import Domain
 
 
 class LinkqEmployee(models.Model):
@@ -125,7 +125,7 @@ class LinkqEmployee(models.Model):
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         extra = self._linkq_store_scope_domain()
         if extra and not kwargs.get("bypass_access"):
-            domain = expression.AND([extra, domain or []])
+            domain = Domain.AND([extra, domain or []])
         return super()._search(
             domain, offset=offset, limit=limit, order=order, **kwargs
         )

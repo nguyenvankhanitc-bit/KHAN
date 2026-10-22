@@ -168,7 +168,7 @@ class PhanHeService(models.Model):
         string="Mức cảnh báo",
     )
     remaining_alert = fields.Html(
-        compute="_compute_remaining",
+        compute="_compute_remaining_alert",
         string="Còn lại (cảnh báo)",
         sanitize=False,
     )
@@ -240,6 +240,7 @@ class PhanHeService(models.Model):
         string="HĐ / Số hóa đơn",
         compute="_compute_next_payment_fields",
         inverse="_inverse_next_payment_fields",
+        store=True,
         readonly=False,
     )
     next_payment_amount = fields.Monetary(
@@ -735,7 +736,6 @@ class PhanHeService(models.Model):
                 rec.remaining_days = 0
                 rec.remaining_time = False
                 rec.alert_level = "ok"
-                rec.remaining_alert = False
                 continue
 
             days = (rec.date_end - today).days
@@ -754,11 +754,16 @@ class PhanHeService(models.Model):
                 rec.alert_level = "warn"
             else:
                 rec.alert_level = "ok"
-            label = rec.remaining_time
 
+    @api.depends("remaining_time", "alert_level")
+    def _compute_remaining_alert(self):
+        for rec in self:
+            if not rec.remaining_time:
+                rec.remaining_alert = False
+                continue
             rec.remaining_alert = (
                 f'<span class="o_phan_he_remaining_alert is-{rec.alert_level}">'
-                f'<i class="fa fa-clock-o"/> {label}</span>'
+                f'<i class="fa fa-clock-o" title="Thời gian còn lại"/> {rec.remaining_time}</span>'
             )
 
     @api.depends("name", "code")

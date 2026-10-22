@@ -72,15 +72,15 @@ class LinkqMonthlyRosterSendMail(models.Model):
     _inherit = "linkq.monthly.roster"
 
     sender_email = fields.Char(string="Người gửi", compute="_compute_sender_email")
-    asm_email = fields.Char(string="Gửi đến ASM", compute="_compute_email_setup", inverse="_inverse_email_recipients", readonly=False)
-    admin_email = fields.Char(string="Gửi đến Admin", compute="_compute_email_setup", inverse="_inverse_email_recipients", readonly=False)
+    asm_email = fields.Char(string="Gửi đến ASM", compute="_compute_email_recipients", inverse="_inverse_email_recipients", readonly=False)
+    admin_email = fields.Char(string="Gửi đến Admin", compute="_compute_email_recipients", inverse="_inverse_email_recipients", readonly=False)
     email_subject = fields.Char(
         string="Tiêu đề Email",
-        compute="_compute_email_setup",
+        compute="_compute_email_metadata",
         store=True,
         readonly=False,
     )
-    attachment_name = fields.Char(string="Tên tệp đính kèm", compute="_compute_email_setup", store=True)
+    attachment_name = fields.Char(string="Tên tệp đính kèm", compute="_compute_email_metadata", store=True)
     attachment_file = fields.Binary(string="File đính kèm")
     asm_email_valid = fields.Boolean(compute="_compute_email_valid")
     admin_email_valid = fields.Boolean(compute="_compute_email_valid")
@@ -161,7 +161,6 @@ class LinkqMonthlyRosterSendMail(models.Model):
                     emails.append(mail)
         return emails
 
-    @api.depends_context("uid")
     @api.depends(
         "store_id",
         "store_id.code",
@@ -170,18 +169,28 @@ class LinkqMonthlyRosterSendMail(models.Model):
         "year",
         "period_label",
     )
-    def _compute_email_setup(self):
-        admin_emails = None
+    def _compute_email_metadata(self):
         for rec in self:
             store_code = (rec.store_id.code or rec.store_id.name or "STORE").strip() or "STORE"
-            rec.asm_email = ", ".join(rec._lookup_asm_emails())
-            if admin_emails is None:
-                admin_emails = rec._lookup_admin_emails()
-            rec.admin_email = ", ".join(admin_emails)
             month_label = rec.period_label or rec.name or ""
             rec.email_subject = f"Lịch ca {month_label} - {store_code}".strip(" -")
             safe_name = re.sub(r"[^\w.-]+", "_", rec.name or "lich_ca")
             rec.attachment_name = f"Lich_ca_{store_code}_{safe_name}.pdf"
+
+    @api.depends_context("uid")
+    @api.depends("store_id")
+    def _compute_email_recipients(self):
+        admin_emails = None
+        for rec in self:
+            rec.asm_email = ", ".join(rec._lookup_asm_emails())
+            if admin_emails is None:
+                admin_emails = rec._lookup_admin_emails()
+            rec.admin_email = ", ".join(admin_emails)
+
+    def _compute_email_setup(self):
+        """Backward-compatibility helper for external callers."""
+        self._compute_email_metadata()
+        self._compute_email_recipients()
 
     def _inverse_email_recipients(self):
         """Cho phép sửa tay trên form; giá trị không-store nên không ghi DB."""

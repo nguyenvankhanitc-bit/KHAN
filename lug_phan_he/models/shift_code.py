@@ -40,9 +40,10 @@ class LinkqShiftCode(models.Model):
     )
     note = fields.Text(string="Ghi chú")
 
-    _sql_constraints = [
-        ("code_uniq", "unique(code)", "Mã ca phải là duy nhất."),
-    ]
+    _code_uniq = models.Constraint(
+        "unique(code)",
+        "Mã ca phải là duy nhất.",
+    )
 
     @api.depends("time_in", "time_out", "shift_group")
     def _compute_total_hours(self):

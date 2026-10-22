@@ -73,13 +73,10 @@ class DailyTaskAssignAccess(models.Model):
     perm_teamwork_write = fields.Boolean(string="Phân công việc team: Chỉnh sửa", default=False)
     perm_teamwork_unlink = fields.Boolean(string="Phân công việc team: Xóa", default=False)
 
-    _sql_constraints = [
-        (
-            "daily_task_assign_access_employee_uniq",
-            "unique(employee_id)",
-            "Đã có dòng phân quyền Phân công cho nhân viên này. Hãy sửa dòng hiện có.",
-        )
-    ]
+    _employee_uniq = models.Constraint(
+        "unique(employee_id)",
+        "Đã có dòng phân quyền Phân công cho nhân viên này. Hãy sửa dòng hiện có.",
+    )
 
     @api.depends(
         "employee_id",

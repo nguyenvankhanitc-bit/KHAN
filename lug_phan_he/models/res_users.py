@@ -100,24 +100,33 @@ class ResUsers(models.Model):
         "linkq_store_perm_line_ids.permission_group_id",
         "linkq_store_perm_line_ids.permission_group_id.active",
     )
-    def _compute_linkq_store(self):
+    def _compute_linkq_store_ids(self):
         for user in self:
             ids = user._linkq_allowed_hr_store_ids() if user.id else []
-            stores = self.env["hr.store"].sudo().browse(ids)
-            user.linkq_store_ids = stores
+            user.linkq_store_ids = self.env["hr.store"].sudo().browse(ids)
+
+    @api.depends("linkq_store_ids")
+    def _compute_linkq_store_single(self):
+        for user in self:
+            stores = user.linkq_store_ids
             user.store_id = stores[:1]
             user.branch_id = stores[:1]
+
+    def _compute_linkq_store(self):
+        """Backward-compatibility helper for external callers."""
+        self._compute_linkq_store_ids()
+        self._compute_linkq_store_single()
 
     store_id = fields.Many2one(
         "hr.store",
         string="Cửa hàng",
-        compute="_compute_linkq_store",
+        compute="_compute_linkq_store_single",
         compute_sudo=True,
     )
     branch_id = fields.Many2one(
         "hr.store",
         string="Chi nhánh",
-        compute="_compute_linkq_store",
+        compute="_compute_linkq_store_single",
         compute_sudo=True,
     )
     linkq_store_ids = fields.Many2many(
@@ -125,7 +134,7 @@ class ResUsers(models.Model):
         "res_users_linkq_store_rel",
         "user_id",
         "store_id",
-        compute="_compute_linkq_store",
+        compute="_compute_linkq_store_ids",
         store=True,
         compute_sudo=True,
         string="Cửa hàng được phép",

@@ -65,13 +65,10 @@ class DailyTaskAccess(models.Model):
     )
     grantee_id = fields.Many2one("hr.employee", string="Grantee (legacy)")
 
-    _sql_constraints = [
-        (
-            "daily_task_access_employee_uniq",
-            "unique(employee_id)",
-            "Đã có dòng phân quyền cho nhân viên này. Hãy sửa dòng hiện có và thêm người vào «Xem việc của».",
-        )
-    ]
+    _employee_uniq = models.Constraint(
+        "unique(employee_id)",
+        "Đã có dòng phân quyền cho nhân viên này. Hãy sửa dòng hiện có và thêm người vào «Xem việc của».",
+    )
 
     @api.depends("employee_id", "target_ids")
     def _compute_name(self):

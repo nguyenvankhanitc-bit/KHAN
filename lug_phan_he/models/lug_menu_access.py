@@ -2,7 +2,7 @@
 
 from odoo import api, models
 from odoo.exceptions import AccessError
-from odoo.osv import expression
+from odoo.fields import Domain
 
 from .lug_menu_permission import MENU_PARENT, OP_TO_FLAG
 
@@ -164,7 +164,7 @@ class LugMenuAccessMixin(models.AbstractModel):
         ):
             extra = self._linkq_record_domain("read")
             if extra:
-                domain = expression.AND([extra, domain or []])
+                domain = Domain.AND([extra, domain or []])
         return super()._search(
             domain, offset=offset, limit=limit, order=order, **kwargs
         )

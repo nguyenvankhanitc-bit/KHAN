@@ -69,13 +69,10 @@ class LinkqStorePermissionLine(models.Model):
         store=True,
     )
 
-    _sql_constraints = [
-        (
-            "user_group_uniq",
-            "unique(permission_group_id, user_id)",
-            "Mỗi user chỉ được khai báo một dòng trong nhóm quyền này.",
-        ),
-    ]
+    _user_group_uniq = models.Constraint(
+        "unique(permission_group_id, user_id)",
+        "Mỗi user chỉ được khai báo một dòng trong nhóm quyền này.",
+    )
 
     @api.depends("permission_group_id", "permission_group_id.store_permission_ids")
     def _compute_stt(self):

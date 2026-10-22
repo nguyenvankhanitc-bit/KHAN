@@ -37,13 +37,10 @@ class DailyTaskTeamPlanAccess(models.Model):
     perm_unlink = fields.Boolean(string="Xóa")
     active = fields.Boolean(default=True)
 
-    _sql_constraints = [
-        (
-            "daily_task_team_plan_access_employee_uniq",
-            "unique(employee_id)",
-            "Đã có dòng phân quyền Plan tổng cho nhân viên này. Hãy sửa dòng hiện có.",
-        )
-    ]
+    _employee_uniq = models.Constraint(
+        "unique(employee_id)",
+        "Đã có dòng phân quyền Plan tổng cho nhân viên này. Hãy sửa dòng hiện có.",
+    )
 
     @api.constrains("employee_id")
     def _check_employee_user(self):

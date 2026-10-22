@@ -162,13 +162,10 @@ class DailyTaskWorkGroup(models.Model):
         compute="_compute_task_count",
     )
 
-    _sql_constraints = [
-        (
-            "daily_task_work_group_uniq",
-            "unique(department_id, name, task_name)",
-            "Hạng mục + Tên công việc này đã tồn tại trong phòng ban.",
-        )
-    ]
+    _work_group_uniq = models.Constraint(
+        "unique(department_id, name, task_name)",
+        "Hạng mục + Tên công việc này đã tồn tại trong phòng ban.",
+    )
 
     # Form: chọn hạng mục đã có → điền sẵn tên / phòng ban / team / quản lý để thêm CV con
     pick_category_id = fields.Many2one(

@@ -31,9 +31,10 @@ class DailyTaskSelfReview(models.Model):
     active = fields.Boolean(string="Đang áp dụng", default=True)
     note = fields.Char(string="Ghi chú")
 
-    _sql_constraints = [
-        ("daily_task_self_review_user_uniq", "unique(user_id)", "User này đã có quyền tự kiểm tra."),
-    ]
+    _user_uniq = models.Constraint(
+        "unique(user_id)",
+        "User này đã có quyền tự kiểm tra.",
+    )
 
     @api.depends("user_id")
     def _compute_employee(self):

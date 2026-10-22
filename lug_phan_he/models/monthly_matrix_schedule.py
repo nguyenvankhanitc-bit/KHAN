@@ -9,7 +9,7 @@ from datetime import date, datetime
 
 from odoo import api, fields, models
 from odoo.exceptions import AccessError, UserError
-from odoo.osv import expression
+from odoo.fields import Domain
 
 COUNT_CODES = ("S2", "S4", "S9", "C1", "GS1", "GS2", "GC1", "F8", "F7")
 JOB_TITLES = [("NV", "NV"), ("NT", "NT"), ("CHT", "CHT"), ("NVPT", "NVPT"), ("TV", "TV")]
@@ -299,7 +299,7 @@ class LinkqMonthlyRoster(models.Model):
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         extra = self._linkq_store_scope_domain()
         if extra and not kwargs.get("bypass_access"):
-            domain = expression.AND([extra, domain or []])
+            domain = Domain.AND([extra, domain or []])
         return super()._search(
             domain, offset=offset, limit=limit, order=order, **kwargs
         )
@@ -835,7 +835,7 @@ class LinkqMonthlyRosterLine(models.Model):
         extra = self.env["linkq.monthly.roster"]._linkq_store_scope_domain()
         if extra and not kwargs.get("bypass_access"):
             line_extra = [(f"roster_id.{term[0]}", term[1], term[2]) for term in extra]
-            domain = expression.AND([line_extra, domain or []])
+            domain = Domain.AND([line_extra, domain or []])
         return super()._search(
             domain, offset=offset, limit=limit, order=order, **kwargs
         )

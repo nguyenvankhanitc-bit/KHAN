@@ -54,13 +54,10 @@ class DailyTaskReportAccess(models.Model):
         index=True,
     )
 
-    _sql_constraints = [
-        (
-            "daily_task_report_access_employee_uniq",
-            "unique(employee_id)",
-            "Đã có dòng phân quyền Báo cáo tổng cho nhân viên này. Hãy sửa dòng hiện có.",
-        )
-    ]
+    _employee_uniq = models.Constraint(
+        "unique(employee_id)",
+        "Đã có dòng phân quyền Báo cáo tổng cho nhân viên này. Hãy sửa dòng hiện có.",
+    )
 
     @api.depends("employee_id", "department_ids", "target_ids")
     def _compute_name(self):

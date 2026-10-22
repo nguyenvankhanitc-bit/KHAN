@@ -6,6 +6,24 @@ import { Component, onWillStart, useState } from "@odoo/owl";
 
 const NO_DEPT_KEY = "0";
 const NO_DEPT_LABEL = "Chưa có phòng ban";
+const LUG_GROUP_KEY = "lug-groups";
+const LUG_GROUP_LABEL = "Theo nhóm quyền (LUG Permission)";
+const GROUP_ICONS = {
+    kpi: "fa-tachometer",
+    intake: "fa-plus-square-o",
+    list: "fa-folder-open-o",
+    track: "fa-eye",
+    gantt: "fa-align-left",
+    assign: "fa-users",
+    overdue: "fa-exclamation-triangle",
+    milestones: "fa-bell-o",
+    report_all: "fa-bar-chart",
+    people: "fa-user-circle-o",
+    perf: "fa-line-chart",
+    config: "fa-cog",
+    archived: "fa-trash-o",
+    contacts: "fa-address-book-o",
+};
 
 export class LugProjectAppPerm extends Component {
     static template = "lug_project.LugProjectAppPerm";
@@ -25,6 +43,8 @@ export class LugProjectAppPerm extends Component {
             rows: [],
             users: [],
             userById: {},
+            lugGroups: [],
+            lugGroupById: {},
             collapsed: {},
         });
         onWillStart(() => this.load());
@@ -39,7 +59,139 @@ export class LugProjectAppPerm extends Component {
     }
 
     get colspan() {
-        return 4 + this.state.perms.length;
+        return 5;
+    }
+
+    selectedGroups(row) {
+        return (row.group_ids || []).map((id) => this.state.lugGroupById[id]).filter(Boolean);
+    }
+
+    previewGroup(row) {
+        return this.selectedGroups(row)[0] || null;
+    }
+
+    groupNamesText(group) {
+        return (group.user_names || []).join(", ");
+    }
+
+    groupMemberNames(row) {
+        const names = [];
+        for (const g of this.selectedGroups(row)) {
+            for (const n of g.user_names || []) {
+                if (n && !names.includes(n)) {
+                    names.push(n);
+                }
+            }
+        }
+        return names;
+    }
+
+    filteredGroupSuggestions(row) {
+        const q = (row.gquery || "").trim().toLowerCase();
+        const taken = new Set();
+        for (const r of this.state.rows) {
+            for (const id of r.group_ids || []) {
+                taken.add(Number(id));
+            }
+        }
+        return (this.state.lugGroups || [])
+            .filter((g) => !taken.has(g.id))
+            .filter((g) => {
+                if (!q) {
+                    return true;
+                }
+                const blob = `${g.name || ""} ${g.code || ""} ${(g.user_names || []).join(" ")}`.toLowerCase();
+                return blob.includes(q);
+            })
+            .slice(0, 12);
+    }
+
+    onGroupQueryInput(row, ev) {
+        row.gquery = ev.target.value || "";
+        row.gopen = true;
+    }
+
+    onGroupQueryFocus(row) {
+        row.gopen = true;
+    }
+
+    onGroupHover(row, groupId) {
+        row.ghover = Number(groupId) || 0;
+    }
+
+    onGroupLeave(row) {
+        row.ghover = 0;
+    }
+
+    onGroupQueryBlur(row) {
+        setTimeout(() => {
+            if (this._holdSuggest) {
+                return;
+            }
+            row.gopen = false;
+            row.ghover = 0;
+        }, 250);
+    }
+
+    onSuggestPointerDown() {
+        this._holdSuggest = true;
+        setTimeout(() => {
+            this._holdSuggest = false;
+        }, 400);
+    }
+
+    onPickGroup(row, groupId) {
+        const id = Number(groupId);
+        if (id && !(row.group_ids || []).includes(id)) {
+            row.group_ids = [...(row.group_ids || []), id];
+            this._markDirty();
+        }
+        row.gquery = "";
+        row.gopen = false;
+        row.ghover = 0;
+    }
+
+    onRemoveGroup(row, groupId) {
+        const id = Number(groupId);
+        row.group_ids = (row.group_ids || []).filter((x) => Number(x) !== id);
+        this._markDirty();
+    }
+
+    onGroupQueryKeydown(row, ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            const list = this.filteredGroupSuggestions(row);
+            if (list.length) {
+                this.onPickGroup(row, list[0].id);
+            }
+        } else if (ev.key === "Backspace" && !(row.gquery || "").trim()) {
+            const ids = row.group_ids || [];
+            if (ids.length) {
+                this.onRemoveGroup(row, ids[ids.length - 1]);
+            }
+        } else if (ev.key === "Escape") {
+            row.gopen = false;
+        }
+    }
+
+    groupIcon(key) {
+        return GROUP_ICONS[key] || "fa-circle-o";
+    }
+
+    columnState(row, permKey) {
+        const groups = this.state.groups;
+        const on = groups.filter((g) => row[g.key]?.[permKey]).length;
+        if (!on) {
+            return "";
+        }
+        return on === groups.length ? "is-on" : "is-mixed";
+    }
+
+    onToggleColumn(row, permKey) {
+        const next = this.columnState(row, permKey) !== "is-on";
+        for (const g of this.state.groups) {
+            this.setPerm(row, g.key, permKey, next);
+        }
     }
 
     emptyPerms() {
@@ -61,9 +213,13 @@ export class LugProjectAppPerm extends Component {
             key: `new-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
             stt: 0,
             user_ids: [],
+            group_ids: [],
             record_ids: {},
             query: "",
             open: false,
+            gquery: "",
+            gopen: false,
+            ghover: 0,
         };
         for (const g of this.state.groups) {
             row[g.key] = Object.fromEntries(this.state.perms.map((p) => [p.key, true]));
@@ -81,6 +237,9 @@ export class LugProjectAppPerm extends Component {
             map.get(info.key).rows.push(row);
         }
         const sections = [...map.values()].sort((a, b) => {
+            if (a.key === LUG_GROUP_KEY || b.key === LUG_GROUP_KEY) {
+                return a.key === LUG_GROUP_KEY ? -1 : 1;
+            }
             if (a.key === NO_DEPT_KEY) {
                 return 1;
             }
@@ -103,6 +262,9 @@ export class LugProjectAppPerm extends Component {
     _rowDept(row) {
         const ids = row.user_ids || [];
         if (!ids.length) {
+            if ((row.group_ids || []).length) {
+                return { key: LUG_GROUP_KEY, label: LUG_GROUP_LABEL };
+            }
             return { key: NO_DEPT_KEY, label: NO_DEPT_LABEL };
         }
         const deptIds = new Set();
@@ -135,33 +297,53 @@ export class LugProjectAppPerm extends Component {
             }
             this.state.users = data.users || [];
             this.state.userById = userById;
+            const lugGroupById = {};
+            for (const g of data.lug_groups || []) {
+                lugGroupById[g.id] = g;
+            }
+            this.state.lugGroups = data.lug_groups || [];
+            this.state.lugGroupById = lugGroupById;
 
-            // Gộp user cùng phòng ban + cùng quyền vào 1 dòng (DB vẫn 1 bản ghi / user)
+            // 1 dòng ma trận = các bản ghi cùng row_key (user + nhóm quyền);
+            // bản ghi cũ chưa có row_key: gộp theo phòng ban + cùng quyền
             const merged = new Map();
             for (const r of data.rows || []) {
                 const userId = Number(r.user_id);
-                if (!userId) {
+                const groupIds = (r.group_ids || []).map(Number).filter(Boolean);
+                if (!userId && !groupIds.length) {
                     continue;
                 }
                 const perms = Object.fromEntries(
                     this.state.groups.map((g) => [g.key, this.clonePerms(r[g.key])])
                 );
-                const deptKey = String(r.department_id || 0);
-                const key = `${deptKey}::${this.permSignature(perms)}`;
+                const key = r.row_key
+                    ? `key::${r.row_key}`
+                    : `${String(r.department_id || 0)}::${this.permSignature(perms)}`;
                 if (!merged.has(key)) {
                     merged.set(key, {
-                        key: `grp-${key}`,
+                        key: r.row_key || `grp-${key}`,
                         stt: 0,
                         user_ids: [],
+                        group_ids: [],
                         record_ids: {},
                         query: "",
                         open: false,
+                        gquery: "",
+                        gopen: false,
+                        ghover: 0,
                         ...perms,
                     });
                 }
                 const row = merged.get(key);
-                row.user_ids.push(userId);
-                row.record_ids[userId] = r.id;
+                if (userId) {
+                    row.user_ids.push(userId);
+                    row.record_ids[userId] = r.id;
+                }
+                for (const gid of groupIds) {
+                    if (!row.group_ids.includes(gid)) {
+                        row.group_ids.push(gid);
+                    }
+                }
             }
             const rows = [...merged.values()];
             if (!rows.length) {
@@ -245,8 +427,11 @@ export class LugProjectAppPerm extends Component {
 
     onQueryBlur(row) {
         setTimeout(() => {
+            if (this._holdSuggest) {
+                return;
+            }
             row.open = false;
-        }, 180);
+        }, 250);
     }
 
     onPickUser(row, userId) {
@@ -285,9 +470,9 @@ export class LugProjectAppPerm extends Component {
         }
     }
 
-    onToggle(row, groupKey, permKey, ev) {
+    setPerm(row, groupKey, permKey, value) {
         const group = { ...this.emptyPerms(), ...this.clonePerms(row[groupKey]) };
-        const next = Boolean(ev?.target?.checked);
+        const next = Boolean(value);
         group[permKey] = next;
         if (next && permKey !== "view") {
             group.view = true;
@@ -309,6 +494,13 @@ export class LugProjectAppPerm extends Component {
         const used = new Set();
         for (const row of this.state.rows) {
             const ids = [...new Set((row.user_ids || []).map(Number).filter(Boolean))];
+            const groupIds = [...new Set((row.group_ids || []).map(Number).filter(Boolean))];
+            if (!ids.length && !groupIds.length) {
+                this.notification.add("Mỗi dòng cần chọn user hoặc nhóm quyền (LUG Permission).", {
+                    type: "warning",
+                });
+                return;
+            }
             for (const userId of ids) {
                 if (used.has(userId)) {
                     this.notification.add("Có user bị chọn trùng trên nhiều dòng. Kiểm tra lại.", {
@@ -317,13 +509,15 @@ export class LugProjectAppPerm extends Component {
                     return;
                 }
                 used.add(userId);
-                payload.push({
-                    user_id: userId,
-                    ...Object.fromEntries(
-                        this.state.groups.map((g) => [g.key, this.clonePerms(row[g.key])])
-                    ),
-                });
             }
+            payload.push({
+                row_key: row.key,
+                user_ids: ids,
+                group_ids: groupIds,
+                ...Object.fromEntries(
+                    this.state.groups.map((g) => [g.key, this.clonePerms(row[g.key])])
+                ),
+            });
         }
         this.state.saving = true;
         try {

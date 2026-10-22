@@ -817,7 +817,9 @@ export class LugProjectShell extends Component {
         return this.navSections
             .map((section) => ({
                 ...section,
-                items: section.items.filter((item) => this.hasPerm(item.code)),
+                items: section.items.filter((item) =>
+                    item.code === "intake" ? this.hasPerm("intake", "others") : this.hasPerm(item.code)
+                ),
             }))
             .filter((section) => section.items.length);
     }
@@ -832,7 +834,7 @@ export class LugProjectShell extends Component {
             group: code,
             write: this.hasPerm(code, "write"),
             export: this.hasPerm(code, "export"),
-            create: this.hasPerm("intake"),
+            create: this.hasPerm("intake", "others") || this.hasPerm(code, "others"),
         };
     }
 
@@ -841,7 +843,11 @@ export class LugProjectShell extends Component {
     }
 
     _ensureAllowedActive() {
-        if (this.hasPerm(this.state.active) || this.noAppAccess) {
+        if (
+            this.hasPerm(this.state.active) ||
+            (this.state.active === "intake" && this.hasPerm("intake", "others")) ||
+            this.noAppAccess
+        ) {
             return false;
         }
         this.state.active = IN_SHELL_CODES.find((code) => this.hasPerm(code));
@@ -1808,7 +1814,12 @@ body.o_lug_shell_active .o_action_manager { flex: 1 1 auto !important; min-heigh
     }
 
     async setActive(code) {
-        if (!this.hasPerm(code)) {
+        if (code === "intake") {
+            if (!this.hasPerm("intake", "others")) {
+                this.notification.add("Bạn không có quyền thêm mới dự án.", { type: "warning" });
+                return;
+            }
+        } else if (!this.hasPerm(code)) {
             this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
             return;
         }
@@ -1850,9 +1861,6 @@ body.o_lug_shell_active .o_action_manager { flex: 1 1 auto !important; min-heigh
         }
         if (code === "perf") {
             await this.loadProjPerfReport();
-        }
-        if (code === "cfg_access") {
-            await this.loadAccessData();
         }
     }
 

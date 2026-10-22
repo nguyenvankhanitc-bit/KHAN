@@ -29,9 +29,9 @@ GROUP_LIST = [
 ]
 GROUPS = tuple(k for k, _l in GROUP_LIST)
 PERMS = ("view", "others", "write", "export")
-PERM_LABELS = {"view": "Xem", "others": "Xem DA người khác", "write": "Chỉnh sửa", "export": "Xuất Excel"}
+PERM_LABELS = {"view": "Xem", "others": "Thêm", "write": "Chỉnh sửa", "export": "Xuất Excel"}
 LABELS = dict(GROUP_LIST)
-ACTS = {"view": "xem", "others": "xem dự án của người khác ở", "write": "chỉnh sửa", "export": "xuất Excel"}
+ACTS = {"view": "xem", "others": "thêm mới ở", "write": "chỉnh sửa", "export": "xuất Excel"}
 LIST_GROUPS = ("list", "overdue", "archived")
 
 
@@ -40,8 +40,13 @@ class LugProjectAppPerm(models.Model):
     _description = "Phân quyền ứng dụng Dự án"
     _order = "user_id"
 
-    user_id = fields.Many2one("res.users", string="User được phân quyền", required=True,
+    user_id = fields.Many2one("res.users", string="User được phân quyền",
                               ondelete="cascade", index=True, domain="[('share', '=', False)]")
+    lug_group_ids = fields.Many2many(
+        "lug.group", "lug_project_app_perm_lug_group_rel", "perm_id", "group_id",
+        string="Nhóm quyền (LUG Permission)",
+    )
+    row_key = fields.Char(string="Dòng ma trận", index=True)
     active = fields.Boolean(default=True)
 
     for _g, _gl in GROUP_LIST:
@@ -49,12 +54,21 @@ class LugProjectAppPerm(models.Model):
             locals()["perm_%s_%s" % (_g, _p)] = fields.Boolean(string="%s: %s" % (_gl, PERM_LABELS[_p]))
     del _g, _gl, _p
 
-    _user_uniq = models.Constraint("UNIQUE(user_id)", "Mỗi user chỉ có 1 dòng phân quyền dự án.")
-
     @api.constrains("user_id")
+    def _check_user_uniq(self):
+        for rec in self:
+            if not rec.user_id:
+                continue
+            other = self.sudo().search([("user_id", "=", rec.user_id.id), ("id", "!=", rec.id)], limit=1)
+            if other:
+                raise ValidationError("Mỗi user chỉ có 1 dòng phân quyền dự án.")
+
+    @api.constrains("user_id", "lug_group_ids")
     def _check_internal_user(self):
         for rec in self:
-            if rec.user_id.share:
+            if not rec.user_id and not rec.lug_group_ids:
+                raise ValidationError("Dòng phân quyền dự án cần ít nhất 1 user hoặc 1 nhóm quyền.")
+            if rec.user_id and rec.user_id.share:
                 raise ValidationError("«%s» không phải user nội bộ." % (rec.user_id.name or ""))
 
     # ------------------------------------------------------------------
@@ -69,17 +83,24 @@ class LugProjectAppPerm(models.Model):
 
     @api.model
     def get_map(self, user=None):
-        """{nhóm: {view, others, write, export}, 'configured': bool, 'full': bool}.
-        others=None → chưa cấu hình, không giới hạn dự án theo người."""
+        """{nhóm: {view, others=Thêm, write, export}, 'configured': bool, 'full': bool}.
+        others=None → chưa cấu hình, được thêm mới."""
         user = user or self.env.user
         if self.env.su or self._is_full(user):
             return {g: {p: True for p in PERMS} for g in GROUPS} | {"configured": True, "full": True}
-        line = self.sudo().search([("active", "=", True), ("user_id", "=", user.id)], limit=1)
-        if not line:
+        lines = self.sudo().search([("active", "=", True), ("user_id", "=", user.id)], limit=1)
+        if not lines and user.sudo().lug_group_ids:
+            lines = self.sudo().search([
+                ("active", "=", True),
+                ("user_id", "=", False),
+                ("lug_group_ids", "in", user.sudo().lug_group_ids.ids),
+            ])
+        if not lines:
             return {g: {"view": True, "others": None, "write": True, "export": True} for g in GROUPS} | {
                 "configured": False, "full": False}
-        return {g: {p: bool(line["perm_%s_%s" % (g, p)]) for p in PERMS} for g in GROUPS} | {
-            "configured": True, "full": False}
+        return {
+            g: {p: any(line["perm_%s_%s" % (g, p)] for line in lines) for p in PERMS} for g in GROUPS
+        } | {"configured": True, "full": False}
 
     @api.model
     def get_client_map(self):
@@ -99,8 +120,8 @@ class LugProjectAppPerm(models.Model):
 
     @api.model
     def own_only(self, group):
-        """True khi user bị bỏ tích «Xem DA người khác» ở nhóm này."""
-        return self.get_map().get(group, {}).get("others") is False
+        """Không còn giới hạn «chỉ dự án của mình» — cột đó đã đổi thành quyền Thêm."""
+        return False
 
     # ------------------------------------------------------------------ ma trận (OWL)
     @api.model
@@ -120,15 +141,35 @@ class LugProjectAppPerm(models.Model):
             raise AccessError("Chỉ Quản lý dự án / Quản trị viên mới cấu hình phân quyền dự án.")
         users = self.env["res.users"].sudo().search([("share", "=", False), ("active", "=", True)], order="name")
         users = users.filtered(lambda u: not self._is_full(u))
+        lug_groups = self.env["lug.group"].sudo().search([("active", "=", True)], order="name")
         rows = []
-        for line in self.sudo().search([("user_id", "in", users.ids)]):
-            payload = self._user_payload(line.user_id)
-            row = {"id": line.id, "user_id": line.user_id.id, "department_id": payload["department_id"]}
+        lines = self.sudo().search([
+            "|", ("user_id", "in", users.ids),
+            "&", ("user_id", "=", False), ("lug_group_ids", "!=", False),
+        ])
+        for line in lines:
+            row = {
+                "id": line.id,
+                "row_key": line.row_key or "",
+                "user_id": line.user_id.id or 0,
+                "group_ids": line.lug_group_ids.ids,
+                "department_id": self._user_payload(line.user_id)["department_id"] if line.user_id else 0,
+            }
             for g in GROUPS:
                 row[g] = {p: bool(line["perm_%s_%s" % (g, p)]) for p in PERMS}
             rows.append(row)
         return {
             "rows": rows,
+            "lug_groups": [
+                {
+                    "id": g.id,
+                    "name": g.name or "",
+                    "code": g.code or "",
+                    "user_count": len(g.user_ids),
+                    "user_names": [u.name or u.login or "" for u in g.user_ids.sorted("name")],
+                }
+                for g in lug_groups
+            ],
             "users": [self._user_payload(u) for u in users],
             "groups": [{"key": k, "label": l} for k, l in GROUP_LIST],
             "perms": [{"key": p, "label": PERM_LABELS[p]} for p in PERMS],
@@ -136,14 +177,20 @@ class LugProjectAppPerm(models.Model):
 
     @api.model
     def save_app_perm_matrix(self, rows):
+        """rows: [{row_key, user_ids, group_ids, <nhóm>: {quyền}}] — 1 bản ghi / user + 1 bản ghi nhóm / dòng."""
         if not self._is_full():
             raise AccessError("Chỉ Quản lý dự án / Quản trị viên mới cấu hình phân quyền dự án.")
+        Rec = self.sudo().with_context(active_test=False)
+        valid_groups = set(self.env["lug.group"].sudo().search([]).ids)
         keep = set()
-        for row in rows or []:
-            user_id = int(row.get("user_id") or 0)
-            if not user_id:
+        seen_users = set()
+        for index, row in enumerate(rows or []):
+            user_ids = [int(u) for u in (row.get("user_ids") or []) if int(u or 0)]
+            group_ids = [int(g) for g in (row.get("group_ids") or []) if int(g or 0) in valid_groups]
+            if not user_ids and not group_ids:
                 continue
-            vals = {"active": True}
+            row_key = (row.get("row_key") or "").strip() or "row-%s" % index
+            vals = {"active": True, "row_key": row_key}
             for g in GROUPS:
                 grp = row.get(g) or {}
                 flags = {p: bool(grp.get(p)) for p in PERMS}
@@ -153,13 +200,25 @@ class LugProjectAppPerm(models.Model):
                     flags = {p: False for p in PERMS}
                 for p in PERMS:
                     vals["perm_%s_%s" % (g, p)] = flags[p]
-            rec = self.sudo().with_context(active_test=False).search([("user_id", "=", user_id)], limit=1)
-            if rec:
-                rec.write(vals)
-            else:
-                rec = self.sudo().create(dict(vals, user_id=user_id))
-            keep.add(rec.id)
-        self.sudo().with_context(active_test=False).search([("id", "not in", list(keep) or [0])]).unlink()
+            for user_id in user_ids:
+                if user_id in seen_users:
+                    raise ValidationError("Có user bị chọn trùng trên nhiều dòng phân quyền.")
+                seen_users.add(user_id)
+                rec = Rec.search([("user_id", "=", user_id)], limit=1)
+                if rec:
+                    rec.write(dict(vals, lug_group_ids=[(5, 0, 0)]))
+                else:
+                    rec = Rec.create(dict(vals, user_id=user_id))
+                keep.add(rec.id)
+            if group_ids:
+                rec = Rec.search([("user_id", "=", False), ("row_key", "=", row_key), ("id", "not in", list(keep) or [0])], limit=1)
+                gvals = dict(vals, lug_group_ids=[(6, 0, group_ids)])
+                if rec:
+                    rec.write(gvals)
+                else:
+                    rec = Rec.create(gvals)
+                keep.add(rec.id)
+        Rec.search([("id", "not in", list(keep) or [0])]).unlink()
         return True
 
 

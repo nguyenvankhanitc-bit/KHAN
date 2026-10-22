@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nhập dự án (custom Project)",
-    "version": "19.0.1.60.0",
+    "version": "19.0.1.61.0",
     "category": "Services/Project",
     "summary": "Bổ sung form nhập dự án trên app Project chuẩn Odoo",
     "description": """
@@ -20,6 +20,7 @@ Inherit app Project native — không tạo model dự án mới.
         "hr",
         "hr_expense",
         "mail",
+        "lug_permission",
     ],
     "data": [
         "security/ir.model.access.csv",

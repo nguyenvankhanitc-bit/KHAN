@@ -32,13 +32,6 @@
                                     t-esc="nav.label"/>
                         </t>
                     </nav>
-                    <div class="o_lps_topbar_user">
-                        <span class="o_lps_topbar_avatar" t-esc="state.userInitial"/>
-                        <span class="o_lps_topbar_identity" t-att-title="state.userLogin">
-                            <strong class="o_lps_topbar_username" t-esc="displayUserName"/>
-                            <small class="o_lps_topbar_role" t-esc="state.userRole"/>
-                        </span>
-                    </div>
                 </header>
                 <div class="o_lps_body" style="display:flex;flex-direction:row;flex:1;min-height:0;height:100%;align-items:stretch;">
                     <aside t-if="showSatacoRail" t-att-class="railClass" t-att-style="railStyle">
@@ -571,87 +564,9 @@
                         <t t-elif="isAccess">
                             <div class="o_lps_scroll">
                             <LugProjectAppPerm t-if="state.appPerm.full" onSaved.bind="loadShellData"/>
-                            <section class="o_lps_access" data-lps-access="v1">
-                                <header class="o_lps_access_head">
-                                    <div>
-                                        <h1><i class="fa fa-users"/> Nhóm quyền Odoo (truy cập app Dự án)</h1>
-                                        <p t-esc="state.access.note || 'Quản lý thành viên nhóm Project chuẩn của Odoo.'"/>
-                                    </div>
-                                    <button type="button"
-                                            class="o_lps_access_refresh"
-                                            t-att-disabled="state.access.loading || state.access.saving"
-                                            t-on-click="loadAccessData">
-                                        <i class="fa fa-refresh"/> Làm mới
-                                    </button>
-                                </header>
-                                <t t-if="state.access.loading">
-                                    <p class="o_lps_empty">Đang tải phân quyền...</p>
-                                </t>
-                                <t t-else="">
-                                    <div t-if="state.access.can_edit" class="o_lps_access_add">
-                                        <select class="o_lps_access_select"
-                                                t-att-value="state.access.pickUserId"
-                                                t-on-change="onAccessPickUser">
-                                            <option value="0">Chọn người dùng...</option>
-                                            <t t-foreach="state.access.candidates" t-as="cand" t-key="cand.id">
-                                                <option t-att-value="cand.id"
-                                                        t-esc="cand.name + (cand.login ? ' (' + cand.login + ')' : '')"/>
-                                            </t>
-                                        </select>
-                                        <select class="o_lps_access_select"
-                                                t-att-value="state.access.pickRole"
-                                                t-on-change="onAccessPickRole">
-                                            <option value="user">Người dùng dự án</option>
-                                            <option value="manager">Quản lý dự án</option>
-                                        </select>
-                                        <button type="button"
-                                                class="o_lps_access_btn"
-                                                t-att-disabled="state.access.saving || !state.access.pickUserId"
-                                                t-on-click="addAccessUser">
-                                            <i class="fa fa-plus"/> Thêm
-                                        </button>
-                                    </div>
-                                    <p t-else="" class="o_lps_access_readonly">
-                                        Bạn chỉ được xem. Chỉ Quản lý dự án / Quản trị viên mới được đổi quyền.
-                                    </p>
-                                    <div class="o_lps_access_grid">
-                                        <t t-foreach="state.access.roles" t-as="role" t-key="role.key">
-                                            <article class="o_lps_access_card">
-                                                <header>
-                                                    <div>
-                                                        <h2 t-esc="role.label"/>
-                                                        <p t-esc="role.hint"/>
-                                                    </div>
-                                                    <em t-esc="(role.users || []).length"/>
-                                                </header>
-                                                <t t-if="!(role.users || []).length">
-                                                    <p class="o_lps_empty">Chưa có thành viên.</p>
-                                                </t>
-                                                <ul t-else="" class="o_lps_access_users">
-                                                    <t t-foreach="role.users" t-as="u" t-key="u.id">
-                                                        <li>
-                                                            <span class="o_lps_access_avatar" t-esc="u.initial"/>
-                                                            <div>
-                                                                <strong t-esc="u.name"/>
-                                                                <small t-esc="u.login"/>
-                                                            </div>
-                                                            <t t-if="state.access.can_edit">
-                                                                <button type="button"
-                                                                        class="o_lps_access_remove"
-                                                                        title="Gỡ quyền Project"
-                                                                        t-att-disabled="state.access.saving"
-                                                                        t-on-click="() => this.setAccessRole(u.id, 'none')">
-                                                                    <i class="fa fa-times"/>
-                                                                </button>
-                                                            </t>
-                                                        </li>
-                                                    </t>
-                                                </ul>
-                                            </article>
-                                        </t>
-                                    </div>
-                                </t>
-                            </section>
+                            <p t-if="!state.appPerm.full" class="o_lps_empty">
+                                Chỉ Quản trị viên / Quản lý dự án mới được cấu hình phân quyền ứng dụng.
+                            </p>
                             </div>
                         </t>
                         <t t-elif="state.viewError">

@@ -111,36 +111,46 @@
 .o_lug_sc_table_wrap {
     width: 100%;
     overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 0 0 10px 10px;
 }
 
 .o_lug_sc_table {
     width: 100%;
+    min-width: 1240px;
     table-layout: fixed;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
 .o_lug_sc_table th,
 .o_lug_sc_table td {
-    padding: 0.55rem 0.62rem;
+    padding: 0.55rem 0.65rem;
     font-size: 0.82rem;
     vertical-align: middle;
+    box-sizing: border-box;
 }
 
 .o_lug_sc_table thead th {
     text-align: center;
-    background: #f8fafc;
-    color: #1e293b;
-    font-size: 0.75rem;
+    background: #f1f5f9;
+    color: #334155;
+    font-size: 0.76rem;
     font-weight: 700;
-    letter-spacing: 0.03em;
+    letter-spacing: 0.02em;
     text-transform: uppercase;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border: 1px solid #cbd5e1;
 }
 
 .o_lug_sc_table tbody td {
+    border: 1px solid #e2e8f0;
     word-break: break-word;
+    overflow-wrap: break-word;
     white-space: normal;
-    overflow-wrap: anywhere;
 }
 
 .o_lug_sc_table .is-stt {

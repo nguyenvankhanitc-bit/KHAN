@@ -85,90 +85,128 @@
 
 .custom_full_table {
     width: 100% !important;
+    min-width: 1240px !important;
     table-layout: fixed !important;
-    border-collapse: collapse !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
 
     thead th {
         text-align: center !important;
         font-weight: 700 !important;
-        font-size: 0.75rem !important;
-        padding: 0.62rem 0.5rem !important;
-        background-color: #f8fafc !important;
-        color: #1e293b !important;
+        font-size: 0.76rem !important;
+        padding: 0.65rem 0.5rem !important;
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
         border: 1px solid #cbd5e1 !important;
         white-space: nowrap !important;
         vertical-align: middle !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        letter-spacing: 0.02em !important;
     }
 
     tbody td,
     tfoot td {
         border: 1px solid #e2e8f0 !important;
-        padding: 0.55rem 0.62rem !important;
+        padding: 0.55rem 0.65rem !important;
         vertical-align: middle !important;
+        font-size: 0.82rem !important;
+        box-sizing: border-box !important;
         word-break: break-word !important;
+        overflow-wrap: break-word !important;
         white-space: normal !important;
-        overflow-wrap: anywhere;
     }
 
-    tbody td:nth-child(1),
-    tbody td:nth-child(5),
-    tbody td:nth-child(6),
-    tbody td:nth-child(7),
-    tfoot td.is-cost {
+    /* Column-specific alignments and widths */
+    .is-stt {
+        width: 48px !important;
+        min-width: 48px !important;
+        max-width: 55px !important;
         text-align: center !important;
-    }
-
-    tbody td.is-cost,
-    tfoot td.is-cost {
-        text-align: right !important;
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
-    }
-
-    tbody td.is-name {
-        text-align: left !important;
+        color: #64748b;
         font-weight: 700;
     }
 
-    tbody td.is-note {
+    .is-name {
+        width: 250px !important;
+        min-width: 220px !important;
         text-align: left !important;
-        max-width: none !important;
+        font-weight: 700;
+        color: #0f172a;
     }
 
-    thead th.is-stt {
-        width: 4%;
+    .is-user {
+        width: 145px !important;
+        min-width: 135px !important;
+        text-align: left !important;
+        color: #334155;
     }
 
-    thead th.is-name {
-        width: 36%;
+    .is-supervisor {
+        width: 145px !important;
+        min-width: 135px !important;
+        text-align: left !important;
+        color: #334155;
     }
 
-    thead th.is-user,
-    thead th.is-supervisor {
-        width: 10%;
+    .is-execution-date {
+        width: 115px !important;
+        min-width: 110px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        font-variant-numeric: tabular-nums;
+        color: #475569;
     }
 
-    thead th.is-deadline {
-        width: 8%;
+    .is-deadline {
+        width: 110px !important;
+        min-width: 105px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        font-variant-numeric: tabular-nums;
+        color: #475569;
     }
 
-    thead th.is-state {
-        width: 8%;
+    .is-state {
+        width: 125px !important;
+        min-width: 120px !important;
+        text-align: center !important;
     }
 
-    thead th.is-timeleft {
-        width: 7%;
+    .is-timeleft {
+        width: 115px !important;
+        min-width: 110px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
     }
 
-    thead th.is-note {
-        width: 14%;
+    .is-note {
+        width: 140px !important;
+        min-width: 130px !important;
+        text-align: left !important;
+        color: #64748b;
     }
 
-    thead th.is-cost {
-        width: 7%;
+    .is-cost {
+        width: 125px !important;
+        min-width: 120px !important;
+        text-align: right !important;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap !important;
     }
 
-    thead th.is-act {
-        width: 3%;
+    .is-act {
+        width: 45px !important;
+        min-width: 45px !important;
+        text-align: center !important;
+    }
+
+    tfoot td.is-cost {
+        text-align: right !important;
+        font-weight: 800;
+        font-size: 0.85rem;
+        color: #6d28d9;
     }
 }

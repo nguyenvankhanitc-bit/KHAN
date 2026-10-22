@@ -27,19 +27,32 @@
                     <div t-if="!card.collapsed" class="o_lug_sc_body">
                         <div class="o_lug_sc_table_wrap">
                             <table class="o_lug_sc_table custom_full_table">
+                                <colgroup>
+                                    <col style="width: 48px;"/>
+                                    <col style="width: 250px;"/>
+                                    <col style="width: 145px;"/>
+                                    <col style="width: 145px;"/>
+                                    <col style="width: 115px;"/>
+                                    <col style="width: 110px;"/>
+                                    <col style="width: 125px;"/>
+                                    <col style="width: 115px;"/>
+                                    <col style="width: 140px;"/>
+                                    <col style="width: 125px;"/>
+                                    <col t-if="canEdit" style="width: 45px;"/>
+                                </colgroup>
                                 <thead>
                                     <tr>
-                                        <th class="is-stt">STT</th>
-                                        <th class="is-name">Tên công việc giai đoạn</th>
-                                        <th class="is-user">Người phụ trách</th>
-                                        <th class="is-supervisor">Người giám sát</th>
-                                        <th class="is-execution-date">Ngày thực hiện</th>
-                                        <th class="is-deadline">Deadline</th>
-                                        <th class="is-state">Trạng thái</th>
-                                        <th class="is-timeleft">Timeleft</th>
-                                        <th class="is-note">Ghi chú</th>
-                                        <th class="is-cost">Chi phí</th>
-                                        <th t-if="canEdit" class="is-act"/>
+                                        <th class="is-stt" title="STT">STT</th>
+                                        <th class="is-name" title="Tên công việc giai đoạn">Tên công việc giai đoạn</th>
+                                        <th class="is-user" title="Người phụ trách">Người phụ trách</th>
+                                        <th class="is-supervisor" title="Người giám sát">Người giám sát</th>
+                                        <th class="is-execution-date" title="Ngày thực hiện">Ngày thực hiện</th>
+                                        <th class="is-deadline" title="Deadline">Deadline</th>
+                                        <th class="is-state" title="Trạng thái">Trạng thái</th>
+                                        <th class="is-timeleft" title="Timeleft">Timeleft</th>
+                                        <th class="is-note" title="Ghi chú">Ghi chú</th>
+                                        <th class="is-cost" title="Chi phí">Chi phí</th>
+                                        <th t-if="canEdit" class="is-act" title="Hành động"/>
                                     </tr>
                                 </thead>
                                 <tbody>

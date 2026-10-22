@@ -53,11 +53,11 @@ class ProjectStageTask(models.Model):
         domain="[('share', '=', False)]",
     )
     user_display = fields.Char(
-        string="Người phụ trách",
+        string="Người phụ trách (hiển thị)",
         compute="_compute_assignee_display",
     )
     supervisor_display = fields.Char(
-        string="Người giám sát",
+        string="Người giám sát (hiển thị)",
         compute="_compute_assignee_display",
     )
     execution_date = fields.Date(string="Ngày thực hiện")

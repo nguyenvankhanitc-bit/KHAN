@@ -25,7 +25,7 @@ class ProjectTask(models.Model):
             ("5", "Giai đoạn 5: BẢO HÀNH & HỖ TRỢ"),
             ("6", "Giai đoạn 6: ĐÓNG DỰ ÁN"),
         ],
-        string="Giai đoạn",
+        string="Bước giai đoạn",
         index=True,
     )
     lug_pic_id = fields.Many2one(

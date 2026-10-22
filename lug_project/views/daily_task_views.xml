@@ -78,14 +78,14 @@
                                         <field name="name"/>
                                     </strong>
                                     <div class="text-primary small mt-1">
-                                        <i class="fa fa-folder-open-o me-1"/><field name="lug_project_id"/>
+                                        <i class="fa fa-folder-open-o me-1" title="Dự án"/><field name="lug_project_id"/>
                                     </div>
                                 </div>
                             </div>
                             <div class="o_kanban_record_body my-1">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <span class="badge text-bg-light">
-                                        <i class="fa fa-clock-o me-1"/><field name="deadline"/>
+                                        <i class="fa fa-clock-o me-1" title="Hạn chót"/><field name="deadline"/>
                                     </span>
                                     <field name="priority" widget="badge"/>
                                 </div>

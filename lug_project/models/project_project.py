@@ -99,12 +99,12 @@ class ProjectProject(models.Model):
         domain="[('share', '=', False)]",
     )
     lug_worker_label = fields.Char(
-        string="Người làm",
+        string="Nhãn người làm",
         compute="_compute_lug_list_display",
     )
     lug_worker_ids = fields.Many2many(
         "res.users",
-        string="Người làm",
+        string="Danh sách người làm",
         compute="_compute_lug_list_display",
     )
     lug_timeleft = fields.Char(
@@ -137,7 +137,7 @@ class ProjectProject(models.Model):
     )
     code = fields.Char(
         related="lug_code",
-        string="Mã dự án",
+        string="Mã dự án (Code)",
         readonly=True,
     )
     project_type = fields.Selection(
@@ -147,7 +147,7 @@ class ProjectProject(models.Model):
             ("internal", "Internal"),
             ("other", "Khác"),
         ],
-        string="Loại dự án",
+        string="Phân loại dự án",
         compute="_compute_project_type",
         store=True,
     )
@@ -171,7 +171,7 @@ class ProjectProject(models.Model):
         store=True,
     )
     lug_priority_label = fields.Char(
-        string="Độ ưu tiên",
+        string="Nhãn độ ưu tiên",
         compute="_compute_lug_priority_label",
     )
     lug_archived_date = fields.Date(

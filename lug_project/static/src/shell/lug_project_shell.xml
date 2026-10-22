@@ -2,15 +2,30 @@
 <templates xml:space="preserve">
     <t t-name="lug_project.LugProjectShell">
         <div t-att-class="shellClass"
-             data-lps-ui="topbar-plist-v1">
-            <div class="o_lps_shell">
-                <header class="o_lps_topbar">
-                    <div class="o_lps_topbar_brand">
-                        <i class="fa fa-th"/>
-                        <span>DỰ ÁN SÁNG TÂM</span>
-                    </div>
+             data-lps-ui="sidebar-dwd-v1">
+            <div class="o_lps_shell"
+                 style="display:flex;flex-direction:column;flex:1;min-height:0;height:100%;overflow:hidden;">
+                <header class="o_lps_topbar"
+                        style="display:flex;flex-shrink:0;min-height:52px;width:100%;">
+                    <button type="button"
+                            class="o_lps_topbar_burger"
+                            t-on-click="toggleSidebar"
+                            t-att-title="state.sidebarCollapsed ? 'Mở rộng thanh bên' : 'Thu gọn thanh bên'">
+                        <i t-att-class="state.sidebarCollapsed ? 'fa fa-indent' : 'fa fa-bars'"/>
+                    </button>
+                    <button type="button"
+                            class="o_lps_topbar_brand"
+                            title="Về App Center"
+                            t-on-click="goHome">
+                        <img class="o_lps_topbar_logo" t-att-src="state.companyLogoUrl" alt="SATACO"/>
+                        <span class="o_lps_topbar_org">
+                            <strong t-esc="state.companyName"/>
+                            <small t-if="state.companyAddress" t-esc="state.companyAddress"/>
+                        </span>
+                    </button>
+                    <span class="o_lps_topbar_module"><i class="fa fa-folder-open"/> DỰ ÁN</span>
                     <nav class="o_lps_topbar_nav">
-                        <t t-foreach="topNavItems" t-as="nav" t-key="nav.code">
+                        <t t-foreach="visibleTopNavItems" t-as="nav" t-key="nav.code">
                             <button type="button"
                                     t-att-class="'o_lps_topbar_link' + (isTopNavActive(nav.code) ? ' is-active' : '')"
                                     t-on-click="() => this.setActive(nav.code === 'list' ? 'list' : nav.code)"
@@ -19,11 +34,14 @@
                     </nav>
                     <div class="o_lps_topbar_user">
                         <span class="o_lps_topbar_avatar" t-esc="state.userInitial"/>
-                        <span class="o_lps_topbar_company" t-esc="state.companyName"/>
+                        <span class="o_lps_topbar_identity" t-att-title="state.userLogin">
+                            <strong class="o_lps_topbar_username" t-esc="displayUserName"/>
+                            <small class="o_lps_topbar_role" t-esc="state.userRole"/>
+                        </span>
                     </div>
                 </header>
                 <div class="o_lps_body" style="display:flex;flex-direction:row;flex:1;min-height:0;height:100%;align-items:stretch;">
-                    <aside t-att-class="railClass" t-att-style="railStyle">
+                    <aside t-if="showSatacoRail" t-att-class="railClass" t-att-style="railStyle">
                         <button type="button" class="o_lps_rail_brand" title="Trang chủ" t-on-click="goHome">
                             <img t-att-src="state.companyLogoUrl" alt="SATACO"/>
                             <span>
@@ -69,7 +87,7 @@
 
                     <aside t-att-class="sidebarClass" t-att-style="sidebarStyle">
                         <div class="o_lps_side_scroll">
-                            <t t-foreach="navSections" t-as="section" t-key="section.key">
+                            <t t-foreach="visibleNavSections" t-as="section" t-key="section.key">
                                 <div class="o_lps_side_section">
                                     <div class="o_lps_side_label">
                                         <span t-if="section.emoji" t-esc="section.emoji"/>
@@ -80,12 +98,10 @@
                                                 t-att-class="'o_lps_side_item' + (item.cta ? ' is-cta' : '') + (state.active === item.code ? (item.code === 'kpi' ? ' active is-kpi' : ' active') : '')"
                                                 t-att-title="item.label"
                                                 t-on-click="() => this.setActive(item.code)">
-                                            <span t-att-class="'o_lps_ico ico-' + item.code">
-                                                <i t-att-class="'fa ' + item.icon"/>
-                                            </span>
+                                            <i t-att-class="'fa ' + item.icon"/>
                                             <span class="o_lps_side_text" t-esc="item.label"/>
                                             <t t-if="itemBadge(item)">
-                                                <em t-att-class="'o_lps_side_count' + (item.badgeKey === 'overdue' ? ' red' : '')"
+                                                <em t-att-class="'o_lps_side_count' + (item.badgeKey === 'list' || item.badgeKey === 'archived' ? ' indigo' : '')"
                                                     t-esc="itemBadge(item)"/>
                                             </t>
                                         </button>
@@ -94,24 +110,21 @@
                             </t>
                         </div>
                         <div t-att-class="sidebarResizerClass"
-                             style="position:absolute;top:0;right:-7px;bottom:0;width:14px;z-index:80;cursor:col-resize;"
+                             title="Kéo để đổi độ rộng menu"
                              t-on-pointerdown="onSidebarResizeStart"
-                             t-on-dblclick="resetSidebarWidth"
-                             title="Kéo để đổi độ rộng menu">
-                            <b class="o_lps_edge_bar"
-                               style="position:absolute;top:10px;bottom:10px;left:50%;width:4px;margin-left:-2px;border-radius:99px;background:#1e293b;display:block;"/>
-                            <span class="o_lps_edge_btn"
-                                  role="button"
-                                  style="position:absolute;top:50%;left:50%;width:22px;height:22px;margin:16px 0 0 -11px;border-radius:50%;background:#4c1d95;color:#fff;font-size:16px;font-weight:800;line-height:22px;text-align:center;cursor:pointer;display:block;"
-                                  t-on-click.stop="toggleSidebar"
-                                  t-on-pointerdown="stopPointer"
-                                  t-att-title="state.sidebarCollapsed ? 'Mở menu dự án' : 'Thu gọn menu dự án'"
-                                  t-esc="state.sidebarCollapsed ? '›' : '‹'"/>
+                             t-on-dblclick="resetSidebarWidth">
+                            <b class="o_lps_sidebar_resizer_grip"/>
                         </div>
                     </aside>
 
                     <main class="o_lps_content" style="position:relative;overflow:hidden;flex:1;min-height:0;min-width:0;">
-                        <t t-if="isHome">
+                        <t t-if="noAppAccess and !isAccess">
+                            <div class="o_lps_view_error">
+                                <p>Bạn chưa được phân quyền sử dụng ứng dụng Dự án.</p>
+                                <pre>Liên hệ Quản lý dự án / Quản trị viên để được cấp quyền.</pre>
+                            </div>
+                        </t>
+                        <t t-elif="isHome">
                             <div class="o_lps_scroll_controls" aria-label="Cuộn tổng quan">
                                 <button type="button" class="o_lps_scroll_btn" title="Cuộn lên" t-on-click="scrollOverviewUp">▲</button>
                                 <button type="button" class="o_lps_scroll_btn" title="Cuộn xuống" t-on-click="scrollOverviewDown">▼</button>
@@ -140,7 +153,7 @@
                                                 <option t-att-value="ptype.id" t-esc="ptype.name"/>
                                             </t>
                                         </select>
-                                        <button type="button" class="o_lps_ov_export" t-on-click="exportOverview">
+                                        <button t-if="hasPerm('kpi', 'export')" type="button" class="o_lps_ov_export" t-on-click="exportOverview">
                                             <i class="fa fa-file-excel-o"/>
                                             Xuất Báo Cáo
                                         </button>
@@ -221,6 +234,426 @@
                             </section>
                             </div>
                         </t>
+                        <t t-elif="isReportAll">
+                            <div class="o_lps_scroll">
+                            <section class="o_lps_report" data-lps-report="pie-v1">
+                                <header class="o_lps_report_head">
+                                    <div>
+                                        <h1><i class="fa fa-pie-chart"/> Báo cáo tổng thể dự án</h1>
+                                        <p>Tỷ lệ công việc theo trạng thái của từng dự án</p>
+                                    </div>
+                                    <div class="o_lps_report_filters">
+                                        <select class="o_lps_ov_select" t-on-change="onReportTypeChange">
+                                            <option value="0">Tất cả loại DA</option>
+                                            <t t-foreach="state.report.types" t-as="ptype" t-key="ptype.id">
+                                                <option t-att-value="ptype.id"
+                                                        t-att-selected="state.report.typeId === ptype.id"
+                                                        t-esc="ptype.name"/>
+                                            </t>
+                                        </select>
+                                        <select class="o_lps_ov_select" t-on-change="onReportStatusChange">
+                                            <option value="">Tất cả trạng thái</option>
+                                            <t t-foreach="state.report.statuses" t-as="st" t-key="st.key">
+                                                <option t-att-value="st.key"
+                                                        t-att-selected="state.report.status === st.key"
+                                                        t-esc="st.label"/>
+                                            </t>
+                                        </select>
+                                    </div>
+                                </header>
+
+                                <t t-if="state.report.loading and !state.report.rows.length">
+                                    <p class="o_lps_empty">Đang tải báo cáo...</p>
+                                </t>
+                                <t t-else="">
+                                    <div class="o_lps_report_summary">
+                                        <article class="o_lps_report_card is-summary">
+                                            <h2>Dự án theo trạng thái</h2>
+                                            <div class="o_lps_report_pie">
+                                                <canvas data-lps-report-chart="status"/>
+                                                <div class="o_lps_report_center">
+                                                    <strong t-esc="state.report.project_count"/>
+                                                    <small>dự án</small>
+                                                </div>
+                                            </div>
+                                            <ul class="o_lps_report_legend">
+                                                <t t-foreach="reportLegend(state.report.status_segments)" t-as="seg" t-key="seg.key">
+                                                    <li>
+                                                        <i t-att-style="'background:' + seg.color"/>
+                                                        <span t-esc="seg.label"/>
+                                                        <b t-esc="seg.value"/>
+                                                        <em><t t-esc="seg.pct"/>%</em>
+                                                    </li>
+                                                </t>
+                                            </ul>
+                                        </article>
+                                        <article class="o_lps_report_card is-summary">
+                                            <h2>Tổng công việc tất cả dự án</h2>
+                                            <div class="o_lps_report_pie">
+                                                <canvas data-lps-report-chart="tasks"/>
+                                                <div class="o_lps_report_center">
+                                                    <strong t-esc="state.report.task_total"/>
+                                                    <small>công việc</small>
+                                                </div>
+                                            </div>
+                                            <ul class="o_lps_report_legend">
+                                                <t t-foreach="reportLegend(state.report.task_segments)" t-as="seg" t-key="seg.key">
+                                                    <li>
+                                                        <i t-att-style="'background:' + seg.color"/>
+                                                        <span t-esc="seg.label"/>
+                                                        <b t-esc="seg.value"/>
+                                                        <em><t t-esc="seg.pct"/>%</em>
+                                                    </li>
+                                                </t>
+                                            </ul>
+                                        </article>
+                                    </div>
+
+                                    <h3 class="o_lps_report_section">Chi tiết từng dự án</h3>
+                                    <p t-if="!state.report.rows.length" class="o_lps_empty">Không có dự án phù hợp.</p>
+                                    <div class="o_lps_report_grid">
+                                        <t t-foreach="state.report.rows" t-as="row" t-key="row.id">
+                                            <article class="o_lps_report_card">
+                                                <header class="o_lps_report_card_head">
+                                                    <button type="button" class="o_lps_report_title"
+                                                            title="Mở dự án"
+                                                            t-on-click="() => this.openProject(row.id)">
+                                                        <small t-esc="row.code"/>
+                                                        <strong t-esc="row.name"/>
+                                                    </button>
+                                                    <span t-att-class="'o_lps_report_status is-' + row.status" t-esc="row.status_label"/>
+                                                </header>
+                                                <div class="o_lps_report_pie">
+                                                    <canvas t-att-data-lps-report-chart="'p' + row.id"/>
+                                                    <div class="o_lps_report_center">
+                                                        <t t-if="row.total">
+                                                            <strong><t t-esc="row.done_pct"/>%</strong>
+                                                            <small>hoàn thành</small>
+                                                        </t>
+                                                        <small t-else="">Chưa có công việc</small>
+                                                    </div>
+                                                </div>
+                                                <ul class="o_lps_report_legend">
+                                                    <t t-foreach="reportLegend(row.segments)" t-as="seg" t-key="seg.key">
+                                                        <li>
+                                                            <i t-att-style="'background:' + seg.color"/>
+                                                            <span t-esc="seg.label"/>
+                                                            <b t-esc="seg.value"/>
+                                                            <em><t t-esc="seg.pct"/>%</em>
+                                                        </li>
+                                                    </t>
+                                                </ul>
+                                                <footer class="o_lps_report_meta">
+                                                    <span><i class="fa fa-user"/> <t t-esc="row.manager_name"/></span>
+                                                    <span t-att-class="'o_lps_report_dl is-' + row.deadline_state" t-esc="row.deadline_badge"/>
+                                                    <span><t t-esc="row.total"/> công việc</span>
+                                                </footer>
+                                            </article>
+                                        </t>
+                                    </div>
+                                </t>
+                                <div class="o_lps_scroll_spacer" aria-hidden="true"/>
+                            </section>
+                            </div>
+                        </t>
+                        <t t-elif="isProjPerf">
+                            <div class="o_lps_scroll">
+                            <section class="o_dpr_root o_lps_perf o_lps_proj_perf" data-lps-perf="project-v1">
+                                <div class="o_dpr_chart_card o_dpr_staff_card">
+                                    <div class="o_dpr_staff_head">
+                                        <div>
+                                            <h3>Hiệu suất dự án</h3>
+                                            <p>Số liệu công việc theo từng dự án — <t t-esc="state.projPerf.period_label"/>. Bấm vào dự án để xem theo nhân sự.</p>
+                                        </div>
+                                        <div class="o_dpr_staff_actions">
+                                            <label class="o_lps_perf_month">
+                                                <span>Tháng</span>
+                                                <input type="month" class="form-control form-control-sm"
+                                                    t-att-value="projPerfMonthValue"
+                                                    t-on-change="onProjPerfMonthChange"/>
+                                            </label>
+                                            <button type="button"
+                                                t-attf-class="btn btn-sm {{ projPerfMonthValue ? 'btn-light' : 'btn-primary' }}"
+                                                t-on-click="onProjPerfAllTime">Mọi thời gian</button>
+                                        </div>
+                                    </div>
+                                    <div t-if="state.projPerf.loading and !state.projPerf.rows.length" class="o_lps_perf_empty">
+                                        <i class="fa fa-spinner fa-spin me-2"/>Đang tải…
+                                    </div>
+                                    <div t-elif="!state.projPerf.rows.length" class="o_lps_perf_empty">
+                                        Chưa có dự án nào để hiển thị.
+                                    </div>
+                                    <div t-else="" class="o_lps_perf_table_wrap">
+                                        <table class="o_dpr_staff">
+                                            <thead>
+                                                <tr>
+                                                    <th>Dự án / Nhân sự</th>
+                                                    <th class="num">Tổng CV</th>
+                                                    <th class="num">Hoàn thành</th>
+                                                    <th class="num">Đang làm</th>
+                                                    <th class="num">Chưa làm</th>
+                                                    <th class="num">Trễ hạn</th>
+                                                    <th class="num">Hiệu suất</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.projPerf.rows" t-as="p" t-key="p.id">
+                                                    <tr class="o_dpr_dept_row" t-on-click="() => this.toggleProjPerfRow(p.id)">
+                                                        <td>
+                                                            <i t-attf-class="fa {{ isProjPerfOpen(p.id) ? 'fa-chevron-down' : 'fa-chevron-right' }}"/>
+                                                            <span t-if="p.code" class="o_lps_proj_code" t-esc="p.code"/>
+                                                            <b t-esc="p.name"/>
+                                                            <em t-if="p.manager_name">QL: <t t-esc="p.manager_name"/></em>
+                                                        </td>
+                                                        <td class="num" t-esc="p.total"/>
+                                                        <td class="num is-done" t-esc="p.done"/>
+                                                        <td class="num is-doing" t-esc="p.doing"/>
+                                                        <td class="num is-todo" t-esc="p.todo"/>
+                                                        <td class="num is-late" t-esc="p.late"/>
+                                                        <td class="num">
+                                                            <span t-attf-class="o_dpr_eff {{ perfEffClass(p.efficiency) }}"><t t-esc="perfFmt(p.efficiency)"/>%</span>
+                                                        </td>
+                                                    </tr>
+                                                    <t t-if="isProjPerfOpen(p.id)">
+                                                        <tr t-if="!p.members.length" class="o_lps_proj_perf_none">
+                                                            <td colspan="7">Chưa có công việc trong kỳ này.</td>
+                                                        </tr>
+                                                        <tr t-foreach="p.members" t-as="m" t-key="m.id">
+                                                            <td>
+                                                                <span t-attf-class="o_dpr_staff_avatar {{ m.unassigned ? 'is-none' : '' }}">
+                                                                    <i t-if="m.unassigned" class="fa fa-user-o"/>
+                                                                    <t t-else="" t-esc="perfInitials(m.name)"/>
+                                                                </span>
+                                                                <span class="o_dpr_staff_name"><b t-esc="m.name"/></span>
+                                                            </td>
+                                                            <td class="num" t-esc="m.total"/>
+                                                            <td class="num is-done" t-esc="m.done"/>
+                                                            <td class="num is-doing" t-esc="m.doing"/>
+                                                            <td class="num is-todo" t-esc="m.todo"/>
+                                                            <td class="num is-late" t-esc="m.late"/>
+                                                            <td class="num">
+                                                                <span t-attf-class="o_dpr_eff {{ perfEffClass(m.efficiency) }}"><t t-esc="perfFmt(m.efficiency)"/>%</span>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </t>
+                                            </tbody>
+                                            <tfoot>
+                                                <tr class="o_lps_proj_perf_total">
+                                                    <td>Tổng cộng (<t t-esc="state.projPerf.project_count"/> dự án)</td>
+                                                    <td class="num" t-esc="state.projPerf.summary.total"/>
+                                                    <td class="num is-done" t-esc="state.projPerf.summary.done"/>
+                                                    <td class="num is-doing" t-esc="state.projPerf.summary.doing"/>
+                                                    <td class="num is-todo" t-esc="state.projPerf.summary.todo"/>
+                                                    <td class="num is-late" t-esc="state.projPerf.summary.late"/>
+                                                    <td class="num">
+                                                        <span t-attf-class="o_dpr_eff {{ perfEffClass(state.projPerf.summary.efficiency) }}"><t t-esc="perfFmt(state.projPerf.summary.efficiency)"/>%</span>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="o_lps_scroll_spacer" aria-hidden="true"/>
+                            </section>
+                            </div>
+                        </t>
+                        <t t-elif="isPerf">
+                            <div class="o_lps_scroll">
+                            <section class="o_dpr_root o_lps_perf" data-lps-perf="staff-v1">
+                                <div class="o_dpr_chart_card o_dpr_staff_card">
+                                    <div class="o_dpr_staff_head">
+                                        <div>
+                                            <h3>Hiệu suất nhân sự</h3>
+                                            <p>Số liệu công việc dự án trong tháng theo từng nhân sự</p>
+                                        </div>
+                                        <div class="o_dpr_staff_actions">
+                                            <label class="o_lps_perf_month">
+                                                <span>Tháng</span>
+                                                <input type="month" class="form-control form-control-sm"
+                                                    t-att-value="perfMonthValue"
+                                                    t-on-change="onPerfMonthChange"/>
+                                            </label>
+                                            <span t-if="perfDirtyCount" class="o_dpr_perf_pending">
+                                                <t t-esc="perfDirtyCount"/> thay đổi chưa lưu
+                                            </span>
+                                            <button t-if="perfDirtyCount" type="button"
+                                                class="btn btn-sm btn-light"
+                                                t-att-disabled="state.perfReport.saving"
+                                                t-on-click="onCancelPerf">Hủy</button>
+                                            <button type="button" class="btn btn-sm btn-primary"
+                                                t-att-disabled="!perfDirtyCount or state.perfReport.saving"
+                                                t-on-click="onSavePerf">
+                                                <i t-attf-class="fa {{ state.perfReport.saving ? 'fa-spinner fa-spin' : 'fa-save' }} me-1"/>Lưu
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div t-if="state.perfReport.loading and !state.perfReport.groups.length" class="o_lps_perf_empty">
+                                        <i class="fa fa-spinner fa-spin me-2"/>Đang tải…
+                                    </div>
+                                    <div t-elif="!state.perfReport.groups.length" class="o_lps_perf_empty">
+                                        Chưa có nhân sự nào để hiển thị.
+                                    </div>
+                                    <div t-else="" class="o_lps_perf_table_wrap">
+                                        <table class="o_dpr_staff">
+                                            <thead>
+                                                <tr>
+                                                    <th>Nhân sự</th>
+                                                    <th class="num">Tổng CV</th>
+                                                    <th class="num">Hoàn thành</th>
+                                                    <th class="num">Đang làm</th>
+                                                    <th class="num">Chưa làm</th>
+                                                    <th class="num">Trễ hạn</th>
+                                                    <th class="num">Hiệu suất</th>
+                                                    <th class="num o_dpr_mgr_th">QL đánh giá tổng</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="state.perfReport.groups" t-as="g" t-key="g.key">
+                                                    <tr class="o_dpr_dept_row" t-on-click="() => this.togglePerfDept(g.key)">
+                                                        <td>
+                                                            <i t-attf-class="fa {{ isPerfDeptOpen(g.key) ? 'fa-chevron-down' : 'fa-chevron-right' }}"/>
+                                                            <b t-esc="g.name"/>
+                                                            <em><t t-esc="g.count"/> nhân sự</em>
+                                                        </td>
+                                                        <td class="num" t-esc="g.total"/>
+                                                        <td class="num is-done" t-esc="g.done"/>
+                                                        <td class="num is-doing" t-esc="g.doing"/>
+                                                        <td class="num is-todo" t-esc="g.todo"/>
+                                                        <td class="num is-late" t-esc="g.late"/>
+                                                        <td class="num">
+                                                            <span t-attf-class="o_dpr_eff {{ perfEffClass(g.efficiency) }}"><t t-esc="perfFmt(g.efficiency)"/>%</span>
+                                                        </td>
+                                                        <td class="num"/>
+                                                    </tr>
+                                                    <t t-if="isPerfDeptOpen(g.key)">
+                                                        <tr t-foreach="g.rows" t-as="r" t-key="r.id">
+                                                            <td>
+                                                                <span class="o_dpr_staff_avatar" t-esc="perfInitials(r.name)"/>
+                                                                <span class="o_dpr_staff_name">
+                                                                    <b t-esc="r.name"/>
+                                                                    <small t-if="r.job" t-esc="r.job"/>
+                                                                </span>
+                                                            </td>
+                                                            <td class="num" t-esc="r.total"/>
+                                                            <td class="num is-done" t-esc="r.done"/>
+                                                            <td class="num is-doing" t-esc="r.doing"/>
+                                                            <td class="num is-todo" t-esc="r.todo"/>
+                                                            <td class="num is-late" t-esc="r.late"/>
+                                                            <td class="num">
+                                                                <span t-attf-class="o_dpr_eff {{ perfEffClass(r.efficiency) }}"><t t-esc="perfFmt(r.efficiency)"/>%</span>
+                                                            </td>
+                                                            <td class="num o_dpr_mgr_cell">
+                                                                <span t-if="r.can_rate" t-attf-class="o_dpr_mgr_input {{ isPerfDirty(r) ? 'is-dirty' : '' }}">
+                                                                    <input type="number" min="0" max="100" step="0.1"
+                                                                        class="form-control form-control-sm"
+                                                                        t-att-value="perfShown(r)"
+                                                                        t-att-placeholder="perfFmt(r.efficiency)"
+                                                                        t-on-input="(ev) => this.onManagerPerf(r, ev)"/>
+                                                                    <span>%</span>
+                                                                </span>
+                                                                <t t-elif="perfShown(r) !== ''">
+                                                                    <b><t t-esc="perfFmt(perfShown(r))"/>%</b>
+                                                                </t>
+                                                                <span t-else="" class="text-muted">—</span>
+                                                            </td>
+                                                        </tr>
+                                                    </t>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div class="o_lps_scroll_spacer" aria-hidden="true"/>
+                            </section>
+                            </div>
+                        </t>
+                        <t t-elif="isAccess">
+                            <div class="o_lps_scroll">
+                            <LugProjectAppPerm t-if="state.appPerm.full" onSaved.bind="loadShellData"/>
+                            <section class="o_lps_access" data-lps-access="v1">
+                                <header class="o_lps_access_head">
+                                    <div>
+                                        <h1><i class="fa fa-users"/> Nhóm quyền Odoo (truy cập app Dự án)</h1>
+                                        <p t-esc="state.access.note || 'Quản lý thành viên nhóm Project chuẩn của Odoo.'"/>
+                                    </div>
+                                    <button type="button"
+                                            class="o_lps_access_refresh"
+                                            t-att-disabled="state.access.loading || state.access.saving"
+                                            t-on-click="loadAccessData">
+                                        <i class="fa fa-refresh"/> Làm mới
+                                    </button>
+                                </header>
+                                <t t-if="state.access.loading">
+                                    <p class="o_lps_empty">Đang tải phân quyền...</p>
+                                </t>
+                                <t t-else="">
+                                    <div t-if="state.access.can_edit" class="o_lps_access_add">
+                                        <select class="o_lps_access_select"
+                                                t-att-value="state.access.pickUserId"
+                                                t-on-change="onAccessPickUser">
+                                            <option value="0">Chọn người dùng...</option>
+                                            <t t-foreach="state.access.candidates" t-as="cand" t-key="cand.id">
+                                                <option t-att-value="cand.id"
+                                                        t-esc="cand.name + (cand.login ? ' (' + cand.login + ')' : '')"/>
+                                            </t>
+                                        </select>
+                                        <select class="o_lps_access_select"
+                                                t-att-value="state.access.pickRole"
+                                                t-on-change="onAccessPickRole">
+                                            <option value="user">Người dùng dự án</option>
+                                            <option value="manager">Quản lý dự án</option>
+                                        </select>
+                                        <button type="button"
+                                                class="o_lps_access_btn"
+                                                t-att-disabled="state.access.saving || !state.access.pickUserId"
+                                                t-on-click="addAccessUser">
+                                            <i class="fa fa-plus"/> Thêm
+                                        </button>
+                                    </div>
+                                    <p t-else="" class="o_lps_access_readonly">
+                                        Bạn chỉ được xem. Chỉ Quản lý dự án / Quản trị viên mới được đổi quyền.
+                                    </p>
+                                    <div class="o_lps_access_grid">
+                                        <t t-foreach="state.access.roles" t-as="role" t-key="role.key">
+                                            <article class="o_lps_access_card">
+                                                <header>
+                                                    <div>
+                                                        <h2 t-esc="role.label"/>
+                                                        <p t-esc="role.hint"/>
+                                                    </div>
+                                                    <em t-esc="(role.users || []).length"/>
+                                                </header>
+                                                <t t-if="!(role.users || []).length">
+                                                    <p class="o_lps_empty">Chưa có thành viên.</p>
+                                                </t>
+                                                <ul t-else="" class="o_lps_access_users">
+                                                    <t t-foreach="role.users" t-as="u" t-key="u.id">
+                                                        <li>
+                                                            <span class="o_lps_access_avatar" t-esc="u.initial"/>
+                                                            <div>
+                                                                <strong t-esc="u.name"/>
+                                                                <small t-esc="u.login"/>
+                                                            </div>
+                                                            <t t-if="state.access.can_edit">
+                                                                <button type="button"
+                                                                        class="o_lps_access_remove"
+                                                                        title="Gỡ quyền Project"
+                                                                        t-att-disabled="state.access.saving"
+                                                                        t-on-click="() => this.setAccessRole(u.id, 'none')">
+                                                                    <i class="fa fa-times"/>
+                                                                </button>
+                                                            </t>
+                                                        </li>
+                                                    </t>
+                                                </ul>
+                                            </article>
+                                        </t>
+                                    </div>
+                                </t>
+                            </section>
+                            </div>
+                        </t>
                         <t t-elif="state.viewError">
                             <div class="o_lps_view_error">
                                 <p>Không tải được màn hình này.</p>
@@ -234,6 +667,7 @@
                             <LugProjectList t-key="state.active"
                                             archived="state.active === 'archived'"
                                             overdue="state.active === 'overdue'"
+                                            perm="listPerm"
                                             onNew.bind="() => this.setActive('intake')"
                                             onGantt.bind="(id) => this.viewGanttForProject(id)"/>
                         </div>

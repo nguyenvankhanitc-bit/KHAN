@@ -21,7 +21,24 @@ export class LugProjectList extends Component {
         onGantt: { type: Function, optional: true },
         archived: { type: Boolean, optional: true },
         overdue: { type: Boolean, optional: true },
+        perm: { type: Object, optional: true },
     };
+
+    get canWrite() {
+        return this.props.perm?.write !== false;
+    }
+
+    get canExport() {
+        return this.props.perm?.export !== false;
+    }
+
+    get canCreate() {
+        return this.props.perm?.create !== false;
+    }
+
+    get permKwargs() {
+        return { context: { lug_perm_group: this.props.perm?.group || "list" } };
+    }
 
     setup() {
         this.orm = useService("orm");
@@ -299,7 +316,12 @@ export class LugProjectList extends Component {
 
     async setWorkflow(projectId, state) {
         try {
-            await this.orm.call("project.project", "lug_set_workflow_state", [[projectId], state]);
+            await this.orm.call(
+                "project.project",
+                "lug_set_workflow_state",
+                [[projectId], state],
+                this.permKwargs
+            );
             if (this.state.details[projectId]) {
                 this.state.details[projectId].workflow_state = state;
             }
@@ -317,9 +339,12 @@ export class LugProjectList extends Component {
     async togglePriority(projectId, ev) {
         ev.stopPropagation();
         try {
-            const urgent = await this.orm.call("project.project", "lug_toggle_priority", [
-                [projectId],
-            ]);
+            const urgent = await this.orm.call(
+                "project.project",
+                "lug_toggle_priority",
+                [[projectId]],
+                this.permKwargs
+            );
             const row = this.state.rows.find((item) => item.id === projectId);
             if (row) {
                 row.urgent = Boolean(urgent);
@@ -379,7 +404,12 @@ export class LugProjectList extends Component {
     }
 
     async editProject(projectId) {
-        const act = await this.orm.call("project.project", "lug_action_open_form", [[projectId]]);
+        const act = await this.orm.call(
+            "project.project",
+            "lug_action_open_form",
+            [[projectId]],
+            this.permKwargs
+        );
         if (act) {
             await this.action.doAction(act, {
                 onClose: async () => {
@@ -402,7 +432,12 @@ export class LugProjectList extends Component {
             confirmClass: "btn-danger",
             confirm: async () => {
                 try {
-                    await this.orm.call("project.project", "lug_action_delete", [[projectId]]);
+                    await this.orm.call(
+                        "project.project",
+                        "lug_action_delete",
+                        [[projectId]],
+                        this.permKwargs
+                    );
                     delete this.state.selected[projectId];
                     if (this.state.expandedId === projectId) {
                         this.state.expandedId = false;

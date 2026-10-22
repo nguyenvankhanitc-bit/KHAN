@@ -12,3 +12,5 @@ from . import project_task
 from . import daily_task
 from . import hr_expense
 from . import project_dashboard
+from . import project_app_perm
+from . import project_perf_report

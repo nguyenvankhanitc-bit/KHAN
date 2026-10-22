@@ -1,0 +1,18 @@
+.o_lug_project_shell .o_daa_shell.o_lps_app_perm {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 16px 18px 8px;
+    background: #f5f7fa;
+
+    .o_daa_table_wrap {
+        max-height: calc(100vh - 240px);
+    }
+
+    .o_daa_col_group {
+        min-width: 260px;
+    }
+
+    .o_daa_col_perm {
+        width: 96px;
+    }
+}

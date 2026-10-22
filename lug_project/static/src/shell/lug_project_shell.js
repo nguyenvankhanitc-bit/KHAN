@@ -1,5 +1,5 @@
 ﻿/** @odoo-module **/
-/* lps-ui: gantt-compact-v5 trash-label-thung-rac-v2 */
+/* lps-ui: gantt-compact-v5 trash-label-thung-rac-v2 access-panel-v1 rail-fix-v6 shell-flex-fix-v2 sidebar-dwd-v1 topbar-login-v1 */
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
@@ -18,10 +18,11 @@ import {
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { View, getDefaultConfig } from "@web/views/view";
 import { LugProjectList } from "../list/lug_project_list";
+import { LugProjectAppPerm } from "../app_perm/lug_project_app_perm";
 
 const SIDEBAR_WIDTH_KEY = "lug_project_sidebar_width";
 const SIDEBAR_COLLAPSED_KEY = "lug_project_sidebar_collapsed";
-const SIDEBAR_WIDTH_DEFAULT = 248;
+const SIDEBAR_WIDTH_DEFAULT = 250;
 const SIDEBAR_WIDTH_MIN = 200;
 const SIDEBAR_WIDTH_MAX = 420;
 const SIDEBAR_WIDTH_COLLAPSED = 72;
@@ -30,6 +31,7 @@ const RAIL_COLLAPSED_KEY = "lug_project_rail_collapsed";
 const RAIL_WIDTH_DEFAULT = 196;
 const RAIL_WIDTH_MIN = 72;
 const RAIL_WIDTH_MAX = 280;
+const RAIL_WIDTH_COLLAPSED = 72;
 
 const RAIL_ORDER = [
     { xmlid: "mail.menu_root_discuss", icon: "fa-comments" },
@@ -44,7 +46,7 @@ const NAV_SECTIONS = [
     {
         key: "project",
         label: "DỰ ÁN",
-        emoji: "",
+        emoji: "📁",
         items: [
             { code: "intake", label: "Nhập dự án mới", icon: "fa-plus", cta: true },
             { code: "list", label: "Danh sách dự án", icon: "fa-folder-open-o", badgeKey: "list" },
@@ -58,10 +60,10 @@ const NAV_SECTIONS = [
     {
         key: "report",
         label: "BÁO CÁO DỰ ÁN",
-        emoji: "",
+        emoji: "📊",
         items: [
             { code: "report_all", label: "Báo cáo tổng thể", icon: "fa-bar-chart" },
-            { code: "people", label: "Báo cáo nhân sự", icon: "fa-user" },
+            { code: "people", label: "Báo cáo nhân sự", icon: "fa-user-circle" },
             { code: "perf", label: "Báo cáo hiệu suất", icon: "fa-line-chart" },
             { code: "kpi", label: "Báo cáo KPI Dự án", icon: "fa-trophy" },
         ],
@@ -69,7 +71,7 @@ const NAV_SECTIONS = [
     {
         key: "config",
         label: "CẤU HÌNH",
-        emoji: "",
+        emoji: "⚙️",
         items: [
             { code: "cfg_phase", label: "Giai đoạn", icon: "fa-sitemap" },
             { code: "archived", label: "Thùng rác", icon: "fa-trash", badgeKey: "archived" },
@@ -82,10 +84,12 @@ const NAV_SECTIONS = [
     {
         key: "utils",
         label: "TIỆN ÍCH",
-        emoji: "",
-        items: [{ code: "contacts", label: "Danh bạ", icon: "fa-book" }],
+        emoji: "📚",
+        items: [{ code: "contacts", label: "Danh bạ", icon: "fa-address-book-o" }],
     },
 ];
+/** Match daily_work: topbar + one left menu (no SATACO app rail). */
+const SHOW_SATACO_RAIL = false;
 
 const TOP_NAV = [
     { code: "kpi", label: "Tổng quan" },
@@ -96,6 +100,18 @@ const TOP_NAV = [
 ];
 
 const NAV_ITEMS = NAV_SECTIONS.flatMap((section) => section.items);
+
+const CONFIG_CODES = ["cfg_phase", "types", "cfg_status", "cfg_priority"];
+/** Codes rendered inside the shell (others open a separate action / notification). */
+const IN_SHELL_CODES = [
+    "kpi", "intake", "list", "track", "gantt", "assign", "overdue", "milestones",
+    "report_all", "people", "perf", "archived",
+];
+
+/** Sidebar code → group key of lug.project.app.perm. */
+function permGroupOf(code) {
+    return CONFIG_CODES.includes(code) ? "config" : code;
+}
 
 function topNavActive(code, active) {
     if (code === "list") {
@@ -131,7 +147,7 @@ const PROJECT_CHIP_COLORS = [
 function readStoredSidebarWidth() {
     try {
         const n = Number(window.localStorage.getItem(SIDEBAR_WIDTH_KEY));
-        if (Number.isFinite(n)) {
+        if (Number.isFinite(n) && n > 0) {
             return Math.min(SIDEBAR_WIDTH_MAX, Math.max(SIDEBAR_WIDTH_MIN, Math.round(n)));
         }
     } catch (_e) {
@@ -201,9 +217,10 @@ function emptyDashboard() {
 
 export class LugProjectShell extends Component {
     static template = "lug_project.LugProjectShell";
-    static components = { View, LugProjectList };
+    static components = { View, LugProjectList, LugProjectAppPerm };
     static props = { ...standardActionServiceProps, "*": true };
-    static path = "project";
+    // Must match action_lug_project_shell path (same as workspace: /odoo/du-an).
+    static path = "du-an";
 
     setup() {
         this.orm = useService("orm");
@@ -213,6 +230,7 @@ export class LugProjectShell extends Component {
         this.navSections = NAV_SECTIONS;
         this.navItems = NAV_ITEMS;
         this.topNavItems = TOP_NAV;
+        this.showSatacoRail = SHOW_SATACO_RAIL;
         this._sidebarResize = null;
         this.staffChart = null;
         this.trendChart = null;
@@ -239,6 +257,7 @@ export class LugProjectShell extends Component {
             companyAddress: "",
             companyLogoUrl: "/lug_app_center/static/src/img/sataco_logo.png",
             userName: "",
+            userLogin: "",
             userRole: "Người dùng",
             userInitial: "U",
             avatarUrl: false,
@@ -255,10 +274,63 @@ export class LugProjectShell extends Component {
             overviewPeriod: "month",
             overviewTypeId: 0,
             overviewExporting: false,
+            access: {
+                can_edit: false,
+                note: "",
+                roles: [],
+                candidates: [],
+                loading: false,
+                saving: false,
+                pickUserId: 0,
+                pickRole: "user",
+            },
+            appPerm: { full: false, configured: false, groups: {} },
+            report: {
+                loading: false,
+                seq: 0,
+                rows: [],
+                task_segments: [],
+                status_segments: [],
+                types: [],
+                statuses: [],
+                project_count: 0,
+                task_total: 0,
+                typeId: 0,
+                status: "",
+            },
+            perfReport: {
+                loading: false,
+                saving: false,
+                loaded: false,
+                year: 0,
+                month: 0,
+                period_label: "",
+                groups: [],
+                staff_count: 0,
+                closedDepts: {},
+                edits: {},
+            },
+            projPerf: {
+                loading: false,
+                loaded: false,
+                year: 0,
+                month: 0,
+                period_label: "",
+                rows: [],
+                project_count: 0,
+                summary: {},
+                openRows: {},
+            },
         });
+        this.reportCharts = [];
         useSubEnv({ config: getDefaultConfig() });
         onMounted(() => {
             document.body.classList.add("o_lug_shell_active");
+            if (SHOW_SATACO_RAIL) {
+                this._ensureRailVisible();
+            }
+            this._injectCriticalShellCss();
+            this._fixShellFlexLayout();
             this._injectOverviewScrollCss();
             this._lockOverviewScrollPane();
         });
@@ -304,6 +376,7 @@ export class LugProjectShell extends Component {
                 (this.state.dashboard.months || []).length,
                 (this.state.dashboard.cost_top || []).length,
                 (this.state.dashboard.perf || []).length,
+                this.state.report.seq,
             ]
         );
         useEffect(
@@ -391,6 +464,333 @@ export class LugProjectShell extends Component {
         return this.state.active === "gantt";
     }
 
+    get isAccess() {
+        return this.state.active === "cfg_access";
+    }
+
+    get isReportAll() {
+        return this.state.active === "report_all";
+    }
+
+    get isPerf() {
+        return this.state.active === "people";
+    }
+
+    get isProjPerf() {
+        return this.state.active === "perf";
+    }
+
+    get projPerfMonthValue() {
+        const p = this.state.projPerf;
+        if (!p.year || !p.month) {
+            return "";
+        }
+        return `${p.year}-${String(p.month).padStart(2, "0")}`;
+    }
+
+    async loadProjPerfReport() {
+        const p = this.state.projPerf;
+        p.loading = true;
+        try {
+            const data = await this.orm.call("project.project", "get_lug_project_perf_report", [], {
+                year: p.year || false,
+                month: p.month || false,
+            });
+            Object.assign(p, {
+                period_label: data.period_label || "",
+                rows: data.rows || [],
+                project_count: data.project_count || 0,
+                summary: data.summary || {},
+            });
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được báo cáo hiệu suất.",
+                { type: "danger" }
+            );
+            p.rows = [];
+        } finally {
+            p.loading = false;
+            p.loaded = true;
+        }
+    }
+
+    async onProjPerfMonthChange(ev) {
+        const [year, month] = String(ev.target.value || "").split("-").map(Number);
+        Object.assign(this.state.projPerf, { year: year || 0, month: month || 0 });
+        await this.loadProjPerfReport();
+    }
+
+    async onProjPerfAllTime() {
+        Object.assign(this.state.projPerf, { year: 0, month: 0 });
+        await this.loadProjPerfReport();
+    }
+
+    toggleProjPerfRow(id) {
+        const open = this.state.projPerf.openRows;
+        if (open[id]) {
+            delete open[id];
+        } else {
+            open[id] = true;
+        }
+    }
+
+    isProjPerfOpen(id) {
+        return Boolean(this.state.projPerf.openRows[id]);
+    }
+
+    get perfMonthValue() {
+        const p = this.state.perfReport;
+        if (!p.year || !p.month) {
+            return "";
+        }
+        return `${p.year}-${String(p.month).padStart(2, "0")}`;
+    }
+
+    get perfDirtyCount() {
+        return Object.keys(this.state.perfReport.edits).length;
+    }
+
+    async loadPerfReport() {
+        const p = this.state.perfReport;
+        p.loading = true;
+        try {
+            const data = await this.orm.call("project.project", "get_lug_perf_report", [], {
+                year: p.year || false,
+                month: p.month || false,
+            });
+            this._applyPerfData(data);
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được báo cáo hiệu suất.",
+                { type: "danger" }
+            );
+            p.groups = [];
+        } finally {
+            p.loading = false;
+            p.loaded = true;
+        }
+    }
+
+    _applyPerfData(data) {
+        const p = this.state.perfReport;
+        Object.assign(p, {
+            year: data.year || p.year,
+            month: data.month || p.month,
+            period_label: data.period_label || "",
+            groups: data.groups || [],
+            staff_count: data.staff_count || 0,
+            edits: {},
+        });
+    }
+
+    async onPerfMonthChange(ev) {
+        const [year, month] = String(ev.target.value || "").split("-").map(Number);
+        if (!year || !month) {
+            return;
+        }
+        if (this.perfDirtyCount && !window.confirm("Bỏ các thay đổi QL đánh giá chưa lưu?")) {
+            ev.target.value = this.perfMonthValue;
+            return;
+        }
+        Object.assign(this.state.perfReport, { year, month });
+        await this.loadPerfReport();
+    }
+
+    togglePerfDept(key) {
+        const closed = this.state.perfReport.closedDepts;
+        if (closed[key]) {
+            delete closed[key];
+        } else {
+            closed[key] = true;
+        }
+    }
+
+    isPerfDeptOpen(key) {
+        return !this.state.perfReport.closedDepts[key];
+    }
+
+    perfInitials(name) {
+        const parts = String(name || "").trim().split(/\s+/).filter(Boolean);
+        if (!parts.length) {
+            return "?";
+        }
+        const last = parts[parts.length - 1][0] || "";
+        const first = parts.length > 1 ? parts[0][0] : "";
+        return (first + last).toUpperCase();
+    }
+
+    perfEffClass(v) {
+        const n = Number(v) || 0;
+        return n >= 85 ? "is-good" : n >= 70 ? "is-ok" : n >= 50 ? "is-mid" : "is-bad";
+    }
+
+    perfFmt(v) {
+        const n = Number(v) || 0;
+        return Number.isInteger(n) ? String(n) : n.toFixed(1);
+    }
+
+    perfShown(row) {
+        const edits = this.state.perfReport.edits;
+        if (row.id in edits) {
+            return edits[row.id];
+        }
+        return row.manager_perf === null || row.manager_perf === undefined || row.manager_perf === false
+            ? ""
+            : row.manager_perf;
+    }
+
+    isPerfDirty(row) {
+        return row.id in this.state.perfReport.edits;
+    }
+
+    onManagerPerf(row, ev) {
+        const raw = String(ev.target.value ?? "").trim();
+        const saved =
+            row.manager_perf === null || row.manager_perf === undefined || row.manager_perf === false
+                ? ""
+                : String(row.manager_perf);
+        const edits = this.state.perfReport.edits;
+        if (raw === saved || (raw && saved && Number(raw) === Number(saved))) {
+            delete edits[row.id];
+        } else {
+            edits[row.id] = raw;
+        }
+    }
+
+    onCancelPerf() {
+        this.state.perfReport.edits = {};
+    }
+
+    async onSavePerf() {
+        const p = this.state.perfReport;
+        const values = Object.entries(p.edits).map(([userId, percent]) => ({
+            user_id: Number(userId),
+            percent: percent === "" ? false : percent,
+        }));
+        if (!values.length) {
+            return;
+        }
+        for (const item of values) {
+            const n = Number(item.percent);
+            if (item.percent !== false && (Number.isNaN(n) || n < 0 || n > 100)) {
+                this.notification.add("% QL đánh giá tổng phải từ 0 đến 100.", { type: "warning" });
+                return;
+            }
+        }
+        p.saving = true;
+        try {
+            const data = await this.orm.call("project.project", "save_lug_manager_perf", [
+                p.year,
+                p.month,
+                values,
+            ]);
+            this._applyPerfData(data);
+            this.notification.add("Đã lưu QL đánh giá tổng.", { type: "success" });
+        } catch (error) {
+            this.notification.add(
+                error?.data?.message || error?.message || "Không lưu được.",
+                { type: "danger" }
+            );
+        } finally {
+            p.saving = false;
+        }
+    }
+
+    async loadProjectReport() {
+        const report = this.state.report;
+        report.loading = true;
+        try {
+            const data = await this.orm.call("project.project", "get_lug_project_report", [], {
+                type_id: report.typeId || false,
+                status: report.status || false,
+            });
+            Object.assign(report, {
+                rows: data.rows || [],
+                task_segments: data.task_segments || [],
+                status_segments: data.status_segments || [],
+                types: data.types || [],
+                statuses: data.statuses || [],
+                project_count: data.project_count || 0,
+                task_total: data.task_total || 0,
+            });
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được báo cáo.",
+                { type: "danger" }
+            );
+            report.rows = [];
+        } finally {
+            report.loading = false;
+            report.seq++;
+        }
+    }
+
+    async onReportTypeChange(ev) {
+        this.state.report.typeId = Number(ev.target.value) || 0;
+        await this.loadProjectReport();
+    }
+
+    async onReportStatusChange(ev) {
+        this.state.report.status = ev.target.value || "";
+        await this.loadProjectReport();
+    }
+
+    reportLegend(segments) {
+        const total = segments.reduce((n, s) => n + (Number(s.value) || 0), 0);
+        return segments.map((s) => ({
+            ...s,
+            pct: total ? Math.round((s.value * 100) / total) : 0,
+        }));
+    }
+
+    _reportDoughnut(canvas, segments, cutout = "68%") {
+        const values = segments.map((s) => Number(s.value) || 0);
+        const empty = !values.some(Boolean);
+        return this._makeChart(canvas, {
+            type: "doughnut",
+            data: {
+                labels: empty ? ["Chưa có dữ liệu"] : segments.map((s) => s.label),
+                datasets: [
+                    {
+                        data: empty ? [1] : values,
+                        backgroundColor: empty ? ["#e2e8f0"] : segments.map((s) => s.color),
+                        borderWidth: 2,
+                        borderColor: "#fff",
+                    },
+                ],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                cutout,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { enabled: !empty },
+                },
+            },
+        });
+    }
+
+    _renderReportCharts() {
+        const report = this.state.report;
+        const root = document.querySelector(".o_lps_report");
+        if (!root) {
+            return;
+        }
+        const statusCanvas = root.querySelector("canvas[data-lps-report-chart='status']");
+        const taskCanvas = root.querySelector("canvas[data-lps-report-chart='tasks']");
+        this.reportCharts.push(this._reportDoughnut(statusCanvas, report.status_segments, "62%"));
+        this.reportCharts.push(this._reportDoughnut(taskCanvas, report.task_segments, "62%"));
+        for (const row of report.rows) {
+            const canvas = root.querySelector(`canvas[data-lps-report-chart='p${row.id}']`);
+            this.reportCharts.push(this._reportDoughnut(canvas, row.segments));
+        }
+    }
+
     get kpiStatus() {
         return this.state.dashboard.status || [];
     }
@@ -399,6 +799,53 @@ export class LugProjectShell extends Component {
         const rows = this.kpiStatus;
         const sum = rows.reduce((acc, row) => acc + (Number(row.pct) || 0), 0);
         return sum ? sum.toFixed(1) : "100.0";
+    }
+
+    get displayUserName() {
+        return this.state.userName || this.state.userLogin || "User";
+    }
+
+    hasPerm(code, perm = "view") {
+        if (code === "cfg_access") {
+            return Boolean(this.state.appPerm.full);
+        }
+        const group = this.state.appPerm.groups?.[permGroupOf(code)];
+        return group ? group[perm] !== false : true;
+    }
+
+    get visibleNavSections() {
+        return this.navSections
+            .map((section) => ({
+                ...section,
+                items: section.items.filter((item) => this.hasPerm(item.code)),
+            }))
+            .filter((section) => section.items.length);
+    }
+
+    get visibleTopNavItems() {
+        return this.topNavItems.filter((nav) => this.hasPerm(nav.code));
+    }
+
+    get listPerm() {
+        const code = this.isProjectList ? this.state.active : "list";
+        return {
+            group: code,
+            write: this.hasPerm(code, "write"),
+            export: this.hasPerm(code, "export"),
+            create: this.hasPerm("intake"),
+        };
+    }
+
+    get noAppAccess() {
+        return !IN_SHELL_CODES.some((code) => this.hasPerm(code));
+    }
+
+    _ensureAllowedActive() {
+        if (this.hasPerm(this.state.active) || this.noAppAccess) {
+            return false;
+        }
+        this.state.active = IN_SHELL_CODES.find((code) => this.hasPerm(code));
+        return true;
     }
 
     get shellClass() {
@@ -438,7 +885,8 @@ export class LugProjectShell extends Component {
 
     get railStyle() {
         if (this.state.railCollapsed) {
-            return "width:0;min-width:0;padding:0;border:0;overflow:hidden;position:relative;";
+            // Icon rail stays visible so App Center / Trang chủ remain reachable
+            return `width:${RAIL_WIDTH_COLLAPSED}px;min-width:${RAIL_WIDTH_COLLAPSED}px;position:relative;overflow:visible;`;
         }
         return `width: ${this.state.railWidth}px;position:relative;overflow:visible;`;
     }
@@ -704,12 +1152,16 @@ export class LugProjectShell extends Component {
                 project_id: this.state.filterProjectId || false,
                 period: this.state.overviewPeriod || "month",
                 type_id: this.state.overviewTypeId || false,
+                perm_group: this.state.active === "gantt" ? "gantt" : "kpi",
             });
+            this.state.appPerm = data.app_perm || { full: false, configured: false, groups: {} };
+            const redirected = this._ensureAllowedActive();
             this.state.companyName = data.company_name || this.state.companyName;
             this.state.companyAddress = data.company_address || "";
             this.state.companyLogoUrl =
                 data.company_logo_url || this.state.companyLogoUrl;
             this.state.userName = data.user_name || "";
+            this.state.userLogin = data.user_login || "";
             this.state.userRole = data.user_role || "Người dùng";
             this.state.userInitial = data.user_initial || "U";
             this.state.avatarUrl = data.avatar_url || false;
@@ -727,6 +1179,18 @@ export class LugProjectShell extends Component {
                 this.state.overviewTypeId = data.dashboard.type_id || 0;
             }
             this.state.apps = this._collectRailApps();
+            if (redirected && this.state.active === "gantt") {
+                this.loadShellData();
+            }
+            if (redirected && this.state.active === "report_all") {
+                this.loadProjectReport();
+            }
+            if (this.state.active === "people" && !this.state.perfReport.loaded) {
+                this.loadPerfReport();
+            }
+            if (this.state.active === "perf" && !this.state.projPerf.loaded) {
+                this.loadProjPerfReport();
+            }
         } catch (error) {
             console.error(error);
             this.state.dashboard = emptyDashboard();
@@ -954,6 +1418,123 @@ export class LugProjectShell extends Component {
         }
     }
 
+    _ensureRailVisible() {
+        // Always restore full SATACO rail — collapsed/narrow (72px) looks "missing".
+        try {
+            window.localStorage.setItem(RAIL_COLLAPSED_KEY, "0");
+            window.localStorage.setItem(RAIL_WIDTH_KEY, String(RAIL_WIDTH_DEFAULT));
+        } catch (_e) {
+            /* ignore */
+        }
+        this.state.railCollapsed = false;
+        this.state.railWidth = RAIL_WIDTH_DEFAULT;
+    }
+
+    _fixShellFlexLayout() {
+        // DOM-level fix: stale bundle CSS once set .o_lps_shell to row (topbar = tall purple column).
+        const root = this.el || document.querySelector(".o_lug_project_shell");
+        if (!root) {
+            return;
+        }
+        const shell = root.querySelector(".o_lps_shell");
+        const body = root.querySelector(".o_lps_body");
+        const topbar = root.querySelector(".o_lps_topbar");
+        if (shell) {
+            shell.style.setProperty("display", "flex", "important");
+            shell.style.setProperty("flex-direction", "column", "important");
+            shell.style.setProperty("flex", "1 1 auto", "important");
+            shell.style.setProperty("min-height", "0", "important");
+            shell.style.setProperty("height", "100%", "important");
+            shell.style.setProperty("width", "100%", "important");
+            shell.style.setProperty("overflow", "hidden", "important");
+        }
+        if (body) {
+            body.style.setProperty("display", "flex", "important");
+            body.style.setProperty("flex-direction", "row", "important");
+            body.style.setProperty("flex", "1 1 auto", "important");
+            body.style.setProperty("min-height", "0", "important");
+            body.style.setProperty("align-items", "stretch", "important");
+        }
+        if (topbar) {
+            topbar.style.setProperty("display", "flex", "important");
+            topbar.style.setProperty("flex-direction", "row", "important");
+            topbar.style.setProperty("flex-shrink", "0", "important");
+            topbar.style.setProperty("width", "100%", "important");
+            topbar.style.setProperty("min-height", "52px", "important");
+            topbar.style.setProperty("max-height", "64px", "important");
+        }
+    }
+
+    _injectCriticalShellCss() {
+        // Drop any older critical style tags that forced shell into row.
+        for (const oldId of ["lug-shell-critical-css", "lug-shell-critical-css-v1", "lug-shell-critical-css-v2"]) {
+            document.getElementById(oldId)?.remove();
+        }
+        const id = "lug-shell-critical-css-v3";
+        let style = document.getElementById(id);
+        if (!style) {
+            style = document.createElement("style");
+            style.id = id;
+            document.head.appendChild(style);
+        }
+        style.textContent = `
+body.o_lug_shell_active .o_action_manager { flex: 1 1 auto !important; min-height: 0 !important; }
+.o_action_manager > .o_lug_project_shell.o_action,
+.o_lug_project_shell {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: #f1f5f9 !important;
+}
+.o_lug_project_shell > .o_lps_shell {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+.o_lug_project_shell .o_lps_body {
+  display: flex !important;
+  flex-direction: row !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  align-items: stretch !important;
+}
+.o_lug_project_shell .o_lps_topbar {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-shrink: 0 !important;
+  width: 100% !important;
+  min-height: 52px !important;
+  max-height: 64px !important;
+  background: linear-gradient(90deg, #4c1d95 0%, #5b21b6 55%, #6d28d9 100%) !important;
+  color: #fff !important;
+}
+.o_lug_project_shell .o_lps_rail {
+  display: flex !important;
+  flex-direction: column !important;
+  flex-shrink: 0 !important;
+  min-width: ${RAIL_WIDTH_COLLAPSED}px !important;
+  background: linear-gradient(180deg, #2e1065 0%, #3b0764 100%) !important;
+  color: #ede9fe !important;
+  overflow: visible !important;
+}
+.o_lug_project_shell .o_lps_content {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+`;
+    }
+
     _injectOverviewScrollCss() {
         const id = "lug-overview-scroll-css";
         let style = document.getElementById(id);
@@ -1074,7 +1655,8 @@ export class LugProjectShell extends Component {
 
     async renderCharts() {
         this.destroyCharts();
-        if (this.state.loading || this.state.active !== "kpi") {
+        const isReport = this.isReportAll && !this.state.report.loading;
+        if (this.state.loading || (this.state.active !== "kpi" && !isReport)) {
             return;
         }
         try {
@@ -1086,6 +1668,10 @@ export class LugProjectShell extends Component {
             return;
         }
         if (typeof Chart === "undefined") {
+            return;
+        }
+        if (isReport) {
+            this._renderReportCharts();
             return;
         }
         const staff = this.overviewStaff;
@@ -1201,6 +1787,14 @@ export class LugProjectShell extends Component {
     }
 
     destroyCharts() {
+        for (const chart of this.reportCharts || []) {
+            try {
+                chart?.destroy();
+            } catch (_e) {
+                // canvas may already be detached by OWL
+            }
+        }
+        this.reportCharts = [];
         for (const key of ["staffChart", "trendChart", "costChart", "perfChart"]) {
             if (this[key]) {
                 try {
@@ -1214,6 +1808,10 @@ export class LugProjectShell extends Component {
     }
 
     async setActive(code) {
+        if (!this.hasPerm(code)) {
+            this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
+            return;
+        }
         if (code === "contacts") {
             await this.openContacts();
             return;
@@ -1229,14 +1827,114 @@ export class LugProjectShell extends Component {
         const cfgNotes = {
             cfg_status: "Trạng thái công việc: Chưa bắt đầu, Đang thực hiện, Chờ duyệt, Hoàn thành, Hủy.",
             cfg_priority: "Mức độ ưu tiên nằm trên từng dự án (Cao / Trung bình / Thấp).",
-            cfg_access: "Phân quyền dùng quyền Project chuẩn của Odoo. Không thay đổi ACL native.",
         };
         if (cfgNotes[code]) {
             this.notification.add(cfgNotes[code], { type: "info" });
             return;
         }
         this.state.viewError = "";
+        const prev = this.state.active;
         this.state.active = code;
+        const scopeSwitch =
+            ["kpi", "gantt"].includes(code) &&
+            prev !== code &&
+            this.hasPerm("kpi", "others") !== this.hasPerm("gantt", "others");
+        if (scopeSwitch) {
+            await this.loadShellData();
+        }
+        if (code === "report_all") {
+            await this.loadProjectReport();
+        }
+        if (code === "people") {
+            await this.loadPerfReport();
+        }
+        if (code === "perf") {
+            await this.loadProjPerfReport();
+        }
+        if (code === "cfg_access") {
+            await this.loadAccessData();
+        }
+    }
+
+    _applyAccessData(data) {
+        this.state.access.can_edit = Boolean(data?.can_edit);
+        this.state.access.note = data?.note || "";
+        this.state.access.roles = data?.roles || [];
+        this.state.access.candidates = data?.candidates || [];
+        const stillPickable = this.state.access.candidates.some(
+            (u) => u.id === this.state.access.pickUserId
+        );
+        if (!stillPickable) {
+            this.state.access.pickUserId = this.state.access.candidates[0]?.id || 0;
+        }
+    }
+
+    async loadAccessData() {
+        this.state.access.loading = true;
+        try {
+            const data = await this.orm.call(
+                "project.project",
+                "get_lug_project_access_data",
+                []
+            );
+            this._applyAccessData(data);
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không tải được phân quyền.",
+                { type: "danger" }
+            );
+            this._applyAccessData({
+                can_edit: false,
+                note: "",
+                roles: [],
+                candidates: [],
+            });
+        } finally {
+            this.state.access.loading = false;
+        }
+    }
+
+    onAccessPickUser(ev) {
+        this.state.access.pickUserId = Number(ev.target.value) || 0;
+    }
+
+    onAccessPickRole(ev) {
+        this.state.access.pickRole = ev.target.value || "user";
+    }
+
+    async addAccessUser() {
+        const userId = this.state.access.pickUserId;
+        const role = this.state.access.pickRole;
+        if (!userId) {
+            this.notification.add("Chọn người dùng cần thêm.", { type: "warning" });
+            return;
+        }
+        await this.setAccessRole(userId, role);
+    }
+
+    async setAccessRole(userId, role) {
+        if (!this.state.access.can_edit || this.state.access.saving) {
+            return;
+        }
+        this.state.access.saving = true;
+        try {
+            const data = await this.orm.call(
+                "project.project",
+                "lug_set_project_access_role",
+                [userId, role]
+            );
+            this._applyAccessData(data);
+            this.notification.add("Đã cập nhật phân quyền dự án.", { type: "success" });
+        } catch (error) {
+            console.error(error);
+            this.notification.add(
+                error?.data?.message || error?.message || "Không cập nhật được phân quyền.",
+                { type: "danger" }
+            );
+        } finally {
+            this.state.access.saving = false;
+        }
     }
 
     async afterIntakeSave() {
@@ -1324,13 +2022,7 @@ export class LugProjectShell extends Component {
     }
 
     async goHome() {
-        try {
-            await this.action.doAction("lug_app_center.action_lug_app_center", {
-                clearBreadcrumbs: true,
-            });
-        } catch (_e) {
-            window.location.href = "/odoo";
-        }
+        window.location.href = "/odoo/app-center";
     }
 
     async openApp(app) {

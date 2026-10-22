@@ -9,3 +9,7 @@ access_lug_project_criterion_user,lug.project.criterion.user,model_lug_project_c
 access_lug_project_criterion_manager,lug.project.criterion.manager,model_lug_project_criterion,project.group_project_manager,1,1,1,1
 access_lug_project_stage_user,lug.project.stage.user,model_lug_project_stage,project.group_project_user,1,1,1,1
 access_lug_project_stage_manager,lug.project.stage.manager,model_lug_project_stage,project.group_project_manager,1,1,1,1
+access_lug_project_app_perm_user,lug.project.app.perm.user,model_lug_project_app_perm,base.group_user,1,0,0,0
+access_lug_project_manager_perf_user,lug.project.manager.perf.user,model_lug_project_manager_perf,base.group_user,1,0,0,0
+access_lug_project_manager_perf_manager,lug.project.manager.perf.manager,model_lug_project_manager_perf,project.group_project_manager,1,1,1,1
+access_lug_project_app_perm_manager,lug.project.app.perm.manager,model_lug_project_app_perm,project.group_project_manager,1,1,1,1

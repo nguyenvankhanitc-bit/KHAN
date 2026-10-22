@@ -1,4 +1,4 @@
-/* lps-ui: edge-ruler-v4 */
+/* lps-ui: edge-ruler-v5 sidebar-dwd */
 .o_dialog .o_lug_project_intake {
     min-width: 720px;
 }
@@ -13,49 +13,10 @@
     overflow: visible !important;
 }
 
-.o_lps_ruler {
-    position: absolute !important;
-    top: 0 !important;
-    right: -7px !important;
-    bottom: 0 !important;
-    width: 14px !important;
-    min-width: 14px !important;
-    cursor: col-resize !important;
-    z-index: 80 !important;
-    background: transparent !important;
-    display: block !important;
-}
-
-.o_lps_ruler .o_lps_edge_bar {
-    position: absolute !important;
-    top: 10px !important;
-    bottom: 10px !important;
-    left: 50% !important;
-    width: 4px !important;
-    margin-left: -2px !important;
-    border-radius: 99px !important;
-    background: #1e293b !important;
-    display: block !important;
-    box-shadow: -4px 0 0 #cbd5e1, 4px 0 0 #cbd5e1 !important;
-}
-
-.o_lps_ruler .o_lps_edge_btn {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 22px !important;
-    height: 22px !important;
-    margin: 16px 0 0 -11px !important;
-    border-radius: 50% !important;
-    background: #4c1d95 !important;
-    color: #fff !important;
-    font-size: 16px !important;
-    font-weight: 800 !important;
-    line-height: 22px !important;
-    text-align: center !important;
-    cursor: pointer !important;
-    display: block !important;
-    box-shadow: 0 2px 8px rgba(76, 29, 149, 0.45) !important;
+/* Match daily_work thin grey resizer — hide legacy purple circle. */
+.o_lug_project_shell .o_lps_ruler .o_lps_edge_bar,
+.o_lug_project_shell .o_lps_ruler .o_lps_edge_btn {
+    display: none !important;
 }
 
 /* gantt-cal-v6: timeline full row; status + heatmap share last row */

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Default entry = shell UI (workspace-compatible /odoo/du-an). -->
     <menuitem
         id="menu_lug_project_shell"
         name="Tổng quan"
@@ -7,6 +8,22 @@
         action="action_lug_project_shell"
         sequence="0"
     />
+
+    <record id="project.menu_projects" model="ir.ui.menu">
+        <field name="action" ref="action_lug_project_shell"/>
+        <field name="sequence">1</field>
+    </record>
+
+    <!-- Optional native list (no custom sidebar). -->
+    <menuitem
+        id="menu_lug_project_shell_ui"
+        name="Danh sách Odoo"
+        parent="project.menu_main_pm"
+        action="action_lug_project_main"
+        sequence="90"
+        groups="base.group_no_one"
+    />
+
     <menuitem
         id="menu_lug_project_type"
         name="Loại dự án"

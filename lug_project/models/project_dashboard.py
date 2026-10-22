@@ -39,6 +39,10 @@ class ProjectProjectDashboard(models.Model):
     _inherit = "project.project"
 
     @api.model
+    def _lug_base_domain(self):
+        return list(_PROJECT_DOMAIN)
+
+    @api.model
     def get_lug_shell_data(self, project_id=False, period="month", type_id=False):
         """Header + dashboard for the custom Project shell."""
         header = self._get_lug_shell_header()
@@ -87,12 +91,17 @@ class ProjectProjectDashboard(models.Model):
                 else "/lug_app_center/static/src/img/sataco_logo.png"
             ),
             "user_name": user.name or "",
+            "user_login": user.login or "",
             "user_role": (
-                "Quản trị viên"
+                "Quản trị hệ thống"
                 if user.has_group("base.group_system")
-                else "Người dùng"
+                else (
+                    "Quản lý dự án"
+                    if user.has_group("project.group_project_manager")
+                    else "Người dùng"
+                )
             ),
-            "user_initial": (user.name or "U")[:1].upper(),
+            "user_initial": (user.name or user.login or "U")[:1].upper(),
             "avatar_url": avatar_url,
             "greeting": {
                 "headline": "Xin chào, %s!" % (user.name or "bạn"),
@@ -148,7 +157,7 @@ class ProjectProjectDashboard(models.Model):
         period = (period or "month").strip()
         if period not in ("month", "quarter", "year"):
             period = "month"
-        domain = list(_PROJECT_DOMAIN)
+        domain = self._lug_base_domain()
         if type_id:
             domain.append(("lug_type_id", "=", type_id))
         date_from, date_to = self._lug_list_date_bounds(period)
@@ -173,11 +182,14 @@ class ProjectProjectDashboard(models.Model):
                 ("date", "<=", date_to),
             ]
         all_projects = Project.search(domain)
-        gantt_domain = list(_PROJECT_DOMAIN)
+        gantt_domain = self._lug_base_domain()
         if type_id:
             gantt_domain.append(("lug_type_id", "=", type_id))
         gantt_all = Project.search(gantt_domain, order="lug_stt, id")
-        filter_projects = [{"id": rec.id, "name": rec._lug_project_title()} for rec in gantt_all[:500]]
+        filter_projects = [
+            {"id": rec.id, "name": rec._lug_project_title(), "code": rec.lug_code or ""}
+            for rec in gantt_all[:500]
+        ]
         if project_id:
             projects = all_projects.filtered(lambda rec: rec.id == project_id)
             if not projects:
@@ -495,7 +507,7 @@ class ProjectProjectDashboard(models.Model):
             "overdue_count": overdue,
             "project_count": total,
             "archived_count": self.with_context(active_test=False).search_count(
-                list(_PROJECT_DOMAIN) + [("active", "=", False)]
+                self._lug_base_domain() + [("active", "=", False)]
             ),
             "featured_title": self._lug_featured_title(projects),
             "status": self._lug_status_breakdown(projects),
@@ -1294,7 +1306,7 @@ class ProjectProjectDashboard(models.Model):
         archived=False,
         overdue=False,
     ):
-        domain = list(_PROJECT_DOMAIN)
+        domain = self._lug_base_domain()
         if archived:
             domain.append(("active", "=", False))
         if overdue:
@@ -1676,6 +1688,83 @@ class ProjectProjectDashboard(models.Model):
             "file_base64": base64.b64encode(buffer.getvalue()).decode(),
         }
 
+    _LUG_REPORT_SEGMENTS = (
+        ("done", "Hoàn thành", "#16a34a"),
+        ("progress", "Đang làm", "#2563eb"),
+        ("todo", "Chưa bắt đầu", "#94a3b8"),
+        ("late", "Trễ hạn", "#dc2626"),
+    )
+    _LUG_REPORT_STATUS_COLORS = {
+        "progress": "#2563eb",
+        "pause": "#f59e0b",
+        "done": "#16a34a",
+        "cancel": "#64748b",
+    }
+
+    @api.model
+    def get_lug_project_report(self, type_id=False, status=False):
+        """Báo cáo tổng thể: biểu đồ tròn công việc theo từng dự án."""
+        today = fields.Date.context_today(self)
+        domain = self._lug_list_domain(type_id=type_id, status=status or None)
+        projects = self.search(domain, order="lug_stt, id")
+        rows = []
+        totals = {key: 0 for key, _label, _color in self._LUG_REPORT_SEGMENTS}
+        status_counts = defaultdict(int)
+        for project in projects:
+            counts = {key: 0 for key in totals}
+            for task in project.stage_line_ids.task_ids:
+                if task.state == "done":
+                    counts["done"] += 1
+                elif task.deadline and task.deadline < today:
+                    counts["late"] += 1
+                elif task.state == "in_progress":
+                    counts["progress"] += 1
+                else:
+                    counts["todo"] += 1
+            for key, value in counts.items():
+                totals[key] += value
+            base = self._lug_serialize_project_row(project, today=today)
+            status_counts[base["status"]] += 1
+            total = sum(counts.values())
+            rows.append({
+                "id": project.id,
+                "code": base["code"],
+                "name": base["name"],
+                "type": base["type"],
+                "manager_name": (base["manager"] or {}).get("name") or "—",
+                "status": base["status"],
+                "status_label": base["status_label"],
+                "deadline_badge": base["deadline_badge"] or "Chưa đặt hạn",
+                "deadline_state": base["deadline_state"] or "none",
+                "progress_pct": base["progress_pct"],
+                "total": total,
+                "done_pct": round(counts["done"] * 100.0 / total) if total else 0,
+                "segments": [
+                    {"key": key, "label": label, "color": color, "value": counts[key]}
+                    for key, label, color in self._LUG_REPORT_SEGMENTS
+                ],
+            })
+        status_labels = {"progress": "Đang làm", "pause": "Tạm dừng", "done": "Hoàn thành", "cancel": "Hủy"}
+        return {
+            "rows": rows,
+            "project_count": len(rows),
+            "task_total": sum(totals.values()),
+            "task_segments": [
+                {"key": key, "label": label, "color": color, "value": totals[key]}
+                for key, label, color in self._LUG_REPORT_SEGMENTS
+            ],
+            "status_segments": [
+                {"key": key, "label": label, "color": self._LUG_REPORT_STATUS_COLORS[key],
+                 "value": status_counts.get(key, 0)}
+                for key, label in status_labels.items()
+            ],
+            "types": [
+                {"id": rec.id, "name": rec.name}
+                for rec in self.env["lug.project.type"].search([], order="sequence, name")
+            ],
+            "statuses": [{"key": key, "label": label} for key, label in self._LUG_WF_FILTERS],
+        }
+
     @api.model
     def get_lug_project_list_detail(self, project_id):
         """Expanded row payload: project info + staged tasks."""
@@ -1762,3 +1851,119 @@ class ProjectProjectDashboard(models.Model):
             return False
         self.write({"lug_workflow_state": state})
         return True
+
+    @api.model
+    def _lug_project_access_groups(self):
+        return (
+            self.env.ref("project.group_project_user"),
+            self.env.ref("project.group_project_manager"),
+        )
+
+    @api.model
+    def _lug_user_group_ids(self, user):
+        """Odoo 19: res.users.group_ids (all_group_ids = + implied)."""
+        if "all_group_ids" in user._fields:
+            return user.all_group_ids
+        if "group_ids" in user._fields:
+            return user.group_ids
+        return user.groups_id  # older Odoo
+
+    @api.model
+    def _lug_can_edit_project_access(self):
+        """Administrator / Settings / Project Manager can edit access."""
+        user = self.env.user
+        return bool(
+            user.has_group("base.group_system")
+            or user.has_group("base.group_erp_manager")
+            or user.has_group("project.group_project_manager")
+        )
+
+    @api.model
+    def _lug_user_access_payload(self, user, role):
+        return {
+            "id": user.id,
+            "name": user.name or "",
+            "login": user.login or "",
+            "role": role,
+            "initial": (user.name or "U")[:1].upper(),
+        }
+
+    @api.model
+    def get_lug_project_access_data(self):
+        """Members of native Project User / Manager groups (no custom ACL)."""
+        g_user, g_mgr = self._lug_project_access_groups()
+        Users = self.env["res.users"].sudo()
+        internal = Users.search(
+            [("share", "=", False), ("active", "=", True)], order="name, login"
+        )
+        managers = internal.filtered(lambda u: g_mgr in self._lug_user_group_ids(u))
+        users_only = internal.filtered(
+            lambda u: g_user in self._lug_user_group_ids(u)
+            and g_mgr not in self._lug_user_group_ids(u)
+        )
+        assigned_ids = set(managers.ids) | set(users_only.ids)
+        candidates = [
+            self._lug_user_access_payload(user, "none")
+            for user in internal
+            if user.id not in assigned_ids
+        ]
+        return {
+            "can_edit": self._lug_can_edit_project_access(),
+            "note": (
+                "Phân quyền dùng nhóm Project chuẩn của Odoo "
+                "(User / Administrator). Quản trị viên hệ thống luôn có quyền cao nhất."
+            ),
+            "roles": [
+                {
+                    "key": "manager",
+                    "label": "Quản lý dự án",
+                    "hint": "Project / Administrator — cấu hình & toàn quyền dự án",
+                    "users": [
+                        self._lug_user_access_payload(user, "manager")
+                        for user in managers
+                    ],
+                },
+                {
+                    "key": "user",
+                    "label": "Người dùng dự án",
+                    "hint": "Project / User — xem và làm việc trên dự án được giao",
+                    "users": [
+                        self._lug_user_access_payload(user, "user")
+                        for user in users_only
+                    ],
+                },
+            ],
+            "candidates": candidates,
+        }
+
+    @api.model
+    def lug_set_project_access_role(self, user_id, role):
+        """Assign native Project group membership. role: manager|user|none."""
+        if not self._lug_can_edit_project_access():
+            raise UserError(
+                "Chỉ Quản lý dự án hoặc Quản trị viên mới được đổi phân quyền."
+            )
+        if role not in ("manager", "user", "none"):
+            raise UserError("Vai trò không hợp lệ.")
+        user = self.env["res.users"].sudo().browse(int(user_id or 0))
+        if not user.exists() or user.share:
+            raise UserError("Không tìm thấy người dùng nội bộ.")
+        # Never demote Settings / System administrators from Project Manager.
+        admin_user = self.env.ref("base.user_admin", raise_if_not_found=False)
+        if role != "manager" and (
+            user.has_group("base.group_system")
+            or (admin_user and user.id == admin_user.id)
+        ):
+            raise UserError(
+                "Không thể hạ quyền tài khoản Quản trị viên hệ thống (Administrator)."
+            )
+        g_user, g_mgr = self._lug_project_access_groups()
+        commands = [(3, g_mgr.id), (3, g_user.id)]
+        if role == "manager":
+            commands = [(4, g_user.id), (4, g_mgr.id)]
+        elif role == "user":
+            commands = [(3, g_mgr.id), (4, g_user.id)]
+        # Odoo 19 field is group_ids (not groups_id).
+        group_field = "group_ids" if "group_ids" in user._fields else "groups_id"
+        user.write({group_field: commands})
+        return self.get_lug_project_access_data()

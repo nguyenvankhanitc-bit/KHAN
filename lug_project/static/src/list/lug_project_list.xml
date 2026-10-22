@@ -33,7 +33,7 @@
     <t t-name="lug_project.LugProjectList">
         <div class="o_lug_plist" data-lug-plist="v6-cards-fix">
             <header class="o_lug_plist_toolbar">
-                <button t-if="!props.archived" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click="onNew">
+                <button t-if="!props.archived and canCreate" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click="onNew">
                     + Tạo mới
                 </button>
                 <span t-if="props.overdue" class="o_lug_plist_overdue_title">
@@ -44,7 +44,8 @@
                     Thùng rác
                     <small>Tự xóa vĩnh viễn sau 30 ngày</small>
                 </span>
-                <button type="button"
+                <button t-if="canExport"
+                        type="button"
                         class="o_lug_plist_btn o_lug_plist_btn--export"
                         t-att-disabled="state.exporting"
                         t-on-click="exportExcel">
@@ -155,10 +156,11 @@
             <t t-else="">
                 <div class="o_lug_plist_board">
                     <t t-foreach="state.rows" t-as="row" t-key="row.id">
-                        <article t-att-class="'o_lug_dash_card' + (row.deadline_late ? ' is-late' : '')"
-                                 t-on-click="() => this.toggleRow(row.id)">
-                            <header class="o_lug_dash_head">
+                        <article t-att-class="'o_lug_dash_card' + (row.deadline_late ? ' is-late' : '') + (isExpanded(row.id) ? ' is-open' : ' is-collapsed')"
+                                 t-att-data-project-id="row.id">
+                            <header class="o_lug_dash_head" t-on-click="() => this.toggleRow(row.id)">
                                 <div class="o_lug_dash_title">
+                                    <i t-att-class="'fa o_lug_dash_caret ' + (isExpanded(row.id) ? 'fa-chevron-down' : 'fa-chevron-right')"/>
                                     <span class="o_lug_dash_code">[<t t-esc="row.code"/>]</span>
                                     <span class="o_lug_dash_name" t-esc="row.name"/>
                                     <span t-if="row.type_tone !== 'none'"
@@ -166,7 +168,16 @@
                                           t-esc="row.type_label"/>
                                 </div>
                                 <div class="o_lug_dash_head_side">
-                                    <button t-if="state.canDelete and !props.archived"
+                                    <t t-if="!isExpanded(row.id)">
+                                        <span class="o_lug_dash_mini" title="Trưởng DA">
+                                            <i class="fa fa-user"/> <t t-esc="row.manager_name or '—'"/>
+                                        </span>
+                                        <span t-att-class="'o_lug_dash_mini o_lug_dash_mini--dl is-' + row.dl_state" t-esc="row.dl_badge"/>
+                                        <span class="o_lug_dash_mini o_lug_dash_mini--pct" title="Tiến độ">
+                                            <t t-esc="row.progress_pct"/>%
+                                        </span>
+                                    </t>
+                                    <button t-if="state.canDelete and canWrite and !props.archived"
                                             type="button"
                                             class="o_lug_plist_del"
                                             title="Xóa dự án"
@@ -177,7 +188,7 @@
                                           t-esc="row.status_badge"/>
                                 </div>
                             </header>
-                            <div class="o_lug_dash_body">
+                            <div t-if="isExpanded(row.id)" class="o_lug_dash_body">
                                 <section class="o_lug_dash_col o_lug_dash_col--people">
                                     <h4>NHÂN SỰ</h4>
                                     <p>
@@ -254,7 +265,7 @@
                                         <section class="o_lug_plist_detail">
                                             <header class="o_lug_plist_detail_head">
                                                 <h3>CHI TIẾT THÔNG TIN DỰ ÁN BAN ĐẦU</h3>
-                                                <div class="o_lug_plist_wf">
+                                                <div t-if="canWrite" class="o_lug_plist_wf">
                                                     <t t-foreach="workflowOptions" t-as="opt" t-key="opt.key">
                                                         <button type="button"
                                                                 t-att-class="'o_lug_plist_wf_btn' + (state.details[row.id].workflow_state === opt.key ? ' is-active' : '')"
@@ -328,10 +339,10 @@
                                             </section>
 
                                             <footer class="o_lug_plist_detail_actions">
-                                                <button type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click.stop="() => this.editProject(row.id)">
+                                                <button t-if="canWrite" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click.stop="() => this.editProject(row.id)">
                                                     <i class="fa fa-pencil"/> Sửa dự án
                                                 </button>
-                                                <button type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost" t-on-click.stop="() => this.addTask(row.id)">
+                                                <button t-if="canWrite" type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost" t-on-click.stop="() => this.addTask(row.id)">
                                                     + Thêm công việc
                                                 </button>
                                                 <button type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost" t-on-click.stop="() => this.viewGantt(row.id)">

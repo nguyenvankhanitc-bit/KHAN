@@ -21,10 +21,9 @@ mock_api.onchange = lambda *args: lambda f: f
 mock_api.constrains = lambda *args: lambda f: f
 
 mock_fields = MagicMock()
+mock_fields.Date = MagicMock(side_effect=lambda **kwargs: kwargs)
 mock_fields.Date.context_today = MagicMock(return_value="2026-10-12")
 mock_fields.Date.to_date = lambda d: d
-mock_fields.Char = MagicMock(side_effect=lambda **kwargs: kwargs)
-mock_fields.Date = MagicMock(side_effect=lambda **kwargs: kwargs)
 mock_fields.Selection = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
 mock_fields.Many2one = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
 mock_fields.Many2many = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
@@ -61,8 +60,14 @@ class MockModel:
     def with_context(self, *args, **kwargs):
         return self
 
-    def ensure_one(self):
-        return self
+    def search(self, *args, **kwargs):
+        return []
+
+    def _can_update_task_state(self):
+        return False
+
+    def _can_edit_task(self):
+        return False
 
 
 mock_models.Model = MockModel
@@ -108,6 +113,8 @@ from lug_project.models.project_project import ProjectProject
 
 class TestDuanToDailyTaskSync(unittest.TestCase):
     def setUp(self):
+        import lug_project.models.project_stage_task as pst
+        pst.fields.Date.context_today.return_value = "2026-10-12"
         self.mock_user1 = MagicMock()
         self.mock_user1.id = 11
         self.mock_user1.name = "Nguyen Van A"
@@ -213,22 +220,162 @@ class TestDuanToDailyTaskSync(unittest.TestCase):
             self.assertEqual(r["priority"], "high")
             self.assertEqual(r["lug_origin_stage_task_id"], 888)
 
-    def test_one_way_sync_no_write_back_to_duan(self):
-        """Verify that updating a daily task does NOT sync back to project.stage.task or project.task."""
+    def test_two_way_sync_write_back_to_stage_task(self):
+        """Verify that updating a daily task syncs back to project.stage.task."""
         daily_task = DailyTask()
         mock_stage_origin = MagicMock()
-        mock_proj_origin = MagicMock()
+        mock_stage_origin.exists.return_value = True
+        mock_stage_origin.state = "in_progress"
         daily_task.lug_origin_stage_task_id = mock_stage_origin
-        daily_task.lug_origin_project_task_id = mock_proj_origin
+        daily_task.lug_origin_project_task_id = False
+        daily_task.lug_origin_project_id = False
+        daily_task.state = "done"
+        daily_task.date_done = "2026-10-22"
         daily_task.env = MagicMock()
         daily_task.env.context.get.return_value = False
+        daily_task.search = MagicMock(return_value=[])
 
-        # Call write on DailyTask
+        # Call write on DailyTask with state='done'
         DailyTask.write(daily_task, {"state": "done", "deadline": "2026-12-01"})
 
-        # Confirm neither origin task has write called
-        mock_stage_origin.with_context.assert_not_called()
-        mock_proj_origin.with_context.assert_not_called()
+        # Confirm stage origin task has write called with state='done' and deadline='2026-12-01'
+        mock_stage_origin.with_context.assert_called_with(lug_sync_lock=True)
+        call_vals = mock_stage_origin.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(call_vals.get("state"), "done")
+        self.assertEqual(call_vals.get("deadline"), "2026-12-01")
+
+    def test_two_way_sync_write_back_to_project_task(self):
+        """Verify that updating a daily task syncs back to project.task."""
+        daily_task = DailyTask()
+        mock_proj_origin = MagicMock()
+        mock_proj_origin.exists.return_value = True
+        mock_proj_origin.lug_status = "progress"
+        mock_proj_origin.lug_todo_task_id = False
+        daily_task.lug_origin_stage_task_id = False
+        daily_task.lug_origin_project_task_id = mock_proj_origin
+        daily_task.lug_origin_project_id = False
+        daily_task.state = "done"
+        daily_task.date_done = "2026-10-22"
+        daily_task.env = MagicMock()
+        daily_task.env.context.get.return_value = False
+        daily_task.search = MagicMock(return_value=[])
+
+        # Call write on DailyTask with state='done'
+        DailyTask.write(daily_task, {"state": "done", "deadline": "2026-12-01"})
+
+        # Confirm project task has write called with lug_status='done'
+        mock_proj_origin.with_context.assert_called_with(lug_sync_lock=True)
+        call_vals = mock_proj_origin.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(call_vals.get("lug_status"), "done")
+        self.assertEqual(call_vals.get("date_deadline"), "2026-12-01")
+
+    def test_daily_task_can_update_state_with_sync_lock(self):
+        """Verify that _can_update_task_state allows update when lug_sync_lock is active or env.su is True."""
+        daily_task = DailyTask()
+        daily_task.env = MagicMock()
+        daily_task.env.su = True
+        daily_task.env.context.get.return_value = True
+        self.assertTrue(daily_task._can_update_task_state())
+
+    def test_forward_sync_status_done_and_in_progress(self):
+        """Verify that forward sync sets completion_percent and date_done properly."""
+        task = ProjectStageTask()
+        task.id = 889
+        task.name = "Khảo sát mặt bằng"
+        task.stage_id = MagicMock()
+        task.project_id = self.mock_project
+        task.user_ids = [self.mock_user1]
+        task.deadline = "2026-11-15"
+        task.execution_date = "2026-10-20"
+        task.state = "done"
+
+        mock_existing_dt = MagicMock()
+        mock_existing_dt.assignee_id.id = 101
+
+        mock_daily_model = MagicMock()
+        mock_daily_model.search.return_value = [mock_existing_dt]
+        mock_daily_model.sudo.return_value = mock_daily_model
+
+        mock_env_obj = MagicMock()
+        mock_env_obj.__contains__.side_effect = lambda k: True
+        mock_env_obj.__getitem__.side_effect = lambda k: mock_daily_model if k == "daily.task" else MagicMock()
+        mock_env_obj.user = self.mock_pm
+        task.env = mock_env_obj
+        task._lug_get_or_create_daily_employee = MagicMock(return_value=self.mock_emp1)
+
+        # 1. State == 'done'
+        task._lug_sync_to_daily()
+        written_vals = mock_existing_dt.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(written_vals["state"], "done")
+        self.assertEqual(written_vals["completion_percent"], 100)
+        self.assertEqual(written_vals["date_done"], "2026-10-12")
+
+        # 2. State == 'in_progress'
+        task.state = "in_progress"
+        task._lug_sync_to_daily()
+        written_vals = mock_existing_dt.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(written_vals["state"], "in_progress")
+        self.assertEqual(written_vals["completion_percent"], 50)
+        self.assertFalse(written_vals["date_done"])
+
+        # 3. State == 'draft'
+        task.state = "draft"
+        task._lug_sync_to_daily()
+        written_vals = mock_existing_dt.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(written_vals["state"], "not_started")
+        self.assertEqual(written_vals["completion_percent"], 0)
+        self.assertFalse(written_vals["date_done"])
+
+    def test_backward_sync_multi_assignee_siblings_resolution(self):
+        """Verify that when 2 users are assigned, stage task becomes done only when all are done."""
+        daily_task1 = DailyTask()
+        mock_stage_origin = MagicMock()
+        mock_stage_origin.exists.return_value = True
+        mock_stage_origin.state = "in_progress"
+
+        daily_task1.lug_origin_stage_task_id = mock_stage_origin
+        daily_task1.lug_origin_project_task_id = False
+        daily_task1.lug_origin_project_id = False
+        daily_task1.state = "done"
+        daily_task1.id = 1
+        daily_task1.env = MagicMock()
+        daily_task1.env.context.get.return_value = False
+
+        # Sibling task still in_progress
+        sibling_dt = MagicMock()
+        sibling_dt.state = "in_progress"
+        daily_task1.search = MagicMock(return_value=[sibling_dt])
+
+        DailyTask.write(daily_task1, {"state": "done"})
+        # Should be in_progress because sibling is not done
+        call_vals = mock_stage_origin.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(call_vals["state"], "in_progress")
+
+        # Now sibling is also done
+        sibling_dt.state = "done"
+        DailyTask.write(daily_task1, {"state": "done"})
+        call_vals = mock_stage_origin.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(call_vals["state"], "done")
+
+    def test_backward_sync_to_project_level(self):
+        """Verify that updating a daily task linked to project.project syncs lug_workflow_state."""
+        daily_task = DailyTask()
+        mock_proj = MagicMock()
+        mock_proj.exists.return_value = True
+
+        daily_task.lug_origin_stage_task_id = False
+        daily_task.lug_origin_project_task_id = False
+        daily_task.lug_origin_project_id = mock_proj
+        daily_task.state = "done"
+        daily_task.id = 1
+        daily_task.env = MagicMock()
+        daily_task.env.context.get.return_value = False
+        daily_task.search = MagicMock(return_value=[])
+
+        DailyTask.write(daily_task, {"state": "done", "deadline": "2026-12-15"})
+        call_vals = mock_proj.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(call_vals["lug_workflow_state"], "done")
+        self.assertEqual(call_vals["lug_deadline"], "2026-12-15")
 
     def test_project_sync_to_daily(self):
         """Verify that creating a new duan (project.project) creates a linked daily.task."""

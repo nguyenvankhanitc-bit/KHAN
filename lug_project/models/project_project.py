@@ -744,13 +744,26 @@ class ProjectProject(models.Model):
 
                 proj_rec = project.sudo() if hasattr(project, "sudo") else project
                 existing_daily_tasks = (
-                    proj_rec.daily_task_ids.exists()
-                    if (hasattr(proj_rec, "daily_task_ids") and hasattr(proj_rec.daily_task_ids, "exists"))
+                    DailyTaskModel.search([
+                        ("lug_origin_project_id", "=", project.id),
+                        ("lug_origin_stage_task_id", "=", False),
+                        ("lug_origin_project_task_id", "=", False),
+                    ])
+                    if hasattr(DailyTaskModel, "search")
                     else []
                 )
+                if not existing_daily_tasks and hasattr(proj_rec, "daily_task_ids") and proj_rec.daily_task_ids:
+                    existing_daily_tasks = proj_rec.daily_task_ids.exists()
                 if not existing_daily_tasks and hasattr(proj_rec, "lug_daily_task_id") and proj_rec.lug_daily_task_id and hasattr(proj_rec.lug_daily_task_id, "exists"):
                     existing_daily_tasks = proj_rec.lug_daily_task_id.exists()
-                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks if getattr(dt, "assignee_id", False)}
+                existing_by_user = {}
+                for dt in existing_daily_tasks:
+                    uid = getattr(dt, "assignee_user_id", False) and dt.assignee_user_id.id
+                    if not uid and getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
+                        uid = dt.assignee_id.employee_id.user_id.id
+                    if uid:
+                        existing_by_user[uid] = dt
 
                 created_first_dt = False
                 for emp_id, (user, emp) in active_daily_emps.items():
@@ -763,11 +776,19 @@ class ProjectProject(models.Model):
                     }
                     if daily_state == "done":
                         daily_vals["date_done"] = fields.Date.context_today(project)
+                        daily_vals["completion_percent"] = 100
+                    elif daily_state == "in_progress":
+                        daily_vals["date_done"] = False
+                        daily_vals["completion_percent"] = 50
+                    else:
+                        daily_vals["date_done"] = False
+                        daily_vals["completion_percent"] = 0
 
-                    if emp_id in existing_by_emp:
-                        existing_by_emp[emp_id].with_context(lug_sync_lock=True).sudo().write(daily_vals)
+                    matched_dt = existing_by_emp.get(emp_id) or (user and existing_by_user.get(user.id))
+                    if matched_dt:
+                        matched_dt.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().write(daily_vals)
                         if not created_first_dt:
-                            created_first_dt = existing_by_emp[emp_id]
+                            created_first_dt = matched_dt
                     else:
                         daily_vals.update({
                             "assignee_id": emp.id,
@@ -782,8 +803,14 @@ class ProjectProject(models.Model):
                 if created_first_dt and project.lug_daily_task_id != created_first_dt:
                     project.with_context(lug_sync_lock=True).sudo().write({"lug_daily_task_id": created_first_dt.id})
 
-                for emp_id, dt in existing_by_emp.items():
-                    if emp_id not in active_daily_emps:
+                for dt in existing_daily_tasks:
+                    emp_id = dt.assignee_id.id if getattr(dt, "assignee_id", False) else False
+                    user_id = False
+                    if getattr(dt, "assignee_user_id", False):
+                        user_id = dt.assignee_user_id.id
+                    elif getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
+                        user_id = dt.assignee_id.employee_id.user_id.id
+                    if emp_id not in active_daily_emps and (not user_id or user_id not in {u.id for u in users}):
                         try:
                             dt.with_context(lug_sync_lock=True).sudo().unlink()
                         except Exception:

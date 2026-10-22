@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nhập dự án (custom Project)",
-    "version": "19.0.1.40.7",
+    "version": "19.0.1.40.8",
     "category": "Services/Project",
     "summary": "Bổ sung form nhập dự án trên app Project chuẩn Odoo",
     "description": """

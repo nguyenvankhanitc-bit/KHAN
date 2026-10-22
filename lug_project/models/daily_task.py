@@ -51,6 +51,142 @@ class DailyTask(models.Model):
                 or False
             )
 
+    def _can_update_task_state(self):
+        """Cho phép cập nhật trạng thái khi đồng bộ từ phân hệ Dự án."""
+        if self.env.su or self.env.context.get("lug_sync_lock"):
+            return True
+        return super()._can_update_task_state()
+
+    def _can_edit_task(self):
+        """Cho phép chỉnh sửa khi đồng bộ từ phân hệ Dự án."""
+        if self.env.su or self.env.context.get("lug_sync_lock"):
+            return True
+        return super()._can_edit_task()
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get("lug_sync_lock"):
+            self._lug_sync_back_to_origin(vals)
+        return res
+
+    def _lug_sync_back_to_origin(self, vals):
+        """Đồng bộ ngược 2 chiều từ Công việc hàng ngày / Công việc dự án về Dự án gốc."""
+        sync_trigger_fields = {"state", "completion_percent", "deadline", "assign_date", "note"}
+        if not any(f in vals for f in sync_trigger_fields):
+            return
+
+        for rec in self:
+            rec_id = getattr(rec, "id", False)
+            # 1. Trường hợp công việc gốc là Công việc chi tiết giai đoạn (project.stage.task)
+            if rec.lug_origin_stage_task_id and rec.lug_origin_stage_task_id.exists():
+                origin = rec.lug_origin_stage_task_id
+                origin_vals = {}
+                if "state" in vals or "completion_percent" in vals:
+                    new_state = rec.state
+                    sibling_domain = [("lug_origin_stage_task_id", "=", origin.id)]
+                    if rec_id:
+                        sibling_domain.append(("id", "!=", rec_id))
+                    siblings = self.sudo().search(sibling_domain)
+                    if new_state == "done":
+                        if not siblings or all(s.state == "done" for s in siblings):
+                            origin_vals["state"] = "done"
+                        else:
+                            origin_vals["state"] = "in_progress"
+                    elif new_state == "in_progress":
+                        origin_vals["state"] = "in_progress"
+                    elif new_state == "not_started":
+                        if any(s.state in ("done", "in_progress") for s in siblings):
+                            origin_vals["state"] = "in_progress"
+                        else:
+                            origin_vals["state"] = "draft"
+                if "deadline" in vals:
+                    origin_vals["deadline"] = vals["deadline"]
+                if "assign_date" in vals:
+                    origin_vals["execution_date"] = vals["assign_date"]
+                if "note" in vals and hasattr(origin, "notes"):
+                    origin_vals["notes"] = vals["note"]
+
+                if origin_vals:
+                    origin.with_context(lug_sync_lock=True).sudo().write(origin_vals)
+                continue
+
+            # 2. Trường hợp công việc gốc là Công việc dự án (project.task)
+            if rec.lug_origin_project_task_id and rec.lug_origin_project_task_id.exists():
+                origin = rec.lug_origin_project_task_id
+                origin_vals = {}
+                if "state" in vals or "completion_percent" in vals:
+                    new_state = rec.state
+                    sibling_domain = [("lug_origin_project_task_id", "=", origin.id)]
+                    if rec_id:
+                        sibling_domain.append(("id", "!=", rec_id))
+                    siblings = self.sudo().search(sibling_domain)
+                    if new_state == "done":
+                        if not siblings or all(s.state == "done" for s in siblings):
+                            origin_vals["lug_status"] = "done"
+                            origin_vals["lug_done_date"] = getattr(rec, "date_done", False) or fields.Date.context_today(self)
+                            origin_vals["lug_progress"] = 100
+                        else:
+                            origin_vals["lug_status"] = "progress"
+                            origin_vals["lug_progress"] = 50
+                    elif new_state == "in_progress":
+                        origin_vals["lug_status"] = "progress"
+                        origin_vals["lug_done_date"] = False
+                        pct = getattr(rec, "completion_percent", False)
+                        origin_vals["lug_progress"] = (
+                            pct if (isinstance(pct, (int, float)) and 0 < pct < 100) else 50
+                        )
+                    elif new_state == "not_started":
+                        if any(s.state in ("done", "in_progress") for s in siblings):
+                            origin_vals["lug_status"] = "progress"
+                        else:
+                            origin_vals["lug_status"] = "todo"
+                            origin_vals["lug_done_date"] = False
+                            origin_vals["lug_progress"] = 0
+                if "deadline" in vals:
+                    origin_vals["date_deadline"] = vals["deadline"]
+                if "assign_date" in vals:
+                    origin_vals["lug_execution_date"] = vals["assign_date"]
+                if "note" in vals and hasattr(origin, "lug_note"):
+                    origin_vals["lug_note"] = vals["note"]
+
+                if origin_vals:
+                    origin.with_context(lug_sync_lock=True).sudo().write(origin_vals)
+                    todo = origin.lug_todo_task_id
+                    if todo and todo.exists():
+                        todo_vals = {}
+                        if "lug_status" in origin_vals:
+                            st = origin_vals["lug_status"]
+                            todo_vals["state"] = (
+                                "1_done"
+                                if st == "done"
+                                else ("1_canceled" if st == "cancel" else "01_in_progress")
+                            )
+                        if "date_deadline" in origin_vals:
+                            todo_vals["date_deadline"] = origin_vals["date_deadline"]
+                        if todo_vals:
+                            todo.with_context(lug_sync_lock=True).sudo().write(todo_vals)
+                continue
+
+            # 3. Trường hợp đồng bộ cấp Dự án (project.project)
+            if rec.lug_origin_project_id and rec.lug_origin_project_id.exists():
+                origin = rec.lug_origin_project_id
+                origin_vals = {}
+                if "state" in vals or "completion_percent" in vals:
+                    new_state = rec.state
+                    if new_state == "done":
+                        origin_vals["lug_workflow_state"] = "done"
+                    elif new_state == "in_progress":
+                        origin_vals["lug_workflow_state"] = "progress"
+                    elif new_state == "not_started":
+                        origin_vals["lug_workflow_state"] = "todo"
+                if "deadline" in vals:
+                    origin_vals["lug_deadline"] = vals["deadline"]
+                if "assign_date" in vals:
+                    origin_vals["date_start"] = vals["assign_date"]
+
+                if origin_vals:
+                    origin.with_context(lug_sync_lock=True).sudo().write(origin_vals)
+
     @api.model
     def action_open_my_project_tasks(self):
         """Mở danh sách công việc thuộc các dự án của nhân viên hiện tại, gom nhóm theo Dự án."""

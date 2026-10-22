@@ -42,6 +42,15 @@ class MockModel:
     def unlink(self):
         return True
 
+    def sudo(self):
+        return self
+
+    def search(self, *args, **kwargs):
+        return []
+
+    def with_context(self, *args, **kwargs):
+        return self
+
 
 mock_models.Model = MockModel
 
@@ -174,7 +183,7 @@ class TestSyncLogic(unittest.TestCase):
         self.assertEqual(daily_args["lug_origin_project_task_id"], 999)
 
     def test_sync_from_daily_task_to_project(self):
-        """Verify that updating a daily task does NOT sync back to project task (strict one-way sync)."""
+        """Verify that updating a daily task syncs back to project task and linked To-Do."""
         daily_rec = DailyTask()
         origin_task = MagicMock()
         origin_task.exists.return_value = True
@@ -186,19 +195,30 @@ class TestSyncLogic(unittest.TestCase):
         origin_task.lug_todo_task_id = mock_todo
 
         daily_rec.lug_origin_project_task_id = origin_task
+        daily_rec.lug_origin_stage_task_id = False
+        daily_rec.lug_origin_project_id = False
+        daily_rec.state = "done"
         daily_rec.date_done = "2026-10-10"
         daily_rec.env = MagicMock()
         daily_rec.env.context.get.return_value = False
+        daily_rec.search = MagicMock(return_value=[])
 
-        origin_task.with_context.return_value.write = MagicMock()
-        mock_todo.with_context.return_value.write = MagicMock()
+        origin_task.with_context.return_value.sudo.return_value.write = MagicMock()
+        mock_todo.with_context.return_value.sudo.return_value.write = MagicMock()
 
         # Run write on DailyTask with state='done'
         DailyTask.write(daily_rec, {"state": "done"})
 
-        # Check origin project task was NOT modified (one-way sync)
-        origin_task.with_context.assert_not_called()
-        mock_todo.with_context.assert_not_called()
+        # Check origin project task was updated
+        origin_task.with_context.assert_called_with(lug_sync_lock=True)
+        origin_args = origin_task.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(origin_args["lug_status"], "done")
+        self.assertEqual(origin_args["lug_done_date"], "2026-10-10")
+
+        # Check linked To-Do was updated
+        mock_todo.with_context.assert_called_with(lug_sync_lock=True)
+        todo_args = mock_todo.with_context.return_value.sudo.return_value.write.call_args[0][0]
+        self.assertEqual(todo_args["state"], "1_done")
 
     def test_sync_from_todo_to_project(self):
         """Verify that when a todo task is marked done, it syncs back to project task and daily task."""

@@ -316,11 +316,20 @@ class ProjectStageTask(models.Model):
 
                 task_rec = task.sudo() if hasattr(task, "sudo") else task
                 existing_daily_tasks = (
-                    task_rec.daily_task_ids.exists()
-                    if (hasattr(task_rec, "daily_task_ids") and hasattr(task_rec.daily_task_ids, "exists"))
+                    DailyTaskModel.search([("lug_origin_stage_task_id", "=", task.id)])
+                    if hasattr(DailyTaskModel, "search")
                     else []
                 )
-                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks}
+                if not existing_daily_tasks and hasattr(task_rec, "daily_task_ids") and task_rec.daily_task_ids:
+                    existing_daily_tasks = task_rec.daily_task_ids.exists()
+                existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks if getattr(dt, "assignee_id", False)}
+                existing_by_user = {}
+                for dt in existing_daily_tasks:
+                    uid = getattr(dt, "assignee_user_id", False) and dt.assignee_user_id.id
+                    if not uid and getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
+                        uid = dt.assignee_id.employee_id.user_id.id
+                    if uid:
+                        existing_by_user[uid] = dt
 
                 for emp_id, (user, emp) in active_daily_emps.items():
                     daily_vals = {
@@ -332,9 +341,17 @@ class ProjectStageTask(models.Model):
                     }
                     if daily_state == "done":
                         daily_vals["date_done"] = fields.Date.context_today(task)
+                        daily_vals["completion_percent"] = 100
+                    elif daily_state == "in_progress":
+                        daily_vals["date_done"] = False
+                        daily_vals["completion_percent"] = 50
+                    else:
+                        daily_vals["date_done"] = False
+                        daily_vals["completion_percent"] = 0
 
-                    if emp_id in existing_by_emp:
-                        existing_by_emp[emp_id].with_context(lug_sync_lock=True).sudo().write(daily_vals)
+                    matched_dt = existing_by_emp.get(emp_id) or (user and existing_by_user.get(user.id))
+                    if matched_dt:
+                        matched_dt.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().write(daily_vals)
                     else:
                         daily_vals.update({
                             "assignee_id": emp.id,
@@ -345,8 +362,14 @@ class ProjectStageTask(models.Model):
                         })
                         DailyTaskModel.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().create(daily_vals)
 
-                for emp_id, dt in existing_by_emp.items():
-                    if emp_id not in active_daily_emps:
+                for dt in existing_daily_tasks:
+                    emp_id = dt.assignee_id.id if getattr(dt, "assignee_id", False) else False
+                    user_id = False
+                    if getattr(dt, "assignee_user_id", False):
+                        user_id = dt.assignee_user_id.id
+                    elif getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
+                        user_id = dt.assignee_id.employee_id.user_id.id
+                    if emp_id not in active_daily_emps and (not user_id or user_id not in {u.id for u in task.user_ids}):
                         try:
                             dt.with_context(lug_sync_lock=True).sudo().unlink()
                         except Exception:

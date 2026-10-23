@@ -28,6 +28,20 @@
         <field name="padding">5</field>
         <field name="company_id" eval="False"/>
     </record>
+    <record id="seq_phan_he_it_cost" model="ir.sequence">
+        <field name="name">Mã khoản chi phí IT</field>
+        <field name="code">phan.he.it.cost</field>
+        <field name="prefix">ITCP</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="seq_phan_he_it_ticket" model="ir.sequence">
+        <field name="name">Mã phiếu bảo trì / sự cố IT</field>
+        <field name="code">phan.he.it.ticket</field>
+        <field name="prefix">ITTK</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
 
     <record id="ir_cron_phan_he_service_alert" model="ir.cron">
         <field name="name">Quản lý dịch vụ: cảnh báo hợp đồng</field>

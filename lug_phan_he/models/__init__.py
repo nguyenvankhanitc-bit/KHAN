@@ -5,6 +5,11 @@ from . import phan_he_access_mixin
 from . import phan_he_org
 from . import phan_he_service_type
 from . import phan_he_server_kind
+from . import phan_he_it_asset
+from . import phan_he_it_cost
+from . import phan_he_it_ticket
+from . import phan_he_it_reminder
+from . import phan_he_it_dashboard
 from . import phan_he_module_access
 from . import lug_menu_permission
 from . import internet_menu_permission

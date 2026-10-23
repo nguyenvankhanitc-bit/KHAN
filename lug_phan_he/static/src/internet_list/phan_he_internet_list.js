@@ -250,6 +250,7 @@ export class PhanHeInternetListBoard extends Component {
         listFilter: { type: String, optional: true },
         listReloadToken: { type: Number, optional: true },
         internetMenus: { type: Object, optional: true },
+        serviceTypeCode: { type: String, optional: true },
         onOpenEntry: { type: Function, optional: true },
         onPeriodCountChange: { type: Function, optional: true },
         "*": true,
@@ -302,6 +303,7 @@ export class PhanHeInternetListBoard extends Component {
         this._searchTimer = null;
         this._providersLoaded = false;
         this._internetTypeId = null;
+        this._serviceTypeCode = (this.props.serviceTypeCode || "internet").toLowerCase();
         this._stickyRaf = null;
         this.tableScrollRef = useRef("tableScroll");
         this.forecastRegionBarRef = useRef("forecastRegionBar");
@@ -778,13 +780,12 @@ export class PhanHeInternetListBoard extends Component {
         }
         try {
             const mode = this.isForecastList ? "forecast" : "schedule";
-            const prev = await this.orm.call("phan.he.service", "search_internet_payment_period", [
-                y,
-                m,
-                "",
-                this.state.regionFilter || false,
-                mode,
-            ]);
+            const prev = await this.orm.call(
+                "phan.he.service",
+                "search_internet_payment_period",
+                [y, m, "", this.state.regionFilter || false, mode],
+                { service_type_code: this._serviceTypeCode || "internet" }
+            );
             // Sum theo đúng tháng trước (date_end / next_payment trong tháng đó)
             this.state.forecastPrevAmount = this._sumMonthChartAmount(prev?.records || [], y, m);
         } catch (err) {
@@ -1037,7 +1038,7 @@ export class PhanHeInternetListBoard extends Component {
         if (this._internetTypeId) {
             domain.push(["service_type_id", "=", this._internetTypeId]);
         } else {
-            domain.push(["service_type_id.code", "=", "internet"]);
+            domain.push(["service_type_id.code", "=", this._serviceTypeCode || "internet"]);
         }
         const today = ymd(new Date());
         const soon = new Date();
@@ -1093,22 +1094,31 @@ export class PhanHeInternetListBoard extends Component {
     }
 
     async ensureInternetTypeId() {
+        const code = (this.props.serviceTypeCode || this._serviceTypeCode || "internet").toLowerCase();
+        this._serviceTypeCode = code;
         if (this._internetTypeId) {
             return this._internetTypeId;
         }
-        if (PhanHeInternetListBoard._cachedInternetTypeId) {
-            this._internetTypeId = PhanHeInternetListBoard._cachedInternetTypeId;
+        const cache = PhanHeInternetListBoard._cachedTypeIds || {};
+        if (cache[code]) {
+            this._internetTypeId = cache[code];
             return this._internetTypeId;
         }
         try {
             const rows = await this.orm.searchRead(
                 "phan.he.service.type",
-                [["code", "=", "internet"]],
+                [["code", "=", code]],
                 ["id"],
                 { limit: 1 }
             );
             this._internetTypeId = rows?.[0]?.id || null;
-            PhanHeInternetListBoard._cachedInternetTypeId = this._internetTypeId;
+            PhanHeInternetListBoard._cachedTypeIds = {
+                ...cache,
+                [code]: this._internetTypeId,
+            };
+            if (code === "internet") {
+                PhanHeInternetListBoard._cachedInternetTypeId = this._internetTypeId;
+            }
         } catch {
             this._internetTypeId = null;
         }
@@ -1710,6 +1720,9 @@ export class PhanHeInternetListBoard extends Component {
                 "note",
                 "invoice_filename",
             ];
+            if ((this._serviceTypeCode || "internet") === "server") {
+                listFields.push("hostname", "server_kind_id", "ip_address", "server_spec");
+            }
             if (isPeriodPay) {
                 listFields.push("next_payment_date");
             }
@@ -1721,14 +1734,19 @@ export class PhanHeInternetListBoard extends Component {
             if (isPeriodPay) {
                 // API server — cùng domain badge Lịch TT / Dự kiến / Xác nhận.
                 const periodTasks = [
-                    this.orm.call("phan.he.service", "search_internet_payment_period", [
-                        Number(this.state.forecastYear) || false,
-                        Number(this.state.forecastMonth) || false,
-                        this.state.search || "",
-                        this.state.regionFilter || false,
-                        // Dùng listFilter local — props có thể chưa kịp đổi trong onWillUpdateProps
-                        listFilter === "payment_forecast" ? "forecast" : "schedule",
-                    ]),
+                    this.orm.call(
+                        "phan.he.service",
+                        "search_internet_payment_period",
+                        [
+                            Number(this.state.forecastYear) || false,
+                            Number(this.state.forecastMonth) || false,
+                            this.state.search || "",
+                            this.state.regionFilter || false,
+                            // Dùng listFilter local — props có thể chưa kịp đổi trong onWillUpdateProps
+                            listFilter === "payment_forecast" ? "forecast" : "schedule",
+                        ],
+                        { service_type_code: this._serviceTypeCode || "internet" }
+                    ),
                 ];
                 if (needProviders) {
                     periodTasks.push(
@@ -1795,6 +1813,7 @@ export class PhanHeInternetListBoard extends Component {
             this.state.totalCount = isPeriodPay ? (records || []).length : totalCount;
             const providerMap = Object.fromEntries((providers || []).map((p) => [String(p.id), p.name]));
             const pageRows = isPeriodPay ? (records || []) : (records || []).slice(0, pageSize);
+            const isServer = (this._serviceTypeCode || "internet") === "server";
             this.state.records = pageRows.map((rec) => {
                 rec = this._enrichRemaining(rec);
                 const p = rec.provider_id;
@@ -1811,6 +1830,21 @@ export class PhanHeInternetListBoard extends Component {
                 }
                 if (pid && !pname) {
                     pname = providerMap[String(pid)] || "";
+                }
+                if (isServer) {
+                    const host = rec.hostname || rec.name || "";
+                    const kind = Array.isArray(rec.server_kind_id) ? (rec.server_kind_id[1] || "") : "";
+                    const storeLabel = host
+                        || (Array.isArray(rec.store_id) ? rec.store_id[1] : "")
+                        || "—";
+                    const storeId = Array.isArray(rec.store_id) ? rec.store_id[0] : rec.id;
+                    return {
+                        ...rec,
+                        provider_id: pid ? [pid, pname || kind] : (kind ? [0, kind] : false),
+                        bandwidth: rec.server_spec || rec.ip_address || rec.bandwidth || "—",
+                        store_id: [storeId || rec.id, storeLabel],
+                        customer_code: rec.ip_address || rec.customer_code || "",
+                    };
                 }
                 return { ...rec, provider_id: pid ? [pid, pname] : false };
             });
@@ -2287,8 +2321,8 @@ export class PhanHeInternetListBoard extends Component {
                     : "readonly",
                 default_ops_status: "active",
                 default_state: "active",
-                default_service_type_code: "internet",
-                phan_he_service_type_code: "internet",
+                default_service_type_code: this._serviceTypeCode || "internet",
+                phan_he_service_type_code: this._serviceTypeCode || "internet",
                 phan_he_internet_menu:
                     INTERNET_NAV_TO_CODE[this.listNavId]
                     || (!resId ? "internet_entry" : "internet_active"),
@@ -2388,6 +2422,7 @@ const barValuePlugin = {
 export class PhanHeMonthCostBoard extends Component {
     static template = "lug_phan_he.PhanHeMonthCostBoard";
     static props = {
+        serviceTypeCode: { type: String, optional: true },
         onOpenEntry: { type: Function, optional: true },
     };
 
@@ -2564,6 +2599,7 @@ export class PhanHeMonthCostBoard extends Component {
                 region: this.state.region,
                 provider_id: this.state.providerId || false,
                 pay_status: this.state.payStatus,
+                service_type_code: this.props.serviceTypeCode || "internet",
             }]);
             this.state.page = 1;
             this.state.selected = {};
@@ -2801,6 +2837,7 @@ export class PhanHeMonthCostBoard extends Component {
 export class PhanHeQuarterCostBoard extends Component {
     static template = "lug_phan_he.PhanHeQuarterCostBoard";
     static props = {
+        serviceTypeCode: { type: String, optional: true },
         onOpenEntry: { type: Function, optional: true },
     };
 
@@ -3037,6 +3074,7 @@ export class PhanHeQuarterCostBoard extends Component {
         this.state.loading = true;
         try {
             this.state.data = await this.orm.call("phan.he.dashboard", "get_quarter_cost_board", [{
+                service_type_code: this.props.serviceTypeCode || "internet",
                 year: this.state.year,
                 quarter: this.state.quarter,
                 region: this.state.region,

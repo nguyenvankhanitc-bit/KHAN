@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cập nhật tiền tố / tách NET–SEC mỗi lần upgrade (không noupdate). -->
+<odoo>
+    <record id="it_asset_type_physical" model="phan.he.it.asset.type">
+        <field name="code_prefix">SRV</field>
+    </record>
+    <record id="it_asset_type_virtual" model="phan.he.it.asset.type">
+        <field name="code_prefix">VM</field>
+    </record>
+    <record id="it_asset_type_cloud" model="phan.he.it.asset.type">
+        <field name="code_prefix">CLD</field>
+    </record>
+    <record id="it_asset_type_network" model="phan.he.it.asset.type">
+        <field name="name">Thiết bị mạng</field>
+        <field name="code_prefix">NET</field>
+    </record>
+    <record id="it_asset_type_security" model="phan.he.it.asset.type">
+        <field name="name">Thiết bị bảo mật</field>
+        <field name="code">security</field>
+        <field name="code_prefix">SEC</field>
+        <field name="sequence">45</field>
+        <field name="color">#dc2626</field>
+    </record>
+    <record id="it_asset_type_software" model="phan.he.it.asset.type">
+        <field name="code_prefix">SW</field>
+    </record>
+</odoo>

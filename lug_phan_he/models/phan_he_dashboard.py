@@ -398,9 +398,9 @@ class PhanHeDashboard(models.AbstractModel):
             ),
             "expire_soon": len(expire_soon_svcs),
             "overdue_contract": len(expired_svcs),
-            "payment_forecast": self.env["phan.he.service"].get_internet_alert_counts().get(
-                "payment_forecast", 0
-            ),
+            "payment_forecast": self.env["phan.he.service"].get_internet_alert_counts(
+                service_type_code=service_type_code or "internet"
+            ).get("payment_forecast", 0),
             "trend_months": trend_months,
             "trend_series": trend_series,
             "max_trend": max_trend,
@@ -681,6 +681,7 @@ class PhanHeDashboard(models.AbstractModel):
 
         Service = self.env["phan.he.service"]
         start, end, as_of, soon = Service._month_ky_bounds(year, month)
+        stype_code = Service._service_type_code_norm(params.get("service_type_code"))
 
         extra = []
         if region and region != "all":
@@ -688,7 +689,9 @@ class PhanHeDashboard(models.AbstractModel):
         if provider_id:
             extra.append(("provider_id", "=", provider_id))
 
-        services = Service.search_month_cost_ky(year, month, extra_domain=extra or None)
+        services = Service.search_month_cost_ky(
+            year, month, extra_domain=extra or None, service_type_code=stype_code
+        )
 
         def period_amount(rec):
             return Service._month_ky_period_amount(rec)
@@ -873,6 +876,7 @@ class PhanHeDashboard(models.AbstractModel):
         pay_filter = (params.get("pay_status") or "all") or "all"
 
         Service = self.env["phan.he.service"]
+        stype_code = Service._service_type_code_norm(params.get("service_type_code"))
         month_names = {1: "01", 2: "02", 3: "03", 4: "04", 5: "05", 6: "06",
                        7: "07", 8: "08", 9: "09", 10: "10", 11: "11", 12: "12"}
         region_label = {
@@ -897,7 +901,9 @@ class PhanHeDashboard(models.AbstractModel):
 
         def month_payment_recs(y, m):
             """Cùng tập HĐ Danh sách thanh toán đã lọc theo tháng."""
-            return Service.search_month_cost_ky(y, m, extra_domain=extra or None)
+            return Service.search_month_cost_ky(
+                y, m, extra_domain=extra or None, service_type_code=stype_code
+            )
 
         def period_amt(rec):
             return float(Service._month_ky_period_amount(rec) or 0.0)
@@ -1232,6 +1238,7 @@ class PhanHeDashboard(models.AbstractModel):
         region = (params.get("region") or "all") or "all"
 
         Service = self.env["phan.he.service"]
+        stype_code = Service._service_type_code_norm(params.get("service_type_code"))
         extra = []
         if region and region != "all":
             extra.append(("store_mien", "=", region))
@@ -1256,7 +1263,7 @@ class PhanHeDashboard(models.AbstractModel):
             start = fields.Date.to_date(f"{year:04d}-{m:02d}-01")
             end = (start + relativedelta(months=1)) - relativedelta(days=1)
             recs = Service.search_month_cost_ky(
-                year, m, extra_domain=extra or None
+                year, m, extra_domain=extra or None, service_type_code=stype_code
             )
             visible = recs.filtered(lambda rec, s=start, e=end: list_visible(rec, s, e))
             month_counts[m - 1] = len(visible)
@@ -1311,10 +1318,10 @@ class PhanHeDashboard(models.AbstractModel):
         year_total = float(sum(month_amounts))
         peak = max(months, key=lambda x: x["amount"]) if months else None
 
-        # KPI Số cửa hàng = Internet Đang sử dụng (cùng badge sidebar)
+        # KPI Số bản ghi đang hoạt động (cùng badge sidebar)
         active_domain = [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            Service._service_type_domain_term(stype_code),
             ("state", "=", "active"),
         ]
         if region and region != "all":

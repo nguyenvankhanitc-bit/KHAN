@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.497.1",
+    "version": "19.0.2.509.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -32,6 +32,10 @@ Quản lý dịch vụ
         "data/ir_sequence_data.xml",
         "data/phan_he_service_type_data.xml",
         "data/phan_he_server_kind_data.xml",
+        "data/phan_he_it_catalog_data.xml",
+        "data/phan_he_it_asset_type_prefix.xml",
+        "data/phan_he_it_asset_seed.xml",
+        "data/phan_he_it_cron.xml",
         "data/phan_he_work_shift_data.xml",
         "data/shift_schedule_north_data.xml",
         "data/shift_schedule_dtt_data.xml",
@@ -42,6 +46,7 @@ Quản lý dịch vụ
         "data/roster_lock_cron.xml",
         "data/shift_guide_document_data.xml",
         "views/phan_he_views.xml",
+        "views/phan_he_it_views.xml",
         "views/phan_he_work_shift_views.xml",
         "views/shift_schedule_north_views.xml",
         "views/shift_schedule_dtt_views.xml",
@@ -131,6 +136,10 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.scss",
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.js",
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.xml",
+            "lug_phan_he/static/src/it_entry/phan_he_it_asset_entry_popup.js",
+            "lug_phan_he/static/src/it_entry/phan_he_it_asset_entry_popup.xml",
+            "lug_phan_he/static/src/it_entry/phan_he_it_cost_entry_popup.js",
+            "lug_phan_he/static/src/it_entry/phan_he_it_cost_entry_popup.xml",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.scss",
             "lug_phan_he/static/src/dashboard/internet_overview.scss",
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.scss",

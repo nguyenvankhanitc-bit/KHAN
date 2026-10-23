@@ -72,6 +72,20 @@ export class PhanHeInternetShell extends Component {
         slots: { type: Object, optional: true },
     };
 
+    get contentClass() {
+        const parts = ["o_internet_content", "o_phan_he_dashboard"];
+        const emb = this.props.embeddedViewProps;
+        if (
+            this.props.contentMode === "view"
+            && emb
+            && emb.resModel === "phan.he.it.cost"
+            && (emb.type || "list") === "list"
+        ) {
+            parts.push("o_it_cost_embed");
+        }
+        return parts.join(" ");
+    }
+
     setup() {
         this.rootRef = useRef("shellRoot");
         this.state = useState({

@@ -9,7 +9,9 @@ function formatMoneyVn(amount) {
 
 export class PhanHeCostEstimateBoard extends Component {
     static template = "lug_phan_he.PhanHeCostEstimateBoard";
-    static props = {};
+    static props = {
+        serviceTypeCode: { type: String, optional: true },
+    };
 
     setup() {
         this.orm = useService("orm");
@@ -101,6 +103,7 @@ export class PhanHeCostEstimateBoard extends Component {
             this.state.data = await this.orm.call("phan.he.dashboard", "get_cost_estimate_board", [{
                 year: this.state.year,
                 region: this.state.region,
+                service_type_code: this.props.serviceTypeCode || "internet",
             }]);
         } catch (err) {
             this.notification.add(
@@ -167,6 +170,7 @@ export class PhanHeCostEstimateBoard extends Component {
                 region: this.state.region,
                 search: this.state.search,
                 table_region: this.state.tableRegion,
+                service_type_code: this.props.serviceTypeCode || "internet",
             }]);
             if (!result?.file_base64) {
                 throw new Error("Không nhận được file Excel.");

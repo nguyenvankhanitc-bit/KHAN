@@ -98,6 +98,7 @@ export class PhanHePaymentBoard extends Component {
         mode: { type: String, optional: true },
         reloadToken: { type: Number, optional: true },
         monthOffset: { type: Number, optional: true },
+        serviceTypeCode: { type: String, optional: true },
         onMonthOffsetChange: { type: Function, optional: true },
         onConfirmCountChange: { type: Function, optional: true },
         onAfterConfirm: { type: Function, optional: true },
@@ -600,7 +601,7 @@ export class PhanHePaymentBoard extends Component {
         const month = Number(this.state.month);
         const domain = [
             ["active", "=", true],
-            ["service_type_id.code", "=", "internet"],
+            ["service_type_id.code", "=", (this.props.serviceTypeCode || "internet").toLowerCase()],
             ["state", "=", "active"],
         ];
         const q = (this.state.search || "").trim();
@@ -662,11 +663,12 @@ export class PhanHePaymentBoard extends Component {
 
     async loadConfirmPayments() {
         // Cùng API / cùng nội dung bảng Lịch thanh toán.
-        const result = await this.orm.call("phan.he.service", "get_payment_confirm_board", [
-            this.state.year,
-            this.state.month,
-            this.state.search || "",
-        ]);
+        const result = await this.orm.call(
+            "phan.he.service",
+            "get_payment_confirm_board",
+            [this.state.year, this.state.month, this.state.search || ""],
+            { service_type_code: this.props.serviceTypeCode || "internet" }
+        );
         let records = result?.records || [];
         records = records.map((r) => this.enrichRemaining(r));
         if (result?.year) {

@@ -367,11 +367,18 @@
         <field name="model">phan.he.server.kind</field>
         <field name="arch" type="xml">
             <list string="Loại máy chủ" editable="bottom">
-                <field name="sequence" widget="handle"/>
-                <field name="name"/>
-                <field name="code" optional="hide"/>
+                <field name="sequence" widget="handle" optional="hide"/>
+                <field name="code" string="Mã máy chủ"/>
+                <field name="name" string="Tên máy chủ"/>
+                <field name="model_name" string="Model"/>
+                <field name="location" string="Vị trí"/>
+                <field name="status" string="Trạng thái"
+                         decoration-success="status == 'in_use'"
+                         decoration-warning="status == 'maintenance'"
+                         decoration-muted="status in ('idle', 'retired')"
+                         widget="badge"/>
                 <field name="color" optional="hide"/>
-                <field name="active"/>
+                <field name="active" optional="hide"/>
             </list>
         </field>
     </record>
@@ -382,15 +389,47 @@
         <field name="arch" type="xml">
             <form string="Loại máy chủ">
                 <sheet>
-                    <group>
-                        <field name="name"/>
-                        <field name="code"/>
+                    <group string="Thông tin máy chủ">
+                        <group>
+                            <field name="code" string="Mã máy chủ"/>
+                            <field name="name" string="Tên máy chủ"/>
+                            <field name="model_name" string="Model"/>
+                        </group>
+                        <group>
+                            <field name="location" string="Vị trí"/>
+                            <field name="status" string="Trạng thái"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <group string="Tuỳ chọn" invisible="1">
                         <field name="sequence"/>
                         <field name="color"/>
-                        <field name="active"/>
                     </group>
                 </sheet>
             </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_server_kind_search" model="ir.ui.view">
+        <field name="name">phan.he.server.kind.search</field>
+        <field name="model">phan.he.server.kind</field>
+        <field name="arch" type="xml">
+            <search string="Loại máy chủ">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="model_name"/>
+                <field name="location"/>
+                <filter name="filter_in_use" string="Đang sử dụng" domain="[('status', '=', 'in_use')]"/>
+                <filter name="filter_idle" string="Nhàn rỗi" domain="[('status', '=', 'idle')]"/>
+                <filter name="filter_maintenance" string="Bảo trì" domain="[('status', '=', 'maintenance')]"/>
+                <filter name="filter_retired" string="Ngưng dùng" domain="[('status', '=', 'retired')]"/>
+                <separator/>
+                <filter name="filter_active" string="Đang hiệu lực" domain="[('active', '=', True)]"/>
+                <separator/>
+                <filter name="group_status" string="Trạng thái" context="{'group_by': 'status'}"/>
+                <filter name="group_location" string="Vị trí" context="{'group_by': 'location'}"/>
+                <filter name="group_model" string="Model" context="{'group_by': 'model_name'}"/>
+            </search>
         </field>
     </record>
 
@@ -398,6 +437,11 @@
         <field name="name">Loại máy chủ</field>
         <field name="res_model">phan.he.server.kind</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_server_kind_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Thêm máy chủ</p>
+            <p>Khai báo mã, tên, model, vị trí và trạng thái từng máy chủ.</p>
+        </field>
     </record>
 
     <record id="view_phan_he_provider_list" model="ir.ui.view">

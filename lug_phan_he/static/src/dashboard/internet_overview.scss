@@ -170,6 +170,43 @@
     @media (max-width: 720px) { grid-template-columns: 1fr; }
 }
 
+.lq-inet-dash .lq-srv-kinds {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0 0 14px;
+
+    .o_srv_kind {
+        background: #fff;
+        border-radius: 14px;
+        border-left: 4px solid var(--accent, #64748b);
+        box-shadow: 0 8px 22px rgba(31, 42, 80, 0.05);
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+
+        span {
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+        strong {
+            font-size: 1.35rem;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+        small {
+            color: #94a3b8;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (max-width: 1100px) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    @media (max-width: 720px) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
 .lq-card {
     background: #fff;
     border: 0;
@@ -692,3 +729,122 @@
 }
 
 .lq-empty { color: #94a3b8; text-align: center; padding: 12px !important; }
+
+/* —— Máy chủ & Cloud overview —— */
+.lq-it-dash {
+    .lq-inet-filters {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        max-width: 720px;
+    }
+    .lq-kpi4 {
+        button.lq-kpi {
+            border: 0;
+            text-align: left;
+            cursor: pointer;
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+            flex-direction: column;
+            gap: 6px;
+            &:hover { box-shadow: 0 4px 14px rgba(107, 33, 168, 0.12); }
+        }
+        .lq-kpi {
+            background: #fff;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+            border-radius: 14px;
+            flex-direction: column;
+            gap: 6px;
+            .lq-kpi-top strong {
+                font-size: 0.78rem;
+                color: #64748b;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+            }
+            > b {
+                font-size: 1.35rem;
+                color: #0f172a;
+                white-space: normal;
+            }
+            > em {
+                font-style: normal;
+                font-size: 0.78rem;
+                color: #64748b;
+            }
+        }
+    }
+    .lq-inet-grid2 {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+        @media (max-width: 960px) { grid-template-columns: 1fr; }
+    }
+    .lq-chart-box.is-tall {
+        height: 260px;
+        canvas { height: 100% !important; }
+    }
+    .o_it_chart_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+    .o_it_chart_modes {
+        display: inline-flex;
+        gap: 4px;
+        button {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #64748b;
+            &.is-active {
+                background: #6b21a8;
+                border-color: #6b21a8;
+                color: #fff;
+            }
+        }
+    }
+    .o_it_by_type, .o_it_todo {
+        margin-bottom: 14px;
+        padding: 16px 18px;
+        background: #fff;
+        border-radius: 14px;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    }
+    .o_it_type_grid {
+        display: grid;
+        gap: 8px;
+    }
+    .o_it_type_row {
+        display: grid;
+        grid-template-columns: 1.4fr 0.8fr 1fr 0.5fr;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border-left: 4px solid var(--accent, #64748b);
+        strong { color: #0f172a; }
+        span, em { color: #64748b; font-style: normal; font-size: 0.85rem; }
+        b { text-align: right; color: #0f172a; }
+        @media (max-width: 700px) {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    .o_it_badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: #e2e8f0;
+        color: #334155;
+        &.is-overdue { background: #fee2e2; color: #b91c1c; }
+        &.is-expiring { background: #ffedd5; color: #c2410c; }
+        &.is-payment { background: #dbeafe; color: #1d4ed8; }
+        &.is-incident { background: #fce7f3; color: #be185d; }
+    }
+}

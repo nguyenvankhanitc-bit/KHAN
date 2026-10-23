@@ -32,6 +32,7 @@
                             listFilter="state.listFilter"
                             listReloadToken="state.listReloadToken"
                             internetMenus="state.internetMenus"
+                            serviceTypeCode="serviceTypeCode"
                             onOpenEntry.bind="openEntryForm"
                             onPeriodCountChange.bind="onPeriodPaymentCountChange"/>
                 </t>
@@ -39,17 +40,22 @@
                     <PhanHePaymentBoard
                             mode="state.paymentBoardMode"
                             reloadToken="state.paymentBoardToken"
+                            serviceTypeCode="serviceTypeCode"
                             onConfirmCountChange.bind="onPeriodPaymentCountChange"
                             onAfterConfirm.bind="loadNavBadges"/>
                 </t>
                 <t t-if="state.contentMode === 'month_cost'">
-                    <PhanHeMonthCostBoard onOpenEntry.bind="openEntryForm"/>
+                    <PhanHeMonthCostBoard
+                            serviceTypeCode="serviceTypeCode"
+                            onOpenEntry.bind="openEntryForm"/>
                 </t>
                 <t t-if="state.contentMode === 'quarter_cost'">
-                    <PhanHeQuarterCostBoard onOpenEntry.bind="openEntryForm"/>
+                    <PhanHeQuarterCostBoard
+                            serviceTypeCode="serviceTypeCode"
+                            onOpenEntry.bind="openEntryForm"/>
                 </t>
                 <t t-if="state.contentMode === 'cost_estimate'">
-                    <PhanHeCostEstimateBoard/>
+                    <PhanHeCostEstimateBoard serviceTypeCode="serviceTypeCode"/>
                 </t>
                 <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost' and state.contentMode !== 'cost_estimate'">
                     <t t-call="lug_phan_he.PhanHeDashboardInner"/>
@@ -60,6 +66,18 @@
                         resId="state.entryPopupResId"
                         onClose.bind="closeEntryPopup"
                         onSaved.bind="onEntryPopupSaved"/>
+            </t>
+            <t t-if="state.itAssetPopupOpen">
+                <PhanHeItAssetEntryPopup
+                        resId="state.itAssetPopupResId"
+                        onClose.bind="closeItAssetPopup"
+                        onSaved.bind="onItAssetPopupSaved"/>
+            </t>
+            <t t-if="state.itCostPopupOpen">
+                <PhanHeItCostEntryPopup
+                        resId="state.itCostPopupResId"
+                        onClose.bind="closeItCostPopup"
+                        onSaved.bind="onItCostPopupSaved"/>
             </t>
         </t>
     </t>
@@ -74,7 +92,7 @@
                     </div>
                 </t>
                 <t t-else="">
-                <t t-if="!isInternetDash">
+                <t t-if="!isInternetDash and !isServerItDash">
                 <div class="o_phan_he_dash_top">
                     <div>
                         <h1>
@@ -161,6 +179,192 @@
                         </div>
                     </section>
                     </t>
+                    <t t-elif="isServerItDash">
+                    <div class="lq-inet-dash lq-it-dash">
+                        <div class="lq-inet-head">
+                            <div class="lq-inet-head-left">
+                                <div class="lq-inet-wifi"><i class="fa fa-server"/></div>
+                                <div>
+                                    <h1 t-esc="overviewTitle"/>
+                                    <p t-esc="overviewSubtitle"/>
+                                </div>
+                            </div>
+                            <div class="lq-inet-filters">
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-calendar"/>
+                                    <select t-att-value="state.selectedMonth" t-on-change="onInetMonthChange">
+                                        <t t-foreach="itMonthOptions" t-as="mo" t-key="mo.value">
+                                            <option t-att-value="mo.value" t-esc="mo.label"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-map-marker"/>
+                                    <select t-att-value="state.selectedRegion" t-on-change="onInetRegionChange">
+                                        <option value="all">Tất cả khu vực</option>
+                                        <t t-foreach="(it.filters and it.filters.miens) or []" t-as="rg" t-key="rg.id">
+                                            <option t-att-value="rg.id" t-esc="rg.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-tags"/>
+                                    <select t-att-value="state.itAssetTypeId" t-on-change="onItAssetTypeChange">
+                                        <option value="all">Tất cả loại tài sản</option>
+                                        <t t-foreach="(it.filters and it.filters.types) or []" t-as="tp" t-key="tp.id">
+                                            <option t-att-value="tp.id" t-esc="tp.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-heartbeat"/>
+                                    <select t-att-value="state.itAssetState" t-on-change="onItAssetStateChange">
+                                        <option value="all">Tất cả trạng thái</option>
+                                        <option value="active">Đang sử dụng</option>
+                                        <option value="suspended">Ngừng tạm</option>
+                                        <option value="retired">Lưu trữ</option>
+                                        <option value="draft">Nháp</option>
+                                    </select>
+                                </label>
+                                <label class="lq-inet-pill">
+                                    <i class="fa fa-building"/>
+                                    <select t-att-value="state.itProviderId" t-on-change="onItProviderChange">
+                                        <option value="all">Tất cả nhà cung cấp</option>
+                                        <t t-foreach="(it.filters and it.filters.providers) or []" t-as="pv" t-key="pv.id">
+                                            <option t-att-value="pv.id" t-esc="pv.name"/>
+                                        </t>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="lq-kpi4">
+                            <button type="button" class="lq-kpi" t-on-click="() => this.openItKpi('assets')">
+                                <div class="lq-kpi-top"><strong>Tổng tài sản</strong></div>
+                                <b t-esc="itKpi.asset_total"/>
+                                <em>Đang hoạt động: <t t-esc="itKpi.asset_active"/> · Ngừng: <t t-esc="itKpi.asset_inactive"/></em>
+                            </button>
+                            <article class="lq-kpi">
+                                <div class="lq-kpi-top"><strong>Chi phí tháng</strong></div>
+                                <b t-esc="formatMoney(itKpi.month_cost)"/>
+                                <span class="lq-delta" t-att-class="{ 'is-up': itKpi.month_delta >= 0, 'is-down': itKpi.month_delta &lt; 0 }">
+                                    <t t-if="itKpi.month_delta >= 0">▲</t><t t-else="">▼</t>
+                                    <t t-esc="formatDelta(itKpi.month_delta)"/> so với tháng trước
+                                </span>
+                            </article>
+                            <article class="lq-kpi">
+                                <div class="lq-kpi-top"><strong>Chi phí năm</strong></div>
+                                <b t-esc="formatMoney(itKpi.year_cost)"/>
+                                <em>
+                                    Ngân sách: <t t-esc="formatMoney(itKpi.year_budget)"/>
+                                    · Thực hiện: <t t-esc="itBudgetPct"/>%
+                                </em>
+                            </article>
+                            <button type="button" class="lq-kpi" t-on-click="() => this.openItKpi('expiring')">
+                                <div class="lq-kpi-top"><strong>Tình hình gia hạn</strong></div>
+                                <b t-esc="itKpi.expiring"/>
+                                <em>
+                                    Quá hạn: <t t-esc="itKpi.overdue"/>
+                                    · Chờ TT: <t t-esc="itKpi.confirm"/>
+                                </em>
+                            </button>
+                        </div>
+
+                        <div class="lq-inet-grid2">
+                            <article class="lq-card">
+                                <div class="lq-card-title o_it_chart_head">
+                                    <span>Chi phí theo tháng</span>
+                                    <span class="o_it_chart_modes">
+                                        <button type="button" t-att-class="state.monthChartMode === 'bar' ? 'is-active' : ''"
+                                                t-on-click="() => this.setMonthChartMode('bar')">Cột</button>
+                                        <button type="button" t-att-class="state.monthChartMode === 'line' ? 'is-active' : ''"
+                                                t-on-click="() => this.setMonthChartMode('line')">Đường</button>
+                                    </span>
+                                </div>
+                                <div class="lq-chart-box is-tall">
+                                    <canvas t-ref="itMonthChart"/>
+                                </div>
+                            </article>
+                            <article class="lq-card">
+                                <div class="lq-card-title">Chi phí theo khu vực</div>
+                                <div class="lq-donut-wrap">
+                                    <div class="lq-donut lq-donut-canvas-wrap">
+                                        <canvas t-ref="itDonutChart"/>
+                                    </div>
+                                    <ul class="lq-legend">
+                                        <t t-foreach="itMienLegend" t-as="rg" t-key="rg.id">
+                                            <li>
+                                                <span t-esc="rg.name"/>
+                                                <em><t t-esc="rg.pct"/>%</em>
+                                                <b t-esc="formatMoney(rg.amount)"/>
+                                            </li>
+                                        </t>
+                                        <li t-if="!itMienLegend.length">
+                                            <span>Chưa có chi phí theo khu vực</span>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </article>
+                        </div>
+
+                        <article class="lq-card o_it_by_type">
+                            <div class="lq-card-title">Chi phí theo nhóm tài sản</div>
+                            <div class="o_it_type_grid">
+                                <t t-foreach="it.by_type or []" t-as="tp" t-key="tp.id">
+                                    <div class="o_it_type_row" t-att-style="'--accent:' + (tp.color || '#64748b')">
+                                        <strong t-esc="tp.name"/>
+                                        <span><t t-esc="tp.count"/> tài sản</span>
+                                        <b t-esc="formatMoney(tp.amount)"/>
+                                        <em><t t-esc="tp.pct"/>%</em>
+                                    </div>
+                                </t>
+                                <div t-if="!(it.by_type or []).length" class="o_phan_he_empty">
+                                    Chưa có nhóm tài sản / chi phí để thống kê.
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="lq-card o_it_todo">
+                            <div class="lq-card-title">Danh sách cần xử lý</div>
+                            <div class="table-responsive">
+                                <table class="o_srv_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tài sản</th>
+                                            <th>Hạng mục</th>
+                                            <th>Ngày xử lý</th>
+                                            <th class="num">Số tiền</th>
+                                            <th>Trạng thái</th>
+                                            <th>Phụ trách</th>
+                                            <th/>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-if="!(it.todo or []).length">
+                                            <td colspan="7" class="o_phan_he_empty">Không có việc cần xử lý.</td>
+                                        </tr>
+                                        <tr t-foreach="it.todo or []" t-as="row" t-key="row.model + '-' + row.id"
+                                            class="is-clickable" t-on-click="() => this.openItTodo(row)">
+                                            <td>
+                                                <b t-esc="row.asset"/>
+                                                <small t-esc="row.asset_code"/>
+                                            </td>
+                                            <td t-esc="row.category"/>
+                                            <td t-esc="row.date || '—'"/>
+                                            <td class="num" t-esc="formatMoney(row.amount)"/>
+                                            <td>
+                                                <span class="o_it_badge" t-att-class="'is-' + (row.kind || 'info')"
+                                                      t-esc="row.state"/>
+                                            </td>
+                                            <td t-esc="row.responsible || '—'"/>
+                                            <td><i class="fa fa-external-link"/></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </article>
+                    </div>
+                    </t>
                     <t t-elif="isInternetDash">
                     <div class="lq-inet-dash">
                         <div class="lq-inet-topbar">
@@ -180,10 +384,12 @@
 
                         <div class="lq-inet-head">
                             <div class="lq-inet-head-left">
-                                <div class="lq-inet-wifi"><i class="fa fa-wifi"/></div>
+                                <div class="lq-inet-wifi">
+                                    <i class="fa fa-wifi"/>
+                                </div>
                                 <div>
-                                    <h1>Tổng quan chi phí &amp; sử dụng Internet</h1>
-                                    <p>Thống kê chi phí dịch vụ Internet theo khu vực và chi phí theo tháng/năm</p>
+                                    <h1 t-esc="overviewTitle"/>
+                                    <p t-esc="overviewSubtitle"/>
                                 </div>
                             </div>
                             <div class="lq-inet-filters">
@@ -261,7 +467,7 @@
                                 </div>
                             </article>
                             <article class="lq-card">
-                                <div class="lq-card-title">Tình hình sử dụng dịch vụ</div>
+                                <div class="lq-card-title" t-esc="overviewUsageTitle"/>
                                 <div class="lq-usage">
                                     <div class="lq-status-v4" style="width:120px;height:120px;flex:0 0 120px;">
                                         <div class="lq-status-v4-ring"
@@ -289,7 +495,7 @@
                         <div class="lq-kpi4">
                             <t t-foreach="inet.kpis or []" t-as="kpi" t-key="kpi.id">
                                 <div t-attf-class="lq-kpi {{ regionToneClass(kpi.code) }}">
-                                    <i class="fa fa-wifi"/>
+                                    <i t-att-class="isServerDash ? 'fa fa-server' : 'fa fa-wifi'"/>
                                         <div>
                                             <strong t-esc="kpi.name"/>
                                             <small>CHI PHÍ</small>
@@ -328,7 +534,7 @@
                                             <b t-esc="formatMoney(tb.amount)"/>
                                         </div>
                                         <div class="lq-region-meta">
-                                            <em><t t-esc="tb.count or 0"/> hợp đồng</em>
+                                            <em><t t-esc="tb.count or 0"/> <t t-esc="detailUnitLabel"/></em>
                                             <div class="lq-mini-bars">
                                                 <t t-foreach="tb.spark or []" t-as="sp" t-key="sp.key">
                                                     <i t-att-style="'height:' + sparkPct(sp) + '%'"/>
@@ -341,9 +547,9 @@
                                             <thead>
                                                 <tr>
                                                     <th>STT</th>
-                                                    <th>Cửa hàng</th>
-                                                    <th>Gói cước</th>
-                                                    <th>Băng thông</th>
+                                                    <th t-esc="detailColStore"/>
+                                                    <th t-esc="detailColProvider"/>
+                                                    <th t-esc="detailColBandwidth"/>
                                                     <th>Chi phí</th>
                                                 </tr>
                                             </thead>
@@ -382,7 +588,7 @@
                                             <b t-esc="formatMoney(yt.year_amount)"/>
                                         </div>
                                         <div class="lq-region-meta">
-                                            <em><t t-esc="yt.year_count or 0"/> hợp đồng</em>
+                                            <em><t t-esc="yt.year_count or 0"/> <t t-esc="detailUnitLabel"/></em>
                                             <div class="lq-mini-bars is-year">
                                                 <t t-foreach="yt.year_spark or []" t-as="ysp" t-key="ysp.key">
                                                     <i t-att-style="'height:' + sparkPct(ysp) + '%'"/>
@@ -399,100 +605,6 @@
                     </div>
                     </t>
                     <t t-else="">
-                    <t t-if="isServerDash">
-                    <section class="o_phan_he_section o_srv_infra">
-                        <div class="o_srv_head">
-                            <h2 class="o_phan_he_section_title">
-                                <span class="o_phan_he_section_num">0</span>
-                                Hạ tầng máy chủ &amp; cloud
-                            </h2>
-                            <button type="button" class="btn btn-primary o_srv_add" t-on-click="() => this.openServerNav('srv_entry')">
-                                <i class="fa fa-plus"/> Nhập máy chủ
-                            </button>
-                        </div>
-                        <div class="o_srv_kpi_row">
-                            <button type="button" class="o_srv_kpi" t-on-click="() => this.openServerNav('srv_active')">
-                                <i class="fa fa-server"/>
-                                <div>
-                                    <small>Đang chạy</small>
-                                    <b t-esc="serverInventory.running"/>
-                                    <em>trên <t t-esc="serverInventory.total"/> máy</em>
-                                </div>
-                            </button>
-                            <article class="o_srv_kpi is-cost">
-                                <i class="fa fa-money"/>
-                                <div>
-                                    <small>Cước tháng đang chạy</small>
-                                    <b t-esc="formatMoneyVnd(serverInventory.month_cost)"/>
-                                    <em>theo hợp đồng hiệu lực</em>
-                                </div>
-                            </article>
-                            <article class="o_srv_kpi is-spec">
-                                <i class="fa fa-cogs"/>
-                                <div>
-                                    <small>Tổng cấu hình</small>
-                                    <b><t t-esc="serverInventory.cpu"/>C · <t t-esc="serverInventory.ram"/>GB</b>
-                                    <em><t t-esc="serverInventory.storage"/> GB ổ đĩa</em>
-                                </div>
-                            </article>
-                            <button type="button" class="o_srv_kpi is-pause" t-on-click="() => this.openServerNav('srv_suspend')">
-                                <i class="fa fa-pause-circle"/>
-                                <div>
-                                    <small>Tạm ngưng</small>
-                                    <b t-esc="serverInventory.suspend"/>
-                                    <em><t t-esc="serverInventory.liquidated"/> đã thanh lý</em>
-                                </div>
-                            </button>
-                        </div>
-                        <div class="o_srv_kinds">
-                            <t t-foreach="serverInventory.kinds or []" t-as="kind" t-key="kind.id">
-                                <article class="o_srv_kind" t-att-style="'--accent:' + kind.color">
-                                    <span t-esc="kind.name"/>
-                                    <strong t-esc="kind.count"/>
-                                    <small t-esc="formatMoneyVnd(kind.amount)"/>
-                                </article>
-                            </t>
-                        </div>
-                        <div class="o_phan_he_panel o_srv_top">
-                            <div class="o_phan_he_chart_head">
-                                <h3><i class="fa fa-list"/> Máy chủ chi phí cao</h3>
-                            </div>
-                            <div class="table-responsive">
-                                <table class="o_srv_table">
-                                    <thead>
-                                        <tr>
-                                            <th>Hostname</th>
-                                            <th>Loại</th>
-                                            <th>Đơn vị</th>
-                                            <th>IP</th>
-                                            <th>Cấu hình</th>
-                                            <th>Nhà cung cấp</th>
-                                            <th class="num">Cước tháng</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr t-if="!(serverInventory.top_servers or []).length">
-                                            <td colspan="7" class="o_phan_he_empty">Chưa có máy chủ. Bấm Nhập máy chủ để khai báo VPS, Cloud hoặc Dedicated.</td>
-                                        </tr>
-                                        <tr t-foreach="serverInventory.top_servers or []" t-as="row" t-key="row.id"
-                                            class="is-clickable" t-on-click="() => this.openServerRecord(row)">
-                                            <td>
-                                                <b t-esc="row.name"/>
-                                                <small t-esc="row.datacenter"/>
-                                            </td>
-                                            <td t-esc="row.kind"/>
-                                            <td t-esc="row.store"/>
-                                            <td t-esc="row.ip"/>
-                                            <td t-esc="row.spec"/>
-                                            <td t-esc="row.provider"/>
-                                            <td class="num" t-esc="formatMoneyVnd(row.amount)"/>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </section>
-                    </t>
                     <section class="o_phan_he_section">
                         <h2 class="o_phan_he_section_title">
                             <span class="o_phan_he_section_num">1</span>

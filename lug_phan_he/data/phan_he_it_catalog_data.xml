@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Loại tài sản -->
+    <record id="it_asset_type_physical" model="phan.he.it.asset.type">
+        <field name="name">Máy chủ vật lý</field>
+        <field name="code">physical</field>
+        <field name="sequence">10</field>
+        <field name="color">#7c3aed</field>
+    </record>
+    <record id="it_asset_type_virtual" model="phan.he.it.asset.type">
+        <field name="name">Máy chủ ảo</field>
+        <field name="code">virtual</field>
+        <field name="sequence">20</field>
+        <field name="color">#2563eb</field>
+    </record>
+    <record id="it_asset_type_cloud" model="phan.he.it.asset.type">
+        <field name="name">Dịch vụ Cloud</field>
+        <field name="code">cloud</field>
+        <field name="sequence">30</field>
+        <field name="color">#0d9488</field>
+    </record>
+    <record id="it_asset_type_network" model="phan.he.it.asset.type">
+        <field name="name">Thiết bị mạng &amp; bảo mật</field>
+        <field name="code">network</field>
+        <field name="sequence">40</field>
+        <field name="color">#f97316</field>
+    </record>
+    <record id="it_asset_type_software" model="phan.he.it.asset.type">
+        <field name="name">Phần mềm &amp; bản quyền</field>
+        <field name="code">software</field>
+        <field name="sequence">50</field>
+        <field name="color">#64748b</field>
+    </record>
+
+    <!-- Hạng mục chi phí -->
+    <record id="it_cost_cat_hw_warranty" model="phan.he.it.cost.category">
+        <field name="name">Bảo hành phần cứng</field>
+        <field name="code">hw_warranty</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="it_cost_cat_support" model="phan.he.it.cost.category">
+        <field name="name">Gói hỗ trợ kỹ thuật</field>
+        <field name="code">support</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="it_cost_cat_fw_license" model="phan.he.it.cost.category">
+        <field name="name">License firewall</field>
+        <field name="code">fw_license</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="it_cost_cat_os_license" model="phan.he.it.cost.category">
+        <field name="name">License phần mềm máy chủ</field>
+        <field name="code">os_license</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="it_cost_cat_db_license" model="phan.he.it.cost.category">
+        <field name="name">License phần mềm cơ sở dữ liệu</field>
+        <field name="code">db_license</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="it_cost_cat_virt_license" model="phan.he.it.cost.category">
+        <field name="name">License ảo hóa</field>
+        <field name="code">virt_license</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="it_cost_cat_backup" model="phan.he.it.cost.category">
+        <field name="name">Phần mềm backup</field>
+        <field name="code">backup</field>
+        <field name="sequence">70</field>
+    </record>
+    <record id="it_cost_cat_cloud" model="phan.he.it.cost.category">
+        <field name="name">Cloud subscription</field>
+        <field name="code">cloud_sub</field>
+        <field name="sequence">80</field>
+    </record>
+    <record id="it_cost_cat_colo" model="phan.he.it.cost.category">
+        <field name="name">Thuê máy chủ / chỗ đặt</field>
+        <field name="code">colo</field>
+        <field name="sequence">90</field>
+    </record>
+    <record id="it_cost_cat_link" model="phan.he.it.cost.category">
+        <field name="name">Đường truyền &amp; dịch vụ liên quan</field>
+        <field name="code">link</field>
+        <field name="sequence">100</field>
+    </record>
+    <record id="it_cost_cat_maintain" model="phan.he.it.cost.category">
+        <field name="name">Chi phí bảo trì</field>
+        <field name="code">maintain</field>
+        <field name="sequence">110</field>
+    </record>
+    <record id="it_cost_cat_repair" model="phan.he.it.cost.category">
+        <field name="name">Chi phí sửa chữa</field>
+        <field name="code">repair</field>
+        <field name="sequence">120</field>
+    </record>
+    <record id="it_cost_cat_spare" model="phan.he.it.cost.category">
+        <field name="name">Chi phí thay thế linh kiện</field>
+        <field name="code">spare</field>
+        <field name="sequence">130</field>
+    </record>
+    <record id="it_cost_cat_other" model="phan.he.it.cost.category">
+        <field name="name">Chi phí khác</field>
+        <field name="code">other</field>
+        <field name="sequence">140</field>
+    </record>
+
+    <!-- Chu kỳ gia hạn -->
+    <record id="it_cycle_1m" model="phan.he.it.renewal.cycle">
+        <field name="name">1 tháng</field>
+        <field name="code">1m</field>
+        <field name="months">1</field>
+    </record>
+    <record id="it_cycle_6m" model="phan.he.it.renewal.cycle">
+        <field name="name">6 tháng</field>
+        <field name="code">6m</field>
+        <field name="months">6</field>
+    </record>
+    <record id="it_cycle_12m" model="phan.he.it.renewal.cycle">
+        <field name="name">12 tháng</field>
+        <field name="code">12m</field>
+        <field name="months">12</field>
+    </record>
+    <record id="it_cycle_24m" model="phan.he.it.renewal.cycle">
+        <field name="name">24 tháng</field>
+        <field name="code">24m</field>
+        <field name="months">24</field>
+    </record>
+    <record id="it_cycle_36m" model="phan.he.it.renewal.cycle">
+        <field name="name">36 tháng</field>
+        <field name="code">36m</field>
+        <field name="months">36</field>
+    </record>
+
+    <!-- Mốc nhắc hạn mặc định -->
+    <record id="it_remind_90" model="phan.he.it.reminder.config">
+        <field name="name">Trước 90 ngày</field>
+        <field name="days_before">90</field>
+    </record>
+    <record id="it_remind_60" model="phan.he.it.reminder.config">
+        <field name="name">Trước 60 ngày</field>
+        <field name="days_before">60</field>
+    </record>
+    <record id="it_remind_30" model="phan.he.it.reminder.config">
+        <field name="name">Trước 30 ngày</field>
+        <field name="days_before">30</field>
+    </record>
+    <record id="it_remind_7" model="phan.he.it.reminder.config">
+        <field name="name">Trước 7 ngày</field>
+        <field name="days_before">7</field>
+    </record>
+    <record id="it_remind_0" model="phan.he.it.reminder.config">
+        <field name="name">Ngày hết hạn</field>
+        <field name="days_before">0</field>
+    </record>
+</odoo>

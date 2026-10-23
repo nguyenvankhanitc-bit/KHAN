@@ -1,0 +1,539 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========== LOẠI TÀI SẢN ========== -->
+    <record id="view_phan_he_it_asset_type_list" model="ir.ui.view">
+        <field name="name">phan.he.it.asset.type.list</field>
+        <field name="model">phan.he.it.asset.type</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="code_prefix"/>
+                <field name="name"/>
+                <field name="color" optional="hide"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_phan_he_it_asset_type" model="ir.actions.act_window">
+        <field name="name">Danh mục loại tài sản</field>
+        <field name="res_model">phan.he.it.asset.type</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ========== TÀI SẢN ========== -->
+    <record id="view_phan_he_it_asset_list" model="ir.ui.view">
+        <field name="name">phan.he.it.asset.list</field>
+        <field name="model">phan.he.it.asset</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="asset_type_id"/>
+                <field name="manufacturer"/>
+                <field name="model_name"/>
+                <field name="location" optional="show"/>
+                <field name="mien_id" optional="show"/>
+                <field name="provider_id" optional="hide"/>
+                <field name="responsible_id" optional="hide"/>
+                <field name="state" widget="badge"
+                         decoration-success="state == 'active'"
+                         decoration-warning="state == 'suspended'"
+                         decoration-muted="state == 'retired'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_it_asset_form" model="ir.ui.view">
+        <field name="name">phan.he.it.asset.form</field>
+        <field name="model">phan.he.it.asset</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_set_active" type="object" string="Đang sử dụng"
+                            invisible="state == 'active'" class="btn-primary"/>
+                    <button name="action_retire" type="object" string="Lưu trữ / Ngừng"
+                            invisible="state == 'retired'" confirm="Chuyển tài sản sang lưu trữ?"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,suspended,retired"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_costs" type="object" class="oe_stat_button" icon="fa-money">
+                            <field name="cost_count" widget="statinfo" string="Chi phí"/>
+                        </button>
+                        <button name="action_open_tickets" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="ticket_count" widget="statinfo" string="Bảo trì"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group string="Thông tin chung">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="asset_type_id"/>
+                            <field name="asset_type_code" invisible="1"/>
+                            <field name="manufacturer"/>
+                            <field name="model_name"/>
+                            <field name="serial_number"/>
+                        </group>
+                        <group string="Vị trí &amp; phụ trách">
+                            <field name="location"/>
+                            <field name="mien_id"/>
+                            <field name="store_id"/>
+                            <field name="date_start"/>
+                            <field name="provider_id"/>
+                            <field name="responsible_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Máy chủ vật lý" invisible="asset_type_code != 'physical'">
+                            <group>
+                                <field name="cpu_info"/>
+                                <field name="ram_gb"/>
+                                <field name="storage_gb"/>
+                                <field name="raid_info"/>
+                                <field name="nic_info"/>
+                                <field name="hypervisor"/>
+                                <field name="warranty_end"/>
+                                <field name="ip_address"/>
+                            </group>
+                        </page>
+                        <page string="Máy chủ ảo" invisible="asset_type_code != 'virtual'">
+                            <group>
+                                <field name="vm_name"/>
+                                <field name="hypervisor"/>
+                                <field name="host_asset_id"/>
+                                <field name="cpu_info"/>
+                                <field name="ram_gb"/>
+                                <field name="storage_gb"/>
+                                <field name="ip_address"/>
+                            </group>
+                        </page>
+                        <page string="Cloud" invisible="asset_type_code != 'cloud'">
+                            <group>
+                                <field name="cloud_provider"/>
+                                <field name="cloud_account"/>
+                                <field name="cloud_region"/>
+                                <field name="cloud_service_type"/>
+                                <field name="cloud_billing_cycle"/>
+                                <field name="currency_id"/>
+                                <field name="cloud_budget"/>
+                            </group>
+                        </page>
+                        <page string="Mạng &amp; bảo mật" invisible="asset_type_code not in ('network', 'security')">
+                            <group>
+                                <field name="manufacturer"/>
+                                <field name="model_name"/>
+                                <field name="serial_number"/>
+                                <field name="admin_url"/>
+                                <field name="warranty_end"/>
+                                <field name="license_end"/>
+                                <field name="firmware_version"/>
+                            </group>
+                        </page>
+                        <page string="Ghi chú">
+                            <field name="note" nolabel="1" placeholder="Ghi chú..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_phan_he_it_asset_search" model="ir.ui.view">
+        <field name="name">phan.he.it.asset.search</field>
+        <field name="model">phan.he.it.asset</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="model_name"/>
+                <field name="serial_number"/>
+                <field name="asset_type_id"/>
+                <filter name="filter_active_state" string="Đang sử dụng" domain="[('state', '=', 'active')]"/>
+                <filter name="filter_physical" string="Máy chủ vật lý" domain="[('asset_type_code', '=', 'physical')]"/>
+                <filter name="filter_virtual" string="Máy chủ ảo" domain="[('asset_type_code', '=', 'virtual')]"/>
+                <filter name="filter_cloud" string="Cloud" domain="[('asset_type_code', '=', 'cloud')]"/>
+                <filter name="filter_network" string="Mạng &amp; bảo mật" domain="[('asset_type_code', 'in', ('network', 'security'))]"/>
+                <separator/>
+                <filter name="group_type" string="Loại tài sản" context="{'group_by': 'asset_type_id'}"/>
+                <filter name="group_mien" string="Khu vực" context="{'group_by': 'mien_id'}"/>
+                <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_phan_he_it_asset" model="ir.actions.act_window">
+        <field name="name">Danh sách máy chủ</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_it_asset_search"/>
+        <field name="context">{'search_default_filter_active_state': 1}</field>
+    </record>
+    <record id="action_phan_he_it_asset_physical" model="ir.actions.act_window">
+        <field name="name">Máy chủ vật lý</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_type_code', '=', 'physical')]</field>
+        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_physical'), 'search_default_filter_physical': 1}"/>
+    </record>
+    <record id="action_phan_he_it_asset_virtual" model="ir.actions.act_window">
+        <field name="name">Máy chủ ảo</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_type_code', '=', 'virtual')]</field>
+        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_virtual')}"/>
+    </record>
+    <record id="action_phan_he_it_asset_cloud" model="ir.actions.act_window">
+        <field name="name">Dịch vụ Cloud</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_type_code', '=', 'cloud')]</field>
+        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_cloud')}"/>
+    </record>
+    <record id="action_phan_he_it_asset_network" model="ir.actions.act_window">
+        <field name="name">Thiết bị mạng &amp; bảo mật</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_type_code', 'in', ('network', 'security'))]</field>
+        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_network')}"/>
+    </record>
+    <record id="action_phan_he_it_asset_new" model="ir.actions.act_window">
+        <field name="name">Thêm tài sản</field>
+        <field name="res_model">phan.he.it.asset</field>
+        <field name="view_mode">form</field>
+        <field name="target">current</field>
+        <field name="context">{'form_view_initial_mode': 'edit'}</field>
+    </record>
+
+    <!-- ========== CHI PHÍ ========== -->
+    <record id="view_phan_he_it_cost_list" model="ir.ui.view">
+        <field name="name">phan.he.it.cost.list</field>
+        <field name="model">phan.he.it.cost</field>
+        <field name="arch" type="xml">
+            <list class="o_it_cost_list">
+                <field name="asset_id" string="Tên thiết bị"/>
+                <field name="provider_id" string="Nhà cung cấp"/>
+                <field name="bandwidth" string="Băng thông"/>
+                <field name="date_start" string="Ngày bắt đầu" widget="date"
+                         options="{'numeric': True}"/>
+                <field name="date_end" string="Ngày kết thúc" widget="date"
+                         options="{'numeric': True}"/>
+                <field name="amount_untaxed" string="Cước tháng" widget="monetary" optional="show"
+                         options="{'currency_field': 'currency_id', 'no_symbol': True}"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="amount_total" string="Số tiền thanh toán" widget="monetary"
+                         options="{'currency_field': 'currency_id', 'no_symbol': True}"/>
+                <field name="note" string="Ghi chú"/>
+                <field name="attachment" string="Hóa đơn" filename="attachment_name" widget="binary"/>
+                <field name="attachment_name" column_invisible="1"/>
+                <field name="remaining_days" column_invisible="1"/>
+                <field name="remaining_label" string="Thời gian còn lại"
+                         decoration-success="remaining_days &gt; 30"
+                         decoration-warning="remaining_days &gt; 0 and remaining_days &lt;= 30"
+                         decoration-danger="date_end and remaining_days &lt;= 0"/>
+                <field name="renewal_state" string="Trạng thái" widget="badge"
+                         decoration-success="renewal_state == 'active'"
+                         decoration-warning="renewal_state in ('expiring', 'quote', 'approval', 'processing')"
+                         decoration-danger="renewal_state in ('overdue', 'cancel')"/>
+                <field name="code" optional="hide" string="Mã khoản CP"/>
+                <field name="category_id" optional="hide"/>
+                <field name="payment_state" optional="hide" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_phan_he_it_cost_form" model="ir.ui.view">
+        <field name="name">phan.he.it.cost.form</field>
+        <field name="model">phan.he.it.cost</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_mark_expiring" type="object" string="Sắp hết hạn"
+                            invisible="renewal_state != 'active'" class="btn-secondary"/>
+                    <button name="action_request_quote" type="object" string="Chờ báo giá"
+                            invisible="renewal_state not in ('active', 'expiring', 'overdue')" class="btn-secondary"/>
+                    <button name="action_submit_approval" type="object" string="Chờ phê duyệt"
+                            invisible="renewal_state not in ('expiring', 'quote')" class="btn-secondary"/>
+                    <button name="action_start_processing" type="object" string="Đang xử lý"
+                            invisible="renewal_state not in ('quote', 'approval', 'expiring', 'overdue')" class="btn-secondary"/>
+                    <button name="action_confirm_renewal" type="object" string="Xác nhận gia hạn"
+                            invisible="renewal_state not in ('processing', 'approval', 'quote', 'expiring', 'overdue')"
+                            class="btn-primary"
+                            confirm="Lưu kỳ hiện tại vào lịch sử và cập nhật hạn mới?"/>
+                    <button name="action_mark_payment_confirm" type="object" string="Chờ xác nhận TT"
+                            invisible="payment_state in ('confirm', 'paid', 'cancel')" class="btn-secondary"/>
+                    <button name="action_mark_paid" type="object" string="Đã thanh toán"
+                            invisible="payment_state not in ('confirm', 'pending', 'overdue')" class="btn-primary"/>
+                    <field name="renewal_state" widget="statusbar"
+                            statusbar_visible="active,expiring,quote,approval,processing,renewed,overdue"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="asset_id"/>
+                            <field name="category_id"/>
+                            <field name="provider_id"/>
+                            <field name="contract_ref"/>
+                            <field name="bandwidth"/>
+                            <field name="cycle_id"/>
+                        </group>
+                        <group>
+                            <field name="date_start" widget="date" options="{'numeric': True}"/>
+                            <field name="date_end" widget="date" options="{'numeric': True}"/>
+                            <field name="reminder_date" widget="date" options="{'numeric': True}"/>
+                            <field name="payment_state"/>
+                        </group>
+                    </group>
+                    <group string="Số tiền">
+                        <field name="currency_id" invisible="1"/>
+                        <field name="amount_untaxed"/>
+                        <field name="amount_total"/>
+                    </group>
+                    <group string="Hóa đơn">
+                        <field name="attachment" filename="attachment_name" widget="binary"/>
+                        <field name="attachment_name" invisible="1"/>
+                        <field name="note"/>
+                    </group>
+                    <notebook>
+                        <page string="Lịch sử kỳ gia hạn">
+                            <field name="period_ids">
+                                <list create="0" delete="0">
+                                    <field name="date_start" widget="date" options="{'numeric': True}"/>
+                                    <field name="date_end" widget="date" options="{'numeric': True}"/>
+                                    <field name="amount_untaxed"/>
+                                    <field name="amount_tax"/>
+                                    <field name="amount_total"/>
+                                    <field name="payment_state"/>
+                                    <field name="date_paid" widget="date" options="{'numeric': True}"/>
+                                    <field name="note"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="view_phan_he_it_cost_search" model="ir.ui.view">
+        <field name="name">phan.he.it.cost.search</field>
+        <field name="model">phan.he.it.cost</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="asset_id"/>
+                <field name="category_id"/>
+                <filter name="filter_confirm" string="Chờ xác nhận TT" domain="[('payment_state', '=', 'confirm')]"/>
+                <filter name="filter_pay_overdue" string="Quá hạn TT" domain="[('payment_state', '=', 'overdue')]"/>
+                <filter name="filter_renew_overdue" string="Quá hạn gia hạn" domain="[('renewal_state', '=', 'overdue')]"/>
+                <filter name="filter_expiring" string="Sắp hết hạn" domain="[('renewal_state', '=', 'expiring')]"/>
+                <separator/>
+                <filter name="group_asset" string="Tài sản" context="{'group_by': 'asset_id'}"/>
+                <filter name="group_category" string="Hạng mục" context="{'group_by': 'category_id'}"/>
+                <filter name="group_provider" string="NCC" context="{'group_by': 'provider_id'}"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_phan_he_it_cost" model="ir.actions.act_window">
+        <field name="name">Danh sách chi phí</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_it_cost_search"/>
+    </record>
+    <record id="action_phan_he_it_cost_confirm" model="ir.actions.act_window">
+        <field name="name">Chờ xác nhận thanh toán</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('payment_state', '=', 'confirm')]</field>
+        <field name="context">{'search_default_filter_confirm': 1}</field>
+    </record>
+    <record id="action_phan_he_it_cost_overdue" model="ir.actions.act_window">
+        <field name="name">Quá hạn</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">['|', ('payment_state', '=', 'overdue'), ('renewal_state', '=', 'overdue')]</field>
+    </record>
+    <record id="action_phan_he_it_cost_schedule" model="ir.actions.act_window">
+        <field name="name">Lịch gia hạn</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('renewal_state', 'in', ('active', 'expiring', 'overdue'))]</field>
+        <field name="context">{'search_default_filter_expiring': 1}</field>
+    </record>
+    <record id="action_phan_he_it_cost_estimate" model="ir.actions.act_window">
+        <field name="name">Dự toán chi phí</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">['|', ('amount_untaxed_actual', '=', False), ('amount_untaxed_actual', '=', 0)]</field>
+    </record>
+    <record id="action_phan_he_it_cost_by_asset" model="ir.actions.act_window">
+        <field name="name">Chi phí theo tài sản</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_asset': 1}</field>
+    </record>
+    <record id="action_phan_he_it_cost_by_provider" model="ir.actions.act_window">
+        <field name="name">Chi phí theo nhà cung cấp</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_provider': 1}</field>
+    </record>
+    <record id="action_phan_he_it_cost_report_month" model="ir.actions.act_window">
+        <field name="name">Chi phí tháng</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_asset': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Lọc theo tháng trên thanh tìm kiếm / ngày hết hạn.</p>
+        </field>
+    </record>
+    <record id="action_phan_he_it_cost_report_quarter" model="ir.actions.act_window">
+        <field name="name">Chi phí quý</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_category': 1}</field>
+    </record>
+    <record id="action_phan_he_it_cost_report_year" model="ir.actions.act_window">
+        <field name="name">Chi phí năm</field>
+        <field name="res_model">phan.he.it.cost</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_provider': 1}</field>
+    </record>
+
+    <record id="action_phan_he_it_cost_category" model="ir.actions.act_window">
+        <field name="name">Danh mục hạng mục chi phí</field>
+        <field name="res_model">phan.he.it.cost.category</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_phan_he_it_cost_category_list" model="ir.ui.view">
+        <field name="name">phan.he.it.cost.category.list</field>
+        <field name="model">phan.he.it.cost.category</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code"/>
+                <field name="name"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_phan_he_it_renewal_cycle" model="ir.actions.act_window">
+        <field name="name">Chu kỳ gia hạn</field>
+        <field name="res_model">phan.he.it.renewal.cycle</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_phan_he_it_renewal_cycle_list" model="ir.ui.view">
+        <field name="name">phan.he.it.renewal.cycle.list</field>
+        <field name="model">phan.he.it.renewal.cycle</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="months"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_phan_he_it_reminder_config" model="ir.actions.act_window">
+        <field name="name">Cấu hình nhắc hạn</field>
+        <field name="res_model">phan.he.it.reminder.config</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="view_phan_he_it_reminder_config_list" model="ir.ui.view">
+        <field name="name">phan.he.it.reminder.config.list</field>
+        <field name="model">phan.he.it.reminder.config</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="days_before"/>
+                <field name="notify_responsible"/>
+                <field name="create_activity"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========== TICKET ========== -->
+    <record id="view_phan_he_it_ticket_list" model="ir.ui.view">
+        <field name="name">phan.he.it.ticket.list</field>
+        <field name="model">phan.he.it.ticket</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="code"/>
+                <field name="asset_id"/>
+                <field name="ticket_type"/>
+                <field name="name"/>
+                <field name="priority"/>
+                <field name="date_reported"/>
+                <field name="responsible_id"/>
+                <field name="cost_amount" optional="show"/>
+                <field name="state" widget="badge"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_phan_he_it_ticket_form" model="ir.ui.view">
+        <field name="name">phan.he.it.ticket.form</field>
+        <field name="model">phan.he.it.ticket</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open,progress,done"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="asset_id"/>
+                            <field name="ticket_type"/>
+                            <field name="name"/>
+                            <field name="priority"/>
+                        </group>
+                        <group>
+                            <field name="date_reported"/>
+                            <field name="date_start"/>
+                            <field name="date_done"/>
+                            <field name="responsible_id"/>
+                            <field name="provider_id"/>
+                            <field name="currency_id"/>
+                            <field name="cost_amount"/>
+                            <field name="linked_cost_id"/>
+                        </group>
+                    </group>
+                    <group string="Mô tả">
+                        <field name="description" nolabel="1" colspan="2"/>
+                    </group>
+                    <group>
+                        <field name="root_cause"/>
+                        <field name="resolution"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="action_phan_he_it_ticket_maintenance" model="ir.actions.act_window">
+        <field name="name">Lịch sử bảo trì</field>
+        <field name="res_model">phan.he.it.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('ticket_type', '=', 'maintenance')]</field>
+        <field name="context">{'default_ticket_type': 'maintenance'}</field>
+    </record>
+    <record id="action_phan_he_it_ticket_support" model="ir.actions.act_window">
+        <field name="name">Yêu cầu hỗ trợ</field>
+        <field name="res_model">phan.he.it.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('ticket_type', '=', 'support')]</field>
+        <field name="context">{'default_ticket_type': 'support'}</field>
+    </record>
+    <record id="action_phan_he_it_ticket_incident" model="ir.actions.act_window">
+        <field name="name">Nhật ký sự cố</field>
+        <field name="res_model">phan.he.it.ticket</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('ticket_type', '=', 'incident')]</field>
+        <field name="context">{'default_ticket_type': 'incident'}</field>
+    </record>
+</odoo>

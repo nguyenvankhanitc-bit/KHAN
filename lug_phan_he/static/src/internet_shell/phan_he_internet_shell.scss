@@ -635,3 +635,95 @@ body.o_internet_mobile_nav_lock {
         height: auto !important;
     }
 }
+
+/* Danh sách chi phí IT — khung ô + tiêu đề nền đậm (bám wrapper o_it_cost_embed) */
+.o_internet_content.o_it_cost_embed,
+.o_internet_content .o_it_cost_list {
+    --ListRenderer-thead-bg-color: #e2e8f0;
+}
+
+.o_internet_content.o_it_cost_embed .o_list_table,
+.o_internet_content .o_it_cost_list .o_list_table {
+    font-size: 13px;
+    border-collapse: collapse !important;
+    border: 1px solid #cbd5e1 !important;
+
+    > thead > tr > th {
+        background: #e2e8f0 !important;
+        background-color: #e2e8f0 !important;
+        color: #0f172a !important;
+        font-weight: 800 !important;
+        vertical-align: middle !important;
+        white-space: nowrap !important;
+        text-align: center !important;
+        padding: 10px 12px !important;
+        border: 1px solid #94a3b8 !important;
+        box-shadow: none !important;
+
+        .o_column_title,
+        .o_list_sortable_icon,
+        span:not(.o_resize) {
+            color: #0f172a !important;
+            font-weight: 800 !important;
+            background: transparent !important;
+        }
+    }
+
+    > tbody > tr > td {
+        vertical-align: middle !important;
+        white-space: nowrap;
+        padding: 10px 12px !important;
+        color: #334155;
+        border: 1px solid #cbd5e1 !important;
+        background: #fff;
+    }
+
+    > tbody > tr:nth-child(even) > td {
+        background: #f8fafc;
+    }
+
+    > tbody > tr:hover > td {
+        background: #eff6ff !important;
+    }
+
+    > thead > tr > th[data-name="asset_id"],
+    > thead > tr > th[data-name="provider_id"],
+    > thead > tr > th[data-name="note"],
+    > tbody > tr > td[name="asset_id"],
+    > tbody > tr > td[name="provider_id"],
+    > tbody > tr > td[name="note"] {
+        text-align: left !important;
+    }
+
+    > thead > tr > th[data-name="bandwidth"],
+    > thead > tr > th[data-name="date_start"],
+    > thead > tr > th[data-name="date_end"],
+    > thead > tr > th[data-name="attachment"],
+    > thead > tr > th[data-name="remaining_label"],
+    > thead > tr > th[data-name="renewal_state"],
+    > tbody > tr > td[name="bandwidth"],
+    > tbody > tr > td[name="date_start"],
+    > tbody > tr > td[name="date_end"],
+    > tbody > tr > td[name="attachment"],
+    > tbody > tr > td[name="remaining_label"],
+    > tbody > tr > td[name="renewal_state"] {
+        text-align: center !important;
+    }
+
+    > thead > tr > th[data-name="amount_untaxed"],
+    > thead > tr > th[data-name="amount_total"],
+    > tbody > tr > td[name="amount_untaxed"],
+    > tbody > tr > td[name="amount_total"] {
+        text-align: right !important;
+        font-variant-numeric: tabular-nums;
+    }
+
+    > tbody > tr > td[name="amount_total"] {
+        font-weight: 700;
+    }
+
+    > tbody > tr > td[name="asset_id"] {
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+}

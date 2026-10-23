@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.PhanHeItCostEntryPopup" owl="1">
+        <div class="lq-entry-overlay" t-on-click="onOverlayClick">
+            <div class="lq-entry-modal is-excel" t-on-click.stop="">
+                <header class="lq-entry-head">
+                    <div class="lq-entry-head-text">
+                        <h2 t-esc="title"/>
+                        <p>Nhập khoản chi phí / gia hạn — bố cục dạng bảng (desktop)</p>
+                    </div>
+                    <button type="button" class="lq-entry-close" title="Đóng"
+                            t-att-disabled="state.saving"
+                            t-on-click="onCancel">
+                        <i class="fa fa-times"/>
+                    </button>
+                </header>
+
+                <t t-if="state.loading">
+                    <div class="lq-entry-loading">Đang tải...</div>
+                </t>
+                <t t-else="">
+                    <div class="lq-entry-body">
+                        <div class="lq-entry-sheet">
+                            <div class="lq-entry-sheet-title">1. Thông tin khoản chi phí</div>
+                            <div class="lq-entry-grid">
+                                <div class="lq-entry-field">
+                                    <label>Mã khoản chi phí</label>
+                                    <input type="text" readonly="readonly" class="is-ro"
+                                           t-att-value="state.form.code"
+                                           title="Mã tự sinh khi lưu"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Tài sản <span class="lq-req">*</span></label>
+                                    <select t-att-value="state.form.asset_id"
+                                            t-on-change="(ev) => this.onField('asset_id', ev)">
+                                        <option value="">Chọn tài sản</option>
+                                        <t t-foreach="state.assets" t-as="a" t-key="a.id">
+                                            <option t-att-value="a.id"
+                                                    t-esc="(a.code ? a.code + ' — ' : '') + a.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Hạng mục chi phí <span class="lq-req">*</span></label>
+                                    <select t-att-value="state.form.category_id"
+                                            t-on-change="(ev) => this.onField('category_id', ev)">
+                                        <option value="">Chọn hạng mục</option>
+                                        <t t-foreach="state.categories" t-as="c" t-key="c.id">
+                                            <option t-att-value="c.id" t-esc="c.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Nhà cung cấp</label>
+                                    <select t-att-value="state.form.provider_id"
+                                            t-on-change="(ev) => this.onField('provider_id', ev)">
+                                        <option value="">— Chọn —</option>
+                                        <t t-foreach="state.providers" t-as="p" t-key="p.id">
+                                            <option t-att-value="p.id" t-esc="p.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Số hợp đồng / mã tham chiếu</label>
+                                    <input type="text" placeholder="VD: HD-IT-2026-01"
+                                           t-att-value="state.form.contract_ref"
+                                           t-on-input="(ev) => this.onField('contract_ref', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Băng thông</label>
+                                    <input type="text" placeholder="VD: 100 Mbps (nếu có)"
+                                           t-att-value="state.form.bandwidth"
+                                           t-on-input="(ev) => this.onField('bandwidth', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Chu kỳ gia hạn</label>
+                                    <select t-att-value="state.form.cycle_id"
+                                            t-on-change="(ev) => this.onField('cycle_id', ev)">
+                                        <option value="">— Chọn —</option>
+                                        <t t-foreach="state.cycles" t-as="cy" t-key="cy.id">
+                                            <option t-att-value="cy.id" t-esc="cy.name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Trạng thái gia hạn</label>
+                                    <select t-att-value="state.form.renewal_state"
+                                            t-on-change="(ev) => this.onField('renewal_state', ev)">
+                                        <t t-foreach="renewalStates" t-as="st" t-key="st.value">
+                                            <option t-att-value="st.value" t-esc="st.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Trạng thái thanh toán</label>
+                                    <select t-att-value="state.form.payment_state"
+                                            t-on-change="(ev) => this.onField('payment_state', ev)">
+                                        <t t-foreach="paymentStates" t-as="st" t-key="st.value">
+                                            <option t-att-value="st.value" t-esc="st.label"/>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lq-entry-sheet">
+                            <div class="lq-entry-sheet-title">2. Thời hạn</div>
+                            <div class="lq-entry-grid">
+                                <div class="lq-entry-field">
+                                    <label>Ngày bắt đầu hiệu lực</label>
+                                    <input type="text" placeholder="dd/mm/yyyy"
+                                           t-att-value="state.form.date_start"
+                                           t-on-input="(ev) => this.onField('date_start', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Ngày hết hạn</label>
+                                    <input type="text" placeholder="dd/mm/yyyy"
+                                           t-att-value="state.form.date_end"
+                                           t-on-input="(ev) => this.onField('date_end', ev)"/>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lq-entry-sheet">
+                            <div class="lq-entry-sheet-title">3. Số tiền &amp; hóa đơn</div>
+                            <div class="lq-entry-grid">
+                                <div class="lq-entry-field">
+                                    <label>Cước tháng</label>
+                                    <input type="number" min="0" step="1000" placeholder="Không bắt buộc"
+                                           t-att-value="state.form.amount_untaxed"
+                                           t-on-input="onAmountUntaxedInput"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Số tiền thanh toán</label>
+                                    <input type="number" min="0" step="1000" placeholder="Nhập tay"
+                                           t-att-value="state.form.amount_total"
+                                           t-on-input="(ev) => this.onField('amount_total', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Hóa đơn</label>
+                                    <div class="lq-entry-upload">
+                                        <label class="lq-entry-upload-btn">
+                                            <i class="fa fa-cloud-upload"/> Tải tệp hóa đơn
+                                            <input type="file" class="d-none"
+                                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx,.zip"
+                                                   t-on-change="onFileChange"/>
+                                        </label>
+                                        <span t-if="state.form.attachment_name" class="lq-entry-file">
+                                            <t t-esc="state.form.attachment_name"/>
+                                            <button type="button" class="lq-entry-file-clear" t-on-click="clearFile">
+                                                <i class="fa fa-times"/>
+                                            </button>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="lq-entry-field is-span-3">
+                                    <label>Ghi chú</label>
+                                    <input type="text" placeholder="Ghi chú..."
+                                           t-att-value="state.form.note"
+                                           t-on-input="(ev) => this.onField('note', ev)"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <footer class="lq-entry-foot">
+                        <button type="button" class="lq-entry-btn is-cancel"
+                                t-att-disabled="state.saving"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/> Hủy
+                        </button>
+                        <button type="button" class="lq-entry-btn is-save"
+                                t-att-disabled="state.saving"
+                                t-on-click="onSave">
+                            <i class="fa fa-save"/>
+                            <t t-if="state.saving">Đang lưu...</t>
+                            <t t-else="">Lưu khoản chi phí</t>
+                        </button>
+                    </footer>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

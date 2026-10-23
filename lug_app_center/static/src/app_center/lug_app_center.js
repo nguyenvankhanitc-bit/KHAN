@@ -358,6 +358,11 @@ export class LugAppCenter extends Component {
             this.notification.add("Không mở được ứng dụng.", { type: "warning" });
             return;
         }
+        // Project: open stable list (/odoo/du-an) — always shows data.
+        if (app.xmlid === "project.menu_main_pm") {
+            window.location.href = "/odoo/du-an";
+            return;
+        }
         try {
             await this.menu.selectMenu(app.id);
         } catch (error) {

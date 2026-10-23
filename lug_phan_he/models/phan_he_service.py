@@ -969,7 +969,21 @@ class PhanHeService(models.Model):
         return period_start, period_end, today
 
     @api.model
-    def _internet_payment_need_domain(self, year=None, month=None):
+    def _service_type_code_norm(self, service_type_code=None):
+        code = (service_type_code or "internet").strip().lower()
+        return code or "internet"
+
+    @api.model
+    def _service_type_domain_term(self, service_type_code=None):
+        """Điều kiện lọc loại dịch vụ (internet / server / …)."""
+        code = self._service_type_code_norm(service_type_code)
+        stype = self.env["phan.he.service.type"].search([("code", "=", code)], limit=1)
+        if stype:
+            return ("service_type_id", "=", stype.id)
+        return ("service_type_id.code", "=", code)
+
+    @api.model
+    def _internet_payment_need_domain(self, year=None, month=None, service_type_code="internet"):
         """Danh sách TT — đúng tháng chọn + quá hạn các tháng trước.
 
         Không lấy HĐ tháng sau chỉ vì còn ≤ 30 ngày
@@ -981,7 +995,7 @@ class PhanHeService(models.Model):
         )
         return [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            self._service_type_domain_term(service_type_code),
             ("state", "=", "active"),
             "|",
             "|",
@@ -991,7 +1005,7 @@ class PhanHeService(models.Model):
         ], period_start, period_end, today
 
     @api.model
-    def _internet_payment_schedule_domain(self, year=None, month=None):
+    def _internet_payment_schedule_domain(self, year=None, month=None, service_type_code="internet"):
         """Lịch dự kiến TT — HĐ Đang sử dụng có kỳ / date_end trong tháng chọn + quá hạn.
 
         Mặc định tháng hiện tại khi không truyền year/month.
@@ -1002,7 +1016,7 @@ class PhanHeService(models.Model):
         )
         return [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            self._service_type_domain_term(service_type_code),
             ("state", "=", "active"),
             "|", "|",
             "&", ("date_end", ">=", period_start), ("date_end", "<=", period_end),
@@ -1145,13 +1159,13 @@ class PhanHeService(models.Model):
         return True
 
     @api.model
-    def get_payment_confirm_board(self, year=None, month=None, search=""):
+    def get_payment_confirm_board(self, year=None, month=None, search="", service_type_code="internet"):
         """Xác nhận TT = cùng tháng / cùng bộ HĐ Lịch TT, chỉ HĐ chưa xác nhận TT.
 
         Sau khi bấm xác nhận (phiếu → paid) cửa hàng biến mất khỏi bảng này.
         """
         payload = self.search_internet_payment_period(
-            year, month, search, mode="schedule"
+            year, month, search, mode="schedule", service_type_code=service_type_code
         )
         period_start = fields.Date.to_date(payload["period_start"])
         period_end = fields.Date.to_date(payload["period_end"])
@@ -1198,8 +1212,8 @@ class PhanHeService(models.Model):
         }
 
     @api.model
-    def get_internet_alert_counts(self, year=None, month=None):
-        """Số HĐ / phiếu thanh toán hiển thị badge sidebar Internet.
+    def get_internet_alert_counts(self, year=None, month=None, service_type_code="internet"):
+        """Số HĐ / phiếu thanh toán hiển thị badge sidebar (Internet / Máy chủ…).
 
         year/month: tháng đang chọn.
         Danh sách TT / Xác nhận: mặc định tháng hiện tại; cửa hàng cần TT (≤30 ngày hoặc quá hạn).
@@ -1207,9 +1221,10 @@ class PhanHeService(models.Model):
         """
         today = fields.Date.context_today(self)
         soon30 = today + relativedelta(days=30)
+        stype_code = self._service_type_code_norm(service_type_code)
         inet_base = [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            self._service_type_domain_term(stype_code),
         ]
         list_active = self.search_count(inet_base + [("state", "=", "active")])
         list_suspend = self.search_count(inet_base + [
@@ -1234,7 +1249,7 @@ class PhanHeService(models.Model):
             ("date_end", "<", today),
         ])
         need_domain, period_start, period_end, today = self._internet_payment_need_domain(
-            year, month
+            year, month, service_type_code=stype_code
         )
         payment_need = self.search_count(need_domain)
         # Xác nhận = subset Lịch TT chưa đánh dấu paid kỳ hiện tại
@@ -1243,9 +1258,11 @@ class PhanHeService(models.Model):
             for svc in self.search(need_domain)
             if self._service_needs_payment_confirm(svc, period_start, period_end, today)
         )
-        forecast_domain, _ps2, _pe2, _td2 = self._internet_payment_schedule_domain()
+        forecast_domain, _ps2, _pe2, _td2 = self._internet_payment_schedule_domain(
+            service_type_code=stype_code
+        )
         payment_forecast = self.search_count(forecast_domain)
-        return {
+        counts = {
             "list_active": list_active,
             "list_suspend": list_suspend,
             "list_liquidated": list_liquidated,
@@ -1258,11 +1275,19 @@ class PhanHeService(models.Model):
             "payment_period_year": period_start.year,
             "payment_period_month": period_start.month,
         }
+        if stype_code == "server":
+            counts["srv_active"] = list_active
+            counts["srv_suspend"] = list_suspend
+            counts["srv_liquidated"] = list_liquidated
+        return counts
 
     @api.model
-    def get_dashboard_data(self, month=None, year=None, region_id=None, store_id=None):
-        """Dashboard Internet: read_group, lọc tháng/năm + miền + cửa hàng."""
+    def get_dashboard_data(
+        self, month=None, year=None, region_id=None, store_id=None, service_type_code="internet"
+    ):
+        """Dashboard chi phí (Internet / Máy chủ…): lọc tháng/năm + miền + cửa hàng."""
         today = fields.Date.context_today(self)
+        stype_code = self._service_type_code_norm(service_type_code)
         # Gọi cũ: get_dashboard_data("2026-09", region)
         if isinstance(month, str):
             extra_region = year
@@ -1286,18 +1311,22 @@ class PhanHeService(models.Model):
         prev_start = m_start - relativedelta(months=1)
         prev_end = m_start - relativedelta(days=1)
 
-        base = self._dash_base_domain(region_id, store_id)
+        base = self._dash_base_domain(region_id, store_id, service_type_code=stype_code)
         miens = self.env["phan.he.mien"].search([("active", "=", True)])
         mien_meta = self._dash_mien_meta(miens)
 
         # Tổng quan tháng = cùng Kỳ/Tổng với Báo cáo → Chi phí tháng
-        month_recs = self.search_month_cost_ky(year, month, extra_domain=base)
+        month_recs = self.search_month_cost_ky(
+            year, month, extra_domain=base, service_type_code=stype_code
+        )
         month_total = sum(self._month_ky_period_amount(r) for r in month_recs)
 
         # Bảng miền (Nam/ĐTT/Bắc/VP): cùng tập Danh sách thanh toán
         # (date_end ≤ today+30 hoặc quá hạn) — không chỉ HĐ có date_end trong tháng.
         cal_year, cal_month = today.year, today.month
-        pay_domain, _ps, _pe, _td = self._internet_payment_need_domain(cal_year, cal_month)
+        pay_domain, _ps, _pe, _td = self._internet_payment_need_domain(
+            cal_year, cal_month, service_type_code=stype_code
+        )
         pay_extra = []
         if store_id:
             pay_extra.append(("store_id", "=", store_id))
@@ -1306,14 +1335,25 @@ class PhanHeService(models.Model):
         pay_list_recs = self.search(
             list(pay_domain) + pay_extra, order="date_end asc, id asc"
         )
-        by_rows, due_sum = self._dash_group_payment_list_rows(pay_list_recs)
+        by_rows, due_sum = self._dash_group_payment_list_rows(
+            pay_list_recs, service_type_code=stype_code
+        )
         # Biểu đồ: T1→T12 năm lịch; chỉ có số liệu đến tháng hiện tại
         # (vd đang T9/2026 thì T10–T12 = 0). Nguồn = Danh sách thanh toán.
         month_day_chart = self._dash_build_year_month_chart(
-            cal_year, mien_meta, store_id=store_id, region_id=region_id
+            cal_year,
+            mien_meta,
+            store_id=store_id,
+            region_id=region_id,
+            service_type_code=stype_code,
         )
 
-        prev_recs = self.search_month_cost_ky(prev_start.year, prev_start.month, extra_domain=base)
+        prev_recs = self.search_month_cost_ky(
+            prev_start.year,
+            prev_start.month,
+            extra_domain=base,
+            service_type_code=stype_code,
+        )
         month_delta = self._dash_delta(
             month_total,
             sum(self._month_ky_period_amount(r) for r in prev_recs),
@@ -1362,7 +1402,9 @@ class PhanHeService(models.Model):
                 "key": f"{ts.year}-{ts.month:02d}",
                 "label": f"Th{ts.month}",
                 "full": f"{ts.month:02d}/{ts.year}",
-                "amount": self.sum_month_cost_ky(ts.year, ts.month, extra_domain=base),
+                "amount": self.sum_month_cost_ky(
+                    ts.year, ts.month, extra_domain=base, service_type_code=stype_code
+                ),
             })
 
         region_rows = []
@@ -1399,7 +1441,7 @@ class PhanHeService(models.Model):
         ys = fields.Date.to_date(f"{year}-01-01")
         ye = fields.Date.to_date(f"{year}-12-31")
         y_recs = self.search(base + self._dash_cost_domain(ys, ye), order="id desc")
-        y_rows, y_sum = self._dash_group_due_stores(y_recs)
+        y_rows, y_sum = self._dash_group_due_stores(y_recs, service_type_code=stype_code)
         year_history[year] = y_sum
         year_rows_by_year[year] = y_rows
         year_bars.append({
@@ -1415,7 +1457,9 @@ class PhanHeService(models.Model):
             ),
             order="id desc",
         )
-        _prev_rows, prev_sum = self._dash_group_due_stores(prev_recs_y)
+        _prev_rows, prev_sum = self._dash_group_due_stores(
+            prev_recs_y, service_type_code=stype_code
+        )
         cur_year = year_bars[-1]["amount"] if year_bars else 0.0
         prev_year_amt = self._dash_mien_total(prev_sum, mien_meta)
         year_delta = self._dash_delta(cur_year, prev_year_amt)
@@ -1452,7 +1496,9 @@ class PhanHeService(models.Model):
             month_bars.append({
                 "month": mo,
                 "label": f"T{mo}",
-                "amount": self.sum_month_cost_ky(year, mo, extra_domain=base),
+                "amount": self.sum_month_cost_ky(
+                    year, mo, extra_domain=base, service_type_code=stype_code
+                ),
             })
 
         detail_tables = []
@@ -1466,7 +1512,10 @@ class PhanHeService(models.Model):
                     "amount": self.sum_month_cost_ky(
                         ts.year,
                         ts.month,
-                        extra_domain=self._dash_base_domain(m["id"], store_id),
+                        extra_domain=self._dash_base_domain(
+                            m["id"], store_id, service_type_code=stype_code
+                        ),
+                        service_type_code=stype_code,
                     ),
                 })
             spark_max = max((s["amount"] for s in spark), default=1) or 1
@@ -1516,8 +1565,9 @@ class PhanHeService(models.Model):
                 "label": f"Tháng {dt.month}/{dt.year}",
             })
 
-        return {
+        result = {
             "user_name": self.env.user.name or "Admin",
+            "service_type_code": stype_code,
             "selected_month": f"{year}-{month:02d}",
             "selected_month_label": f"Tháng {month}/{year}",
             "selected_year": year,
@@ -1550,8 +1600,17 @@ class PhanHeService(models.Model):
             "updated_at": fields.Datetime.context_timestamp(
                 self, fields.Datetime.now()
             ).strftime("%H:%M %d/%m/%Y"),
-            **self.get_internet_alert_counts(),
+            **self.get_internet_alert_counts(service_type_code=stype_code),
         }
+        if stype_code == "server":
+            all_server = self.search([
+                ("active", "=", True),
+                self._service_type_domain_term("server"),
+            ])
+            result["server_inventory"] = self.env["phan.he.dashboard"]._server_inventory(
+                all_server
+            )
+        return result
 
     @api.model
     def _dash_int(self, value):
@@ -1584,8 +1643,8 @@ class PhanHeService(models.Model):
         return start, end
 
     @api.model
-    def internet_board_domain(self, filter_code="all"):
-        """Domain danh sách Internet — mọi filter từ model HĐ (bảng chính Đang sử dụng).
+    def internet_board_domain(self, filter_code="all", service_type_code="internet"):
+        """Domain danh sách dịch vụ — mọi filter từ model HĐ (bảng chính Đang sử dụng).
 
         - active: Đang sử dụng (master)
         - suspend / liquidated: cùng bảng HĐ, lọc trạng thái
@@ -1595,7 +1654,7 @@ class PhanHeService(models.Model):
         soon30 = today + relativedelta(days=30)
         domain = [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            self._service_type_domain_term(service_type_code),
         ]
         code = filter_code or "all"
         if code == "active":
@@ -1638,7 +1697,9 @@ class PhanHeService(models.Model):
         return domain
 
     @api.model
-    def search_internet_payment_period(self, year=None, month=None, search="", region=False, mode="schedule"):
+    def search_internet_payment_period(
+        self, year=None, month=None, search="", region=False, mode="schedule", service_type_code="internet"
+    ):
         """API Danh sách TT (mode=schedule) / Lịch dự kiến TT (mode=forecast).
 
         schedule: cần TT = date_end còn ≤30 ngày hoặc quá hạn; tháng UI = tháng hiện tại.
@@ -1646,11 +1707,11 @@ class PhanHeService(models.Model):
         """
         if mode == "forecast":
             domain, period_start, period_end, _today = self._internet_payment_schedule_domain(
-                year, month
+                year, month, service_type_code=service_type_code
             )
         else:
             domain, period_start, period_end, _today = self._internet_payment_need_domain(
-                year, month
+                year, month, service_type_code=service_type_code
             )
         if region:
             domain = list(domain) + [("store_mien", "=", region)]
@@ -1940,18 +2001,12 @@ class PhanHeService(models.Model):
         }
 
     @api.model
-    def _dash_base_domain(self, region_id=None, store_id=None):
+    def _dash_base_domain(self, region_id=None, store_id=None, service_type_code="internet"):
         domain = [
             ("active", "=", True),
             ("state", "not in", ("cancel", "draft")),
+            self._service_type_domain_term(service_type_code),
         ]
-        stype = self.env["phan.he.service.type"].search(
-            [("code", "=", "internet")], limit=1
-        )
-        if stype:
-            domain.append(("service_type_id", "=", stype.id))
-        else:
-            domain.append(("category", "=", "internet"))
         if store_id:
             domain.append(("store_id", "=", store_id))
         elif region_id:
@@ -1974,7 +2029,9 @@ class PhanHeService(models.Model):
         return float(rec.contract_amount or 0.0)
 
     @api.model
-    def _dash_payment_month_records(self, year, month, store_id=None, region_id=None):
+    def _dash_payment_month_records(
+        self, year, month, store_id=None, region_id=None, service_type_code="internet"
+    ):
         """HĐ thuộc tháng lịch (date_end / next_payment_date trong tháng).
 
         Không dùng cửa sổ today+30 — danh sách ổn định suốt tháng, chỉ đổi khi sang tháng mới.
@@ -1985,7 +2042,7 @@ class PhanHeService(models.Model):
         end = (start + relativedelta(months=1)) - relativedelta(days=1)
         domain = [
             ("active", "=", True),
-            ("service_type_id.code", "=", "internet"),
+            self._service_type_domain_term(service_type_code),
             ("state", "=", "active"),
             "|",
             "&", ("date_end", ">=", start), ("date_end", "<=", end),
@@ -1998,7 +2055,9 @@ class PhanHeService(models.Model):
         return self.search(domain, order="date_end asc, id asc")
 
     @api.model
-    def _dash_build_year_month_chart(self, year, mien_meta, store_id=None, region_id=None):
+    def _dash_build_year_month_chart(
+        self, year, mien_meta, store_id=None, region_id=None, service_type_code="internet"
+    ):
         """Biểu đồ dự tính chi phí: T1→T12, nguồn Danh sách thanh toán.
 
         - Mỗi tháng = tổng HĐ có date_end / next_payment_date trong tháng đó
@@ -2026,7 +2085,7 @@ class PhanHeService(models.Model):
             ) - relativedelta(days=1)
             domain = [
                 ("active", "=", True),
-                ("service_type_id.code", "=", "internet"),
+                self._service_type_domain_term(service_type_code),
                 ("state", "=", "active"),
                 "|",
                 "&", ("date_end", ">=", y_start), ("date_end", "<=", y_end),
@@ -2085,19 +2144,27 @@ class PhanHeService(models.Model):
         return self._dash_build_year_month_chart(year, mien_meta)
 
     @api.model
-    def _dash_group_payment_list_rows(self, recs):
+    def _dash_group_payment_list_rows(self, recs, service_type_code="internet"):
         """Bảng miền: từng HĐ như Danh sách thanh toán, nhóm theo miền."""
+        stype_code = self._service_type_code_norm(service_type_code)
         by_rows = {}
         due_sum = {}
         for svc in recs:
             mid = svc.mien_id.id or 0
             amt = self._dash_payment_list_amount(svc)
-            pkg = (svc.package_name or "").strip() or (svc.provider_id.name or "—")
+            if stype_code == "server":
+                store_label = svc.hostname or svc.name or svc.code or "—"
+                pkg = svc.server_kind_id.name or (svc.provider_id.name or "—")
+                bandwidth = svc.server_spec or svc.ip_address or "—"
+            else:
+                store_label = svc.store_id.name or svc.name or "—"
+                pkg = (svc.package_name or "").strip() or (svc.provider_id.name or "—")
+                bandwidth = svc.bandwidth or "—"
             by_rows.setdefault(mid, []).append({
                 "id": svc.id,
-                "store": svc.store_id.name or svc.name or "—",
+                "store": store_label,
                 "provider": pkg,
-                "bandwidth": svc.bandwidth or "—",
+                "bandwidth": bandwidth,
                 "amount": amt,
                 "remaining_days": int(svc.remaining_days or 0),
                 "remaining_time": svc.remaining_time or "",
@@ -2110,18 +2177,15 @@ class PhanHeService(models.Model):
         return by_rows, due_sum
 
     @api.model
-    def _dash_group_due_stores(self, recs):
+    def _dash_group_due_stores(self, recs, service_type_code="internet"):
         """Gộp 1 cửa hàng / miền; bỏ Tạm ngưng / Thanh lý."""
+        stype_code = self._service_type_code_norm(service_type_code)
         blocked_dom = [
             ("active", "=", True),
             "|", ("ops_status", "in", ("suspend", "liquidated")),
             ("state", "in", ("suspend", "liquidated", "cancel")),
+            self._service_type_domain_term(stype_code),
         ]
-        stype = self.env["phan.he.service.type"].search([("code", "=", "internet")], limit=1)
-        if stype:
-            blocked_dom.append(("service_type_id", "=", stype.id))
-        else:
-            blocked_dom.append(("category", "=", "internet"))
         blocked = set(self.search(blocked_dom).mapped("store_id").ids)
         by_best = {}
         for svc in recs:
@@ -2132,7 +2196,16 @@ class PhanHeService(models.Model):
             if svc.store_id.id and svc.store_id.id in blocked:
                 continue
             mid = svc.mien_id.id or 0
-            store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
+            if stype_code == "server":
+                store_key = svc.id
+                store_label = svc.hostname or svc.name or svc.code or "—"
+                provider = svc.server_kind_id.name or (svc.provider_id.name or "—")
+                bandwidth = svc.server_spec or svc.ip_address or "—"
+            else:
+                store_key = svc.store_id.id or (svc.store_id.name or svc.name or svc.id)
+                store_label = svc.store_id.name or "—"
+                provider = svc.provider_id.name or "—"
+                bandwidth = svc.bandwidth or "—"
             key = (mid, store_key)
             amt = self._dash_payment_list_amount(svc)
             days = int(svc.remaining_days or 0)
@@ -2140,9 +2213,9 @@ class PhanHeService(models.Model):
             if not row:
                 by_best[key] = {
                     "id": svc.id,
-                    "store": svc.store_id.name or "—",
-                    "provider": svc.provider_id.name or "—",
-                    "bandwidth": svc.bandwidth or "—",
+                    "store": store_label,
+                    "provider": provider,
+                    "bandwidth": bandwidth,
                     "amount": amt,
                     "remaining_days": days,
                     "remaining_time": svc.remaining_time or "",
@@ -2151,8 +2224,8 @@ class PhanHeService(models.Model):
             row["amount"] += amt
             if days < row["remaining_days"]:
                 row["id"] = svc.id
-                row["provider"] = svc.provider_id.name or row["provider"]
-                row["bandwidth"] = svc.bandwidth or row["bandwidth"]
+                row["provider"] = provider or row["provider"]
+                row["bandwidth"] = bandwidth or row["bandwidth"]
                 row["remaining_days"] = days
                 row["remaining_time"] = svc.remaining_time or row["remaining_time"]
         by_rows = {}
@@ -2219,23 +2292,27 @@ class PhanHeService(models.Model):
         return sum(float(p.amount or 0.0) for p in in_ky)
 
     @api.model
-    def search_month_cost_ky(self, year, month, extra_domain=None):
+    def search_month_cost_ky(self, year, month, extra_domain=None, service_type_code="internet"):
         """Kỳ Chi phí tháng = cùng tập Danh sách thanh toán.
 
         - HĐ Đang sử dụng (state=active), có date_end
         - date_end còn ≤ 30 ngày kể từ hôm nay hoặc đã quá hạn
         - Số tiền kỳ = next_payment_amount / contract_amount (Lịch TT)
         """
-        domain, _ps, _pe, _today = self._internet_payment_need_domain(year, month)
+        domain, _ps, _pe, _today = self._internet_payment_need_domain(
+            year, month, service_type_code=service_type_code
+        )
         domain = list(domain)
         if extra_domain:
             domain = domain + list(extra_domain)
         return self.search(domain, order="date_end asc, id asc")
 
     @api.model
-    def sum_month_cost_ky(self, year, month, extra_domain=None):
+    def sum_month_cost_ky(self, year, month, extra_domain=None, service_type_code="internet"):
         """Tổng chi phí tháng N = tổng tiền các kỳ đưa vào tháng N."""
-        recs = self.search_month_cost_ky(year, month, extra_domain=extra_domain)
+        recs = self.search_month_cost_ky(
+            year, month, extra_domain=extra_domain, service_type_code=service_type_code
+        )
         return sum(self._month_ky_period_amount(r) for r in recs)
 
     @api.model

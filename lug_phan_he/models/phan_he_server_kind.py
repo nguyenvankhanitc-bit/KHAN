@@ -10,17 +10,29 @@ class PhanHeServerKind(models.Model):
     _name = "phan.he.server.kind"
     _description = "Loại máy chủ"
     _order = "sequence, name"
-    _rec_names_search = ["name", "code"]
+    _rec_names_search = ["name", "code", "model_name", "location"]
 
-    name = fields.Char(string="Loại máy chủ", required=True)
-    code = fields.Char(string="Mã", required=True)
+    code = fields.Char(string="Mã máy chủ", required=True)
+    name = fields.Char(string="Tên máy chủ", required=True)
+    model_name = fields.Char(string="Model")
+    location = fields.Char(string="Vị trí")
+    status = fields.Selection(
+        [
+            ("in_use", "Đang sử dụng"),
+            ("idle", "Nhàn rỗi"),
+            ("maintenance", "Bảo trì"),
+            ("retired", "Ngưng dùng"),
+        ],
+        string="Trạng thái",
+        default="in_use",
+    )
     sequence = fields.Integer(default=10)
     color = fields.Char(string="Màu", help="Ma mau hex, vi du #2563eb")
     active = fields.Boolean(default=True)
 
     _code_uniq = models.Constraint(
         "unique(code)",
-        "Mã loại máy chủ phải duy nhất.",
+        "Mã máy chủ phải duy nhất.",
     )
 
     @api.model
@@ -46,4 +58,6 @@ class PhanHeServerKind(models.Model):
                     code = "%s_%s" % (base, index)
                     index += 1
                 vals["code"] = code
+            if not vals.get("status"):
+                vals["status"] = "in_use"
         return super().create(vals_list)

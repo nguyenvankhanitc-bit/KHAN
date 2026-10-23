@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="ir_cron_phan_he_it_reminder" model="ir.cron">
-        <field name="name">Máy chủ &amp; Cloud: nhắc hạn gia hạn</field>
+        <field name="name">Máy chủ: nhắc hạn gia hạn</field>
         <field name="model_id" ref="model_phan_he_it_reminder_config"/>
         <field name="state">code</field>
         <field name="code">model.cron_it_reminder()</field>

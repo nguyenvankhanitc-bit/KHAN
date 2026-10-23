@@ -377,19 +377,25 @@
     }
 }
 
-/* Fill đúng vùng action — tránh icon bị đẩy xuống đáy trang */
+/* Fill đúng vùng action — tránh icon bị đẩy xuống đáy trang.
+   Odoo 19 client action có thể gắn hub trực tiếp vào .o_action_manager
+   (không có wrapper .o_action). Cần position:relative để .o_phan_he_hub
+   (absolute; inset:0) không leo lên phủ .o_main_navbar / App Center. */
 body:has(.o_phan_he_hub) {
     --phan-he-sidebar-width: 0px !important;
 
     .o_action_manager {
+        position: relative;
         height: calc(100vh - 46px);
         margin-left: 0 !important;
         padding-left: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        overflow: hidden;
     }
 
     .o_action:has(.o_phan_he_hub) {
+        position: relative;
         height: 100%;
         max-height: 100%;
         padding: 0 !important;

@@ -26,7 +26,7 @@
         <field name="name">phan.he.it.asset.list</field>
         <field name="model">phan.he.it.asset</field>
         <field name="arch" type="xml">
-            <list>
+            <list class="o_it_framed_list">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="asset_type_id"/>
@@ -48,7 +48,7 @@
         <field name="name">phan.he.it.asset.form</field>
         <field name="model">phan.he.it.asset</field>
         <field name="arch" type="xml">
-            <form>
+            <form class="o_it_asset_form">
                 <header>
                     <button name="action_set_active" type="object" string="Đang sử dụng"
                             invisible="state == 'active'" class="btn-primary"/>
@@ -68,12 +68,19 @@
                     <group>
                         <group string="Thông tin chung">
                             <field name="code"/>
-                            <field name="name"/>
+                            <field name="name" class="o_it_underline_field"/>
                             <field name="asset_type_id"/>
                             <field name="asset_type_code" invisible="1"/>
-                            <field name="manufacturer"/>
-                            <field name="model_name"/>
-                            <field name="serial_number"/>
+                            <field name="host_asset_id"
+                                     string="Tên máy chủ"
+                                     class="o_it_underline_field"
+                                     invisible="asset_type_code != 'virtual'"
+                                     required="asset_type_code == 'virtual'"
+                                     options="{'no_create': True, 'no_open': True}"/>
+                            <field name="host_label" invisible="1"/>
+                            <field name="manufacturer" invisible="asset_type_code == 'virtual'"/>
+                            <field name="model_name" invisible="asset_type_code == 'virtual'"/>
+                            <field name="serial_number" invisible="asset_type_code == 'virtual'"/>
                         </group>
                         <group string="Vị trí &amp; phụ trách">
                             <field name="location"/>
@@ -101,13 +108,18 @@
                         </page>
                         <page string="Máy chủ ảo" invisible="asset_type_code != 'virtual'">
                             <group>
-                                <field name="vm_name"/>
-                                <field name="hypervisor"/>
-                                <field name="host_asset_id"/>
-                                <field name="cpu_info"/>
-                                <field name="ram_gb"/>
-                                <field name="storage_gb"/>
-                                <field name="ip_address"/>
+                                <field name="vm_name" class="o_it_underline_field"/>
+                                <field name="hypervisor" class="o_it_underline_field"/>
+                                <field name="host_asset_id"
+                                          string="Tên máy chủ"
+                                          class="o_it_underline_field"
+                                          required="1"
+                                          options="{'no_create': True, 'no_open': True}"/>
+                                <field name="cpu_info" class="o_it_underline_field"/>
+                                <field name="ram_gb" class="o_it_underline_field"/>
+                                <field name="storage_gb" class="o_it_underline_field"/>
+                                <field name="ip_address" class="o_it_underline_field"/>
+                                <field name="ip_wan" class="o_it_underline_field"/>
                             </group>
                         </page>
                         <page string="Cloud" invisible="asset_type_code != 'cloud'">
@@ -159,6 +171,7 @@
                 <filter name="filter_network" string="Mạng &amp; bảo mật" domain="[('asset_type_code', 'in', ('network', 'security'))]"/>
                 <separator/>
                 <filter name="group_type" string="Loại tài sản" context="{'group_by': 'asset_type_id'}"/>
+                <filter name="group_host" string="Tên máy chủ" context="{'group_by': 'host_asset_id'}"/>
                 <filter name="group_mien" string="Khu vực" context="{'group_by': 'mien_id'}"/>
                 <filter name="group_state" string="Trạng thái" context="{'group_by': 'state'}"/>
             </search>
@@ -179,12 +192,44 @@
         <field name="domain">[('asset_type_code', '=', 'physical')]</field>
         <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_physical'), 'search_default_filter_physical': 1}"/>
     </record>
+    <record id="view_phan_he_it_asset_virtual_list" model="ir.ui.view">
+        <field name="name">phan.he.it.asset.virtual.list</field>
+        <field name="model">phan.he.it.asset</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list string="Máy chủ ảo"
+                  class="o_it_virtual_list o_it_framed_list"
+                  default_group_by="host_asset_id"
+                  expand="0">
+                <field name="code" string="Mã tài sản"/>
+                <field name="name" string="Tên VM"/>
+                <field name="host_label" string="Tên máy chủ" optional="hide"/>
+                <field name="host_asset_id" column_invisible="1"/>
+                <field name="vm_name" optional="show"/>
+                <field name="hypervisor" optional="show"/>
+                <field name="ip_address" string="Địa chỉ IP" optional="show"/>
+                <field name="ip_wan" string="IP WAN" optional="show"/>
+                <field name="mien_id" optional="show"/>
+                <field name="state" widget="badge"
+                         decoration-success="state == 'active'"
+                         decoration-warning="state == 'suspended'"
+                         decoration-muted="state == 'retired'"/>
+            </list>
+        </field>
+    </record>
     <record id="action_phan_he_it_asset_virtual" model="ir.actions.act_window">
         <field name="name">Máy chủ ảo</field>
         <field name="res_model">phan.he.it.asset</field>
         <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_phan_he_it_asset_search"/>
         <field name="domain">[('asset_type_code', '=', 'virtual')]</field>
-        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_virtual')}"/>
+        <field name="context" eval="{'default_asset_type_id': ref('it_asset_type_virtual'), 'search_default_filter_virtual': 1, 'search_default_group_host': 1}"/>
+    </record>
+    <record id="action_phan_he_it_asset_virtual_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_phan_he_it_asset_virtual_list"/>
+        <field name="act_window_id" ref="action_phan_he_it_asset_virtual"/>
     </record>
     <record id="action_phan_he_it_asset_cloud" model="ir.actions.act_window">
         <field name="name">Dịch vụ Cloud</field>
@@ -213,7 +258,7 @@
         <field name="name">phan.he.it.cost.list</field>
         <field name="model">phan.he.it.cost</field>
         <field name="arch" type="xml">
-            <list class="o_it_cost_list">
+            <list class="o_it_cost_list o_it_framed_list">
                 <field name="asset_id" string="Tên thiết bị"/>
                 <field name="provider_id" string="Nhà cung cấp"/>
                 <field name="bandwidth" string="Băng thông"/>
@@ -461,7 +506,7 @@
         <field name="name">phan.he.it.ticket.list</field>
         <field name="model">phan.he.it.ticket</field>
         <field name="arch" type="xml">
-            <list>
+            <list class="o_it_framed_list">
                 <field name="code"/>
                 <field name="asset_id"/>
                 <field name="ticket_type"/>

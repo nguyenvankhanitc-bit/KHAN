@@ -46,7 +46,7 @@ class PhanHeItAssetType(models.Model):
 
 class PhanHeItAsset(models.Model):
     _name = "phan.he.it.asset"
-    _description = "Tài sản Máy chủ & Cloud"
+    _description = "Tài sản Máy chủ"
     _inherit = ["mail.thread", "mail.activity.mixin"]
     _order = "code, id"
     _rec_names_search = ["code", "name", "model_name", "serial_number"]
@@ -111,11 +111,19 @@ class PhanHeItAsset(models.Model):
     vm_name = fields.Char(string="Tên VM")
     host_asset_id = fields.Many2one(
         "phan.he.it.asset",
-        string="Máy chủ vật lý / Cluster chủ",
-        domain="[('asset_type_code', '=', 'physical')]",
-        ondelete="set null",
+        string="Tên máy chủ",
+        domain="[('asset_type_code', '=', 'physical'), ('active', '=', True)]",
+        ondelete="restrict",
+        tracking=True,
+        help="Chọn máy chủ vật lý chứa VM (vd: Dell R530, Dell R650).",
+    )
+    host_label = fields.Char(
+        string="Tên máy chủ",
+        compute="_compute_host_label",
+        store=True,
     )
     ip_address = fields.Char(string="Địa chỉ IP")
+    ip_wan = fields.Char(string="IP WAN")
 
     # --- Cloud ---
     cloud_provider = fields.Char(string="Nhà cung cấp cloud")
@@ -157,6 +165,55 @@ class PhanHeItAsset(models.Model):
         for rec in self:
             rec.cost_count = len(rec.cost_ids)
             rec.ticket_count = len(rec.ticket_ids)
+
+    @api.depends(
+        "host_asset_id",
+        "host_asset_id.name",
+        "host_asset_id.manufacturer",
+        "host_asset_id.model_name",
+    )
+    def _compute_host_label(self):
+        for rec in self:
+            rec.host_label = rec.host_asset_id._format_host_label() if rec.host_asset_id else ""
+
+    def _format_host_label(self):
+        """Nhãn chọn máy chủ vật lý: Dell R530 / Dell R650."""
+        self.ensure_one()
+        model = (self.model_name or "").replace("PowerEdge ", "").strip()
+        manufacturer = (self.manufacturer or "").strip()
+        if manufacturer and model:
+            return "%s %s" % (manufacturer, model)
+        if model:
+            return model
+        return self.name or self.code or ""
+
+    @api.depends("name", "code", "manufacturer", "model_name", "asset_type_code")
+    def _compute_display_name(self):
+        for rec in self:
+            if rec.asset_type_code == "physical":
+                rec.display_name = rec._format_host_label()
+            else:
+                rec.display_name = rec.name or rec.code or ""
+
+    @api.onchange("host_asset_id")
+    def _onchange_host_asset_id(self):
+        if self.asset_type_code != "virtual" or not self.host_asset_id:
+            return
+        host = self.host_asset_id
+        if not self.hypervisor and host.hypervisor:
+            self.hypervisor = host.hypervisor
+        if not self.name:
+            self.name = "VM trên %s" % host._format_host_label()
+
+    @api.constrains("host_asset_id", "asset_type_id")
+    def _check_virtual_host(self):
+        for rec in self:
+            if rec.asset_type_code == "virtual" and not rec.host_asset_id:
+                raise UserError("Máy chủ ảo phải chọn Tên máy chủ từ danh sách máy chủ vật lý.")
+            if rec.host_asset_id and rec.host_asset_id.asset_type_code != "physical":
+                raise UserError("Tên máy chủ phải là máy chủ vật lý.")
+            if rec.host_asset_id and rec.host_asset_id == rec:
+                raise UserError("Máy chủ ảo không thể trỏ về chính nó.")
 
     @api.model
     def next_asset_code(self, asset_type_id):
@@ -241,14 +298,14 @@ class PhanHeItAsset(models.Model):
         rows = [
             {
                 "code": "SRV-001",
-                "name": "Máy chủ vật lý 01",
+                "name": "Dell R530",
                 "type_code": "physical",
                 "manufacturer": "Dell",
                 "model_name": "PowerEdge R530",
             },
             {
                 "code": "SRV-002",
-                "name": "Máy chủ vật lý 02",
+                "name": "Dell R650",
                 "type_code": "physical",
                 "manufacturer": "Dell",
                 "model_name": "PowerEdge R650",

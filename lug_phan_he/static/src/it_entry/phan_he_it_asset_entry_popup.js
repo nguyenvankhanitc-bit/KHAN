@@ -85,6 +85,7 @@ function emptyForm() {
         hypervisor: "",
         warranty_end: "",
         ip_address: "",
+        ip_wan: "",
         vm_name: "",
         host_asset_id: "",
         cloud_provider: "",
@@ -214,7 +215,7 @@ export class PhanHeItAssetEntryPopup extends Component {
             this.orm.searchRead(
                 "phan.he.it.asset",
                 [["asset_type_code", "=", "physical"], ["active", "=", true]],
-                ["id", "name", "code"],
+                ["id", "name", "code", "manufacturer", "model_name"],
                 { order: "code", limit: 200 }
             ),
         ]);
@@ -228,6 +229,33 @@ export class PhanHeItAssetEntryPopup extends Component {
             const physical = this.state.types.find((t) => t.code === "physical");
             this.state.form.asset_type_id = String((physical || this.state.types[0]).id);
             await this.refreshAutoCode();
+        }
+    }
+
+    hostOptionLabel(host) {
+        const model = String(host?.model_name || "").replace(/^PowerEdge\s+/i, "").trim();
+        const manufacturer = String(host?.manufacturer || "").trim();
+        if (manufacturer && model) {
+            return `${manufacturer} ${model}`;
+        }
+        if (model) {
+            return model;
+        }
+        return host?.name || host?.code || "";
+    }
+
+    onHostChange(ev) {
+        const hostId = ev.target.value;
+        this.state.form.host_asset_id = hostId;
+        const host = (this.state.hosts || []).find((item) => String(item.id) === String(hostId));
+        if (!host) {
+            return;
+        }
+        if (!this.state.form.name?.trim()) {
+            this.state.form.name = `VM trên ${this.hostOptionLabel(host)}`;
+        }
+        if (!this.state.form.vm_name?.trim()) {
+            this.state.form.vm_name = this.state.form.name;
         }
     }
 
@@ -260,7 +288,7 @@ export class PhanHeItAssetEntryPopup extends Component {
                 "code", "name", "asset_type_id", "manufacturer", "model_name", "serial_number",
                 "location", "mien_id", "store_id", "date_start", "provider_id", "responsible_id",
                 "state", "note", "cpu_info", "ram_gb", "storage_gb", "raid_info", "nic_info",
-                "hypervisor", "warranty_end", "ip_address", "vm_name", "host_asset_id",
+                "hypervisor", "warranty_end", "ip_address", "ip_wan", "vm_name", "host_asset_id",
                 "cloud_provider", "cloud_account", "cloud_region", "cloud_service_type",
                 "cloud_billing_cycle", "cloud_budget", "admin_url", "license_end", "firmware_version",
             ],
@@ -296,6 +324,7 @@ export class PhanHeItAssetEntryPopup extends Component {
             hypervisor: rec.hypervisor || "",
             warranty_end: isoToDisplay(rec.warranty_end) || "",
             ip_address: rec.ip_address || "",
+            ip_wan: rec.ip_wan || "",
             vm_name: rec.vm_name || "",
             host_asset_id: m2o(rec.host_asset_id),
             cloud_provider: rec.cloud_provider || "",
@@ -320,10 +349,13 @@ export class PhanHeItAssetEntryPopup extends Component {
             return "Vui lòng nhập mã tài sản.";
         }
         if (!f.name?.trim()) {
-            return "Vui lòng nhập tên tài sản.";
+            return this.isVirtual ? "Vui lòng nhập tên VM." : "Vui lòng nhập tên tài sản.";
         }
         if (!f.asset_type_id) {
             return "Vui lòng chọn loại tài sản.";
+        }
+        if (this.isVirtual && !f.host_asset_id) {
+            return "Vui lòng chọn Tên máy chủ từ máy chủ vật lý (Dell R530 / Dell R650).";
         }
         if (f.date_start && !parseDisplayDate(f.date_start)) {
             return "Ngày bắt đầu phải dạng dd/mm/yyyy.";
@@ -374,6 +406,7 @@ export class PhanHeItAssetEntryPopup extends Component {
             hypervisor: f.hypervisor.trim() || false,
             warranty_end: parseDisplayDate(f.warranty_end) || false,
             ip_address: f.ip_address.trim() || false,
+            ip_wan: f.ip_wan.trim() || false,
             vm_name: f.vm_name.trim() || false,
             host_asset_id: this._m2oOrFalse(f.host_asset_id),
             cloud_provider: f.cloud_provider.trim() || false,

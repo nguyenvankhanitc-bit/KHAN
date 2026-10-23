@@ -38,7 +38,7 @@
                 </button>
                 <button type="button" class="sidebar-row" t-if="state.visible.server" t-att-class="isActive('server') ? 'is-active' : ''" t-on-click="onServer">
                     <span class="sidebar-ico ico-teal"><i class="fa fa-server"/></span>
-                    <span>Máy chủ &amp; Cloud</span>
+                    <span>Máy chủ</span>
                 </button>
                 <button type="button" class="sidebar-row" t-if="state.visible.linkq_nb" t-att-class="erpGroupActive ? 'is-active' : ''" t-on-click="onDashboard">
                     <span class="sidebar-ico ico-violet"><i class="fa fa-link"/></span>

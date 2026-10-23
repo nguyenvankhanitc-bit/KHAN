@@ -212,6 +212,10 @@ html.o_internet_resizing * {
         &.is-icon-alert > i:first-child { color: #ea580c !important; }
         &.is-icon-report > i:first-child { color: #7c3aed !important; }
         &.is-icon-manage > i:first-child { color: #6d28d9 !important; }
+        /* Máy chủ — khớp màu nhóm tài sản trên dashboard */
+        &.is-icon-physical > i:first-child { color: #2563eb !important; }
+        &.is-icon-virtual > i:first-child { color: #06b6d4 !important; }
+        &.is-icon-network > i:first-child { color: #f97316 !important; }
 
         &:hover {
             background: #f8fafc !important;
@@ -273,7 +277,7 @@ html.o_internet_resizing * {
             font-weight: 800;
         }
 
-        /* 3 mục lớn: tô màu + in đậm */
+        /* Mục lớn: tô màu + in đậm */
         &.is-icon-manage {
             color: #6d28d9 !important;
             > i:first-child { color: #6d28d9 !important; }
@@ -288,6 +292,16 @@ html.o_internet_resizing * {
             color: #7c3aed !important;
             > i:first-child { color: #7c3aed !important; }
             &:hover { color: #6d28d9 !important; > i:first-child { color: #6d28d9 !important; } }
+        }
+        &.is-icon-alert {
+            color: #c2410c !important;
+            > i:first-child { color: #ea580c !important; }
+            &:hover { color: #9a3412 !important; > i:first-child { color: #c2410c !important; } }
+        }
+        &.is-icon-list {
+            color: #4338ca !important;
+            > i:first-child { color: #6366f1 !important; }
+            &:hover { color: #3730a3 !important; > i:first-child { color: #4f46e5 !important; } }
         }
 
         &:hover {
@@ -306,10 +320,17 @@ html.o_internet_resizing * {
 
     .o_phan_he_nav_caret {
         margin-left: auto;
-        color: #cbd5e1 !important;
+        color: #475569 !important;
         opacity: 1;
-        font-size: 12px !important;
+        font-size: 14px !important;
+        font-weight: 900 !important;
         transform: none !important;
+        text-shadow: 0 0 0.35px currentColor;
+    }
+
+    .o_phan_he_nav_section:hover .o_phan_he_nav_caret,
+    .o_phan_he_nav_group.is-open > .o_phan_he_nav_section .o_phan_he_nav_caret {
+        color: #1e293b !important;
     }
 
     .o_phan_he_nav_sub {
@@ -636,14 +657,20 @@ body.o_internet_mobile_nav_lock {
     }
 }
 
-/* Danh sách chi phí IT — khung ô + tiêu đề nền đậm (bám wrapper o_it_cost_embed) */
+/* Đóng khung bảng IT (chi phí / tài sản / ticket…) — kẻ ô + header đậm */
+.o_internet_content.o_it_list_embed,
 .o_internet_content.o_it_cost_embed,
-.o_internet_content .o_it_cost_list {
+.o_internet_content .o_it_cost_list,
+.o_internet_content .o_it_framed_list,
+.o_internet_content .o_it_virtual_list {
     --ListRenderer-thead-bg-color: #e2e8f0;
 }
 
+.o_internet_content.o_it_list_embed .o_list_table,
 .o_internet_content.o_it_cost_embed .o_list_table,
-.o_internet_content .o_it_cost_list .o_list_table {
+.o_internet_content .o_it_cost_list .o_list_table,
+.o_internet_content .o_it_framed_list .o_list_table,
+.o_internet_content .o_it_virtual_list .o_list_table {
     font-size: 13px;
     border-collapse: collapse !important;
     border: 1px solid #cbd5e1 !important;
@@ -684,6 +711,27 @@ body.o_internet_mobile_nav_lock {
 
     > tbody > tr:hover > td {
         background: #eff6ff !important;
+    }
+
+    /* Group header (vd: Máy chủ ảo theo Tên máy chủ) */
+    > tbody > tr.o_group_header > th,
+    > tbody > tr.o_group_header > td {
+        background: #f5f3ff !important;
+        color: #5b21b6 !important;
+        font-weight: 800 !important;
+        border: 1px solid #c4b5fd !important;
+        text-align: left !important;
+    }
+
+    > tbody > tr.o_group_header .o_group_name,
+    > tbody > tr.o_group_header .o_group_caret {
+        color: #5b21b6 !important;
+        font-weight: 800 !important;
+    }
+
+    > tbody > tr.o_group_header.o_group_open > th:first-child,
+    > tbody > tr.o_group_header.o_group_open > td:first-child {
+        border-left: 3px solid #7c3aed !important;
     }
 
     > thead > tr > th[data-name="asset_id"],

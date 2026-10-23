@@ -839,7 +839,7 @@
         <field name="model">phan.he.service</field>
         <field name="priority">99</field>
         <field name="arch" type="xml">
-            <list string="Máy chủ &amp; Cloud"
+            <list string="Máy chủ"
                   js_class="phan_he_tracking_list"
                   class="o_phan_he_tracking_list"
                   create="1"
@@ -887,7 +887,7 @@
         <field name="model">phan.he.service</field>
         <field name="priority">99</field>
         <field name="arch" type="xml">
-            <form string="Máy chủ &amp; Cloud" class="o_phan_he_entry_form">
+            <form string="Máy chủ" class="o_phan_he_entry_form">
                 <sheet>
                     <field name="name" invisible="1" force_save="1"/>
                     <field name="stt" invisible="1"/>
@@ -903,7 +903,7 @@
                     <div class="ph-inet-section">
                         <div class="ph-inet-section-head">
                             <span class="ph-inet-num">1</span>
-                            MÁY CHỦ &amp; CLOUD
+                            MÁY CHỦ
                         </div>
                         <div class="ph-inet-grid-4">
                             <div class="ph-inet-field">

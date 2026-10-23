@@ -7,7 +7,7 @@ from odoo import api, fields, models
 
 class PhanHeItDashboard(models.AbstractModel):
     _name = "phan.he.it.dashboard"
-    _description = "Dashboard Máy chủ & Cloud"
+    _description = "Dashboard Máy chủ"
 
     @api.model
     def get_it_dashboard_data(self, filters=None):

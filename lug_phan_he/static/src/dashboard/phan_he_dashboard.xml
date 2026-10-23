@@ -57,7 +57,13 @@
                 <t t-if="state.contentMode === 'cost_estimate'">
                     <PhanHeCostEstimateBoard serviceTypeCode="serviceTypeCode"/>
                 </t>
-                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost' and state.contentMode !== 'cost_estimate'">
+                <t t-if="state.contentMode === 'it_cost_report'">
+                    <PhanHeItCostReport
+                            reportKey="state.itReportKey"
+                            reloadToken="state.itReportToken"
+                            onOpenCost.bind="openItReportCost"/>
+                </t>
+                <t t-if="state.contentMode !== 'owl_list' and state.contentMode !== 'payment_board' and state.contentMode !== 'month_cost' and state.contentMode !== 'quarter_cost' and state.contentMode !== 'cost_estimate' and state.contentMode !== 'it_cost_report'">
                     <t t-call="lug_phan_he.PhanHeDashboardInner"/>
                 </t>
             </PhanHeInternetShell>
@@ -214,16 +220,6 @@
                                         <t t-foreach="(it.filters and it.filters.types) or []" t-as="tp" t-key="tp.id">
                                             <option t-att-value="tp.id" t-esc="tp.name"/>
                                         </t>
-                                    </select>
-                                </label>
-                                <label class="lq-inet-pill">
-                                    <i class="fa fa-heartbeat"/>
-                                    <select t-att-value="state.itAssetState" t-on-change="onItAssetStateChange">
-                                        <option value="all">Tất cả trạng thái</option>
-                                        <option value="active">Đang sử dụng</option>
-                                        <option value="suspended">Ngừng tạm</option>
-                                        <option value="retired">Lưu trữ</option>
-                                        <option value="draft">Nháp</option>
                                     </select>
                                 </label>
                                 <label class="lq-inet-pill">

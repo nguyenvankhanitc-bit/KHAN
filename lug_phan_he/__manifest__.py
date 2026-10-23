@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.509.0",
+    "version": "19.0.2.518.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -136,6 +136,7 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.scss",
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.js",
             "lug_phan_he/static/src/internet_entry/phan_he_internet_entry_popup.xml",
+            "lug_phan_he/static/src/it_entry/phan_he_it_asset_form.scss",
             "lug_phan_he/static/src/it_entry/phan_he_it_asset_entry_popup.js",
             "lug_phan_he/static/src/it_entry/phan_he_it_asset_entry_popup.xml",
             "lug_phan_he/static/src/it_entry/phan_he_it_cost_entry_popup.js",
@@ -147,6 +148,10 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.xml",
             "lug_phan_he/static/src/access/internet_menu_nav.js",
             "lug_phan_he/static/src/access/phan_he_session_logout.js",
+            "lug_phan_he/static/src/it_report/phan_he_it_cost_report.scss",
+            "lug_phan_he/static/src/it_report/phan_he_it_cost_report_frame.scss",
+            "lug_phan_he/static/src/it_report/phan_he_it_cost_report.js",
+            "lug_phan_he/static/src/it_report/phan_he_it_cost_report.xml",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.js",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.xml",
             "lug_phan_he/static/src/dashboard/store_dashboard.scss",

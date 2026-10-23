@@ -9,7 +9,7 @@ SERVICE_MODULES = [
     ("internet", "Dịch vụ Internet", "/lug_phan_he/static/description/icon_hub_internet.png"),
     ("camera", "Dịch vụ Camera", "/lug_phan_he/static/description/icon_hub_camera.png"),
     ("attendance", "Máy chấm công", "/lug_phan_he/static/description/icon_hub_attendance.png"),
-    ("server", "Máy chủ & Cloud", "/lug_phan_he/static/description/icon_hub_server.png"),
+    ("server", "Máy chủ", "/lug_phan_he/static/description/icon_hub_server.png"),
     ("linkq_nb", "LinkQ ERP", "/lug_phan_he/static/description/icon_hub_erp.png"),
 ]
 

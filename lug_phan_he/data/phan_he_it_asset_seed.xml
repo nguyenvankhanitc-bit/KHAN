@@ -3,7 +3,7 @@
     <!-- Dữ liệu khởi tạo tham chiếu — không điền SN / IP / giá / hạn -->
     <record id="it_asset_srv_001" model="phan.he.it.asset">
         <field name="code">SRV-001</field>
-        <field name="name">Máy chủ vật lý 01</field>
+        <field name="name">Dell R530</field>
         <field name="asset_type_id" ref="it_asset_type_physical"/>
         <field name="manufacturer">Dell</field>
         <field name="model_name">PowerEdge R530</field>
@@ -11,7 +11,7 @@
     </record>
     <record id="it_asset_srv_002" model="phan.he.it.asset">
         <field name="code">SRV-002</field>
-        <field name="name">Máy chủ vật lý 02</field>
+        <field name="name">Dell R650</field>
         <field name="asset_type_id" ref="it_asset_type_physical"/>
         <field name="manufacturer">Dell</field>
         <field name="model_name">PowerEdge R650</field>

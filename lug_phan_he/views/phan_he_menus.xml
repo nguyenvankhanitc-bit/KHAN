@@ -407,7 +407,7 @@
 
     <!-- ========== MÁY CHỦ ========== -->
     <menuitem id="menu_phan_he_server_root"
-              name="Máy chủ &amp; Cloud"
+              name="Máy chủ"
               parent="menu_phan_he_root"
               sequence="60"
               groups="base.group_user"/>

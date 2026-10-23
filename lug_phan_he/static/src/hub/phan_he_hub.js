@@ -29,7 +29,7 @@ const SERVICE_APPS = [
     },
     {
         code: "server",
-        name: "Máy chủ & Cloud",
+        name: "Máy chủ",
         icon: "/lug_phan_he/static/description/icon_hub_server.png",
         action: "lug_phan_he.action_phan_he_dashboard_server",
         enabled: true,

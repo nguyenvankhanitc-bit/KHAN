@@ -75,13 +75,22 @@ export class PhanHeInternetShell extends Component {
     get contentClass() {
         const parts = ["o_internet_content", "o_phan_he_dashboard"];
         const emb = this.props.embeddedViewProps;
+        const itListModels = new Set([
+            "phan.he.it.cost",
+            "phan.he.it.asset",
+            "phan.he.it.ticket",
+        ]);
         if (
             this.props.contentMode === "view"
             && emb
-            && emb.resModel === "phan.he.it.cost"
+            && itListModels.has(emb.resModel)
             && (emb.type || "list") === "list"
         ) {
-            parts.push("o_it_cost_embed");
+            // Đóng khung bảng (kẻ ô) — chi phí / tài sản / ticket bảo trì…
+            parts.push("o_it_list_embed");
+            if (emb.resModel === "phan.he.it.cost") {
+                parts.push("o_it_cost_embed");
+            }
         }
         return parts.join(" ");
     }
@@ -150,9 +159,8 @@ export class PhanHeInternetShell extends Component {
             parts.push("is-sidebar-collapsed");
         }
         parts.push(this.props.contentMode === "view" ? "is-detail" : "is-overview");
-        if (this.props.moduleCode === "internet") {
-            parts.push("is-internet-nav");
-        }
+        // Màu icon sidebar dùng chung Internet / Máy chủ / Camera / …
+        parts.push("is-internet-nav");
         if (this.state.isMobile) {
             parts.push("is-mobile-layout");
         }

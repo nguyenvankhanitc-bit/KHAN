@@ -13,6 +13,21 @@ import { PhanHeCostEstimateBoard } from "../cost_estimate/phan_he_cost_estimate"
 import { PhanHeInternetEntryPopup } from "../internet_entry/phan_he_internet_entry_popup";
 import { PhanHeItAssetEntryPopup } from "../it_entry/phan_he_it_asset_entry_popup";
 import { PhanHeItCostEntryPopup } from "../it_entry/phan_he_it_cost_entry_popup";
+import { PhanHeItCostReport } from "../it_report/phan_he_it_cost_report";
+import {
+    INTERNET_NAV_TO_CODE,
+    filterInternetNavSections,
+    firstAllowedInternetNav,
+    internetNavCan,
+} from "../access/internet_menu_nav";
+
+const IT_COST_REPORTS = {
+    it_report_month: "month",
+    it_report_quarter: "quarter",
+    it_report_year: "year",
+    it_report_by_asset: "asset",
+    it_report_by_provider: "provider",
+};
 
 const IT_COST_POPUP_ACTIONS = new Set([
     "lug_phan_he.action_phan_he_it_cost",
@@ -26,12 +41,6 @@ const IT_COST_POPUP_ACTIONS = new Set([
     "lug_phan_he.action_phan_he_it_cost_report_quarter",
     "lug_phan_he.action_phan_he_it_cost_report_year",
 ]);
-import {
-    INTERNET_NAV_TO_CODE,
-    filterInternetNavSections,
-    firstAllowedInternetNav,
-    internetNavCan,
-} from "../access/internet_menu_nav";
 
 const OWL_LIST_NAV = {
     list_all: "all",
@@ -61,29 +70,29 @@ const SERVER_NAV_SECTIONS = [
             {
                 id: "it_asset_all",
                 label: "Danh sách máy chủ",
-                icon: "fa-list",
-                iconTone: "active",
+                icon: "fa-desktop",
+                iconTone: "list",
                 action: "lug_phan_he.action_phan_he_it_asset",
             },
             {
                 id: "it_asset_physical",
                 label: "Máy chủ vật lý",
                 icon: "fa-hdd-o",
-                iconTone: "active",
+                iconTone: "physical",
                 action: "lug_phan_he.action_phan_he_it_asset_physical",
             },
             {
                 id: "it_asset_virtual",
                 label: "Máy chủ ảo",
                 icon: "fa-cubes",
-                iconTone: "active",
+                iconTone: "virtual",
                 action: "lug_phan_he.action_phan_he_it_asset_virtual",
             },
             {
                 id: "it_asset_network",
                 label: "Thiết bị mạng & bảo mật",
                 icon: "fa-sitemap",
-                iconTone: "active",
+                iconTone: "network",
                 action: "lug_phan_he.action_phan_he_it_asset_network",
             },
             {
@@ -151,17 +160,20 @@ const SERVER_NAV_SECTIONS = [
         id: "support",
         label: "Bảo trì & hỗ trợ",
         icon: "fa-wrench",
+        iconTone: "alert",
         children: [
             {
                 id: "it_ticket_maint",
                 label: "Lịch sử bảo trì",
                 icon: "fa-wrench",
+                iconTone: "alert",
                 action: "lug_phan_he.action_phan_he_it_ticket_maintenance",
             },
             {
                 id: "it_ticket_support",
                 label: "Yêu cầu hỗ trợ",
                 icon: "fa-life-ring",
+                iconTone: "active",
                 action: "lug_phan_he.action_phan_he_it_ticket_support",
             },
             {
@@ -169,6 +181,7 @@ const SERVER_NAV_SECTIONS = [
                 label: "Nhật ký sự cố",
                 icon: "fa-exclamation-triangle",
                 tone: "danger",
+                iconTone: "overdue",
                 action: "lug_phan_he.action_phan_he_it_ticket_incident",
             },
         ],
@@ -220,35 +233,41 @@ const SERVER_NAV_SECTIONS = [
         id: "settings",
         label: "Cài đặt",
         icon: "fa-cog",
+        iconTone: "list",
         children: [
             {
                 id: "it_settings_type",
                 label: "Danh mục loại tài sản",
                 icon: "fa-tags",
+                iconTone: "list",
                 action: "lug_phan_he.action_phan_he_it_asset_type",
             },
             {
                 id: "it_settings_category",
                 label: "Danh mục hạng mục chi phí",
                 icon: "fa-list",
+                iconTone: "list",
                 action: "lug_phan_he.action_phan_he_it_cost_category",
             },
             {
                 id: "settings_provider",
                 label: "Nhà cung cấp",
                 icon: "fa-building",
+                iconTone: "list",
                 action: "lug_phan_he.action_phan_he_provider",
             },
             {
                 id: "it_settings_cycle",
                 label: "Chu kỳ gia hạn",
                 icon: "fa-refresh",
+                iconTone: "payment",
                 action: "lug_phan_he.action_phan_he_it_renewal_cycle",
             },
             {
                 id: "it_settings_remind",
                 label: "Cấu hình nhắc hạn",
                 icon: "fa-bell",
+                iconTone: "alert",
                 action: "lug_phan_he.action_phan_he_it_reminder_config",
             },
         ],
@@ -421,6 +440,7 @@ export class PhanHeDashboard extends Component {
         PhanHeInternetEntryPopup,
         PhanHeItAssetEntryPopup,
         PhanHeItCostEntryPopup,
+        PhanHeItCostReport,
     };
 
     setup() {
@@ -452,6 +472,8 @@ export class PhanHeDashboard extends Component {
             paymentBoardMode: "confirm",
             paymentBoardToken: 0,
             contentMode: "dashboard",
+            itReportKey: "month",
+            itReportToken: 0,
             embeddedViewProps: null,
             viewKey: 0,
             listActionXml: null,
@@ -684,7 +706,7 @@ export class PhanHeDashboard extends Component {
 
     get overviewTitle() {
         if (this.isServerDash) {
-            return "Tổng quan máy chủ & Cloud";
+            return "Tổng quan máy chủ";
         }
         return "Tổng quan chi phí & sử dụng Internet";
     }
@@ -697,7 +719,7 @@ export class PhanHeDashboard extends Component {
     }
 
     get overviewUsageTitle() {
-        return this.isServerDash ? "Tình hình máy chủ & cloud" : "Tình hình sử dụng dịch vụ";
+        return this.isServerDash ? "Tình hình máy chủ" : "Tình hình sử dụng dịch vụ";
     }
 
     get detailColStore() {
@@ -931,7 +953,7 @@ export class PhanHeDashboard extends Component {
             attendance: "MÁY CHẤM CÔNG",
             linkq_hrm: "LINKQ HRM",
             linkq_nb: "LINKQ ERP",
-            server: "MÁY CHỦ & CLOUD",
+            server: "MÁY CHỦ",
         };
         return brands[this.serviceTypeCode] || String(this.appTitle || "").toUpperCase();
     }
@@ -1174,6 +1196,16 @@ export class PhanHeDashboard extends Component {
             this.openItCostPopup(false);
             return;
         }
+        if (this.serviceTypeCode === "server" && IT_COST_REPORTS[child.id]) {
+            this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
+            this.state.contentMode = "it_cost_report";
+            this.state.itReportKey = IT_COST_REPORTS[child.id];
+            this.state.itReportToken = (this.state.itReportToken || 0) + 1;
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            return;
+        }
         if (child.reportPeriod) {
             this.openReportPeriod(child.reportPeriod);
             return;
@@ -1254,7 +1286,34 @@ export class PhanHeDashboard extends Component {
             this.state.activeNav = "cost_estimate";
             return;
         }
+        if (ret.contentMode === "it_cost_report") {
+            this.state.contentMode = "it_cost_report";
+            this.state.activeNav = ret.activeNav || this.state.activeNav;
+            this.state.itReportKey = ret.itReportKey || this.state.itReportKey;
+            this.state.itReportToken = (this.state.itReportToken || 0) + 1;
+            return;
+        }
         this.onOverview();
+    }
+
+    openItReportCost(resId) {
+        if (!resId) {
+            return;
+        }
+        this.state.formReturn = {
+            contentMode: "it_cost_report",
+            activeNav: this.state.activeNav,
+            itReportKey: this.state.itReportKey,
+        };
+        this.openEmbedded(
+            { id: this.state.activeNav, action: "lug_phan_he.action_phan_he_it_cost" },
+            {
+                type: "form",
+                resId,
+                action: "lug_phan_he.action_phan_he_it_cost",
+                activeNav: this.state.activeNav,
+            }
+        );
     }
 
     async openEntryForm(resId = false) {
@@ -1492,9 +1551,22 @@ export class PhanHeDashboard extends Component {
                     });
                 },
             };
-            // Ép class khung bảng chi phí IT (CSS o_it_cost_list) — không phụ thuộc arch cache.
-            if (act.res_model === "phan.he.it.cost" && defaultType === "list") {
-                viewProps.className = "o_it_cost_list";
+            // Ép class đóng khung bảng IT — không phụ thuộc arch cache.
+            if (
+                defaultType === "list"
+                && ["phan.he.it.cost", "phan.he.it.asset", "phan.he.it.ticket"].includes(act.res_model)
+            ) {
+                const classes = ["o_it_framed_list"];
+                if (act.res_model === "phan.he.it.cost") {
+                    classes.push("o_it_cost_list");
+                }
+                if (
+                    act.res_model === "phan.he.it.asset"
+                    && String(xmlid || "").includes("virtual")
+                ) {
+                    classes.push("o_it_virtual_list");
+                }
+                viewProps.className = classes.join(" ");
             }
             if (defaultType === "form") {
                 // onDiscard chỉ hợp lệ với FormController — list (Lịch thanh toán…) sẽ lỗi nếu truyền.
@@ -1506,7 +1578,7 @@ export class PhanHeDashboard extends Component {
             if (defaultType === "form") {
                 viewProps.resId = extra.resId === undefined ? false : extra.resId;
                 const openingNew = !viewProps.resId;
-                // Máy chủ & Cloud: form tạo mới chi phí → popup đóng khung.
+                // Máy chủ: form tạo mới chi phí → popup đóng khung.
                 if (
                     this.serviceTypeCode === "server"
                     && openingNew
@@ -1750,7 +1822,7 @@ export class PhanHeDashboard extends Component {
             this.state.data = {
                 ...(this.state.data || {}),
                 updated_at: data?.updated_at,
-                app_title: "Máy chủ & Cloud",
+                app_title: "Máy chủ",
             };
         } catch (error) {
             console.error(error);
@@ -1842,10 +1914,10 @@ export class PhanHeDashboard extends Component {
                     datasets: [{
                         label: "Chi phí",
                         data: series.map((p) => Number(p.amount || 0)),
-                        borderColor: "#6b21a8",
+                        borderColor: "#16a34a",
                         backgroundColor: mode === "bar"
-                            ? "rgba(107, 33, 168, 0.55)"
-                            : "rgba(107, 33, 168, 0.16)",
+                            ? "rgba(22, 163, 74, 0.75)"
+                            : "rgba(22, 163, 74, 0.16)",
                         fill: mode === "line",
                         tension: 0.35,
                         borderRadius: 6,

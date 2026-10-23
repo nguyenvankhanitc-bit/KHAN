@@ -1,0 +1,225 @@
+.o_it_pie_report {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    height: 100%;
+    min-height: 0;
+    padding: 16px 18px 24px;
+    overflow: auto;
+    background: #f8fafc;
+    box-sizing: border-box;
+
+    .o_it_pie_head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+
+        h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            color: #1e1b4b;
+        }
+
+        p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+    }
+
+    .o_it_pie_export {
+        border: 0;
+        border-radius: 10px;
+        background: #4c1d95;
+        color: #fff;
+        font-weight: 700;
+        padding: 8px 14px;
+        white-space: nowrap;
+
+        &:disabled {
+            opacity: 0.6;
+        }
+
+        .fa {
+            margin-right: 6px;
+        }
+    }
+
+    .o_it_pie_loading,
+    .o_it_pie_empty {
+        color: #64748b;
+        padding: 24px 8px;
+        text-align: center;
+    }
+
+    .o_it_pie_card,
+    .o_it_pie_list {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+    }
+
+    .o_it_pie_card {
+        display: grid;
+        grid-template-columns: 260px minmax(260px, 1fr);
+        gap: 28px;
+        align-items: center;
+        padding: 20px 24px;
+    }
+
+    .o_it_pie_chart_wrap {
+        height: 250px;
+        position: relative;
+    }
+
+    .o_it_pie_legend {
+        list-style: none;
+        margin: 0;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        min-width: 0;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        background: #fff;
+        box-sizing: border-box;
+
+        li {
+            display: grid;
+            grid-template-columns: 14px minmax(0, 1fr) auto;
+            gap: 12px;
+            align-items: center;
+            min-width: 0;
+        }
+
+        i {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex: 0 0 auto;
+        }
+
+        .o_it_pie_legend_label {
+            color: #64748b;
+            font-size: 14px;
+            line-height: 1.35;
+            min-width: 0;
+
+            em {
+                font-style: normal;
+            }
+        }
+
+        .o_it_pie_legend_value {
+            text-align: right;
+            white-space: nowrap;
+
+            strong {
+                color: #1e293b;
+                font-size: 15px;
+                font-weight: 800;
+            }
+
+            small {
+                margin-left: 4px;
+                color: #94a3b8;
+                font-size: 13px;
+                font-weight: 500;
+            }
+        }
+    }
+
+    .o_it_pie_list_head {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        padding: 14px 16px 0;
+
+        h2 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 800;
+            color: #1e1b4b;
+        }
+
+        span {
+            color: #64748b;
+            font-size: 13px;
+        }
+    }
+
+    .o_it_pie_table_wrap {
+        overflow: auto;
+        padding: 12px 16px 16px;
+    }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+
+        th,
+        td {
+            border: 1px solid #cbd5e1;
+            padding: 8px 10px;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #e2e8f0;
+            color: #0f172a;
+            font-weight: 800;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        td.num,
+        th.num {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        tbody tr {
+            cursor: pointer;
+        }
+
+        tbody tr:hover td {
+            background: #f5f3ff;
+        }
+    }
+
+    .o_it_pie_badge {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 12px;
+        font-weight: 700;
+        background: #ecfdf5;
+        color: #047857;
+
+        &.is-expiring,
+        &.is-quote,
+        &.is-approval,
+        &.is-processing {
+            background: #fffbeb;
+            color: #b45309;
+        }
+
+        &.is-overdue,
+        &.is-cancel {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+    }
+}
+
+@media (max-width: 900px) {
+    .o_it_pie_report .o_it_pie_card {
+        grid-template-columns: 1fr;
+    }
+}

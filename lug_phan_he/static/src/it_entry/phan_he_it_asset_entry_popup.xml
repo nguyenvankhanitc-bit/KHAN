@@ -6,7 +6,7 @@
                 <header class="lq-entry-head">
                     <div class="lq-entry-head-text">
                         <h2 t-esc="title"/>
-                        <p>Nhập thông tin tài sản Máy chủ &amp; Cloud — bố cục dạng bảng (desktop)</p>
+                        <p>Nhập thông tin tài sản Máy chủ — bố cục dạng bảng (desktop)</p>
                     </div>
                     <button type="button" class="lq-entry-close" title="Đóng"
                             t-att-disabled="state.saving"
@@ -41,10 +41,24 @@
                                            title="Mã tự sinh theo loại tài sản (SRV-0001, NET-0001…)"/>
                                 </div>
                                 <div class="lq-entry-field">
-                                    <label>Tên tài sản <span class="lq-req">*</span></label>
-                                    <input type="text" placeholder="VD: Máy chủ vật lý 03"
+                                    <label>
+                                        <t t-if="isVirtual">Tên VM <span class="lq-req">*</span></t>
+                                        <t t-else="">Tên tài sản <span class="lq-req">*</span></t>
+                                    </label>
+                                    <input type="text"
+                                           t-att-placeholder="isVirtual ? 'VD: VM-ERP-01' : 'VD: Máy chủ vật lý 03'"
                                            t-att-value="state.form.name"
                                            t-on-input="(ev) => this.onField('name', ev)"/>
+                                </div>
+                                <div t-if="isVirtual" class="lq-entry-field">
+                                    <label>Tên máy chủ <span class="lq-req">*</span></label>
+                                    <select t-att-value="state.form.host_asset_id"
+                                            t-on-change="onHostChange">
+                                        <option value="">— Chọn Dell R530 / Dell R650 —</option>
+                                        <t t-foreach="state.hosts" t-as="h" t-key="h.id">
+                                            <option t-att-value="h.id" t-esc="hostOptionLabel(h)"/>
+                                        </t>
+                                    </select>
                                 </div>
 
                                 <div class="lq-entry-field">
@@ -192,7 +206,7 @@
                             </div>
                             <div t-if="isVirtual" class="lq-entry-grid">
                                 <div class="lq-entry-field">
-                                    <label>Tên VM</label>
+                                    <label>Tên VM (chi tiết)</label>
                                     <input type="text" t-att-value="state.form.vm_name"
                                            t-on-input="(ev) => this.onField('vm_name', ev)"/>
                                 </div>
@@ -200,17 +214,6 @@
                                     <label>Hypervisor / nền tảng</label>
                                     <input type="text" t-att-value="state.form.hypervisor"
                                            t-on-input="(ev) => this.onField('hypervisor', ev)"/>
-                                </div>
-                                <div class="lq-entry-field">
-                                    <label>Máy chủ / Cluster chủ</label>
-                                    <select t-att-value="state.form.host_asset_id"
-                                            t-on-change="(ev) => this.onField('host_asset_id', ev)">
-                                        <option value="">— Chọn —</option>
-                                        <t t-foreach="state.hosts" t-as="h" t-key="h.id">
-                                            <option t-att-value="h.id"
-                                                    t-esc="(h.code ? h.code + ' — ' : '') + h.name"/>
-                                        </t>
-                                    </select>
                                 </div>
                                 <div class="lq-entry-field">
                                     <label>CPU</label>
@@ -231,6 +234,12 @@
                                     <label>Địa chỉ IP</label>
                                     <input type="text" t-att-value="state.form.ip_address"
                                            t-on-input="(ev) => this.onField('ip_address', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>IP WAN</label>
+                                    <input type="text" placeholder="Để trống nếu chưa có"
+                                           t-att-value="state.form.ip_wan"
+                                           t-on-input="(ev) => this.onField('ip_wan', ev)"/>
                                 </div>
                             </div>
                             <div t-if="isCloud" class="lq-entry-grid">

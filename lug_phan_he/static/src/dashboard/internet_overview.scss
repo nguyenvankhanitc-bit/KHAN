@@ -524,14 +524,16 @@
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
     min-width: 0;
+    width: 100%;
 
     > li {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         gap: 10px;
         margin: 0;
+        width: 100%;
         &.is-clickable {
             cursor: pointer;
             border-radius: 6px;
@@ -545,37 +547,45 @@
     height: 10px;
     border-radius: 50%;
     flex-shrink: 0;
-    margin-top: 5px;
     display: inline-block;
 }
 
 .o_donut_sample_text {
+    flex: 1 1 auto;
     min-width: 0;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
 }
 
 .o_donut_sample_label {
     color: #0f172a;
     font-size: 0.92rem;
     font-weight: 500;
-    line-height: 1.25;
+    line-height: 1.35;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .o_donut_sample_meta {
-    display: flex;
+    display: inline-flex;
     align-items: baseline;
-    gap: 6px;
-    flex-wrap: wrap;
+    gap: 4px;
+    flex-shrink: 0;
+    margin-left: auto;
+    white-space: nowrap;
     b {
         color: #0f172a;
-        font-size: 0.95rem;
+        font-size: 0.92rem;
         font-weight: 800;
         font-variant-numeric: tabular-nums;
     }
     span {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.88rem;
         font-weight: 500;
     }
@@ -676,22 +686,34 @@
     justify-content: center;
     pointer-events: none;
     text-align: center;
-    padding: 0 12px;
+    padding: 0 14px;
     b {
-        font-size: 1.7rem;
+        font-size: 1.15rem;
         font-weight: 800;
         color: #0f172a;
-        line-height: 1.1;
+        line-height: 1.15;
         word-break: break-word;
+        max-width: 100%;
     }
     span {
         margin-top: 2px;
-        font-size: 0.82rem;
+        font-size: 0.78rem;
         font-weight: 500;
         letter-spacing: 0;
         color: #94a3b8;
         text-transform: none;
     }
+}
+
+/* Tổng quan: số tài sản ngắn — giữ chữ lớn hơn một chút */
+.o_it_overview_grid > .o_it_kpi_donut_panel:not(.o_it_by_type_donut) .o_it_kpi_donut_center b {
+    font-size: 1.55rem;
+}
+
+/* Nhóm tài sản: số tiền dài — nhỏ gọn trong vòng tròn */
+.o_it_by_type_donut .o_it_kpi_donut_center b {
+    font-size: 0.95rem;
+    letter-spacing: -0.02em;
 }
 
 .o_it_kpi_donut_legend {

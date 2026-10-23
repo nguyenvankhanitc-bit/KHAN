@@ -587,32 +587,80 @@ class ProjectProject(models.Model):
         return super()._create_analytic_account()
 
     @api.model
-    def _lug_generate_code(self, project_date=None, excluded_codes=None):
-        """Generate code: DA2026-23082026-01 (year-date-daily sequence)."""
+    def _lug_generate_code(self, type_id=None, project_date=None, excluded_codes=None):
+        """Generate code: [Type]-[dd/mm/yyyy]-[STT in month] (e.g. NB-23/10/2026-01)."""
         self.env["project.project"].flush_model(["lug_code"])
         today = project_date or fields.Date.context_today(self)
+        if isinstance(today, str):
+            try:
+                today = fields.Date.to_date(today)
+            except Exception:
+                today = fields.Date.context_today(self)
         if hasattr(today, "date"):
             today = today.date()
-        year = today.year
-        date_token = today.strftime("%d%m%Y")
-        prefix = "DA%s-%s-" % (year, date_token)
-        lock_key = abs(hash(prefix)) % (2**31)
-        self.env.cr.execute("SELECT pg_advisory_xact_lock(%s)", (lock_key,))
-        self.env.cr.execute(
-            """
-            SELECT COALESCE(MAX(
-                NULLIF(substring(lug_code from %s), '')::INTEGER
-            ), 0)
-              FROM project_project
-             WHERE lug_code LIKE %s
-            """,
-            (len(prefix) + 1, prefix + "%"),
-        )
-        next_seq = (self.env.cr.fetchone()[0] or 0) + 1
+
+        type_code = "DA"
+        if type_id:
+            type_rec = False
+            if hasattr(type_id, "code"):
+                type_rec = type_id
+            elif isinstance(type_id, (int, str)) and str(type_id).isdigit():
+                type_rec = self.env["lug.project.type"].browse(int(type_id))
+            if type_rec and hasattr(type_rec, "exists") and type_rec.exists():
+                code_raw = (type_rec.code or "").strip().upper()
+                if not code_raw and type_rec.name:
+                    code_raw = (type_rec.name or "").strip().upper()[:4]
+                if code_raw:
+                    type_code = code_raw
+            elif type_rec and getattr(type_rec, "code", False):
+                type_code = str(type_rec.code).strip().upper()
+
+        date_str = today.strftime("%d/%m/%Y")
+        prefix = "%s-%s-" % (type_code, date_str)
+
+        # STT counts all projects created in this month
+        month_token = today.strftime("/%m/%Y-")
+        month_pattern = "%" + month_token + "%"
+
+        lock_str = "project_code_%s_%s" % (today.year, today.month)
+        lock_key = abs(hash(lock_str)) % (2**31)
+        if hasattr(self.env, "cr") and hasattr(self.env.cr, "execute"):
+            try:
+                self.env.cr.execute("SELECT pg_advisory_xact_lock(%s)", (lock_key,))
+            except Exception:
+                pass
+
+        max_db_seq = 0
+        if hasattr(self.env, "cr") and hasattr(self.env.cr, "execute"):
+            try:
+                self.env.cr.execute(
+                    """
+                    SELECT COALESCE(MAX(
+                        NULLIF(substring(lug_code from '-([0-9]+)$'), '')::INTEGER
+                    ), 0)
+                      FROM project_project
+                     WHERE lug_code LIKE %s
+                    """,
+                    (month_pattern,),
+                )
+                row = self.env.cr.fetchone()
+                max_db_seq = (row[0] if row else 0) or 0
+            except Exception:
+                pass
+
+        max_batch_seq = 0
+        if excluded_codes:
+            for c in excluded_codes:
+                if c and month_token in c:
+                    parts = c.rsplit("-", 1)
+                    if len(parts) == 2 and parts[1].isdigit():
+                        max_batch_seq = max(max_batch_seq, int(parts[1]))
+
+        next_seq = max(max_db_seq, max_batch_seq) + 1
         code = "%s%02d" % (prefix, next_seq)
 
         excluded = set(excluded_codes or ())
-        while code in excluded or self.sudo().search_count([("lug_code", "=", code)]):
+        while code in excluded or (hasattr(self, "search_count") and self.sudo().search_count([("lug_code", "=", code)])):
             next_seq += 1
             code = "%s%02d" % (prefix, next_seq)
 
@@ -828,7 +876,10 @@ class ProjectProject(models.Model):
         used_codes = set()
         for vals in vals_list:
             if not vals.get("lug_code"):
-                code = self._lug_generate_code(excluded_codes=used_codes) or False
+                code = self._lug_generate_code(
+                    type_id=vals.get("lug_type_id"),
+                    excluded_codes=used_codes,
+                ) or False
                 vals["lug_code"] = code
                 if code:
                     used_codes.add(code)

@@ -8,7 +8,11 @@ def post_init_hook(env):
     Project = env["project.project"].with_context(active_test=False)
     used_codes = set()
     for project in Project.search([("lug_code", "in", [False, ""])]):
-        code = Project._lug_generate_code(excluded_codes=used_codes) or False
+        code = Project._lug_generate_code(
+            type_id=project.lug_type_id.id if project.lug_type_id else False,
+            project_date=project.create_date or fields.Date.context_today(Project),
+            excluded_codes=used_codes,
+        ) or False
         if code:
             used_codes.add(code)
             project.lug_code = code

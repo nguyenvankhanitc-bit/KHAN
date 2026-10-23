@@ -141,7 +141,7 @@
                             <h3>THÔNG TIN CHUNG</h3>
                             <div class="o_lug_kv">
                                 <span class="o_lug_k">Mã dự án</span>
-                                <field name="lug_code" readonly="1" nolabel="1" placeholder="DA2026-23082026-01"/>
+                                <field name="lug_code" readonly="1" nolabel="1" placeholder="NB-23/10/2026-01"/>
                             </div>
                             <div class="o_lug_kv">
                                 <span class="o_lug_k">Tên dự án</span>

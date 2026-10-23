@@ -1383,6 +1383,11 @@
     background: #f8fafc;
     color: #94a3b8;
 
+    &.is-todo {
+        background: #f8fafc;
+        color: #94a3b8;
+        border-color: #e2e8f0;
+    }
     &.is-done {
         background: #dcfce7;
         color: #15803d;

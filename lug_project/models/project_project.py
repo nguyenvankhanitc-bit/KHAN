@@ -309,6 +309,10 @@ class ProjectProject(models.Model):
             phase = rec._lug_phase_from_name(rec.stage_id.name)
             lines = rec.stage_line_ids.sorted(lambda line: (line.sequence or 0, line.id or 0))[:4]
             if lines:
+                has_any_task = any(line.task_ids for line in lines)
+                if not has_any_task:
+                    rec.phase_num = 0
+                    continue
                 current = 1
                 for index, line in enumerate(lines, 1):
                     named = rec._lug_phase_from_name(line.name)
@@ -322,7 +326,7 @@ class ProjectProject(models.Model):
                         current = named
                 rec.phase_num = max(1, min(4, current))
                 continue
-            rec.phase_num = phase or 1
+            rec.phase_num = phase or 0
 
     @api.depends(
         "task_ids.stage_id",

@@ -1217,44 +1217,37 @@ class ProjectProjectDashboard(models.Model):
     def _lug_phase_tracker(self, project):
         lines = project.stage_line_ids.sorted(lambda rec: (rec.sequence or 0, rec.id or 0))[:4]
         steps = []
-        states = []
         for index in range(4):
             line = lines[index] if index < len(lines) else False
             name = ((line.name or "").strip() if line else "") or ("Giai đoạn %s" % (index + 1))
             tasks = line.task_ids if line else self.env["project.stage.task"]
-            if tasks and all(task.state == "done" for task in tasks):
-                raw = "done"
-            elif tasks and any(task.state in ("in_progress", "done") for task in tasks):
-                raw = "active"
+            if not tasks:
+                state = "todo"
+            elif all(task.state == "done" for task in tasks):
+                state = "done"
             else:
-                raw = "todo"
-            states.append(raw)
-            steps.append({"index": index + 1, "name": name, "state": raw})
+                state = "active"
+            steps.append({"index": index + 1, "name": name, "state": state})
+
         current = 0
-        for index, raw in enumerate(states):
-            if raw != "done":
+        for index, step in enumerate(steps):
+            if step["state"] == "active":
                 current = index
                 break
         else:
-            current = 3
-        painted = []
-        all_done = all(raw == "done" for raw in states)
-        for index, step in enumerate(steps):
-            if all_done:
-                state = "done"
-            elif index < current:
-                state = "done"
-            elif index == current:
-                state = "active" if states[current] != "done" else "done"
+            for index, step in enumerate(steps):
+                if step["state"] == "todo":
+                    current = index
+                    break
             else:
-                state = "todo"
-            painted.append({**step, "state": state})
-        active = painted[current]
+                current = 3
+
+        active = steps[current]
         short = (active.get("name") or "").split("&")[0].strip()
         if len(short) > 22:
             short = short[:20] + "…"
         return {
-            "steps": painted,
+            "steps": steps,
             "current": current + 1,
             "label": "GĐ %s/4: %s" % (current + 1, short or ("Giai đoạn %s" % (current + 1))),
         }

@@ -79,7 +79,7 @@ if "odoo.exceptions" in sys.modules and hasattr(sys.modules["odoo.exceptions"], 
 else:
     class ValidationError(Exception):
         pass
-    mock_exceptions.ValidationError = ValidationError
+mock_exceptions.ValidationError = ValidationError
 mock_exceptions.UserError = Exception
 
 mock_tools = MagicMock()

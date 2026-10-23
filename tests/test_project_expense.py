@@ -74,14 +74,14 @@ if "odoo.exceptions" in sys.modules and hasattr(sys.modules["odoo.exceptions"], 
 else:
     class ValidationError(Exception):
         pass
-    mock_exceptions.ValidationError = ValidationError
+mock_exceptions.ValidationError = ValidationError
 
 if "odoo.exceptions" in sys.modules and hasattr(sys.modules["odoo.exceptions"], "UserError"):
     UserError = sys.modules["odoo.exceptions"].UserError
 else:
     class UserError(Exception):
         pass
-    mock_exceptions.UserError = UserError
+mock_exceptions.UserError = UserError
 
 mock_tools = MagicMock()
 mock_tools.html2plaintext = lambda s: s

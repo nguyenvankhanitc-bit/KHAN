@@ -552,16 +552,23 @@
                                     </div>
                                     <div class="text-muted fw-bold mb-1" style="font-size: 10px;">4 GIAI ĐOẠN QUẢN TRỊ DỰ ÁN:</div>
                                     <div class="d-flex gap-1 flex-wrap">
-                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value &gt;= 1 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border'}" style="font-size: 10.5px;">
-                                            <t t-if="record.phase_num.raw_value &gt; 1">✓</t> GĐ 1: Chuẩn bị
+                                        <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 1 ? 'bg-warning-subtle text-warning-emphasis border border-warning' : (record.phase_num.raw_value &gt; 1 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border')}" style="font-size: 10.5px;">
+                                            <t t-if="record.phase_num.raw_value &gt; 1">✓</t>
+                                            <t t-elif="record.phase_num.raw_value == 1">▶</t>
+                                            GĐ 1: Chuẩn bị
                                         </span>
                                         <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 2 ? 'bg-warning-subtle text-warning-emphasis border border-warning' : (record.phase_num.raw_value &gt; 2 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border')}" style="font-size: 10.5px;">
-                                            <t t-if="record.phase_num.raw_value == 2">▶</t> GĐ 2: Thực hiện
+                                            <t t-if="record.phase_num.raw_value == 2">▶</t>
+                                            <t t-elif="record.phase_num.raw_value &gt; 2">✓</t>
+                                            GĐ 2: Thực hiện
                                         </span>
                                         <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 3 ? 'bg-warning-subtle text-warning-emphasis border border-warning' : (record.phase_num.raw_value &gt; 3 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border')}" style="font-size: 10.5px;">
-                                            <t t-if="record.phase_num.raw_value == 3">▶</t> GĐ 3: Nghiệm thu
+                                            <t t-if="record.phase_num.raw_value == 3">▶</t>
+                                            <t t-elif="record.phase_num.raw_value &gt; 3">✓</t>
+                                            GĐ 3: Nghiệm thu
                                         </span>
                                         <span t-attf-class="badge px-2 py-1 #{record.phase_num.raw_value == 4 ? 'bg-success-subtle text-success border border-success' : 'bg-light text-muted border'}" style="font-size: 10.5px;">
+                                            <t t-if="record.phase_num.raw_value == 4">✓</t>
                                             GĐ 4: Đóng DA
                                         </span>
                                     </div>

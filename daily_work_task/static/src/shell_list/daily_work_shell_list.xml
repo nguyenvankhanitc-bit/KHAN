@@ -10,4 +10,15 @@
             </DailyWorkAppShell>
         </div>
     </t>
+
+    <t t-name="daily_work_task.ShellKanbanView">
+        <t t-if="env.inDialog">
+            <t t-call="web.KanbanView"/>
+        </t>
+        <div t-else="" class="o_daily_work_dashboard o_dwt_shell_list o_action">
+            <DailyWorkAppShell t-props="{ activeNav: shellNav }">
+                <t t-call="web.KanbanView"/>
+            </DailyWorkAppShell>
+        </div>
+    </t>
 </templates>

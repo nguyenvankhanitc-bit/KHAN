@@ -237,6 +237,8 @@ class DailyTask(models.Model):
                 "default_group_by": "lug_project_id",
                 "search_default_group_by_project": 1,
                 "search_default_filter_open": 1,
+                "shell_nav": "projects",
+                "active_nav": "projects",
             },
             "search_view_id": [search_view.id, "search"] if search_view else False,
             "target": "current",

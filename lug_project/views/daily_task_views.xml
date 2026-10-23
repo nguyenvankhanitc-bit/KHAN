@@ -31,7 +31,7 @@
         <field name="name">daily.task.project.tree</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <list string="Công việc theo dự án" default_group_by="lug_project_id"
+            <list js_class="daily_work_shell_list" string="Công việc theo dự án" default_group_by="lug_project_id"
                   decoration-success="state == 'done'"
                   decoration-info="state == 'in_progress'"
                   decoration-muted="state == 'not_started'"
@@ -61,7 +61,7 @@
         <field name="name">daily.task.project.kanban</field>
         <field name="model">daily.task</field>
         <field name="arch" type="xml">
-            <kanban default_group_by="state" class="o_kanban_small_column" records_draggable="1">
+            <kanban js_class="daily_work_shell_kanban" default_group_by="state" class="o_kanban_small_column" records_draggable="1">
                 <field name="name"/>
                 <field name="state"/>
                 <field name="priority"/>

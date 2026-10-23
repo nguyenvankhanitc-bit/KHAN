@@ -112,18 +112,18 @@ const SERVER_NAV_SECTIONS = [
         iconTone: "payment",
         children: [
             {
-                id: "it_cost_list",
-                label: "Danh sách chi phí",
-                icon: "fa-list-alt",
-                iconTone: "payment",
-                action: "lug_phan_he.action_phan_he_it_cost",
-            },
-            {
                 id: "it_cost_new",
                 label: "Thêm mới",
                 icon: "fa-plus-circle",
                 iconTone: "store",
                 popup: "it_cost",
+            },
+            {
+                id: "it_cost_list",
+                label: "Danh sách chi phí",
+                icon: "fa-list-alt",
+                iconTone: "payment",
+                action: "lug_phan_he.action_phan_he_it_cost",
             },
             {
                 id: "it_cost_confirm",
@@ -512,7 +512,8 @@ export class PhanHeDashboard extends Component {
         this.inetYearRef = useRef("inetYear");
         this.inetMonthTrendRef = useRef("inetMonthTrend");
         this.itMonthRef = useRef("itMonthChart");
-        this.itDonutRef = useRef("itDonutChart");
+        this.itKpiDonutRef = useRef("itKpiDonutChart");
+        this.itByTypeDonutRef = useRef("itByTypeDonutChart");
         this.inetCharts = {};
         this.itCharts = {};
         onWillStart(async () => {
@@ -819,8 +820,92 @@ export class PhanHeDashboard extends Component {
         return opts;
     }
 
-    get itMienLegend() {
-        return (this.it.by_mien || []).filter((m) => Number(m.amount || 0) > 0);
+    /** 3 lát donut KPI — màu mẫu xanh / vàng / đỏ */
+    get itKpiDonutSlices() {
+        const k = this.itKpi;
+        const renew = Number(k.overdue || 0) + Number(k.confirm || 0) + Number(k.expiring || 0);
+        const rows = [
+            {
+                id: "month",
+                label: "Chi phí tháng",
+                color: "#22c55e",
+                weight: Math.max(Number(k.month_cost || 0), 0),
+                display: this.formatMoney(k.month_cost),
+                action: "month",
+            },
+            {
+                id: "year",
+                label: "Chi phí năm",
+                color: "#eab308",
+                weight: Math.max(Number(k.year_cost || 0), 0),
+                display: this.formatMoney(k.year_cost),
+                action: "year",
+            },
+            {
+                id: "renew",
+                label: "Tình hình gia hạn",
+                color: "#ef4444",
+                weight: Math.max(renew, 0),
+                display: String(renew),
+                action: "expiring",
+            },
+        ];
+        const sum = rows.reduce((a, r) => a + r.weight, 0);
+        return rows.map((r) => ({
+            ...r,
+            pct: sum > 0 ? Math.round((r.weight / sum) * 1000) / 10 : 0,
+        }));
+    }
+
+    onItKpiDonutClick(sl) {
+        if (!sl?.action) {
+            return;
+        }
+        if (sl.action === "expiring") {
+            this.openItKpi("expiring");
+            return;
+        }
+        if (sl.action === "month") {
+            this.openReportPeriod("month");
+            return;
+        }
+        if (sl.action === "year") {
+            this.openReportPeriod("year");
+        }
+    }
+
+    get itByTypeDonutSlices() {
+        const palette = ["#22c55e", "#eab308", "#ef4444", "#3b82f6", "#a855f7", "#f97316"];
+        const rows = (this.it.by_type || []).map((tp, i) => {
+            const amount = Math.max(Number(tp.amount || 0), 0);
+            const count = Number(tp.count || 0);
+            return {
+                id: tp.id || `type-${i}`,
+                label: tp.name || "—",
+                color: tp.color || palette[i % palette.length],
+                amount,
+                count,
+                weight: amount > 0 ? amount : count,
+                display: this.formatMoney(amount),
+                pct: Number(tp.pct || 0),
+            };
+        });
+        const sumAmt = rows.reduce((a, r) => a + r.amount, 0);
+        if (sumAmt > 0) {
+            return rows.map((r) => ({
+                ...r,
+                pct: Math.round((r.amount / sumAmt) * 1000) / 10,
+            }));
+        }
+        const sumW = rows.reduce((a, r) => a + r.weight, 0);
+        return rows.map((r) => ({
+            ...r,
+            pct: sumW > 0 ? Math.round((r.weight / sumW) * 1000) / 10 : 0,
+        }));
+    }
+
+    get itByTypeDonutTotal() {
+        return (this.it.by_type || []).reduce((a, tp) => a + Number(tp.amount || 0), 0);
     }
 
     get inetUsage() {
@@ -1883,7 +1968,7 @@ export class PhanHeDashboard extends Component {
             }
         });
         this.itCharts = {};
-        [this.itMonthRef, this.itDonutRef].forEach((ref) => {
+        [this.itMonthRef, this.itKpiDonutRef, this.itByTypeDonutRef].forEach((ref) => {
             const el = ref && ref.el;
             if (!el || typeof Chart === "undefined" || !Chart.getChart) {
                 return;
@@ -1895,12 +1980,66 @@ export class PhanHeDashboard extends Component {
         });
     }
 
+    _renderItDonutChart(ref, chartKey, slices, tooltipFmt) {
+        const el = ref && ref.el;
+        if (!el || typeof Chart === "undefined") {
+            return;
+        }
+        const ctx = el.getContext("2d");
+        if (!ctx || !(slices || []).length) {
+            return;
+        }
+        const weights = slices.map((s) => Number(s.weight || 0));
+        const hasData = weights.some((w) => w > 0);
+        this.itCharts[chartKey] = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+                labels: slices.map((s) => s.label),
+                datasets: [{
+                    data: hasData ? weights : slices.map(() => 1),
+                    backgroundColor: slices.map((s) => s.color),
+                    borderWidth: 0,
+                    hoverOffset: 4,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "72%",
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (c) => {
+                                const sl = slices[c.dataIndex];
+                                if (!sl) {
+                                    return c.label;
+                                }
+                                if (tooltipFmt) {
+                                    return tooltipFmt(sl);
+                                }
+                                return `${sl.label}: ${sl.display} (${sl.pct}%)`;
+                            },
+                        },
+                    },
+                },
+            },
+        });
+    }
+
     renderItCharts() {
         if (typeof Chart === "undefined") {
             return;
         }
         this.destroyItCharts();
         const it = this.state.it || {};
+        this._renderItDonutChart(this.itKpiDonutRef, "kpiDonut", this.itKpiDonutSlices);
+        this._renderItDonutChart(
+            this.itByTypeDonutRef,
+            "byTypeDonut",
+            this.itByTypeDonutSlices,
+            (sl) => `${sl.label}: ${sl.display} · ${sl.count} tài sản (${sl.pct}%)`
+        );
         const monthCtx = this.itMonthRef && this.itMonthRef.el
             ? this.itMonthRef.el.getContext("2d")
             : null;
@@ -1942,37 +2081,6 @@ export class PhanHeDashboard extends Component {
                             ticks: {
                                 color: "#94a3b8",
                                 callback: (v) => this._formatAxisVnd(v),
-                            },
-                        },
-                    },
-                },
-            });
-        }
-        const donutCtx = this.itDonutRef && this.itDonutRef.el
-            ? this.itDonutRef.el.getContext("2d")
-            : null;
-        const miens = (it.by_mien || []).filter((m) => Number(m.amount || 0) > 0);
-        if (donutCtx && miens.length) {
-            const palette = ["#6b21a8", "#2563eb", "#059669", "#d97706", "#dc2626", "#64748b"];
-            this.itCharts.donut = new Chart(donutCtx, {
-                type: "doughnut",
-                data: {
-                    labels: miens.map((m) => m.name),
-                    datasets: [{
-                        data: miens.map((m) => Number(m.amount || 0)),
-                        backgroundColor: miens.map((_, i) => palette[i % palette.length]),
-                        borderWidth: 0,
-                    }],
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: "68%",
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => `${ctx.label}: ${this.formatMoney(ctx.raw)}`,
                             },
                         },
                     },
@@ -2667,7 +2775,8 @@ export class PhanHeDashboard extends Component {
     }
 
     formatPct(v) {
-        return `${Number(v || 0).toFixed(1)}%`;
+        const n = Math.round(Number(v || 0) * 10) / 10;
+        return String(n.toFixed(1)).replace(/\.0$/, "").replace(".", ",");
     }
 
     padCount(n) {

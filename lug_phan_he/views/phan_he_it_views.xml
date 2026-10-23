@@ -67,9 +67,9 @@
                     </div>
                     <group>
                         <group string="Thông tin chung">
-                            <field name="code"/>
+                            <field name="code" class="o_it_underline_field"/>
                             <field name="name" class="o_it_underline_field"/>
-                            <field name="asset_type_id"/>
+                            <field name="asset_type_id" class="o_it_underline_field"/>
                             <field name="asset_type_code" invisible="1"/>
                             <field name="host_asset_id"
                                      string="Tên máy chủ"
@@ -78,18 +78,18 @@
                                      required="asset_type_code == 'virtual'"
                                      options="{'no_create': True, 'no_open': True}"/>
                             <field name="host_label" invisible="1"/>
-                            <field name="manufacturer" invisible="asset_type_code == 'virtual'"/>
-                            <field name="model_name" invisible="asset_type_code == 'virtual'"/>
-                            <field name="serial_number" invisible="asset_type_code == 'virtual'"/>
+                            <field name="manufacturer" class="o_it_underline_field" invisible="asset_type_code == 'virtual'"/>
+                            <field name="model_name" class="o_it_underline_field" invisible="asset_type_code == 'virtual'"/>
+                            <field name="serial_number" class="o_it_underline_field" invisible="asset_type_code == 'virtual'"/>
                         </group>
-                        <group string="Vị trí &amp; phụ trách">
-                            <field name="location"/>
-                            <field name="mien_id"/>
-                            <field name="store_id"/>
-                            <field name="date_start"/>
-                            <field name="provider_id"/>
-                            <field name="responsible_id"/>
-                            <field name="company_id" groups="base.group_multi_company"/>
+                        <group string="Vị trí &amp; phụ trách" class="o_it_location_group">
+                            <field name="location" class="o_it_underline_field"/>
+                            <field name="mien_id" class="o_it_underline_field"/>
+                            <field name="store_id" class="o_it_underline_field"/>
+                            <field name="date_start" class="o_it_underline_field"/>
+                            <field name="provider_id" class="o_it_underline_field"/>
+                            <field name="responsible_id" class="o_it_underline_field"/>
+                            <field name="company_id" class="o_it_underline_field" groups="base.group_multi_company"/>
                             <field name="active"/>
                         </group>
                     </group>
@@ -116,10 +116,14 @@
                                           required="1"
                                           options="{'no_create': True, 'no_open': True}"/>
                                 <field name="cpu_info" class="o_it_underline_field"/>
-                                <field name="ram_gb" class="o_it_underline_field"/>
-                                <field name="storage_gb" class="o_it_underline_field"/>
+                                <field name="ram_gb" string="RAM (GB)" class="o_it_underline_field"/>
+                                <field name="storage_gb" string="Dung lượng SSD (GB)" class="o_it_underline_field"/>
+                                <field name="hdd_gb" string="Dung lượng HDD (GB)" class="o_it_underline_field"/>
                                 <field name="ip_address" class="o_it_underline_field"/>
                                 <field name="ip_wan" class="o_it_underline_field"/>
+                                <field name="login_user" class="o_it_underline_field"/>
+                                <field name="login_password" class="o_it_underline_field"/>
+                                <field name="note" class="o_it_underline_field"/>
                             </group>
                         </page>
                         <page string="Cloud" invisible="asset_type_code != 'cloud'">
@@ -206,10 +210,15 @@
                 <field name="host_label" string="Tên máy chủ" optional="hide"/>
                 <field name="host_asset_id" column_invisible="1"/>
                 <field name="vm_name" optional="show"/>
-                <field name="hypervisor" optional="show"/>
+                <field name="hypervisor" string="vCPUs" optional="show"/>
+                <field name="ram_gb" string="RAM" optional="show"/>
+                <field name="storage_gb" string="Dung lượng SSD" optional="show"/>
+                <field name="hdd_gb" string="Dung lượng HDD" optional="show"/>
                 <field name="ip_address" string="Địa chỉ IP" optional="show"/>
                 <field name="ip_wan" string="IP WAN" optional="show"/>
-                <field name="mien_id" optional="show"/>
+                <field name="login_user" string="User" optional="show"/>
+                <field name="login_password" string="Pass" optional="show"/>
+                <field name="note" string="Ghi chú" optional="show"/>
                 <field name="state" widget="badge"
                          decoration-success="state == 'active'"
                          decoration-warning="state == 'suspended'"
@@ -523,37 +532,37 @@
         <field name="name">phan.he.it.ticket.form</field>
         <field name="model">phan.he.it.ticket</field>
         <field name="arch" type="xml">
-            <form>
+            <form class="o_it_ticket_form">
                 <header>
                     <field name="state" widget="statusbar" statusbar_visible="draft,open,progress,done"/>
                 </header>
                 <sheet>
                     <group>
                         <group>
-                            <field name="code"/>
-                            <field name="asset_id"/>
-                            <field name="ticket_type"/>
-                            <field name="name"/>
-                            <field name="priority"/>
+                            <field name="code" class="o_it_underline_field"/>
+                            <field name="asset_id" class="o_it_underline_field"/>
+                            <field name="ticket_type" class="o_it_underline_field"/>
+                            <field name="name" class="o_it_underline_field"/>
+                            <field name="priority" class="o_it_underline_field"/>
                         </group>
                         <group>
-                            <field name="date_reported"/>
-                            <field name="date_start"/>
-                            <field name="date_done"/>
-                            <field name="responsible_id"/>
-                            <field name="provider_id"/>
-                            <field name="currency_id"/>
-                            <field name="cost_amount"/>
-                            <field name="linked_cost_id"/>
+                            <field name="date_reported" class="o_it_underline_field"/>
+                            <field name="date_start" class="o_it_underline_field"/>
+                            <field name="date_done" class="o_it_underline_field"/>
+                            <field name="responsible_id" class="o_it_underline_field"/>
+                            <field name="provider_id" class="o_it_underline_field"/>
+                            <field name="currency_id" class="o_it_underline_field"/>
+                            <field name="cost_amount" class="o_it_underline_field"/>
+                            <field name="linked_cost_id" class="o_it_underline_field"/>
                         </group>
                     </group>
-                    <group string="Mô tả">
-                        <field name="description" nolabel="1" colspan="2"/>
+                    <group string="Mô tả" class="o_it_ticket_desc">
+                        <field name="description" nolabel="1" colspan="2" class="o_it_underline_field"/>
                     </group>
-                    <group>
-                        <field name="root_cause"/>
-                        <field name="resolution"/>
-                        <field name="note"/>
+                    <group class="o_it_ticket_extra">
+                        <field name="root_cause" class="o_it_underline_field"/>
+                        <field name="resolution" class="o_it_underline_field"/>
+                        <field name="note" class="o_it_underline_field"/>
                     </group>
                 </sheet>
                 <chatter/>

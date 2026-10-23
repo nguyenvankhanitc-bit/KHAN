@@ -187,7 +187,7 @@
                                            t-on-input="(ev) => this.onField('nic_info', ev)"/>
                                 </div>
                                 <div class="lq-entry-field">
-                                    <label>Hypervisor</label>
+                                    <label>vCPUs</label>
                                     <input type="text" t-att-value="state.form.hypervisor"
                                            t-on-input="(ev) => this.onField('hypervisor', ev)"/>
                                 </div>
@@ -211,7 +211,7 @@
                                            t-on-input="(ev) => this.onField('vm_name', ev)"/>
                                 </div>
                                 <div class="lq-entry-field">
-                                    <label>Hypervisor / nền tảng</label>
+                                    <label>vCPUs</label>
                                     <input type="text" t-att-value="state.form.hypervisor"
                                            t-on-input="(ev) => this.onField('hypervisor', ev)"/>
                                 </div>
@@ -226,9 +226,14 @@
                                            t-on-input="(ev) => this.onField('ram_gb', ev)"/>
                                 </div>
                                 <div class="lq-entry-field">
-                                    <label>Ổ đĩa (GB)</label>
+                                    <label>Dung lượng SSD (GB)</label>
                                     <input type="number" min="0" t-att-value="state.form.storage_gb"
                                            t-on-input="(ev) => this.onField('storage_gb', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Dung lượng HDD (GB)</label>
+                                    <input type="number" min="0" t-att-value="state.form.hdd_gb"
+                                           t-on-input="(ev) => this.onField('hdd_gb', ev)"/>
                                 </div>
                                 <div class="lq-entry-field">
                                     <label>Địa chỉ IP</label>
@@ -240,6 +245,21 @@
                                     <input type="text" placeholder="Để trống nếu chưa có"
                                            t-att-value="state.form.ip_wan"
                                            t-on-input="(ev) => this.onField('ip_wan', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>User</label>
+                                    <input type="text" t-att-value="state.form.login_user"
+                                           t-on-input="(ev) => this.onField('login_user', ev)"/>
+                                </div>
+                                <div class="lq-entry-field">
+                                    <label>Pass</label>
+                                    <input type="text" t-att-value="state.form.login_password"
+                                           t-on-input="(ev) => this.onField('login_password', ev)"/>
+                                </div>
+                                <div class="lq-entry-field lq-entry-field-full">
+                                    <label>Ghi chú</label>
+                                    <input type="text" t-att-value="state.form.note"
+                                           t-on-input="(ev) => this.onField('note', ev)"/>
                                 </div>
                             </div>
                             <div t-if="isCloud" class="lq-entry-grid">

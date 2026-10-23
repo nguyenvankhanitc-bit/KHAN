@@ -510,6 +510,223 @@
     @media (max-width: 900px) { grid-template-columns: 1fr 1fr; }
 }
 
+/* Donut kiểu mẫu: tâm số + legend danh sách (nhãn / giá trị (tỷ lệ%)) */
+.o_donut_sample_wrap {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    min-width: 0;
+}
+
+.o_donut_sample_legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+
+    > li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 0;
+        &.is-clickable {
+            cursor: pointer;
+            border-radius: 6px;
+            &:hover .o_donut_sample_label { color: #2563eb; }
+        }
+    }
+}
+
+.o_donut_sample_dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.o_donut_sample_text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.o_donut_sample_label {
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.o_donut_sample_meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    b {
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+    }
+    span {
+        color: #94a3b8;
+        font-size: 0.88rem;
+        font-weight: 500;
+    }
+}
+
+/* Lưới 2×2: donut trái | chi phí tháng phải (cao 2 hàng) */
+.o_it_overview_grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-rows: auto auto;
+    gap: 14px;
+    margin-bottom: 14px;
+    align-items: stretch;
+
+    > .o_it_kpi_donut_panel {
+        margin-bottom: 0;
+        min-width: 0;
+    }
+    > .o_it_month_chart_panel {
+        grid-column: 2;
+        grid-row: 1 / span 2;
+        margin-bottom: 0;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+    }
+    > .o_it_by_type_donut {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    @media (max-width: 1100px) {
+        grid-template-columns: 1fr;
+        grid-template-rows: none;
+        > .o_it_month_chart_panel,
+        > .o_it_by_type_donut {
+            grid-column: auto;
+            grid-row: auto;
+        }
+    }
+}
+
+.o_it_month_chart_panel {
+    .o_it_month_chart_box {
+        flex: 1 1 auto;
+        min-height: 260px;
+        height: auto;
+    }
+}
+
+.o_it_kpi_donut_panel {
+    margin-bottom: 12px;
+    padding: 12px 14px 10px !important;
+}
+
+.o_it_kpi_donut_title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: #1e3a5f;
+    letter-spacing: 0.02em;
+    margin-bottom: 10px;
+    i { color: #2563eb; font-size: 0.95rem; }
+}
+
+.o_it_kpi_donut_body {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-width: 0;
+    @media (max-width: 900px) {
+        flex-direction: column;
+        align-items: center;
+    }
+}
+
+.o_it_kpi_donut_chart_wrap,
+.o_it_region_donut_wrap {
+    position: relative;
+    width: 210px;
+    height: 210px;
+    flex-shrink: 0;
+    max-width: 100%;
+    canvas {
+        width: 100% !important;
+        height: 100% !important;
+    }
+}
+
+.o_it_kpi_donut_center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    text-align: center;
+    padding: 0 12px;
+    b {
+        font-size: 1.7rem;
+        font-weight: 800;
+        color: #0f172a;
+        line-height: 1.1;
+        word-break: break-word;
+    }
+    span {
+        margin-top: 2px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        letter-spacing: 0;
+        color: #94a3b8;
+        text-transform: none;
+    }
+}
+
+.o_it_kpi_donut_legend {
+    min-width: 0;
+    flex: 1;
+}
+
+.o_it_kpi_donut_note {
+    margin-top: 12px;
+    padding: 6px 8px;
+    background: #e8f1fb;
+    border-radius: 6px;
+    color: #1e3a5f;
+    font-size: 0.72rem;
+    font-weight: 600;
+    line-height: 1.35;
+    i {
+        color: #2563eb;
+        margin-right: 4px;
+    }
+}
+
+/* Region donut trong card nhỏ */
+.lq-donut-wrap.o_donut_sample_wrap {
+    .lq-donut {
+        width: 150px;
+        height: 150px;
+    }
+    .o_it_kpi_donut_center b { font-size: 1.15rem; }
+    .o_it_kpi_donut_center span { font-size: 0.72rem; }
+    .o_donut_sample_label { font-size: 0.85rem; }
+    .o_donut_sample_meta b { font-size: 0.88rem; }
+    .o_donut_sample_meta span { font-size: 0.8rem; }
+}
+
 .lq-kpi {
     border-radius: 18px;
     padding: 16px 16px 18px;

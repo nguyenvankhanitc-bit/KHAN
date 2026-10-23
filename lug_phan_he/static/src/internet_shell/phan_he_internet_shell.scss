@@ -167,7 +167,8 @@ html.o_internet_resizing * {
         display: flex;
         flex-direction: column;
         gap: 2px;
-        margin-top: 8px;
+        margin-top: 10px;
+        padding: 2px 0 4px;
 
         &:first-child {
             margin-top: 0;
@@ -252,16 +253,17 @@ html.o_internet_resizing * {
     }
 
     .o_phan_he_nav_section {
-        min-height: 32px;
+        min-height: 34px;
         height: auto;
-        padding: 8px 10px 4px;
+        padding: 8px 10px;
         margin-top: 0;
-        border-radius: 0;
+        border-radius: 8px;
         font-size: 11.5px;
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #64748b !important;
+        color: #475569 !important;
+        background: #f1f5f9 !important;
 
         > i:first-child {
             font-size: 13px;
@@ -277,35 +279,60 @@ html.o_internet_resizing * {
             font-weight: 800;
         }
 
-        /* Mục lớn: tô màu + in đậm */
+        /* Mục cha: nền + chữ theo nhóm để phân biệt */
         &.is-icon-manage {
-            color: #6d28d9 !important;
+            color: #5b21b6 !important;
+            background: #efe7ff !important;
             > i:first-child { color: #6d28d9 !important; }
-            &:hover { color: #5b21b6 !important; > i:first-child { color: #5b21b6 !important; } }
+            &:hover {
+                color: #4c1d95 !important;
+                background: #e9d5ff !important;
+                > i:first-child { color: #5b21b6 !important; }
+            }
         }
         &.is-icon-payment {
             color: #0f766e !important;
+            background: #ccfbf1 !important;
             > i:first-child { color: #0d9488 !important; }
-            &:hover { color: #115e59 !important; > i:first-child { color: #0f766e !important; } }
+            &:hover {
+                color: #115e59 !important;
+                background: #99f6e4 !important;
+                > i:first-child { color: #0f766e !important; }
+            }
         }
         &.is-icon-report {
-            color: #7c3aed !important;
+            color: #6d28d9 !important;
+            background: #f3e8ff !important;
             > i:first-child { color: #7c3aed !important; }
-            &:hover { color: #6d28d9 !important; > i:first-child { color: #6d28d9 !important; } }
+            &:hover {
+                color: #5b21b6 !important;
+                background: #e9d5ff !important;
+                > i:first-child { color: #6d28d9 !important; }
+            }
         }
         &.is-icon-alert {
             color: #c2410c !important;
+            background: #ffedd5 !important;
             > i:first-child { color: #ea580c !important; }
-            &:hover { color: #9a3412 !important; > i:first-child { color: #c2410c !important; } }
+            &:hover {
+                color: #9a3412 !important;
+                background: #fed7aa !important;
+                > i:first-child { color: #c2410c !important; }
+            }
         }
         &.is-icon-list {
             color: #4338ca !important;
+            background: #e0e7ff !important;
             > i:first-child { color: #6366f1 !important; }
-            &:hover { color: #3730a3 !important; > i:first-child { color: #4f46e5 !important; } }
+            &:hover {
+                color: #3730a3 !important;
+                background: #c7d2fe !important;
+                > i:first-child { color: #4f46e5 !important; }
+            }
         }
 
         &:hover {
-            background: transparent !important;
+            filter: brightness(0.98);
         }
     }
 

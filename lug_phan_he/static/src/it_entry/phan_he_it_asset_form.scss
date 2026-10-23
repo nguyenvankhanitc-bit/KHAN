@@ -10,9 +10,11 @@
         .o_input,
         select.o_input,
         .o_input_dropdown,
-        .o_field_many2one_selection {
+        .o_field_many2one_selection,
+        .o_datepicker .o_input,
+        .o_field_date input.o_input {
             border: 0 !important;
-            border-bottom: 1.5px solid #94a3b8 !important;
+            border-bottom: 1.5px solid #64748b !important;
             border-radius: 0 !important;
             background: transparent !important;
             box-shadow: none !important;
@@ -25,25 +27,87 @@
         .o_input:focus,
         select.o_input:focus,
         .o_input_dropdown:focus-within,
-        .o_field_many2one_selection:focus-within {
+        .o_field_many2one_selection:focus-within,
+        .o_datepicker:focus-within .o_input,
+        .o_field_date:focus-within input.o_input {
             border-bottom-color: #4c1d95 !important;
         }
     }
 
-    /* Tab Máy chủ ảo: mọi ô chữ/số có gạch dưới rõ */
+    /* Nhóm Vị trí & phụ trách + tab notebook: gạch dưới rõ */
+    .o_it_location_group .o_wrap_field .o_field_widget,
     .o_notebook .tab-pane .o_group .o_wrap_field .o_field_widget {
         input.o_input:not([type="checkbox"]),
         .o_field_float input.o_input,
         .o_field_integer input.o_input,
         .o_field_char input.o_input,
+        .o_field_text textarea,
         .o_input_dropdown,
-        .o_field_many2one_selection {
+        .o_field_many2one_selection,
+        .o_datepicker .o_input,
+        .o_field_date input.o_input {
             border: 0 !important;
-            border-bottom: 1.5px solid #94a3b8 !important;
+            border-bottom: 1.5px solid #64748b !important;
             border-radius: 0 !important;
             background: transparent !important;
             min-height: 32px;
         }
+    }
+}
+
+/* Form Bảo trì & hỗ trợ (ticket) — gạch dưới toàn bộ ô nhập */
+.o_form_view.o_it_ticket_form,
+.o_form_view:has(.o_it_ticket_form),
+.o_internet_content .o_form_view.o_it_ticket_form,
+.o_internet_content .o_form_view:has(.o_it_ticket_form) {
+    .o_it_underline_field,
+    .o_field_widget.o_it_underline_field,
+    .o_group .o_wrap_field .o_field_widget {
+        width: 100%;
+
+        input.o_input:not([type="checkbox"]),
+        .o_input,
+        select.o_input,
+        textarea.o_input,
+        .o_field_text textarea,
+        .o_input_dropdown,
+        .o_field_many2one_selection,
+        .o_datepicker .o_input,
+        .o_field_date input.o_input,
+        .o_field_datetime input.o_input,
+        .o_field_monetary input.o_input,
+        .o_field_float input.o_input,
+        .o_field_integer input.o_input,
+        .o_field_selection select {
+            border: 0 !important;
+            border-bottom: 1.5px solid #64748b !important;
+            border-radius: 0 !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            min-height: 32px;
+            padding-left: 2px !important;
+            padding-right: 2px !important;
+        }
+
+        input.o_input:focus,
+        .o_input:focus,
+        select.o_input:focus,
+        textarea.o_input:focus,
+        .o_field_text textarea:focus,
+        .o_input_dropdown:focus-within,
+        .o_field_many2one_selection:focus-within,
+        .o_datepicker:focus-within .o_input {
+            border-bottom-color: #4c1d95 !important;
+        }
+    }
+
+    .o_it_ticket_desc .o_field_html,
+    .o_it_ticket_desc .note-editable,
+    .o_it_ticket_desc .o_field_text textarea {
+        border: 0 !important;
+        border-bottom: 1.5px solid #64748b !important;
+        border-radius: 0 !important;
+        min-height: 72px;
     }
 }
 

@@ -1042,12 +1042,74 @@
 .lq-mc-donut {
     display: flex;
     align-items: center;
+    gap: 28px;
+}
+
+/* Donut kiểu mẫu (dùng chung với dashboard) */
+.o_donut_sample_wrap {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    min-width: 0;
+}
+
+.o_donut_sample_legend {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
     gap: 12px;
-    ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-    li { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-    i { width: 8px; height: 8px; border-radius: 50%; }
-    em { color: #94a3b8; font-style: normal; }
-    b { margin-left: auto; }
+    min-width: 0;
+
+    > li {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin: 0;
+    }
+}
+
+.o_donut_sample_dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 5px;
+    display: inline-block;
+}
+
+.o_donut_sample_text {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.o_donut_sample_label {
+    color: #0f172a;
+    font-size: 0.92rem;
+    font-weight: 500;
+    line-height: 1.25;
+}
+
+.o_donut_sample_meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    b {
+        color: #0f172a;
+        font-size: 0.95rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        margin-left: 0;
+    }
+    span {
+        color: #94a3b8;
+        font-size: 0.88rem;
+        font-weight: 500;
+    }
 }
 
 .lq-mc-table-card {

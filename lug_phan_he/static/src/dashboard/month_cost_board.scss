@@ -159,12 +159,10 @@
 .lq-mc-donut {
     display: flex;
     align-items: center;
-    gap: 12px;
-    ul { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-    li { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
-    i { width: 8px; height: 8px; border-radius: 50%; }
-    em { color: #94a3b8; font-style: normal; }
-    b { margin-left: auto; }
+    gap: 28px;
+    &.o_donut_sample_wrap {
+        align-items: center;
+    }
 }
 
 .lq-mc-table-card {

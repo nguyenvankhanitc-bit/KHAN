@@ -104,7 +104,7 @@ class PhanHeItAsset(models.Model):
     storage_gb = fields.Float(string="Dung lượng lưu trữ (GB)")
     raid_info = fields.Char(string="RAID")
     nic_info = fields.Char(string="Card mạng")
-    hypervisor = fields.Char(string="Hypervisor")
+    hypervisor = fields.Char(string="vCPUs")
     warranty_end = fields.Date(string="Hết hạn bảo hành")
 
     # --- Máy chủ ảo ---
@@ -124,6 +124,10 @@ class PhanHeItAsset(models.Model):
     )
     ip_address = fields.Char(string="Địa chỉ IP")
     ip_wan = fields.Char(string="IP WAN")
+    login_user = fields.Char(string="User")
+    login_password = fields.Char(string="Pass")
+    # VM: storage_gb = SSD; hdd_gb = HDD (riêng)
+    hdd_gb = fields.Float(string="Dung lượng HDD (GB)")
 
     # --- Cloud ---
     cloud_provider = fields.Char(string="Nhà cung cấp cloud")

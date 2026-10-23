@@ -2487,10 +2487,14 @@ export class PhanHeMonthCostBoard extends Component {
     }
 
     get donutRows() {
-        return (this.state.data.donut || []).map((d) => ({
-            ...d,
-            pctLabel: `(${d.pct}%)`,
-        }));
+        return (this.state.data.donut || []).map((d) => {
+            const pct = Math.round(Number(d.pct || 0) * 10) / 10;
+            const pctStr = String(pct.toFixed(1)).replace(/\.0$/, "").replace(".", ",");
+            return {
+                ...d,
+                pctLabel: `(${pctStr}%)`,
+            };
+        });
     }
 
     kpiCountLabel(kind) {
@@ -3059,6 +3063,11 @@ export class PhanHeQuarterCostBoard extends Component {
 
     formatMoney(v) {
         return formatMoneyVn(v);
+    }
+
+    formatPct(v) {
+        const n = Math.round(Number(v || 0) * 10) / 10;
+        return String(n.toFixed(1)).replace(/\.0$/, "").replace(".", ",");
     }
 
     formatDate(v) {

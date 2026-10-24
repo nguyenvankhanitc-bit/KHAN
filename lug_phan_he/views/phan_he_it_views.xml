@@ -36,6 +36,15 @@
                 <field name="mien_id" optional="show"/>
                 <field name="provider_id" optional="hide"/>
                 <field name="responsible_id" optional="hide"/>
+                <!-- Nhập ở popup «Thêm tài sản mới» -->
+                <field name="supplier_name" string="Nhà cung cấp" optional="show"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="contract_amount" string="Số tiền" widget="monetary" sum="Tổng" optional="show"/>
+                <field name="contract_filename" column_invisible="1"/>
+                <field name="contract_file" string="File hợp đồng" widget="binary" filename="contract_filename" optional="show"/>
+                <field name="invoice_filename" column_invisible="1"/>
+                <field name="invoice_file" string="Hóa đơn" widget="binary" filename="invoice_filename" optional="show"/>
+                <field name="note" string="Ghi chú" optional="show"/>
                 <field name="state" widget="badge"
                          decoration-success="state == 'active'"
                          decoration-warning="state == 'suspended'"

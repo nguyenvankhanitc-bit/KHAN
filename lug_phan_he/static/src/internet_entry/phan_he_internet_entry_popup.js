@@ -102,6 +102,7 @@ export class PhanHeInternetEntryPopup extends Component {
     static template = "lug_phan_he.PhanHeInternetEntryPopup";
     static props = {
         resId: { type: [Number, Boolean], optional: true },
+        createMenuCode: { type: String, optional: true },
         onClose: Function,
         onSaved: { type: Function, optional: true },
     };
@@ -362,7 +363,13 @@ export class PhanHeInternetEntryPopup extends Component {
             if (this.isEdit) {
                 await this.orm.write("phan.he.service", [resId], vals);
             } else {
-                resId = await this.orm.create("phan.he.service", [vals]);
+                const createCtx = {
+                    phan_he_service_type_code: "internet",
+                    phan_he_internet_menu: this.props.createMenuCode || "internet_active",
+                    default_ops_status: "active",
+                    default_state: "active",
+                };
+                resId = await this.orm.create("phan.he.service", [vals], { context: createCtx });
                 if (Array.isArray(resId)) {
                     resId = resId[0];
                 }

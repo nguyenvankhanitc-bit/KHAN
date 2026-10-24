@@ -1,79 +1,218 @@
+/* Ma trận phân quyền Menu (Internet / LinkQ / Máy chủ) */
+
+.o_linkq_perm_wrap {
+    border: 2px solid #334155;
+    border-radius: 8px;
+    overflow: auto;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+}
+
 .linkq-perm-table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
+    border-collapse: collapse !important;
+    margin: 0 !important;
+    background: #fff;
 
     thead th {
-        background-color: #f8f9fc;
-        font-weight: 700;
-        font-size: 12px;
+        background: #14532d !important;
+        color: #f8fafc !important;
+        font-weight: 700 !important;
+        font-size: 0.75rem !important;
+        letter-spacing: 0.04em;
         text-transform: uppercase;
-        color: #4a5568;
-        padding: 12px 8px;
-        border-bottom: 2px solid #edf2f7;
+        padding: 12px 10px !important;
+        border: 1px solid #166534 !important;
+        vertical-align: middle;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 2;
     }
 
-    tbody tr {
-        border-bottom: 1px solid #f1f3f7;
-        &:hover {
-            background-color: #fafbfc;
-        }
+    thead th.o_lp_col_menu {
+        text-align: left;
+        min-width: 280px;
+        width: 42%;
+    }
+
+    thead th.o_lp_col_perm {
+        text-align: center;
+        min-width: 72px;
+        width: 11%;
+    }
+
+    tbody tr.is-folder {
+        background: #f0fdf4 !important;
+    }
+
+    tbody tr.is-folder td {
+        font-weight: 600;
+    }
+
+    tbody tr.is-child:nth-child(even) {
+        background: #f8fafc;
+    }
+
+    tbody tr:hover td {
+        background: #dcfce7 !important;
+    }
+
+    tbody td {
+        border: 1px solid #94a3b8 !important;
+        padding: 0 !important;
+        vertical-align: middle !important;
+        background: #fff;
+    }
+
+    tbody td.o_lp_menu_td {
+        padding: 0 12px !important;
+        text-align: left !important;
+    }
+
+    tbody td.o_lp_perm_td {
+        text-align: center !important;
     }
 
     .menu-name-cell {
         display: flex;
         align-items: center;
-        position: relative;
-        padding: 8px 0;
+        gap: 8px;
+        min-height: 42px;
+        padding: 6px 0;
 
-        .branch-line {
-            position: absolute;
-            left: 10px;
-            top: -50%;
-            bottom: 50%;
-            width: 12px;
-            border-left: 1px solid #d1d5db;
-            border-bottom: 1px solid #d1d5db;
+        &.is-child {
+            padding-left: 28px;
         }
 
-        .toggle-btn {
-            cursor: pointer;
-            width: 16px;
-            text-align: center;
-            color: #6b7280;
-            font-size: 11px;
-            margin-right: 4px;
-        }
-
-        .item-icon {
-            font-size: 15px;
-            margin-right: 8px;
-            &.icon-folder { color: #6941c6; }
-            &.icon-file { color: #9ca3af; }
-            &.icon-action { color: #4b5563; }
+        &.is-root {
+            padding-left: 4px;
         }
     }
 
-    .perm-checkbox {
-        width: 16px;
-        height: 16px;
+    .toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        margin: 0;
+        border: 1px solid #86efac;
         border-radius: 4px;
-        accent-color: #6941c6;
+        background: #fff;
+        color: #15803d;
         cursor: pointer;
+        flex: 0 0 auto;
 
-        &.cb-action {
-            accent-color: #f59e0b;
+        &:hover {
+            background: #dcfce7;
+            border-color: #22c55e;
         }
-        &.cb-add {
-            accent-color: #10b981;
+
+        i {
+            font-size: 12px;
+            line-height: 1;
         }
+    }
+
+    .toggle-spacer {
+        display: inline-block;
+        width: 22px;
+        flex: 0 0 auto;
+    }
+
+    .item-icon {
+        font-size: 15px;
+        width: 18px;
+        text-align: center;
+        flex: 0 0 auto;
+
+        &.icon-folder {
+            color: #ca8a04;
+        }
+        &.icon-file {
+            color: #64748b;
+        }
+        &.icon-action {
+            color: #475569;
+        }
+    }
+
+    .menu-label {
+        color: #1e293b;
+        font-size: 0.92rem;
+        line-height: 1.3;
+
+        &.is-folder {
+            color: #14532d;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            font-size: 0.82rem;
+        }
+    }
+
+    .o_lp_check {
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        min-height: 42px;
+        margin: 0 !important;
+        padding: 0 !important;
+        cursor: pointer;
+    }
+
+    /* Ô vuông tích — luôn hiện, nền xanh khi checked */
+    input.o_lp_cb.form-check-input,
+    input.o_lp_cb {
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 1.25rem !important;
+        height: 1.25rem !important;
+        min-width: 1.25rem !important;
+        min-height: 1.25rem !important;
+        margin: 0 !important;
+        float: none !important;
+        cursor: pointer;
+        border: 2px solid #64748b !important;
+        border-radius: 0.25rem !important;
+        background-color: #ffffff !important;
+        background-image: none !important;
+        accent-color: #16a34a;
+        vertical-align: middle;
+        flex-shrink: 0;
+    }
+
+    input.o_lp_cb.form-check-input:checked,
+    input.o_lp_cb:checked {
+        background-color: #16a34a !important;
+        border-color: #15803d !important;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3 6-6'/%3e%3c/svg%3e") !important;
+        background-size: 100% 100% !important;
+        background-repeat: no-repeat !important;
+        background-position: center !important;
+    }
+
+    input.o_lp_cb.form-check-input:focus,
+    input.o_lp_cb:focus {
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.35) !important;
+        border-color: #22c55e !important;
     }
 
     .crown-placeholder {
-        color: #d1d5db;
-        font-size: 13px;
+        color: #cbd5e1;
+        font-size: 12px;
         &::before {
-            content: "👑";
+            content: "—";
         }
     }
+}
+
+/* Form Tổng hợp phân quyền: căn lề tab menu */
+.o_phan_he_module_access_form .o_notebook .o_linkq_perm_wrap {
+    margin-top: 4px;
 }

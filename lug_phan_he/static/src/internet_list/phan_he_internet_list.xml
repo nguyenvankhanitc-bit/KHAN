@@ -258,6 +258,10 @@
                                 <i t-att-class="state.loading ? 'fa fa-refresh fa-spin' : 'fa fa-refresh'"/>
                                 Làm mới
                             </button>
+                            <button t-if="showListAdd" type="button" class="lq-btn-add"
+                                    t-on-click="() => this.onAdd()">
+                                <i class="fa fa-plus"/> Thêm mới
+                            </button>
                             <button type="button" class="lq-btn-excel"
                                     t-att-disabled="state.exporting || state.loading"
                                     t-on-click="() => this.exportListExcel()">
@@ -268,6 +272,10 @@
                         </div>
                     </t>
                     <t t-else="">
+                        <button t-if="showListAdd" type="button" class="lq-btn-add"
+                                t-on-click="() => this.onAdd()">
+                            <i class="fa fa-plus"/> Thêm mới
+                        </button>
                         <label class="lq-chip">
                             <i class="fa fa-map-marker"/>
                             <select t-on-change="(ev) => this.onFilterChange('regionFilter', ev)">
@@ -389,6 +397,10 @@
                             </label>
                         </t>
                         <t t-else="">
+                            <button t-if="showListAdd" type="button" class="lq-btn-add"
+                                    t-on-click="() => this.onAdd()">
+                                <i class="fa fa-plus"/> Thêm mới
+                            </button>
                             <button type="button" class="lq-ghost" t-att-disabled="state.exporting"
                                     t-on-click="() => this.exportListExcel()">
                                 <i class="fa fa-download"/> <t t-if="state.exporting">Đang xuất...</t><t t-else="">Xuất Excel</t>

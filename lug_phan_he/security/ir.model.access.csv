@@ -103,6 +103,20 @@ access_security_internet_menu_permission_system,security.internet.menu.permissio
 access_security_internet_menu_permission_manager,security.internet.menu.permission.manager,model_security_internet_menu_permission,group_phan_he_service_manager,1,1,1,1
 access_security_internet_menu_permission_admin,security.internet.menu.permission.admin,model_security_internet_menu_permission,group_phan_he_admin,1,1,1,1
 access_security_internet_menu_permission_user,security.internet.menu.permission.user,model_security_internet_menu_permission,base.group_user,1,0,0,0
+access_security_server_menu_permission_system,security.server.menu.permission.system,model_security_server_menu_permission,base.group_system,1,1,1,1
+access_security_server_menu_permission_manager,security.server.menu.permission.manager,model_security_server_menu_permission,group_phan_he_service_manager,1,1,1,1
+access_security_server_menu_permission_admin,security.server.menu.permission.admin,model_security_server_menu_permission,group_phan_he_admin,1,1,1,1
+access_security_server_menu_permission_user,security.server.menu.permission.user,model_security_server_menu_permission,base.group_user,1,0,0,0
+access_security_camera_menu_permission_system,security.camera.menu.permission.system,model_security_camera_menu_permission,base.group_system,1,1,1,1
+access_security_camera_menu_permission_manager,security.camera.menu.permission.manager,model_security_camera_menu_permission,group_phan_he_service_manager,1,1,1,1
+access_security_camera_menu_permission_admin,security.camera.menu.permission.admin,model_security_camera_menu_permission,group_phan_he_admin,1,1,1,1
+access_security_camera_menu_permission_user,security.camera.menu.permission.user,model_security_camera_menu_permission,base.group_user,1,0,0,0
+access_phan_he_perm_menu_system,phan.he.perm.menu.system,model_phan_he_perm_menu,base.group_system,1,1,1,1
+access_phan_he_perm_menu_admin,phan.he.perm.menu.admin,model_phan_he_perm_menu,group_phan_he_admin,1,1,1,1
+access_phan_he_perm_menu_user,phan.he.perm.menu.user,model_phan_he_perm_menu,base.group_user,1,0,0,0
+access_phan_he_user_menu_perm_system,phan.he.user.menu.perm.system,model_phan_he_user_menu_perm,base.group_system,1,1,1,1
+access_phan_he_user_menu_perm_admin,phan.he.user.menu.perm.admin,model_phan_he_user_menu_perm,group_phan_he_admin,1,1,1,1
+access_phan_he_user_menu_perm_user,phan.he.user.menu.perm.user,model_phan_he_user_menu_perm,base.group_user,1,0,0,0
 access_linkq_guide_document_user,linkq.guide.document.user,model_linkq_guide_document,base.group_user,1,0,0,0
 access_linkq_guide_document_admin,linkq.guide.document.admin,model_linkq_guide_document,group_phan_he_admin,1,1,1,1
 access_shift_guide_document_user,shift.guide.document.user,model_shift_guide_document,base.group_user,1,0,0,0
@@ -153,3 +167,11 @@ access_phan_he_it_ticket_admin,phan.he.it.ticket.admin,model_phan_he_it_ticket,g
 access_phan_he_it_remind_user,phan.he.it.reminder.config.user,model_phan_he_it_reminder_config,group_phan_he_viewer,1,0,0,0
 access_phan_he_it_remind_manager,phan.he.it.reminder.config.manager,model_phan_he_it_reminder_config,group_phan_he_service_manager,1,1,1,1
 access_phan_he_it_remind_admin,phan.he.it.reminder.config.admin,model_phan_he_it_reminder_config,group_phan_he_admin,1,1,1,1
+access_phan_he_it_asset_internal_menu,phan.he.it.asset internal (menu Máy chủ),model_phan_he_it_asset,base.group_user,1,1,1,1
+access_phan_he_it_asset_type_internal_menu,phan.he.it.asset.type internal (menu Máy chủ),model_phan_he_it_asset_type,base.group_user,1,1,1,1
+access_phan_he_it_cost_internal_menu,phan.he.it.cost internal (menu Máy chủ),model_phan_he_it_cost,base.group_user,1,1,1,1
+access_phan_he_it_cost_period_internal_menu,phan.he.it.cost.period internal (menu Máy chủ),model_phan_he_it_cost_period,base.group_user,1,1,1,1
+access_phan_he_it_cost_category_internal_menu,phan.he.it.cost.category internal (menu Máy chủ),model_phan_he_it_cost_category,base.group_user,1,1,1,1
+access_phan_he_it_renewal_cycle_internal_menu,phan.he.it.renewal.cycle internal (menu Máy chủ),model_phan_he_it_renewal_cycle,base.group_user,1,1,1,1
+access_phan_he_it_ticket_internal_menu,phan.he.it.ticket internal (menu Máy chủ),model_phan_he_it_ticket,base.group_user,1,1,1,1
+access_phan_he_it_reminder_config_internal_menu,phan.he.it.reminder.config internal (menu Máy chủ),model_phan_he_it_reminder_config,base.group_user,1,1,1,1

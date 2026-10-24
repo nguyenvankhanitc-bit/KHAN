@@ -524,12 +524,13 @@
               sequence="30"
               groups="lug_phan_he.group_phan_he_service_manager"/>
 
+    <!-- Đưa Phân quyền ra ngoài Cấu hình — cùng cấp menu gốc Quản lý dịch vụ -->
     <menuitem id="menu_phan_he_access"
               name="Phân quyền"
-              parent="menu_phan_he_config_root"
+              parent="menu_phan_he_root"
               action="action_phan_he_module_access"
-              sequence="40"
-              groups="base.group_system"/>
+              sequence="85"
+              groups="base.group_system,lug_phan_he.group_phan_he_admin"/>
 
     <menuitem id="menu_phan_he_roster_lock_settings"
               name="Cài đặt khóa lịch ca"

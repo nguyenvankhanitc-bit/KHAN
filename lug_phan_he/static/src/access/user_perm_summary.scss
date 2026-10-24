@@ -1,0 +1,236 @@
+.o_ups_shell {
+    display: flex;
+    min-height: 100%;
+    background: #f4f6f9;
+}
+.o_ups_page {
+    flex: 1;
+    min-width: 0;
+    padding: 16px 20px 28px;
+}
+.o_ups_header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+.o_ups_breadcrumb {
+    font-size: 12px;
+    color: #6b7280;
+}
+.o_ups_header h1 {
+    margin: 4px 0 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: #1f2937;
+}
+.o_ups_subtitle {
+    margin: 4px 0 0;
+    color: #6b7280;
+    font-size: 13px;
+}
+.o_ups_header_actions {
+    display: flex;
+    gap: 8px;
+}
+.o_ups_btn_save {
+    background: #714b67;
+    color: #fff;
+    border: none;
+}
+.o_ups_btn_save:hover:not(:disabled) {
+    background: #5c3d54;
+    color: #fff;
+}
+.o_ups_btn_cancel {
+    background: #fff;
+    border: 1px solid #d1d5db;
+}
+
+.o_ups_toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-end;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.o_ups_search {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #6b7280;
+    min-width: 220px;
+}
+.o_ups_bulk {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+.o_ups_bulk_label {
+    font-size: 12px;
+    color: #6b7280;
+    font-weight: 600;
+    margin-right: 4px;
+}
+.o_ups_dirty {
+    margin-left: auto;
+    color: #b45309;
+    font-size: 12px;
+    font-weight: 600;
+}
+.o_ups_loading {
+    padding: 48px;
+    text-align: center;
+    color: #714b67;
+}
+
+.o_ups_table_wrap {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: auto;
+    max-height: calc(100vh - 220px);
+}
+.o_ups_table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+}
+.o_ups_table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 10px 8px;
+    text-align: center;
+    vertical-align: middle;
+}
+.o_ups_head_group .o_ups_col_apps {
+    background: #eef2ff;
+    color: #3730a3;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border-bottom: 1px solid #c7d2fe;
+}
+.o_ups_head_apps th {
+    top: 41px;
+    background: #f1f5f9;
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+}
+.o_ups_col_user {
+    text-align: left !important;
+    min-width: 260px;
+    width: 32%;
+    position: sticky;
+    left: 0;
+    z-index: 3;
+    background: #f8fafc;
+}
+.o_ups_col_app {
+    min-width: 100px;
+    width: 110px;
+}
+.o_ups_col_menu {
+    min-width: 140px;
+    width: 160px;
+}
+.o_ups_user_head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 700;
+    color: #1f2937;
+}
+.o_ups_table tbody tr:nth-child(even) {
+    background: #fafbfc;
+}
+.o_ups_table tbody tr.is-selected {
+    background: #eff6ff !important;
+}
+.o_ups_table td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 8px;
+    vertical-align: middle;
+    text-align: center;
+}
+.o_ups_table td.o_ups_col_user {
+    text-align: left;
+    background: inherit;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+.o_ups_user_cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    cursor: pointer;
+}
+.o_ups_user_cell strong {
+    display: block;
+    color: #111827;
+}
+.o_ups_user_cell small {
+    display: block;
+    color: #6b7280;
+    font-size: 11px;
+}
+.o_ups_admin_tag {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    color: #b45309;
+    font-style: normal;
+    font-weight: 700;
+}
+
+.o_ups_cb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 4px;
+    background: #fff;
+    color: #fff;
+    padding: 0;
+    cursor: pointer;
+}
+.o_ups_cb.is-on {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+.o_ups_cb:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+.o_ups_menu_btn {
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #3730a3;
+    font-weight: 600;
+}
+.o_ups_menu_btn:hover {
+    background: #e0e7ff;
+    color: #312e81;
+}
+
+@media (max-width: 900px) {
+    .o_ups_header {
+        flex-direction: column;
+    }
+}

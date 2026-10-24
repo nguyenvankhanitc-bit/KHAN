@@ -97,7 +97,6 @@ export class PhanHeAppSidebar extends Component {
             "report",
             "missing",
             "lock_settings",
-            "access",
             "audit_log",
             "employees",
             "employee_new",
@@ -291,6 +290,18 @@ export class PhanHeAppSidebar extends Component {
 
     onServer() {
         this.open("lug_phan_he.action_phan_he_dashboard_server");
+    }
+
+    onAccess() {
+        this.open("lug_phan_he.action_phan_he_module_access");
+    }
+
+    onUserPermSummary() {
+        this.open("lug_phan_he.action_phan_he_user_perm_summary");
+    }
+
+    onUserPermMatrix() {
+        this.open("lug_phan_he.action_phan_he_user_perm_matrix");
     }
 
     onDashboard() {

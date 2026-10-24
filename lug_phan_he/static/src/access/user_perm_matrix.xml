@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.UserPermMatrix">
+        <div class="o_phan_he_app_shell o_upm_shell">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+            <div class="o_upm_page">
+                <header class="o_upm_header">
+                    <div class="o_upm_header_text">
+                        <div class="o_upm_breadcrumb">Trang chủ › Phân quyền người dùng</div>
+                        <h1>Phân quyền người dùng</h1>
+                        <p class="o_upm_subtitle">
+                            Quản lý quyền truy cập theo ma trận menu cha – con.
+                            Người dùng chỉ nhìn thấy những menu được cấp quyền.
+                        </p>
+                    </div>
+                    <div class="o_upm_header_actions">
+                        <button type="button" class="btn o_upm_btn_cancel"
+                                t-att-disabled="state.saving or !state.dirty"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/> Hủy
+                        </button>
+                        <button type="button" class="btn o_upm_btn_save"
+                                t-att-disabled="state.saving or !state.dirty"
+                                t-on-click="onSave">
+                            <i class="fa fa-save"/>
+                            <t t-if="state.saving"> Đang lưu...</t>
+                            <t t-else=""> Lưu phân quyền</t>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="o_upm_toolbar">
+                    <label class="o_upm_field">
+                        <span>Người dùng</span>
+                        <select class="form-select" t-on-change="onUserChange"
+                                t-att-value="state.userId">
+                            <t t-foreach="state.users" t-as="u" t-key="u.id">
+                                <option t-att-value="u.id" t-esc="u.name"/>
+                            </t>
+                        </select>
+                    </label>
+                    <label class="o_upm_field">
+                        <span>Ứng dụng</span>
+                        <select class="form-select" t-on-change="onAppChange"
+                                t-att-value="state.appFilter">
+                            <t t-foreach="state.apps" t-as="app" t-key="app.code">
+                                <option t-att-value="app.code" t-esc="app.name"/>
+                            </t>
+                        </select>
+                    </label>
+                    <label class="o_upm_field o_upm_search">
+                        <span>Tìm kiếm menu...</span>
+                        <input type="search" class="form-control"
+                               placeholder="Nhập tên menu hoặc chức năng"
+                               t-att-value="state.query"
+                               t-on-input="onQueryInput"/>
+                    </label>
+                    <button type="button" class="btn o_upm_btn_reset" t-on-click="onResetFilters"
+                            title="Đặt lại bộ lọc">
+                        <i class="fa fa-refresh"/> Đặt lại
+                    </button>
+                    <span t-if="state.dirty" class="o_upm_dirty">● Có thay đổi chưa lưu</span>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="o_upm_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-else="">
+                    <div class="o_upm_table_wrap">
+                        <table class="o_upm_table">
+                            <thead>
+                                <tr>
+                                    <th class="o_upm_col_menu">MENU / CHỨC NĂNG</th>
+                                    <th t-foreach="PERMS" t-as="perm" t-key="perm.key" class="o_upm_col_perm">
+                                        <button type="button" class="o_upm_col_btn"
+                                                t-att-title="'Chọn / bỏ chọn cột: ' + perm.label"
+                                                t-on-click="() => this.onToggleColumn(perm.key)">
+                                            <span t-attf-class="o_upm_cb {{ columnState(perm.key) }}">
+                                                <i t-if="columnState(perm.key) === 'is-on'" class="fa fa-check"/>
+                                                <i t-elif="columnState(perm.key) === 'is-mixed'" class="fa fa-minus"/>
+                                            </span>
+                                            <span t-esc="perm.label"/>
+                                        </button>
+                                    </th>
+                                    <th class="o_upm_col_bulk"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="visibleRows" t-as="row" t-key="row.menu_id"
+                                    t-att-class="row.is_folder ? 'o_upm_row_folder' : 'o_upm_row_leaf'">
+                                    <td class="o_upm_col_menu">
+                                        <div class="o_upm_menu_cell" t-att-style="padStyle(row.depth)">
+                                            <button t-if="row.is_folder" type="button" class="o_upm_fold"
+                                                    t-on-click="() => this.toggleFold(row)">
+                                                <i t-att-class="state.collapsed[row.menu_id] ? 'fa fa-caret-right' : 'fa fa-caret-down'"/>
+                                            </button>
+                                            <span t-else="" class="o_upm_fold_spacer"/>
+                                            <i t-att-class="row.is_folder ? 'fa fa-folder o_upm_ico_folder' : 'fa fa-file-o o_upm_ico_file'"/>
+                                            <strong t-if="row.is_folder" t-esc="row.name"/>
+                                            <span t-else="" t-esc="row.name"/>
+                                        </div>
+                                    </td>
+                                    <td t-foreach="PERMS" t-as="perm" t-key="perm.key" class="o_upm_col_perm">
+                                        <button type="button"
+                                                t-attf-class="o_upm_cb {{ row[perm.key] ? 'is-on' : '' }}"
+                                                role="checkbox"
+                                                t-att-aria-checked="row[perm.key] ? 'true' : 'false'"
+                                                t-att-title="row.name + ' · ' + perm.label"
+                                                t-on-click="() => this.onToggle(row, perm.key)">
+                                            <i t-if="row[perm.key]" class="fa fa-check"/>
+                                        </button>
+                                    </td>
+                                    <td class="o_upm_col_bulk">
+                                        <div t-if="row.is_folder" class="o_upm_bulk">
+                                            <button type="button" class="btn btn-link" title="Xem toàn bộ con"
+                                                    t-on-click="() => this.onBulkChildren(row, 'view')">Xem↓</button>
+                                            <button type="button" class="btn btn-link" title="Toàn quyền con"
+                                                    t-on-click="() => this.onBulkChildren(row, 'all')">All↓</button>
+                                            <button type="button" class="btn btn-link text-danger" title="Thu hồi con"
+                                                    t-on-click="() => this.onBulkChildren(row, 'clear')">Xóa↓</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

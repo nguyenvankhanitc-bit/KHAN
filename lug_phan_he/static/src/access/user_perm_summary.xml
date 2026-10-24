@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.UserPermSummary">
+        <div class="o_phan_he_app_shell o_ups_shell">
+            <PhanHeAppSidebar activeKey="sidebarActiveKey"/>
+            <div class="o_ups_page">
+                <header class="o_ups_header">
+                    <div>
+                        <div class="o_ups_breadcrumb">Trang chủ › Tổng hợp phân quyền</div>
+                        <h1>Tổng hợp phân quyền</h1>
+                        <p class="o_ups_subtitle">
+                            User (chọn nhiều) × quyền truy cập ứng dụng. Bấm «Menu phân quyền» để cấu hình chi tiết cây menu.
+                        </p>
+                    </div>
+                    <div class="o_ups_header_actions">
+                        <button type="button" class="btn o_ups_btn_cancel"
+                                t-att-disabled="state.saving or !state.dirty"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/> Hủy
+                        </button>
+                        <button type="button" class="btn o_ups_btn_save"
+                                t-att-disabled="state.saving or !state.dirty"
+                                t-on-click="onSave">
+                            <i class="fa fa-save"/>
+                            <t t-if="state.saving"> Đang lưu...</t>
+                            <t t-else=""> Lưu</t>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="o_ups_toolbar">
+                    <label class="o_ups_search">
+                        <span>Tìm user</span>
+                        <input type="search" class="form-control" placeholder="Tên hoặc login..."
+                               t-att-value="state.query" t-on-input="onQueryInput"/>
+                    </label>
+                    <div class="o_ups_bulk" t-if="state.apps.length">
+                        <span class="o_ups_bulk_label">Gán nhanh (user đã chọn):</span>
+                        <t t-foreach="state.apps" t-as="app" t-key="app.code">
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                    t-on-click="() => this.onBulkApp(app.code, true)"
+                                    t-att-title="'Bật ' + app.label">
+                                + <t t-esc="app.label"/>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    t-on-click="() => this.onBulkApp(app.code, false)"
+                                    t-att-title="'Tắt ' + app.label">
+                                − <t t-esc="app.label"/>
+                            </button>
+                        </t>
+                    </div>
+                    <span t-if="state.dirty" class="o_ups_dirty">● Có thay đổi chưa lưu</span>
+                </div>
+
+                <t t-if="state.loading">
+                    <div class="o_ups_loading"><i class="fa fa-spinner fa-spin fa-2x"/></div>
+                </t>
+                <t t-else="">
+                    <div class="o_ups_table_wrap">
+                        <table class="o_ups_table">
+                            <thead>
+                                <tr class="o_ups_head_group">
+                                    <th class="o_ups_col_user" rowspan="2">
+                                        <div class="o_ups_user_head">
+                                            <input type="checkbox"
+                                                   t-att-checked="state.selectAll"
+                                                   t-on-change="onToggleSelectAll"/>
+                                            <span>User (chọn nhiều user)</span>
+                                        </div>
+                                    </th>
+                                    <th class="o_ups_col_apps" t-att-colspan="state.apps.length">
+                                        quyền truy cập ứng dụng
+                                    </th>
+                                    <th class="o_ups_col_menu" rowspan="2">Menu phân quyền</th>
+                                </tr>
+                                <tr class="o_ups_head_apps">
+                                    <th t-foreach="state.apps" t-as="app" t-key="app.code"
+                                        class="o_ups_col_app" t-esc="app.label"/>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="visibleRows" t-as="row" t-key="row.user_id"
+                                    t-att-class="row.selected ? 'is-selected' : ''">
+                                    <td class="o_ups_col_user">
+                                        <label class="o_ups_user_cell">
+                                            <input type="checkbox"
+                                                   t-att-checked="row.selected"
+                                                   t-att-disabled="row.is_admin"
+                                                   t-on-change="() => this.onToggleSelect(row)"/>
+                                            <span>
+                                                <strong t-esc="row.name"/>
+                                                <small t-if="row.login" t-esc="row.login"/>
+                                                <em t-if="row.is_admin" class="o_ups_admin_tag">Admin</em>
+                                            </span>
+                                        </label>
+                                    </td>
+                                    <td t-foreach="state.apps" t-as="app" t-key="app.code"
+                                        class="o_ups_col_app">
+                                        <button type="button"
+                                                t-attf-class="o_ups_cb {{ row.apps[app.code] ? 'is-on' : '' }}"
+                                                t-att-disabled="row.is_admin"
+                                                t-att-title="app.label"
+                                                t-on-click="() => this.onToggleApp(row, app.code)">
+                                            <i t-if="row.apps[app.code]" class="fa fa-check"/>
+                                        </button>
+                                    </td>
+                                    <td class="o_ups_col_menu">
+                                        <button type="button" class="btn btn-sm o_ups_menu_btn"
+                                                t-on-click="() => this.openMenuMatrix(row)">
+                                            <i class="fa fa-sitemap"/>
+                                            Chi tiết
+                                            <t t-if="row.menu_count">
+                                                (<t t-esc="row.menu_count"/>)
+                                            </t>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+</templates>

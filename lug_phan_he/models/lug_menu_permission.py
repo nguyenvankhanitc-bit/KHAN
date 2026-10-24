@@ -307,6 +307,12 @@ class PhanHeModuleAccessMenu(models.Model):
             self._ensure_menu_lines()
         return res
 
+    def web_read(self, specification):
+        if self.ids and specification and "menu_permission_line_ids" in specification:
+            self._ensure_menu_lines()
+            self.invalidate_recordset(["menu_permission_line_ids"])
+        return super().web_read(specification)
+
     def _menu_defaults_map(self):
         self.ensure_one()
         return PRESET_MENU.get(self.code) or LINKQ_MENU_DEFAULTS

@@ -125,6 +125,32 @@ def _fold_parent_rights(result):
     return result
 
 
+def _apply_app_gate_to_internet_menus(menus, app):
+    """Bảng 3 là chi tiết CRUD theo menu.
+
+    Bảng 2 chỉ cần *mở* app Internet (view/create/edit/delete/admin).
+    Không AND từng cờ app với menu — tránh tick XÓA ở menu mà vẫn bị chặn vì app tắt XÓA.
+    """
+    app = app or {}
+    if app.get("admin"):
+        return menus
+    app_open = bool(
+        app.get("view")
+        or app.get("create")
+        or app.get("edit")
+        or app.get("delete")
+        or app.get("admin")
+    )
+    if app_open:
+        return menus
+    for _code, flags in (menus or {}).items():
+        if not isinstance(flags, dict):
+            continue
+        for key in ("read", "create", "write", "unlink", "admin"):
+            flags[key] = False
+    return menus
+
+
 class SecurityInternetMenuPermission(models.Model):
     _name = "security.internet.menu.permission"
     _description = "Chi tiết phân quyền Menu Internet"
@@ -190,13 +216,22 @@ class SecurityInternetMenuPermission(models.Model):
         res = super().write(vals)
         if self.env.context.get("skip_internet_menu_cascade"):
             return res
+        # Folder: tick/bỏ tick lan xuống menu con
+        perm_keys = [k for k in ("can_read", "can_create", "can_write", "can_unlink", "can_admin") if k in vals]
+        if perm_keys:
+            for rec in self.filtered("is_folder"):
+                child_vals = {k: bool(rec[k]) for k in perm_keys}
+                if child_vals:
+                    rec.child_ids.with_context(skip_internet_menu_cascade=True).write(child_vals)
         if vals.get("can_admin"):
             for rec in self:
                 child_vals = {fname: True for fname in PERM_BOOLS}
                 child_vals["can_admin"] = True
                 rec.child_ids.with_context(skip_internet_menu_cascade=True).write(child_vals)
-        # Không ép logout tại đây — chỉ áp dụng khi form nhóm bấm Lưu
-        # (xem phan.he.module.access.write + internet_menu_permission_ids).
+        # Đồng bộ bảng 2 theo OR quyền menu
+        roles = self.mapped("role_id")
+        if roles and not self.env.context.get("skip_internet_app_sync"):
+            roles._sync_internet_app_line_from_menus()
         return res
 
 
@@ -208,6 +243,27 @@ class PhanHeModuleAccessInternetMenu(models.Model):
         "role_id",
         string="Phân quyền Menu Internet",
     )
+
+    def _sync_internet_app_line_from_menus(self):
+        """Bảng 2 Internet = OR các quyền bảng 3 (tránh lệch XÓA menu vs app)."""
+        for rec in self:
+            menus = rec.internet_menu_permission_ids
+            line = rec.line_ids.filtered(lambda l: l.service_code == "internet")[:1]
+            if not line:
+                continue
+            vals = {
+                "perm_view": any(
+                    m.can_read or m.can_create or m.can_write or m.can_unlink or m.can_admin
+                    for m in menus
+                ),
+                "perm_create": any(m.can_create or m.can_admin for m in menus),
+                "perm_edit": any(m.can_write or m.can_admin for m in menus),
+                "perm_delete": any(m.can_unlink or m.can_admin for m in menus),
+                "perm_admin": any(m.can_admin for m in menus),
+            }
+            to_write = {k: v for k, v in vals.items() if line[k] != v}
+            if to_write:
+                line.with_context(skip_internet_app_sync=True).write(to_write)
 
     @api.model
     def default_get(self, fields_list):
@@ -239,15 +295,15 @@ class PhanHeModuleAccessInternetMenu(models.Model):
             self._ensure_internet_menu_lines()
         return res
 
+    def web_read(self, specification):
+        if self.ids and specification and "internet_menu_permission_ids" in specification:
+            self._ensure_internet_menu_lines()
+            self.invalidate_recordset(["internet_menu_permission_ids"])
+        return super().web_read(specification)
+
     def _register_hook(self):
         super()._register_hook()
         # Bỏ ensure toàn bộ nhóm lúc boot — tránh làm chậm khởi động/login.
-
-    @api.model
-    def _phan_he_extend_module_rights(self, result, user_id):
-        super()._phan_he_extend_module_rights(result, user_id)
-        result["internet_menus"] = self.get_user_internet_menu_rights(user_id)
-        return result
 
     def _migrate_legacy_internet_menu_lines(self):
         """Gộp quyền menu cũ (Theo dõi / Cảnh báo) sang 4 mục thanh toán mới."""
@@ -377,10 +433,23 @@ class PhanHeModuleAccessInternetMenu(models.Model):
             result[code]["write"] = result[code]["write"] or bool(line.can_write)
             result[code]["unlink"] = result[code]["unlink"] or bool(line.can_unlink)
             result[code]["admin"] = result[code]["admin"] or bool(line.can_admin)
-        return _fold_parent_rights(result)
+        result = _fold_parent_rights(result)
+        # Giao với bảng 2 — tránh menu XÓA vẫn hiện khi app tắt XÓA
+        app = (self._get_user_module_rights_impl(user.id).get("internet") or {})
+        return _apply_app_gate_to_internet_menus(result, app)
 
     @api.model
     def internet_operation_allowed(self, menu_codes, operation, user_id=None):
         menus = self.get_user_internet_menu_rights(user_id)
         codes = menu_codes if isinstance(menu_codes, (list, tuple, set)) else [menu_codes]
         return any(menu_op_allowed(menus, code, operation) for code in codes if code)
+
+    @api.model
+    def _phan_he_extend_module_rights(self, result, user_id):
+        super()._phan_he_extend_module_rights(result, user_id)
+        menus = self.get_user_internet_menu_rights(user_id)
+        # get_user_internet_menu_rights đã gate; đồng bộ lại theo app trong result (sau matrix)
+        result["internet_menus"] = _apply_app_gate_to_internet_menus(
+            menus, result.get("internet") or {}
+        )
+        return result

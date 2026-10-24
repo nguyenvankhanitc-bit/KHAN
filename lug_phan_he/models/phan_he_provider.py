@@ -55,6 +55,11 @@ class PhanHeProvider(models.Model):
         return "internet"
 
     def _phan_he_internet_menu_codes(self, operation):
+        access = self.env["phan.he.module.access"]
+        if hasattr(access, "server_operation_allowed") and access.server_operation_allowed(
+            "settings_provider", operation
+        ):
+            return []
         from .internet_menu_permission import SERVICE_READ_MENUS
         if operation == "read":
             return list(SERVICE_READ_MENUS) + ["setting_provider"]

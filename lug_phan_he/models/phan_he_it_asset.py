@@ -150,6 +150,14 @@ class PhanHeItAsset(models.Model):
         or self.env.company.currency_id,
     )
 
+    # --- Hợp đồng / hóa đơn (nhập trên popup Thêm tài sản) ---
+    contract_file = fields.Binary(string="Hợp đồng", attachment=True)
+    contract_filename = fields.Char(string="Tên file hợp đồng")
+    contract_amount = fields.Monetary(string="Số tiền", currency_field="currency_id", tracking=True)
+    supplier_name = fields.Char(string="Nhà cung cấp (nhập tay)", tracking=True)
+    invoice_file = fields.Binary(string="Hóa đơn", attachment=True)
+    invoice_filename = fields.Char(string="Tên file hóa đơn")
+
     # --- Mạng & bảo mật ---
     admin_url = fields.Char(string="Địa chỉ quản trị")
     license_end = fields.Date(string="Hết hạn license")

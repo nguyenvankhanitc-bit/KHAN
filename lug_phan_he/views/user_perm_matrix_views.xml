@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tuỳ chọn: ma trận theo từng user (bổ sung, không thay bảng 1–2–3) -->
+    <record id="action_phan_he_user_perm_summary" model="ir.actions.client">
+        <field name="name">Ma trận theo user</field>
+        <field name="tag">phan_he_user_perm_summary</field>
+        <field name="target">current</field>
+    </record>
+
+    <record id="action_phan_he_user_perm_matrix" model="ir.actions.client">
+        <field name="name">Menu phân quyền (theo user)</field>
+        <field name="tag">phan_he_user_perm_matrix</field>
+        <field name="target">current</field>
+    </record>
+
+    <!-- Menu chính = bảng 1–2–3 (nhóm quyền) -->
+    <menuitem id="menu_phan_he_user_perm_matrix"
+              name="Tổng hợp phân quyền"
+              parent="menu_phan_he_root"
+              action="action_phan_he_module_access"
+              sequence="84"
+              groups="base.group_system,lug_phan_he.group_phan_he_admin"/>
+
+    <menuitem id="menu_phan_he_user_perm_matrix_detail"
+              name="Ma trận theo user"
+              parent="menu_phan_he_root"
+              action="action_phan_he_user_perm_summary"
+              sequence="86"
+              groups="base.group_system,lug_phan_he.group_phan_he_admin"/>
+</odoo>

@@ -250,6 +250,7 @@ export class PhanHeInternetListBoard extends Component {
         listFilter: { type: String, optional: true },
         listReloadToken: { type: Number, optional: true },
         internetMenus: { type: Object, optional: true },
+        moduleRights: { type: Object, optional: true },
         serviceTypeCode: { type: String, optional: true },
         onOpenEntry: { type: Function, optional: true },
         onPeriodCountChange: { type: Function, optional: true },
@@ -290,6 +291,7 @@ export class PhanHeInternetListBoard extends Component {
             detailForm: {},
             detailInvoicePending: null,
             internetMenus: this.props.internetMenus || {},
+            moduleRights: this.props.moduleRights || {},
             exporting: false,
             forecastYear: nextMonthParts(0).year,
             forecastMonth: nextMonthParts(0).month,
@@ -339,12 +341,17 @@ export class PhanHeInternetListBoard extends Component {
         onWillStart(async () => {
             if (this.props.internetMenus && Object.keys(this.props.internetMenus).length) {
                 this.state.internetMenus = this.props.internetMenus;
+                if (this.props.moduleRights) {
+                    this.state.moduleRights = this.props.moduleRights;
+                }
             } else {
                 try {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                     this.state.internetMenus = rights?.internet_menus || {};
+                    this.state.moduleRights = rights || {};
                 } catch {
                     this.state.internetMenus = {};
+                    this.state.moduleRights = {};
                 }
             }
             // Lịch dự kiến TT: mở đúng tháng hiện tại. Tháng kế tiếp = tháng sau trên bộ lọc.
@@ -523,17 +530,38 @@ export class PhanHeInternetListBoard extends Component {
         return map[this.listFilter] || "Không có dữ liệu";
     }
 
+    internetAppCan(op) {
+        // Bảng 2 chỉ cần mở app; CRUD chi tiết do bảng 3 (internetMenus).
+        const app = (this.state.moduleRights || {}).internet || {};
+        if (app.admin) {
+            return true;
+        }
+        return Boolean(app.view || app.create || app.edit || app.delete || app.admin);
+    }
+
     get canWriteNav() {
-        return internetNavCan(this.state.internetMenus, this.listNavId, "write");
+        return this.internetAppCan("edit")
+            && internetNavCan(this.state.internetMenus, this.listNavId, "write");
+    }
+
+    /** Nút «Thêm mới» trong danh sách Internet: ẩn — tạo mới chỉ qua mục «Thêm mới» ở menu bên trái
+     *  (quyền Thêm của dòng «Thêm mới» trong Phân quyền menu Internet). */
+    get showListAdd() {
+        return false;
     }
 
     get canCreateNav() {
+        if (!this.internetAppCan("create")) {
+            return false;
+        }
         return internetNavCan(this.state.internetMenus, "store_declare", "create")
+            || internetNavCan(this.state.internetMenus, "manage", "create")
             || internetNavCan(this.state.internetMenus, this.listNavId, "create");
     }
 
     get canUnlinkNav() {
-        return internetNavCan(this.state.internetMenus, this.listNavId, "unlink");
+        return this.internetAppCan("delete")
+            && internetNavCan(this.state.internetMenus, this.listNavId, "unlink");
     }
 
     get pageMeta() {

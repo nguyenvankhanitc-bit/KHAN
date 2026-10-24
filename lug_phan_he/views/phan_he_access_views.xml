@@ -24,13 +24,11 @@
         <field name="name">phan.he.module.access.list</field>
         <field name="model">phan.he.module.access</field>
         <field name="arch" type="xml">
-            <list js_class="phan_he_access_list">
-                <field name="name"/>
-                <field name="code"/>
-                <field name="group_ids" widget="many2many_tags" optional="show"/>
-                <field name="user_count"/>
-                <field name="company_id" groups="base.group_multi_company"/>
-                <field name="active"/>
+            <list js_class="phan_he_access_list" string="Tổng hợp phân quyền" create="0" delete="0">
+                <field name="name" string="Dịch vụ"/>
+                <field name="user_count" string="User phân quyền"/>
+                <field name="code" column_invisible="1"/>
+                <field name="summary_sequence" column_invisible="1"/>
             </list>
         </field>
     </record>
@@ -48,35 +46,45 @@
                         </button>
                     </div>
                     <div class="oe_title">
+                        <label for="name" string="Nhóm quyền"/>
                         <h1>
                             <field name="name" placeholder="Tên nhóm quyền"/>
                         </h1>
+                        <field name="group_ids" widget="many2many_tags"
+                               placeholder="Chọn nhóm quyền Lug Security..."
+                               options="{'no_create': True, 'no_quick_create': True}"/>
                     </div>
                     <group>
                         <group>
-                            <field name="code"/>
+                            <field name="code" optional="hide"/>
                             <field name="active"/>
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
+                    <field name="show_menu_linkq" invisible="1"/>
+                    <field name="show_menu_server" invisible="1"/>
+                    <field name="show_menu_internet" invisible="1"/>
+                    <field name="show_menu_store" invisible="1"/>
                     <notebook>
-                        <page string="Người dùng &amp; Nhóm" name="applied_targets">
+                        <!-- BẢNG 1 -->
+                        <page string="1. Người dùng &amp; Nhóm" name="applied_targets">
                             <group>
-                                <field name="group_ids" widget="many2many_tags"
-                                       string="Nhóm quyền Lug Security"
-                                       placeholder="Chọn nhóm quyền Lug Security (action Nhóm quyền)"
-                                       options="{'no_create': True, 'no_quick_create': True}"/>
                                 <field name="custom_user_ids" widget="many2many_tags"
+                                       string="Người dùng ngoại lệ"
                                        placeholder="Thêm user riêng lẻ (nếu có)"
                                        options="{'no_create': True}"/>
                             </group>
                             <group string="DANH SÁCH USERS ÁP DỤNG THỰC TẾ">
-                                <field name="user_ids" widget="many2many_tags" readonly="1"/>
+                                <field name="user_ids" string="Người dùng"
+                                       widget="many2many_tags" readonly="1"/>
                             </group>
                         </page>
-                        <page string="Phân quyền ứng dụng" name="permissions">
-                            <field name="line_ids" nolabel="1" context="{'default_perm_view': False}">
-                                <list editable="bottom" create="0" delete="0">
+                        <!-- BẢNG 2 -->
+                        <page string="2. Phân quyền ứng dụng" name="permissions">
+                            <field name="line_ids" nolabel="1" context="{'default_perm_view': False}"
+                                   class="o_phan_he_access_perm_matrix">
+                                <list editable="bottom" create="0" delete="0"
+                                      class="o_phan_he_access_perm_matrix">
                                     <field name="sequence" widget="handle" optional="hide"/>
                                     <field name="service_code" column_invisible="1"/>
                                     <field name="service_name" string="APP" readonly="1"/>
@@ -91,10 +99,8 @@
                                 </list>
                             </field>
                         </page>
-                        <page string="Mô tả" name="description">
-                            <field name="description" nolabel="1"
-                                      placeholder="Mô tả nhóm quyền..."/>
-                        </page>
+                        <!-- BẢNG 3: tab menu — xem inherit lug_menu_permission_views -->
+                        <!-- Mô tả để cuối form -->
                     </notebook>
                 </sheet>
             </form>
@@ -105,11 +111,11 @@
         <field name="name">phan.he.module.access.search</field>
         <field name="model">phan.he.module.access</field>
         <field name="arch" type="xml">
-            <search>
-                <field name="name"/>
+            <search string="Tìm theo nhóm quyền, mã...">
+                <field name="group_ids" string="Nhóm quyền"/>
                 <field name="code"/>
                 <field name="user_ids"/>
-                <field name="group_ids"/>
+                <field name="name" string="Nhãn nội bộ"/>
                 <filter name="active" string="Đang hiệu lực" domain="[('active', '=', True)]"/>
                 <filter name="linkq_presets" string="Nhóm quyền LinkQ"
                         domain="[('code', 'in', ['preset_view', 'preset_staff', 'preset_store_mgr', 'preset_region_mgr', 'preset_admin'])]"/>
@@ -117,14 +123,143 @@
         </field>
     </record>
 
+    <record id="view_phan_he_service_perm_list" model="ir.ui.view">
+        <field name="name">phan.he.module.access.service.list</field>
+        <field name="model">phan.he.module.access</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list js_class="phan_he_access_list" string="Tổng hợp phân quyền" create="0" delete="0">
+                <field name="name" string="Dịch vụ"/>
+                <field name="user_count" string="User phân quyền"/>
+                <field name="code" column_invisible="1"/>
+                <field name="summary_sequence" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_phan_he_service_perm_form" model="ir.ui.view">
+        <field name="name">phan.he.module.access.service.form</field>
+        <field name="model">phan.he.module.access</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <form string="Phân quyền dịch vụ" js_class="phan_he_access_form" create="0" delete="0">
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Dịch vụ"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <field name="code" invisible="1"/>
+                    <group string="User phân quyền">
+                        <field name="group_ids" widget="many2many_tags" string="Nhóm quyền"
+                               placeholder="Chọn nhóm quyền Lug Security..."
+                               options="{'no_create': True, 'no_quick_create': True}"/>
+                        <field name="custom_user_ids" widget="many2many_tags" string="User phân quyền"
+                               placeholder="Thêm user được phân quyền"
+                               options="{'no_create': True}"/>
+                        <field name="user_ids" widget="many2many_tags" readonly="1"
+                               string="User đang áp dụng"/>
+                    </group>
+                    <separator string="Phân quyền Menu"/>
+                    <field name="internet_menu_permission_ids" nolabel="1"
+                           invisible="code != 'internet'"
+                           widget="linkq_menu_permission_tree"
+                           options="{'header': 'MENU INTERNET'}">
+                        <list create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_folder"/>
+                            <field name="parent_id"/>
+                            <field name="menu_code"/>
+                            <field name="menu_name"/>
+                            <field name="can_read"/>
+                            <field name="can_create"/>
+                            <field name="can_write"/>
+                            <field name="can_unlink"/>
+                            <field name="can_admin"/>
+                        </list>
+                    </field>
+                    <field name="camera_menu_permission_ids" nolabel="1"
+                           invisible="code != 'camera'"
+                           widget="linkq_menu_permission_tree"
+                           options="{'header': 'MENU CAMERA'}">
+                        <list create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_folder"/>
+                            <field name="parent_id"/>
+                            <field name="menu_code"/>
+                            <field name="menu_name"/>
+                            <field name="can_read"/>
+                            <field name="can_create"/>
+                            <field name="can_write"/>
+                            <field name="can_unlink"/>
+                            <field name="can_admin"/>
+                        </list>
+                    </field>
+                    <field name="server_menu_permission_ids" nolabel="1"
+                           invisible="code != 'server'"
+                           widget="linkq_menu_permission_tree"
+                           options="{'header': 'MENU MÁY CHỦ', 'show_all_checks': True}">
+                        <list create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_group"/>
+                            <field name="is_custom"/>
+                            <field name="parent_id"/>
+                            <field name="parent_key"/>
+                            <field name="menu_key"/>
+                            <field name="name"/>
+                            <field name="can_read"/>
+                            <field name="can_create"/>
+                            <field name="can_write"/>
+                            <field name="can_unlink"/>
+                            <field name="can_all"/>
+                        </list>
+                    </field>
+                    <field name="menu_permission_line_ids" nolabel="1"
+                           invisible="code != 'linkq_nb'"
+                           widget="linkq_menu_permission_tree">
+                        <list create="0" delete="0" default_order="sequence">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="is_group"/>
+                            <field name="is_custom"/>
+                            <field name="parent_id"/>
+                            <field name="menu_key"/>
+                            <field name="name"/>
+                            <field name="can_read"/>
+                            <field name="can_create"/>
+                            <field name="can_write"/>
+                            <field name="can_unlink"/>
+                            <field name="can_all"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
     <record id="action_phan_he_module_access" model="ir.actions.act_window">
-        <field name="name">Phân quyền</field>
+        <field name="name">Tổng hợp phân quyền</field>
         <field name="res_model">phan.he.module.access</field>
         <field name="view_mode">list,form</field>
-        <field name="context">{}</field>
+        <field name="mobile_view_mode">list</field>
+        <field name="domain">[('code', 'in', ['internet', 'camera', 'server', 'linkq_nb'])]</field>
+        <field name="context">{'phan_he_service_buckets': True}</field>
         <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">Chưa có nhóm quyền</p>
-            <p>Chọn nhóm quyền Lug Security (Nhóm quyền). Users trong nhóm được gộp tự động; có thể thêm user ngoại lệ.</p>
+            <p class="o_view_nocontent_smiling_face">Chưa có dịch vụ</p>
+            <p>Chọn Dịch vụ Internet, Dịch vụ Camera, Máy chủ hoặc LinkQ ERP để gán user và phân quyền từng mục menu.</p>
         </field>
+    </record>
+
+    <record id="action_phan_he_module_access_view_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_phan_he_service_perm_list"/>
+        <field name="act_window_id" ref="action_phan_he_module_access"/>
+    </record>
+    <record id="action_phan_he_module_access_view_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="2"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_phan_he_service_perm_form"/>
+        <field name="act_window_id" ref="action_phan_he_module_access"/>
     </record>
 </odoo>

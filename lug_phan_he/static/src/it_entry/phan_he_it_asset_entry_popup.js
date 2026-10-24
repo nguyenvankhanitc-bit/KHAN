@@ -100,7 +100,17 @@ function emptyForm() {
         admin_url: "",
         license_end: "",
         firmware_version: "",
+        contract_amount: "",
+        supplier_name: "",
+        contract_filename: "",
+        invoice_filename: "",
     };
+}
+
+/** 1234567 → "1.234.567" (VNĐ). */
+function formatVnd(v) {
+    const n = Number(String(v ?? "").replace(/[^\d]/g, ""));
+    return n ? n.toLocaleString("vi-VN") : "";
 }
 
 export class PhanHeItAssetEntryPopup extends Component {
@@ -116,6 +126,7 @@ export class PhanHeItAssetEntryPopup extends Component {
         this.notification = useService("notification");
         this.assetStates = ASSET_STATES;
         this.cloudBilling = CLOUD_BILLING;
+        this.files = {};
         this.state = useState({
             loading: true,
             saving: false,
@@ -295,6 +306,7 @@ export class PhanHeItAssetEntryPopup extends Component {
                 "note", "hdd_gb", "vm_name", "host_asset_id",
                 "cloud_provider", "cloud_account", "cloud_region", "cloud_service_type",
                 "cloud_billing_cycle", "cloud_budget", "admin_url", "license_end", "firmware_version",
+                "contract_amount", "supplier_name", "contract_filename", "invoice_filename",
             ],
             { limit: 1 }
         );
@@ -343,7 +355,54 @@ export class PhanHeItAssetEntryPopup extends Component {
             admin_url: rec.admin_url || "",
             license_end: isoToDisplay(rec.license_end) || "",
             firmware_version: rec.firmware_version || "",
+            contract_amount: formatVnd(rec.contract_amount),
+            supplier_name: rec.supplier_name || "",
+            contract_filename: rec.contract_filename || "",
+            invoice_filename: rec.invoice_filename || "",
         };
+        // File đã có: chỉ gửi lại khi chọn file mới / bấm xóa
+        this.files = {};
+    }
+
+    /** Số tiền: chỉ nhận số, tự chấm hàng nghìn. */
+    onAmount(ev) {
+        const v = formatVnd(ev.target.value);
+        this.state.form.contract_amount = v;
+        ev.target.value = v;
+    }
+
+    /** Chọn file Hợp đồng / Hóa đơn → base64 (lưu khi bấm Lưu tài sản). */
+    onFile(kind, ev) {
+        const file = ev.target.files && ev.target.files[0];
+        if (!file) {
+            return;
+        }
+        if (file.size > 25 * 1024 * 1024) {
+            this.notification.add("File quá lớn (tối đa 25 MB).", { type: "warning" });
+            ev.target.value = "";
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = () => {
+            const data = String(reader.result || "");
+            this.files = this.files || {};
+            this.files[kind] = { data: data.slice(data.indexOf(",") + 1), name: file.name };
+            this.state.form[`${kind}_filename`] = file.name;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    clearFile(kind) {
+        this.files = this.files || {};
+        this.files[kind] = { data: false, name: false };
+        this.state.form[`${kind}_filename`] = "";
+    }
+
+    fileUrl(kind) {
+        if (!this.isEdit || (this.files && this.files[kind])) {
+            return "";
+        }
+        return `/web/content/phan.he.it.asset/${this.props.resId}/${kind}_file/${encodeURIComponent(this.state.form[`${kind}_filename`] || kind)}?download=true`;
     }
 
     onField(field, ev) {
@@ -428,7 +487,16 @@ export class PhanHeItAssetEntryPopup extends Component {
             admin_url: f.admin_url.trim() || false,
             license_end: parseDisplayDate(f.license_end) || false,
             firmware_version: f.firmware_version.trim() || false,
+            contract_amount: Number(String(f.contract_amount || "").replace(/[^\d]/g, "")) || 0,
+            supplier_name: (f.supplier_name || "").trim() || false,
         };
+        for (const kind of ["contract", "invoice"]) {
+            const file = this.files && this.files[kind];
+            if (file) {
+                vals[`${kind}_file`] = file.data;
+                vals[`${kind}_filename`] = file.name;
+            }
+        }
         return vals;
     }
 

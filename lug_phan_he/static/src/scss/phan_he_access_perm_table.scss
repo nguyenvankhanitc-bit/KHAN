@@ -1,0 +1,106 @@
+/* Bảng 2 · Phân quyền ứng dụng — khung đậm + checkbox xanh lá */
+
+.o_phan_he_module_access_form .o_notebook .o_list_renderer,
+.o_phan_he_access_perm_matrix.o_list_renderer,
+.o_phan_he_access_perm_matrix .o_list_renderer {
+    border: 2px solid #475569;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table,
+.o_phan_he_access_perm_matrix table.o_list_table {
+    border-collapse: collapse !important;
+    width: 100%;
+    margin: 0;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table thead th,
+.o_phan_he_access_perm_matrix table.o_list_table thead th {
+    background: #f1f5f9 !important;
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-size: 0.78rem;
+    border: 1.5px solid #64748b !important;
+    border-bottom-width: 2px !important;
+    vertical-align: middle;
+    white-space: nowrap;
+    padding: 10px 8px !important;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table tbody tr.o_data_row td,
+.o_phan_he_access_perm_matrix table.o_list_table tbody tr.o_data_row td {
+    border: 1.5px solid #64748b !important;
+    vertical-align: middle;
+    padding: 8px !important;
+    background: #fff;
+    text-align: center;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table tbody tr.o_data_row td:first-child,
+.o_phan_he_access_perm_matrix table.o_list_table tbody tr.o_data_row td:first-child {
+    text-align: left;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table tbody tr.o_data_row:nth-child(even) td,
+.o_phan_he_access_perm_matrix table.o_list_table tbody tr.o_data_row:nth-child(even) td {
+    background: #f8fafc !important;
+}
+
+.o_phan_he_module_access_form .o_notebook table.o_list_table tbody tr.o_data_row:hover td,
+.o_phan_he_access_perm_matrix table.o_list_table tbody tr.o_data_row:hover td {
+    background: #f0fdf4 !important;
+}
+
+/* ---- Checkbox xanh lá (không phụ thuộc o_boolean_cell) ---- */
+.o_phan_he_module_access_form .o_notebook .o-checkbox,
+.o_phan_he_module_access_form .o_notebook .form-check,
+.o_phan_he_access_perm_matrix .o-checkbox,
+.o_phan_he_access_perm_matrix .form-check {
+    display: inline-flex;
+    justify-content: center;
+    margin: 0;
+    min-height: 0;
+    padding-left: 0;
+}
+
+.o_phan_he_module_access_form .o_notebook input.form-check-input[type="checkbox"],
+.o_phan_he_access_perm_matrix input.form-check-input[type="checkbox"] {
+    width: 1.25rem !important;
+    height: 1.25rem !important;
+    margin: 0 !important;
+    cursor: pointer;
+    float: none;
+    border: 1.5px solid #94a3b8 !important;
+    border-radius: 0.25rem !important;
+    background-color: #fff !important;
+    background-image: none !important;
+    accent-color: #16a34a;
+}
+
+.o_phan_he_module_access_form .o_notebook input.form-check-input[type="checkbox"]:checked,
+.o_phan_he_access_perm_matrix input.form-check-input[type="checkbox"]:checked,
+.o_phan_he_module_access_form .o_notebook .o-checkbox:hover input.form-check-input[type="checkbox"]:checked,
+.o_phan_he_access_perm_matrix .o-checkbox:hover input.form-check-input[type="checkbox"]:checked {
+    background-color: #16a34a !important;
+    border-color: #15803d !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3e%3cpath fill='none' stroke='%23ffffff' stroke-linecap='round' stroke-linejoin='round' stroke-width='3' d='M6 10l3 3 6-6'/%3e%3c/svg%3e") !important;
+    background-size: 100% 100% !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+}
+
+.o_phan_he_module_access_form .o_notebook input.form-check-input[type="checkbox"]:focus,
+.o_phan_he_access_perm_matrix input.form-check-input[type="checkbox"]:focus {
+    border-color: #22c55e !important;
+    box-shadow: 0 0 0 0.2rem rgba(34, 197, 94, 0.35) !important;
+    outline: none;
+}
+
+.o_phan_he_module_access_form .o_notebook .o-checkbox:hover input.form-check-input[type="checkbox"]:not(:disabled):not(:checked),
+.o_phan_he_access_perm_matrix .o-checkbox:hover input.form-check-input[type="checkbox"]:not(:disabled):not(:checked) {
+    border-color: #22c55e !important;
+}

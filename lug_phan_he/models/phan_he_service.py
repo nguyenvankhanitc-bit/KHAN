@@ -370,7 +370,20 @@ class PhanHeService(models.Model):
         if operation == "read":
             return list(SERVICE_READ_MENUS)
         if operation == "create":
-            return [self.env.context.get("phan_he_internet_menu") or "internet_entry"]
+            # Thêm được nếu có THÊM trên Thêm mới HOẶC list quản lý (Đang sử dụng / …)
+            ctx = self.env.context.get("phan_he_internet_menu")
+            codes = [
+                "internet_entry",
+                "internet_active",
+                "internet_suspend",
+                "internet_liquidation",
+                "group_manage_internet",
+            ]
+            if ctx and ctx not in codes:
+                codes.insert(0, ctx)
+            elif ctx:
+                codes = [ctx] + [c for c in codes if c != ctx]
+            return codes
         status = "active"
         if self and self.id:
             status = self.ops_status or "active"

@@ -13,6 +13,9 @@ from . import phan_he_it_dashboard
 from . import phan_he_module_access
 from . import lug_menu_permission
 from . import internet_menu_permission
+from . import camera_menu_permission
+from . import server_menu_permission
+from . import user_menu_perm
 from . import menu_access
 from . import lug_menu_access
 from . import phan_he_work_shift

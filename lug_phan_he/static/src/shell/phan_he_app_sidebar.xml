@@ -44,6 +44,17 @@
                     <span class="sidebar-ico ico-violet"><i class="fa fa-link"/></span>
                     <span>LinkQ ERP</span>
                 </button>
+                <t t-if="state.showConfig">
+                    <div class="sidebar-pill">Hệ thống</div>
+                    <button type="button" class="sidebar-row" t-att-class="isActive('access') or isActive('access_groups') ? 'is-active' : ''" t-on-click="onAccess">
+                        <span class="sidebar-ico ico-indigo"><i class="fa fa-th"/></span>
+                        <span>Tổng hợp phân quyền</span>
+                    </button>
+                    <button type="button" class="sidebar-row" t-att-class="isActive('access_user') ? 'is-active' : ''" t-on-click="onUserPermSummary">
+                        <span class="sidebar-ico ico-indigo"><i class="fa fa-user"/></span>
+                        <span>Ma trận theo user</span>
+                    </button>
+                </t>
             </nav>
 
             <nav class="o_phan_he_sidebar_nav linkq-subpanel-container" t-if="showLinkqPanel">

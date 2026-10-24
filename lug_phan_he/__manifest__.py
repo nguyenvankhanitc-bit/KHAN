@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.534.0",
+    "version": "19.0.2.557.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -60,6 +60,7 @@ Quản lý dịch vụ
         "views/phan_he_hub_action.xml",
         "views/phan_he_access_views.xml",
         "views/lug_menu_permission_views.xml",
+        "views/user_perm_matrix_views.xml",
         "views/linkq_store_permission_views.xml",
         "views/menu_access_views.xml",
         "views/phan_he_access_action.xml",
@@ -117,6 +118,7 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/js/menu_tree_widget.js",
             "lug_phan_he/static/src/access/phan_he_access_matrix.js",
             "lug_phan_he/static/src/access/linkq_permission_matrix.scss",
+            "lug_phan_he/static/src/scss/phan_he_access_perm_table.scss",
             "lug_phan_he/static/src/access/linkq_permission_matrix.js",
             "lug_phan_he/static/src/access/linkq_permission_matrix.xml",
             "lug_phan_he/static/src/internet_shell/phan_he_internet_shell.scss",
@@ -147,6 +149,13 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.js",
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.xml",
             "lug_phan_he/static/src/access/internet_menu_nav.js",
+            "lug_phan_he/static/src/access/server_menu_nav.js",
+            "lug_phan_he/static/src/access/user_perm_matrix.scss",
+            "lug_phan_he/static/src/access/user_perm_matrix.js",
+            "lug_phan_he/static/src/access/user_perm_matrix.xml",
+            "lug_phan_he/static/src/access/user_perm_summary.scss",
+            "lug_phan_he/static/src/access/user_perm_summary.js",
+            "lug_phan_he/static/src/access/user_perm_summary.xml",
             "lug_phan_he/static/src/access/phan_he_session_logout.js",
             "lug_phan_he/static/src/it_report/phan_he_it_cost_report.scss",
             "lug_phan_he/static/src/it_report/phan_he_it_cost_report_frame.scss",

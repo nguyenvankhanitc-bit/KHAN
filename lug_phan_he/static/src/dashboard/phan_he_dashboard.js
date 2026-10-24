@@ -18,8 +18,15 @@ import {
     INTERNET_NAV_TO_CODE,
     filterInternetNavSections,
     firstAllowedInternetNav,
+    internetMenuCan,
     internetNavCan,
 } from "../access/internet_menu_nav";
+import {
+    filterServerNavSections,
+    firstAllowedServerNav,
+    serverNavCan,
+    serverNavCreate,
+} from "../access/server_menu_nav";
 
 const IT_COST_REPORTS = {
     it_report_month: "month",
@@ -484,9 +491,12 @@ export class PhanHeDashboard extends Component {
             inet: {},
             it: {},
             internetMenus: {},
+            moduleRights: {},
+            serverMenus: {},
             paymentReport: { tables: [] },
             entryPopupOpen: false,
             entryPopupResId: false,
+            entryCreateMenu: "internet_active",
             itAssetPopupOpen: false,
             itAssetPopupResId: false,
             itCostPopupOpen: false,
@@ -520,10 +530,14 @@ export class PhanHeDashboard extends Component {
             try {
                 if (this.serviceTypeCode === "internet") {
                     const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
+                    this.state.moduleRights = rights || {};
                     this.state.internetMenus = rights?.internet_menus || {};
                     // Badge sidebar không chặn mở list — chạy nền.
                     this.loadNavBadges();
                 } else if (this.serviceTypeCode === "server") {
+                    const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
+                    this.state.moduleRights = rights || {};
+                    this.state.serverMenus = rights?.server_menus || {};
                     this.loadNavBadges();
                 }
                 let openNav = this.actionContext.phan_he_open_nav;
@@ -535,6 +549,18 @@ export class PhanHeDashboard extends Component {
                     if ((!openNav || openNav === "overview") && !internetNavCan(menus, "overview")) {
                         const first = firstAllowedInternetNav(
                             filterInternetNavSections(INTERNET_NAV_SECTIONS, menus)
+                        );
+                        openNav = first ? first.id : false;
+                    }
+                }
+                if (this.serviceTypeCode === "server") {
+                    const menus = this.state.serverMenus;
+                    if (openNav && !serverNavCan(menus, openNav === "overview" ? "overview" : openNav)) {
+                        openNav = false;
+                    }
+                    if ((!openNav || openNav === "overview") && !serverNavCan(menus, "overview")) {
+                        const first = firstAllowedServerNav(
+                            filterServerNavSections(SERVER_NAV_SECTIONS, menus)
                         );
                         openNav = first ? first.id : false;
                     }
@@ -1049,7 +1075,7 @@ export class PhanHeDashboard extends Component {
             return filterInternetNavSections(INTERNET_NAV_SECTIONS, this.state.internetMenus);
         }
         if (code === "server") {
-            return SERVER_NAV_SECTIONS;
+            return filterServerNavSections(SERVER_NAV_SECTIONS, this.state.serverMenus);
         }
         if (code === "linkq_nb") {
             return [
@@ -1134,10 +1160,13 @@ export class PhanHeDashboard extends Component {
     }
 
     get canSeeInternetOverview() {
-        if (this.serviceTypeCode !== "internet") {
-            return true;
+        if (this.serviceTypeCode === "internet") {
+            return internetNavCan(this.state.internetMenus, "overview");
         }
-        return internetNavCan(this.state.internetMenus, "overview");
+        if (this.serviceTypeCode === "server") {
+            return serverNavCan(this.state.serverMenus, "overview");
+        }
+        return true;
     }
 
     get alertCount() {
@@ -1187,7 +1216,10 @@ export class PhanHeDashboard extends Component {
     }
 
     onOverview() {
-        if (this.serviceTypeCode === "internet" && !this.canSeeInternetOverview) {
+        if (
+            (this.serviceTypeCode === "internet" || this.serviceTypeCode === "server")
+            && !this.canSeeInternetOverview
+        ) {
             const first = firstAllowedInternetNav(this.navSections);
             if (first) {
                 this.onNavChild(first);
@@ -1217,6 +1249,10 @@ export class PhanHeDashboard extends Component {
             return;
         }
         if (this.serviceTypeCode === "internet" && !internetNavCan(this.state.internetMenus, child.id)) {
+            this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
+            return;
+        }
+        if (this.serviceTypeCode === "server" && !serverNavCan(this.state.serverMenus, child.id)) {
             this.notification.add("Bạn không có quyền xem mục này.", { type: "warning" });
             return;
         }
@@ -1426,34 +1462,78 @@ export class PhanHeDashboard extends Component {
         );
     }
 
-    openEntryPopup(resId = false) {
-        // Cho phép mở nếu có quyền create/write, hoặc chưa có bảng quyền (admin / chưa load).
+    internetAppCan(_op) {
+        // Bảng 2 chỉ cần mở app Internet; CRUD theo bảng 3.
+        const app = (this.state.moduleRights || {}).internet || {};
+        if (app.admin) {
+            return true;
+        }
+        return Boolean(app.view || app.create || app.edit || app.delete || app.admin);
+    }
+
+    resolveInternetCreateMenu() {
         const menus = this.state.internetMenus || {};
-        const hasMenuAcl = Object.keys(menus).length > 0;
-        const canCreate = !hasMenuAcl
-            || internetNavCan(menus, "store_declare", "create")
-            || internetNavCan(menus, this.state.activeNav || "list_active", "create");
-        const canWrite = !hasMenuAcl
-            || internetNavCan(menus, "store_declare", "write")
-            || internetNavCan(menus, this.state.activeNav || "list_active", "write");
+        const candidates = [
+            INTERNET_NAV_TO_CODE[this.state.activeNav] || this.state.activeNav,
+            "internet_active",
+            "internet_entry",
+            "group_manage_internet",
+        ];
+        for (const code of candidates) {
+            if (code && internetMenuCan(menus, code, "create")) {
+                return code;
+            }
+        }
+        return "internet_active";
+    }
+
+    openEntryPopup(resId = false) {
+        // Bảng 2 (app) AND bảng 3 (menu Đang sử dụng / Thêm mới / nhóm cha).
+        const menus = this.state.internetMenus || {};
+        const canCreate = this.internetAppCan("create") && (
+            internetNavCan(menus, "store_declare", "create")
+            || internetNavCan(menus, "manage", "create")
+            || internetNavCan(menus, this.state.activeNav || "list_active", "create")
+        );
+        const canWrite = this.internetAppCan("edit") && (
+            internetNavCan(menus, "store_declare", "write")
+            || internetNavCan(menus, "manage", "write")
+            || internetNavCan(menus, this.state.activeNav || "list_active", "write")
+        );
         if (resId ? !canWrite : !canCreate) {
             this.notification.add(resId ? "Bạn không có quyền Sửa." : "Bạn không có quyền Thêm.", {
                 type: "warning",
             });
             return;
         }
-        this.state.activeNav = "store_declare";
+        // Giữ nav hiện tại (vd Đang sử dụng); không ép sang Thêm mới nếu chưa cấp quyền.
+        if (internetNavCan(menus, "store_declare", "read") || internetNavCan(menus, "store_declare", "create")) {
+            this.state.activeNav = "store_declare";
+        }
         this.state.openGroups.manage = true;
         this.state.entryPopupResId = resId || false;
+        this.state.entryCreateMenu = this.resolveInternetCreateMenu();
         this.state.entryPopupOpen = true;
     }
 
     closeEntryPopup() {
         this.state.entryPopupOpen = false;
         this.state.entryPopupResId = false;
+        this.state.entryCreateMenu = "internet_active";
     }
 
     openItAssetPopup(resId = false) {
+        if (this.serviceTypeCode === "server") {
+            const allowed = resId
+                ? serverNavCan(this.state.serverMenus, this.state.activeNav || "it_asset_all", "write")
+                : serverNavCan(this.state.serverMenus, "it_asset_new", "create");
+            if (!allowed) {
+                this.notification.add(resId ? "Bạn không có quyền Sửa." : "Bạn không có quyền Thêm.", {
+                    type: "warning",
+                });
+                return;
+            }
+        }
         this.state.activeNav = "it_asset_new";
         this.state.openGroups.manage = true;
         this.state.itAssetPopupResId = resId || false;
@@ -1481,6 +1561,17 @@ export class PhanHeDashboard extends Component {
     }
 
     openItCostPopup(resId = false) {
+        if (this.serviceTypeCode === "server") {
+            const allowed = resId
+                ? serverNavCan(this.state.serverMenus, this.state.activeNav || "it_cost_list", "write")
+                : serverNavCan(this.state.serverMenus, "it_cost_new", "create");
+            if (!allowed) {
+                this.notification.add(resId ? "Bạn không có quyền Sửa." : "Bạn không có quyền Thêm.", {
+                    type: "warning",
+                });
+                return;
+            }
+        }
         this.state.activeNav = "it_cost_new";
         this.state.openGroups.payment = true;
         this.state.itCostPopupResId = resId || false;
@@ -1581,14 +1672,23 @@ export class PhanHeDashboard extends Component {
             const menuKey = this.state.activeNav || navId;
             const menuCode = INTERNET_NAV_TO_CODE[menuKey] || false;
             const isInternetAcl = this.serviceTypeCode === "internet";
+            const isServerAcl = this.serviceTypeCode === "server";
             const canWrite = isInternetAcl
-                ? (internetNavCan(this.state.internetMenus, menuKey, "write")
-                    || (menuKey === "store_declare" && internetNavCan(this.state.internetMenus, "store_declare", "write")))
-                : true;
+                ? (this.internetAppCan("edit") && (
+                    internetNavCan(this.state.internetMenus, menuKey, "write")
+                    || (menuKey === "store_declare" && internetNavCan(this.state.internetMenus, "store_declare", "write"))
+                ))
+                : isServerAcl
+                    ? serverNavCan(this.state.serverMenus, menuKey, "write")
+                    : true;
             const canCreate = isInternetAcl
-                ? (internetNavCan(this.state.internetMenus, menuKey, "create")
-                    || internetNavCan(this.state.internetMenus, "store_declare", "create"))
-                : true;
+                ? (this.internetAppCan("create") && (
+                    internetNavCan(this.state.internetMenus, menuKey, "create")
+                    || internetNavCan(this.state.internetMenus, "store_declare", "create")
+                ))
+                : isServerAcl
+                    ? serverNavCreate(this.state.serverMenus, menuKey)
+                    : true;
             const viewContext = {
                 ...this.parseActionContext(act.context),
                 phan_he_service_type_code: this.serviceTypeCode,
@@ -1873,6 +1973,10 @@ export class PhanHeDashboard extends Component {
     }
 
     async loadItDash() {
+        if (this.serviceTypeCode === "server" && !serverNavCan(this.state.serverMenus, "overview")) {
+            this.state.loading = false;
+            return;
+        }
         this.state.loading = true;
         try {
             const parts = String(this.state.selectedMonth || "").split("-");

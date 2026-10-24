@@ -1,60 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="linkq_erp.MenuPermissionTree">
-        <table class="linkq-perm-table">
-            <thead>
-                <tr>
-                    <th style="width: 40%;">MENU LINKQ ERP</th>
-                    <th class="text-center">XEM</th>
-                    <th class="text-center">THÊM</th>
-                    <th class="text-center">SỬA</th>
-                    <th class="text-center">XÓA</th>
-                    <th class="text-center">QUẢN TRỊ</th>
-                </tr>
-            </thead>
-            <tbody>
-                <t t-foreach="records" t-as="rec" t-key="rec.id">
-                    <t t-set="d" t-value="rec.data"/>
-                    <t t-set="isChild" t-value="isChildRow(d)"/>
-                    <tr t-att-class="{'d-none': isChild and state.collapsed[parentId(d)]}">
-                        <td>
-                            <div class="menu-name-cell" t-att-style="isChild ? 'padding-left: 32px' : 'padding-left: 8px'">
-                                <t t-if="isChild">
-                                    <div class="branch-line"/>
-                                </t>
-                                <t t-if="d.item_type === 'folder'">
-                                    <span class="toggle-btn" t-on-click="() => this.toggleRow(rec.id)">
-                                        <i t-att-class="state.collapsed[rec.id] ? 'fa fa-chevron-right' : 'fa fa-chevron-down'"/>
-                                    </span>
-                                    <i class="fa fa-folder item-icon icon-folder"/>
-                                </t>
-                                <t t-elif="d.item_type === 'action'">
-                                    <i class="fa fa-cog item-icon icon-action"/>
-                                </t>
-                                <t t-else="">
-                                    <i class="fa fa-file-o item-icon icon-file"/>
-                                </t>
-                                <span t-att-class="d.item_type === 'folder' ? 'fw-bold' : ''">
-                                    <t t-esc="d.name"/>
-                                </span>
-                            </div>
-                        </td>
-                        <t t-foreach="permKeys" t-as="perm" t-key="perm">
-                            <td class="text-center">
-                                <t t-if="hasPermFlag(d, perm)">
-                                    <input type="checkbox"
-                                           t-att-checked="d[perm]"
-                                           t-att-class="cellClass(perm, d.item_type)"
-                                           t-on-change="(ev) => this.onCheckChange(rec, perm, ev)"/>
-                                </t>
-                                <t t-else="">
-                                    <span class="crown-placeholder"/>
-                                </t>
-                            </td>
-                        </t>
+        <div class="o_linkq_perm_wrap">
+            <table class="linkq-perm-table">
+                <thead>
+                    <tr>
+                        <th class="o_lp_col_menu" t-esc="headerLabel"/>
+                        <th class="o_lp_col_perm">XEM</th>
+                        <th class="o_lp_col_perm">THÊM</th>
+                        <th class="o_lp_col_perm">SỬA</th>
+                        <th class="o_lp_col_perm">XÓA</th>
+                        <th class="o_lp_col_perm">QUẢN TRỊ</th>
                     </tr>
-                </t>
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    <t t-foreach="records" t-as="rec" t-key="rec.id">
+                        <t t-set="d" t-value="rec.data"/>
+                        <t t-set="isChild" t-value="isChildRow(d)"/>
+                        <tr t-att-class="{
+                            'd-none': isChild and isCollapsed(parentId(d)),
+                            'is-folder': d.item_type === 'folder',
+                            'is-child': isChild,
+                        }">
+                            <td class="o_lp_menu_td">
+                                <div class="menu-name-cell" t-att-class="isChild ? 'is-child' : 'is-root'">
+                                    <t t-if="d.item_type === 'folder'">
+                                        <button type="button" class="toggle-btn"
+                                                t-on-click="() => this.toggleRow(rec.id)"
+                                                t-att-title="isCollapsed(rec.id) ? 'Mở rộng' : 'Thu gọn'">
+                                            <i t-att-class="isCollapsed(rec.id) ? 'fa fa-caret-right' : 'fa fa-caret-down'"/>
+                                        </button>
+                                        <i class="fa fa-folder item-icon icon-folder"/>
+                                    </t>
+                                    <t t-elif="d.item_type === 'action'">
+                                        <span class="toggle-spacer"/>
+                                        <i class="fa fa-cog item-icon icon-action"/>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="toggle-spacer"/>
+                                        <i class="fa fa-file-text-o item-icon icon-file"/>
+                                    </t>
+                                    <span t-att-class="d.item_type === 'folder' ? 'menu-label is-folder' : 'menu-label'">
+                                        <t t-esc="d.name"/>
+                                    </span>
+                                </div>
+                            </td>
+                            <t t-foreach="permKeys" t-as="perm" t-key="perm">
+                                <td class="o_lp_perm_td">
+                                    <t t-if="hasPermFlag(d, perm)">
+                                        <label class="o_lp_check">
+                                            <input type="checkbox"
+                                                   class="form-check-input o_lp_cb"
+                                                   t-att-checked="d[perm] ? true : false"
+                                                   t-on-change="(ev) => this.onCheckChange(rec, perm, ev)"/>
+                                        </label>
+                                    </t>
+                                    <t t-else="">
+                                        <span class="crown-placeholder"/>
+                                    </t>
+                                </td>
+                            </t>
+                        </tr>
+                    </t>
+                </tbody>
+            </table>
+        </div>
     </t>
 </templates>

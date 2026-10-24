@@ -49,10 +49,25 @@ class PhanHeModuleAccess(models.Model):
 
     _name = "phan.he.module.access"
     _description = "Nhóm quyền phân hệ dịch vụ"
-    _order = "name"
+    _order = "summary_sequence, name, id"
 
-    name = fields.Char(string="Tên nhóm", required=True, translate=True)
+    # Bốn mục trên màn Tổng hợp phân quyền.
+    SERVICE_BUCKETS = (
+        ("internet", "Dịch vụ Internet", 10),
+        ("camera", "Dịch vụ Camera", 20),
+        ("server", "Máy chủ", 30),
+        ("linkq_nb", "LinkQ ERP", 40),
+    )
+
+    name = fields.Char(
+        string="Tên nhóm",
+        required=True,
+        translate=True,
+        default="Nhóm quyền mới",
+        help="Tự lấy theo Nhóm quyền Lug Security — không cần nhập riêng.",
+    )
     code = fields.Char(string="Code", index=True)
+    summary_sequence = fields.Integer(default=100, index=True)
     active = fields.Boolean(default=True)
     description = fields.Text(string="Mô tả")
     company_id = fields.Many2one(
@@ -69,6 +84,17 @@ class PhanHeModuleAccess(models.Model):
         string="Nhóm quyền",
         help="Nhóm quyền Lug Security (lug.group). Toàn bộ user trong nhóm được áp dụng quyền.",
     )
+
+    @api.onchange("group_ids")
+    def _onchange_group_ids_sync_name(self):
+        """Bỏ lớp tên thừa — đồng bộ nhãn theo nhóm Lug Security."""
+        if not self.group_ids:
+            return
+        main = self.group_ids[:1]
+        self.name = main.name or self.name or "Nhóm quyền"
+        if main.code and (not self.code or self.code in ("", "new")):
+            self.code = main.code
+
     custom_user_ids = fields.Many2many(
         "res.users",
         "phan_he_module_access_custom_user_rel",
@@ -94,6 +120,22 @@ class PhanHeModuleAccess(models.Model):
         copy=True,
     )
     user_count = fields.Integer(compute="_compute_user_count", string="Users")
+    show_menu_linkq = fields.Boolean(
+        string="Hiện tab Menu LinkQ",
+        compute="_compute_show_menu_pages",
+    )
+    show_menu_server = fields.Boolean(
+        string="Hiện tab Menu Máy chủ",
+        compute="_compute_show_menu_pages",
+    )
+    show_menu_internet = fields.Boolean(
+        string="Hiện tab Menu Internet",
+        compute="_compute_show_menu_pages",
+    )
+    show_menu_store = fields.Boolean(
+        string="Hiện tab Cửa hàng",
+        compute="_compute_show_menu_pages",
+    )
 
     LINKQ_PRESET_DEFS = (
         ("preset_view", "Chỉ xem", ()),
@@ -121,6 +163,28 @@ class PhanHeModuleAccess(models.Model):
     def _compute_user_count(self):
         for rec in self:
             rec.user_count = len(rec.user_ids)
+
+    @api.depends("code", "line_ids.service_code", "line_ids.perm_view", "line_ids.perm_admin")
+    def _compute_show_menu_pages(self):
+        """Chỉ hiện tab menu chi tiết khi nhóm thực sự dùng app đó — tránh dư thừa trên form Camera."""
+        for rec in self:
+            lines = {line.service_code: line for line in rec.line_ids}
+            linkq_scope = rec._is_linkq_scope() if rec.id or rec.code else False
+            has_linkq = linkq_scope or bool(
+                lines.get("linkq_nb") and (lines["linkq_nb"].perm_view or lines["linkq_nb"].perm_admin)
+            )
+            has_server = bool(
+                (rec.code or "").strip().lower() == "server"
+                or (lines.get("server") and (lines["server"].perm_view or lines["server"].perm_admin))
+            )
+            has_internet = bool(
+                (rec.code or "").strip().lower() == "internet"
+                or (lines.get("internet") and (lines["internet"].perm_view or lines["internet"].perm_admin))
+            )
+            rec.show_menu_linkq = has_linkq
+            rec.show_menu_server = has_server
+            rec.show_menu_internet = has_internet
+            rec.show_menu_store = has_linkq
 
     @api.depends("group_ids", "group_ids.user_ids", "custom_user_ids")
     def _compute_effective_users(self):
@@ -166,9 +230,33 @@ class PhanHeModuleAccess(models.Model):
             res["line_ids"] = self._default_module_line_commands()
         return res
 
+    def _vals_sync_name_from_groups(self, vals):
+        """Khi có group_ids mà thiếu name/code → lấy từ lug.group."""
+        if not vals.get("group_ids"):
+            if not vals.get("name"):
+                vals["name"] = "Nhóm quyền mới"
+            return vals
+        gids = []
+        for cmd in vals.get("group_ids") or []:
+            if isinstance(cmd, (list, tuple)) and cmd:
+                if cmd[0] == 6:
+                    gids = list(cmd[2] or [])
+                elif cmd[0] == 4:
+                    gids.append(cmd[1])
+        if gids:
+            group = self.env["lug.group"].browse(gids[0])
+            if not vals.get("name") or vals.get("name") in ("Nhóm quyền mới",):
+                vals["name"] = group.name or "Nhóm quyền"
+            if not vals.get("code") and group.code:
+                vals["code"] = group.code
+        if not vals.get("name"):
+            vals["name"] = "Nhóm quyền mới"
+        return vals
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
+            self._vals_sync_name_from_groups(vals)
             if not vals.get("line_ids"):
                 vals["line_ids"] = self._default_module_line_commands()
         records = super().create(vals_list)
@@ -177,6 +265,8 @@ class PhanHeModuleAccess(models.Model):
         return records
 
     def write(self, vals):
+        if "group_ids" in vals and not self.env.context.get("skip_name_sync"):
+            self._vals_sync_name_from_groups(vals)
         before_users = self.mapped("user_ids")
         res = super().write(vals)
         # Chỉ seed dòng quyền khi form/nhóm mới cần — tránh rewrite nặng mỗi lần Lưu.
@@ -189,6 +279,8 @@ class PhanHeModuleAccess(models.Model):
             "line_ids",
             "menu_permission_line_ids",
             "internet_menu_permission_ids",
+            "camera_menu_permission_ids",
+            "server_menu_permission_ids",
             "store_permission_ids",
             "active",
         }
@@ -216,6 +308,51 @@ class PhanHeModuleAccess(models.Model):
                 })
             if to_create:
                 Line.create(to_create)
+
+    @api.model
+    def _ensure_service_buckets(self):
+        """Bốn dịch vụ cố định trên Tổng hợp phân quyền."""
+        if self.env.context.get("skip_service_buckets"):
+            return self.browse()
+        Access = self.sudo().with_context(
+            skip_service_buckets=True,
+            phan_he_service_buckets=False,
+        )
+        records = Access.browse()
+        for code, name, sequence in self.SERVICE_BUCKETS:
+            rec = Access.search([("code", "=", code)], limit=1)
+            if not rec and code == "linkq_nb":
+                rec = Access.search([("name", "ilike", "LINKQ ERP")], limit=1)
+            vals = {"name": name, "code": code, "summary_sequence": sequence, "active": True}
+            if rec:
+                to_write = {}
+                for lang in ("vi_VN", "en_US"):
+                    if rec.with_context(lang=lang).name != name:
+                        rec.with_context(lang=lang).write({"name": name})
+                for key in ("code", "summary_sequence", "active"):
+                    if rec[key] != vals[key]:
+                        to_write[key] = vals[key]
+                if to_write:
+                    rec.write(to_write)
+            else:
+                rec = Access.with_context(lang="vi_VN").create(vals)
+                if rec.with_context(lang="en_US").name != name:
+                    rec.with_context(lang="en_US").write({"name": name})
+            records |= rec
+        return records
+
+    @api.model
+    def web_search_read(self, domain, specification, offset=0, limit=None, order=None, count_limit=None):
+        if self.env.context.get("phan_he_service_buckets"):
+            self._ensure_service_buckets()
+        return super().web_search_read(
+            domain,
+            specification,
+            offset=offset,
+            limit=limit,
+            order=order,
+            count_limit=count_limit,
+        )
 
     def action_open_users(self):
         self.ensure_one()

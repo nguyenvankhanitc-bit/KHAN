@@ -367,6 +367,19 @@ registry.category("views").add("phan_he_roster_form", {
 export class PhanHeAccessListController extends PhanHeWorkShiftListController {
     static template = "lug_phan_he.AccessListView";
 
+    setup() {
+        super.setup();
+        useEffect(
+            () => {
+                const input = this.rootRef.el?.querySelector(".o_searchview_input");
+                if (input) {
+                    input.setAttribute("placeholder", "Tìm theo tên nhóm, mã...");
+                }
+            },
+            () => [this.rootRef.el, this.model.root.count]
+        );
+    }
+
     get sidebarActiveKey() {
         return "access";
     }
@@ -374,6 +387,12 @@ export class PhanHeAccessListController extends PhanHeWorkShiftListController {
 
 export class PhanHeAccessFormController extends PhanHeWorkShiftFormController {
     static template = "lug_phan_he.AccessFormView";
+
+    get className() {
+        const result = { ...(super.className || {}) };
+        result.o_phan_he_module_access_form = true;
+        return result;
+    }
 
     get sidebarActiveKey() {
         return "access";

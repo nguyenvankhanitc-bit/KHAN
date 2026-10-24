@@ -25,6 +25,18 @@ INTERNET_CHILD_XMLIDS = {
     "lug_phan_he.menu_phan_he_service_expired": "payment_overdue",
 }
 
+SERVER_CHILD_XMLIDS = {
+    "lug_phan_he.menu_phan_he_server_dashboard": "overview",
+    "lug_phan_he.menu_phan_he_server_list": "it_asset_all",
+    "lug_phan_he.menu_phan_he_server_suspend": "it_asset_all",
+    "lug_phan_he.menu_phan_he_server_liquidated": "it_asset_all",
+    "lug_phan_he.menu_phan_he_server_entry": "it_asset_new",
+    "lug_phan_he.menu_phan_he_server_payment": "it_cost_list",
+    "lug_phan_he.menu_phan_he_server_expire": "it_cost_schedule",
+    "lug_phan_he.menu_phan_he_server_expired": "it_cost_overdue",
+    "lug_phan_he.menu_phan_he_server_kind": "it_settings_type",
+}
+
 LINKQ_CHILD_XMLIDS = {
     "lug_phan_he.menu_phan_he_linkq_nb_dashboard": "dashboard",
     "lug_phan_he.menu_linkq_shift_schedule_north": "schedule_north",
@@ -65,6 +77,7 @@ class IrUiMenu(models.Model):
         rights = self.env["phan.he.module.access"].get_user_module_rights()
         internet_menus = rights.get("internet_menus") or {}
         linkq_menus = rights.get("linkq_menus") or {}
+        server_menus = rights.get("server_menus") or {}
 
         for xmlid, code in SERVICE_ROOT_XMLIDS.items():
             mid = self._phan_he_menu_id(xmlid)
@@ -79,6 +92,11 @@ class IrUiMenu(models.Model):
         for xmlid, menu_key in INTERNET_CHILD_XMLIDS.items():
             mid = self._phan_he_menu_id(xmlid)
             if mid and not (internet_menus.get(menu_key) or {}).get("read"):
+                res.append(mid)
+
+        for xmlid, menu_key in SERVER_CHILD_XMLIDS.items():
+            mid = self._phan_he_menu_id(xmlid)
+            if mid and not (server_menus.get(menu_key) or {}).get("read"):
                 res.append(mid)
 
         for xmlid, menu_key in LINKQ_CHILD_XMLIDS.items():

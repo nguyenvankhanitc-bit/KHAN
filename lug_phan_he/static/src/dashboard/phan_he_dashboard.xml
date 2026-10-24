@@ -32,6 +32,7 @@
                             listFilter="state.listFilter"
                             listReloadToken="state.listReloadToken"
                             internetMenus="state.internetMenus"
+                            moduleRights="state.moduleRights"
                             serviceTypeCode="serviceTypeCode"
                             onOpenEntry.bind="openEntryForm"
                             onPeriodCountChange.bind="onPeriodPaymentCountChange"/>
@@ -70,6 +71,7 @@
             <t t-if="state.entryPopupOpen">
                 <PhanHeInternetEntryPopup
                         resId="state.entryPopupResId"
+                        createMenuCode="state.entryCreateMenu"
                         onClose.bind="closeEntryPopup"
                         onSaved.bind="onEntryPopupSaved"/>
             </t>

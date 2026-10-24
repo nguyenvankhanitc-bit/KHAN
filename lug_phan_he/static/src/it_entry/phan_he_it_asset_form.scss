@@ -112,3 +112,53 @@
 }
 
 /* Style đóng khung list IT nằm ở phan_he_internet_shell.scss (.o_it_list_embed) */
+
+// File Hợp đồng / Hóa đơn trên popup Thêm tài sản
+.lq-entry-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 34px;
+    min-width: 0;
+}
+
+.lq-entry-file-btn {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 5px 10px;
+    border: 1px dashed #94a3b8;
+    border-radius: 6px;
+    background: #f8fafc;
+    color: #334155;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: none;
+    cursor: pointer;
+
+    &:hover {
+        border-color: #6366f1;
+        color: #4338ca;
+    }
+}
+
+.lq-entry-file-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.82rem;
+    color: #1d4ed8;
+}
+
+.lq-entry-file-del {
+    flex: 0 0 auto;
+    border: 0;
+    background: transparent;
+    color: #dc2626;
+    padding: 0 2px;
+}
+
+.lq-entry-file-empty {
+    font-size: 0.78rem;
+    color: #94a3b8;
+}

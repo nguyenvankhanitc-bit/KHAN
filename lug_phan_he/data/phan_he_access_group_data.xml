@@ -10,4 +10,9 @@
         <field name="code">internet</field>
         <field name="active" eval="True"/>
     </record>
+    <record id="phan_he_access_group_server" model="phan.he.module.access">
+        <field name="name">Máy chủ</field>
+        <field name="code">server</field>
+        <field name="active" eval="True"/>
+    </record>
 </odoo>

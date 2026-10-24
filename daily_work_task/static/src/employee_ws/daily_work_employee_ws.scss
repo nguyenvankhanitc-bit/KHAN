@@ -4187,3 +4187,28 @@ body.o_ews_resizing {
         line-height: 1.25;
     }
 }
+
+// Danh sách công việc: Tên công việc + Ghi chú rộng hơn; bảng dài → thanh trượt ngang
+.o_daily_work_employee_ws.o_action .o_ews_table_wrap .o_ews_table {
+    width: max-content;
+    min-width: 100%;
+    table-layout: auto;
+
+    .o_ews_col_name {
+        width: 380px;
+        min-width: 380px;
+        // Cột Hạng mục nằm giữa STT và Tên → bỏ dính trái để không đè khi cuộn ngang
+        position: static;
+        box-shadow: none;
+    }
+
+    .o_ews_col_note {
+        width: 340px;
+        min-width: 340px;
+    }
+
+    .o_ews_name_input,
+    .o_ews_note_input {
+        min-height: 60px;
+    }
+}

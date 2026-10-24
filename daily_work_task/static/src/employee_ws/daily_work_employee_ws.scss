@@ -4223,3 +4223,10 @@ body.o_ews_resizing {
         margin-bottom: 0;
     }
 }
+
+// Bỏ tiêu đề «QUẢN LÝ CÔNG VIỆC» phía trên thanh chức năng (máy tính; điện thoại vẫn giữ để mở form)
+@media (min-width: 1025px) {
+    .o_daily_work_employee_ws.o_action .o_ews_header .o_ews_page_title {
+        display: none;
+    }
+}

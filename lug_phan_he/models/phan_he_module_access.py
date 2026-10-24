@@ -3,6 +3,7 @@
 from odoo import api, fields, models, tools
 from odoo.exceptions import ValidationError
 import copy
+import logging
 
 
 SERVICE_MODULES = [
@@ -393,6 +394,8 @@ class PhanHeModuleAccess(models.Model):
             # deepcopy: tránh caller mutate làm bẩn ormcache
             return copy.deepcopy(self._cached_user_module_rights(uid, stamp))
         except Exception:
+            # Không nuốt lỗi im lặng: ghi log để biết vì sao hub trống
+            logging.getLogger(__name__).exception("lug_phan_he: get_user_module_rights lỗi (user %s)", user_id or self.env.uid)
             return self._blank_rights(view=False)
 
     @api.model

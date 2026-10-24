@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_phan_he.FileEyeField">
+        <button t-if="hasFile" type="button" class="btn btn-link p-0 ph-file-eye" style="color:#7c3aed;font-size:1.05rem"
+                t-att-title="'Xem ' + fileName" t-on-click="onClick">
+            <i class="fa fa-eye"/>
+        </button>
+        <span t-else="" class="text-muted">—</span>
+    </t>
+</templates>

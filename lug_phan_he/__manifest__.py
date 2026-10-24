@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.560.0",
+    "version": "19.0.2.561.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -168,6 +168,8 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/dashboard/store_dashboard.xml",
             "lug_phan_he/static/src/fields/ops_status_field.js",
             "lug_phan_he/static/src/fields/ops_status_field.xml",
+            "lug_phan_he/static/src/fields/file_eye_field.js",
+            "lug_phan_he/static/src/fields/file_eye_field.xml",
             "lug_phan_he/static/src/fields/bandwidth_field.js",
             "lug_phan_he/static/src/fields/bandwidth_field.xml",
             "lug_phan_he/static/src/fields/phan_he_store_card_field.js",

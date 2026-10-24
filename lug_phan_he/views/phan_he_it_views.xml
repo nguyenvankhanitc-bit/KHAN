@@ -41,9 +41,9 @@
                 <field name="currency_id" column_invisible="1"/>
                 <field name="contract_amount" string="Số tiền" widget="monetary" sum="Tổng" optional="show"/>
                 <field name="contract_filename" column_invisible="1"/>
-                <field name="contract_file" string="File hợp đồng" widget="binary" filename="contract_filename" optional="show"/>
+                <field name="contract_file" string="File hợp đồng" widget="phan_he_file_eye" filename="contract_filename" optional="show"/>
                 <field name="invoice_filename" column_invisible="1"/>
-                <field name="invoice_file" string="Hóa đơn" widget="binary" filename="invoice_filename" optional="show"/>
+                <field name="invoice_file" string="Hóa đơn" widget="phan_he_file_eye" filename="invoice_filename" optional="show"/>
                 <field name="note" string="Ghi chú" optional="show"/>
                 <field name="state" widget="badge"
                          decoration-success="state == 'active'"

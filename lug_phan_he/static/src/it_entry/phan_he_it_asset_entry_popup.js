@@ -405,6 +405,11 @@ export class PhanHeItAssetEntryPopup extends Component {
         return `/web/content/phan.he.it.asset/${this.props.resId}/${kind}_file/${encodeURIComponent(this.state.form[`${kind}_filename`] || kind)}?download=true`;
     }
 
+    /** Ô chọn: đánh dấu option đang có (select t-att-value không tự chọn trong OWL). */
+    isSel(a, b) {
+        return String(a ?? "") === String(b ?? "");
+    }
+
     onField(field, ev) {
         this.state.form[field] = ev.target.value;
     }

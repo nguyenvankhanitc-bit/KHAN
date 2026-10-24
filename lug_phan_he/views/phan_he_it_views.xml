@@ -26,7 +26,7 @@
         <field name="name">phan.he.it.asset.list</field>
         <field name="model">phan.he.it.asset</field>
         <field name="arch" type="xml">
-            <list class="o_it_framed_list">
+            <list class="o_it_framed_list" js_class="phan_he_it_asset_list">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="asset_type_id"/>

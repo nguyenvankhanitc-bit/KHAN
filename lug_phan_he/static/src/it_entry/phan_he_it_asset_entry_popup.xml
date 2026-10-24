@@ -27,9 +27,9 @@
                                     <label>Loại tài sản <span class="lq-req">*</span></label>
                                     <select t-att-value="state.form.asset_type_id"
                                             t-on-change="onAssetTypeChange">
-                                        <option value="">Chọn loại</option>
+                                        <option t-att-selected="!state.form.asset_type_id" value="">Chọn loại</option>
                                         <t t-foreach="state.types" t-as="tp" t-key="tp.id">
-                                            <option t-att-value="tp.id" t-esc="tp.name"/>
+                                            <option t-att-selected="isSel(tp.id, state.form.asset_type_id)" t-att-value="tp.id" t-esc="tp.name"/>
                                         </t>
                                     </select>
                                 </div>
@@ -54,9 +54,9 @@
                                     <label>Tên máy chủ <span class="lq-req">*</span></label>
                                     <select t-att-value="state.form.host_asset_id"
                                             t-on-change="onHostChange">
-                                        <option value="">— Chọn Dell R530 / Dell R650 —</option>
+                                        <option t-att-selected="!state.form.host_asset_id" value="">— Chọn Dell R530 / Dell R650 —</option>
                                         <t t-foreach="state.hosts" t-as="h" t-key="h.id">
-                                            <option t-att-value="h.id" t-esc="hostOptionLabel(h)"/>
+                                            <option t-att-selected="isSel(h.id, state.form.host_asset_id)" t-att-value="h.id" t-esc="hostOptionLabel(h)"/>
                                         </t>
                                     </select>
                                 </div>
@@ -84,7 +84,7 @@
                                     <select t-att-value="state.form.state"
                                             t-on-change="(ev) => this.onField('state', ev)">
                                         <t t-foreach="assetStates" t-as="st" t-key="st.value">
-                                            <option t-att-value="st.value" t-esc="st.label"/>
+                                            <option t-att-selected="isSel(st.value, state.form.state)" t-att-value="st.value" t-esc="st.label"/>
                                         </t>
                                     </select>
                                 </div>
@@ -156,9 +156,9 @@
                                     <label>Khu vực / Miền</label>
                                     <select t-att-value="state.form.mien_id"
                                             t-on-change="(ev) => this.onField('mien_id', ev)">
-                                        <option value="">— Chọn —</option>
+                                        <option t-att-selected="!state.form.mien_id" value="">— Chọn —</option>
                                         <t t-foreach="state.miens" t-as="m" t-key="m.id">
-                                            <option t-att-value="m.id" t-esc="m.name"/>
+                                            <option t-att-selected="isSel(m.id, state.form.mien_id)" t-att-value="m.id" t-esc="m.name"/>
                                         </t>
                                     </select>
                                 </div>
@@ -166,9 +166,9 @@
                                     <label>Đơn vị / Cửa hàng</label>
                                     <select t-att-value="state.form.store_id"
                                             t-on-change="(ev) => this.onField('store_id', ev)">
-                                        <option value="">— Chọn —</option>
+                                        <option t-att-selected="!state.form.store_id" value="">— Chọn —</option>
                                         <t t-foreach="state.stores" t-as="s" t-key="s.id">
-                                            <option t-att-value="s.id" t-esc="s.name"/>
+                                            <option t-att-selected="isSel(s.id, state.form.store_id)" t-att-value="s.id" t-esc="s.name"/>
                                         </t>
                                     </select>
                                 </div>
@@ -182,9 +182,9 @@
                                     <label>Người phụ trách</label>
                                     <select t-att-value="state.form.responsible_id"
                                             t-on-change="(ev) => this.onField('responsible_id', ev)">
-                                        <option value="">— Chọn —</option>
+                                        <option t-att-selected="!state.form.responsible_id" value="">— Chọn —</option>
                                         <t t-foreach="state.employees" t-as="e" t-key="e.id">
-                                            <option t-att-value="e.id" t-esc="e.name"/>
+                                            <option t-att-selected="isSel(e.id, state.form.responsible_id)" t-att-value="e.id" t-esc="e.name"/>
                                         </t>
                                     </select>
                                 </div>
@@ -331,7 +331,7 @@
                                     <select t-att-value="state.form.cloud_billing_cycle"
                                             t-on-change="(ev) => this.onField('cloud_billing_cycle', ev)">
                                         <t t-foreach="cloudBilling" t-as="cb" t-key="cb.value || 'empty'">
-                                            <option t-att-value="cb.value" t-esc="cb.label"/>
+                                            <option t-att-selected="isSel(cb.value, state.form.cloud_billing_cycle)" t-att-value="cb.value" t-esc="cb.label"/>
                                         </t>
                                     </select>
                                 </div>

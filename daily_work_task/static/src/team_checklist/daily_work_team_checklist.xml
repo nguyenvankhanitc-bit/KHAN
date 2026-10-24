@@ -143,7 +143,7 @@
                                 <!-- Độ rộng cột cố định (tiêu đề 2 tầng + table-layout: fixed) -->
                                 <colgroup>
                                     <col style="width:44px"/>
-                                    <col/>
+                                    <col style="width:320px"/>
                                     <col style="width:108px"/>
                                     <col style="width:90px"/>
                                     <col style="width:108px"/>

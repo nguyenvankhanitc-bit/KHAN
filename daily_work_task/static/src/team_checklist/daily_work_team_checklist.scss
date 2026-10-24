@@ -1551,3 +1551,13 @@
         &.is-fail .o_tcl_rate:checked { background-color: #dc2626; border-color: #dc2626; }
     }
 }
+
+// Tên công việc rộng 320px; bảng rộng hơn khung → thanh trượt ngang
+.o_daily_work_team_checklist {
+    .o_tcl_vdrop_body .o_tcl_table_wrap {
+        overflow-x: auto;
+    }
+    .o_tcl_vdrop_body .o_tcl_table {
+        min-width: 1480px;
+    }
+}

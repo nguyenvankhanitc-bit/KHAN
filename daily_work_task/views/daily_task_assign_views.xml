@@ -127,7 +127,7 @@
                 </header>
                 <sheet>
                     <div class="alert alert-info" role="alert">
-                        Chọn <b>Hạng mục</b> → tích một hoặc nhiều <b>Tên chi tiết hạng mục</b>.
+                        Tích một hoặc <b>nhiều Hạng mục</b> → tích <b>Tên chi tiết hạng mục</b> (nhiều hạng mục, bỏ trống chi tiết = giao toàn bộ chi tiết).
                         Gắn <b>Người phụ trách</b> → bấm Lưu (mỗi tên CV = 1 dòng phân công).
                     </div>
                     <group>
@@ -137,11 +137,11 @@
                             <field name="department_id" options="{'no_create': True}"
                                      readonly="dept_locked" force_save="1"
                                      placeholder="Tự lấy theo user đăng nhập..."/>
-                            <field name="category_group_id" widget="dwt_category_checklist"
-                                     options="{'no_create': True, 'no_open': True}"
+                            <field name="category_group_ids" string="Hạng mục" widget="dwt_category_multi"
                                      context="{'work_group_unique_category': 1, 'work_group_short_name': 1, 'work_group_team_scope': 1}"
-                                     domain="[('department_id', '=', department_id)]"
-                                     placeholder="Chọn hạng mục (Camera, Email…)…"/>
+                                     domain="[('department_id', '=', department_id)]"/>
+                            <field name="category_group_id" invisible="1" force_save="1"/>
+                            <field name="category_head_ids" invisible="1"/>
                             <field name="category_name" invisible="1"/>
                             <field name="category_head_id" invisible="1"/>
                             <field name="work_group_ids" string="Tên chi tiết hạng mục"
@@ -149,8 +149,8 @@
                                      options="{'unit': 'mục chi tiết', 'multi_pick': True}"
                                      placeholder="Bấm để chọn tên chi tiết hạng mục..."
                                      context="{'work_group_show_task_name': 1, 'work_group_team_scope': 1}"
-                                     domain="category_head_id and [('category_head_id', '=', category_head_id)] or [('department_id', '=', department_id), ('name', '=', category_name)]"
-                                     invisible="not category_name"/>
+                                     domain="category_head_ids and [('category_head_id', 'in', category_head_ids)] or [('department_id', '=', department_id), ('name', '=', category_name)]"
+                                     invisible="not category_head_ids"/>
                             <field name="work_group_id" invisible="1" force_save="1"/>
                             <field name="name" invisible="1"/>
                             <field name="team_id"/>

@@ -163,6 +163,19 @@ class DailyTaskAssign(models.Model):
         index=True,
         help="Chọn nhóm hạng mục (Camera, Email…). Không phải dòng công việc con.",
     )
+    # Chọn NHIỀU hạng mục 1 lần → áp cùng user (Người phụ trách / Miền...) cho từng hạng mục
+    category_group_ids = fields.Many2many(
+        "daily.task.work.group",
+        "daily_task_assign_category_sel_rel",
+        "assign_id",
+        "work_group_id",
+        string="Hạng mục (chọn nhiều)",
+    )
+    category_head_ids = fields.Many2many(
+        "daily.task.work.group",
+        compute="_compute_category_head_ids",
+        string="Nhóm hạng mục đã chọn",
+    )
     category_head_id = fields.Many2one(
         "daily.task.work.group",
         string="Nhóm hạng mục",
@@ -620,13 +633,66 @@ class DailyTaskAssign(models.Model):
                 or WG._norm_category_name(wg.name)
         return WG._norm_category_name(self.name or "")
 
+    def init(self):
+        """Dòng cũ: Hạng mục (1) → ô Hạng mục chọn nhiều."""
+        self.env.cr.execute("""
+            INSERT INTO daily_task_assign_category_sel_rel (assign_id, work_group_id)
+            SELECT a.id, a.category_group_id FROM daily_task_assign a
+             WHERE a.category_group_id IS NOT NULL
+               AND NOT EXISTS (SELECT 1 FROM daily_task_assign_category_sel_rel r WHERE r.assign_id = a.id)
+        """)
+
+    @api.depends("category_group_ids", "category_group_id")
+    def _compute_category_head_ids(self):
+        for rec in self:
+            cats = rec.category_group_ids or rec.category_group_id
+            rec.category_head_ids = cats.mapped(lambda c: c.category_head_id or c)
+
+    @staticmethod
+    def _m2m_ids_any(commands):
+        """Id cuối cùng từ lệnh many2many (6 / 4 / 3 / 5)."""
+        ids = []
+        for cmd in commands or []:
+            if not isinstance(cmd, (list, tuple)) or not cmd:
+                continue
+            if cmd[0] == 6:
+                ids = list(cmd[2] or [])
+            elif cmd[0] == 4 and cmd[1] not in ids:
+                ids.append(cmd[1])
+            elif cmd[0] == 3 and cmd[1] in ids:
+                ids.remove(cmd[1])
+            elif cmd[0] == 5:
+                ids = []
+        return ids
+
     def _expand_vals_by_work_groups(self, vals_list):
-        """Nhiều tên CV (checkbox) → nhiều dòng phân công (1 dòng / 1 công việc)."""
+        """Nhiều tên CV (checkbox) → nhiều dòng phân công (1 dòng / 1 công việc).
+        Nhiều hạng mục: chi tiết đã tích của từng hạng mục → 1 dòng / chi tiết; hạng mục không tích
+        chi tiết → giao toàn bộ chi tiết của hạng mục. Mọi dòng cùng user (Người phụ trách / Miền...)."""
         if self.env.context.get("skip_assign_expand"):
             return [dict(v) for v in vals_list]
+        WG = self.env["daily.task.work.group"]
         expanded = []
         for vals in vals_list:
             vals = dict(vals)
+            cat_ids = self._m2m_ids_any(vals.pop("category_group_ids", None))
+            if len(cat_ids) > 1:
+                wg_ids = self._m2m_ids_any(vals.pop("work_group_ids", None))
+                details = WG.browse(wg_ids).exists()
+                for cat in WG.browse(cat_ids).exists():
+                    head = cat.category_head_id or cat
+                    mine = details.filtered(lambda w: (w.category_head_id or w) == head)
+                    base = dict(vals, category_group_id=cat.id, category_group_ids=[(6, 0, [cat.id])])
+                    base.pop("stt", None)
+                    if not mine:
+                        # Không tích chi tiết → giao toàn bộ chi tiết của hạng mục
+                        mine = WG.search([("category_head_id", "=", head.id), ("active", "=", True)]) or head
+                    expanded.extend(self._expand_vals_by_work_groups(
+                        [dict(base, work_group_ids=[(6, 0, mine.ids)])]))
+                continue
+            if cat_ids:
+                vals["category_group_ids"] = [(6, 0, cat_ids)]
+                vals.setdefault("category_group_id", cat_ids[0])
             wg_ids = self._m2m_command_ids(vals.pop("work_group_ids", None))
             if not wg_ids and vals.get("work_group_id"):
                 wg_ids = [vals["work_group_id"]]
@@ -952,9 +1018,24 @@ class DailyTaskAssign(models.Model):
             }
         }
 
+    @api.onchange("category_group_ids")
+    def _onchange_category_group_ids(self):
+        """Tích nhiều hạng mục → Hạng mục chính = mục đầu; bỏ chi tiết không còn thuộc hạng mục đã chọn."""
+        cats = self.category_group_ids
+        if cats and self.category_group_id not in cats:
+            self.category_group_id = cats[:1]
+        elif not cats:
+            self.category_group_id = False
+        heads = cats.mapped(lambda c: c.category_head_id or c)
+        if self.work_group_ids and heads:
+            keep = self.work_group_ids.filtered(lambda w: (w.category_head_id or w) in heads)
+            self.work_group_ids = [(6, 0, keep.ids)]
+
     @api.onchange("category_group_id")
     def _onchange_category_group_id(self):
-        """Chọn Hạng mục → hiện checkbox Tên công việc cùng nhóm."""
+        """Chọn Hạng mục → hiện checkbox Tên công việc cùng nhóm (chọn nhiều hạng mục: giữ chi tiết)."""
+        if len(self.category_group_ids) > 1:
+            return {"domain": {"work_group_ids": self._work_group_task_domain()}}
         self.work_group_ids = [(5, 0, 0)]
         self.work_group_id = False
         self.name = False

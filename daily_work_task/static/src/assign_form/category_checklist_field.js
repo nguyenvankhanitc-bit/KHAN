@@ -184,3 +184,84 @@ registry.category("fields").add("dwt_collapsible_checkboxes", {
         };
     },
 });
+
+
+/** Many2many «Hạng mục» chọn nhiều (ô tích) — mỗi tên hạng mục hiện 1 lần. */
+export class DwtCategoryMultiField extends Component {
+    static template = "daily_work_task.DwtCategoryMultiField";
+    static props = {
+        ...standardFieldProps,
+        domain: { type: [Array, Function], optional: true },
+        context: { type: Object, optional: true },
+    };
+
+    setup() {
+        this.state = useState({ query: "", open: false });
+        this.rootRef = useRef("root");
+        this.specialData = useSpecialData(async (orm, props) => {
+            const { relation } = props.record.fields[props.name];
+            const domain = getFieldDomain(props.record, props.name, props.domain);
+            const context = { ...(props.context || {}), work_group_unique_category: 1 };
+            return orm.call(relation, "name_search", [], { name: "", domain, limit: 500, context });
+        });
+        const onDocClick = (ev) => {
+            if (this.state.open && this.rootRef.el && !this.rootRef.el.contains(ev.target)) {
+                this.state.open = false;
+            }
+        };
+        onMounted(() => document.addEventListener("click", onDocClick, true));
+        onWillUnmount(() => document.removeEventListener("click", onDocClick, true));
+    }
+
+    get items() {
+        const q = (this.state.query || "").trim().toLowerCase();
+        const all = this.specialData.data || [];
+        return q ? all.filter((it) => String(it[1]).toLowerCase().includes(q)) : all;
+    }
+
+    get ids() {
+        return this.props.record.data[this.props.name]?.currentIds || [];
+    }
+
+    isChecked(id) {
+        return this.ids.includes(id);
+    }
+
+    get selectedNames() {
+        const map = new Map((this.specialData.data || []).map((it) => [it[0], it[1]]));
+        return this.ids.map((id) => map.get(id)).filter(Boolean);
+    }
+
+    toggleOpen() {
+        if (!this.props.readonly) {
+            this.state.open = !this.state.open;
+        }
+    }
+
+    async onToggle(item) {
+        if (this.props.readonly) {
+            return;
+        }
+        const list = this.props.record.data[this.props.name];
+        if (this.isChecked(item[0])) {
+            await list.addAndRemove({ remove: [item[0]] });
+        } else {
+            await list.addAndRemove({ add: [item[0]] });
+        }
+    }
+
+    onQuery(ev) {
+        this.state.query = ev.target.value || "";
+    }
+}
+
+registry.category("fields").add("dwt_category_multi", {
+    component: DwtCategoryMultiField,
+    displayName: _t("Hạng mục (chọn nhiều)"),
+    supportedTypes: ["many2many"],
+    relatedFields: [{ name: "display_name", type: "char" }],
+    extractProps: ({ context }, dynamicInfo) => ({
+        domain: dynamicInfo.domain,
+        context: dynamicInfo.context || context,
+    }),
+});

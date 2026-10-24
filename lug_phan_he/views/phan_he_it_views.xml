@@ -102,6 +102,24 @@
                             <field name="active"/>
                         </group>
                     </group>
+                    <!-- Hợp đồng / hóa đơn: up file trực tiếp trên form -->
+                    <group>
+                        <group string="Hợp đồng &amp; hóa đơn">
+                            <field name="supplier_name" string="Nhà cung cấp" class="o_it_underline_field"
+                                   placeholder="Nhập tên nhà cung cấp"/>
+                            <field name="currency_id" invisible="1"/>
+                            <field name="contract_amount" string="Số tiền (VNĐ)" widget="monetary"
+                                   class="o_it_underline_field"/>
+                        </group>
+                        <group string=" ">
+                            <field name="contract_filename" invisible="1"/>
+                            <field name="contract_file" string="File hợp đồng" widget="binary"
+                                   filename="contract_filename"/>
+                            <field name="invoice_filename" invisible="1"/>
+                            <field name="invoice_file" string="File hóa đơn" widget="binary"
+                                   filename="invoice_filename"/>
+                        </group>
+                    </group>
                     <notebook>
                         <page string="Máy chủ vật lý" invisible="asset_type_code != 'physical'">
                             <group>

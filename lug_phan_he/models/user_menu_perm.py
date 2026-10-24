@@ -15,6 +15,13 @@ from .internet_menu_permission import INTERNET_MENU_TREE
 from .lug_menu_permission import MENU_TREE as LINKQ_MENU_TREE
 from .server_menu_permission import SERVER_MENU_TREE
 
+SERVER_CATALOG_CLASH = {"overview"} | {code for code, _n, _f, _p in INTERNET_MENU_TREE}
+
+
+def _server_catalog_code_of(code):
+    return ("server_%s" % code) if code in SERVER_CATALOG_CLASH else code
+
+
 # (code, name, app_code, parent_code, is_folder)
 # parent_code False = gốc app; thư mục cấp 1 gắn vào gốc app.
 def _build_unified_tree():
@@ -50,9 +57,10 @@ def _build_unified_tree():
         ("attendance_payment", "Thanh toán", "app_attendance"),
     ):
         rows.append((code, name, "attendance", parent, False))
-    # Máy chủ — cây sidebar IT thực tế. "overview" đổi mã để khỏi trùng catalog khác.
+    # Máy chủ — cây sidebar IT thực tế. Mã trùng với app khác (overview, overview_dashboard…)
+    # → thêm tiền tố «server_» trong catalog (mã duy nhất); RUNTIME_CODE_MAP đổi ngược khi tính quyền.
     def _server_catalog_code(code):
-        return "server_overview" if code == "overview" else code
+        return _server_catalog_code_of(code)
 
     for code, name, is_group, parent in SERVER_MENU_TREE:
         rows.append((
@@ -94,7 +102,9 @@ SUMMARY_APP_ROOT = {code: root for code, _l, root in SUMMARY_APPS}
 PERM_FIELDS = ("can_view", "can_create", "can_edit", "can_delete", "can_admin")
 # Map mã catalog → mã quyền runtime (internet / server / linkq)
 RUNTIME_CODE_MAP = {
-    "server_overview": "overview",
+    _server_catalog_code_of(code): code
+    for code, _n, _g, _p in SERVER_MENU_TREE
+    if _server_catalog_code_of(code) != code
 }
 for key, _l, _g, _p in LINKQ_MENU_TREE:
     RUNTIME_CODE_MAP["lq_%s" % key] = key
@@ -139,6 +149,8 @@ class PhanHePermMenu(models.Model):
         # Pass 1: create / update meta (parent later)
         for code, name, app_code, _parent, is_folder in UNIFIED_MENU_TREE:
             seq += 10
+            if code in created:
+                continue  # mã trùng trong cây → giữ dòng đầu, không làm hỏng nâng cấp
             vals = {
                 "name": name,
                 "app_code": app_code,

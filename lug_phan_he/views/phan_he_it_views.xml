@@ -122,7 +122,7 @@
                                 <field name="host_asset_id"
                                           string="Tên máy chủ"
                                           class="o_it_underline_field"
-                                          required="1"
+                                          required="asset_type_code == 'virtual'"
                                           options="{'no_create': True, 'no_open': True}"/>
                                 <field name="cpu_info" class="o_it_underline_field"/>
                                 <field name="ram_gb" string="RAM (GB)" class="o_it_underline_field"/>

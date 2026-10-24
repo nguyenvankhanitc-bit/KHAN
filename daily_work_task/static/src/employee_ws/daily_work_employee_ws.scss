@@ -28,7 +28,7 @@
         flex: 1 1 auto;
         min-height: 0;
         overflow: auto;
-        padding: 16px 18px 28px;
+        padding: 4px 18px 28px; // sát thanh menu phía trên
         scrollbar-width: thin;
 
         &::-webkit-scrollbar {
@@ -4210,5 +4210,16 @@ body.o_ews_resizing {
     .o_ews_name_input,
     .o_ews_note_input {
         min-height: 60px;
+    }
+}
+
+// Khung «Quản lý công việc» sát ngay dưới thanh menu (bỏ khoảng trống phía trên)
+.o_daily_work_employee_ws.o_action {
+    .o_ews_qm {
+        margin-top: 0;
+    }
+    .o_ews_pin > .o_ews_header {
+        padding-bottom: 6px;
+        margin-bottom: 0;
     }
 }

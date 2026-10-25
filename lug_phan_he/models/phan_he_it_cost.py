@@ -324,6 +324,20 @@ class PhanHeItCost(models.Model):
             "dimension": "Phân bổ theo tài sản",
             "filename": "Chi_phi_theo_tai_san.xlsx",
         },
+        "estimate": {
+            "title": "Dự toán chi phí",
+            "slice": "asset",
+            "period": None,
+            "dimension": "Lọc chi phí danh sách thiết bị theo tháng",
+            "filename": "Du_toan_chi_phi.xlsx",
+        },
+        "schedule": {
+            "title": "Lịch gia hạn",
+            "slice": "asset",
+            "period": None,
+            "dimension": "Khoản chi hết hạn / cần gia hạn theo tháng",
+            "filename": "Lich_gia_han.xlsx",
+        },
         "provider": {
             "title": "Chi phí theo nhà cung cấp",
             "slice": "provider",
@@ -349,33 +363,71 @@ class PhanHeItCost(models.Model):
             raise UserError("Không có báo cáo này.")
         return meta
 
-    def _pie_period(self, period_key):
+    def _pie_period(self, period_key, filters=None):
         today = fields.Date.context_today(self)
-        if period_key == "month":
-            start = today.replace(day=1)
+        filters = filters or {}
+        mode = filters.get("period_mode") or period_key
+        year = int(filters.get("year") or today.year)
+        if mode == "month":
+            month = int(filters.get("month") or today.month)
+            month = min(max(month, 1), 12)
+            start = today.replace(year=year, month=month, day=1)
             end = start + relativedelta(months=1, days=-1)
             label = "Tháng %s/%s" % (start.month, start.year)
-            return start, end, label
-        if period_key == "quarter":
-            quarter = (today.month - 1) // 3
-            start = today.replace(month=quarter * 3 + 1, day=1)
+            prev_start = start - relativedelta(months=1)
+            prev_end = start - relativedelta(days=1)
+            return start, end, label, prev_start, prev_end, "tháng trước"
+        if mode == "quarter":
+            quarter = int(filters.get("quarter") or ((today.month - 1) // 3 + 1))
+            quarter = min(max(quarter, 1), 4)
+            start = today.replace(year=year, month=(quarter - 1) * 3 + 1, day=1)
             end = start + relativedelta(months=3, days=-1)
-            label = "Quý %s/%s" % (quarter + 1, today.year)
-            return start, end, label
-        if period_key == "year":
-            start = today.replace(month=1, day=1)
-            end = today.replace(month=12, day=31)
-            return start, end, "Năm %s" % today.year
-        return None, None, "Toàn bộ khoản chi phí"
+            label = "Quý %s/%s" % (quarter, year)
+            prev_start = start - relativedelta(months=3)
+            prev_end = start - relativedelta(days=1)
+            return start, end, label, prev_start, prev_end, "quý trước"
+        if mode == "year":
+            start = today.replace(year=year, month=1, day=1)
+            end = today.replace(year=year, month=12, day=31)
+            label = "Năm %s" % year
+            prev_start = start.replace(year=year - 1)
+            prev_end = end.replace(year=year - 1)
+            return start, end, label, prev_start, prev_end, "năm trước"
+        return None, None, "Toàn bộ khoản chi phí", None, None, ""
 
-    def _pie_in_period(self, rec, start, end):
+    def _pie_period_anchor(self, rec):
+        """Mốc kỳ cho báo cáo tháng/quý/năm: theo ngày bắt đầu."""
+        return rec.date_start or rec.date_end
+
+    def _pie_in_period(self, rec, start, end, mode="anchor"):
+        """mode=anchor: date_start nằm trong kỳ.
+        mode=overlap: khoản chi còn hiệu lực giao với kỳ (dùng cho theo tài sản / NCC).
+        mode=end: ngày hết hạn trong kỳ, hoặc quá hạn trước kỳ (lịch gia hạn).
+        """
         if not start:
             return True
-        rec_start = rec.date_start or rec.date_end
-        rec_end = rec.date_end or rec.date_start
-        if not rec_start or not rec_end:
+        if mode == "overlap":
+            ds = rec.date_start or rec.date_end
+            de = rec.date_end or rec.date_start
+            if not ds:
+                return False
+            return ds <= end and (not de or de >= start)
+        if mode == "end":
+            de = rec.date_end
+            if not de:
+                return False
+            # Trong tháng chọn, hoặc quá hạn từ trước (còn theo dõi gia hạn).
+            if start <= de <= end:
+                return True
+            return de < start and (rec.renewal_state or "") in (
+                "active",
+                "expiring",
+                "overdue",
+            )
+        anchor = self._pie_period_anchor(rec)
+        if not anchor:
             return False
-        return rec_start <= end and rec_end >= start
+        return start <= anchor <= end
 
     def _pie_slice(self, rec, kind):
         if kind == "category":
@@ -384,7 +436,7 @@ class PhanHeItCost(models.Model):
             return rec.asset_id.id or 0, rec.asset_name or "Tài sản"
         if kind == "provider":
             return rec.provider_id.id or 0, rec.provider_id.name or "Chưa có nhà cung cấp"
-        anchor = rec.date_end or rec.date_start
+        anchor = self._pie_period_anchor(rec)
         if kind == "month":
             if not anchor:
                 return 0, "Không rõ tháng"
@@ -397,29 +449,95 @@ class PhanHeItCost(models.Model):
     def _pie_date(self, value):
         return value.strftime("%d/%m/%Y") if value else ""
 
+    # Báo cáo Chi phí theo tài sản: chỉ Máy chủ vật lý + Thiết bị mạng/bảo mật.
+    _ASSET_REPORT_TYPE_CODES = ("physical", "network", "security")
+
+    def _pie_asset_type_ok(self, rec):
+        code = (rec.asset_id.asset_type_code or "").strip().lower()
+        return code in self._ASSET_REPORT_TYPE_CODES
+
+    def _pie_asset_label(self, rec):
+        asset = rec.asset_id
+        if asset:
+            return (asset.name or asset.code or rec.asset_name or "Tài sản").strip()
+        return (rec.asset_name or "Tài sản").strip()
+
+    def _pie_sum_in_period(self, start, end, mode="anchor", asset_report=False):
+        if not start:
+            return 0.0
+        records = self.search([]).filtered(
+            lambda rec: self._pie_in_period(rec, start, end, mode)
+        )
+        if asset_report:
+            records = records.filtered(self._pie_asset_type_ok)
+        return sum(float(rec.amount_total or 0.0) for rec in records)
+
     @api.model
-    def get_it_cost_pie_report(self, report_key):
+    def get_it_cost_pie_report(self, report_key, filters=None):
         """Biểu đồ tròn + phiếu danh sách cho một mục Báo cáo máy chủ."""
         meta = self._pie_report_meta(report_key)
-        start, end, period_label = self._pie_period(meta["period"])
-        records = self.search([]).filtered(lambda rec: self._pie_in_period(rec, start, end))
-        records = records.sorted(key=lambda rec: (rec.date_end or rec.date_start or fields.Date.from_string("1900-01-01"), rec.id))
+        filters = dict(filters or {})
+        asset_like = report_key in ("asset", "estimate", "schedule")
+        if report_key in ("asset", "estimate", "schedule", "provider") and not filters.get(
+            "period_mode"
+        ):
+            filters["period_mode"] = "month"
+        period_key = meta["period"] or filters.get("period_mode")
+        start, end, period_label, prev_start, prev_end, prev_label = self._pie_period(
+            period_key, filters
+        )
+        # Theo tài sản / dự toán / NCC: overlap. Lịch gia hạn: theo ngày hết hạn (+ quá hạn).
+        # Tháng / quý / năm báo cáo: theo ngày bắt đầu.
+        if report_key == "schedule":
+            match_mode = "end"
+        elif report_key in ("asset", "estimate", "provider"):
+            match_mode = "overlap"
+        else:
+            match_mode = "anchor"
+        records = self.search([]).filtered(
+            lambda rec: self._pie_in_period(rec, start, end, match_mode)
+        )
+        if report_key == "schedule":
+            records = records.filtered(
+                lambda rec: (rec.renewal_state or "")
+                in ("active", "expiring", "overdue", "quote", "approval", "processing")
+            )
+        if asset_like:
+            records = records.filtered(self._pie_asset_type_ok)
+        records = records.sorted(
+            key=lambda rec: (
+                rec.date_end or rec.date_start or fields.Date.from_string("1900-01-01"),
+                rec.id,
+            )
+        )
         buckets = OrderedDict()
         rows = []
         total = 0.0
+        asset_ids = set()
         for rec in records:
             amount = float(rec.amount_total or 0.0)
             total += amount
-            key, label = self._pie_slice(rec, meta["slice"])
+            if asset_like:
+                key = rec.asset_id.id or 0
+                label = self._pie_asset_label(rec)
+            else:
+                key, label = self._pie_slice(rec, meta["slice"])
             bucket = buckets.get(key)
             if not bucket:
                 bucket = {"key": key, "label": label, "amount": 0.0, "count": 0}
                 buckets[key] = bucket
+            else:
+                # Giữ tên mới nhất từ danh sách tài sản
+                bucket["label"] = label
             bucket["amount"] += amount
             bucket["count"] += 1
+            if rec.asset_id:
+                asset_ids.add(rec.asset_id.id)
+            elif label:
+                asset_ids.add(label)
             rows.append({
                 "id": rec.id,
-                "asset_name": rec.asset_name or "",
+                "asset_name": self._pie_asset_label(rec) if asset_like else (rec.asset_name or ""),
                 "provider": rec.provider_id.name or "",
                 "bandwidth": rec.bandwidth or "",
                 "date_start": self._pie_date(rec.date_start),
@@ -443,23 +561,66 @@ class PhanHeItCost(models.Model):
                 "count": sum(item["count"] for item in rest),
             })
             slices = head
+        palette = (
+            ("#2563eb", "#14b8a6", "#f59e0b", "#ef4444", "#0ea5e9", "#22c55e", "#f97316", "#6366f1")
+            if asset_like
+            else self._PIE_COLORS
+        )
         for index, item in enumerate(slices):
-            item["color"] = self._PIE_COLORS[index % len(self._PIE_COLORS)]
+            item["color"] = palette[index % len(palette)]
             item["percent"] = round(item["amount"] * 100.0 / total, 1) if total else 0.0
             item["amount"] = round(item["amount"], 0)
+        prev_total = (
+            self._pie_sum_in_period(
+                prev_start,
+                prev_end,
+                match_mode,
+                asset_report=asset_like,
+            )
+            if prev_start
+            else 0.0
+        )
+        delta_pct = 0.0
+        if prev_total:
+            delta_pct = round((total - prev_total) / abs(prev_total) * 100.0, 1)
+        elif total:
+            delta_pct = 100.0
+        top = slices[0] if slices else {}
+        today = fields.Date.context_today(self)
+        if report_key == "estimate":
+            subtitle = "Chi phí thiết bị trong %s — chọn tháng/năm để lọc" % period_label
+        elif report_key == "schedule":
+            subtitle = "Gia hạn trong %s + khoản quá hạn trước đó — chọn tháng/năm để lọc" % (
+                period_label
+            )
+        elif report_key == "asset":
+            subtitle = "Theo dõi và phân tích chi phí theo từng tài sản trong hệ thống"
+        else:
+            subtitle = meta["dimension"]
         return {
             "key": report_key,
             "title": meta["title"],
+            "subtitle": subtitle,
             "dimension": meta["dimension"],
             "period": period_label,
+            "period_mode": filters.get("period_mode") or meta["period"] or "month",
+            "year": int(filters.get("year") or today.year),
+            "month": int(filters.get("month") or today.month),
+            "quarter": int(filters.get("quarter") or ((today.month - 1) // 3 + 1)),
             "total": round(total, 0),
+            "prev_total": round(prev_total, 0),
+            "delta_pct": delta_pct,
+            "prev_label": prev_label or "",
+            "asset_count": len(asset_ids) or len({r["asset_name"] for r in rows if r["asset_name"]}),
+            "top_asset_name": top.get("label") or "",
+            "top_asset_amount": top.get("amount") or 0,
             "count": len(rows),
             "slices": slices,
             "rows": rows,
         }
 
     @api.model
-    def export_it_cost_pie_excel(self, report_key):
+    def export_it_cost_pie_excel(self, report_key, filters=None):
         """Kết xuất Excel: tổng hợp biểu đồ tròn và phiếu danh sách."""
         try:
             import openpyxl
@@ -468,7 +629,7 @@ class PhanHeItCost(models.Model):
         except ImportError as exc:
             raise UserError("Thiếu thư viện openpyxl trên server.") from exc
 
-        data = self.get_it_cost_pie_report(report_key)
+        data = self.get_it_cost_pie_report(report_key, filters)
         meta = self._pie_report_meta(report_key)
         wb = openpyxl.Workbook()
         thin = Border(

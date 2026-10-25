@@ -8,7 +8,7 @@ SERVER_MENU_TREE = [
     ("overview", "TỔNG QUAN", True, False),
     ("overview_dashboard", "Tổng quan Dashboard", False, "overview"),
     ("manage", "QUẢN LÝ TÀI SẢN", True, False),
-    ("it_asset_all", "Danh sách máy chủ", False, "manage"),
+    ("it_asset_all", "Danh sách tài sản", False, "manage"),
     ("it_asset_physical", "Máy chủ vật lý", False, "manage"),
     ("it_asset_virtual", "Máy chủ ảo", False, "manage"),
     ("it_asset_network", "Thiết bị mạng & bảo mật", False, "manage"),
@@ -16,14 +16,11 @@ SERVER_MENU_TREE = [
     ("payment", "CHI PHÍ & GIA HẠN", True, False),
     ("it_cost_new", "Thêm mới", False, "payment"),
     ("it_cost_list", "Danh sách chi phí", False, "payment"),
-    ("it_cost_confirm", "Chờ xác nhận thanh toán", False, "payment"),
     ("it_cost_overdue", "Quá hạn", False, "payment"),
     ("it_cost_schedule", "Lịch gia hạn", False, "payment"),
     ("it_cost_estimate", "Dự toán chi phí", False, "payment"),
     ("support", "BẢO TRÌ & HỖ TRỢ", True, False),
     ("it_ticket_maint", "Lịch sử bảo trì", False, "support"),
-    ("it_ticket_support", "Yêu cầu hỗ trợ", False, "support"),
-    ("it_ticket_incident", "Nhật ký sự cố", False, "support"),
     ("reports", "BÁO CÁO", True, False),
     ("it_report_month", "Chi phí tháng", False, "reports"),
     ("it_report_quarter", "Chi phí quý", False, "reports"),
@@ -64,7 +61,6 @@ ASSET_MENUS = (
 COST_MENUS = (
     "it_cost_new",
     "it_cost_list",
-    "it_cost_confirm",
     "it_cost_overdue",
     "it_cost_schedule",
     "it_cost_estimate",
@@ -80,8 +76,6 @@ REPORT_MENUS = (
 )
 TICKET_MENUS = (
     "it_ticket_maint",
-    "it_ticket_support",
-    "it_ticket_incident",
     "support",
 )
 
@@ -439,6 +433,12 @@ class PhanHeModuleAccessServerMenu(models.Model):
                 to_create.append(vals)
             if to_create:
                 Line.with_context(skip_server_menu_cascade=True).create(to_create)
+            stale = rec.server_menu_permission_ids.filtered(
+                lambda line: line.menu_key not in SERVER_MENU_LABEL
+            )
+            if stale:
+                stale.with_context(skip_server_menu_cascade=True).unlink()
+                rec.invalidate_recordset(["server_menu_permission_ids"])
             for line in rec.server_menu_permission_ids:
                 label = SERVER_MENU_LABEL.get(line.menu_key) or line.menu_key or ""
                 expected = ("📁  %s" % label) if line.is_group else ("    └─  %s" % label)

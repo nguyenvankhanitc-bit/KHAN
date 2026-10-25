@@ -1,99 +1,324 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="lug_phan_he.PhanHeItCostReport">
-        <div class="o_it_pie_report">
-            <header class="o_it_pie_head">
-                <div>
-                    <h1 t-esc="state.title"/>
-                    <p>
-                        <span t-esc="state.period"/>
-                        <span> · </span>
-                        <span t-esc="state.dimension"/>
-                    </p>
-                </div>
-                <button type="button"
-                        class="o_it_pie_export"
-                        t-att-disabled="state.exporting or state.loading"
-                        t-on-click="exportExcel">
-                    <i class="fa fa-file-excel-o"/>
-                    <t t-if="state.exporting">Đang xuất...</t>
-                    <t t-else="">Xuất Excel</t>
-                </button>
-            </header>
+        <div t-att-class="isAssetReport ? 'o_it_pie_report o_it_asset_report' : 'o_it_pie_report'">
+            <t t-if="isAssetReport">
+                <header class="o_it_asset_head">
+                    <div>
+                        <h1 t-esc="state.title"/>
+                        <p t-esc="state.subtitle"/>
+                    </div>
+                    <div class="o_it_asset_filters">
+                        <div class="o_it_asset_modes">
+                            <button type="button" t-att-class="state.periodMode === 'month' ? 'is-on' : ''"
+                                    t-on-click="() => this.setPeriodMode('month')">Tháng</button>
+                            <button type="button" t-att-class="state.periodMode === 'quarter' ? 'is-on' : ''"
+                                    t-on-click="() => this.setPeriodMode('quarter')">Quý</button>
+                            <button type="button" t-att-class="state.periodMode === 'year' ? 'is-on' : ''"
+                                    t-on-click="() => this.setPeriodMode('year')">Năm</button>
+                        </div>
+                        <label t-if="state.periodMode === 'month'">
+                            <i class="fa fa-calendar"/>
+                            <select t-on-change="onMonthChange">
+                                <t t-foreach="monthOptions" t-as="m" t-key="m">
+                                    <option t-att-value="m" t-att-selected="state.month === m"
+                                            t-esc="monthLabel(m)"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label t-if="state.periodMode === 'quarter'">
+                            <i class="fa fa-calendar"/>
+                            <select t-on-change="onQuarterChange">
+                                <t t-foreach="[1,2,3,4]" t-as="q" t-key="q">
+                                    <option t-att-value="q" t-att-selected="state.quarter === q"
+                                            t-esc="'Quý ' + q"/>
+                                </t>
+                            </select>
+                        </label>
+                        <label>
+                            <i class="fa fa-calendar-o" t-if="state.periodMode === 'year'"/>
+                            <select t-on-change="onYearChange">
+                                <t t-foreach="yearOptions" t-as="y" t-key="y">
+                                    <option t-att-value="y" t-att-selected="state.year === y"
+                                            t-esc="yearOptionLabel(y)"/>
+                                </t>
+                            </select>
+                        </label>
+                        <button type="button"
+                                class="o_it_pie_export"
+                                t-att-disabled="state.exporting or state.loading"
+                                t-on-click="exportExcel">
+                            <i class="fa fa-download"/>
+                            <t t-if="state.exporting">Đang xuất...</t>
+                            <t t-else="">Xuất Excel</t>
+                        </button>
+                    </div>
+                </header>
 
-            <t t-if="state.loading">
-                <div class="o_it_pie_loading">Đang tải báo cáo...</div>
+                <t t-if="state.loading">
+                    <div class="o_it_pie_loading">Đang tải báo cáo...</div>
+                </t>
+                <t t-else="">
+                    <div class="o_it_asset_kpis">
+                        <article class="is-total">
+                            <span class="o_it_asset_ico"><i class="fa fa-money"/></span>
+                            <div>
+                                <small>Tổng chi phí</small>
+                                <b t-esc="formatMoney(state.total) + ' đ'"/>
+                                <em t-att-class="deltaClass()" t-esc="deltaText()"/>
+                            </div>
+                        </article>
+                        <article class="is-count">
+                            <span class="o_it_asset_ico"><i class="fa fa-server"/></span>
+                            <div>
+                                <small>Số lượng tài sản</small>
+                                <b t-esc="padCount(state.assetCount)"/>
+                                <em>Tài sản đang được theo dõi</em>
+                            </div>
+                        </article>
+                        <article class="is-top">
+                            <span class="o_it_asset_ico"><i class="fa fa-line-chart"/></span>
+                            <div>
+                                <small>Chi phí cao nhất</small>
+                                <b t-esc="formatMoney(state.topAssetAmount) + ' đ'"/>
+                                <em t-esc="state.topAssetName || '—'"/>
+                            </div>
+                        </article>
+                    </div>
+
+                    <div class="o_it_asset_charts">
+                        <section class="o_it_asset_card">
+                            <header><strong>Chi phí theo từng tài sản</strong></header>
+                            <div class="o_it_asset_bar_wrap">
+                                <t t-if="state.slices.length">
+                                    <canvas t-ref="bar"/>
+                                </t>
+                                <t t-else="">
+                                    <div class="o_it_pie_empty">Chưa có số liệu.</div>
+                                </t>
+                            </div>
+                            <ul class="o_it_asset_bar_legend" t-if="state.slices.length">
+                                <li t-foreach="state.slices" t-as="slice" t-key="'b'+slice_index">
+                                    <i t-att-style="'background:' + slice.color"/>
+                                    <span t-esc="slice.label"/>
+                                    <b t-esc="formatMoney(slice.amount) + ' đ'"/>
+                                    <small t-esc="slice.percent + '%'"/>
+                                </li>
+                            </ul>
+                        </section>
+                        <section class="o_it_asset_card">
+                            <header><strong>Tỷ trọng chi phí</strong></header>
+                            <div class="o_it_asset_donut_row">
+                                <div class="o_it_asset_donut">
+                                    <t t-if="state.slices.length">
+                                        <canvas t-ref="pie"/>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="o_it_pie_empty">Chưa có số liệu.</div>
+                                    </t>
+                                </div>
+                                <ul class="o_it_asset_donut_legend" t-if="state.slices.length">
+                                    <li t-foreach="state.slices" t-as="slice" t-key="'d'+slice_index">
+                                        <i t-att-style="'background:' + slice.color"/>
+                                        <div>
+                                            <strong t-esc="slice.label"/>
+                                            <span>
+                                                <t t-esc="formatMoney(slice.amount)"/> đ
+                                                (<t t-esc="slice.percent"/>%)
+                                            </span>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="o_it_asset_table-card">
+                        <div class="o_it_asset_table_head">
+                            <strong>
+                                <t t-if="props.reportKey === 'estimate'">
+                                    Danh sách thiết bị (chi phí <t t-esc="state.period"/>)
+                                </t>
+                                <t t-elif="props.reportKey === 'schedule'">
+                                    Lịch gia hạn (<t t-esc="state.period"/>)
+                                </t>
+                                <t t-else="">Danh sách tài sản</t>
+                            </strong>
+                            <label class="o_it_asset_search">
+                                <i class="fa fa-search"/>
+                                <input type="text" placeholder="Tìm kiếm..."
+                                       t-att-value="state.search"
+                                       t-on-input="onSearch"/>
+                            </label>
+                        </div>
+                        <div class="o_it_asset_table_wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>STT</th>
+                                        <th>Tên tài sản</th>
+                                        <th>Nhà cung cấp</th>
+                                        <th>Băng thông</th>
+                                        <th>Ngày bắt đầu</th>
+                                        <th>Ngày kết thúc</th>
+                                        <th class="num">Cước tháng</th>
+                                        <th class="num">Số tiền thanh toán</th>
+                                        <th>Ghi chú</th>
+                                        <th>Thời gian còn lại</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-if="!pageRows.length">
+                                        <td colspan="11" class="o_it_pie_empty">Không có phiếu trong kỳ này.</td>
+                                    </tr>
+                                    <tr t-foreach="pageRows" t-as="row" t-key="row.id"
+                                        t-on-click="() => this.openRow(row)">
+                                        <td t-esc="rowStt(row_index)"/>
+                                        <td class="is-name" t-esc="row.asset_name"/>
+                                        <td t-esc="row.provider || '—'"/>
+                                        <td t-esc="row.bandwidth || '—'"/>
+                                        <td t-esc="row.date_start || '—'"/>
+                                        <td t-esc="row.date_end || '—'"/>
+                                        <td class="num" t-esc="formatMoney(row.amount_untaxed)"/>
+                                        <td class="num" t-esc="formatMoney(row.amount_total)"/>
+                                        <td t-esc="row.note || '—'"/>
+                                        <td t-esc="row.remaining_label || '—'"/>
+                                        <td>
+                                            <span t-att-class="'o_it_asset_badge is-' + (row.renewal_state || 'active')">
+                                                <i/>
+                                                <t t-esc="row.renewal_label"/>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <footer class="o_it_asset_pager" t-if="filteredRows.length">
+                            <span>
+                                Hiển thị
+                                <t t-esc="pageFrom"/>
+                                -
+                                <t t-esc="pageTo"/>
+                                /
+                                <t t-esc="filteredRows.length"/>
+                            </span>
+                            <div>
+                                <button type="button" t-att-disabled="state.page &lt;= 1"
+                                        t-on-click="() => this.goPage(state.page - 1)">
+                                    <i class="fa fa-chevron-left"/>
+                                </button>
+                                <t t-foreach="pagerPages" t-as="p" t-key="p_index">
+                                    <button type="button"
+                                            t-att-class="p === state.page ? 'is-on' : ''"
+                                            t-att-disabled="p === '…'"
+                                            t-on-click="() => this.goPage(p)"
+                                            t-esc="p"/>
+                                </t>
+                                <button type="button" t-att-disabled="state.page &gt;= pageCount"
+                                        t-on-click="() => this.goPage(state.page + 1)">
+                                    <i class="fa fa-chevron-right"/>
+                                </button>
+                            </div>
+                        </footer>
+                    </section>
+                </t>
             </t>
-            <t t-else="">
-                <section class="o_it_pie_card">
-                    <div class="o_it_pie_chart_wrap">
-                        <t t-if="state.slices.length">
-                            <canvas t-ref="pie"/>
-                        </t>
-                        <t t-else="">
-                            <div class="o_it_pie_empty">Chưa có số liệu để vẽ biểu đồ.</div>
-                        </t>
-                    </div>
-                    <ul class="o_it_pie_legend">
-                        <li t-foreach="state.slices" t-as="slice" t-key="slice_index">
-                            <i t-att-style="'background:' + slice.color"/>
-                            <span class="o_it_pie_legend_label">
-                                <em t-esc="state.sliceField"/> - <t t-esc="slice.label"/>
-                            </span>
-                            <span class="o_it_pie_legend_value">
-                                <strong t-esc="formatMoney(slice.amount)"/>
-                                <small>(<t t-esc="slice.percent"/>%)</small>
-                            </span>
-                        </li>
-                    </ul>
-                </section>
 
-                <section class="o_it_pie_list">
-                    <div class="o_it_pie_list_head">
-                        <h2>Phiếu danh sách</h2>
-                        <span>
-                            <t t-esc="state.count"/> phiếu ·
-                            <t t-esc="formatMoney(state.total)"/> đ
-                        </span>
+            <t t-else="">
+                <header class="o_it_pie_head">
+                    <div>
+                        <h1 t-esc="state.title"/>
+                        <p>
+                            <span t-esc="state.period"/>
+                            <span> · </span>
+                            <span t-esc="state.dimension"/>
+                        </p>
                     </div>
-                    <div class="o_it_pie_table_wrap">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tên thiết bị</th>
-                                    <th>Nhà cung cấp</th>
-                                    <th>Băng thông</th>
-                                    <th>Ngày bắt đầu</th>
-                                    <th>Ngày kết thúc</th>
-                                    <th class="num">Cước tháng</th>
-                                    <th class="num">Số tiền thanh toán</th>
-                                    <th>Ghi chú</th>
-                                    <th>Thời gian còn lại</th>
-                                    <th>Trạng thái</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr t-if="!state.rows.length">
-                                    <td colspan="10" class="o_it_pie_empty">Không có phiếu trong kỳ này.</td>
-                                </tr>
-                                <tr t-foreach="state.rows" t-as="row" t-key="row.id" t-on-click="() => this.openRow(row)">
-                                    <td t-esc="row.asset_name"/>
-                                    <td t-esc="row.provider"/>
-                                    <td t-esc="row.bandwidth"/>
-                                    <td t-esc="row.date_start"/>
-                                    <td t-esc="row.date_end"/>
-                                    <td class="num" t-esc="formatMoney(row.amount_untaxed)"/>
-                                    <td class="num" t-esc="formatMoney(row.amount_total)"/>
-                                    <td t-esc="row.note"/>
-                                    <td t-esc="row.remaining_label"/>
-                                    <td>
-                                        <span t-att-class="'o_it_pie_badge is-' + (row.renewal_state || 'active')" t-esc="row.renewal_label"/>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                    <button type="button"
+                            class="o_it_pie_export"
+                            t-att-disabled="state.exporting or state.loading"
+                            t-on-click="exportExcel">
+                        <i class="fa fa-file-excel-o"/>
+                        <t t-if="state.exporting">Đang xuất...</t>
+                        <t t-else="">Xuất Excel</t>
+                    </button>
+                </header>
+
+                <t t-if="state.loading">
+                    <div class="o_it_pie_loading">Đang tải báo cáo...</div>
+                </t>
+                <t t-else="">
+                    <section class="o_it_pie_card">
+                        <div class="o_it_pie_chart_wrap">
+                            <t t-if="state.slices.length">
+                                <canvas t-ref="pie"/>
+                            </t>
+                            <t t-else="">
+                                <div class="o_it_pie_empty">Chưa có số liệu để vẽ biểu đồ.</div>
+                            </t>
+                        </div>
+                        <ul class="o_it_pie_legend">
+                            <li t-foreach="state.slices" t-as="slice" t-key="slice_index">
+                                <i t-att-style="'background:' + slice.color"/>
+                                <span class="o_it_pie_legend_label">
+                                    <em t-esc="state.sliceField"/> - <t t-esc="slice.label"/>
+                                </span>
+                                <span class="o_it_pie_legend_value">
+                                    <strong t-esc="formatMoney(slice.amount)"/>
+                                    <small>(<t t-esc="slice.percent"/>%)</small>
+                                </span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <section class="o_it_pie_list">
+                        <div class="o_it_pie_list_head">
+                            <h2>Phiếu danh sách</h2>
+                            <span>
+                                <t t-esc="state.count"/> phiếu ·
+                                <t t-esc="formatMoney(state.total)"/> đ
+                            </span>
+                        </div>
+                        <div class="o_it_pie_table_wrap">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tên thiết bị</th>
+                                        <th>Nhà cung cấp</th>
+                                        <th>Băng thông</th>
+                                        <th>Ngày bắt đầu</th>
+                                        <th>Ngày kết thúc</th>
+                                        <th class="num">Cước tháng</th>
+                                        <th class="num">Số tiền thanh toán</th>
+                                        <th>Ghi chú</th>
+                                        <th>Thời gian còn lại</th>
+                                        <th>Trạng thái</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-if="!state.rows.length">
+                                        <td colspan="10" class="o_it_pie_empty">Không có phiếu trong kỳ này.</td>
+                                    </tr>
+                                    <tr t-foreach="state.rows" t-as="row" t-key="row.id" t-on-click="() => this.openRow(row)">
+                                        <td t-esc="row.asset_name"/>
+                                        <td t-esc="row.provider"/>
+                                        <td t-esc="row.bandwidth"/>
+                                        <td t-esc="row.date_start"/>
+                                        <td t-esc="row.date_end"/>
+                                        <td class="num" t-esc="formatMoney(row.amount_untaxed)"/>
+                                        <td class="num" t-esc="formatMoney(row.amount_total)"/>
+                                        <td t-esc="row.note"/>
+                                        <td t-esc="row.remaining_label"/>
+                                        <td>
+                                            <span t-att-class="'o_it_pie_badge is-' + (row.renewal_state || 'active')" t-esc="row.renewal_label"/>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+                </t>
             </t>
         </div>
     </t>

@@ -8,6 +8,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { PhanHeAppSidebar } from "../shell/phan_he_app_sidebar";
 import { PhanHeInternetShell } from "../internet_shell/phan_he_internet_shell";
 import { PhanHeInternetListBoard, PhanHeMonthCostBoard, PhanHeQuarterCostBoard } from "../internet_list/phan_he_internet_list";
+import { PhanHeYearCostBoard } from "./year_cost_board";
 import { PhanHePaymentBoard } from "../payment_board/phan_he_payment_board";
 import { PhanHeCostEstimateBoard } from "../cost_estimate/phan_he_cost_estimate";
 import { PhanHeInternetEntryPopup } from "../internet_entry/phan_he_internet_entry_popup";
@@ -34,11 +35,12 @@ const IT_COST_REPORTS = {
     it_report_year: "year",
     it_report_by_asset: "asset",
     it_report_by_provider: "provider",
+    it_cost_estimate: "estimate",
+    it_cost_schedule: "schedule",
 };
 
 const IT_COST_POPUP_ACTIONS = new Set([
     "lug_phan_he.action_phan_he_it_cost",
-    "lug_phan_he.action_phan_he_it_cost_confirm",
     "lug_phan_he.action_phan_he_it_cost_overdue",
     "lug_phan_he.action_phan_he_it_cost_schedule",
     "lug_phan_he.action_phan_he_it_cost_estimate",
@@ -76,7 +78,7 @@ const SERVER_NAV_SECTIONS = [
         children: [
             {
                 id: "it_asset_all",
-                label: "Danh sách máy chủ",
+                label: "Danh sách tài sản",
                 icon: "fa-desktop",
                 iconTone: "list",
                 action: "lug_phan_he.action_phan_he_it_asset",
@@ -133,13 +135,6 @@ const SERVER_NAV_SECTIONS = [
                 action: "lug_phan_he.action_phan_he_it_cost",
             },
             {
-                id: "it_cost_confirm",
-                label: "Chờ xác nhận thanh toán",
-                icon: "fa-check-square-o",
-                iconTone: "payment",
-                action: "lug_phan_he.action_phan_he_it_cost_confirm",
-            },
-            {
                 id: "it_cost_overdue",
                 label: "Quá hạn",
                 icon: "fa-times-circle",
@@ -175,21 +170,6 @@ const SERVER_NAV_SECTIONS = [
                 icon: "fa-wrench",
                 iconTone: "alert",
                 action: "lug_phan_he.action_phan_he_it_ticket_maintenance",
-            },
-            {
-                id: "it_ticket_support",
-                label: "Yêu cầu hỗ trợ",
-                icon: "fa-life-ring",
-                iconTone: "active",
-                action: "lug_phan_he.action_phan_he_it_ticket_support",
-            },
-            {
-                id: "it_ticket_incident",
-                label: "Nhật ký sự cố",
-                icon: "fa-exclamation-triangle",
-                tone: "danger",
-                iconTone: "overdue",
-                action: "lug_phan_he.action_phan_he_it_ticket_incident",
             },
         ],
     },
@@ -442,6 +422,7 @@ export class PhanHeDashboard extends Component {
         PhanHeInternetListBoard,
         PhanHeMonthCostBoard,
         PhanHeQuarterCostBoard,
+        PhanHeYearCostBoard,
         PhanHeCostEstimateBoard,
         PhanHePaymentBoard,
         PhanHeInternetEntryPopup,
@@ -504,10 +485,15 @@ export class PhanHeDashboard extends Component {
             selectedMonth: `${year}-${pad2(new Date().getMonth() + 1)}`,
             selectedRegion: "all",
             selectedStore: "all",
+            inetPeriod: "month",
             itAssetTypeId: "all",
             itAssetState: "all",
             itProviderId: "all",
-            monthChartMode: "bar",
+            itAllocateMode: "cost",
+            itPeriodMode: "year",
+            itChartMode: "month",
+            itDonutMode: "pct",
+            monthChartMode: "line",
             filters: {
                 year: year,
                 date_from: yearStartDisplay(year),
@@ -517,13 +503,21 @@ export class PhanHeDashboard extends Component {
                 employee_id: "",
             },
         });
-        this.inetSparkRef = useRef("inetSpark");
         this.inetDonutRef = useRef("inetDonut");
-        this.inetYearRef = useRef("inetYear");
-        this.inetMonthTrendRef = useRef("inetMonthTrend");
+        this.inetRegionBarRef = useRef("inetRegionBar");
+        this.inetYearLinesRef = useRef("inetYearLines");
+        this.inetProvDonutRef = useRef("inetProvDonut");
+        this.inetCashflowRef = useRef("inetCashflow");
         this.itMonthRef = useRef("itMonthChart");
+        this.itRenewDonutRef = useRef("itRenewDonut");
         this.itKpiDonutRef = useRef("itKpiDonutChart");
         this.itByTypeDonutRef = useRef("itByTypeDonutChart");
+        this.itQuarterRef = useRef("itQuarterChart");
+        this.itCategoryRef = useRef("itCategoryChart");
+        this.itBudgetGaugeRef = useRef("itBudgetGauge");
+        this.itYearTrendRef = useRef("itYearTrendChart");
+        this.itOpexDonutRef = useRef("itOpexDonut");
+        this.itLifecycleRef = useRef("itLifecycleChart");
         this.inetCharts = {};
         this.itCharts = {};
         onWillStart(async () => {
@@ -565,17 +559,24 @@ export class PhanHeDashboard extends Component {
                         openNav = first ? first.id : false;
                     }
                 }
-                if (openNav === "report_quarter") {
+                if (openNav === "report_quarter" || openNav === "it_report_quarter") {
                     this.state.contentMode = "quarter_cost";
-                    this.state.activeNav = "report_quarter";
-                    this._openGroupForNav("report_quarter");
+                    this.state.activeNav = openNav;
+                    this._openGroupForNav(openNav);
                     this.state.loading = false;
                     return;
                 }
-                if (openNav === "report_month") {
+                if (openNav === "report_month" || openNav === "it_report_month") {
                     this.state.contentMode = "month_cost";
-                    this.state.activeNav = "report_month";
-                    this._openGroupForNav("report_month");
+                    this.state.activeNav = openNav;
+                    this._openGroupForNav(openNav);
+                    this.state.loading = false;
+                    return;
+                }
+                if (openNav === "report_year" || openNav === "it_report_year") {
+                    this.state.contentMode = "year_cost";
+                    this.state.activeNav = openNav;
+                    this._openGroupForNav(openNav);
                     this.state.loading = false;
                     return;
                 }
@@ -614,15 +615,8 @@ export class PhanHeDashboard extends Component {
                 if (openNav && openNav !== "overview") {
                     const child = this.findNavChild(openNav);
                     if (child) {
-                        if (child.id === "store_declare") {
-                            this.openEntryPopup(false);
-                        } else if (child.id === "it_asset_new" || child.popup === "it_asset") {
-                            this.openItAssetPopup(false);
-                        } else if (child.id === "it_cost_new" || child.popup === "it_cost") {
-                            this.openItCostPopup(false);
-                        } else if (child.action) {
-                            await this.openEmbedded(child);
-                        }
+                        // Dùng onNavChild để Dự toán / báo cáo IT mở đúng board OWL.
+                        this.onNavChild(child);
                     }
                     this._openGroupForNav(openNav);
                 }
@@ -633,7 +627,7 @@ export class PhanHeDashboard extends Component {
         });
         useEffect(
             () => {
-                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "cost_estimate" || this.state.contentMode === "payment_board") {
+                if (!this.isInternetDash || this.state.loading || this.state.contentMode === "owl_list" || this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "year_cost" || this.state.contentMode === "cost_estimate" || this.state.contentMode === "payment_board") {
                     return () => {};
                 }
                 this.renderInetCharts();
@@ -649,7 +643,7 @@ export class PhanHeDashboard extends Component {
                 this.renderItCharts();
                 return () => this.destroyItCharts();
             },
-            () => [this.state.it, this.state.loading, this.state.activeNav, this.state.monthChartMode]
+            () => [this.state.it, this.state.loading, this.state.activeNav, this.state.monthChartMode, this.state.itAllocateMode, this.state.itPeriodMode, this.state.itChartMode, this.state.itDonutMode]
         );
         onWillUnmount(() => this.destroyInetCharts());
         onWillUpdateProps((next) => {
@@ -707,6 +701,7 @@ export class PhanHeDashboard extends Component {
             && this.state.contentMode !== "view"
             && this.state.contentMode !== "month_cost"
             && this.state.contentMode !== "quarter_cost"
+            && this.state.contentMode !== "year_cost"
             && this.state.contentMode !== "cost_estimate"
         );
     }
@@ -740,9 +735,9 @@ export class PhanHeDashboard extends Component {
 
     get overviewSubtitle() {
         if (this.isServerDash) {
-            return "Theo dõi tài sản hạ tầng CNTT, chi phí vận hành, bảo trì và kế hoạch gia hạn.";
+            return "Theo dõi chi phí, ngân sách và hiệu quả sử dụng tài sản máy chủ, thiết bị mạng và dịch vụ.";
         }
-        return "Thống kê chi phí dịch vụ Internet theo khu vực và chi phí theo tháng/năm";
+        return "Quản lý chi phí – Theo dõi xu hướng – Lập kế hoạch dòng tiền";
     }
 
     get overviewUsageTitle() {
@@ -807,6 +802,20 @@ export class PhanHeDashboard extends Component {
         return this.state.inet || {};
     }
 
+    get inetOv() {
+        return this.inet.ov || {};
+    }
+
+    get inetYear() {
+        const parts = String(this.state.selectedMonth || "").split("-");
+        return Number(parts[0]) || new Date().getFullYear();
+    }
+
+    get inetYearOptions() {
+        const y = new Date().getFullYear();
+        return [y - 1, y, y + 1, y + 2];
+    }
+
     get it() {
         return this.state.it || {};
     }
@@ -816,6 +825,9 @@ export class PhanHeDashboard extends Component {
             asset_total: 0,
             asset_active: 0,
             asset_inactive: 0,
+            asset_delta: 0,
+            asset_active_pct: 0,
+            expiring_pct: 0,
             month_cost: 0,
             month_delta: 0,
             year_cost: 0,
@@ -824,6 +836,236 @@ export class PhanHeDashboard extends Component {
             overdue: 0,
             confirm: 0,
         };
+    }
+
+    itTypeMeta(name) {
+        const n = String(name || "").toLowerCase();
+        if (n.includes("ảo") || n.includes("virtual")) {
+            return { icon: "fa-cloud", color: "#3b82f6", tile: "#3b82f6" };
+        }
+        if (n.includes("cloud")) {
+            return { icon: "fa-cloud", color: "#0ea5e9", tile: "#0ea5e9" };
+        }
+        if (n.includes("bảo mật") || n.includes("security")) {
+            return { icon: "fa-shield", color: "#ef4444", tile: "#ef4444" };
+        }
+        if (n.includes("mạng") || n.includes("network")) {
+            return { icon: "fa-sitemap", color: "#22c55e", tile: "#22c55e" };
+        }
+        if (n.includes("phần mềm") || n.includes("bản quyền")) {
+            return { icon: "fa-key", color: "#f59e0b", tile: "#f59e0b" };
+        }
+        if (n.includes("vật lý") || n.includes("physical") || n.includes("máy chủ")) {
+            return { icon: "fa-server", color: "#6366f1", tile: "#6366f1" };
+        }
+        return { icon: "fa-cube", color: "#64748b", tile: "#64748b" };
+    }
+
+    get itByTypeBars() {
+        return (this.it.by_type || []).map((tp) => {
+            const meta = this.itTypeMeta(tp.name);
+            return {
+                id: tp.id,
+                name: tp.name || "—",
+                color: meta.color,
+                barColor: "#818cf8",
+                icon: meta.icon,
+                amount: Number(tp.amount || 0),
+                pct: Math.max(Number(tp.pct || 0), 0),
+                count: Number(tp.count || 0),
+            };
+        });
+    }
+
+    get itByTypeTotal() {
+        return (this.it.by_type || []).reduce((s, r) => s + Number(r.amount || 0), 0);
+    }
+
+    get itRenewalStatus() {
+        return this.it.renewal_status || [];
+    }
+
+    get itRenewalSchedule() {
+        return this.it.renewal_schedule || [];
+    }
+
+    get itAllocateBlocks() {
+        const mode = this.state.itAllocateMode || "cost";
+        const rows = this.it.allocate || this.it.by_type || [];
+        const mapped = rows.map((r) => {
+            const meta = this.itTypeMeta(r.name);
+            const amount = Number(r.amount || 0);
+            const count = Number(r.count || 0);
+            const weight = mode === "count" ? count : amount;
+            return {
+                id: r.id,
+                name: r.name || "—",
+                color: meta.tile,
+                icon: meta.icon,
+                amount,
+                count,
+                weight,
+                display: mode === "count" ? `${count} tài sản` : this.formatMoney(amount),
+            };
+        });
+        const sum = mapped.reduce((a, r) => a + Math.max(r.weight, 0), 0) || 1;
+        return mapped.map((r) => ({
+            ...r,
+            pct: Math.round((Math.max(r.weight, 0) / sum) * 1000) / 10,
+        }));
+    }
+
+    get itTodoRows() {
+        const fmt = (d) => {
+            const raw = String(d || "").trim();
+            const m = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            return m ? `${m[3]}/${m[2]}/${m[1]}` : raw || "—";
+        };
+        return (this.it.todo || []).map((row, idx) => ({
+            ...row,
+            stt: idx + 1,
+            date_start: fmt(row.date_start),
+            date_end: fmt(row.date_end || row.date),
+        }));
+    }
+
+    get itTodoPageInfo() {
+        const n = (this.it.todo || []).length;
+        if (!n) {
+            return "Hiển thị 0 trên 0 tài sản";
+        }
+        return `Hiển thị 1-${n} trên ${n} tài sản`;
+    }
+
+    pad2(n) {
+        return pad2(n);
+    }
+
+    deltaClass(v) {
+        const n = Number(v || 0);
+        if (n > 0) {
+            return "is-up";
+        }
+        if (n < 0) {
+            return "is-down";
+        }
+        return "is-muted";
+    }
+
+    deltaText(v) {
+        const n = Number(v || 0);
+        const abs = Math.abs(n);
+        const s = String(abs.toFixed(1)).replace(/\.0$/, "").replace(".", ",");
+        if (n > 0) {
+            return `↑ ${s}%`;
+        }
+        if (n < 0) {
+            return `↓ ${s}%`;
+        }
+        return "0%";
+    }
+
+    setItAllocateMode(mode) {
+        this.state.itAllocateMode = mode === "count" ? "count" : "cost";
+    }
+
+    setItPeriodMode(mode) {
+        const next = ["year", "quarter", "month"].includes(mode) ? mode : "year";
+        this.state.itPeriodMode = next;
+        this.state.itChartMode = next === "year" ? "month" : next;
+    }
+
+    setItChartMode(mode) {
+        const allowed = ["month", "quarter", "year", "category"];
+        this.state.itChartMode = allowed.includes(mode) ? mode : "month";
+    }
+
+    setItDonutMode(mode) {
+        this.state.itDonutMode = mode === "value" ? "value" : "pct";
+    }
+
+    get itHeaderYear() {
+        return Number(String(this.state.selectedMonth || "").split("-")[0]) || new Date().getFullYear();
+    }
+
+    get itYearChoices() {
+        const y = new Date().getFullYear();
+        return [y - 1, y, y + 1, y + 2];
+    }
+
+    onItHeaderYearChange(ev) {
+        const year = ev.target.value;
+        const month = String(this.state.selectedMonth || "").split("-")[1] || pad2(new Date().getMonth() + 1);
+        this.state.selectedMonth = `${year}-${month}`;
+        this.loadItDash();
+    }
+
+    get itCategoryRows() {
+        const palette = ["#3b82f6", "#22c55e", "#a855f7", "#f97316", "#14b8a6", "#94a3b8"];
+        const rows = (this.it.by_category || []).slice(0, 6);
+        const max = Math.max(...rows.map((r) => Number(r.amount || 0)), 1);
+        return rows.map((r, i) => ({
+            ...r,
+            color: palette[i % palette.length],
+            barPct: Math.max(8, Math.round((Number(r.amount || 0) / max) * 100)),
+        }));
+    }
+
+    formatMoneyShort(v) {
+        const n = Number(v || 0);
+        if (Math.abs(n) >= 1e9) {
+            return `${(n / 1e9).toFixed(1).replace(/\.0$/, "")} tỷ`;
+        }
+        if (Math.abs(n) >= 1e6) {
+            return `${(n / 1e6).toFixed(1).replace(/\.0$/, "")}Tr`;
+        }
+        if (Math.abs(n) >= 1e3) {
+            return `${Math.round(n / 1e3)}K`;
+        }
+        return this.formatMoney(n);
+    }
+
+    openItSchedule(item) {
+        if (!item?.id) {
+            return;
+        }
+        this.openItTodo({ id: item.id, model: "phan.he.it.cost" });
+    }
+
+    openItScheduleAll() {
+        const child = this.findNavChild("it_cost_schedule");
+        if (child) {
+            this.onNavChild(child);
+        }
+    }
+
+    exportItOverview() {
+        const rows = this.itTodoRows;
+        const header = [
+            "STT", "Tên tài sản", "Mã", "Hãng/Model", "Loại tài sản",
+            "Ngày bắt đầu", "Ngày kết thúc", "Số tiền", "Trạng thái",
+        ];
+        const lines = [header.join(",")];
+        rows.forEach((r) => {
+            lines.push([
+                r.stt,
+                `"${String(r.asset || "").replace(/"/g, '""')}"`,
+                r.asset_code || "",
+                `"${String(r.brand || "").replace(/"/g, '""')}"`,
+                `"${String(r.asset_type || r.category || "").replace(/"/g, '""')}"`,
+                r.date_start || "",
+                r.date_end || r.date || "",
+                r.amount || 0,
+                r.status_label || r.state || "",
+            ].join(","));
+        });
+        const blob = new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `Tong_quan_may_chu_${this.state.selectedMonth || "export"}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
     }
 
     get itBudgetPct() {
@@ -835,7 +1077,8 @@ export class PhanHeDashboard extends Component {
     }
 
     get itMonthOptions() {
-        const y = Number(this.it.year || new Date().getFullYear());
+        const parts = String(this.state.selectedMonth || "").split("-");
+        const y = Number(parts[0]) || new Date().getFullYear();
         const opts = [];
         for (let m = 1; m <= 12; m++) {
             opts.push({
@@ -901,14 +1144,14 @@ export class PhanHeDashboard extends Component {
     }
 
     get itByTypeDonutSlices() {
-        const palette = ["#22c55e", "#eab308", "#ef4444", "#3b82f6", "#a855f7", "#f97316"];
+        const palette = ["#3b82f6", "#22c55e", "#eab308", "#a855f7", "#94a3b8", "#fb923c"];
         const rows = (this.it.by_type || []).map((tp, i) => {
             const amount = Math.max(Number(tp.amount || 0), 0);
             const count = Number(tp.count || 0);
             return {
                 id: tp.id || `type-${i}`,
                 label: tp.name || "—",
-                color: tp.color || palette[i % palette.length],
+                color: palette[i % palette.length],
                 amount,
                 count,
                 weight: amount > 0 ? amount : count,
@@ -1317,6 +1560,33 @@ export class PhanHeDashboard extends Component {
             this.openItCostPopup(false);
             return;
         }
+        if (this.serviceTypeCode === "server" && child.id === "it_report_month") {
+            this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
+            this.state.contentMode = "month_cost";
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.loading = false;
+            return;
+        }
+        if (this.serviceTypeCode === "server" && child.id === "it_report_quarter") {
+            this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
+            this.state.contentMode = "quarter_cost";
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.loading = false;
+            return;
+        }
+        if (this.serviceTypeCode === "server" && child.id === "it_report_year") {
+            this.state.activeNav = child.id;
+            this._openGroupForNav(child.id);
+            this.state.contentMode = "year_cost";
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.loading = false;
+            return;
+        }
         if (this.serviceTypeCode === "server" && IT_COST_REPORTS[child.id]) {
             this.state.activeNav = child.id;
             this._openGroupForNav(child.id);
@@ -1392,14 +1662,34 @@ export class PhanHeDashboard extends Component {
                 : Object.entries(OWL_LIST_NAV).find(([, v]) => v === ret.listFilter)?.[0] || "list_active";
             return;
         }
-        if (ret.contentMode === "month_cost" || ret.activeNav === "report_month") {
+        if (
+            ret.contentMode === "month_cost"
+            || ret.activeNav === "report_month"
+            || ret.activeNav === "it_report_month"
+        ) {
             this.state.contentMode = "month_cost";
-            this.state.activeNav = "report_month";
+            this.state.activeNav = ret.activeNav
+                || (this.serviceTypeCode === "server" ? "it_report_month" : "report_month");
             return;
         }
-        if (ret.contentMode === "quarter_cost" || ret.activeNav === "report_quarter") {
+        if (
+            ret.contentMode === "quarter_cost"
+            || ret.activeNav === "report_quarter"
+            || ret.activeNav === "it_report_quarter"
+        ) {
             this.state.contentMode = "quarter_cost";
-            this.state.activeNav = "report_quarter";
+            this.state.activeNav = ret.activeNav
+                || (this.serviceTypeCode === "server" ? "it_report_quarter" : "report_quarter");
+            return;
+        }
+        if (
+            ret.contentMode === "year_cost"
+            || ret.activeNav === "report_year"
+            || ret.activeNav === "it_report_year"
+        ) {
+            this.state.contentMode = "year_cost";
+            this.state.activeNav = ret.activeNav
+                || (this.serviceTypeCode === "server" ? "it_report_year" : "report_year");
             return;
         }
         if (ret.contentMode === "cost_estimate" || ret.activeNav === "cost_estimate") {
@@ -1435,6 +1725,78 @@ export class PhanHeDashboard extends Component {
                 activeNav: this.state.activeNav,
             }
         );
+    }
+
+    openMonthCostEntry(resId = false) {
+        if (this.serviceTypeCode === "server") {
+            if (!resId) {
+                this.openItCostPopup(false);
+                return;
+            }
+            this.state.formReturn = {
+                contentMode: "month_cost",
+                activeNav: "it_report_month",
+            };
+            this.openEmbedded(
+                { id: "it_report_month", action: "lug_phan_he.action_phan_he_it_cost" },
+                {
+                    type: "form",
+                    resId,
+                    action: "lug_phan_he.action_phan_he_it_cost",
+                    activeNav: "it_report_month",
+                }
+            );
+            return;
+        }
+        this.openEntryForm(resId);
+    }
+
+    openQuarterCostEntry(resId = false) {
+        if (this.serviceTypeCode === "server") {
+            if (!resId) {
+                this.openItCostPopup(false);
+                return;
+            }
+            this.state.formReturn = {
+                contentMode: "quarter_cost",
+                activeNav: "it_report_quarter",
+            };
+            this.openEmbedded(
+                { id: "it_report_quarter", action: "lug_phan_he.action_phan_he_it_cost" },
+                {
+                    type: "form",
+                    resId,
+                    action: "lug_phan_he.action_phan_he_it_cost",
+                    activeNav: "it_report_quarter",
+                }
+            );
+            return;
+        }
+        this.openEntryForm(resId);
+    }
+
+    openYearCostEntry(resId = false) {
+        if (this.serviceTypeCode === "server") {
+            if (!resId) {
+                this.openItCostPopup(false);
+                return;
+            }
+            this.state.formReturn = {
+                contentMode: "year_cost",
+                activeNav: "it_report_year",
+            };
+            this.openEmbedded(
+                { id: "it_report_year", action: "lug_phan_he.action_phan_he_it_cost" },
+                {
+                    type: "form",
+                    resId,
+                    action: "lug_phan_he.action_phan_he_it_cost",
+                    activeNav: "it_report_year",
+                }
+            );
+            return;
+        }
+        this.openEntryForm(resId);
     }
 
     async openEntryForm(resId = false) {
@@ -1607,6 +1969,54 @@ export class PhanHeDashboard extends Component {
     async openEmbedded(child, extra = {}) {
         const navId = extra.activeNav || child.id;
         const xmlid = extra.action || child.action;
+        // Dự toán / Lịch gia hạn Máy chủ → board lọc theo tháng (không dùng list Odoo cũ).
+        const scheduleEstimateActions = {
+            "lug_phan_he.action_phan_he_it_cost_estimate": {
+                nav: "it_cost_estimate",
+                key: "estimate",
+            },
+            "lug_phan_he.action_phan_he_it_cost_schedule": {
+                nav: "it_cost_schedule",
+                key: "schedule",
+            },
+        };
+        const scheduleEstimateHit =
+            scheduleEstimateActions[xmlid]
+            || (navId === "it_cost_estimate" && scheduleEstimateActions["lug_phan_he.action_phan_he_it_cost_estimate"])
+            || (navId === "it_cost_schedule" && scheduleEstimateActions["lug_phan_he.action_phan_he_it_cost_schedule"]);
+        if (
+            this.serviceTypeCode === "server"
+            && extra.type !== "form"
+            && scheduleEstimateHit
+        ) {
+            this.state.activeNav = scheduleEstimateHit.nav;
+            this._openGroupForNav(scheduleEstimateHit.nav);
+            this.state.contentMode = "it_cost_report";
+            this.state.itReportKey = scheduleEstimateHit.key;
+            this.state.itReportToken = (this.state.itReportToken || 0) + 1;
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.loading = false;
+            this.state.viewKey += 1;
+            return;
+        }
+        // Báo cáo IT (theo tài sản / NCC…) → board OWL.
+        if (
+            this.serviceTypeCode === "server"
+            && extra.type !== "form"
+            && IT_COST_REPORTS[navId]
+        ) {
+            this.state.activeNav = navId;
+            this._openGroupForNav(navId);
+            this.state.contentMode = "it_cost_report";
+            this.state.itReportKey = IT_COST_REPORTS[navId];
+            this.state.itReportToken = (this.state.itReportToken || 0) + 1;
+            this.state.embeddedViewProps = null;
+            this.state.listActionXml = null;
+            this.state.loading = false;
+            this.state.viewKey += 1;
+            return;
+        }
         // Chặn mọi đường mở list phan.he.payment khi đang ở Lịch thanh toán Internet.
         const paymentListActions = new Set([
             "lug_phan_he.action_phan_he_payment",
@@ -1699,6 +2109,8 @@ export class PhanHeDashboard extends Component {
                         ? "edit"
                         : "readonly",
             };
+            // Không áp mặc định chip "Đang sử dụng" trên mọi list tài sản IT.
+            delete viewContext.search_default_filter_active_state;
             if (isInternetAcl) {
                 viewContext.phan_he_internet_menu = menuCode || (extra.resId ? "internet_active" : "internet_entry");
             }
@@ -1809,15 +2221,39 @@ export class PhanHeDashboard extends Component {
         this.state.filters.date_to = `${pad2(to.getDate())}/${pad2(to.getMonth() + 1)}/${to.getFullYear()}`;
         this._openGroupForNav("reports");
         this.state.embeddedViewProps = null;
-        if (period === "month" && (this.serviceTypeCode === "internet" || this.serviceTypeCode === "server")) {
+        if (period === "month" && this.serviceTypeCode === "internet") {
             this.state.activeNav = "report_month";
             this.state.contentMode = "month_cost";
             this.state.loading = false;
             return;
         }
-        if (period === "quarter" && (this.serviceTypeCode === "internet" || this.serviceTypeCode === "server")) {
+        if (period === "month" && this.serviceTypeCode === "server") {
+            this.state.activeNav = "it_report_month";
+            this.state.contentMode = "month_cost";
+            this.state.loading = false;
+            return;
+        }
+        if (period === "quarter" && this.serviceTypeCode === "internet") {
             this.state.activeNav = "report_quarter";
             this.state.contentMode = "quarter_cost";
+            this.state.loading = false;
+            return;
+        }
+        if (period === "quarter" && this.serviceTypeCode === "server") {
+            this.state.activeNav = "it_report_quarter";
+            this.state.contentMode = "quarter_cost";
+            this.state.loading = false;
+            return;
+        }
+        if (period === "year" && this.serviceTypeCode === "internet") {
+            this.state.activeNav = "report_year";
+            this.state.contentMode = "year_cost";
+            this.state.loading = false;
+            return;
+        }
+        if (period === "year" && this.serviceTypeCode === "server") {
+            this.state.activeNav = "it_report_year";
+            this.state.contentMode = "year_cost";
             this.state.loading = false;
             return;
         }
@@ -1878,8 +2314,8 @@ export class PhanHeDashboard extends Component {
         const isCost = row.model === "phan.he.it.cost";
         const actionXml = isCost
             ? "lug_phan_he.action_phan_he_it_cost"
-            : "lug_phan_he.action_phan_he_it_ticket_incident";
-        const navId = isCost ? "it_cost_list" : "it_ticket_incident";
+            : "lug_phan_he.action_phan_he_it_ticket_maintenance";
+        const navId = isCost ? "it_cost_list" : "it_ticket_maint";
         this.openEmbedded(
             { id: navId, action: actionXml },
             {
@@ -1894,7 +2330,6 @@ export class PhanHeDashboard extends Component {
     openItKpi(kind) {
         const map = {
             assets: "it_asset_all",
-            confirm: "it_cost_confirm",
             overdue: "it_cost_overdue",
             expiring: "it_cost_schedule",
         };
@@ -2008,6 +2443,8 @@ export class PhanHeDashboard extends Component {
                 [filters]
             );
             this.state.it = data || {};
+            // Giữ tháng đã chọn — tránh <select> reset về option đầu khi options re-render.
+            this.state.selectedMonth = `${year}-${pad2(month)}`;
             this.state.data = {
                 ...(this.state.data || {}),
                 updated_at: data?.updated_at,
@@ -2030,6 +2467,22 @@ export class PhanHeDashboard extends Component {
             await this.loadItDash();
             return;
         }
+        await this.loadInternetDash();
+    }
+
+    async onInetYearOnlyChange(ev) {
+        const y = Number(ev.target.value) || new Date().getFullYear();
+        const parts = String(this.state.selectedMonth || "").split("-");
+        const m = Number(parts[1]) || new Date().getMonth() + 1;
+        this.state.selectedMonth = `${y}-${pad2(m)}`;
+        await this.loadInternetDash();
+    }
+
+    onInetPeriodChange(ev) {
+        this.state.inetPeriod = ev.target.value || "month";
+    }
+
+    async reloadInetOverview() {
         await this.loadInternetDash();
     }
 
@@ -2063,7 +2516,58 @@ export class PhanHeDashboard extends Component {
         await this.loadItDash();
     }
 
+    bindItChartBox() {
+        this.unbindItChartBox();
+        const root = this.itMonthRef?.el?.closest(".lq-it-ov");
+        if (!root || typeof ResizeObserver === "undefined") {
+            return;
+        }
+        const fit = () => {
+            const w = root.clientWidth;
+            const h = root.clientHeight;
+            if (w === this._itBoxW && h === this._itBoxH) {
+                return;
+            }
+            this._itBoxW = w;
+            this._itBoxH = h;
+            const dpr = window.devicePixelRatio || 1;
+            Object.values(this.itCharts || {}).forEach((chart) => {
+                try {
+                    chart.options.devicePixelRatio = dpr;
+                    chart.resize();
+                } catch (e) {
+                    /* ignore */
+                }
+            });
+        };
+        this._itChartFit = fit;
+        this._itResizeObserver = new ResizeObserver(() => {
+            if (this._itResizeFrame) {
+                cancelAnimationFrame(this._itResizeFrame);
+            }
+            this._itResizeFrame = requestAnimationFrame(fit);
+        });
+        this._itResizeObserver.observe(root);
+        window.visualViewport?.addEventListener("resize", fit);
+    }
+
+    unbindItChartBox() {
+        if (this._itResizeFrame) {
+            cancelAnimationFrame(this._itResizeFrame);
+            this._itResizeFrame = 0;
+        }
+        if (this._itChartFit) {
+            window.visualViewport?.removeEventListener("resize", this._itChartFit);
+            this._itChartFit = null;
+        }
+        this._itResizeObserver?.disconnect();
+        this._itResizeObserver = null;
+        this._itBoxW = 0;
+        this._itBoxH = 0;
+    }
+
     destroyItCharts() {
+        this.unbindItChartBox();
         Object.values(this.itCharts || {}).forEach((chart) => {
             try {
                 chart.destroy();
@@ -2072,7 +2576,18 @@ export class PhanHeDashboard extends Component {
             }
         });
         this.itCharts = {};
-        [this.itMonthRef, this.itKpiDonutRef, this.itByTypeDonutRef].forEach((ref) => {
+        [
+            this.itMonthRef,
+            this.itRenewDonutRef,
+            this.itKpiDonutRef,
+            this.itByTypeDonutRef,
+            this.itQuarterRef,
+            this.itCategoryRef,
+            this.itBudgetGaugeRef,
+            this.itYearTrendRef,
+            this.itOpexDonutRef,
+            this.itLifecycleRef,
+        ].forEach((ref) => {
             const el = ref && ref.el;
             if (!el || typeof Chart === "undefined" || !Chart.getChart) {
                 return;
@@ -2095,6 +2610,8 @@ export class PhanHeDashboard extends Component {
         }
         const weights = slices.map((s) => Number(s.weight || 0));
         const hasData = weights.some((w) => w > 0);
+        const labelMode = this.state.itDonutMode;
+        const moneyShort = (v) => this.formatMoneyShort(v);
         this.itCharts[chartKey] = new Chart(ctx, {
             type: "doughnut",
             data: {
@@ -2102,10 +2619,38 @@ export class PhanHeDashboard extends Component {
                 datasets: [{
                     data: hasData ? weights : slices.map(() => 1),
                     backgroundColor: slices.map((s) => s.color),
-                    borderWidth: 0,
+                    borderWidth: 2,
+                    borderColor: "#fff",
                     hoverOffset: 4,
                 }],
             },
+            plugins: [{
+                id: `itSliceLabel-${chartKey}`,
+                afterDraw(chart) {
+                    const { ctx } = chart;
+                    const meta = chart.getDatasetMeta(0);
+                    const data = chart.data.datasets[0].data;
+                    const total = data.reduce((a, b) => a + Number(b || 0), 0) || 1;
+                    meta.data.forEach((arc, i) => {
+                        const v = Number(data[i] || 0);
+                        if (!v || v / total < 0.045 || !arc) {
+                            return;
+                        }
+                        const ang = ((arc.startAngle || 0) + (arc.endAngle || 0)) / 2;
+                        const r = ((arc.innerRadius || 0) + (arc.outerRadius || 0)) / 2;
+                        const x = arc.x + Math.cos(ang) * r;
+                        const y = arc.y + Math.sin(ang) * r;
+                        const pct = String(Math.round((v / total) * 1000) / 10).replace(".", ",");
+                        ctx.save();
+                        ctx.fillStyle = "#fff";
+                        ctx.font = "700 11px sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.textBaseline = "middle";
+                        ctx.fillText(labelMode === "value" ? moneyShort(v) : `${pct}%`, x, y);
+                        ctx.restore();
+                    });
+                },
+            }],
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
@@ -2137,60 +2682,377 @@ export class PhanHeDashboard extends Component {
         }
         this.destroyItCharts();
         const it = this.state.it || {};
-        this._renderItDonutChart(this.itKpiDonutRef, "kpiDonut", this.itKpiDonutSlices);
-        this._renderItDonutChart(
-            this.itByTypeDonutRef,
-            "byTypeDonut",
-            this.itByTypeDonutSlices,
-            (sl) => `${sl.label}: ${sl.display} · ${sl.count} tài sản (${sl.pct}%)`
-        );
-        const monthCtx = this.itMonthRef && this.itMonthRef.el
-            ? this.itMonthRef.el.getContext("2d")
-            : null;
         const series = it.month_series || [];
-        if (monthCtx) {
-            const mode = this.state.monthChartMode === "line" ? "line" : "bar";
+        const moneyTip = {
+            callbacks: {
+                label: (ctx) => `${ctx.dataset.label}: ${this.formatMoney(ctx.raw)}`,
+            },
+        };
+        const axisY = {
+            beginAtZero: true,
+            ticks: { color: "#94a3b8", callback: (v) => this._formatAxisVnd(v) },
+            grid: { color: "rgba(148,163,184,0.18)" },
+            border: { display: false },
+        };
+        const monthCtx = this.itMonthRef?.el?.getContext("2d");
+        const chartMode = this.state.itChartMode || "month";
+        if (monthCtx && chartMode === "category") {
+            const cats = this.itCategoryRows;
             this.itCharts.month = new Chart(monthCtx, {
-                type: mode,
+                type: "bar",
                 data: {
-                    labels: series.map((p) => p.label),
+                    labels: cats.map((c) => c.name),
                     datasets: [{
                         label: "Chi phí",
-                        data: series.map((p) => Number(p.amount || 0)),
-                        borderColor: "#16a34a",
-                        backgroundColor: mode === "bar"
-                            ? "rgba(22, 163, 74, 0.75)"
-                            : "rgba(22, 163, 74, 0.16)",
-                        fill: mode === "line",
-                        tension: 0.35,
+                        data: cats.map((c) => Number(c.amount || 0)),
+                        backgroundColor: cats.map((c) => c.color),
                         borderRadius: 6,
-                        borderWidth: mode === "line" ? 2.4 : 0,
                     }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: axisY,
+                        y: { grid: { display: false }, ticks: { color: "#475569" } },
+                    },
+                },
+            });
+        } else if (monthCtx && chartMode === "quarter") {
+            const qs = it.quarter_series || [];
+            this.itCharts.month = new Chart(monthCtx, {
+                data: {
+                    labels: qs.map((q) => q.label),
+                    datasets: [
+                        { type: "bar", label: "Thực tế", data: qs.map((q) => Number(q.actual || 0)), backgroundColor: "#3b82f6", borderRadius: 4 },
+                        { type: "bar", label: "Ngân sách", data: qs.map((q) => Number(q.budget || 0)), backgroundColor: "#4ade80", borderRadius: 4 },
+                        { type: "line", label: "Dự báo", data: qs.map((q) => Number(q.actual || 0)), borderColor: "#f59e0b", tension: 0.3, pointRadius: 3 },
+                    ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: true, position: "bottom" },
-                        tooltip: {
-                            callbacks: {
-                                label: (ctx) => this.formatMoney(ctx.raw),
-                            },
-                        },
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+                        y: axisY,
                     },
+                },
+            });
+        } else if (monthCtx && chartMode === "year") {
+            const ys = it.year_trend || [];
+            this.itCharts.month = new Chart(monthCtx, {
+                type: "line",
+                data: {
+                    labels: ys.map((y) => y.label),
+                    datasets: [
+                        { label: "Thực tế", data: ys.map((y) => Number(y.amount || 0)), borderColor: "#3b82f6", tension: 0.35, pointRadius: 3 },
+                        { label: "Dự báo", data: ys.map((y) => Number(y.forecast || 0)), borderColor: "#a78bfa", borderDash: [6, 4], tension: 0.35, pointRadius: 3 },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+                        y: axisY,
+                    },
+                },
+            });
+        } else if (monthCtx) {
+            this.itCharts.month = new Chart(monthCtx, {
+                data: {
+                    labels: series.map((p) => p.label),
+                    datasets: [
+                        {
+                            type: "bar",
+                            label: "Thực tế",
+                            data: series.map((p) => Number(p.amount || 0)),
+                            backgroundColor: "#3b82f6",
+                            borderRadius: 4,
+                            order: 2,
+                        },
+                        {
+                            type: "bar",
+                            label: "Ngân sách",
+                            data: series.map((p) => Number(p.budget || 0)),
+                            backgroundColor: "#4ade80",
+                            borderRadius: 4,
+                            order: 3,
+                        },
+                        {
+                            type: "line",
+                            label: "Dự báo",
+                            data: series.map((p) => Number(p.forecast || 0)),
+                            borderColor: "#f59e0b",
+                            backgroundColor: "transparent",
+                            borderWidth: 2.4,
+                            tension: 0.35,
+                            pointRadius: 3,
+                            pointBackgroundColor: "#fff",
+                            pointBorderColor: "#f59e0b",
+                            pointBorderWidth: 2,
+                            order: 1,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
                     scales: {
                         x: { grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 11 } } },
-                        y: {
+                        y: axisY,
+                    },
+                },
+            });
+        }
+
+        const typeSlices = this.itByTypeDonutSlices.map((r) => ({
+            ...r,
+            weight: Number(r.amount || r.weight || 0),
+            display: this.formatMoney(r.amount || 0),
+        }));
+        this._renderItDonutChart(this.itByTypeDonutRef, "byTypeDonut", typeSlices);
+
+        const qSeries = it.quarter_series || [];
+        const qCtx = this.itQuarterRef?.el?.getContext("2d");
+        if (qCtx && qSeries.length) {
+            this.itCharts.quarter = new Chart(qCtx, {
+                data: {
+                    labels: qSeries.map((q) => q.label),
+                    datasets: [
+                        {
+                            type: "bar",
+                            label: "Thực tế",
+                            data: qSeries.map((q) => Number(q.actual || 0)),
+                            backgroundColor: "#3b82f6",
+                            borderRadius: 4,
+                            yAxisID: "y",
+                            barThickness: 14,
+                            maxBarThickness: 14,
+                        },
+                        {
+                            type: "bar",
+                            label: "Ngân sách",
+                            data: qSeries.map((q) => Number(q.budget || 0)),
+                            backgroundColor: "#4ade80",
+                            borderRadius: 4,
+                            yAxisID: "y",
+                            barThickness: 14,
+                            maxBarThickness: 14,
+                        },
+                        {
+                            type: "line",
+                            label: "% sử dụng NS",
+                            data: qSeries.map((q) => Number(q.usage_pct || 0)),
+                            borderColor: "#f59e0b",
+                            backgroundColor: "transparent",
+                            borderWidth: 2.2,
+                            tension: 0.3,
+                            pointRadius: 3,
+                            pointBackgroundColor: "#f59e0b",
+                            yAxisID: "y1",
+                        },
+                    ],
+                },
+                plugins: [{
+                    id: "itQuarterPct",
+                    afterDatasetsDraw(chart) {
+                        const { ctx } = chart;
+                        const meta = chart.getDatasetMeta(0);
+                        qSeries.forEach((q, i) => {
+                            const bar = meta.data[i];
+                            if (!bar) {
+                                return;
+                            }
+                            ctx.save();
+                            ctx.fillStyle = "#64748b";
+                            ctx.font = "700 11px sans-serif";
+                            ctx.textAlign = "center";
+                            ctx.fillText(
+                                `${String(q.usage_pct || 0).replace(".", ",")}%`,
+                                bar.x,
+                                bar.y - 8
+                            );
+                            ctx.restore();
+                        });
+                    },
+                }],
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: { padding: { top: 16 } },
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+                        y: axisY,
+                        y1: {
+                            position: "right",
                             beginAtZero: true,
-                            ticks: {
-                                color: "#94a3b8",
-                                callback: (v) => this._formatAxisVnd(v),
-                            },
+                            max: 100,
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: "#f59e0b", callback: (v) => `${v}%` },
                         },
                     },
                 },
             });
         }
+
+        const cats = (it.by_category || []).slice(0, 8);
+        const catColors = ["#3b82f6", "#22c55e", "#a855f7", "#f97316", "#14b8a6", "#94a3b8", "#eab308", "#60a5fa"];
+        const catCtx = this.itCategoryRef?.el?.getContext("2d");
+        if (catCtx) {
+            this.itCharts.category = new Chart(catCtx, {
+                type: "bar",
+                data: {
+                    labels: cats.map((c) => c.name),
+                    datasets: [{
+                        label: "Chi phí",
+                        data: cats.map((c) => Number(c.amount || 0)),
+                        backgroundColor: cats.map((_, i) => catColors[i % catColors.length]),
+                        borderRadius: 6,
+                    }],
+                },
+                options: {
+                    indexAxis: "y",
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: { ...axisY, grid: { color: "rgba(148,163,184,0.15)" } },
+                        y: { grid: { display: false }, ticks: { color: "#475569", font: { size: 11 } } },
+                    },
+                },
+            });
+        }
+
+        const usage = Math.min(100, Math.max(0, Number(it.kpi?.budget_usage_pct || 0)));
+        const gaugeCtx = this.itBudgetGaugeRef?.el?.getContext("2d");
+        if (gaugeCtx) {
+            this.itCharts.gauge = new Chart(gaugeCtx, {
+                type: "doughnut",
+                data: {
+                    labels: ["Đã dùng", "Còn lại"],
+                    datasets: [{
+                        data: [usage, Math.max(0, 100 - usage)],
+                        backgroundColor: ["#22c55e", "#e8eef4"],
+                        borderWidth: 0,
+                        circumference: 180,
+                        rotation: 270,
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: "78%",
+                    plugins: { legend: { display: false }, tooltip: { enabled: false } },
+                },
+            });
+        }
+
+        const yTrend = it.year_trend || [];
+        const ytCtx = this.itYearTrendRef?.el?.getContext("2d");
+        if (ytCtx && yTrend.length) {
+            this.itCharts.yearTrend = new Chart(ytCtx, {
+                type: "line",
+                data: {
+                    labels: yTrend.map((y) => y.label),
+                    datasets: [
+                        {
+                            label: "Thực tế",
+                            data: yTrend.map((y) => Number(y.amount || 0)),
+                            borderColor: "#3b82f6",
+                            backgroundColor: "rgba(59,130,246,0.12)",
+                            fill: true,
+                            tension: 0.35,
+                            pointRadius: 4,
+                        },
+                        {
+                            label: "Dự báo",
+                            data: yTrend.map((y) => Number(y.forecast || 0)),
+                            borderColor: "#a78bfa",
+                            borderDash: [6, 4],
+                            pointBackgroundColor: "#a78bfa",
+                            fill: false,
+                            tension: 0.35,
+                            pointRadius: 3,
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: moneyTip },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
+                        y: axisY,
+                    },
+                },
+            });
+        }
+
+        const opexColor = { opex: "#3b82f6", capex: "#22c55e" };
+        const opexSlices = (it.opex_capex || []).map((r) => ({
+            id: r.id,
+            label: r.label,
+            color: opexColor[r.id] || r.color || "#94a3b8",
+            weight: Number(r.amount || 0),
+            display: this.formatMoney(r.amount || 0),
+            pct: Number(r.pct || 0),
+        }));
+        this._renderItDonutChart(this.itOpexDonutRef, "opexDonut", opexSlices);
+
+        const life = it.lifecycle || [];
+        const lifeCtx = this.itLifecycleRef?.el?.getContext("2d");
+        if (lifeCtx && life.length) {
+            this.itCharts.lifecycle = new Chart(lifeCtx, {
+                type: "bar",
+                data: {
+                    labels: life.map((r) => r.name),
+                    datasets: [
+                        {
+                            label: "Còn hiệu lực",
+                            data: life.map((r) => Number(r.active || 0)),
+                            backgroundColor: "#22c55e",
+                            stack: "life",
+                        },
+                        {
+                            label: "Sắp hết hạn ≤6 tháng",
+                            data: life.map((r) => Number(r.expiring || 0)),
+                            backgroundColor: "#facc15",
+                            stack: "life",
+                        },
+                        {
+                            label: "Đã quá hạn",
+                            data: life.map((r) => Number(r.overdue || 0)),
+                            backgroundColor: "#fb923c",
+                            stack: "life",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { color: "#64748b", font: { size: 10 } } },
+                        y: {
+                            stacked: true,
+                            beginAtZero: true,
+                            ticks: { color: "#94a3b8", stepSize: 1 },
+                            grid: { color: "rgba(148,163,184,0.15)" },
+                            border: { display: false },
+                        },
+                    },
+                },
+            });
+        }
+        this.bindItChartBox();
     }
 
     destroyInetCharts() {
@@ -2202,7 +3064,13 @@ export class PhanHeDashboard extends Component {
             }
         });
         this.inetCharts = {};
-        [this.inetSparkRef, this.inetDonutRef, this.inetYearRef, this.inetMonthTrendRef].forEach((ref) => {
+        [
+            this.inetDonutRef,
+            this.inetRegionBarRef,
+            this.inetYearLinesRef,
+            this.inetProvDonutRef,
+            this.inetCashflowRef,
+        ].forEach((ref) => {
             const el = ref && ref.el;
             if (!el || typeof Chart === "undefined" || !Chart.getChart) {
                 return;
@@ -2224,38 +3092,55 @@ export class PhanHeDashboard extends Component {
         }
         this.destroyInetCharts();
         const inet = this.state.inet || {};
-        const money = (v) => this.formatMoney(v);
-        const spark = inet.trend && inet.trend.length ? inet.trend : inet.month_weeks || [];
-        const sparkCtx = this._inetChartOrNull(this.inetSparkRef);
-        if (sparkCtx) {
-            this.inetCharts.spark = new Chart(sparkCtx, {
-                type: "line",
+        const ov = inet.ov || {};
+        const axisMoney = {
+            beginAtZero: true,
+            ticks: {
+                color: "#94a3b8",
+                font: { size: 10 },
+                callback: (v) => this.formatMoneyShort(v),
+            },
+            grid: { color: "rgba(148,163,184,0.15)" },
+        };
+
+        const regionBarCtx = this._inetChartOrNull(this.inetRegionBarRef);
+        const rc = ov.region_compare || {};
+        if (regionBarCtx && (rc.labels || []).length) {
+            this.inetCharts.regionBar = new Chart(regionBarCtx, {
+                type: "bar",
                 data: {
-                    labels: spark.map((p) => p.label || p.full),
-                    datasets: [{
-                        data: spark.map((p) => Number(p.amount || 0)),
-                        borderColor: "#6b7cff",
-                        backgroundColor: "rgba(107, 124, 255, 0.16)",
-                        fill: true,
-                        tension: 0.35,
-                        pointRadius: 3,
-                        pointBackgroundColor: "#fff",
-                        pointBorderColor: "#6b7cff",
-                        borderWidth: 2.4,
-                    }],
+                    labels: rc.labels || [],
+                    datasets: [
+                        {
+                            label: "Tháng này",
+                            data: (rc.this_month || []).map((v) => Number(v || 0)),
+                            backgroundColor: "#2563eb",
+                            borderRadius: 6,
+                            maxBarThickness: 22,
+                        },
+                        {
+                            label: "Tháng trước",
+                            data: (rc.last_month || []).map((v) => Number(v || 0)),
+                            backgroundColor: "#93c5fd",
+                            borderRadius: 6,
+                            maxBarThickness: 22,
+                        },
+                    ],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    resizeDelay: 120,
+                    animation: { duration: 0 },
                     plugins: { legend: { display: false } },
-                    layout: { padding: { top: 8, right: 6, left: 2, bottom: 0 } },
                     scales: {
-                        x: { grid: { display: false }, ticks: { font: { size: 10 }, color: "#94a3b8" } },
-                        y: { display: false, beginAtZero: true },
+                        x: { grid: { display: false }, ticks: { color: "#64748b", font: { size: 11, weight: "600" } } },
+                        y: axisMoney,
                     },
                 },
             });
         }
+
         const donutCtx = this._inetChartOrNull(this.inetDonutRef);
         if (donutCtx) {
             const regions = inet.regions || [];
@@ -2266,45 +3151,118 @@ export class PhanHeDashboard extends Component {
                     datasets: [{
                         data: regions.map((r) => Number(r.amount || 0)),
                         backgroundColor: regions.map((r) => r.color || "#94a3b8"),
-                        borderWidth: 0,
+                        borderWidth: 3,
+                        borderColor: "#fff",
                     }],
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    cutout: "68%",
+                    resizeDelay: 120,
+                    animation: { duration: 0 },
+                    cutout: "70%",
                     plugins: { legend: { display: false } },
                 },
             });
         }
-        const yearCtx = this._inetChartOrNull(this.inetYearRef);
-        if (yearCtx) {
-            const bars = inet.year_bars || [];
-            this.inetCharts.year = new Chart(yearCtx, {
-                type: "bar",
+
+        const yearLinesCtx = this._inetChartOrNull(this.inetYearLinesRef);
+        const yl = ov.year_lines || {};
+        if (yearLinesCtx && (yl.series || []).length) {
+            this.inetCharts.yearLines = new Chart(yearLinesCtx, {
+                type: "line",
                 data: {
-                    labels: bars.map((b) => String(b.year)),
-                    datasets: [{
-                        data: bars.map((b) => Number(b.amount || 0)),
-                        backgroundColor: bars.map((b) => (b.is_current ? "#5b4cf5" : "#d6dcff")),
-                        borderRadius: 6,
-                        barPercentage: 0.55,
-                    }],
+                    labels: yl.labels || [],
+                    datasets: (yl.series || []).map((s) => ({
+                        label: s.label,
+                        data: (s.amounts || []).map((v) => Number(v || 0)),
+                        borderColor: s.color,
+                        backgroundColor: "transparent",
+                        borderWidth: 2.2,
+                        borderDash: s.dashed ? [6, 4] : [],
+                        tension: 0.35,
+                        pointRadius: 2.5,
+                        pointBackgroundColor: s.color,
+                    })),
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    resizeDelay: 120,
+                    animation: { duration: 0 },
+                    interaction: { mode: "index", intersect: false },
                     plugins: { legend: { display: false } },
                     scales: {
                         x: { grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 } } },
-                        y: { display: false },
+                        y: axisMoney,
                     },
                 },
             });
         }
-        const trendCtx = this._inetChartOrNull(this.inetMonthTrendRef);
-        if (trendCtx) {
-            this.inetCharts.monthTrend = this._buildMonthDayChart(trendCtx, inet);
+
+        const provCtx = this._inetChartOrNull(this.inetProvDonutRef);
+        const providers = ov.providers || [];
+        if (provCtx && providers.length) {
+            this.inetCharts.provDonut = new Chart(provCtx, {
+                type: "doughnut",
+                data: {
+                    labels: providers.map((p) => p.name),
+                    datasets: [{
+                        data: providers.map((p) => Number(p.amount || 0)),
+                        backgroundColor: providers.map((p) => p.color),
+                        borderWidth: 2,
+                        borderColor: "#fff",
+                    }],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 120,
+                    animation: { duration: 0 },
+                    cutout: "62%",
+                    plugins: { legend: { display: false } },
+                },
+            });
+        }
+
+        const cashCtx = this._inetChartOrNull(this.inetCashflowRef);
+        const cf = ov.cashflow || {};
+        if (cashCtx && (cf.labels || []).length) {
+            this.inetCharts.cashflow = new Chart(cashCtx, {
+                type: "bar",
+                data: {
+                    labels: cf.labels || [],
+                    datasets: [
+                        {
+                            label: "Thực tế",
+                            data: (cf.actual || []).map((v) => Number(v || 0)),
+                            backgroundColor: "#2563eb",
+                            borderRadius: 4,
+                            maxBarThickness: 16,
+                            stack: "cf",
+                        },
+                        {
+                            label: "Dự kiến",
+                            data: (cf.projected || []).map((v) => Number(v || 0)),
+                            backgroundColor: "#93c5fd",
+                            borderRadius: 4,
+                            maxBarThickness: 16,
+                            stack: "cf",
+                        },
+                    ],
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    resizeDelay: 120,
+                    animation: { duration: 0 },
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { stacked: true, grid: { display: false }, ticks: { color: "#94a3b8", font: { size: 10 } } },
+                        y: { ...axisMoney, stacked: true },
+                    },
+                },
+            });
         }
     }
 
@@ -2669,7 +3627,7 @@ export class PhanHeDashboard extends Component {
         }
         if (
             (this.serviceTypeCode === "internet" || this.serviceTypeCode === "server")
-            && (this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "cost_estimate")
+            && (this.state.contentMode === "month_cost" || this.state.contentMode === "quarter_cost" || this.state.contentMode === "year_cost" || this.state.contentMode === "cost_estimate")
         ) {
             this.state.loading = false;
             return;

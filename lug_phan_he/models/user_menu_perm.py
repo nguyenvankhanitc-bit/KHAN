@@ -175,6 +175,13 @@ class PhanHePermMenu(models.Model):
             parent_id = parent.id if parent else False
             if line.parent_id.id != parent_id:
                 line.write({"parent_id": parent_id})
+        # Menu đã bỏ khỏi sidebar Máy chủ.
+        retired = Menu.search([
+            ("code", "in", ("it_cost_confirm", "it_ticket_support", "it_ticket_incident")),
+            ("active", "=", True),
+        ])
+        if retired:
+            retired.write({"active": False})
         return True
 
 

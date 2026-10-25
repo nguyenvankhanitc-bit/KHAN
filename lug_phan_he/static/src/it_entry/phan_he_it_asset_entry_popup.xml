@@ -8,11 +8,25 @@
                         <h2 t-esc="title"/>
                         <p>Nhập thông tin tài sản Máy chủ — bố cục dạng bảng (desktop)</p>
                     </div>
-                    <button type="button" class="lq-entry-close" title="Đóng"
-                            t-att-disabled="state.saving"
-                            t-on-click="onCancel">
-                        <i class="fa fa-times"/>
-                    </button>
+                    <div class="lq-entry-head-actions">
+                        <button type="button" class="lq-entry-cancel"
+                                t-att-disabled="state.saving"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/> Hủy
+                        </button>
+                        <button type="button" class="lq-entry-save"
+                                t-att-disabled="state.saving || state.loading"
+                                t-on-click="onSave">
+                            <i class="fa fa-save"/>
+                            <t t-if="state.saving">Đang lưu...</t>
+                            <t t-else="">Lưu</t>
+                        </button>
+                        <button type="button" class="lq-entry-close" title="Đóng"
+                                t-att-disabled="state.saving"
+                                t-on-click="onCancel">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
                 </header>
 
                 <t t-if="state.loading">
@@ -369,21 +383,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <footer class="lq-entry-foot">
-                        <button type="button" class="lq-entry-btn is-cancel"
-                                t-att-disabled="state.saving"
-                                t-on-click="onCancel">
-                            <i class="fa fa-times"/> Hủy
-                        </button>
-                        <button type="button" class="lq-entry-btn is-save"
-                                t-att-disabled="state.saving"
-                                t-on-click="onSave">
-                            <i class="fa fa-save"/>
-                            <t t-if="state.saving">Đang lưu...</t>
-                            <t t-else="">Lưu tài sản</t>
-                        </button>
-                    </footer>
                 </t>
             </div>
         </div>

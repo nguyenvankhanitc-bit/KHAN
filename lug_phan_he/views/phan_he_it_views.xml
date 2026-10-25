@@ -26,26 +26,26 @@
         <field name="name">phan.he.it.asset.list</field>
         <field name="model">phan.he.it.asset</field>
         <field name="arch" type="xml">
-            <list class="o_it_framed_list" js_class="phan_he_it_asset_list">
-                <field name="code"/>
-                <field name="name"/>
-                <field name="asset_type_id"/>
-                <field name="manufacturer"/>
-                <field name="model_name"/>
-                <field name="location" optional="show"/>
-                <field name="mien_id" optional="show"/>
+            <list class="o_it_framed_list o_it_asset_list" js_class="phan_he_it_asset_list">
+                <field name="code" string="Mã TS"/>
+                <field name="name" string="Tên tài sản"/>
+                <field name="asset_type_id" string="Loại"/>
+                <field name="manufacturer" string="Hãng"/>
+                <field name="model_name" string="Model"/>
+                <field name="location" string="Vị trí" optional="hide"/>
+                <field name="mien_id" string="Khu vực" optional="show"/>
                 <field name="provider_id" optional="hide"/>
                 <field name="responsible_id" optional="hide"/>
                 <!-- Nhập ở popup «Thêm tài sản mới» -->
-                <field name="supplier_name" string="Nhà cung cấp" optional="show"/>
+                <field name="supplier_name" string="NCC" optional="show"/>
                 <field name="currency_id" column_invisible="1"/>
                 <field name="contract_amount" string="Số tiền" widget="monetary" sum="Tổng" optional="show"/>
                 <field name="contract_filename" column_invisible="1"/>
-                <field name="contract_file" string="File hợp đồng" widget="phan_he_file_eye" filename="contract_filename" optional="show"/>
+                <field name="contract_file" string="Hợp đồng" widget="phan_he_file_eye" filename="contract_filename" optional="show"/>
                 <field name="invoice_filename" column_invisible="1"/>
-                <field name="invoice_file" string="Hóa đơn" widget="phan_he_file_eye" filename="invoice_filename" optional="show"/>
-                <field name="note" string="Ghi chú" optional="show"/>
-                <field name="state" widget="badge"
+                <field name="invoice_file" string="Hóa đơn" widget="phan_he_file_eye" filename="invoice_filename" optional="hide"/>
+                <field name="note" string="Ghi chú" optional="hide"/>
+                <field name="state" string="Trạng thái" widget="badge"
                          decoration-success="state == 'active'"
                          decoration-warning="state == 'suspended'"
                          decoration-muted="state == 'retired'"/>
@@ -195,7 +195,6 @@
                 <field name="model_name"/>
                 <field name="serial_number"/>
                 <field name="asset_type_id"/>
-                <filter name="filter_active_state" string="Đang sử dụng" domain="[('state', '=', 'active')]"/>
                 <filter name="filter_physical" string="Máy chủ vật lý" domain="[('asset_type_code', '=', 'physical')]"/>
                 <filter name="filter_virtual" string="Máy chủ ảo" domain="[('asset_type_code', '=', 'virtual')]"/>
                 <filter name="filter_cloud" string="Cloud" domain="[('asset_type_code', '=', 'cloud')]"/>
@@ -210,11 +209,11 @@
     </record>
 
     <record id="action_phan_he_it_asset" model="ir.actions.act_window">
-        <field name="name">Danh sách máy chủ</field>
+        <field name="name">Danh sách tài sản</field>
         <field name="res_model">phan.he.it.asset</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_phan_he_it_asset_search"/>
-        <field name="context">{'search_default_filter_active_state': 1}</field>
+        <field name="context">{}</field>
     </record>
     <record id="action_phan_he_it_asset_physical" model="ir.actions.act_window">
         <field name="name">Máy chủ vật lý</field>
@@ -424,13 +423,6 @@
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_phan_he_it_cost_search"/>
     </record>
-    <record id="action_phan_he_it_cost_confirm" model="ir.actions.act_window">
-        <field name="name">Chờ xác nhận thanh toán</field>
-        <field name="res_model">phan.he.it.cost</field>
-        <field name="view_mode">list,form</field>
-        <field name="domain">[('payment_state', '=', 'confirm')]</field>
-        <field name="context">{'search_default_filter_confirm': 1}</field>
-    </record>
     <record id="action_phan_he_it_cost_overdue" model="ir.actions.act_window">
         <field name="name">Quá hạn</field>
         <field name="res_model">phan.he.it.cost</field>
@@ -602,19 +594,5 @@
         <field name="view_mode">list,form</field>
         <field name="domain">[('ticket_type', '=', 'maintenance')]</field>
         <field name="context">{'default_ticket_type': 'maintenance'}</field>
-    </record>
-    <record id="action_phan_he_it_ticket_support" model="ir.actions.act_window">
-        <field name="name">Yêu cầu hỗ trợ</field>
-        <field name="res_model">phan.he.it.ticket</field>
-        <field name="view_mode">list,form</field>
-        <field name="domain">[('ticket_type', '=', 'support')]</field>
-        <field name="context">{'default_ticket_type': 'support'}</field>
-    </record>
-    <record id="action_phan_he_it_ticket_incident" model="ir.actions.act_window">
-        <field name="name">Nhật ký sự cố</field>
-        <field name="res_model">phan.he.it.ticket</field>
-        <field name="view_mode">list,form</field>
-        <field name="domain">[('ticket_type', '=', 'incident')]</field>
-        <field name="context">{'default_ticket_type': 'incident'}</field>
     </record>
 </odoo>

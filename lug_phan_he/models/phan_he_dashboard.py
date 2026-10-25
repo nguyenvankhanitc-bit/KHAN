@@ -671,6 +671,10 @@ class PhanHeDashboard(models.AbstractModel):
         - Chưa thanh toán = Tổng − Đã thanh toán
         """
         params = params or {}
+        stype_code = (params.get("service_type_code") or "internet").strip().lower() or "internet"
+        if stype_code == "server":
+            return self.env["phan.he.it.dashboard"].get_it_month_cost_board(params)
+
         today = fields.Date.context_today(self)
         year = int(params.get("year") or today.year)
         month = int(params.get("month") or today.month)
@@ -867,6 +871,10 @@ class PhanHeDashboard(models.AbstractModel):
     def get_quarter_cost_board(self, params=None):
         """Dashboard Chi phí quý — KPI 4 quý, biểu đồ tháng/NCC/khu vực, danh sách hợp đồng."""
         params = params or {}
+        stype_code = (params.get("service_type_code") or "internet").strip().lower() or "internet"
+        if stype_code == "server":
+            return self.env["phan.he.it.dashboard"].get_it_quarter_cost_board(params)
+
         today = fields.Date.context_today(self)
         year = int(params.get("year") or today.year)
         quarter = int(params.get("quarter") or ((today.month - 1) // 3 + 1))
@@ -1072,6 +1080,187 @@ class PhanHeDashboard(models.AbstractModel):
         }
 
     @api.model
+    def get_year_cost_board(self, params=None):
+        """Dashboard Chi phí năm — KPI YoY, so sánh tháng, NCC, cơ cấu, bảng chi tiết."""
+        params = params or {}
+        stype_code = (params.get("service_type_code") or "internet").strip().lower() or "internet"
+        if stype_code == "server":
+            return self.env["phan.he.it.dashboard"].get_it_year_cost_board(params)
+
+        today = fields.Date.context_today(self)
+        year = int(params.get("year") or today.year)
+        prev_year = year - 1
+        region = (params.get("region") or "all") or "all"
+        provider_id = int(params["provider_id"]) if params.get("provider_id") else False
+        Service = self.env["phan.he.service"]
+        stype_code = Service._service_type_code_norm(params.get("service_type_code"))
+
+        def provider_color(name):
+            u = (name or "").upper()
+            if "VIETTEL" in u:
+                return "#ee0033"
+            if "FPT" in u:
+                return "#f97316"
+            if "VNPT" in u:
+                return "#22c55e"
+            if "CMC" in u:
+                return "#6366f1"
+            if "ACT" in u:
+                return "#0ea5e9"
+            return "#64748b"
+
+        def provider_mark(name):
+            u = (name or "").strip()
+            if not u:
+                return "?"
+            parts = u.split()
+            if len(parts) >= 2:
+                return (parts[0][:1] + parts[1][:1]).upper()
+            return u[:2].upper()
+
+        def delta_pct(cur, prev):
+            if prev:
+                return round((cur - prev) / abs(prev) * 100, 1)
+            if cur:
+                return 100.0
+            return 0.0
+
+        def collect_year(y):
+            month_map = {m: 0.0 for m in range(1, 13)}
+            provider_map = {}
+            category_map = {}
+            row_map = {}
+            total = 0.0
+            for m in range(1, 13):
+                recs = Service.search_month_cost_ky(
+                    y, m,
+                    extra_domain=[("provider_id", "=", provider_id)] if provider_id else None,
+                    service_type_code=stype_code,
+                )
+                if region and region != "all":
+                    recs = recs.filtered(
+                        lambda s, rg=region: (s.mien_id.name or s.store_mien or "") == rg
+                        or (s.store_id.mien_id.name if s.store_id else "") == rg
+                    )
+                for rec in recs:
+                    amt = float(rec.contract_amount or 0.0)
+                    if amt <= 0:
+                        continue
+                    total += amt
+                    month_map[m] += amt
+                    pname = rec.provider_id.name if rec.provider_id else "Khác"
+                    provider_map[pname] = provider_map.get(pname, 0.0) + amt
+                    cname = "Phí dịch vụ định kỳ"
+                    category_map[cname] = category_map.get(cname, 0.0) + amt
+                    key = rec.id
+                    row = row_map.get(key)
+                    if not row:
+                        row = {
+                            "id": rec.id,
+                            "name": rec.store_id.name or rec.display_name or "—",
+                            "code": rec.customer_code or rec.code or "",
+                            "provider": pname,
+                            "provider_id": rec.provider_id.id if rec.provider_id else False,
+                            "amount": 0.0,
+                        }
+                        row_map[key] = row
+                    row["amount"] += amt
+            return total, month_map, provider_map, category_map, row_map
+
+        cur_total, cur_months, cur_providers, cur_cats, cur_rows = collect_year(year)
+        prev_total, prev_months, _pp, _pc, prev_rows = collect_year(prev_year)
+
+        year_delta = delta_pct(cur_total, prev_total)
+        year_delta_amt = cur_total - prev_total
+        avg_cur = cur_total / 12.0 if cur_total else 0.0
+        avg_prev = prev_total / 12.0 if prev_total else 0.0
+
+        month_compare = []
+        month_change = []
+        for m in range(1, 13):
+            cur = cur_months.get(m, 0.0)
+            prev = prev_months.get(m, 0.0)
+            pct = delta_pct(cur, prev)
+            month_compare.append({
+                "month": m, "label": "T%s" % m,
+                "current": cur, "prev": prev, "delta_pct": pct,
+            })
+            month_change.append({
+                "month": m, "label": "T%s" % m, "delta_pct": pct,
+                "direction": "up" if pct > 0 else ("down" if pct < 0 else "flat"),
+            })
+
+        prov_total = sum(cur_providers.values()) or 1.0
+        by_provider = [
+            {
+                "name": name, "amount": amt,
+                "pct": round(amt * 100 / prov_total, 1),
+                "color": provider_color(name), "mark": provider_mark(name),
+            }
+            for name, amt in sorted(cur_providers.items(), key=lambda x: -x[1])
+        ]
+        colors = ["#6366f1", "#3b82f6", "#22c55e", "#f59e0b", "#ef4444", "#94a3b8"]
+        cat_total = sum(cur_cats.values()) or 1.0
+        by_structure = [
+            {
+                "id": i, "label": name, "amount": amt,
+                "pct": round(amt * 100 / cat_total, 1),
+                "color": colors[i % len(colors)],
+            }
+            for i, (name, amt) in enumerate(sorted(cur_cats.items(), key=lambda x: -x[1]))
+        ]
+
+        rows = []
+        for key in set(cur_rows) | set(prev_rows):
+            cur = cur_rows.get(key) or {}
+            prev = prev_rows.get(key) or {}
+            amount = float(cur.get("amount") or 0.0)
+            prev_amount = float(prev.get("amount") or 0.0)
+            if amount <= 0 and prev_amount <= 0:
+                continue
+            rows.append({
+                "id": cur.get("id") or prev.get("id"),
+                "name": cur.get("name") or prev.get("name") or "—",
+                "code": cur.get("code") or prev.get("code") or "",
+                "provider": cur.get("provider") or prev.get("provider") or "—",
+                "provider_id": cur.get("provider_id") or prev.get("provider_id") or False,
+                "amount": amount,
+                "prev_amount": prev_amount,
+                "delta": amount - prev_amount,
+                "delta_pct": delta_pct(amount, prev_amount),
+            })
+        rows.sort(key=lambda r: (-abs(r["delta"]), -r["amount"]))
+
+        providers = self.env["phan.he.provider"].search_read(
+            [("active", "=", True)], ["name"], order="name asc"
+        )
+        regions = sorted({
+            m.name for m in self.env["phan.he.mien"].search([("active", "=", True)]) if m.name
+        })
+        return {
+            "year": year,
+            "prev_year": prev_year,
+            "entity_label": "hợp đồng",
+            "subtitle": "Phân tích và so sánh chi phí hợp đồng Internet theo năm",
+            "kpi": {
+                "year_total": cur_total,
+                "prev_total": prev_total,
+                "delta_pct": year_delta,
+                "delta_amount": year_delta_amt,
+                "avg_month": avg_cur,
+                "avg_month_delta_pct": delta_pct(avg_cur, avg_prev),
+                "contract_count": len([r for r in rows if r["amount"] > 0]),
+            },
+            "month_compare": month_compare,
+            "month_change": month_change,
+            "by_provider": by_provider,
+            "by_structure": by_structure,
+            "rows": rows,
+            "providers": providers,
+            "regions": regions,
+        }
+
+    @api.model
     def export_quarter_cost_excel(self, params=None):
         """Xuất danh sách chi phí quý ra Excel."""
         import base64
@@ -1122,6 +1311,7 @@ class PhanHeDashboard(models.AbstractModel):
         rows = [r for r in (data.get("rows") or []) if keep(r)]
         year = data.get("year")
         quarter = data.get("quarter")
+        is_server = (params.get("service_type_code") or "").strip().lower() == "server"
         ops_label = {
             "active": "Đang hoạt động",
             "suspend": "Tạm ngưng",
@@ -1133,7 +1323,11 @@ class PhanHeDashboard(models.AbstractModel):
         ws.title = f"Chi phi Q{quarter}-{year}"[:31]
 
         headers = [
-            "STT", "Cửa hàng", "Mã KH", "Mã hợp đồng", "Nhà cung cấp", "Băng thông",
+            "STT",
+            "Thiết bị" if is_server else "Cửa hàng",
+            "Mã" if is_server else "Mã KH",
+            "Mã khoản" if is_server else "Mã hợp đồng",
+            "Nhà cung cấp", "Băng thông",
             "Khu vực", "Ngày bắt đầu", "Ngày kết thúc", "Cước tháng",
             "Số tiền thanh toán", "Trạng thái", "Thời gian còn lại",
         ]

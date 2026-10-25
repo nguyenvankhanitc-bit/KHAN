@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Quản lý dịch vụ",
-    "version": "19.0.2.565.0",
+    "version": "19.0.2.606.0",
     "category": "Operations",
     "summary": "Quản lý dịch vụ: Internet, Camera, Máy chấm công, LinkQ ERP, Máy chủ",
     "description": """
@@ -146,6 +146,8 @@ Quản lý dịch vụ
             "lug_phan_he/static/src/it_entry/phan_he_it_cost_entry_popup.xml",
             "lug_phan_he/static/src/dashboard/phan_he_dashboard.scss",
             "lug_phan_he/static/src/dashboard/internet_overview.scss",
+            "lug_phan_he/static/src/dashboard/year_cost_board.scss",
+            "lug_phan_he/static/src/dashboard/year_cost_board.js",
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.scss",
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.js",
             "lug_phan_he/static/src/internet_form/phan_he_internet_form.xml",

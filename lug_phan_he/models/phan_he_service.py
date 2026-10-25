@@ -1623,7 +1623,330 @@ class PhanHeService(models.Model):
             result["server_inventory"] = self.env["phan.he.dashboard"]._server_inventory(
                 all_server
             )
+        if stype_code == "internet":
+            result["ov"] = self._dash_build_inet_overview(
+                result,
+                month_recs=month_recs,
+                prev_recs=prev_recs,
+                mien_meta=mien_meta,
+                year=year,
+                month=month,
+                base=base,
+                stype_code=stype_code,
+            )
         return result
+
+    @api.model
+    def _dash_build_inet_overview(
+        self,
+        data,
+        month_recs=None,
+        prev_recs=None,
+        mien_meta=None,
+        year=None,
+        month=None,
+        base=None,
+        stype_code="internet",
+    ):
+        """Payload bố cục Tổng quan Internet theo mockup."""
+        month_recs = month_recs or self.browse()
+        prev_recs = prev_recs or self.browse()
+        mien_meta = mien_meta or []
+        year = int(year or fields.Date.context_today(self).year)
+        month = int(month or 1)
+        base = list(base or [])
+        regions = data.get("regions") or []
+        month_total = float(data.get("month_total") or 0.0)
+        year_total = float(data.get("year_total") or 0.0)
+        month_delta = float(data.get("month_delta") or 0.0)
+        year_delta = float(data.get("year_delta") or 0.0)
+        usage = data.get("usage") or {}
+        lines = int(usage.get("total") or 0)
+        new_lines = max(0, int(usage.get("active") or 0) - max(0, lines - 5))
+
+        # Dự báo cuối năm + ngân sách (ước lượng từ lũy kế)
+        forecast = round(year_total / month * 12.0, 0) if month else year_total
+        budget = round(max(forecast * 1.08, year_total * 1.15, 1.0), 0)
+        remaining = max(0.0, budget - year_total)
+        budget_used_pct = round(year_total * 100.0 / budget, 1) if budget else 0.0
+        remaining_pct = round(remaining * 100.0 / budget, 1) if budget else 0.0
+        expire_soon = int(data.get("expire_soon") or 0)
+        overdue = int(data.get("overdue_contract") or 0)
+        high_delta = sum(1 for r in regions if float(r.get("delta") or 0) >= 10)
+        alert_n = expire_soon + overdue + high_delta
+
+        kpi6 = [
+            {
+                "id": "month",
+                "label": "Chi phí tháng này",
+                "value": month_total,
+                "tone": "blue",
+                "icon": "fa-database",
+                "hint": f"{'+' if month_delta >= 0 else ''}{str(month_delta).replace('.', ',')}% so với tháng trước",
+                "hint_tone": "up" if month_delta >= 0 else "down",
+            },
+            {
+                "id": "ytd",
+                "label": "Chi phí lũy kế năm",
+                "value": year_total,
+                "tone": "green",
+                "icon": "fa-calendar",
+                "hint": f"{'+' if year_delta >= 0 else ''}{str(year_delta).replace('.', ',')}% so với cùng kỳ năm trước",
+                "hint_tone": "up" if year_delta >= 0 else "down",
+            },
+            {
+                "id": "forecast",
+                "label": "Dự báo chi phí cuối năm",
+                "value": forecast,
+                "tone": "purple",
+                "icon": "fa-bar-chart",
+                "hint": f"{str(budget_used_pct).replace('.', ',')}% ngân sách năm",
+                "hint_tone": "muted",
+            },
+            {
+                "id": "remain",
+                "label": "Ngân sách năm còn lại",
+                "value": remaining,
+                "tone": "orange",
+                "icon": "fa-money",
+                "hint": f"{str(remaining_pct).replace('.', ',')}% tổng ngân sách",
+                "hint_tone": "muted",
+            },
+            {
+                "id": "lines",
+                "label": "Tổng số đường truyền",
+                "value": lines,
+                "tone": "teal",
+                "icon": "fa-sitemap",
+                "hint": f"+{new_lines} đường truyền mới" if new_lines else "Ổn định",
+                "hint_tone": "up" if new_lines else "muted",
+                "is_count": True,
+            },
+            {
+                "id": "alerts",
+                "label": "Đường truyền cần xử lý",
+                "value": alert_n,
+                "tone": "red",
+                "icon": "fa-exclamation-triangle",
+                "hint": f"{expire_soon} sắp hết hạn | {high_delta} chi phí tăng cao",
+                "hint_tone": "down" if alert_n else "muted",
+                "is_count": True,
+            },
+        ]
+
+        # So sánh miền: tháng này vs tháng trước
+        prev_sum = {}
+        for rec in prev_recs:
+            mid = rec.mien_id.id or 0
+            prev_sum[mid] = prev_sum.get(mid, 0.0) + self._month_ky_period_amount(rec)
+        region_compare_rows = []
+        for r in regions:
+            mid = r.get("id") or 0
+            this_m = float(r.get("amount") or 0.0)
+            last_m = float(prev_sum.get(mid, 0.0) or 0.0)
+            diff = this_m - last_m
+            pct = round(diff * 100.0 / abs(last_m), 1) if last_m else (100.0 if this_m else 0.0)
+            region_compare_rows.append({
+                "id": mid,
+                "name": r.get("short") or r.get("name") or "",
+                "full_name": r.get("name") or "",
+                "color": r.get("color") or "#94a3b8",
+                "this_month": this_m,
+                "last_month": last_m,
+                "diff": diff,
+                "pct": pct,
+            })
+
+        # Chi phí theo năm (đường T1–T12, 3 năm)
+        year_labels = [f"T{i}" for i in range(1, 13)]
+        year_series = []
+        palette_years = {
+            year - 2: "#94a3b8",
+            year - 1: "#2563eb",
+            year: "#f59e0b",
+        }
+        for y in (year - 2, year - 1, year):
+            amounts = []
+            for mo in range(1, 13):
+                if y == year and mo > month:
+                    # Dự báo các tháng còn lại = trung bình các tháng đã có
+                    done = [a for a in amounts if a]
+                    avg = (sum(done) / len(done)) if done else 0.0
+                    amounts.append(round(avg, 0))
+                else:
+                    amounts.append(round(self.sum_month_cost_ky(
+                        y, mo, extra_domain=base, service_type_code=stype_code
+                    ), 0))
+            year_series.append({
+                "year": y,
+                "label": f"{y}" + (" (dự báo)" if y == year else ""),
+                "color": palette_years.get(y, "#64748b"),
+                "dashed": y == year,
+                "amounts": amounts,
+            })
+
+        # Donut nhà cung cấp
+        prov_sum = {}
+        for rec in month_recs:
+            pname = (rec.provider_id.name if rec.provider_id else "") or "Khác"
+            prov_sum[pname] = prov_sum.get(pname, 0.0) + self._month_ky_period_amount(rec)
+        prov_colors = ["#2563eb", "#f59e0b", "#22c55e", "#94a3b8", "#8b5cf6", "#14b8a6"]
+        prov_items = sorted(prov_sum.items(), key=lambda x: x[1], reverse=True)
+        if len(prov_items) > 4:
+            head = prov_items[:3]
+            other = sum(v for _, v in prov_items[3:])
+            prov_items = head + [("Khác", other)]
+        providers = []
+        for i, (name, amt) in enumerate(prov_items):
+            providers.append({
+                "id": i + 1,
+                "name": name,
+                "amount": amt,
+                "pct": round(amt * 100.0 / month_total, 1) if month_total else 0.0,
+                "color": prov_colors[i % len(prov_colors)],
+            })
+
+        # Hiệu suất sử dụng
+        Store = self.env["phan.he.store"]
+        efficiency = []
+        for r in regions:
+            mid = r.get("id") or 0
+            store_dom = [("mien_id", "=", mid)]
+            if "active" in Store._fields:
+                store_dom.append(("active", "=", True))
+            n_stores = Store.search_count(store_dom)
+            n_lines = int(r.get("count") or 0)
+            amt = float(r.get("amount") or 0.0)
+            efficiency.append({
+                "id": mid,
+                "name": r.get("short") or r.get("name") or "",
+                "stores": n_stores,
+                "lines": n_lines,
+                "cost_per_line": round(amt / n_lines, 0) if n_lines else 0.0,
+                "cost_per_store": round(amt / n_stores, 0) if n_stores else 0.0,
+            })
+
+        # Dự báo dòng tiền 12 tháng
+        labels_cf = [f"T{i}" for i in range(1, 13)]
+        actual_cf = []
+        projected_cf = []
+        done_amts = []
+        for mo in range(1, 13):
+            if mo <= month:
+                amt = float(self.sum_month_cost_ky(
+                    year, mo, extra_domain=base, service_type_code=stype_code
+                ) or 0.0)
+                actual_cf.append(amt)
+                projected_cf.append(0.0)
+                if amt:
+                    done_amts.append(amt)
+            else:
+                avg = (sum(done_amts) / len(done_amts)) if done_amts else 0.0
+                actual_cf.append(0.0)
+                projected_cf.append(round(avg, 0))
+        actual_sum = sum(actual_cf)
+        projected_sum = sum(projected_cf)
+        payable = float(sum(
+            float(t.get("amount") or 0.0) for t in (data.get("detail_tables") or [])
+        ) or 0.0)
+        cashflow = {
+            "labels": labels_cf,
+            "actual": actual_cf,
+            "projected": projected_cf,
+            "summary": {
+                "total_12m": round(actual_sum + projected_sum, 0),
+                "actual": round(actual_sum, 0),
+                "payable": round(payable, 0),
+                "remaining_proj": round(projected_sum, 0),
+            },
+        }
+
+        # Kế hoạch ngân sách năm sau
+        next_budget = []
+        for r in regions:
+            y_amt = 0.0
+            for t in data.get("detail_tables") or []:
+                if t.get("id") == r.get("id"):
+                    y_amt = float(t.get("year_amount") or 0.0)
+                    break
+            if not y_amt:
+                # scale month * 12
+                y_amt = float(r.get("amount") or 0.0) * (12.0 / max(month, 1))
+            plan = round(y_amt * 1.08, 0)
+            diff = plan - y_amt
+            pct = round(diff * 100.0 / y_amt, 1) if y_amt else 0.0
+            next_budget.append({
+                "id": r.get("id"),
+                "name": r.get("short") or r.get("name") or "",
+                "forecast": round(y_amt, 0),
+                "plan": plan,
+                "diff": round(diff, 0),
+                "pct": pct,
+            })
+
+        alerts = []
+        for r in region_compare_rows:
+            if r["pct"] >= 8 and r["this_month"] > 0:
+                alerts.append({
+                    "tone": "red" if r["pct"] >= 12 else "orange",
+                    "icon": "fa-arrow-up",
+                    "title": f"{r['full_name'] or r['name']} tăng {r['pct']}%",
+                    "text": f"Chi phí tháng này {self._format_ov_money(r['this_month'])} (+{self._format_ov_money(r['diff'])}).",
+                })
+        if expire_soon:
+            alerts.append({
+                "tone": "orange",
+                "icon": "fa-clock-o",
+                "title": f"{expire_soon} đường truyền sắp hết hạn",
+                "text": "Trong 30 ngày tới — cần gia hạn / đàm phán lại.",
+            })
+        if overdue:
+            alerts.append({
+                "tone": "red",
+                "icon": "fa-exclamation-circle",
+                "title": f"{overdue} hợp đồng quá hạn",
+                "text": "Cần xử lý thanh toán / gia hạn ngay.",
+            })
+        if not alerts:
+            alerts.append({
+                "tone": "blue",
+                "icon": "fa-check-circle",
+                "title": "Không có cảnh báo bất thường",
+                "text": "Chi phí và gia hạn đang trong ngưỡng ổn định.",
+            })
+        alerts = alerts[:5]
+
+        return {
+            "kpi6": kpi6,
+            "region_compare": {
+                "labels": [r["name"] for r in region_compare_rows],
+                "this_month": [r["this_month"] for r in region_compare_rows],
+                "last_month": [r["last_month"] for r in region_compare_rows],
+                "rows": region_compare_rows,
+            },
+            "year_lines": {
+                "labels": year_labels,
+                "series": year_series,
+            },
+            "providers": providers,
+            "efficiency": efficiency,
+            "cashflow": cashflow,
+            "next_budget": next_budget,
+            "alerts": alerts,
+            "period_options": [
+                {"id": "month", "name": "Tháng"},
+                {"id": "quarter", "name": "Quý"},
+                {"id": "year", "name": "Năm"},
+            ],
+        }
+
+    @api.model
+    def _format_ov_money(self, value):
+        try:
+            n = int(round(float(value or 0)))
+        except (TypeError, ValueError):
+            n = 0
+        return f"{n:,}".replace(",", ".") + " đ"
 
     @api.model
     def _dash_int(self, value):

@@ -2494,6 +2494,28 @@ export class PhanHeMonthCostBoard extends Component {
         onWillUnmount(() => this.destroyCharts());
     }
 
+    get isServer() {
+        return (this.props.serviceTypeCode || "internet") === "server";
+    }
+
+    get entityLabel() {
+        return this.state.data.entity_label || (this.isServer ? "thiết bị" : "hợp đồng");
+    }
+
+    get entityColumn() {
+        return this.isServer ? "Thiết bị / Mã" : "Cửa hàng / Mã KH";
+    }
+
+    get tableTitle() {
+        return this.isServer
+            ? "Danh sách thiết bị sắp đến hạn (dưới 30 ngày)"
+            : "Danh sách cửa hàng sắp đến hạn (dưới 30 ngày)";
+    }
+
+    get searchPlaceholder() {
+        return this.isServer ? "Tìm thiết bị / mã..." : "Tìm cửa hàng / Mã KH...";
+    }
+
     get kpi() {
         return this.state.data.kpi || {};
     }
@@ -2528,7 +2550,7 @@ export class PhanHeMonthCostBoard extends Component {
     kpiCountLabel(kind) {
         const kpi = this.kpi;
         const n = kind === "paid" ? kpi.paid_count : kind === "unpaid" ? kpi.unpaid_count : kpi.total_count;
-        return `${n || 0} hợp đồng`;
+        return `${n || 0} ${this.entityLabel}`;
     }
 
     get filteredRows() {
@@ -2695,7 +2717,9 @@ export class PhanHeMonthCostBoard extends Component {
 
     exportCsv() {
         const rows = this.filteredRows;
-        const header = ["STT", "Cửa hàng", "Mã KH", "Nhà cung cấp", "Ngày bắt đầu", "Ngày kết thúc", "Còn lại", "Cước tháng", "Đã thanh toán", "Còn phải trả", "Trạng thái"];
+        const nameCol = this.isServer ? "Thiết bị" : "Cửa hàng";
+        const codeCol = this.isServer ? "Mã" : "Mã KH";
+        const header = ["STT", nameCol, codeCol, "Nhà cung cấp", "Ngày bắt đầu", "Ngày kết thúc", "Còn lại", "Cước tháng", "Đã thanh toán", "Còn phải trả", "Trạng thái"];
         const lines = [header.join(",")];
         rows.forEach((r, i) => {
             const cells = [
@@ -2717,7 +2741,7 @@ export class PhanHeMonthCostBoard extends Component {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `Chi_phi_thang_${this.state.year}_${pad2(this.state.month)}.csv`;
+        a.download = `Chi_phi_thang_${this.isServer ? "may_chu_" : ""}${this.state.year}_${pad2(this.state.month)}.csv`;
         a.click();
         URL.revokeObjectURL(url);
     }
@@ -2826,6 +2850,7 @@ export class PhanHeMonthCostBoard extends Component {
         const donutEl = this.donutRef.el;
         if (donutEl) {
             const total = this.kpi.total_count || 0;
+            const centerLabel = this.entityLabel;
             this.charts.donut = new Chart(donutEl, {
                 type: "doughnut",
                 data: {
@@ -2857,7 +2882,7 @@ export class PhanHeMonthCostBoard extends Component {
                         ctx.fillText(String(total), x, y - 4);
                         ctx.fillStyle = "#94a3b8";
                         ctx.font = "600 11px Segoe UI, sans-serif";
-                        ctx.fillText("hợp đồng", x, y + 14);
+                        ctx.fillText(centerLabel, x, y + 14);
                         ctx.restore();
                     },
                 }],
@@ -2911,6 +2936,24 @@ export class PhanHeQuarterCostBoard extends Component {
             () => [this.state.data, this.state.loading]
         );
         onWillUnmount(() => this.destroyCharts());
+    }
+
+    get isServer() {
+        return (this.props.serviceTypeCode || "internet") === "server";
+    }
+
+    get entityLabel() {
+        return this.state.data.entity_label || (this.isServer ? "thiết bị" : "hợp đồng");
+    }
+
+    get entityColumn() {
+        return this.isServer ? "Thiết bị / Mã" : "Cửa hàng / Mã KH";
+    }
+
+    get searchPlaceholder() {
+        return this.isServer
+            ? "Tìm thiết bị, mã, khu vực..."
+            : "Tìm cửa hàng, mã KH, mã HĐ, khu vực...";
     }
 
     get kpi() {
@@ -3205,6 +3248,7 @@ export class PhanHeQuarterCostBoard extends Component {
         this.state.exporting = true;
         try {
             const result = await this.orm.call("phan.he.dashboard", "export_quarter_cost_excel", [{
+                service_type_code: this.props.serviceTypeCode || "internet",
                 year: this.state.year,
                 quarter: this.state.quarter,
                 region: this.state.region,

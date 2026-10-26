@@ -49,6 +49,9 @@
                          decoration-success="state == 'active'"
                          decoration-warning="state == 'suspended'"
                          decoration-muted="state == 'retired'"/>
+                <!-- ✏️ / 🗑: chỉ tài khoản quản trị -->
+                <field name="id" string="Thao tác" widget="phan_he_it_asset_actions"
+                       groups="base.group_system,lug_phan_he.group_phan_he_admin"/>
             </list>
         </field>
     </record>

@@ -162,3 +162,36 @@
     font-size: 0.78rem;
     color: #94a3b8;
 }
+
+// Cột Thao tác (✏️ / 🗑) — danh sách tài sản Máy chủ
+.ph-asset-actions {
+    display: inline-flex;
+    gap: 6px;
+    justify-content: center;
+    width: 100%;
+}
+
+.ph-asset-act {
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    background: #fff;
+    font-size: 0.85rem;
+
+    &.is-edit {
+        border: 1px solid #c7d2fe;
+        color: #4f46e5;
+
+        &:hover { background: #eef2ff; }
+    }
+
+    &.is-del {
+        border: 1px solid #fecaca;
+        color: #dc2626;
+
+        &:hover { background: #fef2f2; }
+    }
+}

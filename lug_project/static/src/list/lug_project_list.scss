@@ -1417,3 +1417,44 @@
         border-bottom: 1px solid #e2e8f0;
     }
 }
+
+.o_lug_contracts_wrap,
+.o_lug_dash_contracts {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    align-items: center;
+}
+
+.o_lug_contract_chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 500;
+    color: #1e293b;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    text-decoration: none;
+    transition: all 0.15s ease;
+    max-width: 180px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    i {
+        font-size: 12px;
+        &.fa-file-pdf-o { color: #dc2626; }
+        &.fa-file-word-o { color: #2563eb; }
+        &.fa-file-excel-o { color: #16a34a; }
+        &.fa-file-text-o { color: #64748b; }
+    }
+
+    &:hover {
+        background: #e2e8f0;
+        border-color: #94a3b8;
+        color: #0f172a;
+        text-decoration: none;
+    }
+}

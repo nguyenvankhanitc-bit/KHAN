@@ -114,6 +114,10 @@
                         </field>
                     </page>
                     <page string="E. Tài liệu" name="lug_docs">
+                        <separator string="Hợp đồng &amp; Phụ lục"/>
+                        <field name="lug_contract_attachment_ids" widget="many2many_binary" nolabel="1"
+                               options="{'accepted_file_extensions': '.pdf,.doc,.docx,.xls,.xlsx'}"/>
+                        <separator string="File đính kèm khác"/>
                         <field name="lug_attachment_ids" widget="many2many_binary" nolabel="1"/>
                     </page>
                 </notebook>
@@ -164,6 +168,11 @@
                             <div class="o_lug_kv">
                                 <span class="o_lug_k">Trưởng dự án</span>
                                 <field name="lug_pic_id" widget="many2one_avatar_user" nolabel="1" placeholder="Chọn người..."/>
+                            </div>
+                            <div class="o_lug_kv o_lug_kv_file">
+                                <span class="o_lug_k">File hợp đồng</span>
+                                <field name="lug_contract_attachment_ids" widget="many2many_binary" nolabel="1"
+                                       options="{'accepted_file_extensions': '.pdf,.doc,.docx,.xls,.xlsx'}"/>
                             </div>
                             <div class="o_lug_kv o_lug_kv_file">
                                 <span class="o_lug_k">File đính kèm</span>
@@ -404,6 +413,7 @@
                 <field name="lug_workflow_state" string="Trạng thái" widget="badge" optional="show"/>
                 <field name="lug_progress_pct" string="Tiến độ" widget="progressbar"/>
                 <field name="lug_total_expense" string="Chi phí" widget="monetary" optional="show"/>
+                <field name="lug_contract_attachment_ids" string="File hợp đồng" widget="many2many_binary" optional="show"/>
                 <field name="lug_timeleft" string="Timeleft" widget="lug_timeleft" column_invisible="1" optional="hide"/>
                 <field name="lug_worker_ids" string="Người làm" widget="lug_workers" column_invisible="1" readonly="1" options="{'no_create': True}"/>
                 <field name="lug_content" column_invisible="1" optional="hide"/>

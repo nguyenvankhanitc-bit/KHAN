@@ -78,5 +78,7 @@ class ProjectStageLine(models.Model):
                 if self.project_id.lug_pic_id
                 else [],
                 "default_state": "draft",
+                "default_execution_date": self.project_id.date_start or fields.Date.context_today(self),
+                "default_deadline": self.project_id.lug_deadline or self.project_id.date or False,
             },
         }

@@ -166,6 +166,18 @@
                                     <span t-if="row.type_tone !== 'none'"
                                           t-att-class="'o_lug_dash_type is-' + row.type_tone"
                                           t-esc="row.type_label"/>
+                                    <span t-if="row.contract_files and row.contract_files.length" class="o_lug_dash_contracts ms-2">
+                                        <t t-foreach="row.contract_files" t-as="cfile" t-key="cfile.id">
+                                            <a t-att-href="cfile.download_url"
+                                               target="_blank"
+                                               class="o_lug_contract_chip"
+                                               t-att-title="'Tải về: ' + cfile.name"
+                                               t-on-click.stop="">
+                                                <i t-att-class="'fa ' + cfile.icon + ' me-1'"/>
+                                                <span t-esc="cfile.name"/>
+                                            </a>
+                                        </t>
+                                    </span>
                                 </div>
                                 <div class="o_lug_dash_head_side">
                                     <t t-if="!isExpanded(row.id)">
@@ -227,6 +239,26 @@
                                     <p><span>Bắt đầu:</span> <b t-esc="row.date_start or '—'"/></p>
                                     <p><span>Deadline:</span> <b t-esc="row.deadline or '—'"/></p>
                                     <div t-att-class="'o_lug_dash_dl is-' + row.dl_state" t-esc="row.dl_badge"/>
+                                    <div class="o_lug_dash_contracts_section mt-2">
+                                        <span>File hợp đồng:</span>
+                                        <t t-if="!row.contract_files or !row.contract_files.length">
+                                            <span class="o_lug_plist_muted ms-1">—</span>
+                                        </t>
+                                        <t t-else="">
+                                            <div class="o_lug_contracts_wrap mt-1">
+                                                <t t-foreach="row.contract_files" t-as="cfile" t-key="cfile.id">
+                                                    <a t-att-href="cfile.download_url"
+                                                       target="_blank"
+                                                       class="o_lug_contract_chip"
+                                                       t-att-title="'Tải về: ' + cfile.name"
+                                                       t-on-click.stop="">
+                                                        <i t-att-class="'fa ' + cfile.icon + ' me-1'"/>
+                                                        <span t-esc="cfile.name"/>
+                                                    </a>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
                                 </section>
                                 <section class="o_lug_dash_col o_lug_dash_col--progress">
                                     <div class="o_lug_dash_donut" t-att-style="row.donut_style">

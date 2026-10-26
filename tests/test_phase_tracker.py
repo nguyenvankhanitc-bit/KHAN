@@ -86,13 +86,19 @@ class ExceptionsModule(types.ModuleType):
         setattr(self, name, cls)
         return cls
 
-exceptions_mod = ExceptionsModule("odoo.exceptions")
-ValidationError = type("ValidationError", (Exception,), {})
-UserError = type("UserError", (Exception,), {})
-AccessError = type("AccessError", (Exception,), {})
-exceptions_mod.ValidationError = ValidationError
-exceptions_mod.UserError = UserError
-exceptions_mod.AccessError = AccessError
+if "odoo.exceptions" in sys.modules and hasattr(sys.modules["odoo.exceptions"], "ValidationError"):
+    exceptions_mod = sys.modules["odoo.exceptions"]
+    ValidationError = exceptions_mod.ValidationError
+    UserError = getattr(exceptions_mod, "UserError", type("UserError", (Exception,), {}))
+    AccessError = getattr(exceptions_mod, "AccessError", type("AccessError", (Exception,), {}))
+else:
+    exceptions_mod = ExceptionsModule("odoo.exceptions")
+    ValidationError = type("ValidationError", (Exception,), {})
+    UserError = type("UserError", (Exception,), {})
+    AccessError = type("AccessError", (Exception,), {})
+    exceptions_mod.ValidationError = ValidationError
+    exceptions_mod.UserError = UserError
+    exceptions_mod.AccessError = AccessError
 
 mock_tools = MagicMock()
 mock_tools.html2plaintext = lambda s: s

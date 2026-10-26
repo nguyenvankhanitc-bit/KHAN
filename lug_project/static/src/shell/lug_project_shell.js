@@ -1,4 +1,4 @@
-﻿/** @odoo-module **/
+/** @odoo-module **/
 /* lps-ui: gantt-compact-v5 trash-label-thung-rac-v2 access-panel-v1 rail-fix-v6 shell-flex-fix-v2 sidebar-dwd-v1 topbar-login-v1 */
 
 import { registry } from "@web/core/registry";
@@ -1379,7 +1379,7 @@ export class LugProjectShell extends Component {
 
     onGanttRowClick(row) {
         if (row.kind === "task") {
-            this.openTask(row.res_id);
+            this.openTask(row.res_id, row.model);
             return;
         }
         this.openProject(row.project_id || row.res_id);
@@ -2016,16 +2016,31 @@ body.o_lug_shell_active .o_action_manager { flex: 1 1 auto !important; min-heigh
         });
     }
 
-    async openTask(taskId) {
+    async openTask(taskId, model = "project.task") {
         if (!taskId) {
             return;
         }
+        if (model === "project.stage.task") {
+            try {
+                const act = await this.orm.call("project.stage.task", "action_open_popup", [[taskId]]);
+                if (act) {
+                    await this.action.doAction(act, {
+                        onClose: async () => {
+                            await this.loadShellData();
+                        },
+                    });
+                    return;
+                }
+            } catch (e) {
+                // fallback to form view if popup fails
+            }
+        }
         await this.action.doAction({
             type: "ir.actions.act_window",
-            res_model: "project.task",
+            res_model: model || "project.task",
             res_id: taskId,
             views: [[false, "form"]],
-            target: "current",
+            target: model === "project.stage.task" ? "new" : "current",
         });
     }
 

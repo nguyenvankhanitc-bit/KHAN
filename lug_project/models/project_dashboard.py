@@ -622,60 +622,126 @@ class ProjectProjectDashboard(models.Model):
             return start, (max(ends) if ends else None)
 
         bounds = {project.id: _project_bounds(project) for project in picked}
+        picked_ids = picked.ids if hasattr(picked, "ids") else [p.id for p in picked]
 
-        tasks_by_project = defaultdict(list)
+        stage_tasks_by_project = defaultdict(list)
+        if "project.stage.task" in self.env:
+            try:
+                stasks = self.env["project.stage.task"].search(
+                    [("project_id", "in", picked_ids)],
+                    limit=200 if single else 100,
+                    order="sequence, id",
+                )
+                for st in stasks:
+                    stage_tasks_by_project[st.project_id.id].append(st)
+            except Exception:
+                self.env.cr.rollback()
+                stage_tasks_by_project = defaultdict(list)
+
+        native_tasks_by_project = defaultdict(list)
         if "project.task" in self.env:
             try:
-                tasks = self.env["project.task"].search(
+                ntasks = self.env["project.task"].search(
                     [
-                        ("project_id", "in", picked.ids),
+                        ("project_id", "in", picked_ids),
                         ("has_template_ancestor", "=", False),
                         ("has_project_template", "=", False),
                     ],
-                    limit=80 if single else 40,
+                    limit=200 if single else 100,
                     order="priority desc, date_deadline, id",
                 )
-                for task in tasks:
-                    proj_start, proj_end = bounds.get(task.project_id.id, (None, None))
+                for nt in ntasks:
+                    native_tasks_by_project[nt.project_id.id].append(nt)
+            except Exception:
+                self.env.cr.rollback()
+                native_tasks_by_project = defaultdict(list)
+
+        tasks_by_project = defaultdict(list)
+        for project in picked:
+            proj_start, proj_end = bounds.get(project.id, (None, None))
+            proj_tasks = []
+
+            # 1. First, check stage tasks (the modern WBS tasks for lug_project)
+            if project.id in stage_tasks_by_project:
+                for stask in stage_tasks_by_project[project.id]:
+                    # Match start date with "Ngày thực hiện", falling back to project date_start
                     t_start = (
-                        self._lug_as_date(task.date_assign)
+                        self._lug_as_date(stask.execution_date)
                         or proj_start
-                        or self._lug_as_date(task.create_date)
+                        or self._lug_as_date(stask.create_date)
                         or today
                     )
-                    real_end = self._lug_as_date(task.date_deadline) or self._lug_as_date(task.date_end)
+                    # Match end date with "Ngày hết hạn", falling back to project Deadline
+                    real_end = self._lug_as_date(stask.deadline)
                     t_end = real_end or proj_end or t_start
                     if t_end < t_start:
                         t_end = t_start
-                    staff, staff_full = self._lug_gantt_staff(task.user_ids or task.lug_pic_id)
-                    pic, pic_full = self._lug_gantt_staff(task.lug_pic_id)
-                    supervisor, supervisor_full = self._lug_gantt_staff(task.lug_supervisor_id)
-                    tasks_by_project[task.project_id.id].append(
+                    staff, staff_full = self._lug_gantt_staff(stask.user_ids)
+                    pic, pic_full = self._lug_gantt_staff(stask.user_ids[:1] if stask.user_ids else [])
+                    supervisor, supervisor_full = self._lug_gantt_staff(stask.supervisor_ids)
+                    proj_tasks.append(
                         {
-                            "id": task.id,
-                            "name": task.name,
+                            "id": stask.id,
+                            "name": stask.name or "Công việc",
                             "start": t_start,
                             "end": t_end,
                             "has_end": bool(real_end),
-                            "state": task.state or "01_in_progress",
+                            "state": stask.state or "draft",
                             "staff": staff,
                             "staff_full": staff_full,
                             "pic": pic,
                             "pic_full": pic_full,
                             "supervisor": supervisor,
                             "supervisor_full": supervisor_full,
+                            "model": "project.stage.task",
                         }
                     )
-            except Exception:
-                self.env.cr.rollback()
-                tasks_by_project = defaultdict(list)
+
+            # 2. If no stage tasks, fallback to native tasks
+            if not proj_tasks and project.id in native_tasks_by_project:
+                for ntask in native_tasks_by_project[project.id]:
+                    # Match start date with "Ngày thực hiện", falling back to project date_start
+                    t_start = (
+                        self._lug_as_date(ntask.lug_execution_date)
+                        or self._lug_as_date(ntask.date_assign)
+                        or proj_start
+                        or self._lug_as_date(ntask.create_date)
+                        or today
+                    )
+                    # Match end date with "Ngày hết hạn", falling back to project Deadline
+                    real_end = self._lug_as_date(ntask.date_deadline) or self._lug_as_date(ntask.date_end)
+                    t_end = real_end or proj_end or t_start
+                    if t_end < t_start:
+                        t_end = t_start
+                    staff, staff_full = self._lug_gantt_staff(ntask.user_ids or ntask.lug_pic_id)
+                    pic, pic_full = self._lug_gantt_staff(ntask.lug_pic_id or (ntask.user_ids[:1] if ntask.user_ids else []))
+                    supervisor, supervisor_full = self._lug_gantt_staff(ntask.lug_supervisor_id)
+                    proj_tasks.append(
+                        {
+                            "id": ntask.id,
+                            "name": ntask.name or "Nhiệm vụ",
+                            "start": t_start,
+                            "end": t_end,
+                            "has_end": bool(real_end),
+                            "state": ntask.state or "01_in_progress",
+                            "staff": staff,
+                            "staff_full": staff_full,
+                            "pic": pic,
+                            "pic_full": pic_full,
+                            "supervisor": supervisor,
+                            "supervisor_full": supervisor_full,
+                            "model": "project.task",
+                        }
+                    )
+
+            tasks_by_project[project.id] = proj_tasks
 
         milestones_by_project = defaultdict(list)
         if "project.milestone" in self.env:
             try:
                 milestones = self.env["project.milestone"].search(
                     [
-                        ("project_id", "in", picked.ids),
+                        ("project_id", "in", picked_ids),
                         ("deadline", "!=", False),
                     ],
                     limit=24,
@@ -718,14 +784,9 @@ class ProjectProjectDashboard(models.Model):
                 axis_dates.append(milestone["deadline"])
 
         if single:
-            dates = []
-            for start, end in spans.values():
-                if start:
-                    dates.append(start)
-                if end:
-                    dates.append(end)
+            dates = [day for day in axis_dates if day]
             if not dates:
-                dates = [day for day in axis_dates if day] or [today]
+                dates = [today]
             win_start = min(dates)
             win_end = max(dates)
         else:
@@ -790,6 +851,9 @@ class ProjectProjectDashboard(models.Model):
             "to_define": "Chưa bắt đầu",
         }
         task_label = {
+            "draft": "Chưa bắt đầu",
+            "in_progress": "Đang làm",
+            "done": "Hoàn thành",
             "01_in_progress": "Đang thực hiện",
             "02_changes_requested": "Chỉnh sửa",
             "03_approved": "Đã duyệt",
@@ -802,17 +866,27 @@ class ProjectProjectDashboard(models.Model):
         for project in picked:
             start, end = spans[project.id]
             clip = self._lug_gantt_clip(start, end, win_start, win_end)
-            child_tasks = tasks_by_project.get(project.id, [])[:20 if single else 5]
+            child_tasks = tasks_by_project.get(project.id, [])[:80 if single else 20]
             child_ms = milestones_by_project.get(project.id, [])
             ms_idx = []
             for milestone in child_ms:
                 if win_start <= milestone["deadline"] <= win_end:
                     ms_idx.append((milestone["deadline"] - win_start).days)
+            stage_tasks = (
+                project.stage_line_ids.task_ids
+                if hasattr(project, "stage_line_ids") and project.stage_line_ids
+                else False
+            )
             staff, staff_full = self._lug_gantt_staff(
-                project.lug_assignee_ids or project.task_ids.user_ids
+                project.lug_assignee_ids
+                or (stage_tasks.user_ids if stage_tasks else False)
+                or project.task_ids.user_ids
             )
             pic, pic_full = self._lug_gantt_staff(project.lug_pic_id)
-            supervisor, supervisor_full = self._lug_gantt_staff(project.task_ids.lug_supervisor_id)
+            supervisor, supervisor_full = self._lug_gantt_staff(
+                (stage_tasks.supervisor_ids if stage_tasks else False)
+                or project.task_ids.lug_supervisor_id
+            )
             rows.append(
                 {
                     "id": "p-%s" % project.id,
@@ -843,7 +917,7 @@ class ProjectProjectDashboard(models.Model):
                     continue
                 rows.append(
                     {
-                        "id": "t-%s" % task["id"],
+                        "id": "t-%s-%s" % (task.get("model", "task").replace(".", "_"), task["id"]),
                         "kind": "task",
                         "name": task["name"],
                         "staff": task.get("staff") or "—",
@@ -854,6 +928,7 @@ class ProjectProjectDashboard(models.Model):
                         "supervisor_full": task.get("supervisor_full") or "",
                         "project_id": project.id,
                         "res_id": task["id"],
+                        "model": task.get("model", "project.task"),
                         "has_children": False,
                         "start": tclip[0],
                         "span": tclip[1],
@@ -1443,6 +1518,24 @@ class ProjectProjectDashboard(models.Model):
                 archived_on = project.write_date.date()
             if archived_on:
                 trash_left = (archived_on + timedelta(days=trash_days) - today).days
+
+        contract_files = []
+        for att in project.lug_contract_attachment_ids:
+            fname = att.name or "Hợp đồng"
+            fext = (fname.rsplit(".", 1)[-1] if "." in fname else "").lower()
+            ficon = "fa-file-pdf-o" if fext == "pdf" else (
+                "fa-file-word-o" if fext in ("doc", "docx") else (
+                    "fa-file-excel-o" if fext in ("xls", "xlsx") else "fa-file-text-o"
+                )
+            )
+            contract_files.append({
+                "id": att.id,
+                "name": fname,
+                "ext": fext,
+                "icon": ficon,
+                "download_url": f"/web/content/{att.id}?download=true",
+            })
+
         return {
             "id": project.id,
             "stt": project.lug_stt or 0,
@@ -1457,6 +1550,7 @@ class ProjectProjectDashboard(models.Model):
             "urgent": project.lug_priority == "high",
             "manager": manager,
             "assignees": assignees,
+            "contract_files": contract_files,
             "phase": self._lug_phase_tracker(project),
             "status": status_key,
             "status_label": self._LUG_WF_LABELS.get(wf, wf),
@@ -1579,9 +1673,9 @@ class ProjectProjectDashboard(models.Model):
         headers = [
             "STT", "Mã dự án", "Cửa hàng / Dự án", "Loại", "Bắt đầu", "Deadline",
             "Cảnh báo hạn", "Độ ưu tiên", "Trưởng DA", "Phụ trách", "Giai đoạn",
-            "Trạng thái", "Tiến độ (%)", "Chi phí",
+            "Trạng thái", "Tiến độ (%)", "Chi phí", "File hợp đồng",
         ]
-        widths = [6, 16, 28, 16, 14, 14, 16, 12, 22, 28, 28, 14, 12, 16]
+        widths = [6, 16, 28, 16, 14, 14, 16, 12, 22, 28, 28, 14, 12, 16, 32]
         for col, title in enumerate(headers):
             sheet.write(0, col, title, header_fmt)
             sheet.set_column(col, col, widths[col])
@@ -1591,6 +1685,7 @@ class ProjectProjectDashboard(models.Model):
             extra = row["assignees"].get("extra") or 0
             if extra:
                 assignees = ("%s +%s" % (assignees, extra)).strip(" ,")
+            contract_str = ", ".join(f.get("name") or "" for f in (row.get("contract_files") or []))
             values = [
                 index,
                 row["code"],
@@ -1606,6 +1701,7 @@ class ProjectProjectDashboard(models.Model):
                 row.get("status_label") or "",
                 row.get("progress_pct") or 0,
                 row.get("total_expense") or 0.0,
+                contract_str,
             ]
             for col, value in enumerate(values):
                 sheet.write(index, col, value, cell_fmt)

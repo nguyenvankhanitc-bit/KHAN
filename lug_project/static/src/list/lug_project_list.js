@@ -169,6 +169,7 @@ export class LugProjectList extends Component {
             assignees: assignees,
             dl_state: row.deadline_state || "none",
             dl_badge: row.deadline_badge || "Chưa đặt hạn",
+            contract_files: row.contract_files || [],
         });
     }
 

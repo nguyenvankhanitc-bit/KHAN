@@ -80,6 +80,13 @@ class ProjectProject(models.Model):
         "attachment_id",
         string="File đính kèm",
     )
+    lug_contract_attachment_ids = fields.Many2many(
+        "ir.attachment",
+        "lug_project_contract_ir_attachment_rel",
+        "project_id",
+        "attachment_id",
+        string="File hợp đồng",
+    )
     lug_stt = fields.Integer(string="STT", copy=False, index=True, readonly=True)
     lug_pic_id = fields.Many2one(
         "res.users",
@@ -489,6 +496,11 @@ class ProjectProject(models.Model):
                         due = task.date_deadline
                         if due and hasattr(due, "hour"):
                             due = due.date()
+                        exec_date = (
+                            task.lug_execution_date
+                            if hasattr(task, "lug_execution_date") and task.lug_execution_date
+                            else (project.date_start or fields.Date.context_today(project))
+                        )
                         task_vals.append({
                             "stage_id": line.id,
                             "sequence": (task.sequence or index * 10),
@@ -497,7 +509,8 @@ class ProjectProject(models.Model):
                             "supervisor_ids": [(6, 0, [task.lug_supervisor_id.id])]
                             if task.lug_supervisor_id
                             else [],
-                            "deadline": due or False,
+                            "execution_date": exec_date,
+                            "deadline": due or project.lug_deadline or project.date or False,
                             "state": status_map.get(task.lug_status, "draft"),
                             "notes": task.lug_note or False,
                             "cost": task.lug_cost or 0.0,

@@ -119,6 +119,7 @@ export class PhanHeItAssetEntryPopup extends Component {
         resId: { type: [Number, Boolean], optional: true },
         onClose: Function,
         onSaved: { type: Function, optional: true },
+        defaultTypeId: { type: [Number, Boolean], optional: true },
     };
 
     setup() {
@@ -240,8 +241,10 @@ export class PhanHeItAssetEntryPopup extends Component {
         this.state.employees = employees || [];
         this.state.hosts = hosts || [];
         if (!this.props.resId && !this.state.form.asset_type_id && this.state.types.length) {
+            const preset = this.props.defaultTypeId
+                && this.state.types.find((t) => t.id === this.props.defaultTypeId);
             const physical = this.state.types.find((t) => t.code === "physical");
-            this.state.form.asset_type_id = String((physical || this.state.types[0]).id);
+            this.state.form.asset_type_id = String((preset || physical || this.state.types[0]).id);
             await this.refreshAutoCode();
         }
     }

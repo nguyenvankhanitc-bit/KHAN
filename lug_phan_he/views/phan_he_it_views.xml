@@ -231,7 +231,7 @@
         <field name="priority">20</field>
         <field name="arch" type="xml">
             <list string="Máy chủ ảo"
-                  class="o_it_virtual_list o_it_framed_list"
+                  class="o_it_virtual_list o_it_framed_list" js_class="phan_he_it_asset_list"
                   default_group_by="host_asset_id"
                   expand="0">
                 <field name="code" string="Mã tài sản"/>
@@ -252,6 +252,8 @@
                          decoration-success="state == 'active'"
                          decoration-warning="state == 'suspended'"
                          decoration-muted="state == 'retired'"/>
+                <field name="id" string="Thao tác" widget="phan_he_it_asset_actions"
+                       groups="base.group_system,lug_phan_he.group_phan_he_admin"/>
             </list>
         </field>
     </record>

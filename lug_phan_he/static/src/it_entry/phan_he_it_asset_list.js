@@ -10,7 +10,7 @@ import { PhanHeItAssetEntryPopup } from "./phan_he_it_asset_entry_popup";
 
 /** Bọc popup «Thêm / Chỉnh sửa tài sản» để mở qua dialog service. */
 export class PhanHeItAssetPopupHost extends Component {
-    static template = xml`<PhanHeItAssetEntryPopup resId="props.resId" onClose="props.close" onSaved="props.onSaved"/>`;
+    static template = xml`<PhanHeItAssetEntryPopup resId="props.resId" defaultTypeId="props.defaultTypeId" onClose="props.close" onSaved="props.onSaved"/>`;
     static components = { PhanHeItAssetEntryPopup };
     static props = ["*"];
 }
@@ -20,6 +20,8 @@ export class PhanHeItAssetListController extends ListController {
     _openAssetPopup(resId) {
         this.env.services.dialog.add(PhanHeItAssetPopupHost, {
             resId: resId || false,
+            // «Mới» từ Máy chủ ảo / Thiết bị mạng… → chọn sẵn loại theo danh sách đang mở
+            defaultTypeId: (this.props.context || {}).default_asset_type_id || false,
             onSaved: () => this.model.load(),
         });
     }

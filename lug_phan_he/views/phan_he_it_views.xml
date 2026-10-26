@@ -216,6 +216,8 @@
         <field name="res_model">phan.he.it.asset</field>
         <field name="view_mode">list,form</field>
         <field name="search_view_id" ref="view_phan_he_it_asset_search"/>
+        <!-- Máy chủ vật lý + Thiết bị mạng & bảo mật (máy chủ ảo nằm trong máy chủ vật lý → xem ở «Máy chủ ảo») -->
+        <field name="domain">[('asset_type_code', 'in', ('physical', 'network', 'security'))]</field>
         <field name="context">{}</field>
     </record>
     <record id="action_phan_he_it_asset_physical" model="ir.actions.act_window">

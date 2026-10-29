@@ -22,7 +22,8 @@ export class PhanHeInternetFormController extends FormController {
             try {
                 const rights = await this.orm.call("phan.he.module.access", "get_user_module_rights", []);
                 this.internetMenus = rights?.internet_menus || {};
-            } catch {
+            } catch (error) {
+                console.warn("lug_phan_he: không lấy được quyền menu Internet", error);
                 this.internetMenus = {};
             }
             this._applyInternetActionFlags();
@@ -42,9 +43,16 @@ export class PhanHeInternetFormController extends FormController {
         return internetMenuCan(this.internetMenus, this.internetMenuCode, op);
     }
 
+    /** Màn hình mở form (dashboard / danh sách) đã kiểm quyền Sửa → mở sẵn chế độ «edit». */
+    get _openerGrantsEdit() {
+        return (this.props.context || {}).form_view_initial_mode === "edit";
+    }
+
     _applyInternetActionFlags() {
-        this.canCreate = Boolean(this._baseCanCreate && this._inetCan("create"));
-        this.canEdit = Boolean(this._baseCanEdit && this._inetCan("write"));
+        // Server vẫn chặn ghi theo quyền menu (_check_access) — đây chỉ là hiển thị nút.
+        const openerEdit = this._openerGrantsEdit;
+        this.canCreate = Boolean(this._baseCanCreate && (this._inetCan("create") || openerEdit));
+        this.canEdit = Boolean(this._baseCanEdit && (this._inetCan("write") || openerEdit));
         const root = this.model?.root;
         if (!root) {
             return;
@@ -66,7 +74,7 @@ export class PhanHeInternetFormController extends FormController {
     }
 
     async onClickEdit() {
-        if (!this.canEdit || !this._inetCan("write")) {
+        if (!this.canEdit) {
             return;
         }
         if (!this.model?.root || this.model.root.isInEdition) {

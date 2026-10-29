@@ -693,6 +693,12 @@ body.o_internet_mobile_nav_lock {
     display: none !important;
 }
 
+/* Form nhúng (cửa hàng Internet…) vẫn cần hàng nút Chỉnh sửa / Hủy / Lưu — chỉ ẩn breadcrumb */
+.o_internet_content .o_form_view .o_control_panel_breadcrumbs,
+.o_internet_content .o_form_view .o_control_panel_main_buttons {
+    display: flex !important;
+}
+
 /* Đóng khung bảng IT (chi phí / tài sản / ticket…) — kẻ ô + header đậm */
 .o_internet_content.o_it_list_embed,
 .o_internet_content.o_it_cost_embed,

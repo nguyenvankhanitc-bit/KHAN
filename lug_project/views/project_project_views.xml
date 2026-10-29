@@ -142,6 +142,7 @@
                 </header>
                 <sheet>
                     <field name="user_id" invisible="1"/>
+                    <field name="partner_id" invisible="1"/>
                     <field name="allow_milestones" invisible="1"/>
                     <div class="o_lug_summary">
                         <div class="o_lug_card">
@@ -154,11 +155,6 @@
                                 <span class="o_lug_k">Tên dự án</span>
                                 <field name="lug_content" nolabel="1"
                                        placeholder="vd: Cải tạo siêu thị Aeon Tân Phú"/>
-                            </div>
-                            <div class="o_lug_kv">
-                                <span class="o_lug_k">Đối tác</span>
-                                <field name="partner_id" nolabel="1" placeholder="Chọn đối tác..."
-                                       widget="res_partner_many2one"/>
                             </div>
                             <div class="o_lug_kv">
                                 <span class="o_lug_k">Cửa hàng</span>

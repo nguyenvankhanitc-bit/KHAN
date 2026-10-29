@@ -138,6 +138,13 @@ class TestPicAndIntakeForm(unittest.TestCase):
         self.assertEqual(partner_name_field.get("invisible"), "lug_pic_type != 'partner'")
         self.assertEqual(partner_name_field.get("nolabel"), "1")
 
+        # Ensure redundant visible 'Đối tác' label is removed
+        visible_labels = [span.text.strip() for span in arch.findall(".//span[@class='o_lug_k']") if span.text]
+        self.assertNotIn("Đối tác", visible_labels, "'Đối tác' should not be a visible label in the intake form.")
+        partner_field = arch.find(".//field[@name='partner_id']")
+        self.assertIsNotNone(partner_field)
+        self.assertEqual(partner_field.get("invisible"), "1")
+
     def test_xml_open_create_project_points_to_intake_form(self):
         """Verify project.open_create_project action uses view_project_intake_form."""
         view_path = os.path.join(REPO_ROOT, "lug_project", "views", "project_project_views.xml")

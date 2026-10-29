@@ -356,10 +356,24 @@ export class LugProjectList extends Component {
         }
     }
 
-    onNew() {
+    async onNew() {
         if (this.props.onNew) {
             this.props.onNew();
+            return;
         }
+        await this.action.doAction({
+            type: "ir.actions.act_window",
+            name: "Nhập dự án mới",
+            res_model: "project.project",
+            views: [[false, "form"]],
+            target: "new",
+            context: {
+                form_view_ref: "lug_project.view_project_intake_form",
+                default_allow_milestones: true,
+            },
+        }, {
+            onClose: () => this.loadList(),
+        });
     }
 
     async exportExcel() {

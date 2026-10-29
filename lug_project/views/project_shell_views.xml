@@ -6,8 +6,13 @@
         <field name="res_model">project.project</field>
         <field name="view_mode">kanban,list,form</field>
         <field name="domain">[('is_template', '=', False)]</field>
-        <field name="context">{'display_milestone_deadline': True}</field>
+        <field name="context">{'display_milestone_deadline': True, 'form_view_ref': 'lug_project.view_project_intake_form'}</field>
         <field name="path">du-an-list</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('project.view_project_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('project.view_project')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('lug_project.view_project_intake_form')}),
+        ]"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Chưa có dự án</p>
         </field>

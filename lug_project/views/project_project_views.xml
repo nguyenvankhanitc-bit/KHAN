@@ -48,6 +48,9 @@
                         <group>
                             <group>
                                 <field name="user_id" string="Project Manager" widget="many2one_avatar_user" domain="[('share', '=', False)]"/>
+                                <field name="lug_pic_type"/>
+                                <field name="lug_pic_id" widget="many2one_avatar_user" invisible="lug_pic_type == 'partner'"/>
+                                <field name="lug_pic_partner_name" invisible="lug_pic_type != 'partner'"/>
                                 <field name="lug_department_id"/>
                             </group>
                             <group>
@@ -129,7 +132,7 @@
     <record id="view_project_intake_form" model="ir.ui.view">
         <field name="name">project.project.form.intake.lug</field>
         <field name="model">project.project</field>
-        <field name="priority">90</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <form string="Nhập dự án" class="o_lug_intake_form">
                 <header>
@@ -166,8 +169,19 @@
                                 <field name="lug_type_id" nolabel="1" placeholder="Chọn loại..."/>
                             </div>
                             <div class="o_lug_kv">
-                                <span class="o_lug_k">Trưởng dự án</span>
-                                <field name="lug_pic_id" widget="many2one_avatar_user" nolabel="1" placeholder="Chọn người..."/>
+                                <span class="o_lug_k">Người phụ trách</span>
+                                <field name="lug_pic_type" nolabel="1" placeholder="Chọn phân loại..."/>
+                            </div>
+                            <div class="o_lug_kv" invisible="not lug_pic_type">
+                                <span class="o_lug_k"/>
+                                <div class="d-flex align-items-center w-100">
+                                    <field name="lug_pic_id" widget="many2one_avatar_user" nolabel="1"
+                                           placeholder="Chọn nhân viên công ty..."
+                                           invisible="lug_pic_type != 'internal'" class="w-100"/>
+                                    <field name="lug_pic_partner_name" nolabel="1"
+                                           placeholder="Nhập tên đối tác phụ trách..."
+                                           invisible="lug_pic_type != 'partner'" class="w-100"/>
+                                </div>
                             </div>
                             <div class="o_lug_kv o_lug_kv_file">
                                 <span class="o_lug_k">File hợp đồng</span>
@@ -249,6 +263,11 @@
 
     <record id="project.open_create_project" model="ir.actions.act_window">
         <field name="name">Nhập dự án</field>
+        <field name="res_model">project.project</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="lug_project.view_project_intake_form"/>
+        <field name="target">new</field>
+        <field name="context">{'default_allow_milestones': True, 'form_view_ref': 'lug_project.view_project_intake_form'}</field>
     </record>
 
     <!-- Form dự án đầy đủ -->
@@ -280,7 +299,9 @@
                 <attribute name="string">Khách hàng</attribute>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                <field name="lug_pic_type"/>
+                <field name="lug_pic_id" widget="many2one_avatar_user" invisible="lug_pic_type == 'partner'"/>
+                <field name="lug_pic_partner_name" invisible="lug_pic_type != 'partner'"/>
                 <field name="lug_department_id"/>
                 <field name="lug_approver_id" widget="many2one_avatar_user"/>
                 <field name="lug_priority"/>
@@ -409,7 +430,9 @@
                 <attribute name="optional">show</attribute>
             </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="lug_pic_id" string="Phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}"/>
+                <field name="lug_pic_type" column_invisible="1" optional="hide"/>
+                <field name="lug_pic_id" string="Phụ trách" widget="many2one_avatar_user" options="{'no_open': True, 'no_create': True}" invisible="lug_pic_type == 'partner'"/>
+                <field name="lug_pic_partner_name" string="Phụ trách (Đối tác)" invisible="lug_pic_type != 'partner'"/>
                 <field name="lug_workflow_state" string="Trạng thái" widget="badge" optional="show"/>
                 <field name="lug_progress_pct" string="Tiến độ" widget="progressbar"/>
                 <field name="lug_total_expense" string="Chi phí" widget="monetary" optional="show"/>
@@ -489,7 +512,9 @@
                 <field name="progress"/>
                 <field name="phase_num"/>
                 <field name="lug_priority_label"/>
+                <field name="lug_pic_type"/>
                 <field name="lug_pic_id"/>
+                <field name="lug_pic_partner_name"/>
                 <field name="lug_assignee_ids"/>
                 <field name="lug_deadline"/>
             </xpath>
@@ -524,7 +549,10 @@
                                 </div>
                                 <div class="small text-secondary d-flex align-items-center gap-1 mb-1 flex-wrap">
                                     <span>• Phụ trách:</span>
-                                    <field name="lug_pic_id" widget="many2one_avatar_user"/>
+                                    <field name="lug_pic_id" widget="many2one_avatar_user" invisible="lug_pic_type == 'partner'"/>
+                                    <span t-if="record.lug_pic_partner_name and record.lug_pic_partner_name.raw_value" class="text-dark fw-bold">
+                                        <field name="lug_pic_partner_name"/>
+                                    </span>
                                     <field name="lug_assignee_ids" widget="many2many_avatar_user"/>
                                 </div>
                                 <div class="small text-muted">
@@ -594,5 +622,11 @@
     <record id="project.open_view_project_all" model="ir.actions.act_window">
         <field name="view_mode">kanban,list,form</field>
         <field name="view_id" ref="project.view_project_kanban"/>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'kanban', 'view_id': ref('project.view_project_kanban')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('project.view_project')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('lug_project.view_project_intake_form')}),
+        ]"/>
+        <field name="context">{'form_view_ref': 'lug_project.view_project_intake_form'}</field>
     </record>
 </odoo>

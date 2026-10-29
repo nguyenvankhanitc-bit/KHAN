@@ -88,12 +88,24 @@ class ProjectProject(models.Model):
         string="File hợp đồng",
     )
     lug_stt = fields.Integer(string="STT", copy=False, index=True, readonly=True)
+    lug_pic_type = fields.Selection(
+        [
+            ("internal", "Nội bộ"),
+            ("partner", "Đối tác"),
+        ],
+        string="Người phụ trách",
+        tracking=True,
+    )
     lug_pic_id = fields.Many2one(
         "res.users",
         string="Người phụ trách",
         tracking=True,
         domain="[('share', '=', False)]",
         index=True,
+    )
+    lug_pic_partner_name = fields.Char(
+        string="Đối tác phụ trách",
+        tracking=True,
     )
     lug_supply_date = fields.Date(string="Ngày cung cấp", tracking=True)
     lug_content = fields.Text(string="Nội dung dự án")
@@ -387,10 +399,19 @@ class ProjectProject(models.Model):
                 pct = int(round(100.0 * done / float(len(legacy))))
             rec.lug_progress_pct = max(0, min(100, pct))
 
+    @api.onchange("lug_pic_type")
+    def _onchange_lug_pic_type(self):
+        if self.lug_pic_type == "partner":
+            self.lug_pic_id = False
+        elif self.lug_pic_type == "internal":
+            self.lug_pic_partner_name = False
+
     @api.onchange("lug_pic_id")
     def _onchange_lug_pic_id(self):
         if self.lug_pic_id:
             self.user_id = self.lug_pic_id
+            if not self.lug_pic_type:
+                self.lug_pic_type = "internal"
 
     @api.constrains("date_start", "lug_deadline")
     def _check_lug_deadline(self):
@@ -900,7 +921,11 @@ class ProjectProject(models.Model):
             if content and not vals.get("description"):
                 vals["description"] = content
             vals["name"] = self._lug_name_from_vals(vals)
-            if vals.get("lug_pic_id") and not vals.get("user_id"):
+            if vals.get("lug_pic_type") == "partner":
+                vals["lug_pic_id"] = False
+            elif vals.get("lug_pic_type") == "internal" and vals.get("lug_pic_id") and not vals.get("user_id"):
+                vals["user_id"] = vals["lug_pic_id"]
+            elif vals.get("lug_pic_id") and not vals.get("user_id"):
                 vals["user_id"] = vals["lug_pic_id"]
             vals.setdefault("allow_milestones", True)
             vals.setdefault("lug_workflow_state", "todo")
@@ -913,7 +938,13 @@ class ProjectProject(models.Model):
         return records
 
     def write(self, vals):
-        if vals.get("lug_pic_id") and "user_id" not in vals:
+        if vals.get("lug_pic_type") == "partner":
+            vals = dict(vals, lug_pic_id=False)
+        elif vals.get("lug_pic_type") == "internal":
+            vals = dict(vals, lug_pic_partner_name=False)
+            if vals.get("lug_pic_id") and "user_id" not in vals:
+                vals["user_id"] = vals["lug_pic_id"]
+        elif vals.get("lug_pic_id") and "user_id" not in vals:
             vals = dict(vals, user_id=vals["lug_pic_id"])
         incoming_name = str(vals.get("name") or "").strip() if "name" in vals else None
         if "lug_content" in vals or incoming_name in ("", "Dự án mới"):
@@ -936,7 +967,9 @@ class ProjectProject(models.Model):
             sync_fields = {
                 "name",
                 "lug_content",
+                "lug_pic_type",
                 "lug_pic_id",
+                "lug_pic_partner_name",
                 "user_id",
                 "lug_assignee_ids",
                 "date_start",

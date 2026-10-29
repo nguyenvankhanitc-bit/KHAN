@@ -1066,19 +1066,28 @@ export class LugProjectShell extends Component {
                 resModel: "project.project",
                 type: "list",
                 domain: projectDomain,
-                context: { display_milestone_deadline: true },
+                context: {
+                    display_milestone_deadline: true,
+                    form_view_ref: "lug_project.view_project_intake_form",
+                },
             },
             track: {
                 resModel: "project.project",
                 type: "kanban",
                 domain: projectDomain,
-                context: { display_milestone_deadline: true },
+                context: {
+                    display_milestone_deadline: true,
+                    form_view_ref: "lug_project.view_project_intake_form",
+                },
                 groupBy: ["last_update_status"],
             },
             timeline: {
                 resModel: "project.project",
                 type: "calendar",
                 domain: projectDomain,
+                context: {
+                    form_view_ref: "lug_project.view_project_intake_form",
+                },
             },
             assign: {
                 resModel: "project.task",
@@ -1094,7 +1103,10 @@ export class LugProjectShell extends Component {
                     ["is_template", "=", false],
                     ["last_update_status", "!=", "done"],
                 ],
-                context: { search_default_lug_overdue: 1 },
+                context: {
+                    search_default_lug_overdue: 1,
+                    form_view_ref: "lug_project.view_project_intake_form",
+                },
             },
             people: {
                 resModel: "project.task",
@@ -1107,6 +1119,9 @@ export class LugProjectShell extends Component {
                 resModel: "project.project",
                 type: "list",
                 domain: [["is_template", "=", true]],
+                context: {
+                    form_view_ref: "lug_project.view_project_intake_form",
+                },
             },
             report_all: {
                 resModel: "report.project.task.user",

@@ -11,6 +11,7 @@ from unittest.mock import MagicMock
 # 1. Mock odoo modules before importing project_task / daily_task
 mock_odoo = MagicMock()
 mock_api = MagicMock()
+mock_api.model = lambda f: f
 mock_api.model_create_multi = lambda f: f
 mock_api.depends = lambda *args: lambda f: f
 mock_api.onchange = lambda *args: lambda f: f

@@ -1204,6 +1204,18 @@ class ProjectProjectDashboard(models.Model):
             pool = project.task_ids.user_ids
         elif project.lug_pic_id:
             pool = project.lug_pic_id
+        elif getattr(project, "lug_pic_partner_name", False):
+            pname = (project.lug_pic_partner_name or "").strip()
+            return {
+                "users": [{
+                    "id": False,
+                    "name": pname,
+                    "initial": pname[:1].upper() if pname else "P",
+                    "avatar_url": False,
+                    "color": "#64748B",
+                }],
+                "extra": 0,
+            }
         else:
             return {"users": [], "extra": 0}
         total = len(pool)
@@ -1491,13 +1503,25 @@ class ProjectProjectDashboard(models.Model):
             return ", ".join(names[:2]) + ", …"
         if project.lug_pic_id:
             return project.lug_pic_id.name
+        if getattr(project, "lug_pic_partner_name", False):
+            return project.lug_pic_partner_name
         return "—"
 
     @api.model
     def _lug_serialize_project_row(self, project, today=None):
         today = today or fields.Date.context_today(self)
         wf = project.lug_workflow_state or "todo"
-        manager = self._lug_user_chip(project.user_id)
+        if getattr(project, "lug_pic_type", False) == "partner" and getattr(project, "lug_pic_partner_name", False):
+            pname = (project.lug_pic_partner_name or "").strip()
+            manager = {
+                "id": False,
+                "name": pname,
+                "initial": pname[:1].upper() if pname else "P",
+                "avatar_url": False,
+                "color": "#64748B",
+            }
+        else:
+            manager = self._lug_user_chip(project.lug_pic_id or project.user_id)
         assignees = self._lug_assignee_chips(project)
         progress_pct = max(0, min(100, int(project.lug_progress_pct or 0)))
         if wf in ("done", "closed", "cancel") or progress_pct >= 80:

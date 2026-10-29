@@ -74,9 +74,6 @@ class ProjectStageLine(models.Model):
             "context": {
                 "default_stage_id": self.id,
                 "default_project_id": self.project_id.id,
-                "default_user_ids": [(6, 0, [self.project_id.lug_pic_id.id])]
-                if self.project_id.lug_pic_id
-                else [],
                 "default_state": "draft",
                 "default_execution_date": self.project_id.date_start or fields.Date.context_today(self),
                 "default_deadline": self.project_id.lug_deadline or self.project_id.date or False,

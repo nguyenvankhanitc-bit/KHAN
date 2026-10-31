@@ -42,6 +42,14 @@ class ProjectTask(models.Model):
         index=True,
         tracking=True,
     )
+    lug_staff_ids = fields.Many2many(
+        "res.users",
+        "project_task_staff_rel",
+        "task_id",
+        "user_id",
+        string="Nhân sự",
+        domain="[('share', '=', False)]",
+    )
     lug_execution_date = fields.Date(string="Ngày thực hiện", copy=False)
     lug_done_date = fields.Date(string="Ngày hoàn thành", copy=False)
     lug_result = fields.Char(string="Kết quả")
@@ -329,6 +337,13 @@ class ProjectTask(models.Model):
                         if emp:
                             active_daily_emps[emp.id] = (u, emp)
 
+                    active_sup_emps = {}
+                    sup = getattr(task, "lug_supervisor_id", False)
+                    if sup and hasattr(sup, "id") and not isinstance(sup, (str, dict)):
+                        emp = task._lug_get_or_create_daily_employee(sup)
+                        if emp:
+                            active_sup_emps[emp.id] = (sup, emp)
+
                     existing_daily_tasks = (
                         DailyTaskModel.search([("lug_origin_project_task_id", "=", task.id)])
                         if hasattr(DailyTaskModel, "search")
@@ -338,14 +353,27 @@ class ProjectTask(models.Model):
                         existing_daily_tasks = task.lug_daily_task_ids.exists()
                     if not existing_daily_tasks and hasattr(task, "lug_daily_task_id") and task.lug_daily_task_id and hasattr(task.lug_daily_task_id, "exists"):
                         existing_daily_tasks = task.lug_daily_task_id.exists()
-                    existing_by_emp = {dt.assignee_id.id: dt for dt in existing_daily_tasks if getattr(dt, "assignee_id", False)}
-                    existing_by_user = {}
+
+                    existing_pic_by_emp = {}
+                    existing_pic_by_user = {}
+                    existing_sup_by_emp = {}
+                    existing_sup_by_user = {}
                     for dt in existing_daily_tasks:
+                        dt_role = getattr(dt, "lug_task_role", "pic") or "pic"
+                        eid = dt.assignee_id.id if getattr(dt, "assignee_id", False) else False
                         uid = getattr(dt, "assignee_user_id", False) and dt.assignee_user_id.id
                         if not uid and getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
                             uid = dt.assignee_id.employee_id.user_id.id
-                        if uid:
-                            existing_by_user[uid] = dt
+                        if dt_role == "supervisor":
+                            if eid:
+                                existing_sup_by_emp[eid] = dt
+                            if uid:
+                                existing_sup_by_user[uid] = dt
+                        else:
+                            if eid:
+                                existing_pic_by_emp[eid] = dt
+                            if uid:
+                                existing_pic_by_user[uid] = dt
 
                     created_first_dt = False
                     for emp_id, (u, emp) in active_daily_emps.items():
@@ -355,6 +383,7 @@ class ProjectTask(models.Model):
                             "assign_date": assign_date,
                             "state": daily_state,
                             "priority": daily_priority,
+                            "lug_task_role": "pic",
                         }
                         if daily_state == "done":
                             daily_vals["date_done"] = task.lug_done_date or fields.Date.context_today(task)
@@ -369,7 +398,8 @@ class ProjectTask(models.Model):
                             daily_vals["date_done"] = False
                             daily_vals["completion_percent"] = 0
 
-                        matched_dt = existing_by_emp.get(emp_id) or (u and existing_by_user.get(u.id))
+                        u_id = getattr(u, "id", None)
+                        matched_dt = existing_pic_by_emp.get(emp_id) or (u_id and existing_pic_by_user.get(u_id))
                         if matched_dt:
                             matched_dt.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().write(daily_vals)
                             if not created_first_dt:
@@ -386,22 +416,70 @@ class ProjectTask(models.Model):
                             if not created_first_dt:
                                 created_first_dt = new_dt
 
+                    # Sync supervisor task
+                    for emp_id, (u, emp) in active_sup_emps.items():
+                        daily_vals = {
+                            "name": sync_name,
+                            "deadline": deadline,
+                            "assign_date": assign_date,
+                            "state": daily_state,
+                            "priority": daily_priority,
+                            "lug_task_role": "supervisor",
+                        }
+                        if daily_state == "done":
+                            daily_vals["date_done"] = task.lug_done_date or fields.Date.context_today(task)
+                            daily_vals["completion_percent"] = 100
+                        elif daily_state == "in_progress":
+                            daily_vals["date_done"] = False
+                            prog = getattr(task, "lug_progress", False)
+                            daily_vals["completion_percent"] = (
+                                prog if (isinstance(prog, (int, float)) and 0 < prog < 100) else 50
+                            )
+                        else:
+                            daily_vals["date_done"] = False
+                            daily_vals["completion_percent"] = 0
+
+                        u_id = getattr(u, "id", None)
+                        matched_dt = existing_sup_by_emp.get(emp_id) or (u_id and existing_sup_by_user.get(u_id))
+                        if matched_dt:
+                            matched_dt.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).sudo().write(daily_vals)
+                        else:
+                            daily_vals.update({
+                                "assignee_id": emp.id,
+                                "assigned_by_id": assigned_by_id,
+                                "department_id": emp.department_id.id or task.project_id.lug_department_id.id or False,
+                                "lug_origin_project_task_id": task.id,
+                                "lug_origin_project_id": task.project_id.id if task.project_id else False,
+                            })
+                            DailyTaskModel.with_context(lug_sync_lock=True, daily_task_assigner_uid=assigned_by_id).create(daily_vals)
+
                     if created_first_dt and task.lug_daily_task_id != created_first_dt:
                         task.with_context(lug_sync_lock=True).write({"lug_daily_task_id": created_first_dt.id})
 
-                    # Unlink daily tasks for removed assignees
+                    # Unlink daily tasks for removed assignees or supervisors
                     for dt in existing_daily_tasks:
+                        dt_role = getattr(dt, "lug_task_role", "pic") or "pic"
                         emp_id = dt.assignee_id.id if getattr(dt, "assignee_id", False) else False
                         user_id = False
                         if getattr(dt, "assignee_user_id", False):
                             user_id = dt.assignee_user_id.id
                         elif getattr(dt, "assignee_id", False) and getattr(dt.assignee_id, "employee_id", False) and getattr(dt.assignee_id.employee_id, "user_id", False):
                             user_id = dt.assignee_id.employee_id.user_id.id
-                        if emp_id not in active_daily_emps and (not user_id or user_id not in {u.id for u in users}):
-                            try:
-                                dt.with_context(lug_sync_lock=True).sudo().unlink()
-                            except Exception:
-                                pass
+
+                        if dt_role == "supervisor":
+                            sup_uid = getattr(task.lug_supervisor_id, "id", None) if hasattr(getattr(task, "lug_supervisor_id", None), "id") else False
+                            if emp_id not in active_sup_emps and (not user_id or not sup_uid or user_id != sup_uid):
+                                try:
+                                    dt.with_context(lug_sync_lock=True).sudo().unlink()
+                                except Exception:
+                                    pass
+                        else:
+                            pic_uids = {getattr(u, "id", None) for u in users if hasattr(u, "id") and not isinstance(u, (str, dict))}
+                            if emp_id not in active_daily_emps and (not user_id or user_id not in pic_uids):
+                                try:
+                                    dt.with_context(lug_sync_lock=True).sudo().unlink()
+                                except Exception:
+                                    pass
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).exception("Error syncing project task %s to daily task: %s", task.id, e)
@@ -480,6 +558,7 @@ class ProjectTask(models.Model):
                         "date_deadline",
                         "lug_execution_date",
                         "lug_pic_id",
+                        "lug_supervisor_id",
                         "user_ids",
                         "lug_status",
                         "lug_progress",
@@ -512,12 +591,28 @@ class ProjectTask(models.Model):
                     pass
         return super().unlink()
 
-    @api.constrains("lug_pic_id", "user_ids", "project_id")
+    @api.constrains("lug_pic_id", "user_ids", "lug_staff_ids", "project_id")
     def _check_lug_assignee(self):
         for rec in self:
             if rec.project_id and not rec.lug_origin_project_task_id:
                 if not rec.lug_pic_id and not rec.user_ids:
                     raise ValidationError("Vui lòng chọn Người phụ trách cho công việc.")
+                project = rec.project_id
+                if project.lug_pic_pool_ids:
+                    pics = rec.user_ids or (rec.lug_pic_id and rec.lug_pic_id)
+                    if pics:
+                        invalid_pics = pics - project.lug_pic_pool_ids
+                        if invalid_pics:
+                            raise ValidationError(
+                                "Người phụ trách không thuộc nhóm người phụ trách của dự án."
+                            )
+                if project.lug_staff_pool_ids and rec.lug_staff_ids:
+                    invalid_staff = rec.lug_staff_ids - project.lug_staff_pool_ids
+                    if invalid_staff:
+                        raise ValidationError(
+                            "Nhân sự '%s' không thuộc nhóm nhân sự của dự án."
+                            % (", ".join(invalid_staff.mapped("name")))
+                        )
 
     @api.constrains("lug_stage_id", "project_id")
     def _check_lug_stage_project(self):

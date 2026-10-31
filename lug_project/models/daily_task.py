@@ -34,6 +34,15 @@ class DailyTask(models.Model):
         store=True,
         index=True,
     )
+    lug_task_role = fields.Selection(
+        [
+            ("pic", "Người phụ trách"),
+            ("supervisor", "Người giám sát"),
+        ],
+        string="Vai trò trong dự án",
+        default="pic",
+        index=True,
+    )
 
     @api.depends(
         "lug_origin_project_id",
@@ -76,6 +85,8 @@ class DailyTask(models.Model):
             return
 
         for rec in self:
+            if getattr(rec, "lug_task_role", False) == "supervisor":
+                continue
             rec_id = getattr(rec, "id", False)
             # 1. Trường hợp công việc gốc là Công việc chi tiết giai đoạn (project.stage.task)
             if rec.lug_origin_stage_task_id and rec.lug_origin_stage_task_id.exists():
@@ -188,7 +199,7 @@ class DailyTask(models.Model):
                     origin.with_context(lug_sync_lock=True).sudo().write(origin_vals)
 
     @api.model
-    def action_open_my_project_tasks(self):
+    def action_open_my_project_tasks(self, role="pic"):
         """Mở danh sách công việc thuộc các dự án của nhân viên hiện tại, gom nhóm theo Dự án."""
         emp = self._my_hr_employee() if hasattr(self, "_my_hr_employee") else False
         project_cond = [
@@ -210,7 +221,18 @@ class DailyTask(models.Model):
                 ("assignee_user_id", "=", self.env.user.id),
                 ("assignee_id.employee_id.user_id", "=", self.env.user.id),
             ]
-        domain = project_cond + user_cond
+
+        target_role = role or self.env.context.get("default_lug_task_role") or "pic"
+        if target_role == "supervisor":
+            role_cond = [("lug_task_role", "=", "supervisor")]
+            action_name = "Dự án - Tôi giám sát"
+            filter_role_ctx = {"search_default_filter_role_supervisor": 1, "default_lug_task_role": "supervisor"}
+        else:
+            role_cond = [("lug_task_role", "!=", "supervisor")]
+            action_name = "Dự án - Tôi phụ trách"
+            filter_role_ctx = {"search_default_filter_role_pic": 1, "default_lug_task_role": "pic"}
+
+        domain = project_cond + user_cond + role_cond
 
         list_view = self.env.ref("lug_project.view_daily_task_project_tree", raise_if_not_found=False)
         kanban_view = self.env.ref("lug_project.view_daily_task_project_kanban", raise_if_not_found=False)
@@ -226,20 +248,28 @@ class DailyTask(models.Model):
 
         search_view = self.env.ref("lug_project.view_daily_task_project_search", raise_if_not_found=False)
 
+        ctx = {
+            "default_group_by": "lug_project_id",
+            "search_default_group_by_project": 1,
+            "search_default_filter_open": 1,
+            "shell_nav": "projects",
+            "active_nav": "projects",
+        }
+        ctx.update(filter_role_ctx)
+
         return {
-            "name": "Dự án",
+            "name": action_name,
             "type": "ir.actions.act_window",
             "res_model": "daily.task",
             "view_mode": "list,kanban,form",
             "views": views or [[False, "list"], [False, "kanban"], [False, "form"]],
             "domain": domain,
-            "context": {
-                "default_group_by": "lug_project_id",
-                "search_default_group_by_project": 1,
-                "search_default_filter_open": 1,
-                "shell_nav": "projects",
-                "active_nav": "projects",
-            },
+            "context": ctx,
             "search_view_id": [search_view.id, "search"] if search_view else False,
             "target": "current",
         }
+
+    @api.model
+    def action_open_my_supervisor_project_tasks(self):
+        """Mở danh sách công việc dự án mà nhân viên hiện tại là Người giám sát."""
+        return self.action_open_my_project_tasks(role="supervisor")

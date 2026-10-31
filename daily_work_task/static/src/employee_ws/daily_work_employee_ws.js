@@ -347,6 +347,10 @@ export class DailyWorkEmployeeWs extends Component {
             await this.action.doAction("lug_project.action_daily_task_my_projects");
             return;
         }
+        if (key === "projects_supervisor") {
+            await this.action.doAction("lug_project.action_daily_task_my_supervisor_projects");
+            return;
+        }
         if (key === "today") {
             await this.action.doAction("daily_work_task.action_daily_work_today", { clearBreadcrumbs: true });
             return;

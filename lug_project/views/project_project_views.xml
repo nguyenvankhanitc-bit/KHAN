@@ -75,6 +75,7 @@
                                 <field name="name" string="Công việc"/>
                                 <field name="lug_pic_id" widget="many2one_avatar_user" string="Người phụ trách" required="1"/>
                                 <field name="lug_supervisor_id" widget="many2one_avatar_user" string="Người giám sát"/>
+                                <field name="lug_staff_ids" widget="many2many_avatar_user" string="Nhân sự" optional="show"/>
                                 <field name="lug_execution_date" string="Ngày thực hiện"/>
                                 <field name="date_deadline" string="Deadline"/>
                                 <field name="lug_done_date" string="Ngày hoàn thành"/>
@@ -179,6 +180,16 @@
                                            invisible="lug_pic_type != 'partner'" class="w-100"/>
                                 </div>
                             </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Nhóm phụ trách</span>
+                                <field name="lug_pic_pool_ids" widget="many2many_avatar_user" nolabel="1"
+                                       placeholder="Chọn nhóm người phụ trách..."/>
+                            </div>
+                            <div class="o_lug_kv">
+                                <span class="o_lug_k">Nhân sự</span>
+                                <field name="lug_staff_pool_ids" widget="many2many_avatar_user" nolabel="1"
+                                       placeholder="Chọn nhân sự tham gia dự án..."/>
+                            </div>
                             <div class="o_lug_kv o_lug_kv_file">
                                 <span class="o_lug_k">File hợp đồng</span>
                                 <field name="lug_contract_attachment_ids" widget="many2many_binary" nolabel="1"
@@ -238,6 +249,7 @@
                                         <field name="name" string="Tên công việc giai đoạn"/>
                                         <field name="user_ids" string="Người phụ trách" widget="many2many_avatar_user" required="1"/>
                                         <field name="supervisor_ids" string="Người giám sát" widget="many2many_avatar_user"/>
+                                        <field name="staff_ids" string="Nhân sự" widget="many2many_avatar_user" optional="show"/>
                                         <field name="execution_date" string="Ngày thực hiện"/>
                                         <field name="deadline" string="Deadline"/>
                                         <field name="state" string="Trạng thái" widget="badge"
@@ -298,6 +310,8 @@
                 <field name="lug_pic_type"/>
                 <field name="lug_pic_id" widget="many2one_avatar_user" invisible="lug_pic_type == 'partner'"/>
                 <field name="lug_pic_partner_name" invisible="lug_pic_type != 'partner'"/>
+                <field name="lug_pic_pool_ids" widget="many2many_avatar_user" string="Nhóm người phụ trách"/>
+                <field name="lug_staff_pool_ids" widget="many2many_avatar_user" string="Nhóm nhân sự"/>
                 <field name="lug_department_id"/>
                 <field name="lug_approver_id" widget="many2one_avatar_user"/>
                 <field name="lug_priority"/>

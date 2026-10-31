@@ -325,6 +325,10 @@ export class DailyWorkAppShell extends Component {
             await this._doNavAction("lug_project.action_daily_task_my_projects", asPopup);
             return;
         }
+        if (key === "projects_supervisor") {
+            await this._doNavAction("lug_project.action_daily_task_my_supervisor_projects", asPopup);
+            return;
+        }
         if (key === "team_report") {
             await this._doNavAction("daily_work_task.action_task_team_report", asPopup);
             return;

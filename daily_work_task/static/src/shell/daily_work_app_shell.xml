@@ -28,8 +28,15 @@
                     </button>
                     <button type="button"
                             t-att-class="'o_dwd_topnav_item' + (isActive('projects') ? ' active' : '')"
-                            t-on-click="() => this.openNav('projects')">
+                            t-on-click="() => this.openNav('projects')"
+                            title="Dự án (Tôi phụ trách)">
                         <i class="fa fa-folder-open-o"/><span>Dự án</span>
+                    </button>
+                    <button type="button"
+                            t-att-class="'o_dwd_topnav_item' + (isActive('projects_supervisor') ? ' active' : '')"
+                            t-on-click="() => this.openNav('projects_supervisor')"
+                            title="Dự án (Tôi giám sát)">
+                        <i class="fa fa-eye"/><span>Giám sát DA</span>
                     </button>
                     <button type="button" class="o_dwd_topnav_item" t-on-click="() => this.openNav('today')">
                         <i class="fa fa-sun-o"/><span>Hôm nay</span>
@@ -131,9 +138,15 @@
                         </button>
                         <button type="button"
                                 t-att-class="'o_dwd_side_item' + (isActive('projects') ? ' active' : '')"
-                                title="Dự án"
+                                title="Dự án (Tôi phụ trách)"
                                 t-on-click="() => this.openNav('projects')">
-                            <i class="fa fa-folder-open-o"/><span>Dự án</span>
+                            <i class="fa fa-folder-open-o"/><span>Dự án (Tôi phụ trách)</span>
+                        </button>
+                        <button type="button"
+                                t-att-class="'o_dwd_side_item' + (isActive('projects_supervisor') ? ' active' : '')"
+                                title="Dự án (Tôi giám sát)"
+                                t-on-click="() => this.openNav('projects_supervisor')">
+                            <i class="fa fa-eye"/><span>Dự án (Tôi giám sát)</span>
                         </button>
                         <button t-if="state.canTeamwork" type="button" t-att-class="'o_dwd_side_item' + (isActive('team_work') ? ' active' : '')" title="Phân công việc team"
                                 t-on-click="() => this.openNav('team_work')">

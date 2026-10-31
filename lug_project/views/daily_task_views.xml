@@ -16,8 +16,12 @@
                 <separator/>
                 <filter string="Quá hạn" name="filter_overdue" domain="[('is_overdue', '=', True)]"/>
                 <filter string="Ưu tiên cao" name="filter_high" domain="[('priority', '=', 'high')]"/>
+                <separator/>
+                <filter string="Tôi phụ trách" name="filter_role_pic" domain="[('lug_task_role', '!=', 'supervisor')]"/>
+                <filter string="Tôi giám sát" name="filter_role_supervisor" domain="[('lug_task_role', '=', 'supervisor')]"/>
                 <group>
                     <filter string="Dự án" name="group_by_project" context="{'group_by': 'lug_project_id'}"/>
+                    <filter string="Vai trò" name="group_role" context="{'group_by': 'lug_task_role'}"/>
                     <filter string="Trạng thái" name="group_state" context="{'group_by': 'state'}"/>
                     <filter string="Mức ưu tiên" name="group_priority" context="{'group_by': 'priority'}"/>
                     <filter string="Hạn chót" name="group_deadline" context="{'group_by': 'deadline'}"/>
@@ -38,6 +42,10 @@
                   decoration-danger="is_overdue">
                 <field name="lug_project_id" string="Dự án"/>
                 <field name="name" string="Tên công việc"/>
+                <field name="lug_task_role" string="Vai trò" widget="badge"
+                       decoration-primary="lug_task_role == 'pic'"
+                       decoration-warning="lug_task_role == 'supervisor'"
+                       optional="show"/>
                 <field name="assign_date" string="Ngày bắt đầu" optional="show"/>
                 <field name="deadline" string="Hạn chót"/>
                 <field name="priority" widget="badge"
@@ -97,19 +105,34 @@
         </field>
     </record>
 
-    <!-- Action Server: Mở danh sách công việc theo dự án của user hiện tại -->
+    <!-- Action Server: Mở danh sách công việc theo dự án của user hiện tại (Người phụ trách) -->
     <record id="action_daily_task_my_projects" model="ir.actions.server">
-        <field name="name">Dự án</field>
+        <field name="name">Dự án (Tôi phụ trách)</field>
         <field name="model_id" ref="daily_work_task.model_daily_task"/>
         <field name="state">code</field>
         <field name="code">action = model.action_open_my_project_tasks()</field>
     </record>
 
+    <!-- Action Server: Mở danh sách công việc theo dự án user giám sát -->
+    <record id="action_daily_task_my_supervisor_projects" model="ir.actions.server">
+        <field name="name">Dự án (Tôi giám sát)</field>
+        <field name="model_id" ref="daily_work_task.model_daily_task"/>
+        <field name="state">code</field>
+        <field name="code">action = model.action_open_my_supervisor_project_tasks()</field>
+    </record>
+
     <!-- Menuitem: Nằm ngay dưới "Quản lý công việc" trong Công việc hàng ngày -->
     <menuitem id="menu_daily_work_projects"
-              name="Dự án"
+              name="Dự án (Tôi phụ trách)"
               parent="daily_work_task.menu_daily_work_cat_tasks"
               action="action_daily_task_my_projects"
               sequence="2"
+              groups="daily_work_task.group_daily_work_user"/>
+
+    <menuitem id="menu_daily_work_projects_supervisor"
+              name="Dự án (Tôi giám sát)"
+              parent="daily_work_task.menu_daily_work_cat_tasks"
+              action="action_daily_task_my_supervisor_projects"
+              sequence="3"
               groups="daily_work_task.group_daily_work_user"/>
 </odoo>

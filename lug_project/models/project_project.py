@@ -109,6 +109,24 @@ class ProjectProject(models.Model):
     )
     lug_supply_date = fields.Date(string="Ngày cung cấp", tracking=True)
     lug_content = fields.Text(string="Nội dung dự án")
+    lug_pic_pool_ids = fields.Many2many(
+        "res.users",
+        "lug_project_pic_pool_rel",
+        "project_id",
+        "user_id",
+        string="Nhóm người phụ trách",
+        domain="[('share', '=', False)]",
+        tracking=True,
+    )
+    lug_staff_pool_ids = fields.Many2many(
+        "res.users",
+        "lug_project_staff_pool_rel",
+        "project_id",
+        "user_id",
+        string="Nhóm nhân sự",
+        domain="[('share', '=', False)]",
+        tracking=True,
+    )
     lug_assignee_ids = fields.Many2many(
         "res.users",
         "lug_project_assignee_rel",
@@ -927,6 +945,8 @@ class ProjectProject(models.Model):
                 vals["user_id"] = vals["lug_pic_id"]
             elif vals.get("lug_pic_id") and not vals.get("user_id"):
                 vals["user_id"] = vals["lug_pic_id"]
+            if vals.get("lug_pic_id") and not vals.get("lug_pic_pool_ids"):
+                vals["lug_pic_pool_ids"] = [(4, vals["lug_pic_id"])]
             vals.setdefault("allow_milestones", True)
             vals.setdefault("lug_workflow_state", "todo")
         records = super().create(vals_list)

@@ -711,6 +711,9 @@
                 <i class="lg-bar"/> Mẫu dự án
                 <i class="lg-ms"/> Milestone
             </div>
+            <LugProjectExportModal t-if="state.showExportModal"
+                                   close="() => this.closeExportModal()"
+                                   onExport="(ids) => this.exportTimelineProjects(ids)"/>
         </div>
     </t>
 </templates>

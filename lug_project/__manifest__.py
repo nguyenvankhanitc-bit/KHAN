@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Nhập dự án (custom Project)",
-    "version": "19.0.1.65.0",
+    "version": "19.0.1.66.0",
     "category": "Services/Project",
     "summary": "Bổ sung form nhập dự án trên app Project chuẩn Odoo",
     "description": """
@@ -56,6 +56,9 @@ Inherit app Project native — không tạo model dự án mới.
             "lug_project/static/src/app_perm/lug_project_app_perm.scss",
             "lug_project/static/src/app_perm/lug_project_app_perm.xml",
             "lug_project/static/src/app_perm/lug_project_app_perm.js",
+            "lug_project/static/src/export_modal/lug_project_export_modal.scss",
+            "lug_project/static/src/export_modal/lug_project_export_modal.xml",
+            "lug_project/static/src/export_modal/lug_project_export_modal.js",
             "lug_project/static/src/shell/lug_project_shell.scss",
             "lug_project/static/src/shell/lug_project_report.scss",
             "lug_project/static/src/shell/lug_project_shell.xml",

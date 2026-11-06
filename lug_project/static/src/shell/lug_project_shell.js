@@ -19,6 +19,7 @@ import { standardActionServiceProps } from "@web/webclient/actions/action_servic
 import { View, getDefaultConfig } from "@web/views/view";
 import { LugProjectList } from "../list/lug_project_list";
 import { LugProjectAppPerm } from "../app_perm/lug_project_app_perm";
+import { LugProjectExportModal } from "../export_modal/lug_project_export_modal";
 
 const SIDEBAR_WIDTH_KEY = "lug_project_sidebar_width";
 const SIDEBAR_COLLAPSED_KEY = "lug_project_sidebar_collapsed";
@@ -66,6 +67,7 @@ const NAV_SECTIONS = [
             { code: "people", label: "Báo cáo nhân sự", icon: "fa-user-circle" },
             { code: "perf", label: "Báo cáo hiệu suất", icon: "fa-line-chart" },
             { code: "kpi", label: "Báo cáo KPI Dự án", icon: "fa-trophy" },
+            { code: "export_report", label: "Xuất báo cáo", icon: "fa-file-excel-o" },
         ],
     },
     {
@@ -110,6 +112,9 @@ const IN_SHELL_CODES = [
 
 /** Sidebar code → group key of lug.project.app.perm. */
 function permGroupOf(code) {
+    if (code === "export_report") {
+        return "report_all";
+    }
     return CONFIG_CODES.includes(code) ? "config" : code;
 }
 
@@ -217,7 +222,7 @@ function emptyDashboard() {
 
 export class LugProjectShell extends Component {
     static template = "lug_project.LugProjectShell";
-    static components = { View, LugProjectList, LugProjectAppPerm };
+    static components = { View, LugProjectList, LugProjectAppPerm, LugProjectExportModal };
     static props = { ...standardActionServiceProps, "*": true };
     // Must match action_lug_project_shell path (same as workspace: /odoo/du-an).
     static path = "du-an";
@@ -243,6 +248,7 @@ export class LugProjectShell extends Component {
         this.overviewScrollRef = useRef("overviewScroll");
         this.state = useState({
             active: "kpi",
+            showExportModal: false,
             query: "",
             viewError: "",
             loading: true,
@@ -1828,7 +1834,44 @@ body.o_lug_shell_active .o_action_manager { flex: 1 1 auto !important; min-heigh
         }
     }
 
+    openExportModal() {
+        this.state.showExportModal = true;
+    }
+
+    closeExportModal() {
+        this.state.showExportModal = false;
+    }
+
+    async exportTimelineProjects(projectIds) {
+        try {
+            const result = await this.orm.call("project.project", "export_lug_timeline_xlsx", [], {
+                project_ids: projectIds,
+            });
+            if (result && result.file_base64) {
+                this._downloadBase64Excel(
+                    result.file_base64,
+                    result.filename || "bao_cao_tien_do_thi_cong.xlsx"
+                );
+                this.notification.add("Xuất báo cáo tiến độ thành công.", { type: "success" });
+            }
+        } catch (error) {
+            this.notification.add(
+                error?.data?.message || error?.message || "Xuất báo cáo thất bại.",
+                { type: "danger" }
+            );
+            throw error;
+        }
+    }
+
     async setActive(code) {
+        if (code === "export_report") {
+            if (!this.hasPerm("export_report", "export") && !this.hasPerm("export_report", "view")) {
+                this.notification.add("Bạn không có quyền xuất báo cáo.", { type: "warning" });
+                return;
+            }
+            this.openExportModal();
+            return;
+        }
         if (code === "intake") {
             if (!this.hasPerm("intake", "others")) {
                 this.notification.add("Bạn không có quyền thêm mới dự án.", { type: "warning" });

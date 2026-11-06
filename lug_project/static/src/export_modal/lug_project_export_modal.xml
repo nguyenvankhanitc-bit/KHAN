@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="lug_project.LugProjectExportModal">
+        <div class="o_lug_export_modal_backdrop" t-on-click.self="onClose">
+            <div class="o_lug_export_modal_dialog">
+                <header class="o_lug_export_modal_header">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="fa fa-file-excel-o text-success fs-4"/>
+                        <div>
+                            <h5 class="mb-0 fw-bold">Xuất Báo Cáo Tiến Độ Dự Án (Excel)</h5>
+                            <small class="text-muted">Chọn một hoặc nhiều dự án để xuất file Excel dạng timeline theo từng sheet riêng</small>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" t-att-disabled="state.exporting" t-on-click="onClose" aria-label="Close"/>
+                </header>
+
+                <div class="o_lug_export_modal_body">
+                    <!-- Thanh công cụ tìm kiếm và chọn tất cả -->
+                    <div class="o_lug_export_modal_toolbar">
+                        <div class="o_lug_export_search_wrap">
+                            <i class="fa fa-search o_lug_export_search_icon"/>
+                            <input type="text"
+                                   class="form-control o_lug_export_search_input"
+                                   placeholder="Tìm theo tên hoặc mã dự án..."
+                                   t-model="state.searchTerm"/>
+                            <button t-if="state.searchTerm"
+                                    type="button"
+                                    class="btn o_lug_export_search_clear"
+                                    t-on-click="() => this.state.searchTerm = ''">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center justify-content-between mt-2">
+                            <button type="button"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    t-on-click="toggleSelectAll">
+                                <i t-att-class="'fa ' + (isAllSelected ? 'fa-check-square-o' : 'fa-square-o')"/>
+                                <span class="ms-1" t-esc="isAllSelected ? 'Bỏ chọn tất cả' : 'Chọn tất cả'"/>
+                            </button>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                Đã chọn: <strong t-esc="selectedCount"/> / <t t-esc="state.projects.length"/> dự án
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Danh sách dự án -->
+                    <div class="o_lug_export_list_wrap">
+                        <t t-if="state.loading">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa fa-spinner fa-spin fa-2x mb-2"/>
+                                <div>Đang tải danh sách dự án...</div>
+                            </div>
+                        </t>
+                        <t t-elif="!filteredProjects.length">
+                            <div class="text-center py-5 text-muted">
+                                <i class="fa fa-folder-open-o fa-2x mb-2 text-secondary"/>
+                                <div>Không tìm thấy dự án nào phù hợp.</div>
+                            </div>
+                        </t>
+                        <t t-else="">
+                            <table class="table table-hover align-middle mb-0 o_lug_export_table">
+                                <thead class="table-light sticky-top">
+                                    <tr>
+                                        <th style="width: 44px;" class="text-center">#</th>
+                                        <th style="width: 140px;">Mã dự án</th>
+                                        <th>Tên dự án</th>
+                                        <th style="width: 180px;" class="text-end">Thời gian</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="filteredProjects" t-as="p" t-key="p.id">
+                                        <tr t-att-class="'o_lug_export_row' + (state.selectedIds.has(p.id) ? ' table-active' : '')"
+                                            t-on-click="() => this.toggleProject(p.id)"
+                                            style="cursor: pointer;">
+                                            <td class="text-center" t-on-click.stop="">
+                                                <input type="checkbox"
+                                                       class="form-check-input"
+                                                       t-att-checked="state.selectedIds.has(p.id)"
+                                                       t-on-change="() => this.toggleProject(p.id)"/>
+                                            </td>
+                                            <td class="fw-semibold text-secondary">
+                                                <t t-esc="p.code or '—'"/>
+                                            </td>
+                                            <td class="fw-medium text-dark">
+                                                <t t-esc="p.name"/>
+                                            </td>
+                                            <td class="text-end text-muted small">
+                                                <t t-if="p.date_start or p.date_end">
+                                                    <t t-esc="p.date_start or '—'"/> <i class="fa fa-arrow-right mx-1 text-secondary"/> <t t-esc="p.date_end or '—'"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted">—</span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </t>
+                    </div>
+                </div>
+
+                <footer class="o_lug_export_modal_footer">
+                    <button type="button"
+                            class="btn btn-secondary px-3"
+                            t-att-disabled="state.exporting"
+                            t-on-click="onClose">
+                        Đóng
+                    </button>
+                    <button type="button"
+                            class="btn btn-success px-4 d-flex align-items-center gap-2"
+                            t-att-disabled="state.exporting or selectedCount === 0"
+                            t-on-click="onConfirmExport">
+                        <t t-if="state.exporting">
+                            <i class="fa fa-spinner fa-spin"/>
+                            <span>Đang tạo file Excel...</span>
+                        </t>
+                        <t t-else="">
+                            <i class="fa fa-download"/>
+                            <span>Tải file Excel (<t t-esc="selectedCount"/> DA)</span>
+                        </t>
+                    </button>
+                </footer>
+            </div>
+        </div>
+    </t>
+</templates>

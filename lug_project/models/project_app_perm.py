@@ -299,6 +299,13 @@ class ProjectProjectAppPerm(models.Model):
         return super(ProjectProjectAppPerm, self._lug_scoped("kpi")).export_lug_overview_xlsx(
             period=period, type_id=type_id)
 
+    @api.model
+    def export_lug_timeline_xlsx(self, project_ids=None):
+        self._lug_perm().check("report_all", "export")
+        return super(ProjectProjectAppPerm, self._lug_scoped("report_all")).export_lug_timeline_xlsx(
+            project_ids=project_ids
+        )
+
     def _lug_check_list_write(self):
         self._lug_perm().check(self._lug_list_perm_group(), "write")
 

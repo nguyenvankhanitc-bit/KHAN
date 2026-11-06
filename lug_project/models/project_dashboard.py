@@ -1801,6 +1801,361 @@ class ProjectProjectDashboard(models.Model):
             "file_base64": base64.b64encode(buffer.getvalue()).decode(),
         }
 
+    @api.model
+    def export_lug_timeline_xlsx(self, project_ids=None):
+        """Xuất báo cáo tiến độ thi công nhiều dự án theo mẫu sheet BA RIA + BDUONG."""
+        import base64
+        import calendar
+        import io
+        import re
+
+        try:
+            import xlsxwriter
+        except ImportError as exc:
+            raise UserError("Thiếu thư viện xlsxwriter. Cài đặt: pip install xlsxwriter") from exc
+
+        if isinstance(project_ids, (int, str)):
+            project_ids = [int(project_ids)]
+        elif project_ids:
+            project_ids = [int(p) for p in project_ids if p]
+
+        if project_ids:
+            projects = self.browse(project_ids).filtered(lambda p: p.exists())
+        else:
+            projects = self.search([("active", "=", True)], order="lug_stt, id")
+
+        if not projects:
+            raise UserError("Vui lòng chọn ít nhất 1 dự án để xuất báo cáo.")
+
+        buffer = io.BytesIO()
+        workbook = xlsxwriter.Workbook(buffer, {"in_memory": True})
+
+        fmt_title = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 14,
+            "bold": True,
+            "valign": "vcenter",
+        })
+        fmt_month = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#EFEFEF",
+        })
+        fmt_dow = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 9,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#EFEFEF",
+        })
+        fmt_dow_sunday = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 9,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#FFFF00",
+        })
+        fmt_header_col = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "text_wrap": True,
+            "border": 1,
+            "bg_color": "#EFEFEF",
+        })
+        fmt_header_day = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 9,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#EFEFEF",
+        })
+        fmt_header_day_sunday = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 9,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#FFFF00",
+        })
+
+        fmt_stage = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#CCCCCC",
+        })
+        fmt_stage_center = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+            "bg_color": "#CCCCCC",
+        })
+        fmt_stage_pct = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "num_format": "0%",
+            "border": 1,
+            "bg_color": "#CCCCCC",
+        })
+
+        fmt_task_text = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "valign": "vcenter",
+            "border": 1,
+        })
+        fmt_task_center = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+        })
+        fmt_task_pct = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "align": "center",
+            "valign": "vcenter",
+            "num_format": "0%",
+            "border": 1,
+        })
+
+        fmt_timeline_x = workbook.add_format({
+            "font_name": "Roboto",
+            "font_size": 10,
+            "bold": True,
+            "align": "center",
+            "valign": "vcenter",
+            "border": 1,
+        })
+        fmt_timeline_sunday = workbook.add_format({
+            "border": 1,
+            "bg_color": "#FFFF00",
+        })
+        fmt_timeline_empty = workbook.add_format({
+            "border": 1,
+        })
+
+        DOW_VI = {0: "T2", 1: "T3", 2: "T4", 3: "T5", 4: "T6", 5: "T7", 6: "CN"}
+
+        def sanitize_sheet_name(name, existing):
+            clean = re.sub(r'[\\/:*?\[\]]', '-', str(name or "Dự án")).strip()
+            clean = re.sub(r'\s+', ' ', clean)[:31].strip() or "Dự án"
+            base = clean[:27]
+            candidate = clean
+            cnt = 1
+            while candidate.lower() in existing:
+                candidate = f"{base}-{cnt}"[:31]
+                cnt += 1
+            existing.add(candidate.lower())
+            return candidate
+
+        used_sheets = set()
+        today = fields.Date.context_today(self)
+
+        for project in projects:
+            sheet_title = sanitize_sheet_name(project.name, used_sheets)
+            sheet = workbook.add_worksheet(sheet_title)
+
+            stage_lines = project.stage_line_ids.sorted(key=lambda s: (s.sequence, s.id))
+            all_tasks = stage_lines.mapped("task_ids").sorted(key=lambda t: (t.sequence, t.id))
+
+            valid_dates = []
+            for t in all_tasks:
+                s_date = t.execution_date or t.deadline
+                e_date = t.deadline or t.execution_date
+                if s_date:
+                    valid_dates.append(fields.Date.to_date(s_date))
+                if e_date:
+                    valid_dates.append(fields.Date.to_date(e_date))
+
+            if not valid_dates and project.date_start:
+                valid_dates.append(fields.Date.to_date(project.date_start))
+            if not valid_dates and project.date_end:
+                valid_dates.append(fields.Date.to_date(project.date_end))
+
+            if valid_dates:
+                min_date = min(valid_dates)
+                max_date = max(valid_dates)
+                if min_date > max_date:
+                    min_date, max_date = max_date, min_date
+            else:
+                min_date = today.replace(day=1)
+                _, last_day = calendar.monthrange(today.year, today.month)
+                max_date = today.replace(day=last_day)
+
+            if (max_date - min_date).days > 365:
+                max_date = min_date + timedelta(days=365)
+
+            total_days = (max_date - min_date).days + 1
+            day_list = [min_date + timedelta(days=i) for i in range(total_days)]
+
+            # Chiều rộng cột
+            sheet.set_column(0, 0, 3)
+            sheet.set_column(1, 1, 8)
+            sheet.set_column(2, 2, 38)
+            sheet.set_column(3, 3, 26)
+            sheet.set_column(4, 4, 13)
+            sheet.set_column(5, 5, 13)
+            sheet.set_column(6, 6, 10)
+            sheet.set_column(7, 7, 14)
+
+            start_timeline_col = 8
+            for col_idx in range(start_timeline_col, start_timeline_col + total_days):
+                sheet.set_column(col_idx, col_idx, 4.5)
+
+            # Row 0: Tiêu đề
+            proj_title = f"TIMELINE THI CÔNG - {str(project.name or '').upper()}"
+            sheet.write(0, 1, proj_title, fmt_title)
+            sheet.set_row(0, 24)
+
+            # Row 1: Nhóm tháng
+            sheet.set_row(1, 20)
+            month_groups = []
+            cur_month = None
+            start_m_col = None
+            for idx, d in enumerate(day_list):
+                c = start_timeline_col + idx
+                m_label = f"THÁNG {d.month:02d}"
+                if m_label != cur_month:
+                    if cur_month is not None:
+                        month_groups.append((cur_month, start_m_col, c - 1))
+                    cur_month = m_label
+                    start_m_col = c
+            if cur_month is not None:
+                month_groups.append((cur_month, start_m_col, start_timeline_col + total_days - 1))
+
+            for m_label, s_col, e_col in month_groups:
+                if s_col == e_col:
+                    sheet.write(1, s_col, m_label, fmt_month)
+                else:
+                    sheet.merge_range(1, s_col, 1, e_col, m_label, fmt_month)
+
+            # Row 2: Thứ trong tuần
+            sheet.set_row(2, 18)
+            for idx, d in enumerate(day_list):
+                c = start_timeline_col + idx
+                dow = d.weekday()
+                dow_label = DOW_VI.get(dow, "")
+                sheet.write(2, c, dow_label, fmt_dow_sunday if dow == 6 else fmt_dow)
+
+            # Row 3: Header cột & ngày
+            sheet.set_row(3, 30)
+            sheet.write(3, 1, "STT", fmt_header_col)
+            sheet.write(3, 2, "TIÊU ĐỀ CÔNG VIỆC", fmt_header_col)
+            sheet.write(3, 3, "NGƯỜI \nPHỤ TRÁCH \nCÔNG VIỆC", fmt_header_col)
+            sheet.write(3, 4, "NGÀY BẮT \nĐẦU", fmt_header_col)
+            sheet.write(3, 5, "NGÀY ĐẾN \nHẠN", fmt_header_col)
+            sheet.write(3, 6, "THỜI \nGIAN", fmt_header_col)
+            sheet.write(3, 7, "% CÔNG VIỆC \nHOÀN THÀNH", fmt_header_col)
+
+            for idx, d in enumerate(day_list):
+                c = start_timeline_col + idx
+                is_sun = (d.weekday() == 6)
+                sheet.write(3, c, d.day, fmt_header_day_sunday if is_sun else fmt_header_day)
+
+            # Dữ liệu Giai đoạn & Công việc
+            current_row = 4
+            stage_counter = 1
+            for stage in stage_lines:
+                tasks = stage.task_ids.sorted(key=lambda t: (t.sequence, t.id))
+                pct_map = {"done": 1.0, "in_progress": 0.5, "draft": 0.0}
+                if tasks:
+                    stage_pct = sum(pct_map.get(t.state, 0.0) for t in tasks) / len(tasks)
+                else:
+                    stage_pct = 0.0
+
+                stage_label = f"{stage_counter}.0"
+                stage_name = stage.name or f"GIAI ĐOẠN {stage_counter}"
+
+                sheet.set_row(current_row, 20)
+                sheet.write(current_row, 1, stage_label, fmt_stage_center)
+                sheet.write(current_row, 2, stage_name, fmt_stage)
+                sheet.write(current_row, 3, "", fmt_stage)
+                sheet.write(current_row, 4, "", fmt_stage)
+                sheet.write(current_row, 5, "", fmt_stage)
+                sheet.write(current_row, 6, "", fmt_stage)
+                sheet.write(current_row, 7, stage_pct, fmt_stage_pct)
+
+                for idx in range(total_days):
+                    c = start_timeline_col + idx
+                    sheet.write(current_row, c, "", fmt_stage)
+
+                current_row += 1
+
+                task_counter = 1
+                for task in tasks:
+                    t_stt = task.stt or f"{stage_counter}.{task_counter}"
+                    t_name = task.name or ""
+                    t_assignee = task.user_display or ", ".join(task.user_ids.mapped("name")) or ""
+                    s_d = fields.Date.to_date(task.execution_date or task.deadline)
+                    e_d = fields.Date.to_date(task.deadline or task.execution_date)
+                    if s_d and e_d and s_d > e_d:
+                        s_d, e_d = e_d, s_d
+
+                    duration = ((e_d - s_d).days + 1) if (s_d and e_d) else ""
+                    t_pct = pct_map.get(task.state, 0.0)
+
+                    sheet.set_row(current_row, 18)
+                    sheet.write(current_row, 1, t_stt, fmt_task_center)
+                    sheet.write(current_row, 2, t_name, fmt_task_text)
+                    sheet.write(current_row, 3, t_assignee, fmt_task_text)
+                    sheet.write(current_row, 4, s_d.strftime("%d/%m/%Y") if s_d else "", fmt_task_center)
+                    sheet.write(current_row, 5, e_d.strftime("%d/%m/%Y") if e_d else "", fmt_task_center)
+                    sheet.write(current_row, 6, duration, fmt_task_center)
+                    sheet.write(current_row, 7, t_pct, fmt_task_pct)
+
+                    for idx, d in enumerate(day_list):
+                        c = start_timeline_col + idx
+                        dow = d.weekday()
+                        in_range = (s_d and e_d and s_d <= d <= e_d)
+                        if in_range:
+                            sheet.write(current_row, c, "X", fmt_timeline_x)
+                        elif dow == 6:
+                            sheet.write(current_row, c, "", fmt_timeline_sunday)
+                        else:
+                            sheet.write(current_row, c, "", fmt_timeline_empty)
+
+                    current_row += 1
+                    task_counter += 1
+
+                stage_counter += 1
+
+            if not stage_lines:
+                sheet.write(current_row, 1, "", fmt_task_center)
+                sheet.write(current_row, 2, "Chưa có giai đoạn / công việc cho dự án này.", fmt_task_text)
+                for c in range(3, start_timeline_col + total_days):
+                    sheet.write(current_row, c, "", fmt_task_center)
+
+        workbook.close()
+        filename = f"bao_cao_tien_do_thi_cong_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx"
+        return {
+            "filename": filename,
+            "file_base64": base64.b64encode(buffer.getvalue()).decode(),
+        }
+
     _LUG_REPORT_SEGMENTS = (
         ("done", "Hoàn thành", "#16a34a"),
         ("progress", "Đang làm", "#2563eb"),

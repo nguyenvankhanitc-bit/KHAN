@@ -325,6 +325,7 @@
                                                                 <th>PHỤ TRÁCH</th>
                                                                 <th>DEADLINE</th>
                                                                 <th>TRẠNG THÁI</th>
+                                                                <th>HOÀN THÀNH</th>
                                                                 <th>TIMELEFT</th>
                                                                 <th>GHI CHÚ</th>
                                                             </tr>
@@ -345,6 +346,15 @@
                                                                         <td>
                                                                             <span t-att-class="'o_lug_plist_task_pill is-' + task.state" t-esc="task.state_label"/>
                                                                         </td>
+                                                                        <td class="text-center o_lug_plist_check_cell" t-on-click.stop="">
+                                                                            <input type="checkbox"
+                                                                                   class="form-check-input o_lug_plist_task_check"
+                                                                                   t-att-checked="task.state === 'done'"
+                                                                                   t-att-disabled="!canWrite"
+                                                                                   t-att-title="canWrite ? (task.state === 'done' ? 'Bỏ hoàn thành' : 'Đánh dấu hoàn thành') : 'Chỉ xem'"
+                                                                                   t-on-click.stop=""
+                                                                                   t-on-change="(ev) => this.toggleTaskDone(row.id, task.id, ev.target.checked)"/>
+                                                                        </td>
                                                                         <td>
                                                                             <span t-att-class="'o_lug_plist_tl is-' + (task.timeleft.state or 'none')">
                                                                                 <i t-if="task.timeleft.state === 'ok'" class="fa fa-hourglass-half"/>
@@ -359,11 +369,11 @@
                                                                     <td>
                                                                         <span t-att-class="'o_lug_plist_phase is-' + stage.phase_tone" t-esc="stage.phase_label"/>
                                                                     </td>
-                                                                    <td colspan="7" class="o_lug_plist_muted text-center py-2">Chưa có công việc trong giai đoạn này.</td>
+                                                                    <td colspan="8" class="o_lug_plist_muted text-center py-2">Chưa có công việc trong giai đoạn này.</td>
                                                                 </tr>
                                                             </t>
                                                             <tr t-if="!state.details[row.id].stages.length">
-                                                                <td colspan="8" class="o_lug_plist_muted text-center py-3">Chưa có giai đoạn công việc. Bấm "Sửa dự án" để thêm giai đoạn.</td>
+                                                                <td colspan="9" class="o_lug_plist_muted text-center py-3">Chưa có giai đoạn công việc. Bấm "Sửa dự án" để thêm giai đoạn.</td>
                                                             </tr>
                                                         </tbody>
                                                     </table>

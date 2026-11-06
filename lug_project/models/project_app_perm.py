@@ -313,6 +313,11 @@ class ProjectProjectAppPerm(models.Model):
         self._lug_check_list_write()
         return super().lug_set_workflow_state(state)
 
+    @api.model
+    def lug_toggle_stage_task_done(self, task_id, is_done=None, new_state=None):
+        self._lug_check_list_write()
+        return super().lug_toggle_stage_task_done(task_id, is_done=is_done, new_state=new_state)
+
     def lug_toggle_priority(self):
         self._lug_check_list_write()
         return super().lug_toggle_priority()

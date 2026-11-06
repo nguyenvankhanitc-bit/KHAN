@@ -537,3 +537,70 @@ class ProjectStageTask(models.Model):
             "views": [(view.id, "form")],
             "target": "new",
         }
+
+    def lug_toggle_done(self, is_done=None, new_state=None):
+        self.ensure_one()
+        project = self.project_id or (self.stage_id and self.stage_id.project_id)
+        if project and hasattr(project, "_lug_check_list_write"):
+            project._lug_check_list_write()
+        elif hasattr(self, "check_access_rights"):
+            self.check_access_rights("write")
+            self.check_access_rule("write")
+
+        today = fields.Date.context_today(self)
+        if isinstance(today, str):
+            try:
+                from datetime import datetime
+                today = datetime.strptime(today[:10], "%Y-%m-%d").date()
+            except Exception:
+                today = None
+        exec_date = self.execution_date
+        if isinstance(exec_date, str):
+            try:
+                from datetime import datetime
+                exec_date = datetime.strptime(exec_date[:10], "%Y-%m-%d").date()
+            except Exception:
+                exec_date = None
+
+        if new_state:
+            state_val = new_state
+        elif is_done is not None:
+            if is_done:
+                state_val = "done"
+            else:
+                state_val = "in_progress" if (exec_date and today and exec_date <= today) else "draft"
+        else:
+            if self.state == "done":
+                state_val = "in_progress" if (exec_date and today and exec_date <= today) else "draft"
+            else:
+                state_val = "done"
+
+        self.write({"state": state_val})
+
+        Dashboard = self.env["project.project"]
+        tl = Dashboard._lug_task_timeleft_meta(self, today=today) if hasattr(Dashboard, "_lug_task_timeleft_meta") else {}
+        state_labels = getattr(Dashboard, "_LUG_TASK_STATE_LABELS", {
+            "draft": "Chưa bắt đầu",
+            "in_progress": "Đang làm",
+            "done": "Hoàn thành",
+        })
+
+        done_count = 0
+        total_count = 0
+        pct = 0
+        if project:
+            tasks = project.stage_line_ids.task_ids
+            done_count = len(tasks.filtered(lambda t: t.state == "done"))
+            total_count = len(tasks)
+            pct = project.lug_progress_pct or 0
+
+        return {
+            "task_id": self.id,
+            "state": self.state,
+            "is_done": self.state == "done",
+            "state_label": state_labels.get(self.state, self.state),
+            "timeleft": tl,
+            "progress_done": done_count,
+            "progress_total": total_count,
+            "progress_pct": pct,
+        }

@@ -790,6 +790,26 @@
     }
 }
 
+.o_lug_plist_check_cell {
+    text-align: center;
+    vertical-align: middle !important;
+    width: 90px;
+    min-width: 80px;
+}
+
+.o_lug_plist_task_check {
+    cursor: pointer;
+    width: 17px;
+    height: 17px;
+    margin: 0 auto;
+    accent-color: #16a34a;
+
+    &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+}
+
 .o_lug_plist_task_user {
     color: #64748b;
     margin-right: 4px;

@@ -2321,6 +2321,13 @@ class ProjectProjectDashboard(models.Model):
         return True
 
     @api.model
+    def lug_toggle_stage_task_done(self, task_id, is_done=None, new_state=None):
+        task = self.env["project.stage.task"].browse(int(task_id)).exists()
+        if not task:
+            return False
+        return task.lug_toggle_done(is_done=is_done, new_state=new_state)
+
+    @api.model
     def _lug_project_access_groups(self):
         return (
             self.env.ref("project.group_project_user"),

@@ -540,4 +540,128 @@ export class LugProjectList extends Component {
             await this.action.doAction(act);
         }
     }
+
+    async toggleTaskDone(projectId, taskId, isDone) {
+        if (!this.canWrite) {
+            return;
+        }
+        const detail = this.state.details[projectId];
+        let targetTask = null;
+        if (detail?.stages) {
+            for (const stage of detail.stages) {
+                const found = stage.tasks?.find((t) => t.id === taskId);
+                if (found) {
+                    targetTask = found;
+                    break;
+                }
+            }
+        }
+        const prev = targetTask
+            ? {
+                  state: targetTask.state,
+                  state_label: targetTask.state_label,
+                  timeleft: targetTask.timeleft,
+              }
+            : null;
+
+        if (targetTask) {
+            targetTask.state = isDone ? "done" : "draft";
+            targetTask.state_label = isDone ? "Hoàn thành" : "Chưa bắt đầu";
+            if (isDone) {
+                targetTask.timeleft = { state: "done", label: "Hoàn thành", short: "Xong" };
+            }
+            let doneCount = 0;
+            let totalCount = 0;
+            for (const stage of detail.stages || []) {
+                for (const t of stage.tasks || []) {
+                    totalCount++;
+                    if (t.state === "done") {
+                        doneCount++;
+                    }
+                }
+            }
+            detail.progress_done = doneCount;
+            detail.progress_total = totalCount;
+            const pct = totalCount > 0 ? Math.round((doneCount * 100) / totalCount) : 0;
+            detail.progress_pct = pct;
+
+            const row = this.state.rows.find((item) => item.id === projectId);
+            if (row) {
+                row.progress_pct = pct;
+                this.decorateRow(row);
+            }
+        }
+
+        try {
+            const res = await this.orm.call(
+                "project.stage.task",
+                "lug_toggle_done",
+                [[taskId], isDone],
+                this.permKwargs
+            );
+            if (res && targetTask) {
+                targetTask.state = res.state;
+                targetTask.state_label = res.state_label;
+                targetTask.timeleft = res.timeleft;
+                if (detail) {
+                    detail.progress_done = res.progress_done;
+                    detail.progress_total = res.progress_total;
+                    detail.progress_pct = res.progress_pct;
+                }
+                const row = this.state.rows.find((item) => item.id === projectId);
+                if (row) {
+                    row.progress_pct = res.progress_pct;
+                    this.decorateRow(row);
+                }
+            }
+            await this.reloadListSilently();
+            await this.refreshDetailSilently(projectId);
+        } catch (error) {
+            console.error(error);
+            if (targetTask && prev) {
+                targetTask.state = prev.state;
+                targetTask.state_label = prev.state_label;
+                targetTask.timeleft = prev.timeleft;
+            }
+            this.notification.add(
+                error?.data?.message || error?.message || "Không cập nhật được trạng thái công việc.",
+                { type: "danger" }
+            );
+            await this.refreshDetailSilently(projectId);
+        }
+    }
+
+    async reloadListSilently() {
+        try {
+            const data = await this.orm.call("project.project", "get_lug_project_list_data", [], {
+                ...this.filterParams,
+                offset: this.state.offset,
+                limit: PAGE_SIZE,
+            });
+            this.state.total = data.total || 0;
+            this.state.rows = (data.rows || []).map((row) => this.decorateRow(row));
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    async refreshDetailSilently(projectId) {
+        try {
+            const detail = await this.orm.call(
+                "project.project",
+                "get_lug_project_list_detail",
+                [projectId]
+            );
+            if (detail) {
+                this.state.details[projectId] = detail;
+                const row = this.state.rows.find((item) => item.id === projectId);
+                if (row) {
+                    row.progress_pct = detail.progress_pct;
+                    this.decorateRow(row);
+                }
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
 }

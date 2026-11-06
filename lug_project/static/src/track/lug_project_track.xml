@@ -1,0 +1,384 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="lug_project.LugProjectTrack">
+        <div class="o_lug_plist o_lug_ptrack" data-lug-ptrack="v2-horizontal-sync-modal">
+            <header class="o_lug_plist_toolbar">
+                <button t-if="!props.archived and canCreate" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click="onNew">
+                    + Tạo mới
+                </button>
+                <button t-if="canExport"
+                        type="button"
+                        class="o_lug_plist_btn o_lug_plist_btn--export"
+                        t-att-disabled="state.exporting"
+                        t-on-click="exportExcel">
+                    <i class="fa fa-file-excel-o"/> Xuất Excel
+                </button>
+                <div class="o_lug_plist_search">
+                    <i class="fa fa-search"/>
+                    <input type="search"
+                           placeholder="Tìm mã, tên dự án, cửa hàng, trưởng DA..."
+                           t-att-value="state.search"
+                           t-on-input="onSearchInput"/>
+                </div>
+                <button type="button"
+                        t-att-class="'o_lug_plist_urgent_btn' + (state.priority === 'urgent' ? ' is-on' : '')"
+                        t-on-click="onUrgentOnly">
+                    Chỉ hiện dự án Gấp
+                </button>
+                <div class="o_lug_plist_pager">
+                    <span t-esc="pagerLabel"/>
+                    <button type="button" class="o_lug_plist_pg" t-att-disabled="!canPrev" t-on-click="prevPage">
+                        <i class="fa fa-angle-left"/>
+                    </button>
+                    <button type="button" class="o_lug_plist_pg" t-att-disabled="!canNext" t-on-click="nextPage">
+                        <i class="fa fa-angle-right"/>
+                    </button>
+                </div>
+            </header>
+
+            <div class="o_lug_plist_filters">
+                <label>
+                    Độ ưu tiên
+                    <select t-att-value="state.priority" t-on-change="(ev) => this.onFilterChange('priority', ev)">
+                        <option value="">Tất cả</option>
+                        <option value="urgent">Gấp</option>
+                        <option value="normal">Không gấp</option>
+                    </select>
+                </label>
+                <label>
+                    Loại dự án
+                    <select t-att-value="state.typeId" t-on-change="(ev) => this.onFilterChange('typeId', ev)">
+                        <option value="">Tất cả</option>
+                        <t t-foreach="state.types" t-as="type" t-key="type.id">
+                            <option t-att-value="type.id" t-esc="type.name"/>
+                        </t>
+                    </select>
+                </label>
+                <label>
+                    Trạng thái
+                    <select t-att-value="state.status" t-on-change="(ev) => this.onFilterChange('status', ev)">
+                        <option value="">Tất cả</option>
+                        <t t-foreach="state.statuses" t-as="st" t-key="st.key">
+                            <option t-att-value="st.key" t-esc="st.label"/>
+                        </t>
+                    </select>
+                </label>
+                <label>
+                    Trưởng DA
+                    <select t-att-value="state.managerId" t-on-change="(ev) => this.onFilterChange('managerId', ev)">
+                        <option value="">Tất cả</option>
+                        <t t-foreach="state.managers" t-as="mgr" t-key="mgr.id">
+                            <option t-att-value="mgr.id" t-esc="mgr.name"/>
+                        </t>
+                    </select>
+                </label>
+                <label>
+                    Bộ lọc ngày
+                    <select t-att-value="state.datePreset" t-on-change="(ev) => this.onFilterChange('datePreset', ev)">
+                        <option value="">Tất cả thời gian</option>
+                        <option value="today">Hôm nay</option>
+                        <option value="week">Tuần này</option>
+                        <option value="month">Tháng này</option>
+                        <option value="quarter">Quý này</option>
+                        <option value="year">Năm nay</option>
+                        <option value="custom">Khoảng tùy chọn</option>
+                    </select>
+                </label>
+                <label>
+                    Lọc theo
+                    <select t-att-value="state.dateField" t-on-change="(ev) => this.onFilterChange('dateField', ev)">
+                        <option value="start">Ngày bắt đầu</option>
+                        <option value="deadline">Deadline</option>
+                    </select>
+                </label>
+                <t t-if="state.datePreset === 'custom'">
+                    <label>
+                        Từ ngày
+                        <input type="date" t-att-value="state.dateFrom" t-on-change="(ev) => this.onFilterChange('dateFrom', ev)"/>
+                    </label>
+                    <label>
+                        Đến ngày
+                        <input type="date" t-att-value="state.dateTo" t-on-change="(ev) => this.onFilterChange('dateTo', ev)"/>
+                    </label>
+                </t>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="o_lug_plist_loading">
+                    <i class="fa fa-spinner fa-spin"/> Đang tải danh sách dự án...
+                </div>
+            </t>
+            <t t-elif="!state.rows.length">
+                <div class="o_lug_plist_empty">
+                    Không có dự án nào.
+                </div>
+            </t>
+            <t t-else="">
+                <div class="o_lug_plist_board">
+                    <t t-foreach="state.rows" t-as="row" t-key="row.id">
+                        <article t-att-class="'o_lug_dash_card is-open o_lug_ptrack_card' + (row.deadline_late ? ' is-late' : '')"
+                                 t-att-data-project-id="row.id"
+                                 t-on-click="() => this.openProjectModal(row.id)">
+                            <header class="o_lug_dash_head">
+                                <div class="o_lug_dash_title">
+                                    <span class="o_lug_dash_code">[<t t-esc="row.code"/>]</span>
+                                    <span class="o_lug_dash_name" t-esc="row.name"/>
+                                    <span t-if="row.type_tone !== 'none'"
+                                          t-att-class="'o_lug_dash_type is-' + row.type_tone"
+                                          t-esc="row.type_label"/>
+                                    <span t-if="row.contract_files and row.contract_files.length" class="o_lug_dash_contracts ms-2">
+                                        <t t-foreach="row.contract_files" t-as="cfile" t-key="cfile.id">
+                                            <a t-att-href="cfile.download_url"
+                                               target="_blank"
+                                               class="o_lug_contract_chip"
+                                               t-att-title="'Tải về: ' + cfile.name"
+                                               t-on-click.stop="">
+                                                <i t-att-class="'fa ' + cfile.icon + ' me-1'"/>
+                                                <span t-esc="cfile.name"/>
+                                            </a>
+                                        </t>
+                                    </span>
+                                </div>
+                                <div class="o_lug_dash_head_side">
+                                    <span class="o_lug_ptrack_hint" title="Nhấn để xem danh sách công việc">
+                                        <i class="fa fa-tasks"/> Xem công việc
+                                    </span>
+                                    <button t-if="state.canDelete and canWrite and !props.archived"
+                                            type="button"
+                                            class="o_lug_plist_del"
+                                            title="Xóa dự án"
+                                            t-on-click.stop="(ev) => this.deleteProject(row.id, ev)">
+                                        <i class="fa fa-trash-o"/> Xóa
+                                    </button>
+                                    <span t-att-class="'o_lug_dash_status is-' + row.status_tone"
+                                          t-esc="row.status_badge"/>
+                                </div>
+                            </header>
+                            <div class="o_lug_dash_body">
+                                <section class="o_lug_dash_col o_lug_dash_col--people">
+                                    <h4>NHÂN SỰ</h4>
+                                    <p>
+                                        <span>Trưởng DA:</span>
+                                        <b t-esc="row.manager_name"/>
+                                    </p>
+                                    <div class="o_lug_dash_people_row">
+                                        <span>Phụ trách:</span>
+                                        <div class="o_lug_plist_assignees">
+                                            <t t-if="!row.assignees.users.length">
+                                                <span class="o_lug_plist_muted">—</span>
+                                            </t>
+                                            <t t-else="">
+                                                <t t-foreach="row.assignees.users" t-as="user" t-key="user.id">
+                                                    <span class="o_lug_plist_user" t-att-title="user.name">
+                                                        <t t-if="user.avatar_url">
+                                                            <img class="o_lug_plist_user_img" t-att-src="user.avatar_url" t-att-alt="user.name"/>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <span class="o_lug_plist_user_init" t-att-style="'background:' + user.color" t-esc="user.initial"/>
+                                                        </t>
+                                                    </span>
+                                                </t>
+                                                <span t-if="row.assignees.extra" class="o_lug_plist_user_more">+<t t-esc="row.assignees.extra"/></span>
+                                            </t>
+                                        </div>
+                                    </div>
+                                    <p>
+                                        <span>Độ ưu tiên:</span>
+                                        <b t-if="row.urgent" class="is-urgent">Gấp</b>
+                                        <b t-else="">Bình thường</b>
+                                    </p>
+                                </section>
+                                <section class="o_lug_dash_col o_lug_dash_col--plan">
+                                    <h4>KẾ HOẠCH &amp; DEADLINE</h4>
+                                    <p><span>Bắt đầu:</span> <b t-esc="row.date_start or '—'"/></p>
+                                    <p><span>Deadline:</span> <b t-esc="row.deadline or '—'"/></p>
+                                    <div t-att-class="'o_lug_dash_dl is-' + row.dl_state" t-esc="row.dl_badge"/>
+                                    <div class="o_lug_dash_contracts_section mt-2">
+                                        <span>File hợp đồng:</span>
+                                        <t t-if="!row.contract_files or !row.contract_files.length">
+                                            <span class="o_lug_plist_muted ms-1">—</span>
+                                        </t>
+                                        <t t-else="">
+                                            <div class="o_lug_contracts_wrap mt-1">
+                                                <t t-foreach="row.contract_files" t-as="cfile" t-key="cfile.id">
+                                                    <a t-att-href="cfile.download_url"
+                                                       target="_blank"
+                                                       class="o_lug_contract_chip"
+                                                       t-att-title="'Tải về: ' + cfile.name"
+                                                       t-on-click.stop="">
+                                                        <i t-att-class="'fa ' + cfile.icon + ' me-1'"/>
+                                                        <span t-esc="cfile.name"/>
+                                                    </a>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </section>
+                                <section class="o_lug_dash_col o_lug_dash_col--progress">
+                                    <div class="o_lug_dash_donut" t-att-style="row.donut_style">
+                                        <div class="o_lug_dash_donut_inner">
+                                            <strong><t t-esc="row.progress_pct"/>%</strong>
+                                        </div>
+                                    </div>
+                                    <div class="o_lug_dash_progress_meta">
+                                        <div class="o_lug_dash_progress_label">
+                                            TIẾN ĐỘ THỰC HIỆN DỰ ÁN (<t t-esc="row.progress_pct"/>%)
+                                        </div>
+                                        <div t-att-class="'o_lug_dash_bar ' + row.bar_class">
+                                            <i t-att-style="'width:' + row.progress_pct + '%'"/>
+                                        </div>
+                                        <div class="o_lug_dash_phases_cap">4 GIAI ĐOẠN QUẢN TRỊ DỰ ÁN</div>
+                                        <div class="o_lug_dash_pills">
+                                            <t t-foreach="row.pills" t-as="pill" t-key="pill.index">
+                                                <span t-att-class="'o_lug_dash_pill is-' + pill.state">
+                                                    <t t-if="pill.state === 'done'">✓ </t>
+                                                    <t t-elif="pill.state === 'active'">▶ </t>
+                                                    GĐ <t t-esc="pill.index"/>: <t t-esc="pill.name"/>
+                                                </span>
+                                            </t>
+                                        </div>
+                                    </div>
+                                </section>
+                            </div>
+                        </article>
+                    </t>
+                </div>
+            </t>
+
+            <!-- Modal hiển thị danh sách công việc theo giai đoạn khi nhấn vào dự án -->
+            <div t-if="state.expandedId" class="o_lpt_modal_backdrop" t-on-click.self="closeProjectModal">
+                <div class="o_lpt_modal" role="dialog" aria-modal="true">
+                    <header class="o_lpt_modal_head">
+                        <div class="o_lpt_modal_title_wrap">
+                            <h3 class="o_lpt_modal_title">
+                                <span t-if="activeModalDetail or activeModalRow" class="o_lug_dash_code me-2">
+                                    [<t t-esc="(activeModalDetail and activeModalDetail.code) or (activeModalRow and activeModalRow.code)"/>]
+                                </span>
+                                <span t-esc="(activeModalDetail and activeModalDetail.name) or (activeModalRow and activeModalRow.name) or 'Chi tiết công việc dự án'"/>
+                            </h3>
+                            <div t-if="activeModalDetail" class="o_lpt_modal_subtitle">
+                                <span class="badge bg-primary-subtle text-primary me-2">
+                                    <t t-esc="activeModalDetail.progress_done"/> / <t t-esc="activeModalDetail.progress_total"/> hoàn thành
+                                </span>
+                                <span class="o_lpt_modal_pct">
+                                    Tiến độ: <strong><t t-esc="activeModalDetail.progress_pct"/>%</strong>
+                                </span>
+                            </div>
+                        </div>
+                        <div class="o_lpt_modal_head_actions">
+                            <div t-if="canWrite and activeModalDetail" class="o_lug_plist_wf">
+                                <t t-foreach="workflowOptions" t-as="opt" t-key="opt.key">
+                                    <button type="button"
+                                            t-att-class="'o_lug_plist_wf_btn' + (activeModalDetail.workflow_state === opt.key ? ' is-active' : '')"
+                                            t-on-click.stop="() => this.setWorkflow(state.expandedId, opt.key)"
+                                            t-esc="opt.label"/>
+                                </t>
+                            </div>
+                            <button type="button" class="o_lpt_modal_close" title="Đóng" aria-label="Close" t-on-click="closeProjectModal">
+                                <i class="fa fa-times"/>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div class="o_lpt_modal_body">
+                        <t t-if="state.detailLoading === state.expandedId and !activeModalDetail">
+                            <div class="o_lug_plist_detail_loading">
+                                <i class="fa fa-spinner fa-spin"/> Đang tải danh sách công việc...
+                            </div>
+                        </t>
+                        <t t-elif="activeModalDetail">
+                            <section class="o_lug_plist_phases">
+                                <header class="o_lug_plist_phases_head d-flex justify-content-between align-items-center">
+                                    <span>DANH SÁCH CÔNG VIỆC CHI TIẾT THEO GIAI ĐOẠN:</span>
+                                    <span class="badge bg-primary-subtle text-primary">
+                                        <t t-esc="activeModalDetail.progress_done"/> / <t t-esc="activeModalDetail.progress_total"/> hoàn thành
+                                    </span>
+                                </header>
+                                <div class="o_lug_plist_phases_table_wrap">
+                                    <table class="o_lug_plist_phases_table">
+                                        <thead>
+                                            <tr>
+                                                <th>GIAI ĐOẠN</th>
+                                                <th>STT</th>
+                                                <th>TÊN CÔNG VIỆC GIAI ĐOẠN</th>
+                                                <th>PHỤ TRÁCH</th>
+                                                <th>DEADLINE</th>
+                                                <th>TRẠNG THÁI</th>
+                                                <th>HOÀN THÀNH</th>
+                                                <th>TIMELEFT</th>
+                                                <th>GHI CHÚ</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="activeModalDetail.stages" t-as="stage" t-key="stage.id">
+                                                <t t-foreach="stage.tasks" t-as="task" t-key="task.id">
+                                                    <tr class="o_lug_plist_task_row" t-on-click="() => this.openTask(task.id)" style="cursor: pointer;">
+                                                        <td>
+                                                            <span t-att-class="'o_lug_plist_phase is-' + stage.phase_tone" t-esc="stage.phase_label"/>
+                                                        </td>
+                                                        <td class="text-center" t-esc="task.stt"/>
+                                                        <td class="fw-semibold text-primary">
+                                                            <t t-esc="task.name"/>
+                                                        </td>
+                                                        <td><i class="fa fa-user o_lug_plist_task_user"/> <t t-esc="task.assignees"/></td>
+                                                        <td t-esc="task.deadline or '—'"/>
+                                                        <td>
+                                                            <span t-att-class="'o_lug_plist_task_pill is-' + task.state" t-esc="task.state_label"/>
+                                                        </td>
+                                                        <td class="text-center o_lug_plist_check_cell" t-on-click.stop="">
+                                                            <input type="checkbox"
+                                                                   class="form-check-input o_lug_plist_task_check"
+                                                                   t-att-checked="task.state === 'done'"
+                                                                   t-att-disabled="!canWrite"
+                                                                   t-att-title="canWrite ? (task.state === 'done' ? 'Bỏ hoàn thành' : 'Đánh dấu hoàn thành') : 'Chỉ xem'"
+                                                                   t-on-click.stop=""
+                                                                   t-on-change="(ev) => this.toggleTaskDone(state.expandedId, task.id, ev.target.checked)"/>
+                                                        </td>
+                                                        <td>
+                                                            <span t-att-class="'o_lug_plist_tl is-' + (task.timeleft.state or 'none')">
+                                                                <i t-if="task.timeleft.state === 'ok'" class="fa fa-hourglass-half"/>
+                                                                <i t-elif="task.timeleft.state === 'late'" class="fa fa-exclamation-triangle"/>
+                                                                <t t-esc="task.timeleft.short or task.timeleft.label"/>
+                                                            </span>
+                                                        </td>
+                                                        <td t-esc="task.notes or '—'"/>
+                                                    </tr>
+                                                </t>
+                                                <tr t-if="!stage.tasks.length" class="o_lug_plist_phase_empty">
+                                                    <td>
+                                                        <span t-att-class="'o_lug_plist_phase is-' + stage.phase_tone" t-esc="stage.phase_label"/>
+                                                    </td>
+                                                    <td colspan="8" class="o_lug_plist_muted text-center py-2">Chưa có công việc trong giai đoạn này.</td>
+                                                </tr>
+                                            </t>
+                                            <tr t-if="!activeModalDetail.stages.length">
+                                                <td colspan="9" class="o_lug_plist_muted text-center py-3">Chưa có giai đoạn công việc. Bấm "Sửa dự án" để thêm giai đoạn.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </t>
+                    </div>
+
+                    <footer class="o_lpt_modal_foot o_lug_plist_detail_actions">
+                        <button t-if="canWrite" type="button" class="o_lug_plist_btn o_lug_plist_btn--primary" t-on-click.stop="() => this.editProject(state.expandedId)">
+                            <i class="fa fa-pencil"/> Sửa dự án
+                        </button>
+                        <button t-if="canWrite" type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost" t-on-click.stop="() => this.addTask(state.expandedId)">
+                            + Thêm công việc
+                        </button>
+                        <button type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost" t-on-click.stop="() => this.viewGanttFromModal(state.expandedId)">
+                            <i class="fa fa-bar-chart"/> Xem Gantt Chart
+                        </button>
+                        <button type="button" class="o_lug_plist_btn o_lug_plist_btn--ghost ms-auto" t-on-click.stop="closeProjectModal">
+                            Đóng
+                        </button>
+                    </footer>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

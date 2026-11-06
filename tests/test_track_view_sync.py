@@ -209,5 +209,86 @@ class TestTrackBackendSync(unittest.TestCase):
         self.assertEqual(proj.phase_num, 4)
 
 
+class TestTrackFrontendSyncAndModal(unittest.TestCase):
+    def setUp(self):
+        import os
+        import xml.etree.ElementTree as ET
+        self.ET = ET
+        self.repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.shell_js_path = os.path.join(self.repo_root, "lug_project/static/src/shell/lug_project_shell.js")
+        self.shell_xml_path = os.path.join(self.repo_root, "lug_project/static/src/shell/lug_project_shell.xml")
+        self.list_js_path = os.path.join(self.repo_root, "lug_project/static/src/list/lug_project_list.js")
+        self.track_js_path = os.path.join(self.repo_root, "lug_project/static/src/track/lug_project_track.js")
+        self.track_xml_path = os.path.join(self.repo_root, "lug_project/static/src/track/lug_project_track.xml")
+        self.track_scss_path = os.path.join(self.repo_root, "lug_project/static/src/track/lug_project_track.scss")
+
+    def test_shell_passes_track_perm_and_callbacks(self):
+        with open(self.shell_js_path, "r", encoding="utf-8") as f:
+            shell_js = f.read()
+        self.assertIn("this.isProjectList || this.isProjectTrack", shell_js)
+
+        tree = self.ET.parse(self.shell_xml_path)
+        root = tree.getroot()
+        track_nodes = list(root.iter("LugProjectTrack"))
+        self.assertEqual(len(track_nodes), 1)
+        track_el = track_nodes[0]
+        self.assertEqual(track_el.attrib.get("perm"), "listPerm")
+        self.assertIn("onNew.bind", track_el.attrib)
+        self.assertIn("onGantt.bind", track_el.attrib)
+
+    def test_list_passes_perm_kwargs_and_refreshes_workflow(self):
+        with open(self.list_js_path, "r", encoding="utf-8") as f:
+            list_js = f.read()
+        self.assertGreaterEqual(list_js.count("...this.permKwargs"), 3)
+        self.assertIn("await this.reloadListSilently()", list_js.split("async setWorkflow")[1].split("async togglePriority")[0])
+
+    def test_track_component_extends_list_and_manages_modal(self):
+        with open(self.track_js_path, "r", encoding="utf-8") as f:
+            track_js = f.read()
+        self.assertIn("extends LugProjectList", track_js)
+        self.assertIn('static template = "lug_project.LugProjectTrack"', track_js)
+        self.assertIn("openProjectModal(", track_js)
+        self.assertIn("closeProjectModal(", track_js)
+        self.assertIn("get activeModalRow()", track_js)
+        self.assertIn("viewGanttFromModal(", track_js)
+        self.assertIn('"track"', track_js)
+
+    def test_track_template_renders_horizontal_cards_and_interactive_modal(self):
+        tree = self.ET.parse(self.track_xml_path)
+        with open(self.track_xml_path, "r", encoding="utf-8") as f:
+            track_xml = f.read()
+
+        # Full-width horizontal dashboard cards always visible (F1 / AE1)
+        self.assertIn("o_lug_dash_card", track_xml)
+        self.assertIn("o_lug_dash_body", track_xml)
+        self.assertIn("o_lug_dash_donut", track_xml)
+        self.assertIn("o_lug_dash_bar", track_xml)
+        self.assertIn("o_lug_dash_pills", track_xml)
+        self.assertNotIn('t-if="isExpanded(row.id)" class="o_lug_dash_body"', track_xml)
+
+        # Clicking card opens modal while contract/delete clicks stop propagation (R5)
+        self.assertIn("this.openProjectModal(row.id)", track_xml)
+        self.assertIn("t-on-click.stop", track_xml)
+
+        # Interactive modal with staged tasks, checkbox, workflow switcher, and footer actions (F2 / AE2 / AE3)
+        self.assertIn("o_lpt_modal_backdrop", track_xml)
+        self.assertIn("o_lpt_modal", track_xml)
+        self.assertIn("o_lug_plist_phases_table", track_xml)
+        self.assertIn("HOÀN THÀNH", track_xml)
+        self.assertIn("this.toggleTaskDone(", track_xml)
+        self.assertIn("this.openTask(task.id)", track_xml)
+        self.assertIn("this.setWorkflow(", track_xml)
+        self.assertIn("this.editProject(", track_xml)
+        self.assertIn("this.addTask(", track_xml)
+        self.assertIn("this.viewGanttFromModal(", track_xml)
+        self.assertIn('t-att-disabled="!canWrite"', track_xml)
+
+    def test_track_scss_enables_host_vertical_scroll(self):
+        with open(self.track_scss_path, "r", encoding="utf-8") as f:
+            track_scss = f.read()
+        self.assertIn("o_lps_view_host--ptrack", track_scss)
+        self.assertIn("overflow-y: auto !important", track_scss)
+
+
 if __name__ == "__main__":
     unittest.main()

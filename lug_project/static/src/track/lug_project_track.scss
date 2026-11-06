@@ -1,0 +1,138 @@
+/* Theo dõi dự án (LugProjectTrack) — Horizontal Dashboard Cards + Interactive Task Modal */
+
+.o_lps_view_host.o_lps_view_host--ptrack {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+
+.o_lug_ptrack {
+    .o_lug_ptrack_card {
+        cursor: pointer;
+        transition: box-shadow 0.16s ease, transform 0.12s ease;
+
+        &:hover {
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+            border-color: #93c5fd;
+        }
+    }
+
+    .o_lug_ptrack_hint {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #2563eb;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        border-radius: 999px;
+        padding: 3px 10px;
+        white-space: nowrap;
+    }
+}
+
+.o_lpt_modal_backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    z-index: 1060;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.o_lpt_modal {
+    background: #ffffff;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 1180px;
+    max-height: 88vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 48px -12px rgba(15, 23, 42, 0.28);
+    border: 1px solid #e2e8f0;
+}
+
+.o_lpt_modal_head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px 22px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-wrap: wrap;
+}
+
+.o_lpt_modal_title_wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+}
+
+.o_lpt_modal_title {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.35;
+}
+
+.o_lpt_modal_subtitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.o_lpt_modal_head_actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.o_lpt_modal_close {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+
+    &:hover {
+        background: #f1f5f9;
+        color: #0f172a;
+    }
+}
+
+.o_lpt_modal_body {
+    padding: 18px 22px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.o_lpt_modal_foot {
+    padding: 14px 22px;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 0 !important;
+}

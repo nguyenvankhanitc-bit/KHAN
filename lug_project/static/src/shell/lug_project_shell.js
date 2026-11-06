@@ -17,6 +17,7 @@ import {
 } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { View, getDefaultConfig } from "@web/views/view";
+import { LugProjectTrack } from "../track/lug_project_track";
 import { LugProjectList } from "../list/lug_project_list";
 import { LugProjectAppPerm } from "../app_perm/lug_project_app_perm";
 import { LugProjectExportModal } from "../export_modal/lug_project_export_modal";
@@ -222,7 +223,7 @@ function emptyDashboard() {
 
 export class LugProjectShell extends Component {
     static template = "lug_project.LugProjectShell";
-    static components = { View, LugProjectList, LugProjectAppPerm, LugProjectExportModal };
+    static components = { View, LugProjectList, LugProjectTrack, LugProjectAppPerm, LugProjectExportModal };
     static props = { ...standardActionServiceProps, "*": true };
     // Must match action_lug_project_shell path (same as workspace: /odoo/du-an).
     static path = "du-an";
@@ -464,6 +465,10 @@ export class LugProjectShell extends Component {
 
     get isProjectList() {
         return ["list", "archived", "overdue"].includes(this.state.active);
+    }
+
+    get isProjectTrack() {
+        return this.state.active === "track";
     }
 
     get isGantt() {
@@ -835,7 +840,7 @@ export class LugProjectShell extends Component {
     }
 
     get listPerm() {
-        const code = this.isProjectList ? this.state.active : "list";
+        const code = this.isProjectList || this.isProjectTrack ? this.state.active : "list";
         return {
             group: code,
             write: this.hasPerm(code, "write"),

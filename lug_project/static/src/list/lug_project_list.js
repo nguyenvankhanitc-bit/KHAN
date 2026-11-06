@@ -237,6 +237,7 @@ export class LugProjectList extends Component {
         try {
             const data = await this.orm.call("project.project", "get_lug_project_list_data", [], {
                 ...this.filterParams,
+                ...this.permKwargs,
                 offset: this.state.offset,
                 limit: PAGE_SIZE,
             });
@@ -331,7 +332,10 @@ export class LugProjectList extends Component {
                 row.status = state;
                 row.status_label =
                     WORKFLOW_OPTIONS.find((opt) => opt.key === state)?.label || state;
+                this.decorateRow(row);
             }
+            await this.reloadListSilently();
+            await this.refreshDetailSilently(projectId);
         } catch (error) {
             console.error(error);
         }
@@ -384,7 +388,7 @@ export class LugProjectList extends Component {
                 "project.project",
                 "export_lug_project_list_xlsx",
                 [],
-                ids.length ? { ids } : this.filterParams
+                ids.length ? { ids, ...this.permKwargs } : { ...this.filterParams, ...this.permKwargs }
             );
             if (!result?.file_base64) {
                 this.notification.add("Không có dữ liệu để xuất.", { type: "warning" });
@@ -635,6 +639,7 @@ export class LugProjectList extends Component {
         try {
             const data = await this.orm.call("project.project", "get_lug_project_list_data", [], {
                 ...this.filterParams,
+                ...this.permKwargs,
                 offset: this.state.offset,
                 limit: PAGE_SIZE,
             });

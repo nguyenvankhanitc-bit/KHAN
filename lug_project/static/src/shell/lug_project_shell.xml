@@ -586,6 +586,12 @@
                                             onNew.bind="() => this.setActive('intake')"
                                             onGantt.bind="(id) => this.viewGanttForProject(id)"/>
                         </div>
+                        <div t-elif="isProjectTrack" class="o_lps_view_host o_lps_view_host--ptrack">
+                            <LugProjectTrack t-key="state.active"
+                                             perm="listPerm"
+                                             onNew.bind="() => this.setActive('intake')"
+                                             onGantt.bind="(id) => this.viewGanttForProject(id)"/>
+                        </div>
                         <div t-else="" class="o_lps_view_host">
                             <View t-props="viewProps" t-key="state.active"/>
                         </div>

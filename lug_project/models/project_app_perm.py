@@ -32,7 +32,7 @@ PERMS = ("view", "others", "write", "export")
 PERM_LABELS = {"view": "Xem", "others": "Thêm", "write": "Chỉnh sửa", "export": "Xuất Excel"}
 LABELS = dict(GROUP_LIST)
 ACTS = {"view": "xem", "others": "thêm mới ở", "write": "chỉnh sửa", "export": "xuất Excel"}
-LIST_GROUPS = ("list", "overdue", "archived")
+LIST_GROUPS = ("list", "track", "overdue", "archived")
 
 
 class LugProjectAppPerm(models.Model):

@@ -332,6 +332,7 @@ class ProjectProject(models.Model):
         return 0
 
     @api.depends(
+        "lug_workflow_state",
         "stage_id",
         "stage_id.name",
         "stage_line_ids.sequence",
@@ -343,6 +344,9 @@ class ProjectProject(models.Model):
     )
     def _compute_project_phase(self):
         for rec in self:
+            if getattr(rec, "lug_workflow_state", False) == "done":
+                rec.phase_num = 4
+                continue
             phase = rec._lug_phase_from_name(rec.stage_id.name)
             lines = rec.stage_line_ids.sorted(lambda line: (line.sequence or 0, line.id or 0))[:4]
             if lines:
@@ -369,6 +373,8 @@ class ProjectProject(models.Model):
         "task_ids.stage_id",
         "task_ids.stage_id.fold",
         "task_ids.is_closed",
+        "task_ids.lug_status",
+        "task_ids.lug_progress",
         "stage_line_ids.task_ids.state",
     )
     def _compute_project_progress(self):
@@ -382,8 +388,15 @@ class ProjectProject(models.Model):
             if not total_tasks:
                 rec.progress = 0.0
                 continue
+            progresses = [int(getattr(task, "lug_progress", 0) or 0) for task in rec.task_ids]
+            if any(progresses):
+                pct = round(sum(progresses) / float(total_tasks), 1)
+                rec.progress = max(0.0, min(100.0, pct))
+                continue
             closed_tasks = rec.task_ids.filtered(
-                lambda task: task.is_closed or (task.stage_id and task.stage_id.fold)
+                lambda task: getattr(task, "lug_status", False) == "done"
+                or task.is_closed
+                or (task.stage_id and task.stage_id.fold)
             )
             rec.progress = round((len(closed_tasks) / float(total_tasks)) * 100, 1)
 

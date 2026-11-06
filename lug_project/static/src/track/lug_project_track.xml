@@ -164,24 +164,9 @@
                                     </p>
                                     <div class="o_lug_dash_people_row">
                                         <span>Phụ trách:</span>
-                                        <div class="o_lug_plist_assignees">
-                                            <t t-if="!row.assignees.users.length">
-                                                <span class="o_lug_plist_muted">—</span>
-                                            </t>
-                                            <t t-else="">
-                                                <t t-foreach="row.assignees.users" t-as="user" t-key="user.id">
-                                                    <span class="o_lug_plist_user" t-att-title="user.name">
-                                                        <t t-if="user.avatar_url">
-                                                            <img class="o_lug_plist_user_img" t-att-src="user.avatar_url" t-att-alt="user.name"/>
-                                                        </t>
-                                                        <t t-else="">
-                                                            <span class="o_lug_plist_user_init" t-att-style="'background:' + user.color" t-esc="user.initial"/>
-                                                        </t>
-                                                    </span>
-                                                </t>
-                                                <span t-if="row.assignees.extra" class="o_lug_plist_user_more">+<t t-esc="row.assignees.extra"/></span>
-                                            </t>
-                                        </div>
+                                        <t t-call="lug_project.LugPlistAssignees">
+                                            <t t-set="assignees" t-value="row.assignees"/>
+                                        </t>
                                     </div>
                                     <p>
                                         <span>Độ ưu tiên:</span>
@@ -246,7 +231,6 @@
                 </div>
             </t>
 
-            <!-- Modal hiển thị danh sách công việc theo giai đoạn khi nhấn vào dự án -->
             <div t-if="state.expandedId" class="o_lpt_modal_backdrop" t-on-click.self="closeProjectModal">
                 <div class="o_lpt_modal" role="dialog" aria-modal="true">
                     <header class="o_lpt_modal_head">

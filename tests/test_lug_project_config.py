@@ -28,17 +28,19 @@ if "odoo" not in sys.modules:
     mock_api.constrains = lambda *args: lambda f: f
 
     mock_fields = MagicMock()
-    mock_fields.Date = MagicMock(side_effect=lambda **kwargs: kwargs)
-    mock_fields.Char = MagicMock(side_effect=lambda **kwargs: kwargs)
-    mock_fields.Float = MagicMock(side_effect=lambda **kwargs: kwargs)
-    mock_fields.Integer = MagicMock(side_effect=lambda **kwargs: kwargs)
+    mock_fields.Date = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
+    mock_fields.Char = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
+    mock_fields.Float = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
+    mock_fields.Integer = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
     mock_fields.Selection = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
     mock_fields.Many2one = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
     mock_fields.Many2many = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
     mock_fields.One2many = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
-    mock_fields.Text = MagicMock(side_effect=lambda **kwargs: kwargs)
+    mock_fields.Text = MagicMock(side_effect=lambda *args, **kwargs: kwargs)
     mock_fields.Date.context_today = MagicMock(return_value="2026-11-07")
-    mock_fields.Date.to_date = lambda d: d
+    mock_fields.Date.to_date = lambda d: (
+        __import__("datetime").date.fromisoformat(d) if isinstance(d, str) else d
+    )
 
     mock_models = MagicMock()
 
@@ -48,6 +50,9 @@ if "odoo" not in sys.modules:
 
         def __init__(self, *args, **kwargs):
             pass
+
+        def write(self, vals):
+            return True
 
         def sudo(self):
             return self

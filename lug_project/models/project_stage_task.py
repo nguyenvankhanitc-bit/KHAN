@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from datetime import date, timedelta
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
 
@@ -71,6 +72,11 @@ class ProjectStageTask(models.Model):
     )
     execution_date = fields.Date(string="Ngày thực hiện")
     deadline = fields.Date(string="Ngày hết hạn")
+    lug_notified_deadline = fields.Date(
+        string="Deadline đã thông báo",
+        copy=False,
+        index=True,
+    )
     state = fields.Selection(
         [
             ("draft", "Chưa bắt đầu"),
@@ -501,6 +507,8 @@ class ProjectStageTask(models.Model):
         return records
 
     def write(self, vals):
+        if "deadline" in vals and "lug_notified_deadline" not in vals:
+            vals["lug_notified_deadline"] = False
         vals = dict(vals)
         if vals.get("user_id") and not vals.get("user_ids"):
             vals["user_ids"] = [(6, 0, [vals.pop("user_id")])]
@@ -605,3 +613,99 @@ class ProjectStageTask(models.Model):
             "progress_total": total_count,
             "progress_pct": pct,
         }
+
+    def _send_deadline_reminder_notification(self, recipients, message_content):
+        """Gửi thông báo qua Odoo Discuss / Web Bus cho danh sách users liên quan."""
+        if not recipients or not message_content:
+            return
+
+        # 1. Gửi qua Odoo Bus notification để hiện popup real-time trên giao diện web
+        for user in recipients:
+            if user.partner_id and hasattr(user.partner_id, "_bus_send"):
+                try:
+                    user.partner_id._bus_send(
+                        "mail.simple_notification",
+                        {
+                            "type": "warning",
+                            "message": message_content,
+                            "title": "Thông báo hạn chót công việc",
+                            "sticky": True,
+                        },
+                    )
+                except Exception:
+                    pass
+
+        # 2. Gửi tin nhắn Odoo Discuss DM nếu có discuss.channel
+        if "discuss.channel" in self.env:
+            bot_partner = (
+                self.env.ref("base.partner_root", raise_if_not_found=False)
+                or (self.env.ref("base.user_root", raise_if_not_found=False) and self.env.ref("base.user_root").partner_id)
+                or self.env.user.partner_id
+            )
+            for user in recipients:
+                if not user.partner_id or user.share:
+                    continue
+                try:
+                    with self.env.cr.savepoint():
+                        chat = (
+                            self.env["discuss.channel"]
+                            .sudo()
+                            .with_user(user)
+                            ._get_or_create_chat([bot_partner.id], pin=True)
+                        )
+                        chat.with_user(bot_partner.user_ids[:1] or user).sudo().message_post(
+                            body=message_content,
+                            message_type="comment",
+                            subtype_xmlid="mail.mt_comment",
+                            author_id=bot_partner.id,
+                        )
+                        chat.sudo()._broadcast(user.partner_id.ids)
+                except Exception:
+                    pass
+
+    @api.model
+    def _cron_check_deadline_reminders(self):
+        """Kiểm tra và gửi thông báo cho các công việc sắp đến hạn."""
+        lead_days_param = self.env["ir.config_parameter"].sudo().get_param("lug_project.notify_lead_days", "1")
+        try:
+            lead_days = int(lead_days_param)
+        except (ValueError, TypeError):
+            lead_days = 1
+        lead_days = max(1, lead_days)
+
+        today = fields.Date.context_today(self)
+        today_date = fields.Date.to_date(today)
+        if isinstance(today_date, str):
+            today_date = date.fromisoformat(today_date)
+        warning_limit = today_date + timedelta(days=lead_days)
+
+        domain = [
+            ("state", "not in", ["done", "cancel"]),
+            ("deadline", "!=", False),
+            ("deadline", "<=", warning_limit),
+            ("deadline", ">=", today),
+        ]
+        tasks = self.search(domain)
+
+        for task in tasks:
+            if task.lug_notified_deadline and task.lug_notified_deadline == task.deadline:
+                continue
+
+            all_users = set()
+            for user_field in (task.user_ids, task.supervisor_ids, task.staff_ids):
+                if user_field:
+                    for u in user_field:
+                        all_users.add(u)
+            recipients = [
+                u for u in all_users
+                if getattr(u, "active", True)
+                and not getattr(u, "share", False)
+                and getattr(u, "partner_id", False)
+            ]
+            if not recipients:
+                continue
+
+            msg = f"Công việc {task.name or ''} sắp đến thời hạn, vui lòng nhanh chóng hoàn thành và xác nhận công việc"
+            task._send_deadline_reminder_notification(recipients, msg)
+            task.sudo().write({"lug_notified_deadline": task.deadline})
+

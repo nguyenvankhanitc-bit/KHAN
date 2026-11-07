@@ -38,6 +38,7 @@ Inherit app Project native — không tạo model dự án mới.
         "views/project_shell_views.xml",
         "views/project_menus.xml",
         "views/daily_task_views.xml",
+        "views/res_config_settings_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

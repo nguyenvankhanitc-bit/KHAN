@@ -14,3 +14,4 @@ from . import hr_expense
 from . import project_dashboard
 from . import project_app_perm
 from . import project_perf_report
+from . import res_config_settings

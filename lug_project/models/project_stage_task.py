@@ -36,6 +36,7 @@ class ProjectStageTask(models.Model):
         store=False,
     )
     name = fields.Char(string="Tên công việc giai đoạn", required=True)
+    partner_name = fields.Char(string="Đối tác")
     user_ids = fields.Many2many(
         "res.users",
         "project_stage_task_user_rel",

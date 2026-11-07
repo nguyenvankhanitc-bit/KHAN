@@ -28,6 +28,7 @@ class ProjectTask(models.Model):
         string="Bước giai đoạn",
         index=True,
     )
+    lug_partner_name = fields.Char(string="Đối tác")
     lug_pic_id = fields.Many2one(
         "res.users",
         string="Người phụ trách",

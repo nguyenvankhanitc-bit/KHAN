@@ -37,6 +37,7 @@
                     </div>
                     <group>
                         <group string="Phân công &amp; Tiến độ">
+                            <field name="lug_partner_name" string="Đối tác"/>
                             <field name="lug_pic_id" widget="many2one_avatar_user" required="1"/>
                             <field name="lug_supervisor_id" widget="many2one_avatar_user"/>
                             <field name="lug_execution_date"/>

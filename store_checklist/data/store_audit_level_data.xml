@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="level_excellent" model="store.audit.level"><field name="name">Tốt</field><field name="min_score">95</field><field name="tone">green</field></record>
+    <record id="level_good" model="store.audit.level"><field name="name">Khá</field><field name="min_score">80</field><field name="tone">blue</field></record>
+    <record id="level_average" model="store.audit.level"><field name="name">Trung bình</field><field name="min_score">60</field><field name="tone">orange</field></record>
+    <record id="level_improve" model="store.audit.level"><field name="name">Cần cải thiện</field><field name="min_score">50</field><field name="tone">red</field></record>
+    <record id="level_poor" model="store.audit.level"><field name="name">Kém</field><field name="min_score">0</field><field name="tone">darkred</field></record>
+</odoo>

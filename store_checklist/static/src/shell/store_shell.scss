@@ -1,0 +1,523 @@
+/* Hiện lại nút Mới / Lưu trên list Cài đặt (shell Internet đang ẩn breadcrumb + nút). */
+.o_phan_he_shell.o_internet_master .o_internet_content {
+    .o_control_panel_breadcrumbs {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        height: auto !important;
+        min-height: 32px;
+    }
+
+    .o_control_panel_main_buttons {
+        display: flex !important;
+        align-items: center;
+        gap: 8px;
+        height: auto !important;
+        min-height: 32px;
+    }
+
+    /* Ẩn chữ breadcrumb, chỉ giữ nút thao tác. */
+    .o_breadcrumb,
+    .o_last_breadcrumb_item {
+        display: none !important;
+    }
+
+    .o_list_button_add,
+    .o_list_button_save,
+    .o_list_button_discard,
+    .o_form_button_create,
+    .o_form_button_save,
+    .o_form_button_cancel,
+    .o_form_button_edit {
+        display: inline-flex !important;
+        align-items: center;
+    }
+}
+
+.o_store_shell_home {
+    padding: 20px 24px 32px;
+    color: #1f2937;
+
+    h1 {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f4e79;
+    }
+
+    .o_store_shell_head p {
+        margin: 4px 0 16px;
+        color: #64748b;
+    }
+}
+
+.o_store_shell_cards {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.o_store_shell_card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+    border-top: 3px solid #94a3b8;
+
+    span {
+        display: block;
+        font-size: 13px;
+        color: #64748b;
+    }
+
+    strong {
+        display: block;
+        margin-top: 6px;
+        font-size: 26px;
+        line-height: 1.1;
+    }
+
+    &.is-blue { border-top-color: #2563eb; strong { color: #1d4ed8; } }
+    &.is-green { border-top-color: #16a34a; strong { color: #15803d; } }
+    &.is-red { border-top-color: #dc2626; strong { color: #b91c1c; } }
+    &.is-amber { border-top-color: #d97706; strong { color: #b45309; } }
+}
+
+.o_store_shell_table {
+    background: #fff;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th, td {
+        padding: 10px 14px;
+        text-align: left;
+        border-bottom: 1px solid #eef2f7;
+    }
+
+    th {
+        font-size: 12px;
+        color: #64748b;
+        font-weight: 600;
+        background: #f8fafc;
+    }
+
+    tr {
+        cursor: pointer;
+    }
+
+    tbody tr:hover {
+        background: #f8fbff;
+    }
+
+    .is-num {
+        text-align: right;
+    }
+}
+
+.o_store_shell_empty {
+    background: #fff;
+    border-radius: 12px;
+    padding: 28px 16px;
+    text-align: center;
+    color: #64748b;
+}
+
+@media (max-width: 991.98px) {
+    .o_store_shell_cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+/* Điểm chuẩn: kẻ ô như bảng Excel */
+.o_store_benchmark {
+    table.o_list_table {
+        border-collapse: collapse;
+        th, td {
+            border: 1px solid #9aa5b5;
+        }
+        thead th {
+            background: #1f497d;
+            color: #fff;
+            text-align: center;
+        }
+        .o_group_header td, .o_group_header th {
+            background: #dce6f1;
+            font-weight: 600;
+        }
+    }
+}
+
+.o_store_benchmark table.o_list_table td[name="category"],
+.o_store_benchmark table.o_list_table td[name="sub_group_id"],
+.o_store_benchmark table.o_list_table td[name="name"] {
+    white-space: normal;
+}
+
+/* Popup Điểm chuẩn: mọi ô nhập có đường gạch chân */
+.o_store_benchmark_form .o_field_widget {
+    .o_input, input, select, textarea {
+        border-bottom: 1px solid #8c96a5 !important;
+    }
+}
+
+/* Phiếu đánh giá: tiêu đề, thanh nhóm, tổng điểm */
+.o_store_audit_form {
+    .o_store_audit_head > .o_inner_group:first-child .o_field_widget { max-width: 380px; }
+    .o_store_audit_head > .o_inner_group:last-child { width: fit-content; margin: 0 auto; }
+    .o_store_audit_title {
+        display: flex; align-items: center; gap: 20px; margin-bottom: 16px; padding: 22px 28px;
+        border-radius: 14px; border: 1px solid #dbe5f5;
+        background: linear-gradient(90deg, #eaf2ff 0%, #f4f8ff 70%, rgba(244, 248, 255, 0) 90%),
+                        url('/store_checklist/static/src/shell/img/banner_bg.jpg') right center / auto 100% no-repeat;
+        min-height: 140px;
+        h2 { margin: 0 0 6px; color: #12285f; font-weight: 800; font-size: 2rem; line-height: 1.2; }
+        p { margin: 0; color: #475569; font-size: 1rem; }
+    }
+    .o_store_audit_icon { width: 80px; height: 80px; border-radius: 18px; box-shadow: 0 6px 14px rgba(37, 99, 235, .3); }
+    .o_store_audit_period {
+        display: inline-flex; align-items: center; gap: 6px; background: #fff; border-radius: 999px;
+        padding: 4px 14px; font-size: .85rem; color: #1e3a8a; box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
+    }
+    .o_store_audit_head { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); margin-bottom: 16px; }
+    .o_store_audit_kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .o_store_kpi {
+        display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 12px; padding: 14px 18px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
+        .o_store_kpi_ico {
+            width: 52px; height: 52px; border-radius: 50%; color: #fff; font-size: 22px; flex: none;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .o_store_kpi_purple { background: #7c4dbd; }
+        .o_store_kpi_blue { background: #2563eb; }
+        .o_store_kpi_lbl { color: #334155; }
+        .o_store_kpi_val { font-size: 1.8rem; font-weight: 700; color: #12285f; line-height: 1.1;
+            small { font-size: .85rem; font-weight: 400; color: #64748b; } }
+    }
+    /* cuộn bảng thì tab, thanh mục và dòng tiêu đề cột đứng yên */
+    .o_notebook_headers { position: sticky; top: 49px; z-index: 5; background: #fff; }
+    .o_store_audit_lines .o_list_renderer { overflow: visible !important; }
+    .o_store_audit_lines thead { top: 130px !important; z-index: 3; }
+    .o_store_audit_bar {
+        background: #dbeafe; color: #1e3a8a; font-weight: 700; padding: 0 14px; height: 42px; border-radius: 6px 6px 0 0;
+        position: sticky; top: 88px; z-index: 4;
+        /* cột bên phải cố định (Ghi chú 260, Kết quả 110, Điểm đánh giá 140, Điểm chuẩn 115, nút cột 32) nên tính vị trí từ mép phải */
+        .o_store_bar_max, .o_store_bar_act { position: absolute; top: 0; line-height: 42px; text-align: center; }
+        .o_store_bar_act { right: 485px; width: 105px; }
+        .o_store_bar_max { right: 599px; width: 115px; }
+        display: flex; justify-content: space-between; align-items: center;
+        strong { color: #1d4ed8; font-size: 1.1rem; margin-left: 6px; }
+        .o_field_widget { display: inline; width: auto; }
+    }
+    .o_store_audit_lines table.o_list_table {
+        border-collapse: collapse;
+        th, td { border: 1px solid #c7d2e5; }
+        thead th { background: #eef3fb; color: #1e3a8a; text-align: center; font-weight: 700; }
+        thead th, thead th * { white-space: normal !important; text-overflow: clip !important; overflow: visible !important; text-align: center !important; }
+        td[name="name"], td[name="requirement"], td[name="note"] { white-space: normal; }
+        font-size: 0.9rem;
+        tfoot { display: none; }
+        td[name="max_score"], td[name="actual_score"], td[name="result"] { text-align: center !important; }
+        td[name="max_score"] *, td[name="actual_score"] *, td[name="result"] * { text-align: center !important; justify-content: center; }
+        /* thân bảng: nền trắng, chữ đen (bỏ kẻ sọc, bỏ chữ mờ của dòng chưa chấm) */
+        tbody tr, tbody tr td { background: #fff !important; color: #000 !important; }
+        tbody tr.text-muted, tbody tr.text-muted td { color: #000 !important; }
+        td[name="name"], td[name="requirement"] { word-break: normal; overflow-wrap: break-word; }
+        td[name="name"], td[name="requirement"], td[name="name"] *, td[name="requirement"] * { white-space: normal !important; text-overflow: clip !important; overflow: visible !important; }
+    }
+    .o_store_audit_total {
+        display: flex; justify-content: space-between; align-items: center;
+        background: #eaf1fb; border-radius: 0 0 6px 6px; padding: 10px 14px; font-weight: 600;
+        strong { color: #1d4ed8; font-size: 1.2rem; }
+    }
+    .o_store_audit_grand {
+        display: flex; align-items: center; gap: 18px; background: #e8f0fe; border-radius: 8px;
+        padding: 14px 18px; margin-bottom: 16px; font-size: 1.1rem;
+        .fa-trophy { color: #1d4ed8; font-size: 1.6rem; }
+        strong { color: #1d4ed8; font-size: 1.6rem; }
+    }
+}
+
+.o_store_audit_list table.o_list_table {
+    border-collapse: collapse;
+    th, td { border: 1px solid #c7d2e5; }
+    thead th { background: #dbeafe; color: #1e3a8a; text-align: center; }
+}
+
+/* Popup phiếu đánh giá: bung gần hết chiều ngang màn hình */
+.modal-dialog:has(.o_store_audit_form) {
+    max-width: 96vw;
+    width: 96vw;
+}
+
+/* Popup phiếu: ẩn nút Nạp lại tiêu chí + thanh trạng thái, sheet chiếm hết chiều ngang */
+.modal .o_store_audit_form {
+    button[name="action_load_template"], button[name="action_audit"], .o_statusbar_status { display: none !important; }
+    .o_form_sheet_bg, .o_form_sheet { max-width: none !important; width: 100%; }
+}
+
+/* Popup phiếu: bỏ chữ "Odoo" trên đầu hộp thoại */
+.modal:has(.o_store_audit_form) .modal-title { visibility: hidden; }
+/* nút X nổi ở góc phải, bỏ dải tiêu đề trống để phiếu lên sát trên cùng */
+.modal:has(.o_store_audit_form) .modal-header {
+    position: absolute; top: 0; right: 14px; z-index: 20; padding: 8px 12px; border: 0; background: transparent;
+    .modal-title { display: none; }
+}
+
+/* Cột nút xem / tải biên bản: nút trong list không có nhãn cột nên đặt tên bằng CSS */
+.o_store_audit_list table.o_list_table thead th.o_list_button::after { content: "Biên bản"; display: block; text-align: center; }
+
+/* Tổng quan: dashboard cửa hàng đã / chưa audit */
+.o_store_dash {
+    .o_store_dash_top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+    .o_store_dash_title { display: flex; align-items: center; gap: 12px;
+        > i { font-size: 34px; color: #7c4dff; }
+        h1 { margin: 0; font-size: 1.5rem; font-weight: 700; color: #1e1b4b; }
+        p { margin: 0; color: #64748b; } }
+    .o_store_dash_filters { display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+        select { width: auto; min-width: 150px; flex: 0 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #fff; }
+        .o_store_dash_refresh { border: 0; border-radius: 8px; padding: 8px 18px; background: #7c4dff; color: #fff; font-weight: 600; } }
+    .o_store_dash_kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 16px; }
+    .o_store_dash_kpi { display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 14px; padding: 16px 18px;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+        .ico { width: 54px; height: 54px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 26px;
+            &.is-blue { background: #dbeafe; color: #2f80ed; } &.is-green { background: #dcfce7; color: #27ae60; }
+            &.is-orange { background: #ffedd5; color: #f97316; } &.is-purple { background: #ede9fe; color: #7c4dff; } }
+        .lbl { display: block; color: #1e293b; font-weight: 500; }
+        strong { font-size: 2.2rem; font-weight: 800; line-height: 1.1;
+            &.blue { color: #2f80ed; } &.green { color: #27ae60; } &.orange { color: #f97316; } &.purple { color: #7c4dff; } }
+        .pill { font-size: .8rem; font-weight: 600; border-radius: 999px; padding: 2px 10px; vertical-align: middle;
+            &.green { background: #dcfce7; } &.orange { background: #ffedd5; } &.purple { background: #ede9fe; } }
+        .bar { height: 8px; background: #e5e7eb; border-radius: 999px; margin-top: 4px; width: 160px;
+            div { height: 100%; background: #7c4dff; border-radius: 999px; } } }
+    .o_store_dash_row { display: grid; gap: 14px; margin-bottom: 14px;
+        &.three { grid-template-columns: repeat(3, 1fr); } &.two { grid-template-columns: 1fr 1fr; } }
+    .o_store_dash_panel { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 4px rgba(0, 0, 0, .08);
+        h3 { font-size: 1rem; font-weight: 700; color: #1e1b4b; margin: 0 0 8px; display: flex; align-items: center; gap: 8px;
+            i { color: #7c4dff; } a { margin-left: auto; font-size: .85rem; font-weight: 500; color: #4f46e5; } } }
+    .o_store_dash_svg { width: 100%; height: auto; .tick { font-size: 11px; fill: #475569; } .val { font-size: 12px; font-weight: 700; fill: #1e293b; } }
+    .o_store_dash_donut { display: flex; align-items: center; gap: 16px;
+        svg { width: 150px; height: 150px; .big { font-size: 28px; font-weight: 800; fill: #1e1b4b; } .tick { font-size: 11px; fill: #475569; } }
+        ul { list-style: none; margin: 0; padding: 0; li { margin: 6px 0; i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; } b { margin-left: 6px; } } } }
+    .o_store_dash_legend { display: flex; justify-content: flex-end; gap: 14px; font-size: .8rem; color: #475569;
+        i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; } }
+    .o_store_dash_table { width: 100%; border-collapse: collapse;
+        th { background: #f8fafc; color: #475569; font-weight: 600; text-align: left; padding: 8px 10px; }
+        td { padding: 8px 10px; border-top: 1px solid #f1f5f9; &.empty { text-align: center; color: #64748b; } }
+        .dot { display: inline-block; width: 4px; height: 14px; border-radius: 2px; margin-right: 6px; vertical-align: middle; } }
+    .o_store_dash_badge { background: #fee2e2; color: #dc2626; border-radius: 999px; padding: 3px 12px; font-size: .8rem; font-weight: 600; }
+}
+@media (max-width: 1100px) { .o_store_dash { .o_store_dash_kpis, .o_store_dash_row.three, .o_store_dash_row.two { grid-template-columns: 1fr 1fr; } } }
+
+/* Cài đặt > Mức Đánh giá: bảng kẻ khung, tiêu đề in đậm canh giữa, các cột rộng đều nhau */
+.o_store_level table.o_list_table {
+    border-collapse: collapse; table-layout: fixed;
+    th, td { border: 1px solid #c7d2e5; text-align: center !important; }
+    thead th { background: #dbeafe; color: #1e3a8a; font-weight: 700; text-align: center !important; }
+    thead th * { text-align: center !important; justify-content: center; }
+    thead th:not(.o_list_record_selector):not(.o_list_button):not(.o_optional_columns_dropdown_th) { width: auto !important; }
+    td * { text-align: center; justify-content: center; }
+}
+
+/* ===== Giao diện điện thoại (mobile-first): phiếu đánh giá ===== */
+.o_store_mobile { display: none; }
+
+@media (max-width: 767.98px) {
+    .modal-dialog:has(.o_store_audit_form) { max-width: 100vw !important; width: 100vw !important; margin: 0 !important; height: 100%; }
+    .modal:has(.o_store_audit_form) .modal-content { height: 100%; border-radius: 0; }
+    .modal:has(.o_store_audit_form) .modal-body { padding: 6px 10px; }
+    .modal:has(.o_store_audit_form) .modal-footer { padding: 8px 10px; }
+
+    .o_store_audit_form {
+        .o_store_audit_title { padding: 12px; gap: 12px; min-height: 0; border-radius: 12px;
+            .o_store_audit_icon { width: 46px; height: 46px; }
+            h2 { font-size: 1.05rem; line-height: 1.25; } p { font-size: .85rem; } }
+        .o_store_audit_head { padding: 8px 12px; .o_group, .o_inner_group { display: block !important; width: 100% !important; margin: 0 !important; }
+            .o_wrap_field, .o_cell { display: block; width: 100%; }
+            .o_field_widget { max-width: 100% !important; } }
+        .o_store_audit_kpis { display: none; }
+        /* điện thoại: Tổng quan đánh giá lên ngay dưới tiêu đề, thẻ cửa hàng / gian hàng xuống sau */
+        .o_form_sheet { display: flex; flex-direction: column; }
+        .o_store_audit_title { order: 0; }
+        .o_store_mobile { order: 1; }
+        .o_store_audit_head { order: 2; }
+        .o_notebook { order: 3; }
+        .o_store_audit_head { padding-bottom: 0 !important; margin-bottom: 8px !important;
+            .o_inner_group { margin-bottom: 0 !important; }
+            .o_wrap_field { margin-bottom: 4px; }
+            .o_cell { padding-bottom: 0 !important; }
+            .o_wrap_input { margin-bottom: 8px !important; }
+            .o_inner_group:last-child .o_wrap_input:last-child { margin-bottom: 0 !important; } }
+        .o_store_audit_title { margin-bottom: 8px !important; }
+        .o_store_mobile { display: block; margin-bottom: 12px; }
+        .o_store_mobile_title { font-weight: 700; color: #1e3a8a; margin: 0 0 8px; i { margin-right: 6px; } }
+        .o_store_ov { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .o_store_ov_tile { border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px;
+            background: #eef4ff; box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+            .o_store_ov_name { font-weight: 600; color: #1e293b; font-size: .85rem; i { font-size: 1.1rem; margin-right: 4px; } }
+            .o_store_ov_score { font-size: 1.6rem; font-weight: 800; color: #12285f; line-height: 1.1; display: flex; align-items: baseline; gap: 2px;
+                small { font-size: .8rem; font-weight: 500; color: #64748b; } }
+            &.is-a { background: #f1ebff; i { color: #7c4dff; } } &.is-b { background: #e8f1ff; i { color: #2f80ed; } }
+            &.is-c { background: #e6f7ec; i { color: #27ae60; } } &.is-t { background: #fff3e2; i { color: #f59e0b; } } }
+        .o_store_ov_final { margin-top: 10px; background: #fff; border-radius: 12px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+            display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 4px;
+            i { color: #f59e0b; margin-right: 6px; } .o_store_ov_final_text { grid-column: 1 / -1; color: #475569; font-size: .85rem; } }
+
+        /* tab A / B / C: chip cuộn ngang */
+        .o_notebook_headers { overflow-x: auto; position: sticky; top: 0; z-index: 6; background: #fff; box-shadow: 0 2px 4px rgba(0, 0, 0, .08); }
+        .o_notebook_headers .nav { flex-wrap: nowrap; white-space: nowrap; }
+        .o_store_audit_bar { position: static; height: auto; padding: 8px 12px; flex-wrap: wrap; gap: 4px;
+            .o_store_bar_max, .o_store_bar_act { display: none; } }
+
+        /* bảng tiêu chí -> mỗi dòng là một thẻ */
+        .o_store_audit_lines {
+            thead, tfoot { display: none !important; }
+            table.o_list_table, tbody { display: block; width: 100% !important; border: 0; }
+            tbody tr { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2px 10px; border: 1px solid #dbe4f3 !important;
+                border-radius: 12px; margin: 8px 0; padding: 10px 12px; background: #fff !important; }
+            table.o_list_table tbody tr td { display: block; border: 0 !important; padding: 2px 0 !important; text-align: left !important; width: auto !important;
+                white-space: normal !important; }
+            table.o_list_table tbody tr td.o_list_record_selector, td.o_list_actions_cell { display: none; }
+            table.o_list_table tbody tr td[name="sequence"] { display: none !important; }
+            table.o_list_table tbody tr td[name="name"] { grid-column: 1 / -1; font-weight: 700; font-size: 1rem; }
+            table.o_list_table tbody tr td[name="requirement"] { grid-column: 1 / -1; color: #64748b; font-size: .85rem; margin-bottom: 4px; }
+            table.o_list_table tbody tr td[name="max_score"]::before { content: "Điểm chuẩn"; }
+            table.o_list_table tbody tr td[name="actual_score"]::before { content: "Điểm đánh giá"; }
+            table.o_list_table tbody tr td[name="result"]::before { content: "Kết quả"; }
+            table.o_list_table tbody tr td[name="note"]::before { content: "Chi tiết lỗi"; }
+            table.o_list_table tbody tr td[name="max_score"]::before, td[name="actual_score"]::before, td[name="result"]::before, td[name="note"]::before {
+                display: block; font-size: .7rem; color: #dc2626; font-weight: 700; }
+            table.o_list_table tbody tr td[name="note"], td[name="attachment_ids"] { grid-column: 1 / -1; }
+            table.o_list_table tbody tr td[name="note"] { border-top: 1px dashed #dbe4f3 !important; padding-top: 6px !important; }
+            table.o_list_table tbody tr td * { text-align: left !important; justify-content: flex-start; }
+        }
+    }
+}
+
+/* Danh sách phiếu: dòng nhóm cửa hàng không hiện số tổng */
+.o_store_audit_list tr.o_group_header td.o_list_number { visibility: hidden; }
+
+/* Danh Sách Đánh Giá: thanh lọc tháng / miền phía trên bảng */
+.o_store_list_wrap { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; min-height: 0;
+    .o_store_list_filters { display: flex; flex-wrap: nowrap; gap: 10px; justify-content: flex-start;
+        select { width: auto; min-width: 160px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #fff; } } }
+
+/* Thư mục con "Công việc đánh giá" trong Cài đặt */
+.o_phan_he_nav_sub.is-sub { padding-left: 38px !important; }
+.o_phan_he_nav_sub.is-folder { font-weight: 600;
+    &::after { font-family: FontAwesome; margin-left: auto; content: "\f107"; }
+    &.is-closed::after { content: "\f105"; } }
+
+/* Phiếu đánh giá: cố định cỡ hiển thị tương đương trình duyệt zoom 90% */
+.o_store_audit_form { zoom: 0.9; }
+
+/* Tab A / B / C / Tổng hợp của phiếu: chữ in đậm */
+.o_store_audit_form .o_notebook_headers .nav-link { font-weight: 700; }
+
+/* ===== Điện thoại: Danh Sách Đánh Giá hiển thị mỗi phiếu là một thẻ ===== */
+@media (max-width: 767.98px) {
+    .o_store_audit_list {
+        .o_list_renderer { overflow-x: visible !important; }
+        table.o_list_table { display: block; width: 100% !important; border: 0; }
+        table.o_list_table thead, table.o_list_table tfoot { display: none !important; }
+        table.o_list_table tbody { display: block; }
+        tr.o_group_header { display: block; margin-top: 12px;
+            > :not(:first-child) { display: none !important; }
+            > :first-child { display: block; background: #dbeafe; color: #1e3a8a; font-weight: 700; border-radius: 8px; padding: 8px 12px !important; } }
+        table.o_list_table tbody tr.o_data_row { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px;
+            border: 1px solid #dbe4f3 !important; border-radius: 12px; margin: 8px 0; padding: 10px 12px; background: #fff !important; }
+        table.o_list_table tbody tr.o_data_row td { display: block; border: 0 !important; padding: 2px 0 !important;
+            text-align: left !important; width: auto !important; white-space: normal !important; color: inherit; }
+        table.o_list_table tbody tr.o_data_row td.o_list_record_selector,
+        table.o_list_table tbody tr.o_data_row td.o_list_actions_cell { display: none; }
+        td[name="name"] { grid-column: 1 / -1; font-weight: 700; font-size: 1rem; }
+        td[name="store_id"]::before { content: "Cửa hàng"; }
+        td[name="audit_date"]::before { content: "Ngày giờ audit"; }
+        td[name="auditor_id"]::before { content: "Người đánh giá"; }
+        td[name="total_score"]::before { content: "Điểm đánh giá"; }
+        td[name="max_score"]::before { content: "Điểm chuẩn"; }
+        td[name="pass_rate"]::before { content: "Tỷ lệ đạt"; }
+        td[name="conclusion"]::before { content: "Kết luận"; }
+        td[name="state"]::before { content: "Trạng thái"; }
+        td[name="store_id"]::before, td[name="audit_date"]::before, td[name="auditor_id"]::before, td[name="total_score"]::before,
+        td[name="max_score"]::before, td[name="pass_rate"]::before, td[name="conclusion"]::before, td[name="state"]::before {
+            display: block; font-size: .7rem; color: #64748b; font-weight: 600; }
+        td.o_list_button { display: inline-block !important; grid-column: auto; }
+    }
+}
+
+/* Nút Quay lại (điện thoại): trả về nội dung đã mở trước đó, dùng cho mọi màn của Checklist Audit */
+.o_store_back { display: none; }
+@media (max-width: 767.98px) {
+    .o_store_back { display: block;
+        button { border: 0; background: #ede9fe; color: #5b21b6; font-weight: 700; border-radius: 999px; padding: 6px 14px;
+            i { margin-right: 6px; } } }
+    .o_store_list_wrap { padding: 8px 10px; }
+    .o_store_list_filters { flex-wrap: wrap !important; select { flex: 1 1 45% !important; min-width: 0 !important; } }
+}
+
+/* ===== Điện thoại: Tổng quan — thẻ số 2x2, biểu đồ nhỏ lại xếp 2x2, bảng cửa hàng chưa audit ở cuối ===== */
+@media (max-width: 767.98px) {
+    .o_store_dash { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px !important;
+        > * { min-width: 0; }
+        .o_store_dash_top { grid-column: 1 / -1; order: 0; margin-bottom: 0;
+            .o_store_dash_title { h1 { font-size: 1.1rem; } p { display: none; } > i { font-size: 26px; } }
+            .o_store_dash_filters { width: 100%; select { flex: 1 1 45%; min-width: 0; } } }
+        .o_store_dash_kpis { grid-column: 1 / -1; order: 1; grid-template-columns: 1fr 1fr !important; gap: 8px; margin-bottom: 0;
+            .o_store_dash_kpi { padding: 10px; gap: 8px;
+                .ico { width: 38px; height: 38px; font-size: 18px; border-radius: 10px; }
+                .lbl { font-size: .75rem; } strong { font-size: 1.4rem; }
+                .pill { font-size: .65rem; padding: 1px 6px; } .bar { width: 100%; } } }
+        .o_store_dash_row { display: contents !important; }
+        .o_store_dash_row.three > .o_store_dash_panel { order: 2; }
+        .o_store_dash_row.two > .o_store_dash_panel:nth-child(2) { order: 3; }
+        .o_store_dash_row.two > .o_store_dash_panel:first-child { order: 4; grid-column: 1 / -1; overflow-x: auto; }
+        .o_store_dash_panel { padding: 8px 10px; min-width: 0;
+            h3 { font-size: .75rem; margin-bottom: 4px; i { display: none; } } }
+        .o_store_dash_donut { flex-direction: column; gap: 4px; align-items: center;
+            svg { width: 100px; height: 100px; } ul { font-size: .7rem; width: 100%; } }
+        .o_store_dash_legend { font-size: .65rem; gap: 8px; justify-content: flex-start; }
+        .o_store_dash_table { font-size: .75rem; th, td { padding: 6px 6px; } }
+    }
+}
+
+/* Tab A / B / C / Tổng hợp: chữ in hoa, mỗi tab một màu nền, có viền ngăn cách rõ ràng */
+.o_store_audit_form .o_notebook_headers .nav-tabs { gap: 6px; border-bottom: 2px solid #cbd5e1; padding-bottom: 0; }
+.o_store_audit_form .o_notebook_headers .nav-link {
+    text-transform: uppercase; border: 1px solid #94a3b8 !important; border-bottom: 0 !important; border-radius: 8px 8px 0 0;
+    margin-bottom: -2px; color: #1e293b;
+}
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(1) .nav-link { background: #dbeafe; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(2) .nav-link { background: #dcfce7; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(3) .nav-link { background: #fef3c7; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(4) .nav-link { background: #fce7f3; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(1) .nav-link.active { background: #93c5fd; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(2) .nav-link.active { background: #86efac; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(3) .nav-link.active { background: #fde047; }
+.o_store_audit_form .o_notebook_headers .nav-item:nth-child(4) .nav-link.active { background: #f9a8d4; }
+
+/* Danh sách Check list giám sát: tiêu đề dạng banner + nút xuất Excel */
+.o_store_list_banner {
+    display: flex; align-items: center; gap: 20px; padding: 18px 28px; border-radius: 14px; border: 1px solid #dbe5f5;
+    background: linear-gradient(90deg, #eaf2ff 0%, #f4f8ff 70%, rgba(244, 248, 255, 0) 90%),
+                url('/store_checklist/static/src/shell/img/banner_bg.jpg') right center / auto 100% no-repeat;
+    min-height: 120px;
+    .o_store_audit_icon { width: 72px; height: 72px; border-radius: 18px; box-shadow: 0 6px 14px rgba(37, 99, 235, .3); }
+    h2 { margin: 0 0 4px; color: #12285f; font-weight: 800; font-size: 1.6rem; line-height: 1.25; }
+    p { margin: 0; color: #475569; }
+}
+.o_store_list_filters .o_store_export_btn {
+    margin-left: auto; border: 0; border-radius: 8px; padding: 8px 18px; background: #16a34a; color: #fff; font-weight: 700;
+    i { margin-right: 6px; }
+}
+@media (max-width: 767.98px) {
+    .o_store_list_banner { padding: 12px; gap: 12px; min-height: 0;
+        .o_store_audit_icon { width: 46px; height: 46px; } h2 { font-size: 1rem; } p { font-size: .8rem; } }
+    .o_store_list_filters .o_store_export_btn { flex: 1 1 100%; margin-left: 0; }
+}

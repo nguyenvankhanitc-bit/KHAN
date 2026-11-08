@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="sub_group_01" model="store.audit.sub.group">
+        <field name="category">a</field>
+        <field name="sequence">10</field>
+        <field name="name">I. Không gian bên ngoài</field>
+    </record>
+    <record id="sub_group_02" model="store.audit.sub.group">
+        <field name="category">a</field>
+        <field name="sequence">20</field>
+        <field name="name">II. Không gian bên trong</field>
+    </record>
+    <record id="sub_group_03" model="store.audit.sub.group">
+        <field name="category">a</field>
+        <field name="sequence">30</field>
+        <field name="name">III. Sắp xếp sản phẩm</field>
+    </record>
+    <record id="sub_group_04" model="store.audit.sub.group">
+        <field name="category">b</field>
+        <field name="sequence">40</field>
+        <field name="name">IV. Tác phong và diện mạo</field>
+    </record>
+    <record id="sub_group_05" model="store.audit.sub.group">
+        <field name="category">b</field>
+        <field name="sequence">50</field>
+        <field name="name">V. Kỹ năng giao tiếp</field>
+    </record>
+    <record id="sub_group_06" model="store.audit.sub.group">
+        <field name="category">c</field>
+        <field name="sequence">60</field>
+        <field name="name">VI. Chuyên môn nghiệp vụ</field>
+    </record>
+</odoo>

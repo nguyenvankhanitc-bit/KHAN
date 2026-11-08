@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Toàn bộ điều hướng nằm trong sidebar của shell (static/src/shell) -->
+    <menuitem id="menu_store_root" name="Checklist Audit" action="action_store_shell"
+              sequence="10" groups="group_store_user"/>
+</odoo>

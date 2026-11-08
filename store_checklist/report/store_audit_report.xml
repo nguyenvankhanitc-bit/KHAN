@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="paperformat_store_audit" model="report.paperformat">
+        <field name="name">Biên bản đánh giá cửa hàng</field>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="margin_top">8</field>
+        <field name="margin_bottom">8</field>
+        <field name="margin_left">8</field>
+        <field name="margin_right">8</field>
+        <field name="dpi">90</field>
+    </record>
+
+    <record id="action_report_store_audit" model="ir.actions.report">
+        <field name="name">Biên bản đánh giá</field>
+        <field name="model">store.audit</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">store_checklist.report_store_audit</field>
+        <field name="report_file">store_checklist.report_store_audit</field>
+        <field name="print_report_name">'Bien-ban-%s' % (object.name or '').replace('/', '-')</field>
+        <field name="paperformat_id" ref="paperformat_store_audit"/>
+    </record>
+
+    <template id="report_store_audit">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <div class="page" style="font-family: 'Segoe UI', Roboto, Arial, 'Liberation Sans', 'DejaVu Sans', sans-serif; font-size: 11px; color: #000;">
+                    <style>
+                        .sa td, .sa th { border: 1px solid #000; padding: 4px 6px; vertical-align: middle; }
+                        .sa { width: 100%; border-collapse: collapse; }
+                        .sa tr { page-break-inside: avoid; }
+                        .sa .c { text-align: center; }
+                        .sa .b { font-weight: bold; }
+                        .red { color: #f00; }
+                    </style>
+                    <t t-set="dt" t-value="context_timestamp(o.audit_date)"/>
+                    <table t-att-style="'width:100%; border-collapse:collapse; margin-bottom:12px; height:84px; background-color:#144ab8; background-image:url(' + o._report_image('report_banner.png') + '); background-repeat:no-repeat; background-size:100% 100%; -webkit-background-size:100% 100%; border-radius:14px;'">
+                        <tr>
+                            <td style="width:20%; text-align:center; padding:6px 10px;"><img t-att-src="o._report_image('company_logo.png')" style="height:60px;"/></td>
+                            <td style="width:8%; text-align:right; padding-right:14px;"><span style="display:inline-block; width:54px; height:54px; line-height:62px; text-align:center; background:#1c4fb5; border:2px solid #5d8de0; border-radius:12px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M9 18v-4M13 18v-7M17 18v-3"/></svg></span></td>
+                            <td style="width:3px; padding:0;"><div style="width:2px; height:46px; background:#9db9ee;"/></td>
+                            <td style="padding-left:18px; color:#fff;">
+                                <div style="font-size:26px; font-weight:bold; letter-spacing:.3px;"><t t-esc="o.form_title"/></div>
+                                <div style="font-size:17px; margin-top:6px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> &#160;Tháng <t t-esc="dt.month"/>/<t t-esc="dt.year"/></div>
+                            </td>
+                        </tr>
+                    </table>
+                    <table style="width:100%; border-collapse:separate; border-spacing:0; margin-bottom:12px;">
+                        <tr>
+                            <td style="width:52%; vertical-align:top; padding:0 12px 0 0;">
+                                <div style="display:inline-block; background:#1e3a8a; color:#fff; font-weight:bold; font-size:14px; padding:6px 22px 6px 12px; border-radius:8px 18px 0 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg> Thông tin chung</div>
+                                <table style="width:100%; border:1px solid #cfdcf2; border-radius:0 8px 8px 8px; font-size:13px; border-collapse:separate; border-spacing:0;">
+                                    <tr><td style="width:34px; padding:8px 4px 8px 14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg></td><td style="width:30%; padding:8px;">Tên cửa hàng</td><td style="width:14px;">:</td><td style="font-weight:bold; padding:8px;"><t t-esc="o.store_id.display_name"/></td></tr>
+                                    <tr><td style="padding:8px 4px 8px 14px; border-top:1px dotted #b8c7e3;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></td><td style="padding:8px; border-top:1px dotted #b8c7e3;">Địa điểm</td><td style="border-top:1px dotted #b8c7e3;">:</td><td style="font-weight:bold; padding:8px; border-top:1px dotted #b8c7e3;"><t t-esc="o.address or o.province"/></td></tr>
+                                    <tr><td style="padding:8px 4px 8px 14px; border-top:1px dotted #b8c7e3;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg></td><td style="padding:8px; border-top:1px dotted #b8c7e3;">Người đánh giá</td><td style="border-top:1px dotted #b8c7e3;">:</td><td style="font-weight:bold; padding:8px; border-top:1px dotted #b8c7e3;"><t t-esc="o.auditor_id.name"/></td></tr>
+                                    <tr><td style="padding:8px 4px 8px 14px; border-top:1px dotted #b8c7e3;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></td><td style="padding:8px; border-top:1px dotted #b8c7e3;">Ngày đánh giá</td><td style="border-top:1px dotted #b8c7e3;">:</td><td style="font-weight:bold; padding:8px; border-top:1px dotted #b8c7e3;"><t t-esc="dt.strftime('%d/%m/%Y')"/></td></tr>
+                                </table>
+                            </td>
+                            <td style="vertical-align:bottom; padding:0;"><img t-att-src="o._report_image('report_store.png')" style="width:100%; border-radius:10px;"/></td>
+                        </tr>
+                    </table>
+                    <div style="display:inline-block; background:#143c96; color:#fff; font-weight:bold; font-size:17px; padding:9px 30px 9px 16px; border-radius:10px 26px 0 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="12" width="5" height="9" rx="1"/><rect x="10" y="4" width="5" height="17" rx="1"/><rect x="17" y="9" width="5" height="12" rx="1"/></svg> &#160;TỔNG QUAN ĐÁNH GIÁ</div>
+                    <div style="border:2px solid #1d55bd; border-radius:0 12px 12px 12px; padding:8px 10px 10px; margin-bottom:14px; background:#fff;">
+                    <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:15px;">
+                        <tr>
+                            <td style="padding:12px 10px; font-size:16px; font-weight:bold; color:#fff; background:#1d55bd; text-align:center; border-radius:8px 0 0 0;">Tiêu chí</td>
+                            <td style="padding:12px 10px; font-size:16px; font-weight:bold; color:#fff; background:#1d55bd; text-align:center; width:22%; border-left:1px solid #5d8de0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="12" width="5" height="9" rx="1"/><rect x="10" y="4" width="5" height="17" rx="1"/><rect x="17" y="9" width="5" height="12" rx="1"/></svg> &#160;Điểm đánh giá</td>
+                            <td style="padding:12px 10px; font-size:16px; font-weight:bold; color:#fff; background:#1d55bd; text-align:center; width:20%; border-left:1px solid #5d8de0; "><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l3 7 7 .6-5.3 4.7 1.7 7.2L12 17.8 5.6 21.5l1.7-7.2L2 9.6 9 9z"/></svg> &#160;Mức đánh giá</td>
+                            <td style="padding:12px 10px; font-size:16px; font-weight:bold; color:#fff; background:#1d55bd; text-align:center; width:21%; border-left:1px solid #5d8de0; border-radius:0 8px 0 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M7 12l4 4 6-7"/></svg> &#160;Xếp loại</td></tr>
+                        <t t-foreach="o._report_overview()" t-as="r">
+                            <tr t-att-style="'background:#f2f7ff;' if r_index % 2 else 'background:#fff;'">
+                                <td style="padding:0; border-bottom:1px solid #93b4e8;">
+                                    <table style="width:100%; border-collapse:collapse;"><tr>
+                                        <td style="width:46px; padding:8px 0 8px 10px;">
+                                            <t t-if="r['icon'] == 'store'"><svg width="34" height="34" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#7c4dff"/><path d="M6 12l1-5h14l1 5M7 12v9h14v-9M11 21v-5h6v5" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg></t><t t-elif="r['icon'] == 'people'"><svg width="34" height="34" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#2f80ed"/><circle cx="14" cy="11" r="3" fill="#fff"/><circle cx="8.5" cy="12" r="2.2" fill="#fff"/><circle cx="19.5" cy="12" r="2.2" fill="#fff"/><path d="M9 20c0-3 2.5-4.5 5-4.5s5 1.5 5 4.5z" fill="#fff"/></svg></t>
+                                            <t t-elif="r['icon'] == 'trend'"><svg width="34" height="34" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#27ae60"/><path d="M6 20l6-6 4 4 7-8M18 10h5v5" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-else=""><svg width="34" height="34" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="#f59e0b"/><path d="M14 6l8 4v8l-8 4-8-4v-8z M6 10l8 4 8-4 M14 14v8" fill="none" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg></t></td>
+                                        <td style="width:30%; font-weight:bold; font-size:16px; padding:8px;" t-esc="r['name']"/>
+                                        <td style="color:#334155; font-size:15px; padding:8px 10px; border-left:1px solid #93b4e8;" t-esc="r['note']"/>
+                                    </tr></table></td>
+                                <td style="text-align:center; font-weight:bold; font-size:18px; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8;"><t t-esc="'%g' % r['score']"/> / <t t-esc="'%g' % r['max']"/></td>
+                                <td style="text-align:center; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8;">
+                                    <span t-att-style="'display:inline-block; padding:5px 18px 5px 10px; border-radius:16px; font-weight:bold; font-size:15px; ' + {'green': 'background:#d8f5e1; color:#15803d;', 'blue': 'background:#dbeafe; color:#1d4ed8;', 'orange': 'background:#ffe9cf; color:#c2410c;', 'red': 'background:#fddada; color:#dc2626;', 'darkred': 'background:#f3c9c9; color:#7f1d1d;'}[r['tone']]">
+                                        <t t-if="r['tone'] == 'green'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#16a34a"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'blue'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#2563eb"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'orange'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#f59e0b"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-elif="r['tone'] == 'red'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#dc2626"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-else=""><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#7f1d1d"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t>
+                                        &#160;<t t-esc="r['level']"/></span></td>
+                                <td t-if="r_index == 0" rowspan="4" style="text-align:center; vertical-align:middle; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8; border-right:1px solid #93b4e8;">
+                                    <span t-att-style="'display:inline-block; padding:8px 26px; border-radius:20px; font-weight:bold; font-size:18px; white-space:nowrap; ' + ('background:#d8f5e1; color:#15803d;' if o.conclusion == 'pass' else 'background:#fddada; color:#dc2626;')" t-esc="'ĐẠT' if o.conclusion == 'pass' else 'KHÔNG ĐẠT'"/></td>
+                            </tr>
+                        </t>
+                    </table>
+                    </div>
+                    <t t-foreach="o._report_sections()" t-as="sec">
+                        <table class="sa" style="margin-top:0">
+                            <tr><td colspan="6" class="b" style="background:#f00;color:#fff;"><t t-esc="sec['title']"/></td></tr>
+                            <tr class="c b" style="background:#ffcc66">
+                                <td style="width:4%">STT</td><td style="width:16%">Tiêu chuẩn, yêu cầu</td><td>Quy định cơ bản</td>
+                                <td style="width:7%">Điểm chuẩn</td><td style="width:7%" class="red">Điểm đánh giá</td>
+                                <td style="width:24%">Chi tiết lỗi</td></tr>
+                            <t t-foreach="sec['groups']" t-as="grp">
+                                <tr class="b" style="background:#92d050">
+                                    <td colspan="3"><t t-esc="grp['name']"/></td>
+                                    <td class="c"><t t-esc="'%g' % grp['max']"/></td>
+                                    <td class="c red"><t t-esc="'%g' % grp['score']"/></td><td/></tr>
+                                <t t-foreach="grp['lines']" t-as="l">
+                                    <tr>
+                                        <td class="c"><t t-esc="l.sequence"/></td>
+                                        <td><t t-esc="l.name"/></td>
+                                        <td><t t-esc="l.requirement"/></td>
+                                        <td class="c"><t t-esc="'%g' % l.max_score"/></td>
+                                        <td class="c red"><t t-if="l.is_scored"><t t-esc="'%g' % l.actual_score"/></t></td>
+                                        <td class="c"><t t-esc="l.note"/></td>
+                                    </tr>
+                                </t>
+                            </t>
+                            <tr class="c b"><td colspan="3"><t t-set="nm" t-value="sec['title'].split(': ')[1]"/>TỔNG <t t-if="not nm.startswith('ĐIỂM')">ĐIỂM </t><t t-esc="nm"/></td>
+                                <td><t t-esc="'%g' % sec['max']"/></td><td><t t-esc="'%g' % sec['score']"/></td><td/></tr>
+                        </table>
+                    </t>
+                    <div style="page-break-inside: avoid; margin-top: 18px; font-size: 12px;">
+                        <div class="b" style="font-weight:bold;">Đánh giá của cấp quản lý/ trưởng bộ phận:</div>
+                        <div style="border-bottom:1px dotted #000; height:24px;"/>
+                        <div style="border-bottom:1px dotted #000; height:24px;"/>
+                        <div style="border-bottom:1px dotted #000; height:24px;"/>
+                        <div style="margin-top:6px;">Ngày <t t-esc="context_timestamp(o.audit_date).strftime('%d')"/> tháng <t t-esc="context_timestamp(o.audit_date).strftime('%m')"/> năm <t t-esc="context_timestamp(o.audit_date).strftime('%Y')"/></div>
+                        <table style="width:100%; border:0; margin-top:6px; text-align:center;">
+                            <tr style="font-weight:bold;">
+                                <td style="width:20%">Người lập</td><td style="width:20%">Trưởng bộ phận</td>
+                                <td style="width:20%">Kế toán</td><td style="width:20%">Phòng HCNS</td><td>Ban Giám đốc</td></tr>
+                            <tr><td style="height:60px"/><td/><td/><td/><td/></tr>
+                            <tr><td><t t-esc="env.user.name"/></td><td/><td/><td/><td/></tr>
+                        </table>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

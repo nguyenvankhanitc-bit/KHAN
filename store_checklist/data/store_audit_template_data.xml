@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="tmpl_mystery_shopper" model="store.audit.template">
+        <field name="name">Mystery Shopper - Cửa hàng tiện ích / thời trang</field>
+    </record>
+
+    <record id="tmpl_line_01" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">1</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_01"/>
+        <field name="name">Bảng hiệu</field>
+        <field name="requirement">Có đầy đủ thông tin thương hiệu, có sáng đèn.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_02" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">2</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_01"/>
+        <field name="name">Ấn phẩm truyền thông</field>
+        <field name="requirement">POSM/standee còn hiệu lực; thông tin các gói sản phẩm dịch vụ và bảng giá rõ ràng; đặt/treo ngay ngắn, sạch, không rách/hoen ố.</field>
+        <field name="max_score">1</field>
+    </record>
+    <record id="tmpl_line_03" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">3</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Ánh sáng</field>
+        <field name="requirement">Bật đầy đủ đèn trần, tủ, biển quảng cáo, hộp đèn trang trí theo thiết kế trong mọi khung giờ mở cửa.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_04" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">4</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Tường, sàn</field>
+        <field name="requirement">Tường và sàn sạch sẽ, không có rác.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_05" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">5</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Không khí bên trong cửa hàng</field>
+        <field name="requirement">Không khí, mùi dễ chịu, thoải mái; không có mùi hôi.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_06" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">6</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Âm thanh</field>
+        <field name="requirement">Bên trong CH mở các bản nhạc tươi vui, tạo không khí mua sắm sôi động.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_07" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">7</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Gương</field>
+        <field name="requirement">Gương kính sạch sẽ, không nứt vỡ, bám bẩn.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_08" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">8</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Bàn tư vấn và quầy lễ tân, thu ngân</field>
+        <field name="requirement">Không để vật dụng thừa không phục vụ công tác bán hàng; đồ dùng cá nhân để đúng quy định, không để khu vực quầy tầm mắt KH.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_09" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">9</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_02"/>
+        <field name="name">Quầy kệ, khu vực trưng bày sản phẩm</field>
+        <field name="requirement">Kệ sản phẩm sạch, không bụi/dơ/gãy vỡ; có đầy đủ thông tin bảng giá, tên sản phẩm.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_10" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">10</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_03"/>
+        <field name="name">Sắp xếp sản phẩm trưng bày</field>
+        <field name="requirement">Trưng bày đủ chủng loại mẫu quy định; ghi rõ chức năng, giá bán, tem nhãn đầy đủ; sản phẩm lau chùi sạch sẽ.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_11" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">11</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_03"/>
+        <field name="name">Sắp xếp sản phẩm trải nghiệm</field>
+        <field name="requirement">Sản phẩm trải nghiệm có đầy đủ thông tin, đặt đúng giá kệ, tem nhãn đầy đủ, sử dụng tốt.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_12" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">12</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Quy định về trang phục, hình ảnh nhân viên</field>
+        <field name="requirement">Quần/váy áo sạch sẽ, là ủi thẳng, mặc đúng đồng phục gian hàng; giày dép có quai.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_13" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">13</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Quy định về thẻ tên</field>
+        <field name="requirement">Đeo thẻ/biển tên ngay ngắn trong suốt thời gian làm việc; không che, úp hoặc dán thứ khác.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_14" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">14</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Quy định diện mạo</field>
+        <field name="requirement">Đầu tóc gọn gàng; trang sức lịch sự, đơn giản, nhẹ nhàng, phù hợp.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_15" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">15</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Thái độ chú tâm khi làm việc</field>
+        <field name="requirement">Làm việc nghiêm túc, không đùa giỡn/nói chuyện riêng; duy trì thái độ chú tâm phục vụ khách hàng.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_16" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">16</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Quy định tác phong làm việc</field>
+        <field name="requirement">Không ngồi trên trang thiết bị CH, không gác chân đứng dựa người vào quầy kệ trưng bày.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_17" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">17</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_04"/>
+        <field name="name">Không làm việc riêng trong giờ</field>
+        <field name="requirement">Không ăn uống trong gian hàng; không sử dụng điện thoại di động trừ khi check thông tin SP/hỗ trợ KH.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_18" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">18</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Năng lực đón tiếp khách hàng</field>
+        <field name="requirement">Luôn có nhân viên tiếp đón khi KH đến, không để KH chờ đợi lâu.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_19" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">19</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Tư thế tác phong</field>
+        <field name="requirement">Tư thế đứng/ngồi thẳng lưng; không khoanh tay, chống nạnh, dựa kệ; dùng cả bàn tay khi chỉ hướng dẫn KH.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_20" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">20</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Quy ước bàn tay</field>
+        <field name="requirement">Luôn sử dụng 2 tay khi đưa/nhận máy, sản phẩm, phụ kiện, nhận và gửi tiền cho KH.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_21" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">21</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Trao đổi với KH khi đưa sản phẩm</field>
+        <field name="requirement">Thông báo/trao đổi trước khi rời vị trí lấy SP; luôn có câu thưa gửi khi đưa sản phẩm cho KH.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_22" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">22</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Giao tiếp với khách hàng</field>
+        <field name="requirement">Giọng nói tươi vui, rõ ràng, lịch sự, âm lượng vừa phải, sử dụng kính ngữ tôn trọng KH.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_23" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">23</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Sử dụng ngôn ngữ phù hợp</field>
+        <field name="requirement">Không dùng tiếng lóng, biệt ngữ, pha trộn ngôn ngữ, không chửi bậy; không thờ ơ, lảng tránh câu hỏi.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_24" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">24</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Ánh mắt</field>
+        <field name="requirement">Gương mặt tươi vui, thân thiện, hướng về KH khi giao tiếp; nụ cười tươi đúng lúc.</field>
+        <field name="max_score">4</field>
+    </record>
+    <record id="tmpl_line_25" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">25</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Kết thúc tư vấn bán hàng, thanh toán</field>
+        <field name="requirement">Chủ động tư vấn hình thức thanh toán, hỗ trợ thanh toán thành công, in và trả bill đầy đủ.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_26" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">26</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_05"/>
+        <field name="name">Cảm ơn và mong muốn phục vụ lần sau</field>
+        <field name="requirement">Chủ động chào, cảm ơn và hẹn gặp lại KH khi KH ra về.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_27" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">27</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_06"/>
+        <field name="name">Tìm hiểu nhu cầu KH</field>
+        <field name="requirement">Chủ động đặt câu hỏi xác định nhu cầu KH nhằm khai thác và tư vấn SP phù hợp.</field>
+        <field name="max_score">5</field>
+    </record>
+    <record id="tmpl_line_28" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">28</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_06"/>
+        <field name="name">Đưa ra đề xuất về sản phẩm</field>
+        <field name="requirement">Chủ động giới thiệu sản phẩm/dịch vụ tương tự, đề xuất mẫu SP tương ứng hoặc so sánh ưu/nhược điểm.</field>
+        <field name="max_score">10</field>
+    </record>
+    <record id="tmpl_line_29" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">29</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_06"/>
+        <field name="name">Tư vấn sản phẩm phù hợp với nhu cầu KH</field>
+        <field name="requirement">Chủ động tư vấn kiến thức sản phẩm, chất liệu, tính năng, công năng sử dụng và bảo hành.</field>
+        <field name="max_score">10</field>
+    </record>
+    <record id="tmpl_line_30" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_mystery_shopper"/>
+        <field name="sequence">30</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_06"/>
+        <field name="name">Tư vấn chương trình khuyến mãi</field>
+        <field name="requirement">Chủ động tư vấn quy trình đổi trả, chính sách khuyến mại, quà tặng, chương trình thành viên.</field>
+        <field name="max_score">5</field>
+    </record>
+</odoo>

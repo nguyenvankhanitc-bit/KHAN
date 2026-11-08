@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.Shell">
+        <PhanHeInternetShell
+                brand="brand"
+                navSections="navSections"
+                openGroups="state.openGroups"
+                activeNav="state.activeNav"
+                contentMode="shellMode"
+                embeddedViewProps="state.embeddedViewProps"
+                viewKey="state.viewKey"
+                onOverview.bind="onOverview"
+                onToggleGroup.bind="toggleGroup"
+                onNavChild.bind="onNavChild"
+                isGroupOpen.bind="isGroupOpen"
+                navChildClass.bind="navChildClass">
+            <div class="o_store_list_wrap" t-if="state.contentMode === 'list' and state.embeddedViewProps">
+                <div class="o_store_back" t-if="state.canBack">
+                    <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
+                </div>
+                <div class="o_store_list_banner" t-if="listTitle">
+                    <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
+                    <div>
+                        <h2 t-esc="listTitle"/>
+                        <p t-esc="state.activeNav === 'gs' ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                    </div>
+                </div>
+                <div class="o_store_dash_filters o_store_list_filters" t-if="showListFilters">
+                    <select t-on-change="(ev) => this.onListFilter('month', ev)">
+                        <option value="">Tất cả tháng</option>
+                        <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
+                                t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
+                    </select>
+                    <select t-on-change="(ev) => this.onListFilter('store', ev)">
+                        <option value="">Tất cả cửa hàng</option>
+                        <option t-foreach="state.dash ? state.dash.store_options : []" t-as="st" t-key="st.id" t-att-value="st.id"
+                                t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
+                    </select>
+                    <select t-on-change="(ev) => this.onListFilter('mien', ev)">
+                        <option value="">Tất cả miền</option>
+                        <option value="Nam">Miền Nam</option>
+                        <option value="ĐTT">Miền ĐTT</option>
+                        <option value="Bắc">Miền Bắc</option>
+                        <option value="other">Khác</option>
+                    </select>
+                    <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                </div>
+                <View t-props="state.embeddedViewProps" t-key="state.viewKey"/>
+            </div>
+            <div class="o_store_shell_home o_store_dash" t-elif="state.dash">
+                <div class="o_store_dash_top">
+                    <div class="o_store_dash_title">
+                        <i class="fa fa-bar-chart"/>
+                        <div>
+                            <h1>Dashboard Checklist Audit</h1>
+                            <p>Theo dõi tình hình thực hiện và chất lượng Audit toàn hệ thống</p>
+                        </div>
+                    </div>
+                    <div class="o_store_dash_filters">
+                        <select t-on-change="(ev) => this.onFilter('month', ev)">
+                            <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
+                                    t-att-selected="m.value === state.filters.month" t-esc="m.label"/>
+                        </select>
+                        <select t-on-change="(ev) => this.onFilter('mien', ev)">
+                            <option value="">Tất cả miền</option>
+                            <option value="Nam">Miền Nam</option>
+                            <option value="ĐTT">Miền ĐTT</option>
+                            <option value="Bắc">Miền Bắc</option>
+                            <option value="other">Khác</option>
+                        </select>
+                        <select t-on-change="(ev) => this.onFilter('store', ev)">
+                            <option value="">Tất cả cửa hàng</option>
+                            <option t-foreach="state.dash.store_options" t-as="st" t-key="st.id" t-att-value="st.id" t-esc="st.name"/>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="o_store_dash_kpis">
+                    <div class="o_store_dash_kpi">
+                        <span class="ico is-blue"><i class="fa fa-shopping-bag"/></span>
+                        <div><span class="lbl">Tổng số cửa hàng</span><strong class="blue" t-esc="state.dash.total"/></div>
+                    </div>
+                    <div class="o_store_dash_kpi">
+                        <span class="ico is-green"><i class="fa fa-check"/></span>
+                        <div><span class="lbl">Đã Audit</span>
+                            <strong class="green"><t t-esc="state.dash.done"/> <small class="pill green"><t t-esc="state.dash.rate"/>%</small></strong></div>
+                    </div>
+                    <div class="o_store_dash_kpi">
+                        <span class="ico is-orange"><i class="fa fa-clock-o"/></span>
+                        <div><span class="lbl">Chưa Audit</span>
+                            <strong class="orange"><t t-esc="state.dash.todo"/> <small class="pill orange"><t t-esc="state.dash.total ? 100 - state.dash.rate : 0"/>%</small></strong></div>
+                    </div>
+                    <div class="o_store_dash_kpi">
+                        <span class="ico is-purple"><i class="fa fa-calendar-check-o"/></span>
+                        <div><span class="lbl">Tỷ lệ hoàn thành</span>
+                            <strong class="purple"><t t-esc="state.dash.rate"/>%</strong>
+                            <div class="bar"><div t-attf-style="width: #{state.dash.rate}%"/></div></div>
+                    </div>
+                </div>
+
+                <div class="o_store_dash_row three">
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-bar-chart"/> 1. Tổng số cửa hàng theo miền</h3>
+                        <t t-set="bc" t-value="barData('total')"/>
+                        <svg t-attf-viewBox="0 0 #{bc.W} #{bc.H}" class="o_store_dash_svg">
+                            <g t-foreach="bc.ticks" t-as="t" t-key="t_index">
+                                <line x1="30" t-att-x2="bc.W" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                <text x="24" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                            </g>
+                            <g t-foreach="bc.bars" t-as="b" t-key="b.label">
+                                <rect t-att-x="b.x" t-att-y="b.y" t-att-width="b.w" t-att-height="b.h" t-att-fill="b.color" rx="3"/>
+                                <text t-att-x="b.x + b.w / 2" t-att-y="b.y - 4" text-anchor="middle" class="val" t-esc="b.value"/>
+                                <text t-att-x="b.x + b.w / 2" t-att-y="bc.H - 8" text-anchor="middle" class="tick" t-esc="b.label"/>
+                            </g>
+                        </svg>
+                    </div>
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-pie-chart"/> 2. Đã Audit theo miền</h3>
+                        <t t-set="dn" t-value="donutData()"/>
+                        <div class="o_store_dash_donut">
+                            <svg viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" t-att-r="dn.R" fill="none" stroke="#eef2f7" stroke-width="22"/>
+                                <circle t-foreach="dn.segments" t-as="sg" t-key="sg.label" cx="80" cy="80" t-att-r="dn.R" fill="none"
+                                        t-att-stroke="sg.color" stroke-width="22" t-att-stroke-dasharray="sg.dash"
+                                        t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                <text x="80" y="82" text-anchor="middle" class="big" t-esc="dn.total"/>
+                                <text x="80" y="100" text-anchor="middle" class="tick">Đã Audit</text>
+                            </svg>
+                            <ul>
+                                <li t-foreach="dn.segments" t-as="sg" t-key="sg.label">
+                                    <i t-attf-style="background: #{sg.color}"/> <t t-esc="sg.label"/>
+                                    <b><t t-esc="sg.value"/> (<t t-esc="sg.pct"/>%)</b>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-list-ul"/> 3. Chưa Audit theo miền</h3>
+                        <t t-set="bt" t-value="barData('todo')"/>
+                        <svg t-attf-viewBox="0 0 #{bt.W} #{bt.H}" class="o_store_dash_svg">
+                            <g t-foreach="bt.ticks" t-as="t" t-key="t_index">
+                                <line x1="30" t-att-x2="bt.W" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                <text x="24" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                            </g>
+                            <g t-foreach="bt.bars" t-as="b" t-key="b.label">
+                                <rect t-att-x="b.x" t-att-y="b.y" t-att-width="b.w" t-att-height="b.h" t-att-fill="b.color" rx="3"/>
+                                <text t-att-x="b.x + b.w / 2" t-att-y="b.y - 4" text-anchor="middle" class="val" t-esc="b.value"/>
+                                <text t-att-x="b.x + b.w / 2" t-att-y="bt.H - 8" text-anchor="middle" class="tick" t-esc="b.label"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="o_store_dash_row two">
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-table"/> 4. Danh sách cửa hàng chưa Audit
+                            <a t-if="state.dash.todo_rows.length > 5" href="#" t-on-click.prevent="() => state.showAllTodo = !state.showAllTodo">
+                                <t t-esc="state.showAllTodo ? 'Thu gọn' : 'Xem tất cả →'"/></a></h3>
+                        <table class="o_store_dash_table">
+                            <thead><tr><th>Miền</th><th>Cửa hàng</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="todoRows" t-as="r" t-key="r.id">
+                                    <td><i class="dot" t-attf-style="background: #{miencolor(r.key)}"/> <t t-esc="r.mien"/></td>
+                                    <td t-esc="r.store"/>
+                                    <td><span class="o_store_dash_badge">Chưa Audit</span></td>
+                                    <td><t t-esc="r.last or '—'"/></td>
+                                </tr>
+                                <tr t-if="!todoRows.length"><td colspan="4" class="empty">Tất cả cửa hàng đã được Audit</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-line-chart"/> 5. Xu hướng thực hiện Audit</h3>
+                        <t t-set="ln" t-value="lineData()"/>
+                        <div class="o_store_dash_legend"><span><i style="background:#2f80ed"/> Tỷ lệ Audit</span>
+                            <span><i style="background:#93c5fd"/> Tỷ lệ chưa Audit</span></div>
+                        <svg t-attf-viewBox="0 0 #{ln.W} #{ln.H}" class="o_store_dash_svg">
+                            <g t-foreach="ln.ticks" t-as="t" t-key="t_index">
+                                <line x1="40" t-att-x2="ln.W - 16" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                <text x="34" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                            </g>
+                            <path t-att-d="ln.todoPath" fill="none" stroke="#93c5fd" stroke-width="2"/>
+                            <path t-att-d="ln.donePath" fill="none" stroke="#2f80ed" stroke-width="2"/>
+                            <g t-foreach="ln.done" t-as="p" t-key="p_index">
+                                <circle t-att-cx="p.x" t-att-cy="p.y" r="3.5" fill="#2f80ed"/>
+                                <text t-att-x="p.x" t-att-y="p.y - 8" text-anchor="middle" class="tick"><t t-esc="p.v"/>%</text>
+                                <text t-att-x="p.x" t-att-y="ln.H - 8" text-anchor="middle" class="tick" t-esc="p.label"/>
+                            </g>
+                            <g t-foreach="ln.todo" t-as="p" t-key="p_index">
+                                <circle t-att-cx="p.x" t-att-cy="p.y" r="3.5" fill="#93c5fd"/>
+                                <text t-att-x="p.x" t-att-y="p.y + 14" text-anchor="middle" class="tick"><t t-esc="p.v"/>%</text>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </PhanHeInternetShell>
+    </t>
+</templates>

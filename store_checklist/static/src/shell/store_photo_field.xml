@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.PhotoField" t-inherit="web.Many2ManyBinaryField" t-inherit-mode="primary">
+        <xpath expr="//div[@aria-atomic='true']" position="attributes">
+            <attribute name="t-ref">root</attribute>
+        </xpath>
+        <xpath expr="//span[@aria-label='Attach']" position="attributes">
+            <attribute name="class">fa fa-camera</attribute>
+        </xpath>
+    </t>
+</templates>

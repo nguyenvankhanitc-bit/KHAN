@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_store_audit_form" model="ir.ui.view">
+        <field name="name">store.audit.form</field>
+        <field name="model">store.audit</field>
+        <field name="arch" type="xml">
+            <form string="Phiếu Audit" class="o_store_audit_form">
+                <header>
+                    <button name="action_audit" type="object" string="Lưu" class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_done" type="object" string="Hoàn tất" class="btn-primary" invisible="state != 'audited'"/>
+                    <button name="action_create_actions" type="object" string="Tạo khắc phục" invisible="state == 'draft'"/>
+                    <button name="action_draft" type="object" string="Về nháp" invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,audited,done"/>
+                </header>
+                <sheet>
+                    <field name="name" invisible="1"/>
+                    <div class="o_store_audit_title">
+                        <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
+                        <div class="o_store_audit_text">
+                            <h2><field name="form_title"/></h2>
+                            <field name="audit_type" invisible="1"/>
+                            <p>Bí mật giám hàng cửa hàng tiện ích</p>
+                        </div>
+                    </div>
+                    <group class="o_store_audit_head">
+                        <group>
+                            <field name="store_id" options="{'no_create': True}" readonly="state == 'done'"/>
+                            <field name="address" string="Địa chỉ"/>
+                            <field name="template_id" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="audit_date" options="{'numeric': true}" readonly="state == 'done'"/>
+                            <field name="auditor_id" readonly="state == 'done'"/>
+                        </group>
+                    </group>
+                    <div class="o_store_audit_kpis">
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico o_store_kpi_blue"><i class="fa fa-shopping-bag"/></span>
+                            <div><div class="o_store_kpi_lbl">Tổng phiếu check list</div>
+                                <div class="o_store_kpi_val"><field name="kpi_total"/></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico bg-success"><i class="fa fa-check"/></span>
+                            <div><div class="o_store_kpi_lbl">Đạt yêu cầu</div>
+                                <div class="o_store_kpi_val"><field name="kpi_pass"/> <small><field name="kpi_pass_pct" widget="float" digits="[3,1]"/>%</small></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico bg-warning"><i class="fa fa-exclamation-triangle"/></span>
+                            <div><div class="o_store_kpi_lbl">Cần cải thiện</div>
+                                <div class="o_store_kpi_val"><field name="kpi_improve"/> <small><field name="kpi_improve_pct" widget="float" digits="[3,1]"/>%</small></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico o_store_kpi_purple"><i class="fa fa-bar-chart"/></span>
+                            <div><div class="o_store_kpi_lbl">Tổng Điểm Đánh Giá</div>
+                                <div class="o_store_kpi_val"><field name="kpi_avg" options="{'hide_trailing_zeros': true}"/> <small>/ <field name="kpi_max" options="{'hide_trailing_zeros': true}"/></small> <small class="pill purple"><field name="kpi_score_pct" widget="float" digits="[3,2]"/>%</small></div></div></div>
+                    </div>
+                    <div class="o_store_mobile">
+                        <div class="o_store_mobile_title"><i class="fa fa-bar-chart"/> TỔNG QUAN ĐÁNH GIÁ</div>
+                        <div class="o_store_ov">
+                        <div class="o_store_ov_tile is-a">
+                            <div class="o_store_ov_name"><i class="fa fa-building-o"/> <span>Cơ sở vật chất</span></div>
+                            <div class="o_store_ov_score"><field name="score_a" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_a" options="{'hide_trailing_zeros': true}"/></small></div>
+                            <field name="lvl_a" widget="badge"
+                                   decoration-success="tone_a == 'green'" decoration-info="tone_a == 'blue'"
+                                   decoration-warning="tone_a == 'orange'" decoration-danger="tone_a in ('red', 'darkred')"/>
+                        </div>
+                        <div class="o_store_ov_tile is-b">
+                            <div class="o_store_ov_name"><i class="fa fa-users"/> <span>Tác phong và kỹ năng</span></div>
+                            <div class="o_store_ov_score"><field name="score_b" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_b" options="{'hide_trailing_zeros': true}"/></small></div>
+                            <field name="lvl_b" widget="badge"
+                                   decoration-success="tone_b == 'green'" decoration-info="tone_b == 'blue'"
+                                   decoration-warning="tone_b == 'orange'" decoration-danger="tone_b in ('red', 'darkred')"/>
+                        </div>
+                        <div class="o_store_ov_tile is-c">
+                            <div class="o_store_ov_name"><i class="fa fa-line-chart"/> <span>Chuyên môn nghiệp vụ</span></div>
+                            <div class="o_store_ov_score"><field name="score_c" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_c" options="{'hide_trailing_zeros': true}"/></small></div>
+                            <field name="lvl_c" widget="badge"
+                                   decoration-success="tone_c == 'green'" decoration-info="tone_c == 'blue'"
+                                   decoration-warning="tone_c == 'orange'" decoration-danger="tone_c in ('red', 'darkred')"/>
+                        </div>
+                        <div class="o_store_ov_tile is-t">
+                            <div class="o_store_ov_name"><i class="fa fa-cube"/> <span>Tổng điểm</span></div>
+                            <div class="o_store_ov_score"><field name="total_score" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_score" options="{'hide_trailing_zeros': true}"/></small></div>
+                            <field name="lvl_t" widget="badge"
+                                   decoration-success="tone_t == 'green'" decoration-info="tone_t == 'blue'"
+                                   decoration-warning="tone_t == 'orange'" decoration-danger="tone_t in ('red', 'darkred')"/>
+                        </div>
+                        </div>
+                        <div class="o_store_ov_final">
+                            <div><i class="fa fa-trophy"/> <strong>Kết luận chung</strong></div>
+                            <field name="lvl_t" widget="badge"
+                                   decoration-success="tone_t == 'green'" decoration-info="tone_t == 'blue'"
+                                   decoration-warning="tone_t == 'orange'" decoration-danger="tone_t in ('red', 'darkred')"/>
+                            <div class="o_store_ov_final_text"><field name="conclusion_text"/></div>
+                        </div>
+                    </div>
+                    <field name="tone_a" invisible="1"/>
+                    <field name="tone_b" invisible="1"/>
+                    <field name="tone_c" invisible="1"/>
+                    <field name="tone_t" invisible="1"/>
+                    <notebook>
+                        <page string="A. Điểm cơ sở vật chất" name="lines_a">
+                            <div class="o_store_audit_bar">
+                                <span>A. ĐIỂM CƠ SỞ VẬT CHẤT</span>
+                                <span class="o_store_bar_max"><field name="max_a" options="{'hide_trailing_zeros': true}"/></span>
+                                <span class="o_store_bar_act"><field name="score_a" options="{'hide_trailing_zeros': true}"/></span>
+                                <span>Tổng điểm mục A: <strong><field name="score_a" options="{'hide_trailing_zeros': true}"/> / <field name="max_a" options="{'hide_trailing_zeros': true}"/></strong></span>
+                            </div>
+                            <field name="line_a_ids" readonly="state == 'done'" nolabel="1">
+                                <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
+                                      decoration-muted="result == 'todo'">
+                                    <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
+                                    <field name="category" column_invisible="1" force_save="1"/>
+                                    <field name="sub_category" column_invisible="1" force_save="1"/>
+                                    <field name="name" readonly="1" force_save="1" width="220px"/>
+                                    <field name="requirement" readonly="1" force_save="1"/>
+                                    <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="is_scored" column_invisible="1"/>
+                                    <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
+                                           decoration-success="result == 'pass'"
+                                           decoration-warning="result == 'partial'"
+                                           decoration-danger="result == 'fail'"/>
+                                    <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="B. Tác phong và kỹ năng" name="lines_b">
+                            <div class="o_store_audit_bar">
+                                <span>B. TÁC PHONG VÀ KỸ NĂNG PHỤC VỤ</span>
+                                <span class="o_store_bar_max"><field name="max_b" options="{'hide_trailing_zeros': true}"/></span>
+                                <span class="o_store_bar_act"><field name="score_b" options="{'hide_trailing_zeros': true}"/></span>
+                                <span>Tổng điểm mục B: <strong><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></strong></span>
+                            </div>
+                            <field name="line_b_ids" readonly="state == 'done'" nolabel="1">
+                                <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
+                                      decoration-muted="result == 'todo'">
+                                    <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
+                                    <field name="category" column_invisible="1" force_save="1"/>
+                                    <field name="sub_category" column_invisible="1" force_save="1"/>
+                                    <field name="name" readonly="1" force_save="1" width="220px"/>
+                                    <field name="requirement" readonly="1" force_save="1"/>
+                                    <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="is_scored" column_invisible="1"/>
+                                    <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
+                                           decoration-success="result == 'pass'"
+                                           decoration-warning="result == 'partial'"
+                                           decoration-danger="result == 'fail'"/>
+                                    <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="C. Chuyên môn nghiệp vụ" name="lines_c">
+                            <div class="o_store_audit_bar">
+                                <span>C. CHUYÊN MÔN NGHIỆP VỤ TƯ VẤN</span>
+                                <span class="o_store_bar_max"><field name="max_c" options="{'hide_trailing_zeros': true}"/></span>
+                                <span class="o_store_bar_act"><field name="score_c" options="{'hide_trailing_zeros': true}"/></span>
+                                <span>Tổng điểm mục C: <strong><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></strong></span>
+                            </div>
+                            <field name="line_c_ids" readonly="state == 'done'" nolabel="1">
+                                <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
+                                      decoration-muted="result == 'todo'">
+                                    <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
+                                    <field name="category" column_invisible="1" force_save="1"/>
+                                    <field name="sub_category" column_invisible="1" force_save="1"/>
+                                    <field name="name" readonly="1" force_save="1" width="220px"/>
+                                    <field name="requirement" readonly="1" force_save="1"/>
+                                    <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="is_scored" column_invisible="1"/>
+                                    <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
+                                           decoration-success="result == 'pass'"
+                                           decoration-warning="result == 'partial'"
+                                           decoration-danger="result == 'fail'"/>
+                                    <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Tổng hợp" name="summary_total">
+                            <div class="o_store_audit_grand">
+                                <i class="fa fa-trophy"/>
+                                <span>Tổng điểm chung</span>
+                                <strong><field name="total_score"/> / <field name="max_score"/></strong>
+                                <field name="pass_rate" widget="percentage"/>
+                                <field name="conclusion" widget="badge"
+                                       decoration-success="conclusion == 'pass'" decoration-danger="conclusion == 'fail'"/>
+                            </div>
+                            <group>
+                                <group>
+                                    <label for="score_a" string="A. Cơ sở vật chất"/>
+                                    <div class="o_row"><field name="score_a" options="{'hide_trailing_zeros': true}"/> / <field name="max_a" options="{'hide_trailing_zeros': true}"/></div>
+                                    <label for="score_b" string="B. Tác phong &amp; kỹ năng"/>
+                                    <div class="o_row"><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></div>
+                                    <label for="score_c" string="C. Chuyên môn tư vấn"/>
+                                    <div class="o_row"><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></div>
+                                </group>
+                                <group>
+                                    <field name="pass_threshold" readonly="state != 'draft'"/>
+                                    <field name="summary" placeholder="Nhận xét tổng thể về cửa hàng..."/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_audit_list" model="ir.ui.view">
+        <field name="name">store.audit.list</field>
+        <field name="model">store.audit</field>
+        <field name="arch" type="xml">
+            <list string="Phiếu Audit" class="o_store_audit_list" decoration-danger="conclusion == 'fail' and state != 'draft'">
+                <field name="name" string="Mã phiếu"/>
+                <field name="store_id" string="Cửa hàng"/>
+                <field name="province" optional="hide"/>
+                <field name="period" optional="hide"/>
+                <field name="audit_date" options="{'numeric': true}"/>
+                <field name="auditor_id" optional="show"/>
+                <field name="total_score" string="Điểm đánh giá" options="{'hide_trailing_zeros': true}"/>
+                <field name="max_score" string="Điểm chuẩn" options="{'hide_trailing_zeros': true}"/>
+                <field name="pass_rate" widget="percentage"/>
+                <field name="conclusion" widget="badge"
+                       decoration-success="conclusion == 'pass'" decoration-danger="conclusion == 'fail'"/>
+                <field name="state" widget="badge"/>
+                <button name="action_view_report" type="object" icon="fa-eye" title="Xem biên bản"/>
+                <button name="action_download_report" type="object" icon="fa-download" title="Tải biên bản"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa phiếu" class="text-danger"
+                        groups="store_checklist.group_store_manager"
+                        confirm="Xóa phiếu đánh giá này? Thao tác không thể hoàn tác."/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_audit_search" model="ir.ui.view">
+        <field name="name">store.audit.search</field>
+        <field name="model">store.audit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="period"/>
+                <filter name="draft" string="Nháp" domain="[('state', '=', 'draft')]"/>
+                <filter name="not_passed" string="Không đạt" domain="[('conclusion', '=', 'fail'), ('state', '!=', 'draft')]"/>
+                <group>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                    <filter name="group_period" string="Kỳ đánh giá" context="{'group_by': 'period'}"/>
+                    <filter name="group_province" string="Tỉnh / TP" context="{'group_by': 'province'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_store_audit" model="ir.actions.act_window">
+        <field name="name">Phiếu Audit</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_group_store': 1}</field>
+    </record>
+
+    <!-- Phân tích lỗi theo tiêu chí / cửa hàng (thay sheet Tong_hop) -->
+    <record id="view_store_audit_line_pivot" model="ir.ui.view">
+        <field name="name">store.audit.line.pivot</field>
+        <field name="model">store.audit.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Phân tích tiêu chí">
+                <field name="category" type="row"/>
+                <field name="store_id" type="col"/>
+                <field name="actual_score" type="measure"/>
+                <field name="max_score" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_store_audit_line_list" model="ir.ui.view">
+        <field name="name">store.audit.line.list</field>
+        <field name="model">store.audit.line</field>
+        <field name="arch" type="xml">
+            <list string="Tiêu chí" create="false">
+                <field name="audit_id"/>
+                <field name="store_id"/>
+                <field name="audit_date"/>
+                <field name="category"/>
+                <field name="name"/>
+                <field name="max_score"/>
+                <field name="actual_score"/>
+                <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
+                       decoration-success="result == 'pass'"
+                       decoration-warning="result == 'partial'"
+                       decoration-danger="result == 'fail'"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_audit_line_analysis" model="ir.actions.act_window">
+        <field name="name">Phân tích tiêu chí</field>
+        <field name="res_model">store.audit.line</field>
+        <field name="view_mode">pivot,list</field>
+    </record>
+</odoo>

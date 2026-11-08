@@ -1,0 +1,17 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_store_store_user,store.store user,model_store_store,group_store_user,1,0,0,0
+access_store_store_manager,store.store manager,model_store_store,group_store_manager,1,1,1,1
+access_store_audit_user,store.audit user,model_store_audit,group_store_user,1,1,1,0
+access_store_audit_manager,store.audit manager,model_store_audit,group_store_manager,1,1,1,1
+access_store_audit_line_user,store.audit.line user,model_store_audit_line,group_store_user,1,1,1,0
+access_store_audit_line_manager,store.audit.line manager,model_store_audit_line,group_store_manager,1,1,1,1
+access_store_audit_template_user,store.audit.template user,model_store_audit_template,group_store_user,1,0,0,0
+access_store_audit_template_manager,store.audit.template manager,model_store_audit_template,group_store_manager,1,1,1,1
+access_store_audit_template_line_user,store.audit.template.line user,model_store_audit_template_line,group_store_user,1,0,0,0
+access_store_audit_template_line_manager,store.audit.template.line manager,model_store_audit_template_line,group_store_manager,1,1,1,1
+access_store_audit_action_user,store.audit.action user,model_store_audit_action,group_store_user,1,1,1,0
+access_store_audit_action_manager,store.audit.action manager,model_store_audit_action,group_store_manager,1,1,1,1
+access_store_audit_sub_group_user,store.audit.sub.group user,model_store_audit_sub_group,group_store_user,1,0,0,0
+access_store_audit_sub_group_manager,store.audit.sub.group manager,model_store_audit_sub_group,group_store_manager,1,1,1,1
+access_store_audit_level_user,store.audit.level user,model_store_audit_level,group_store_user,1,0,0,0
+access_store_audit_level_manager,store.audit.level manager,model_store_audit_level,group_store_manager,1,1,1,1

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Mẫu Mystery Shopper hiện có là checklist NVBH; ASM / GS tạo sẵn mẫu trống, nhập tiêu chí ở Cài đặt → Điểm chuẩn -->
+    <record id="tmpl_mystery_shopper" model="store.audit.template">
+        <field name="audit_type">nvbh</field>
+    </record>
+    <record id="tmpl_asm" model="store.audit.template">
+        <field name="name">Checklist ASM</field>
+        <field name="audit_type">asm</field>
+    </record>
+    <record id="tmpl_gs" model="store.audit.template">
+        <field name="name">Checklist GS</field>
+        <field name="audit_type">gs</field>
+    </record>
+</odoo>

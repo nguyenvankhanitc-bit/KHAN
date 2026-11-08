@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Phiếu theo loại checklist: mở từ sidebar NVBH / ASM / GS -->
+    <record id="action_store_audit_nvbh" model="ir.actions.act_window">
+        <field name="name">Checklist NVBH</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('audit_type', '=', 'nvbh')]</field>
+        <field name="context">{'store_audit_type': 'nvbh', 'search_default_group_store': 1}</field>
+    </record>
+    <record id="action_store_audit_asm" model="ir.actions.act_window">
+        <field name="name">Checklist ASM</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('audit_type', '=', 'asm')]</field>
+        <field name="context">{'store_audit_type': 'asm', 'search_default_group_store': 1}</field>
+    </record>
+    <record id="action_store_audit_gs" model="ir.actions.act_window">
+        <field name="name">Checklist GS</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('audit_type', '=', 'gs')]</field>
+        <field name="context">{'store_audit_type': 'gs', 'search_default_group_store': 1}</field>
+    </record>
+
+    <!-- Điểm chuẩn: STT - Nhóm tiêu chí - Tiêu chí đánh giá - Yêu cầu / Tiêu chuẩn - Điểm chuẩn -->
+    <record id="view_store_benchmark_list" model="ir.ui.view">
+        <field name="name">store.audit.template.line.benchmark.list</field>
+        <field name="model">store.audit.template.line</field>
+        <field name="arch" type="xml">
+            <list string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
+                <field name="sequence" string="STT" width="60px"/>
+                <field name="category" width="200px"/>
+                <field name="sub_group_id" width="210px"/>
+                <field name="name" width="260px"/>
+                <field name="requirement"/>
+                <field name="max_score" sum="Tổng"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger"
+                        confirm="Xóa hạng mục này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_benchmark_form" model="ir.ui.view">
+        <field name="name">store.audit.template.line.benchmark.form</field>
+        <field name="model">store.audit.template.line</field>
+        <field name="arch" type="xml">
+            <form string="Điểm chuẩn" class="o_store_benchmark_form">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="template_id" string="Loại checklist"/>
+                            <field name="category"/>
+                            <field name="sub_group_id" options="{'no_create': true}" domain="category and [('category', '=', category), ('audit_type', '=', audit_type)] or [('audit_type', '=', audit_type)]"/>
+                            <field name="audit_type" invisible="1"/>
+                        </group>
+                        <group>
+                            <field name="sequence" string="STT"/>
+                            <field name="max_score"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="name"/>
+                        <field name="requirement"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_benchmark_search" model="ir.ui.view">
+        <field name="name">store.audit.template.line.benchmark.search</field>
+        <field name="model">store.audit.template.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="template_id"/>
+                <group>
+                    <filter name="group_template" string="Loại checklist" context="{'group_by': 'template_id'}"/>
+                    <filter name="group_category" string="Nhóm tiêu chí" context="{'group_by': 'category'}"/>
+                    <filter name="group_sub_group" string="Phân nhóm" context="{'group_by': 'sub_group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_store_benchmark" model="ir.actions.act_window">
+        <field name="name">Điểm chuẩn</field>
+        <field name="res_model">store.audit.template.line</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('template_id.audit_type', '!=', 'gs')]</field>
+        <field name="search_view_id" ref="view_store_benchmark_search"/>
+        <field name="context">{'search_default_group_sub_group': 1}</field>
+    </record>
+
+    <record id="action_store_benchmark_gs" model="ir.actions.act_window">
+        <field name="name">Điểm chuẩn giám sát</field>
+        <field name="res_model">store.audit.template.line</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('template_id.audit_type', '=', 'gs')]</field>
+        <field name="search_view_id" ref="view_store_benchmark_search"/>
+        <field name="context" eval="{'search_default_group_sub_group': 1, 'default_template_id': ref('tmpl_gs')}"/>
+    </record>
+
+    <record id="view_store_sub_group_list" model="ir.ui.view">
+        <field name="name">store.audit.sub.group.list</field>
+        <field name="model">store.audit.sub.group</field>
+        <field name="arch" type="xml">
+            <list string="Phân nhóm" editable="bottom" default_order="sequence, id">
+                <field name="sequence" string="STT"/>
+                <field name="category"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_sub_group" model="ir.actions.act_window">
+        <field name="name">Phân nhóm</field>
+        <field name="res_model">store.audit.sub.group</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('audit_type', '!=', 'gs')]</field>
+    </record>
+
+    <record id="action_store_sub_group_gs" model="ir.actions.act_window">
+        <field name="name">Phân nhóm giám sát</field>
+        <field name="res_model">store.audit.sub.group</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('audit_type', '=', 'gs')]</field>
+        <field name="context">{'default_audit_type': 'gs'}</field>
+    </record>
+
+    <record id="view_store_level_list" model="ir.ui.view">
+        <field name="name">store.audit.level.list</field>
+        <field name="model">store.audit.level</field>
+        <field name="arch" type="xml">
+            <list string="Mức đánh giá" class="o_store_level">
+                <field name="name"/>
+                <field name="min_score"/>
+                <field name="score_range"/>
+                <field name="tone" widget="badge"
+                       decoration-success="tone == 'green'" decoration-info="tone == 'blue'"
+                       decoration-warning="tone == 'orange'" decoration-danger="tone in ('red', 'darkred')"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa mức đánh giá này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_level_form" model="ir.ui.view">
+        <field name="name">store.audit.level.form</field>
+        <field name="model">store.audit.level</field>
+        <field name="arch" type="xml">
+            <form string="Mức đánh giá">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="min_score"/>
+                        <field name="tone"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_store_level" model="ir.actions.act_window">
+        <field name="name">Mức Đánh giá</field>
+        <field name="res_model">store.audit.level</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('audit_type', '!=', 'gs')]</field>
+    </record>
+
+    <record id="action_store_level_gs" model="ir.actions.act_window">
+        <field name="name">Mức đánh giá giám sát</field>
+        <field name="res_model">store.audit.level</field>
+        <field name="view_mode">list</field>
+        <field name="domain">[('audit_type', '=', 'gs')]</field>
+        <field name="context">{'default_audit_type': 'gs'}</field>
+    </record>
+
+    <record id="action_store_groups" model="ir.actions.act_window">
+        <field name="name">Phân quyền</field>
+        <field name="res_model">res.groups</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain" eval="[('privilege_id', '=', ref('res_groups_privilege_store_checklist'))]"/>
+        <field name="group_ids" eval="[(4, ref('group_store_manager'))]"/>
+    </record>
+
+    <record id="action_store_shell" model="ir.actions.client">
+        <field name="name">Checklist Audit</field>
+        <field name="tag">store_checklist_shell</field>
+    </record>
+</odoo>

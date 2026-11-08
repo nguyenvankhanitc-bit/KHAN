@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.SearchBarToggler" t-inherit="web.SearchBar.Toggler" t-inherit-mode="primary">
+        <xpath expr="//button" position="attributes">
+            <attribute name="t-on-click">() => this.onSearchClick()</attribute>
+        </xpath>
+        <xpath expr="//i" position="replace">
+            <span class="fw-bold">Tìm</span>
+        </xpath>
+    </t>
+</templates>

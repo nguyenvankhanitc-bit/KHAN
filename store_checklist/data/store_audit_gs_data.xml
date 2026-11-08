@@ -1,0 +1,433 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Checklist giám sát (GS): nạp từ file Checklist_Giam_Sat_Audit_Chuyen_Nghiep.xlsx, sheet Checklist_Audit -->
+    <record id="sub_group_gs_01" model="store.audit.sub.group">
+        <field name="name">A. CƠ SỞ VẬT CHẤT</field>
+        <field name="category">a</field>
+        <field name="audit_type">gs</field>
+        <field name="sequence">1</field>
+    </record>
+    <record id="sub_group_gs_02" model="store.audit.sub.group">
+        <field name="name">B. TÁC PHONG &amp; KỸ NĂNG</field>
+        <field name="category">b</field>
+        <field name="audit_type">gs</field>
+        <field name="sequence">2</field>
+    </record>
+    <record id="sub_group_gs_03" model="store.audit.sub.group">
+        <field name="name">C. CHUYÊN MÔN NGHIỆP VỤ</field>
+        <field name="category">c</field>
+        <field name="audit_type">gs</field>
+        <field name="sequence">3</field>
+    </record>
+    <record id="tmpl_line_gs_01" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">1</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Bảng hiệu &amp; nhận diện</field>
+        <field name="requirement">Đúng nhận diện thương hiệu; nội dung rõ ràng; không bong tróc, nứt vỡ; đèn hoạt động đúng thời gian.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_02" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">2</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Ấn phẩm truyền thông / POSM</field>
+        <field name="requirement">Đúng chương trình và thời hạn; giá, thông tin sản phẩm rõ ràng; bố trí ngay ngắn, không rách hoặc lỗi thời.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_03" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">3</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Ánh sáng</field>
+        <field name="requirement">Đèn trần, đèn tủ, đèn trưng bày hoạt động đầy đủ; ánh sáng phù hợp, không nhấp nháy hoặc dây điện hở.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_04" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">4</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Tường, trần, sàn</field>
+        <field name="requirement">Sạch, khô, không bong tróc, thấm dột, nứt vỡ hoặc có nguy cơ trượt ngã.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_05" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">5</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Không khí &amp; mùi</field>
+        <field name="requirement">Không gian thông thoáng, nhiệt độ phù hợp; không có mùi khó chịu, ẩm mốc hoặc khói bất thường.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_06" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">6</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Âm thanh</field>
+        <field name="requirement">Âm lượng phù hợp; nội dung phát đúng quy định; thiết bị không rè, nhiễu hoặc gây ảnh hưởng khách hàng.</field>
+        <field name="max_score">1</field>
+    </record>
+    <record id="tmpl_line_gs_07" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">7</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Gương, kính, cửa</field>
+        <field name="requirement">Sạch, không nứt vỡ; cửa đóng mở an toàn; khóa và phụ kiện hoạt động tốt.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_08" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">8</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Quầy tư vấn &amp; quầy thu ngân</field>
+        <field name="requirement">Bề mặt sạch, gọn; không có đồ cá nhân/vật dụng thừa; khu vực giao dịch thông thoáng.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_09" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">9</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Quầy kệ &amp; khu vực trưng bày</field>
+        <field name="requirement">Kệ chắc chắn, sạch; sản phẩm sắp xếp đúng sơ đồ/tiêu chuẩn; không có vật cản lối đi.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_10" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">10</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Kho &amp; khu vực phụ trợ</field>
+        <field name="requirement">Sắp xếp gọn, phân khu rõ; lối đi thông thoáng; hàng/vật tư không đặt trực tiếp gây mất vệ sinh hoặc nguy hiểm.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_11" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">11</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Thiết bị bán hàng &amp; CNTT</field>
+        <field name="requirement">POS, máy in, máy quét, máy tính, mạng hoạt động ổn định; dây dẫn gọn, không mất an toàn.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_12" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">12</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Vệ sinh &amp; nhà vệ sinh (nếu có)</field>
+        <field name="requirement">Khu vực bán hàng, kho, khu phụ trợ và nhà vệ sinh sạch; có dụng cụ vệ sinh và lịch vệ sinh.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_13" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">13</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">Điện, nước &amp; hệ thống kỹ thuật</field>
+        <field name="requirement">Không rò rỉ, chập cháy; tủ điện có che chắn; thiết bị điện/nước được sử dụng an toàn.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_14" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">14</field>
+        <field name="category">a</field>
+        <field name="sub_group_id" ref="sub_group_gs_01"/>
+        <field name="name">PCCC &amp; lối thoát hiểm</field>
+        <field name="requirement">Bình chữa cháy đúng vị trí, còn hạn/áp suất; lối thoát hiểm và thiết bị PCCC không bị che chắn.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_15" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">15</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Đồng phục &amp; diện mạo</field>
+        <field name="requirement">Nhân viên mặc đúng đồng phục, bảng tên; đầu tóc, diện mạo gọn gàng theo quy định.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_16" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">16</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Tác phong trong ca làm</field>
+        <field name="requirement">Có mặt đúng vị trí; không sử dụng điện thoại/việc riêng trái quy định; chủ động hỗ trợ công việc.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_17" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">17</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Chào đón khách hàng</field>
+        <field name="requirement">Chủ động chào hỏi, thái độ thân thiện, đúng chuẩn dịch vụ; không bỏ mặc khách.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_18" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">18</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Kỹ năng giao tiếp</field>
+        <field name="requirement">Ngôn ngữ lịch sự, rõ ràng; lắng nghe, không tranh cãi hoặc có thái độ thiếu chuẩn mực.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_19" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">19</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Kỹ năng tư vấn</field>
+        <field name="requirement">Tìm hiểu nhu cầu; tư vấn đúng thông tin, không gây hiểu nhầm hoặc cam kết sai.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_20" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">20</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Phối hợp trong cửa hàng</field>
+        <field name="requirement">Nhân viên hỗ trợ nhau; phối hợp bán hàng, thu ngân, kho và bàn giao công việc nhịp nhàng.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_21" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">21</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Xử lý phản hồi/khiếu nại</field>
+        <field name="requirement">Tiếp nhận bình tĩnh; ghi nhận đầy đủ; xử lý theo thẩm quyền và báo cấp quản lý khi cần.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_22" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">22</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Kỷ luật &amp; tuân thủ nội quy</field>
+        <field name="requirement">Không vi phạm nội quy, quy định bảo mật, quy tắc ứng xử và quy trình làm việc.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_23" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">23</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Phân công &amp; bố trí nhân sự</field>
+        <field name="requirement">Quản lý bố trí đủ vị trí theo lưu lượng khách; có người chịu trách nhiệm từng khu vực.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_24" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">24</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Kiểm soát giờ giấc &amp; chấm công</field>
+        <field name="requirement">Nhân viên tuân thủ giờ làm; chấm công đúng quy định; có giải trình trường hợp bất thường.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_25" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">25</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Đào tạo &amp; hướng dẫn nhân viên</field>
+        <field name="requirement">Nhân viên nắm quy định cơ bản; nhân viên mới được hướng dẫn; có ghi nhận đào tạo khi áp dụng.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_26" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">26</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Vai trò quản lý cửa hàng</field>
+        <field name="requirement">Quản lý nắm tình hình vận hành, phân công, giám sát nhân viên và xử lý vấn đề phát sinh.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_27" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">27</field>
+        <field name="category">b</field>
+        <field name="sub_group_id" ref="sub_group_gs_02"/>
+        <field name="name">Tiếp nhận &amp; bàn giao ca</field>
+        <field name="requirement">Bàn giao tiền, hàng, thiết bị, công việc tồn và sự cố đầy đủ; có xác nhận theo quy định.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_28" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">28</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Quy trình mở cửa</field>
+        <field name="requirement">Thực hiện đủ bước mở cửa, kiểm tra an ninh, thiết bị, vệ sinh và sẵn sàng phục vụ.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_29" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">29</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Quy trình đóng cửa</field>
+        <field name="requirement">Thực hiện kiểm tra khách, tiền, hàng, thiết bị, điện nước, cửa khóa và bàn giao an toàn.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_30" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">30</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Quy trình bán hàng trên POS</field>
+        <field name="requirement">Tạo đơn đúng, đúng sản phẩm/giá/khuyến mại; không bỏ qua bước hoặc thao tác ngoài quy trình.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_31" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">31</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Thu ngân &amp; quản lý tiền</field>
+        <field name="requirement">Thu đúng số tiền, phương thức thanh toán; quản lý tiền mặt, két và chứng từ theo quy định.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_32" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">32</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Hóa đơn &amp; chứng từ</field>
+        <field name="requirement">Xuất/ghi nhận hóa đơn, chứng từ đúng quy định; lưu trữ đầy đủ, dễ tra cứu.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_33" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">33</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Đổi trả &amp; bảo hành</field>
+        <field name="requirement">Thực hiện đúng điều kiện, quy trình, phê duyệt và lưu hồ sơ đổi trả/bảo hành.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_34" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">34</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Quản lý tồn kho</field>
+        <field name="requirement">Thực hiện nhập, xuất, chuyển kho, điều chỉnh theo đúng chứng từ và thẩm quyền.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_35" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">35</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Kiểm soát hàng hóa trưng bày</field>
+        <field name="requirement">Giá niêm yết đúng; hàng hóa sạch, nguyên vẹn; không trưng bày hàng hết hạn/ngừng bán.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_36" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">36</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Kiểm soát thất thoát</field>
+        <field name="requirement">Tuân thủ quy trình kiểm soát hàng, tiền, chìa khóa, tài khoản và khu vực hạn chế.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_37" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">37</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Quản lý tài khoản &amp; dữ liệu</field>
+        <field name="requirement">Không dùng chung tài khoản trái quy định; bảo mật mật khẩu, dữ liệu khách hàng và thông tin nội bộ.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_38" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">38</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Tiếp nhận &amp; xử lý sự cố</field>
+        <field name="requirement">Báo cáo đúng đầu mối; có mã/ticket hoặc nhật ký; theo dõi đến khi xử lý xong.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_39" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">39</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Theo dõi công việc tồn đọng</field>
+        <field name="requirement">Có danh sách việc chưa hoàn thành, người phụ trách, hạn xử lý; không để lỗi lặp lại không kiểm soát.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_40" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">40</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Báo cáo doanh thu &amp; vận hành</field>
+        <field name="requirement">Báo cáo đúng hạn, số liệu nhất quán; có giải trình khi phát sinh bất thường.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="tmpl_line_gs_41" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">41</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Tuân thủ chương trình/giá bán</field>
+        <field name="requirement">Áp dụng đúng giá, khuyến mại, chính sách bán hàng được phê duyệt.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_42" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">42</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">An toàn lao động &amp; ứng phó</field>
+        <field name="requirement">Nhân viên biết cách báo sự cố, sơ cứu cơ bản và thực hiện hướng dẫn an toàn tại cửa hàng.</field>
+        <field name="max_score">2</field>
+    </record>
+    <record id="tmpl_line_gs_43" model="store.audit.template.line">
+        <field name="template_id" ref="tmpl_gs"/>
+        <field name="sequence">43</field>
+        <field name="category">c</field>
+        <field name="sub_group_id" ref="sub_group_gs_03"/>
+        <field name="name">Theo dõi khắc phục sau Audit</field>
+        <field name="requirement">Các lỗi kỳ trước có bằng chứng khắc phục; lỗi chưa xử lý có lý do, người chịu trách nhiệm và hạn mới.</field>
+        <field name="max_score">3</field>
+    </record>
+    <record id="level_gs_poor" model="store.audit.level">
+        <field name="name">Không đạt</field>
+        <field name="min_score">0</field>
+        <field name="tone">red</field>
+        <field name="audit_type">gs</field>
+    </record>
+    <record id="level_gs_improve" model="store.audit.level">
+        <field name="name">Cần cải thiện</field>
+        <field name="min_score">60</field>
+        <field name="tone">orange</field>
+        <field name="audit_type">gs</field>
+    </record>
+    <record id="level_gs_good" model="store.audit.level">
+        <field name="name">Đạt tốt</field>
+        <field name="min_score">80</field>
+        <field name="tone">blue</field>
+        <field name="audit_type">gs</field>
+    </record>
+    <record id="level_gs_excellent" model="store.audit.level">
+        <field name="name">Xuất sắc</field>
+        <field name="min_score">90</field>
+        <field name="tone">green</field>
+        <field name="audit_type">gs</field>
+    </record>
+</odoo>

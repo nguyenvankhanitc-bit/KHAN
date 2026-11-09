@@ -24,13 +24,13 @@
                     </div>
                     <group class="o_store_audit_head">
                         <group>
-                            <field name="store_id" options="{'no_create': True}" readonly="state == 'done'"/>
+                            <field name="store_id" options="{'no_create': True}" readonly="state == 'done' and not can_edit_done"/>
                             <field name="address" string="Địa chỉ"/>
                             <field name="template_id" invisible="1"/>
                         </group>
                         <group>
-                            <field name="audit_date" options="{'numeric': true}" readonly="state == 'done'"/>
-                            <field name="auditor_id" readonly="state == 'done'"/>
+                            <field name="audit_date" options="{'numeric': true}" readonly="state == 'done' and not can_edit_done"/>
+                            <field name="auditor_id" readonly="state == 'done' and not can_edit_done"/>
                         </group>
                     </group>
                     <div class="o_store_audit_kpis">
@@ -41,8 +41,11 @@
                             <div><div class="o_store_kpi_lbl">Đạt yêu cầu</div>
                                 <div class="o_store_kpi_val"><field name="kpi_pass"/> <small><field name="kpi_pass_pct" widget="float" digits="[3,1]"/>%</small></div></div></div>
                         <div class="o_store_kpi"><span class="o_store_kpi_ico bg-warning"><i class="fa fa-exclamation-triangle"/></span>
-                            <div><div class="o_store_kpi_lbl">Cần cải thiện</div>
+                            <div><div class="o_store_kpi_lbl">Trung bình</div>
                                 <div class="o_store_kpi_val"><field name="kpi_improve"/> <small><field name="kpi_improve_pct" widget="float" digits="[3,1]"/>%</small></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico bg-danger"><i class="fa fa-times"/></span>
+                            <div><div class="o_store_kpi_lbl">Không đạt</div>
+                                <div class="o_store_kpi_val"><field name="kpi_fail"/> <small><field name="kpi_fail_pct" widget="float" digits="[3,1]"/>%</small></div></div></div>
                         <div class="o_store_kpi"><span class="o_store_kpi_ico o_store_kpi_purple"><i class="fa fa-bar-chart"/></span>
                             <div><div class="o_store_kpi_lbl">Tổng Điểm Đánh Giá</div>
                                 <div class="o_store_kpi_val"><field name="kpi_avg" options="{'hide_trailing_zeros': true}"/> <small>/ <field name="kpi_max" options="{'hide_trailing_zeros': true}"/></small> <small class="pill purple"><field name="kpi_score_pct" widget="float" digits="[3,2]"/>%</small></div></div></div>
@@ -99,7 +102,7 @@
                                 <span class="o_store_bar_act"><field name="score_a" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục A: <strong><field name="score_a" options="{'hide_trailing_zeros': true}"/> / <field name="max_a" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_a_ids" readonly="state == 'done'" nolabel="1">
+                            <field name="line_a_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -115,6 +118,7 @@
                                            decoration-warning="result == 'partial'"
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>
@@ -126,7 +130,7 @@
                                 <span class="o_store_bar_act"><field name="score_b" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục B: <strong><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_b_ids" readonly="state == 'done'" nolabel="1">
+                            <field name="line_b_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -142,6 +146,7 @@
                                            decoration-warning="result == 'partial'"
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>
@@ -153,7 +158,7 @@
                                 <span class="o_store_bar_act"><field name="score_c" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục C: <strong><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_c_ids" readonly="state == 'done'" nolabel="1">
+                            <field name="line_c_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -169,6 +174,7 @@
                                            decoration-warning="result == 'partial'"
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>
@@ -179,8 +185,10 @@
                                 <span>Tổng điểm chung</span>
                                 <strong><field name="total_score"/> / <field name="max_score"/></strong>
                                 <field name="pass_rate" widget="percentage"/>
-                                <field name="conclusion" widget="badge"
-                                       decoration-success="conclusion == 'pass'" decoration-danger="conclusion == 'fail'"/>
+                                <field name="tone_t" invisible="1"/>
+                                <field name="lvl_t" widget="badge"
+                                       decoration-success="tone_t == 'green'" decoration-info="tone_t == 'blue'"
+                                       decoration-warning="tone_t == 'orange'" decoration-danger="tone_t in ('red', 'darkred')"/>
                             </div>
                             <group>
                                 <group>
@@ -192,7 +200,8 @@
                                     <div class="o_row"><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></div>
                                 </group>
                                 <group>
-                                    <field name="pass_threshold" readonly="state != 'draft'"/>
+                                    <field name="pass_threshold" readonly="state != 'draft' and not can_edit_done"/>
+                                    <field name="can_edit_done" invisible="1"/>
                                     <field name="summary" placeholder="Nhận xét tổng thể về cửa hàng..."/>
                                 </group>
                             </group>
@@ -209,19 +218,25 @@
         <field name="arch" type="xml">
             <list string="Phiếu Audit" class="o_store_audit_list" decoration-danger="conclusion == 'fail' and state != 'draft'">
                 <field name="name" string="Mã phiếu"/>
+                <field name="audit_date" options="{'numeric': true}"/>
                 <field name="store_id" string="Cửa hàng"/>
                 <field name="province" optional="hide"/>
                 <field name="period" optional="hide"/>
-                <field name="audit_date" options="{'numeric': true}"/>
                 <field name="auditor_id" optional="show"/>
                 <field name="total_score" string="Điểm đánh giá" options="{'hide_trailing_zeros': true}"/>
                 <field name="max_score" string="Điểm chuẩn" options="{'hide_trailing_zeros': true}"/>
                 <field name="pass_rate" widget="percentage"/>
-                <field name="conclusion" widget="badge"
-                       decoration-success="conclusion == 'pass'" decoration-danger="conclusion == 'fail'"/>
+                <field name="error_count" string="Tổng số lỗi"/>
+                <field name="tone_t" column_invisible="True"/>
+                <field name="lvl_t" string="Kết luận" widget="badge"
+                       decoration-success="tone_t == 'green'" decoration-info="tone_t == 'blue'"
+                       decoration-warning="tone_t == 'orange'" decoration-danger="tone_t in ('red', 'darkred')"/>
                 <field name="state" widget="badge"/>
                 <button name="action_view_report" type="object" icon="fa-eye" title="Xem biên bản"/>
                 <button name="action_download_report" type="object" icon="fa-download" title="Tải biên bản"/>
+                <!-- field chen giữa để cột sửa / xóa tách khỏi cột xem / tải biên bản -->
+                <field name="can_edit_done" column_invisible="1"/>
+                <button name="action_edit_popup" type="object" icon="fa-pencil" title="Chỉnh sửa phiếu" invisible="not can_edit_done"/>
                 <button name="unlink" type="object" icon="fa-trash" title="Xóa phiếu" class="text-danger"
                         groups="store_checklist.group_store_manager"
                         confirm="Xóa phiếu đánh giá này? Thao tác không thể hoàn tác."/>

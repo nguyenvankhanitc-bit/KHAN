@@ -1,4 +1,4 @@
-/* Hiện lại nút Mới / Lưu trên list Cài đặt (shell Internet đang ẩn breadcrumb + nút). */
+﻿/* Hiện lại nút Mới / Lưu trên list Cài đặt (shell Internet đang ẩn breadcrumb + nút). */
 .o_phan_he_shell.o_internet_master .o_internet_content {
     .o_control_panel_breadcrumbs {
         display: flex !important;
@@ -186,18 +186,18 @@
         padding: 4px 14px; font-size: .85rem; color: #1e3a8a; box-shadow: 0 1px 3px rgba(0, 0, 0, .1);
     }
     .o_store_audit_head { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 4px rgba(0, 0, 0, .08); margin-bottom: 16px; }
-    .o_store_audit_kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+    .o_store_audit_kpis { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 18px; }
     .o_store_kpi {
-        display: flex; align-items: center; gap: 14px; background: #fff; border-radius: 12px; padding: 14px 18px;
+        display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 10px; padding: 8px 12px; min-width: 0;
         box-shadow: 0 1px 4px rgba(0, 0, 0, .1);
         .o_store_kpi_ico {
-            width: 52px; height: 52px; border-radius: 50%; color: #fff; font-size: 22px; flex: none;
+            width: 36px; height: 36px; border-radius: 50%; color: #fff; font-size: 15px; flex: none;
             display: flex; align-items: center; justify-content: center;
         }
         .o_store_kpi_purple { background: #7c4dbd; }
         .o_store_kpi_blue { background: #2563eb; }
-        .o_store_kpi_lbl { color: #334155; }
-        .o_store_kpi_val { font-size: 1.8rem; font-weight: 700; color: #12285f; line-height: 1.1;
+        .o_store_kpi_lbl { color: #334155; font-size: .8rem; }
+        .o_store_kpi_val { font-size: 1.3rem; font-weight: 700; color: #12285f; line-height: 1.1;
             small { font-size: .85rem; font-weight: 400; color: #64748b; } }
     }
     /* cuộn bảng thì tab, thanh mục và dòng tiêu đề cột đứng yên */
@@ -342,11 +342,13 @@
             .o_wrap_field, .o_cell { display: block; width: 100%; }
             .o_field_widget { max-width: 100% !important; } }
         .o_store_audit_kpis { display: none; }
-        /* điện thoại: Tổng quan đánh giá lên ngay dưới tiêu đề, thẻ cửa hàng / gian hàng xuống sau */
+        .o_store_audit_head .o_field_many2one .o-autocomplete--input { min-height: 36px; }
+        /* điện thoại: thứ tự các khối trong phiếu */
         .o_form_sheet { display: flex; flex-direction: column; }
         .o_store_audit_title { order: 0; }
-        .o_store_mobile { order: 1; }
-        .o_store_audit_head { order: 2; }
+        /* điện thoại: ô Cửa hàng lên ngay dưới tiêu đề để danh sách gợi ý xổ xuống bên dưới ô nhập (đủ chỗ, không bị lật lên che ô) */
+        .o_store_audit_head { order: 1; margin-bottom: 14px !important; }
+        .o_store_mobile { order: 2; }
         .o_notebook { order: 3; }
         .o_store_audit_head { padding-bottom: 0 !important; margin-bottom: 8px !important;
             .o_inner_group { margin-bottom: 0 !important; }
@@ -443,10 +445,10 @@
         td[name="total_score"]::before { content: "Điểm đánh giá"; }
         td[name="max_score"]::before { content: "Điểm chuẩn"; }
         td[name="pass_rate"]::before { content: "Tỷ lệ đạt"; }
-        td[name="conclusion"]::before { content: "Kết luận"; }
+        td[name="lvl_t"]::before { content: "Kết luận"; }
         td[name="state"]::before { content: "Trạng thái"; }
         td[name="store_id"]::before, td[name="audit_date"]::before, td[name="auditor_id"]::before, td[name="total_score"]::before,
-        td[name="max_score"]::before, td[name="pass_rate"]::before, td[name="conclusion"]::before, td[name="state"]::before {
+        td[name="max_score"]::before, td[name="pass_rate"]::before, td[name="lvl_t"]::before, td[name="state"]::before {
             display: block; font-size: .7rem; color: #64748b; font-weight: 600; }
         td.o_list_button { display: inline-block !important; grid-column: auto; }
     }
@@ -521,3 +523,172 @@
         .o_store_audit_icon { width: 46px; height: 46px; } h2 { font-size: 1rem; } p { font-size: .8rem; } }
     .o_store_list_filters .o_store_export_btn { flex: 1 1 100%; margin-left: 0; }
 }
+
+/* Danh sách trong Checklist Audit: nút "Mới" thành "Thêm mới", ô tìm kiếm nhỏ gọn hơn */
+.o_store_list_wrap {
+    .o_list_button_add, .o_form_button_create, .o-kanban-button-new { font-size: 0 !important;
+        &::after { content: "Thêm mới"; font-size: .875rem; } }
+    /* ô tìm kiếm nằm sát nút "Thêm mới" (bên trái), bộ chuyển trang đẩy sang phải */
+    .o_control_panel .o_control_panel_main { justify-content: flex-start !important; gap: 12px; align-items: center; }
+    .o_control_panel .o_control_panel_actions { flex: 0 1 auto !important; justify-content: flex-start !important; }
+    .o_control_panel .o_control_panel_breadcrumbs { flex: 0 0 auto !important; min-width: 0 !important; width: auto !important; }
+    .o_control_panel .o_control_panel_main { gap: 0 !important; }
+    .o_control_panel .o_control_panel_breadcrumbs,
+    .o_control_panel .o_control_panel_main_buttons { padding-right: 0 !important; margin-right: 0 !important; gap: 0 !important; }
+    .o_control_panel .o_control_panel_actions { min-width: 0 !important; margin-right: auto; margin-left: 47px !important; justify-content: flex-start !important; flex: 0 0 auto !important; width: auto !important; max-width: 100% !important; }
+    .o_control_panel .o_cp_searchview, .o_control_panel .o_searchview { margin-left: 0 !important; margin-right: 0 !important; }
+    .o_control_panel .o_control_panel_actions > * { margin-left: 0 !important; margin-right: 0 !important; }
+    .o_control_panel .o_cp_searchview { margin-left: 0 !important; }
+    .o_control_panel .o_control_panel_navigation { flex: 1 1 auto !important; justify-content: flex-end; }
+    .o_control_panel .o_cp_searchview { width: 340px !important; max-width: 340px !important; flex: 0 0 340px !important; }
+    .o_control_panel .o_searchview_input_container { flex-wrap: nowrap !important; overflow: hidden; }
+    .o_control_panel .o_searchview_facet { flex: 0 0 auto; }
+    .o_control_panel .o_searchview_input { min-width: 40px; }
+    .o_control_panel .o_searchview { padding-top: 0 !important; padding-bottom: 0 !important; font-size: .8rem; min-height: 30px; }
+    .o_control_panel .o_cp_searchview .btn { padding: 2px 8px; }
+}
+
+/* Danh sách gợi ý cửa hàng xổ xuống bên dưới đường gạch chân của ô nhập (không đè lên ô) */
+body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px !important; }
+
+/* ===== Sidebar: tô màu thư mục cha và icon từng mục ===== */
+.o_phan_he_nav_section {
+    &.is-icon-audit { background: #e0edff !important; color: #1d4ed8 !important; > i:first-child { color: #2563eb !important; } }
+    &.is-icon-settings { background: #ffedd5 !important; color: #c2410c !important; > i:first-child { color: #ea580c !important; } }
+}
+.o_phan_he_nav_section.is-icon-report { background: #dcfce7 !important; color: #15803d !important; > i:first-child { color: #16a34a !important; } }
+.o_phan_he_nav_sub {
+    &.store-tn-report_gs > i:first-child { color: #16a34a !important; }
+    &.store-tn-nvbh > i:first-child { color: #2563eb !important; }
+    &.store-tn-asm > i:first-child { color: #7c3aed !important; }
+    &.store-tn-gs > i:first-child { color: #0891b2 !important; }
+    &.store-tn-review > i:first-child { color: #16a34a !important; }
+    &.store-tn-review_list > i:first-child { color: #d97706 !important; }
+    &.store-tn-access > i:first-child { color: #dc2626 !important; }
+    &.store-tn-evaluation > i:first-child, &.store-tn-supervision > i:first-child { color: #f59e0b !important; }
+    &.store-tn-subgroup > i:first-child, &.store-tn-gs_subgroup > i:first-child { color: #0d9488 !important; }
+    &.store-tn-benchmark > i:first-child, &.store-tn-gs_benchmark > i:first-child { color: #4f46e5 !important; }
+    &.store-tn-level > i:first-child, &.store-tn-gs_level > i:first-child { color: #eab308 !important; }
+}
+
+/* Báo cáo hoạt động giám sát: KPI + bảng theo giám sát (bấm dòng để mở danh sách cửa hàng) */
+.o_store_report { background: #fff; border-radius: 14px; padding: 18px 22px;
+    h3 { font-size: 1.15rem; font-weight: 700; color: #12285f; margin: 0 0 14px; }
+    h4 { font-size: 1rem; font-weight: 700; margin: 18px 0 8px; }
+    .o_store_report_kpis { display: flex; gap: 48px; padding-bottom: 14px; border-bottom: 1px solid #e2e8f0;
+        > div { display: flex; flex-direction: column; }
+        strong { font-size: 1.9rem; line-height: 1.2; }
+        span { color: #64748b; font-size: .85rem; }
+        .is-green strong { color: #15803d; } .is-red strong { color: #dc2626; } }
+    .o_store_report_table { width: 100%; border-collapse: collapse;
+        th, td { padding: 9px 10px; border-bottom: 1px solid #eef2f7; text-align: left; }
+        th { font-weight: 700; } .r { text-align: right; } }
+    .o_store_report_row { cursor: pointer; &:hover { background: #f5f8ff; } }
+    .o_store_report_detail > td { background: #fafbff; padding: 4px 18px 14px; }
+}
+
+/* Báo cáo hoạt động giám sát cá nhân (người dùng thường) */
+.o_store_personal { display: flex; flex-direction: column; gap: 14px;
+    .o_store_personal_head { background: #fff; border-radius: 14px; padding: 14px 20px;
+        h3 { font-size: 1.3rem; font-weight: 800; color: #12285f; margin: 0 0 4px; } p { margin: 0; color: #475569; } }
+    .o_store_personal_kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+        > div { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px; text-align: center;
+            display: flex; flex-direction: column; gap: 4px; }
+        b { font-size: .9rem; color: #12285f; } span { font-size: .85rem; color: #475569; }
+        strong { font-size: 2.1rem; line-height: 1.2; small { font-size: 1.2rem; font-weight: 600; } }
+        .is-green { color: #15803d; } .is-red { color: #dc2626; } .is-blue { color: #1d55bd; } }
+    .o_store_dash_row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 14px; }
+    .o_store_donut_pct { fill: #fff; font-size: 11px; font-weight: 700; }
+    .o_store_personal_tabs { display: flex; gap: 6px; margin-bottom: -14px;
+        button { background: none; border: 1px solid transparent; border-bottom: 0; padding: 8px 14px; border-radius: 8px 8px 0 0; color: #475569;
+            &.is-active { background: #fff; border-color: #e2e8f0; color: #12285f; font-weight: 700; } } }
+    .o_store_personal_body { background: #fff; border: 1px solid #e2e8f0; border-radius: 0 10px 10px 10px; padding: 14px 18px;
+        h4 { font-size: 1rem; font-weight: 800; margin: 4px 0 10px; } }
+    .o_store_report_table { width: 100%; border-collapse: collapse;
+        th, td { padding: 9px 10px; border-bottom: 1px solid #eef2f7; text-align: left; }
+        th { font-weight: 700; } .r { text-align: right; } }
+    .o_store_pill { display: inline-block; padding: 2px 12px; border-radius: 12px; color: #fff; font-weight: 700; font-size: .8rem; white-space: nowrap;
+        &.is-state-draft { background: #cbd5e1; color: #334155; } &.is-state-audited { background: #64748b; } &.is-state-done { background: #15803d; } }
+}
+
+/* Báo cáo cá nhân: cố định cỡ biểu đồ (SVG tự co theo bề rộng khung nên phải giới hạn) */
+.o_store_personal {
+    .o_store_dash_panel { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 18px; min-width: 0;
+        h3 { font-size: .95rem; font-weight: 800; color: #12285f; margin: 0 0 8px; } }
+    .o_store_dash_donut { display: flex; align-items: center; gap: 24px;
+        svg { width: 190px; height: 190px; flex: none; }
+        ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: .9rem;
+            i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 6px; } } }
+    .o_store_dash_svg { display: block; width: 100%; max-width: 440px; height: auto; max-height: 220px; margin: 0 auto;
+        .tick { font-size: 11px; fill: #64748b; } .val { font-size: 12px; font-weight: 700; fill: #12285f; } }
+}
+
+/* Báo cáo cá nhân: tab có nền, chữ đen đậm, viền phân tách; bảng có nền tiêu đề và kẻ ô */
+.o_store_personal {
+    .o_store_personal_tabs { gap: 4px;
+        button { background: #ccfbf1; color: #000; font-weight: 700; border: 1px solid #5eead4; border-bottom: 0;
+            &.is-active { background: #5eead4; border-color: #14b8a6; } } }
+    .o_store_personal_body .o_store_report_table { border: 1px solid #94a3b8;
+        th, td { border: 1px solid #94a3b8; }
+        thead th { background: #d6e6ff; color: #000; font-weight: 700; } }
+}
+
+/* Cột mức đánh giá của dashboard: tên mức (in hoa như bảng Mức đánh giá) + khoảng điểm không ngắt dòng */
+.o_store_personal .o_store_lv_head { white-space: nowrap; text-align: center !important;
+    span { display: block; text-transform: uppercase; }
+    small { display: block; font-weight: 600; color: #334155; } }
+
+/* Báo cáo xếp loại cửa hàng */
+.o_store_storerep {
+    .o_store_badge { display: inline-block; vertical-align: middle; margin-left: 10px; padding: 2px 12px; border-radius: 14px;
+        background: #16a34a; color: #fff; font-size: .85rem; font-weight: 700; }
+    .o_store_rank_tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+        > div { border-radius: 12px; padding: 12px 16px; display: flex; flex-direction: column;
+            strong { font-size: 2rem; line-height: 1.1; } b { font-size: 1.05rem; } span { font-size: .8rem; color: #475569; } } }
+    .o_store_legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: center; font-size: .85rem; margin-bottom: 4px;
+        i { display: inline-block; width: 12px; height: 12px; margin-right: 4px; } }
+    .o_store_seg_txt { fill: #fff; font-size: 11px; font-weight: 700; }
+    .o_store_rank_title { font-size: 1rem; font-weight: 800; margin: 4px 0 0; }
+    .o_store_rank_cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; align-items: start;
+        .o_store_rank_card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+        .o_store_rank_head { color: #fff; font-weight: 800; padding: 8px 12px; font-size: 1.05rem; }
+        .o_store_report_table { th, td { padding: 6px 10px; } max-height: 320px; } }
+}
+
+/* Biểu đồ so sánh xếp loại giữa các miền: dùng hết bề rộng khung */
+.o_store_storerep .o_store_dash_svg { max-width: 100%; max-height: 340px; }
+
+/* Danh sách phiếu: tiêu đề cột không bị cắt chữ (xuống dòng), nội dung căn giữa */
+.o_store_audit_list table.o_list_table {
+    thead th .o_column_title, thead th span { white-space: normal !important; text-overflow: clip !important; overflow: visible !important; }
+    thead th { vertical-align: middle; line-height: 1.25; }
+    tbody tr:not(.o_group_header) td { text-align: center !important; vertical-align: middle; }
+    thead th.o_list_button ~ th.o_list_button::after { content: "Thao tác"; }
+}
+/* Bảng tiêu chí trong phiếu: cột Tổng số lỗi căn giữa */
+.o_store_audit_lines td[name="error_count"], .o_store_audit_lines th[data-name="error_count"] { text-align: center !important; }
+
+/* Báo cáo xếp loại: nội dung căn giữa, tên cửa hàng căn trái */
+.o_store_personal .o_store_rank_table { th, td { text-align: center !important; } td.l { text-align: left !important; } }
+
+/* Báo cáo xếp loại (giao diện theo mẫu): thẻ số liệu có icon, vành khuyên có chú thích, cột nhóm theo miền */
+.o_store_rk {
+    .o_store_rk_tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px;
+        > div { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; border: 1px solid #e2e8f0; background: #dbeafe;
+            &.is-total { background: #dbeafe; strong, b { color: #1d4ed8; } .ico { background: #2563eb; } }
+            .ico { width: 48px; height: 48px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+                color: #fff; font-size: 22px; flex: none; }
+            b { display: block; font-size: .9rem; } strong { display: block; font-size: 2.1rem; line-height: 1.1; }
+            small { display: block; color: #475569; font-size: .8rem; } } }
+    .o_store_dash_donut svg { width: 210px; height: 210px; }
+    .o_store_rk_mid { font-size: 20px; font-weight: 800; fill: #12285f; }
+    .o_store_rk_sub { font-size: 9px; fill: #64748b; }
+    .o_store_dash_donut ul li { margin-bottom: 4px; b { font-weight: 700; } div { margin-left: 18px; color: #475569; font-size: .85rem; } }
+    .o_store_legend { justify-content: flex-end; }
+    .o_store_personal_body h4 i { color: #2563eb; margin-right: 6px; }
+    .o_store_rk_foot { margin: 10px 0 0; color: #64748b; font-size: .85rem; i { color: #2563eb; } }
+}
+
+/* Báo cáo xếp loại: chú thích biểu đồ cột theo miền */
+.o_store_rk .o_store_legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-end; font-size: .85rem; margin-bottom: 4px;
+    i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; } }

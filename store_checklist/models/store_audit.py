@@ -56,6 +56,7 @@ class StoreAudit(models.Model):
         [('pass', 'ĐẠT'), ('fail', 'KHÔNG ĐẠT')], string='Kết luận',
         compute='_compute_scores', store=True)
     summary = fields.Text(string='Đánh giá tổng thể')
+    error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_total', store=True)
 
     # Mức đánh giá từng mục A/B/C và tổng (theo bảng Cài đặt > Mức Đánh giá), tính realtime, không lưu
     lvl_a = fields.Char(compute='_compute_levels')
@@ -67,6 +68,7 @@ class StoreAudit(models.Model):
     tone_c = fields.Char(compute='_compute_levels')
     tone_t = fields.Char(compute='_compute_levels')
     conclusion_text = fields.Char(compute='_compute_levels')
+    can_edit_done = fields.Boolean(compute='_compute_can_edit_done')
     form_title = fields.Char(compute='_compute_form_title')
 
     # Thẻ số liệu trên đầu phiếu: tính realtime từ các dòng A/B/C của chính phiếu này, không lưu
@@ -75,6 +77,8 @@ class StoreAudit(models.Model):
     kpi_pass_pct = fields.Float(compute='_compute_kpi')
     kpi_improve = fields.Integer(compute='_compute_kpi')
     kpi_improve_pct = fields.Float(compute='_compute_kpi')
+    kpi_fail = fields.Integer(compute='_compute_kpi')
+    kpi_fail_pct = fields.Float(compute='_compute_kpi')
     kpi_avg = fields.Float(compute='_compute_kpi')
     kpi_max = fields.Float(compute='_compute_kpi')
     kpi_score_pct = fields.Float(compute='_compute_kpi')
@@ -205,15 +209,30 @@ class StoreAudit(models.Model):
             lines = rec.line_a_ids | rec.line_b_ids | rec.line_c_ids
             scored = lines.filtered('is_scored')
             passed = len(scored.filtered(lambda l: l.result == 'pass'))
-            improve = len(scored) - passed  # chưa đạt mức yêu cầu = Trung bình + Không đạt
+            improve = len(scored.filtered(lambda l: l.result == 'partial'))  # Trung bình
+            failed = len(scored.filtered(lambda l: l.result == 'fail'))  # Không đạt
             rec.kpi_total = len(lines)
             rec.kpi_pass = passed
             rec.kpi_pass_pct = 100 * passed / len(scored) if scored else 0.0
             rec.kpi_improve = improve
             rec.kpi_improve_pct = 100 * improve / len(scored) if scored else 0.0
+            rec.kpi_fail = failed
+            rec.kpi_fail_pct = 100 * failed / len(scored) if scored else 0.0
             rec.kpi_avg = sum(lines.mapped('actual_score'))
             rec.kpi_max = sum(lines.mapped('max_score'))
             rec.kpi_score_pct = 100 * rec.kpi_avg / rec.kpi_max if rec.kpi_max else 0.0
+
+    @api.depends('line_ids.error_count', 'line_a_ids.error_count', 'line_b_ids.error_count', 'line_c_ids.error_count')
+    def _compute_error_total(self):
+        for rec in self:
+            rec.error_count = sum((rec.line_a_ids | rec.line_b_ids | rec.line_c_ids).mapped('error_count'))
+
+    @api.depends_context('uid')
+    def _compute_can_edit_done(self):
+        # Quản lý (gồm Administrator) được sửa phiếu đã Hoàn tất; người dùng thường thì phiếu Hoàn tất bị khóa
+        can = self.env.user.has_group('store_checklist.group_store_manager')
+        for rec in self:
+            rec.can_edit_done = can
 
     @api.depends('audit_type')
     def _compute_form_title(self):
@@ -237,6 +256,12 @@ class StoreAudit(models.Model):
         self.ensure_one()
         return {'type': 'ir.actions.act_url', 'target': 'new',
                 'url': f'/report/pdf/store_checklist.report_store_audit/{self.id}'}
+
+    def action_edit_popup(self):
+        """Mở phiếu ở popup để chỉnh sửa (nút bút chì trong danh sách, dành cho Quản lý)."""
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
+                'target': 'new', 'context': {**self.env.context, 'dialog_size': 'extra-large'}}
 
     def action_download_report(self):
         self.ensure_one()
@@ -321,6 +346,187 @@ class StoreAudit(models.Model):
         return res
 
     @api.model
+    def get_report_gs(self, domain, prev_domain=False):
+        """Dashboard quản trị & hoạt động giám sát: KPI, phân loại, năng suất từng giám sát (theo domain đang lọc)."""
+        audits = self.search(domain, order='audit_date desc, id desc')
+        done = audits.filtered(lambda r: r.state != 'draft')
+
+        def avg(recs):
+            return round(100 * sum(recs.mapped('pass_rate')) / len(recs), 1) if recs else 0.0
+
+        chain_avg = avg(done)
+        levels = self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc')
+        prev_done = self.search(prev_domain).filtered(lambda r: r.state != 'draft') if prev_domain else self.browse()
+
+        def row_of(a):
+            return {
+                'id': a.id, 'store': a.store_id.display_name or '', 'auditor': a.auditor_id.name or '',
+                'date': fields.Datetime.context_timestamp(self, a.audit_date).strftime('%d/%m/%Y %H:%M:%S'),
+                'score': round(100 * a.pass_rate, 1), 'level': a.lvl_t or '',
+            }
+
+        rows = []
+        for user in audits.mapped('auditor_id').sorted('name'):
+            mine = audits.filtered(lambda r: r.auditor_id == user)
+            mine_done = mine.filtered(lambda r: r.state != 'draft')
+            mine_avg = avg(mine_done)
+            draft = len(mine) - len(mine_done)
+            if draft:
+                status, tone = 'Còn phiếu nháp', 'orange'
+            elif not mine_done:
+                status, tone = 'Chưa có phiếu', 'gray'
+            elif mine_avg - chain_avg > 5:
+                status, tone = 'Chấm nới tay', 'yellow'
+            elif chain_avg - mine_avg > 5:
+                status, tone = 'Chấm chặt tay', 'red'
+            else:
+                status, tone = 'Chấm sát thực tế', 'green'
+            rows.append({
+                'id': user.id, 'name': user.name or 'Chưa rõ',
+                'plan': len(mine), 'audited': len(mine), 'done': len(mine_done), 'draft': draft,
+                'avg': mine_avg,
+                'by_level': [len(mine_done.filtered(lambda r: r.lvl_t == lv.name)) for lv in levels],
+                'status': status, 'tone': tone,
+                'audits': [row_of(r) for r in mine_done],
+            })
+        auditors = self.sudo().search([('audit_type', '=', 'gs')]).mapped('auditor_id').sorted('name')
+        return {
+            'total': len(audits), 'done': len(done), 'draft': len(audits) - len(done),
+            'done_rate': round(100 * len(done) / len(audits), 1) if audits else 0.0,
+            'avg': chain_avg, 'prev_avg': avg(prev_done) if prev_domain and prev_done else None,
+            'levels': [{'name': lv.name, 'range': lv.score_range, 'tone': lv.tone,
+                        'count': len(done.filtered(lambda r: r.lvl_t == lv.name))} for lv in levels],
+            'rows': rows,
+            'stores': [row_of(r) for r in done],
+            'auditor_options': [{'id': u.id, 'name': u.name} for u in auditors],
+        }
+
+    @api.model
+    def _rank_rows(self, domain):
+        """Mỗi cửa hàng một dòng: lần audit đã chốt gần nhất trong kỳ, xếp theo tỷ lệ đạt giảm dần."""
+        latest = {}
+        for a in self.search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
+            latest.setdefault(a.store_id, a)
+        return [{'id': a.id, 'store': a.store_id.display_name or '', 'max': a.max_score, 'score': a.total_score,
+                 'rate': round(100 * a.pass_rate, 2), 'level': a.lvl_t or '', 'tone': a.tone_t or 'orange',
+                 # mỗi dòng chữ trong "Chi tiết lỗi" của tiêu chí là một lỗi: "Tiêu chí: lỗi"
+                 'errors': ['%s: %s' % (l.name, ln.strip()) for l in a.line_ids.sorted('sequence')
+                            for ln in (l.note or '').splitlines() if ln.strip()]}
+                for a in sorted(latest.values(), key=lambda a: -a.pass_rate)]
+
+    @api.model
+    def get_report_rank(self, domain):
+        """Báo cáo xếp loại: STT, Cửa hàng, Điểm chuẩn, Điểm đánh giá, Tỷ lệ đạt, Xếp loại (theo bảng Xếp loại trong Cài đặt)."""
+        return self._rank_rows(domain)
+
+    @api.model
+    def export_rank_xlsx(self, domain):
+        import xlsxwriter
+        rows = self._rank_rows(domain)
+        buf = io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        sheet = book.add_worksheet('Bao cao xep loai')
+        head = book.add_format({'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#1D55BD', 'align': 'center',
+                                'valign': 'vcenter', 'border': 1})
+        cell = book.add_format({'border': 1, 'valign': 'vcenter'})
+        ctr = book.add_format({'border': 1, 'align': 'center'})
+        num = book.add_format({'border': 1, 'num_format': '0.##', 'align': 'center'})
+        pct = book.add_format({'border': 1, 'num_format': '0.00', 'align': 'center'})
+        wrap = book.add_format({'border': 1, 'valign': 'vcenter', 'text_wrap': True})
+        sheet.merge_range(0, 0, 0, 6, 'BÁO CÁO XẾP LOẠI', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
+        for i, (name, width) in enumerate(zip(['STT', 'Cửa hàng', 'Điểm chuẩn', 'Điểm đánh giá', 'Tỷ lệ đạt (%)', 'Chi tiết lỗi', 'Xếp loại'],
+                                              [6, 24, 14, 16, 14, 16, 18])):
+            sheet.write(2, i, name, head)
+            sheet.set_column(i, i, width)
+        for n, r in enumerate(rows, 1):
+            sheet.write(2 + n, 0, n, ctr)
+            sheet.write(2 + n, 1, r['store'], cell)
+            sheet.write(2 + n, 2, r['max'], num)
+            sheet.write(2 + n, 3, r['score'], num)
+            sheet.write(2 + n, 4, r['rate'], pct)
+            sheet.write(2 + n, 5, len(r['errors']), num)
+            sheet.write(2 + n, 6, r['level'], ctr)
+        sheet.freeze_panes(3, 0)
+        book.close()
+        stamp = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime('%d%m%Y_%H%M')
+        return {'name': 'Bao_cao_xep_loai_%s.xlsx' % stamp, 'data': base64.b64encode(buf.getvalue()).decode()}
+
+    @api.model
+    def get_report_store(self, domain):
+        """Báo cáo xếp loại cửa hàng: mỗi cửa hàng lấy lần audit gần nhất (đã chốt) trong kỳ, xếp theo bảng Mức đánh giá GS."""
+        latest = {}
+        for a in self.search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
+            latest.setdefault(a.store_id, a)
+        miens = dict(self.env['hr.store']._fields['mien'].selection)
+        levels = self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc')
+
+        def short(m):
+            return (miens.get(m) or 'Khác').replace('Miền ', 'M.')
+
+        out = []
+        for lv in levels:
+            sel = sorted((a for a in latest.values() if a.lvl_t == lv.name), key=lambda a: -a.pass_rate)
+            out.append({'name': lv.name, 'tone': lv.tone, 'range': lv.score_range, 'count': len(sel),
+                        'stores': [{'id': a.id, 'store': a.store_id.display_name or '', 'mien': short(a.mien),
+                                    'score': round(100 * a.pass_rate)} for a in sel]})
+        order = [k for k in ('Bắc', 'ĐTT', 'Nam') if k in miens] + [False]
+        by_mien = []
+        for key in order:
+            group = [a for a in latest.values() if (a.mien if a.mien in miens else False) == key]
+            if group:
+                by_mien.append({'label': (miens.get(key) or 'Khác'),
+                                'counts': [len([a for a in group if a.lvl_t == lv.name]) for lv in levels]})
+        return {'total': len(latest), 'levels': out, 'by_mien': by_mien}
+
+    @api.model
+    def get_report_personal(self, month=None):
+        """Báo cáo hoạt động giám sát cá nhân (người dùng thường): chỉ phiếu GS của chính người dùng trong tháng."""
+        today = fields.Date.context_today(self)
+        year, mon = map(int, (month or today.strftime('%Y-%m')).split('-'))
+        end_y, end_m = (year + 1, 1) if mon == 12 else (year, mon + 1)
+        base = [('audit_type', '=', 'gs'), ('audit_date', '>=', datetime(year, mon, 1)),
+                ('audit_date', '<', datetime(end_y, end_m, 1))]
+        mine = self.search(base + [('auditor_id', '=', self.env.uid)], order='audit_date desc, id desc')
+        done = mine.filtered(lambda r: r.state != 'draft')
+        # trung bình chuỗi: toàn bộ phiếu GS đã chốt trong tháng của mọi giám sát (quy tắc truy cập chỉ cho thấy phiếu của mình)
+        chain = self.sudo().search(base + [('state', '!=', 'draft')])
+
+        def avg(recs):
+            return round(100 * sum(recs.mapped('pass_rate')) / len(recs), 1) if recs else 0.0
+
+        states = dict(self._fields['state'].selection)
+        miens = dict(self.env['hr.store']._fields['mien'].selection)
+        rows = []
+        for r in mine:
+            due = min(r.action_ids.filtered(lambda a: a.state == 'todo' and a.deadline).mapped('deadline'), default=False)
+            rows.append({
+                'id': r.id, 'name': r.name, 'store': r.store_id.display_name or '',
+                'date': fields.Datetime.context_timestamp(self, r.audit_date).strftime('%d/%m/%Y %H:%M:%S'),
+                'score': r.total_score, 'max': r.max_score, 'rate': round(100 * r.pass_rate, 2),
+                'level': r.lvl_t or '', 'tone': r.tone_t or 'orange', 'draft': r.state == 'draft', 'passed': r.conclusion == 'pass',
+                'state': 'Nháp (Cần bổ sung)' if r.state == 'draft' else states.get(r.state, ''),
+                'state_key': r.state,
+                'capa': 'Không có' if not due else ('Trong ngày' if due == today else due.strftime('%d/%m/%Y')),
+            })
+        levels = []
+        for lv in self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc'):
+            sel = [x for x in rows if not x['draft'] and x['level'] == lv.name]
+            if sel:
+                levels.append({'name': lv.name, 'tone': lv.tone, 'count': len(sel), 'rows': sel})
+        weeks = [0, 0, 0, 0]  # tuần 4 gồm cả các ngày cuối tháng
+        for r in mine:
+            day = fields.Datetime.context_timestamp(self, r.audit_date).day
+            weeks[min((day - 1) // 7, 3)] += 1
+        return {
+            'month': '%04d-%02d' % (year, mon), 'name': self.env.user.name,
+            'mien': ', '.join(sorted({miens.get(m, '') for m in mine.mapped('store_id.mien') if m})),
+            'plan': len(mine), 'done': len(done), 'draft': len(mine) - len(done),
+            'rate': round(100 * len(done) / len(mine)) if mine else 0,
+            'avg': avg(done), 'chain_avg': avg(chain),
+            'levels': levels, 'weeks': weeks, 'rows': rows,
+        }
+
+    @api.model
     def export_list_xlsx(self, domain, title='DANH SÁCH PHIẾU ĐÁNH GIÁ'):
         """Kết xuất danh sách phiếu (đúng bộ lọc đang xem) ra file Excel; trả về {name, data base64}."""
         import xlsxwriter
@@ -336,8 +542,6 @@ class StoreAudit(models.Model):
         num = book.add_format({'border': 1, 'num_format': '0.##', 'align': 'center'})
         pct = book.add_format({'border': 1, 'num_format': '0.00', 'align': 'center'})
         ctr = book.add_format({'border': 1, 'align': 'center'})
-        bad = book.add_format({'border': 1, 'align': 'center', 'bold': True, 'font_color': '#DC2626'})
-        good = book.add_format({'border': 1, 'align': 'center', 'bold': True, 'font_color': '#15803D'})
         big = book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'})
         cols = ['STT', 'Mã phiếu', 'Cửa hàng', 'Miền', 'Ngày giờ audit', 'Người đánh giá', 'Điểm đánh giá',
                 'Điểm chuẩn', 'Tỷ lệ đạt (%)', 'Kết luận', 'Trạng thái']
@@ -359,7 +563,7 @@ class StoreAudit(models.Model):
             sheet.write(r, 6, a.total_score, num)
             sheet.write(r, 7, a.max_score, num)
             sheet.write(r, 8, a.pass_rate * 100, pct)
-            sheet.write(r, 9, 'ĐẠT' if a.conclusion == 'pass' else 'KHÔNG ĐẠT', good if a.conclusion == 'pass' else bad)
+            sheet.write(r, 9, a.lvl_t or '', ctr)
             sheet.write(r, 10, states.get(a.state, ''), ctr)
         sheet.freeze_panes(3, 0)
         book.close()
@@ -456,9 +660,15 @@ class StoreAuditLine(models.Model):
         ('fail', 'Không đạt'),
     ], string='Kết quả', compute='_compute_result', store=True)
     note = fields.Text(string='Chi tiết lỗi / Nhận xét thực tế')
+    error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_count', store=True)
     attachment_ids = fields.Many2many(
         'ir.attachment', 'store_audit_line_attachment_rel', 'line_id', 'attachment_id',
         string='Bằng chứng')
+
+    @api.depends('note')
+    def _compute_error_count(self):
+        for rec in self:  # mỗi dòng không trống của "Chi tiết lỗi" là một lỗi
+            rec.error_count = len([ln for ln in (rec.note or '').splitlines() if ln.strip()])
 
     @api.depends('actual_score', 'max_score', 'is_scored')
     def _compute_result(self):
@@ -472,9 +682,40 @@ class StoreAuditLine(models.Model):
             else:
                 line.result = 'partial'
 
+    # Quy tắc: dòng có "Chi tiết lỗi" thì điểm = 0 và kết quả Không đạt
+    def _has_error_note(self):
+        return bool((self.note or '').strip())
+
+    @api.onchange('note')
+    def _onchange_note(self):
+        if self._has_error_note():
+            self.actual_score = 0.0
+            self.is_scored = True
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if (vals.get('note') or '').strip():
+                vals.update(actual_score=0.0, is_scored=True)
+        return super().create(vals_list)
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'note' in vals or 'actual_score' in vals or 'is_scored' in vals:
+            bad = self.filtered(lambda l: l._has_error_note() and (l.actual_score or not l.is_scored))
+            if bad:
+                super(StoreAuditLine, bad).write({'actual_score': 0.0, 'is_scored': True})
+        return res
+
     @api.onchange('actual_score')
     def _onchange_actual_score(self):
         self.is_scored = True
+        if self._has_error_note() and self.actual_score:
+            self.actual_score = 0.0
+            return {'warning': {
+                'title': 'Tiêu chí có lỗi',
+                'message': 'Tiêu chí đã nhập "Chi tiết lỗi" nên điểm đánh giá luôn bằng 0 (Không đạt). Xóa chi tiết lỗi nếu muốn chấm điểm.',
+            }}
         if self.actual_score < 0 or self.actual_score > self.max_score:
             bad = self.actual_score
             self.actual_score = self.max_score if bad > 0 else 0.0

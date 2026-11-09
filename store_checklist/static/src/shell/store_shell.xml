@@ -14,7 +14,7 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-if="state.contentMode === 'list' and state.embeddedViewProps">
+            <div class="o_store_list_wrap" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav))">
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
@@ -22,7 +22,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'gs' ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showListFilters">
@@ -31,21 +31,338 @@
                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
-                    <select t-on-change="(ev) => this.onListFilter('store', ev)">
+                    <select t-if="!reportNavs.includes(state.activeNav)" t-on-change="(ev) => this.onListFilter('store', ev)">
                         <option value="">Tất cả cửa hàng</option>
                         <option t-foreach="state.dash ? state.dash.store_options : []" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
-                    <select t-on-change="(ev) => this.onListFilter('mien', ev)">
+                    <select t-if="!isPersonal" t-on-change="(ev) => this.onListFilter('mien', ev)">
                         <option value="">Tất cả miền</option>
                         <option value="Nam">Miền Nam</option>
                         <option value="ĐTT">Miền ĐTT</option>
                         <option value="Bắc">Miền Bắc</option>
                         <option value="other">Khác</option>
                     </select>
+                    <select t-if="state.activeNav === 'report_gs' and !isPersonal and state.report" t-on-change="(ev) => this.onListFilter('auditor', ev)">
+                        <option value="">Tất cả giám sát</option>
+                        <option t-foreach="state.report.auditor_options" t-as="au" t-key="au.id" t-att-value="au.id"
+                                t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
+                    </select>
                     <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
-                <View t-props="state.embeddedViewProps" t-key="state.viewKey"/>
+                <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
+                <div class="o_store_personal o_store_rk" t-elif="state.activeNav === 'report_rank' and state.rankReport and state.rankStore">
+                    <t t-set="rs" t-value="state.rankStore"/>
+                    <div class="o_store_rk_tiles">
+                        <div class="is-total">
+                            <span class="ico"><i class="fa fa-building-o"/></span>
+                            <div><b>TỔNG CỬA HÀNG</b><strong t-esc="state.rankStoreTotal"/><small>Trong hồ sơ nhân viên / cửa hàng</small></div>
+                        </div>
+                        <div t-foreach="rs.levels" t-as="lv" t-key="lv.name" t-attf-style="background: #{rankColor(lv_index)}1f">
+                            <span class="ico" t-attf-style="background: #{rankColor(lv_index)}"><i t-att-class="'fa ' + rankIcon(lv.tone)"/></span>
+                            <div><b t-attf-style="color: #{rankColor(lv_index)}" t-esc="lv.name.toUpperCase()"/><strong t-attf-style="color: #{rankColor(lv_index)}" t-esc="lv.count"/><small>Điểm <t t-esc="lv.range"/></small></div>
+                        </div>
+                    </div>
+                    <div class="o_store_dash_row">
+                        <div class="o_store_dash_panel">
+                            <h3><i class="fa fa-pie-chart"/> Tỷ lệ xếp loại</h3>
+                            <t t-set="dn" t-value="rankDonut()"/>
+                            <div class="o_store_dash_donut" t-if="dn.total">
+                                <svg viewBox="0 0 160 160">
+                                    <circle cx="80" cy="80" t-att-r="dn.R" fill="none" stroke="#e5e7eb" stroke-width="26"/>
+                                    <circle t-foreach="dn.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" t-att-r="dn.R" fill="none"
+                                            t-att-stroke="sg.color" stroke-width="26" t-att-stroke-dasharray="sg.dash"
+                                            t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                    <text x="80" y="80" text-anchor="middle" class="o_store_rk_mid" t-esc="dn.total"/>
+                                    <text x="80" y="96" text-anchor="middle" class="o_store_rk_sub">Tổng cửa hàng</text>
+                                </svg>
+                                <ul>
+                                    <li t-foreach="dn.segments" t-as="sg" t-key="sg.name">
+                                        <i t-attf-style="background: #{sg.color}"/> <b t-esc="sg.name"/>
+                                        <div><t t-esc="sg.value"/> cửa hàng (<t t-esc="(sg.value * 100 / dn.total).toFixed(2)"/>%)</div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-muted" t-else="">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</p>
+                        </div>
+                        <div class="o_store_dash_panel">
+                            <h3><i class="fa fa-bar-chart"/> Kết quả xếp loại theo miền</h3>
+                            <t t-set="gp" t-value="rankGrouped()"/>
+                            <div class="o_store_legend">
+                                <span t-foreach="rs.levels" t-as="lv" t-key="lv.name"><i t-attf-style="background: #{rankColor(lv_index)}"/> <t t-esc="lv.name"/></span>
+                            </div>
+                            <svg t-attf-viewBox="0 0 #{gp.W} #{gp.H}" class="o_store_dash_svg" t-if="gp.groups.length">
+                                <g t-foreach="gp.ticks" t-as="t" t-key="t_index">
+                                    <line x1="36" t-att-x2="gp.W" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                    <text x="30" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                                </g>
+                                <g t-foreach="gp.groups" t-as="g" t-key="g.label">
+                                    <g t-foreach="g.bars" t-as="b" t-key="b.k">
+                                        <rect t-if="b.n" t-att-x="b.x" t-att-y="b.y" t-att-width="b.w" t-att-height="b.h" t-att-fill="b.color" rx="2"/>
+                                        <text t-if="b.n" t-att-x="b.x + b.w / 2" t-att-y="b.y - 4" text-anchor="middle" class="val" t-esc="b.n"/>
+                                    </g>
+                                    <text t-att-x="g.cx" t-att-y="gp.H - 8" text-anchor="middle" class="tick" t-esc="g.label"/>
+                                </g>
+                            </svg>
+                            <p class="text-muted" t-else="">Chưa có dữ liệu trong kỳ đã chọn.</p>
+                        </div>
+                    </div>
+                    <div class="o_store_personal_body">
+                        <h4><i class="fa fa-list-alt"/> Danh sách xếp loại</h4>
+                        <table class="o_store_report_table o_store_rank_table">
+                            <thead><tr><th>STT</th><th>Cửa hàng</th><th>Điểm chuẩn</th><th>Điểm đánh giá</th><th>Tỷ lệ đạt</th><th>Chi tiết lỗi</th><th>Xếp loại</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="state.rankReport" t-as="r" t-key="r.id">
+                                    <td t-esc="r_index + 1"/><td class="l" t-esc="r.store"/><td t-esc="r.max"/><td t-esc="r.score"/>
+                                    <td><t t-esc="r.rate"/>%</td>
+                                    <td t-esc="r.errors.length"/>
+                                    <td><span class="o_store_pill" t-attf-style="background: #{rankLevelColor(r.level)}" t-esc="r.level"/></td>
+                                </tr>
+                                <tr t-if="!state.rankReport.length"><td colspan="7" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="o_store_rk_foot"><i class="fa fa-info-circle"/> Có <t t-esc="state.rankReport.length"/> bản ghi</p>
+                    </div>
+                </div>
+                <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">
+                    <t t-set="sr" t-value="state.storeReport"/>
+                    <div class="o_store_personal_head">
+                        <h3>Báo cáo xếp loại cửa hàng <span class="o_store_badge"><t t-esc="sr.total"/> cửa hàng</span></h3>
+                        <p>Phân loại theo kết quả đánh giá (lần audit gần nhất trong kỳ) · theo bảng Mức độ đánh giá</p>
+                    </div>
+                    <div class="o_store_rank_tiles">
+                        <div t-foreach="sr.levels" t-as="lv" t-key="lv.name" t-attf-style="background: #{toneBg(lv.tone)}">
+                            <strong t-attf-style="color: #{toneColor(lv.tone)}" t-esc="lv.count"/>
+                            <b t-esc="lv.name"/>
+                            <span>Điểm <t t-esc="lv.range"/></span>
+                        </div>
+                    </div>
+                    <div class="o_store_dash_row">
+                        <div class="o_store_dash_panel">
+                            <h3>TỶ LỆ XẾP LOẠI TOÀN CHUỖI</h3>
+                            <t t-set="dn" t-value="storeDonut()"/>
+                            <div class="o_store_dash_donut" t-if="dn.total">
+                                <svg viewBox="0 0 160 160">
+                                    <circle t-foreach="dn.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" t-att-r="dn.R" fill="none"
+                                            t-att-stroke="sg.color" stroke-width="30" t-att-stroke-dasharray="sg.dash"
+                                            t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                    <text t-foreach="dn.segments" t-as="sg" t-key="sg.name" t-att-x="sg.tx" t-att-y="sg.ty" text-anchor="middle" class="o_store_donut_pct" t-esc="sg.pct + '%'"/>
+                                </svg>
+                                <ul>
+                                    <li t-foreach="dn.segments" t-as="sg" t-key="sg.name"><i t-attf-style="background: #{sg.color}"/> <t t-esc="sg.name"/></li>
+                                </ul>
+                            </div>
+                            <p class="text-muted" t-else="">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</p>
+                        </div>
+                        <div class="o_store_dash_panel">
+                            <h3>SO SÁNH XẾP LOẠI GIỮA CÁC MIỀN</h3>
+                            <t t-set="sk" t-value="storeStacked()"/>
+                            <div class="o_store_legend">
+                                <span t-foreach="sr.levels" t-as="lv" t-key="lv.name"><i t-attf-style="background: #{toneColor(lv.tone)}"/> <t t-esc="lv.name"/></span>
+                            </div>
+                            <svg t-attf-viewBox="0 0 #{sk.W} #{sk.H}" class="o_store_dash_svg" t-if="sk.cols.length">
+                                <g t-foreach="sk.ticks" t-as="t" t-key="t_index">
+                                    <line x1="44" t-att-x2="sk.W" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                    <text x="38" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                                </g>
+                                <g t-foreach="sk.cols" t-as="col" t-key="col.label">
+                                    <g t-foreach="col.segs" t-as="sg" t-key="sg.key">
+                                        <rect t-if="sg.n" t-att-x="sg.x" t-att-y="sg.y" t-att-width="sg.w" t-att-height="sg.h" t-att-fill="sg.color"/>
+                                        <text t-if="sg.n and sg.h > 12" t-att-x="sg.x + sg.w / 2" t-att-y="sg.y + sg.h / 2 + 4" text-anchor="middle" class="o_store_seg_txt"><t t-esc="sg.n"/> CH</text>
+                                    </g>
+                                    <text t-att-x="col.cx" t-att-y="sk.H - 8" text-anchor="middle" class="tick" t-esc="col.label"/>
+                                </g>
+                            </svg>
+                            <p class="text-muted" t-else="">Chưa có dữ liệu trong kỳ đã chọn.</p>
+                        </div>
+                    </div>
+                    <h4 class="o_store_rank_title">DANH SÁCH CHI TIẾT THEO XẾP LOẠI</h4>
+                    <div class="o_store_rank_cards">
+                        <div class="o_store_rank_card" t-foreach="sr.levels" t-as="lv" t-key="lv.name">
+                            <div class="o_store_rank_head" t-attf-style="background: #{toneColor(lv.tone)}">Cửa hàng <t t-esc="lv.name"/> (<t t-esc="lv.count"/>)</div>
+                            <table class="o_store_report_table">
+                                <thead><tr><th>Tên cửa hàng</th><th>Miền</th><th class="r">Điểm</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="lv.stores" t-as="st" t-key="st.id"><td t-esc="st.store"/><td t-esc="st.mien"/><td class="r"><t t-esc="st.score"/>%</td></tr>
+                                    <tr t-if="!lv.stores.length"><td colspan="3" class="text-muted">Không có</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="o_store_personal" t-elif="state.activeNav === 'report_gs' and state.personal">
+                    <t t-set="pr" t-value="state.personal"/>
+                    <div class="o_store_personal_head">
+                        <h3>BÁO CÁO HOẠT ĐỘNG GIÁM SÁT CÁ NHÂN - <t t-esc="pr.name.toUpperCase()"/></h3>
+                        <p><i class="fa fa-filter"/> Tháng <t t-esc="pr.month.slice(5)"/>/<t t-esc="pr.month.slice(0, 4)"/><t t-if="pr.mien"> | <t t-esc="pr.mien"/> (Khu vực phụ trách)</t> | Người đánh giá: <span class="text-muted" t-esc="pr.name"/></p>
+                    </div>
+                    <div class="o_store_personal_kpis">
+                        <div><b>KẾ HOẠCH THÁNG</b><strong><t t-esc="pr.plan"/> <small>Cửa hàng</small></strong><span>Tiến độ đạt <t t-esc="pr.rate"/>%</span></div>
+                        <div><b>ĐÃ HOÀN THÀNH</b><strong class="is-green" t-esc="pr.done"/><span>Đã chốt biên bản</span></div>
+                        <div><b>CHƯA HOÀN THÀNH</b><strong class="is-red" t-esc="pr.draft"/><span><t t-esc="pr.draft"/> Phiếu nháp cần xử lý</span></div>
+                        <div><b>ĐIỂM TRUNG BÌNH CHẤM</b><strong class="is-blue"><t t-esc="pr.avg"/>%</strong><span t-esc="personalDiff"/></div>
+                    </div>
+                    <div class="o_store_dash_row">
+                        <div class="o_store_dash_panel">
+                            <h3>PHÂN LOẠI CỬA HÀNG ĐÃ ĐÁNH GIÁ</h3>
+                            <t t-set="dn" t-value="personalDonut()"/>
+                            <div class="o_store_dash_donut" t-if="dn.total">
+                                <svg viewBox="0 0 160 160">
+                                    <circle t-foreach="dn.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" t-att-r="dn.R" fill="none"
+                                            t-att-stroke="sg.color" stroke-width="30" t-att-stroke-dasharray="sg.dash"
+                                            t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                    <text t-foreach="dn.segments" t-as="sg" t-key="sg.name" t-att-x="sg.tx" t-att-y="sg.ty" text-anchor="middle" class="o_store_donut_pct" t-esc="sg.pct + '%'"/>
+                                </svg>
+                                <ul>
+                                    <li t-foreach="dn.segments" t-as="sg" t-key="sg.name">
+                                        <i t-attf-style="background: #{sg.color}"/> <t t-esc="sg.name"/>: <b><t t-esc="sg.value"/> CH</b>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-muted" t-else="">Chưa có phiếu đã chốt trong tháng.</p>
+                        </div>
+                        <div class="o_store_dash_panel">
+                            <h3>TIẾN ĐỘ KIỂM TRA THEO TUẦN TRONG THÁNG</h3>
+                            <t t-set="bc" t-value="personalBars()"/>
+                            <svg t-attf-viewBox="0 0 #{bc.W} #{bc.H}" class="o_store_dash_svg">
+                                <g t-foreach="bc.ticks" t-as="t" t-key="t_index">
+                                    <line x1="30" t-att-x2="bc.W" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                    <text x="24" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.label"/>
+                                </g>
+                                <g t-foreach="bc.bars" t-as="b" t-key="b.label">
+                                    <rect t-att-x="b.x" t-att-y="b.y" t-att-width="b.w" t-att-height="b.h" fill="#1d55bd" rx="2"/>
+                                    <text t-att-x="b.cx" t-att-y="b.y - 4" text-anchor="middle" class="val" t-esc="b.value"/>
+                                    <text t-att-x="b.cx" t-att-y="bc.H - 8" text-anchor="middle" class="tick" t-esc="b.label"/>
+                                </g>
+                                <line x1="30" t-att-x2="bc.W" t-att-y1="bc.ly" t-att-y2="bc.ly" stroke="#e67e22" stroke-width="2"/>
+                                <circle t-foreach="bc.bars" t-as="b" t-key="b.label" t-att-cx="b.cx" t-att-cy="bc.ly" r="3.5" fill="#e67e22"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="o_store_personal_tabs">
+                        <button type="button" t-att-class="state.personalTab === 'activity' ? 'is-active' : ''" t-on-click="() => state.personalTab = 'activity'">[ Hoạt động Giám sát ]</button>
+                        <button type="button" t-att-class="state.personalTab === 'class' ? 'is-active' : ''" t-on-click="() => state.personalTab = 'class'">[ Danh sách cửa hàng <t t-esc="pr.name"/> đã kiểm tra ]</button>
+                    </div>
+                    <div class="o_store_personal_body" t-if="state.personalTab === 'activity'">
+                        <h4>Chi tiết hoạt động theo giám sát</h4>
+                        <table class="o_store_report_table">
+                            <thead><tr><th>Giám sát</th><th class="r">Số CH</th><th class="r">Điểm TB</th><th class="r">Đạt</th></tr></thead>
+                            <tbody>
+                                <tr t-if="personalDone.length">
+                                    <td t-esc="pr.name"/>
+                                    <td class="r" t-esc="personalStoreCount"/>
+                                    <td class="r"><t t-esc="pr.avg"/>%</td>
+                                    <td class="r" t-esc="personalDone.filter((r) => r.passed).length"/>
+                                </tr>
+                                <tr t-else=""><td colspan="4" class="text-muted">Chưa có phiếu giám sát nào đã chốt trong tháng đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="o_store_personal_body" t-else="">
+                        <h4>Danh sách cửa hàng <t t-esc="pr.name"/> đã kiểm tra</h4>
+                        <table class="o_store_report_table">
+                            <thead><tr><th>Cửa hàng</th><th>Người đánh giá</th><th>Ngày Audit</th><th class="r">Điểm</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="personalDone" t-as="au" t-key="au.id">
+                                    <td t-esc="au.store"/><td t-esc="pr.name"/><td t-esc="au.date"/><td class="r"><t t-esc="au.rate"/>%</td>
+                                </tr>
+                                <tr t-if="!personalDone.length"><td colspan="4" class="text-muted">Chưa có cửa hàng nào đã kiểm tra trong tháng đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="o_store_personal o_store_manager" t-elif="state.activeNav === 'report_gs' and state.report">
+                    <t t-set="rp" t-value="state.report"/>
+                    <div class="o_store_personal_head">
+                        <h3 t-esc="reportTitle"/>
+                        <p><i class="fa fa-filter"/> <t t-esc="reportSubtitle"/></p>
+                    </div>
+                    <div class="o_store_personal_kpis">
+                        <div><b>TỔNG LƯỢT AUDIT</b><strong t-esc="rp.total"/><span>Đạt <t t-esc="rp.total ? 100 : 0"/>% kế hoạch</span></div>
+                        <div><b>ĐÃ HOÀN THÀNH</b><strong class="is-green" t-esc="rp.done"/><span>Tỷ lệ <t t-esc="rp.done_rate"/>%</span></div>
+                        <div><b>CHƯA HOÀN THÀNH</b><strong class="is-red" t-esc="rp.draft"/><span>Phiếu nháp</span></div>
+                        <div><b>ĐIỂM TB TOÀN CHUỖI</b><strong class="is-blue"><t t-esc="rp.avg"/>%</strong><span t-esc="reportDiff"/></div>
+                    </div>
+                    <div class="o_store_dash_row">
+                        <div class="o_store_dash_panel">
+                            <h3>TỶ LỆ PHÂN LOẠI CỬA HÀNG</h3>
+                            <t t-set="dn" t-value="reportDonut()"/>
+                            <div class="o_store_dash_donut" t-if="dn.total">
+                                <svg viewBox="0 0 160 160">
+                                    <circle t-foreach="dn.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" t-att-r="dn.R" fill="none"
+                                            t-att-stroke="sg.color" stroke-width="30" t-att-stroke-dasharray="sg.dash"
+                                            t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                    <text t-foreach="dn.segments" t-as="sg" t-key="sg.name" t-att-x="sg.tx" t-att-y="sg.ty" text-anchor="middle" class="o_store_donut_pct" t-esc="sg.pct + '%'"/>
+                                </svg>
+                                <ul>
+                                    <li t-foreach="dn.segments" t-as="sg" t-key="sg.name">
+                                        <i t-attf-style="background: #{sg.color}"/> <t t-esc="sg.name"/>: <b><t t-esc="sg.pct"/>%</b>
+                                    </li>
+                                </ul>
+                            </div>
+                            <p class="text-muted" t-else="">Chưa có phiếu đã chốt trong kỳ đã chọn.</p>
+                        </div>
+                        <div class="o_store_dash_panel">
+                            <h3>NĂNG SUẤT &amp; ĐIỂM TRUNG BÌNH THEO GIÁM SÁT</h3>
+                            <t t-set="cb" t-value="reportCombo()"/>
+                            <svg t-attf-viewBox="0 0 #{cb.W} #{cb.H}" class="o_store_dash_svg" t-if="rp.rows.length">
+                                <g t-foreach="cb.ticks" t-as="t" t-key="t_index">
+                                    <line x1="34" t-att-x2="cb.W - cb.R" t-att-y1="t.y" t-att-y2="t.y" stroke="#e5e7eb"/>
+                                    <text x="28" t-att-y="t.y + 4" text-anchor="end" class="tick" t-esc="t.left"/>
+                                    <text t-att-x="cb.W - cb.R + 6" t-att-y="t.y + 4" class="tick"><t t-esc="t.right"/>%</text>
+                                </g>
+                                <g t-foreach="cb.bars" t-as="b" t-key="b.id">
+                                    <rect t-att-x="b.x" t-att-y="b.y" t-att-width="b.w" t-att-height="b.h" fill="#1d55bd" rx="2"/>
+                                    <text t-att-x="b.cx" t-att-y="cb.H - 24" text-anchor="middle" class="tick" t-esc="b.label"/>
+                                </g>
+                                <path t-att-d="cb.line" fill="none" stroke="#e67e22" stroke-width="2"/>
+                                <g t-foreach="cb.bars" t-as="b" t-key="b.id">
+                                    <circle t-att-cx="b.cx" t-att-cy="b.cy" r="3.5" fill="#e67e22"/>
+                                    <text t-att-x="b.cx" t-att-y="b.cy - 8" text-anchor="middle" class="val"><t t-esc="b.avg"/>%</text>
+                                </g>
+                            </svg>
+                            <p class="text-muted" t-else="">Chưa có phiếu giám sát trong kỳ đã chọn.</p>
+                        </div>
+                    </div>
+                    <div class="o_store_personal_tabs">
+                        <button type="button" t-att-class="state.personalTab === 'activity' ? 'is-active' : ''" t-on-click="() => state.personalTab = 'activity'">[ Hoạt động Giám sát ]</button>
+                        <button type="button" t-att-class="state.personalTab === 'class' ? 'is-active' : ''" t-on-click="() => state.personalTab = 'class'">[ Phân loại Cửa hàng ]</button>
+                    </div>
+                    <div class="o_store_personal_body" t-if="state.personalTab === 'activity'">
+                        <h4>CHI TIẾT HOẠT ĐỘNG THEO GIÁM SÁT</h4>
+                        <table class="o_store_report_table">
+                            <thead><tr>
+                                <th>Giám sát viên</th><th class="r">Kế hoạch (CH)</th><th class="r">Đã audit</th><th class="r">Hoàn tất</th>
+                                <th class="r">Chưa xong (Nháp)</th><th class="r">Điểm TB (%)</th>
+                                <th t-foreach="rp.levels" t-as="lv" t-key="lv.name" class="r o_store_lv_head"><span t-esc="lv.name"/><small t-esc="lv.range"/></th>
+                                <th>Trạng thái</th>
+                            </tr></thead>
+                            <tbody>
+                                <t t-foreach="rp.rows" t-as="row" t-key="row.id">
+                                    <tr>
+                                        <td t-esc="row.name"/><td class="r" t-esc="row.plan"/><td class="r" t-esc="row.audited"/><td class="r" t-esc="row.done"/>
+                                        <td class="r" t-esc="row.draft"/><td class="r"><t t-esc="row.avg"/>%</td>
+                                        <td t-foreach="row.by_level" t-as="n" t-key="n_index" class="r" t-esc="n"/>
+                                        <td><span class="o_store_pill" t-attf-style="background: #{statusColor(row.tone)}" t-esc="row.status"/></td>
+                                    </tr>
+                                </t>
+                                <tr t-if="!rp.rows.length"><td t-att-colspan="7 + rp.levels.length" class="text-muted">Chưa có phiếu giám sát nào trong kỳ đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="o_store_personal_body" t-else="">
+                        <h4>DANH SÁCH CỬA HÀNG ĐÃ KIỂM TRA</h4>
+                        <table class="o_store_report_table">
+                            <thead><tr><th>Cửa hàng</th><th>Giám sát viên</th><th>Ngày Audit</th><th>Phân loại</th><th class="r">Điểm</th></tr></thead>
+                            <tbody>
+                                <tr t-foreach="rp.stores" t-as="au" t-key="au.id">
+                                    <td t-esc="au.store"/><td t-esc="au.auditor"/><td t-esc="au.date"/><td t-esc="au.level"/><td class="r"><t t-esc="au.score"/>%</td>
+                                </tr>
+                                <tr t-if="!rp.stores.length"><td colspan="5" class="text-muted">Chưa có cửa hàng nào đã kiểm tra trong kỳ đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
             <div class="o_store_shell_home o_store_dash" t-elif="state.dash">
                 <div class="o_store_dash_top">

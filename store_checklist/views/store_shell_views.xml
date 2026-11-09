@@ -23,6 +23,15 @@
         <field name="context">{'store_audit_type': 'gs', 'search_default_group_store': 1}</field>
     </record>
 
+    <!-- Báo cáo GS: các cửa hàng đã được kiểm tra (phiếu giám sát không còn ở trạng thái nháp) -->
+    <record id="action_store_report_gs" model="ir.actions.act_window">
+        <field name="name">Báo cáo GS</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('audit_type', '=', 'gs'), ('state', '!=', 'draft')]</field>
+        <field name="context">{'store_audit_type': 'gs', 'search_default_group_store': 1}</field>
+    </record>
+
     <!-- Điểm chuẩn: STT - Nhóm tiêu chí - Tiêu chí đánh giá - Yêu cầu / Tiêu chuẩn - Điểm chuẩn -->
     <record id="view_store_benchmark_list" model="ir.ui.view">
         <field name="name">store.audit.template.line.benchmark.list</field>
@@ -135,8 +144,8 @@
         <field name="model">store.audit.level</field>
         <field name="arch" type="xml">
             <list string="Mức đánh giá" class="o_store_level">
-                <field name="name"/>
-                <field name="min_score"/>
+                <field name="name" string="Xếp loại"/>
+                <field name="min_score" options="{'hide_trailing_zeros': true}"/>
                 <field name="score_range"/>
                 <field name="tone" widget="badge"
                        decoration-success="tone == 'green'" decoration-info="tone == 'blue'"
@@ -155,8 +164,8 @@
             <form string="Mức đánh giá">
                 <sheet>
                     <group>
-                        <field name="name"/>
-                        <field name="min_score"/>
+                        <field name="name" string="Xếp loại"/>
+                        <field name="min_score" options="{'hide_trailing_zeros': true}"/>
                         <field name="tone"/>
                     </group>
                 </sheet>

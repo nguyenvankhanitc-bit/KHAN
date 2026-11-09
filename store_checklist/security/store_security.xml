@@ -23,4 +23,42 @@
         <field name="comment">Xóa phiếu, cấu hình cửa hàng, mẫu checklist, điểm chuẩn và phân quyền.</field>
         <field name="user_ids" eval="[(4, ref('base.user_admin')), (4, ref('base.user_root'))]"/>
     </record>
+
+    <!-- Phân quyền xem phiếu: Quản trị/Quản lý xem tất cả; user có Chức danh "Giám sát" chỉ xem phiếu do mình đánh giá; user khác xem đầy đủ. -->
+    <record id="rule_store_audit_manager_all" model="ir.rule">
+        <field name="name">Phiếu audit: Quản lý xem tất cả</field>
+        <field name="model_id" ref="model_store_audit"/>
+        <field name="groups" eval="[(4, ref('group_store_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_store_audit_user_scope" model="ir.rule">
+        <field name="name">Phiếu audit: Giám sát chỉ xem phiếu của mình</field>
+        <field name="model_id" ref="model_store_audit"/>
+        <field name="groups" eval="[(4, ref('group_store_user'))]"/>
+        <field name="domain_force">[('auditor_id', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
+    </record>
+    <record id="rule_store_audit_line_manager_all" model="ir.rule">
+        <field name="name">Chi tiết phiếu audit: Quản lý xem tất cả</field>
+        <field name="model_id" ref="model_store_audit_line"/>
+        <field name="groups" eval="[(4, ref('group_store_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_store_audit_line_user_scope" model="ir.rule">
+        <field name="name">Chi tiết phiếu audit: Giám sát chỉ xem phiếu của mình</field>
+        <field name="model_id" ref="model_store_audit_line"/>
+        <field name="groups" eval="[(4, ref('group_store_user'))]"/>
+        <field name="domain_force">[('audit_id.auditor_id', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
+    </record>
+    <record id="rule_store_audit_action_manager_all" model="ir.rule">
+        <field name="name">Khắc phục: Quản lý xem tất cả</field>
+        <field name="model_id" ref="model_store_audit_action"/>
+        <field name="groups" eval="[(4, ref('group_store_manager'))]"/>
+        <field name="domain_force">[(1, '=', 1)]</field>
+    </record>
+    <record id="rule_store_audit_action_user_scope" model="ir.rule">
+        <field name="name">Khắc phục: Giám sát chỉ xem phiếu của mình</field>
+        <field name="model_id" ref="model_store_audit_action"/>
+        <field name="groups" eval="[(4, ref('group_store_user'))]"/>
+        <field name="domain_force">[('audit_id.auditor_id', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
+    </record>
 </odoo>

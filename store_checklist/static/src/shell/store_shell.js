@@ -42,8 +42,16 @@ export class StoreChecklistShell extends Component {
             dash: null,
             filters: { month: "", mien: "", store: "" },
             showAllTodo: false,
-            listFilters: { month: new Date().toISOString().slice(0, 7), mien: "", store: "" },
+            listFilters: { month: new Date().toISOString().slice(0, 7), mien: "", store: "", auditor: "" },
             canBack: false,
+            report: null,
+            storeReport: null,
+            rankReport: null,
+            rankStore: null,
+            rankStoreTotal: 0,
+            personal: null,
+            personalTab: "activity",
+            reportOpen: {},
         });
         this.history = [{ home: true }];
         onWillStart(async () => {
@@ -62,13 +70,24 @@ export class StoreChecklistShell extends Component {
                 id: "audit",
                 label: "Checklist Audit",
                 icon: "fa-check-square-o",
-                iconTone: "manage",
+                iconTone: "audit",
                 children: [
                     { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh" },
                     { id: "asm", label: "Checklist ASM", icon: "fa-users", action: "store_checklist.action_store_audit_asm" },
                     { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
                     { id: "review", label: "Phiếu Đánh Giá", icon: "fa-clipboard", action: "store_checklist.action_store_audit" },
                     { id: "review_list", label: "Danh Sách Đánh Giá", icon: "fa-list", action: "store_checklist.action_store_audit" },
+                ],
+            },
+            {
+                id: "report",
+                label: "Báo cáo",
+                icon: "fa-bar-chart",
+                iconTone: "report",
+                children: [
+                    { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text-o", action: "store_checklist.action_store_report_gs" },
+                    { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-th-large" },
+                    { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-sort-amount-desc" },
                 ],
             },
         ];
@@ -88,6 +107,7 @@ export class StoreChecklistShell extends Component {
                 id: "settings",
                 label: "Cài đặt",
                 icon: "fa-cog",
+                iconTone: "settings",
                 children: [
                     { id: "access", label: "Phân quyền", icon: "fa-shield", action: "store_checklist.action_store_groups" },
                     { id: "evaluation", label: "Công việc đánh giá", icon: "fa-folder-open-o", folder: true },
@@ -109,7 +129,7 @@ export class StoreChecklistShell extends Component {
     }
 
     navChildClass(child) {
-        const cls = [];
+        const cls = ["store-tn-" + child.id];
         if (this.state.activeNav === child.id) {
             cls.push("is-active");
         }
@@ -134,7 +154,11 @@ export class StoreChecklistShell extends Component {
 
     // Các danh sách phiếu (Checklist NVBH / ASM / GS và Danh Sách Đánh Giá) có thanh lọc tháng / cửa hàng / miền
     get filterNavs() {
-        return ["review", "review_list", "nvbh", "asm", "gs"];
+        return ["review", "review_list", "nvbh", "asm", "gs", ...this.reportNavs];
+    }
+
+    get reportNavs() {
+        return ["report_gs", "report_store", "report_rank"];
     }
 
     get showListFilters() {
@@ -145,9 +169,13 @@ export class StoreChecklistShell extends Component {
         return this.state.contentMode === "list" ? "dashboard" : this.state.contentMode;
     }
 
-    listDomain(base) {
-        const { month, mien, store } = this.state.listFilters;
+    listDomain(base, monthOverride) {
+        const { mien, store, auditor } = this.state.listFilters;
+        const month = monthOverride === undefined ? this.state.listFilters.month : monthOverride;
         const domain = [...base];
+        if (auditor) {
+            domain.push(["auditor_id", "=", Number(auditor)]);
+        }
         if (month) {
             const [y, m] = month.split("-").map(Number);
             const fmt = (d) => d.toISOString().slice(0, 19).replace("T", " ");
@@ -168,15 +196,24 @@ export class StoreChecklistShell extends Component {
         return {
             gs: "DANH SÁCH CHECK LIST GIÁM SÁT CỬA HÀNG",
             review: "DANH SÁCH PHIẾU ĐÁNH GIÁ CỬA HÀNG",
+            report_gs: "BÁO CÁO GIÁM SÁT CỬA HÀNG",
+            report_rank: "Báo cáo xếp loại",
         }[this.state.activeNav] || "";
     }
 
     // Kết xuất Excel đúng theo bộ lọc tháng / cửa hàng / miền đang chọn
     async exportExcel() {
-        const domain = this.state.embeddedViewProps?.domain || [];
-        const file = await this.orm.call("store.audit", "export_list_xlsx", [domain], {
-            title: this.listTitle || "DANH SÁCH PHIẾU ĐÁNH GIÁ",
-        });
+        let domain = this.reportNavs.includes(this.state.activeNav)
+            ? this.listDomain(this.reportBase)
+            : this.state.embeddedViewProps?.domain || [];
+        if (this.isPersonal) {
+            domain = this.listDomain([["audit_type", "=", "gs"], ["auditor_id", "=", user.userId]]);
+        }
+        const file = this.state.activeNav === "report_rank"
+            ? await this.orm.call("store.audit", "export_rank_xlsx", [domain])
+            : await this.orm.call("store.audit", "export_list_xlsx", [domain], {
+                  title: this.listTitle || "DANH SÁCH PHIẾU ĐÁNH GIÁ",
+              });
         const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
         const blob = new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
         const link = document.createElement("a");
@@ -186,8 +223,251 @@ export class StoreChecklistShell extends Component {
         URL.revokeObjectURL(link.href);
     }
 
+    get reportBase() {
+        return [["audit_type", "=", "gs"], ["state", "!=", "draft"]];
+    }
+
+    get isPersonal() {
+        return this.state.activeNav === "report_gs" && !this.state.isManager;
+    }
+
+    toneColor(tone) {
+        return { green: "#16a34a", blue: "#2563eb", orange: "#f59e0b", red: "#dc2626", darkred: "#7f1d1d" }[tone] || "#94a3b8";
+    }
+
+    get personalDiff() {
+        const p = this.state.personal;
+        const d = Math.round(Math.abs(p.avg - p.chain_avg) * 10) / 10;
+        return `${p.avg < p.chain_avg ? "Thấp hơn" : "Cao hơn"} ${d}% so với trung bình chuỗi`;
+    }
+
+    // Phiếu giám sát đã chốt (không còn nháp) của người dùng trong tháng
+    get personalDone() {
+        return this.state.personal.rows.filter((r) => !r.draft);
+    }
+
+    get personalStoreCount() {
+        return new Set(this.personalDone.map((r) => r.store)).size;
+    }
+
+    levelAvg(lv) {
+        return Math.round((10 * lv.rows.reduce((a, r) => a + r.rate, 0)) / lv.rows.length) / 10;
+    }
+
+    levelPassed(lv) {
+        return lv.rows.filter((r) => r.passed).length;
+    }
+
+    personalDonut() {
+        return this.donutFrom(this.state.personal.levels);
+    }
+
+    reportDonut() {
+        return this.donutFrom(this.state.report.levels.filter((l) => l.count));
+    }
+
+    get reportTitle() {
+        const m = this.state.listFilters.month;
+        return "DASHBOARD QUẢN TRỊ & HOẠT ĐỘNG GIÁM SÁT" + (m ? ` THÁNG ${m.slice(5)}/${m.slice(0, 4)}` : "");
+    }
+
+    get reportSubtitle() {
+        const f = this.state.listFilters;
+        const mien = { Nam: "Miền Nam", "ĐTT": "Miền ĐTT", "Bắc": "Miền Bắc", other: "Khác" }[f.mien] || "Tất cả miền";
+        const au = this.state.report?.auditor_options.find((a) => String(a.id) === f.auditor);
+        return [f.month ? `Tháng ${f.month.slice(5)}/${f.month.slice(0, 4)}` : "Tất cả tháng", mien, au ? au.name : "Tất cả giám sát"].join(" | ");
+    }
+
+    get reportDiff() {
+        const r = this.state.report;
+        if (r.prev_avg === null) {
+            return "Chưa có dữ liệu tháng trước";
+        }
+        const d = Math.round((r.avg - r.prev_avg) * 10) / 10;
+        return `${d > 0 ? "+" : ""}${d}% so với tháng trước`;
+    }
+
+    // Cột: số phiếu mỗi giám sát (trục trái); đường cam: điểm TB % (trục phải 0-100)
+    reportCombo() {
+        const rows = this.state.report.rows;
+        const max = Math.max(4, ...rows.map((r) => r.audited));
+        const step = Math.ceil(max / 4), top = step * 4;
+        const W = 560, H = 240, L = 34, R = 40, B = 46, T = 16;
+        const slot = (W - L - R) / Math.max(rows.length, 1);
+        const y = (v, t) => T + (H - T - B) * (1 - v / t);
+        return {
+            W, H, R, ticks: [0, 1, 2, 3, 4].map((i) => ({ y: y(i * step, top), left: i * step, right: i * 25 })),
+            bars: rows.map((r, i) => ({
+                id: r.id, x: L + slot * i + slot * 0.2, w: slot * 0.6, y: y(r.audited, top), h: (H - T - B) * (r.audited / top),
+                cx: L + slot * (i + 0.5), cy: y(r.avg, 100), value: r.audited, avg: r.avg,
+                label: r.name.length > 14 ? r.name.slice(0, 13) + "…" : r.name,
+            })),
+            line: rows.map((r, i) => `${i ? "L" : "M"}${L + slot * (i + 0.5)},${y(r.avg, 100)}`).join(" "),
+        };
+    }
+
+    statusColor(tone) {
+        return { green: "#16a34a", yellow: "#f59e0b", orange: "#ea580c", red: "#dc2626", gray: "#94a3b8" }[tone] || "#94a3b8";
+    }
+
+    donutFrom(items, base) {
+        const total = base || items.reduce((a, i) => a + i.count, 0);
+        const R = 62, C = 2 * Math.PI * R;
+        let offset = 0;
+        return {
+            R, total,
+            segments: items.map((it) => {
+                const len = (it.count / total) * C;
+                const mid = ((offset + len / 2) / C) * 2 * Math.PI - Math.PI / 2;
+                const seg = { dash: `${len} ${C - len}`, offset: -offset, color: it.color || this.toneColor(it.tone), name: it.name,
+                    value: it.count, pct: Math.round((100 * it.count) / total), tx: 80 + R * Math.cos(mid), ty: 84 + R * Math.sin(mid) };
+                offset += len;
+                return seg;
+            }),
+        };
+    }
+
+    // Cột: số phiếu mỗi tuần; đường cam: mức trung bình kế hoạch / tuần
+    personalBars() {
+        const p = this.state.personal;
+        const target = p.plan / 4;
+        const max = Math.max(4, ...p.weeks, Math.ceil(target));
+        const step = Math.ceil(max / 4), top = step * 4;
+        const W = 360, H = 190, L = 30, B = 26, T = 14;
+        const slot = (W - L) / 4;
+        const y = (v) => T + (H - T - B) * (1 - v / top);
+        return {
+            W, H, ly: y(target),
+            ticks: [0, 1, 2, 3, 4].map((i) => ({ y: y(i * step), label: i * step })),
+            bars: p.weeks.map((v, i) => ({ x: L + slot * i + slot * 0.2, w: slot * 0.6, y: y(v), h: (H - T - B) * (v / top), value: v, label: `Tuần ${i + 1}`, cx: L + slot * (i + 0.5) })),
+        };
+    }
+
+    toneBg(tone) {
+        return { green: "#dcfce7", blue: "#dbeafe", orange: "#fef3c7", red: "#fee2e2", darkred: "#fecaca" }[tone] || "#f1f5f9";
+    }
+
+    storeDonut() {
+        return this.donutFrom(this.state.storeReport.levels.filter((l) => l.count));
+    }
+
+    // Cột chồng: số cửa hàng theo xếp loại của từng miền
+    storeStacked() {
+        const rep = this.state.storeReport;
+        const totals = rep.by_mien.map((m) => m.counts.reduce((a, b) => a + b, 0));
+        const max = Math.max(4, ...totals);
+        const step = Math.ceil(max / 4), top = step * 4;
+        const W = 560, H = 250, L = 44, B = 30, T = 12;
+        const slot = (W - L) / Math.max(rep.by_mien.length, 1);
+        const y = (v) => T + (H - T - B) * (1 - v / top);
+        return {
+            W, H,
+            ticks: [0, 1, 2, 3, 4].map((i) => ({ y: y(i * step), label: `${i * step} CH` })),
+            cols: rep.by_mien.map((m, i) => {
+                let acc = 0;
+                return {
+                    label: m.label, cx: L + slot * (i + 0.5),
+                    segs: m.counts.map((n, k) => {
+                        const w = Math.min(slot * 0.6, 70); // giới hạn bề rộng cột khi chỉ có ít miền
+                        const seg = { x: L + slot * (i + 0.5) - w / 2, w, y: y(acc + n), h: (H - T - B) * (n / top), n,
+                            color: this.toneColor(rep.levels[k].tone), key: k };
+                        acc += n;
+                        return seg;
+                    }),
+                };
+            }),
+        };
+    }
+
+    // màu từng xếp loại lấy từ "Màu hiển thị" của bảng Xếp loại trong Cài đặt
+    rankColor(i) {
+        return this.toneColor(this.state.rankStore.levels[i].tone);
+    }
+
+    rankLevelColor(name) {
+        const i = this.state.rankStore.levels.findIndex((l) => l.name === name);
+        return i < 0 ? "#94a3b8" : this.rankColor(i);
+    }
+
+    rankIcon(tone) {
+        return { green: "fa-star", blue: "fa-trophy", orange: "fa-bar-chart", red: "fa-times", darkred: "fa-times" }[tone] || "fa-circle";
+    }
+
+    rankDonut() {
+        // Đủ mọi xếp loại trong bảng Xếp loại (kể cả 0 cửa hàng); tỷ lệ = số cửa hàng / tổng cửa hàng trong hồ sơ
+        const items = this.state.rankStore.levels.map((l, i) => ({ ...l, color: this.rankColor(i) }));
+        const sum = items.reduce((a, l) => a + l.count, 0);
+        return this.donutFrom(items, Math.max(this.state.rankStoreTotal, sum));
+    }
+
+    // Cột nhóm: mỗi miền một cụm, mỗi xếp loại một cột
+    rankGrouped() {
+        const { levels, by_mien: groups } = this.state.rankStore;
+        const max = Math.max(4, ...groups.flatMap((g) => g.counts));
+        const step = Math.ceil(max / 4), top = step * 4;
+        const W = 560, H = 250, L = 36, B = 30, T = 16;
+        const slot = (W - L) / Math.max(groups.length, 1);
+        const bw = Math.min((slot * 0.8) / levels.length, 36);
+        const y = (v) => T + (H - T - B) * (1 - v / top);
+        return {
+            W, H, ticks: [0, 1, 2, 3, 4].map((i) => ({ y: y(i * step), label: i * step })),
+            groups: groups.map((g, i) => {
+                const cx = L + slot * (i + 0.5);
+                return {
+                    label: /^(Miền|Khác)/.test(g.label) ? g.label : `Miền ${g.label}`, cx,
+                    bars: g.counts.map((n, k) => ({
+                        k, n, x: cx - (bw * levels.length) / 2 + bw * k, w: bw - 4, y: y(n),
+                        h: (H - T - B) * (n / top), color: this.rankColor(k),
+                    })),
+                };
+            }),
+        };
+    }
+
+    async loadStoreReport() {
+        this.state.storeReport = await this.orm.call("store.audit", "get_report_store", [this.listDomain(this.reportBase)]);
+    }
+
+    async loadReport() {
+        if (this.state.activeNav === "report_rank") {
+            const domain = this.listDomain(this.reportBase);
+            // Tổng cửa hàng = số cửa hàng trong hồ sơ nhân viên / cửa hàng (hr.store), theo bộ lọc miền
+            const mien = this.state.listFilters.mien;
+            const storeDomain = mien === "other"
+                ? ["|", ["mien", "=", false], ["mien", "not in", ["Nam", "ĐTT", "Bắc"]]]
+                : mien ? [["mien", "=", mien]] : [];
+            [this.state.rankReport, this.state.rankStore, this.state.rankStoreTotal] = await Promise.all([
+                this.orm.call("store.audit", "get_report_rank", [domain]),
+                this.orm.call("store.audit", "get_report_store", [domain]),
+                this.orm.searchCount("hr.store", storeDomain),
+            ]);
+            return;
+        }
+        if (this.state.activeNav === "report_store") {
+            return this.loadStoreReport();
+        }
+        if (!this.state.isManager) {
+            this.state.personal = await this.orm.call("store.audit", "get_report_personal", [this.state.listFilters.month || false]);
+            return;
+        }
+        const month = this.state.listFilters.month;
+        let prev = false;
+        if (month) {
+            const [y, m] = month.split("-").map(Number);
+            prev = this.listDomain(this.reportBase, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
+        }
+        this.state.report = await this.orm.call("store.audit", "get_report_gs", [this.listDomain(this.reportBase), prev]);
+    }
+
+    toggleReportRow(id) {
+        this.state.reportOpen[id] = !this.state.reportOpen[id];
+    }
+
     onListFilter(key, ev) {
         this.state.listFilters[key] = ev.target.value;
+        if (this.reportNavs.includes(this.state.activeNav)) {
+            return this.loadReport();
+        }
         const props = this.state.embeddedViewProps;
         this.state.embeddedViewProps = { ...props, domain: this.listDomain(this.listBase) };
         this.state.viewKey += 1;
@@ -314,6 +594,13 @@ export class StoreChecklistShell extends Component {
             this.state.openGroups[child.id] = !this.state.openGroups[child.id];
             return;
         }
+        if (this.reportNavs.includes(child?.id)) {
+            this.track({ child });
+            this.state.activeNav = child.id;
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            return this.loadReport();
+        }
         if (!child?.action) {
             return;
         }
@@ -373,7 +660,7 @@ export class StoreChecklistShell extends Component {
     }
 
     openRecord(act, navId, resId) {
-        if (!["benchmark", "review", "review_list", "level", "gs_benchmark", "gs_level", "nvbh", "asm", "gs"].includes(navId)) {
+        if (!["benchmark", "review", "review_list", "level", "gs_benchmark", "gs_level", "nvbh", "asm", "gs", "report_gs"].includes(navId)) {
             return this.showWindow(act, navId, "form", resId);
         }
         // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách

@@ -173,6 +173,15 @@ export class StoreChecklistShell extends Component {
         );
     }
 
+    // Điểm chuẩn / Mức đánh giá (Cài đặt, chỉ Quản lý): các màn mở phiếu trong hộp thoại, cũng dùng nút riêng
+    get showSettingsAdd() {
+        return Boolean(
+            this.state.isManager
+            && this.state.embeddedViewProps
+            && ["benchmark", "level", "gs_benchmark", "gs_level"].includes(this.state.activeNav)
+        );
+    }
+
     onAddNew() {
         this.state.embeddedViewProps?.createRecord?.();
     }

@@ -14,7 +14,7 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-att-class="showOwnAdd ? 'has-own-add' : ''" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav))">
+            <div class="o_store_list_wrap" t-att-class="showOwnAdd or showSettingsAdd ? 'has-own-add' : ''" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav))">
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
@@ -24,6 +24,9 @@
                         <h2 t-esc="listTitle"/>
                         <p t-esc="state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
+                </div>
+                <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
+                    <button type="button" class="btn btn-primary o_store_add_btn" t-on-click="onAddNew">Thêm mới</button>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showListFilters">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-if="showOwnAdd" t-on-click="onAddNew">Thêm mới</button>

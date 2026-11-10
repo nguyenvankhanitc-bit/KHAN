@@ -692,3 +692,8 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 /* Báo cáo xếp loại: chú thích biểu đồ cột theo miền */
 .o_store_rk .o_store_legend { display: flex; flex-wrap: wrap; gap: 14px; justify-content: flex-end; font-size: .85rem; margin-bottom: 4px;
     i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; margin-right: 4px; } }
+
+/* Danh sách phiếu: "Thêm mới" nằm ở thanh bộ lọc; ẩn nút mặc định của thanh điều khiển để không bị trùng.
+   Selector dài để thắng luật "hiện lại nút Mới" của shell Internet ở đầu file. */
+.o_phan_he_shell.o_internet_master .o_internet_content .o_store_list_wrap.has-own-add .o_list_button_add { display: none !important; }
+.o_store_list_filters .o_store_add_btn { font-weight: 600; }

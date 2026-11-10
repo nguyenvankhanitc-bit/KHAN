@@ -50,12 +50,14 @@ export class StoreChecklistShell extends Component {
             rankStore: null,
             rankStoreTotal: 0,
             personal: null,
+            canCreate: false,
             personalTab: "activity",
             reportOpen: {},
         });
         this.history = [{ home: true }];
         onWillStart(async () => {
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
+            this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
             await this.loadOverview();
         });
     }
@@ -159,6 +161,20 @@ export class StoreChecklistShell extends Component {
 
     get reportNavs() {
         return ["report_gs", "report_store", "report_rank"];
+    }
+
+    // Nút "Thêm mới" riêng của module (thanh bộ lọc), không phụ thuộc nút mặc định của Odoo ở thanh điều khiển
+    get showOwnAdd() {
+        return Boolean(
+            this.showListFilters
+            && !this.reportNavs.includes(this.state.activeNav)
+            && this.state.canCreate
+            && this.state.embeddedViewProps
+        );
+    }
+
+    onAddNew() {
+        this.state.embeddedViewProps?.createRecord?.();
     }
 
     get showListFilters() {

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Chặn trình duyệt (Chrome/Edge) tự dịch trang: dịch tự động làm hỏng DOM của Owl
+         (lỗi "removeChild ... không phải là con của nút này") với người dùng để giao diện English. -->
+    <template id="web_layout_no_translate" name="Web layout: không cho trình duyệt dịch trang" inherit_id="web.layout">
+        <xpath expr="//html" position="attributes">
+            <attribute name="translate">no</attribute>
+        </xpath>
+        <xpath expr="//head" position="inside">
+            <meta name="google" content="notranslate"/>
+        </xpath>
+    </template>
+</odoo>

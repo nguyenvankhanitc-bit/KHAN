@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "LUG Enterprise Application Center",
-    "version": "19.0.1.3.18",
+    "version": "19.0.1.3.19",
     "category": "Productivity",
     "summary": "Cổng truy cập tập trung toàn bộ ứng dụng doanh nghiệp",
     "description": """
@@ -24,6 +24,7 @@ Một cổng truy cập — toàn bộ ứng dụng doanh nghiệp.
         "data/lug_app_center_announcement_data.xml",
         "views/lug_app_center_views.xml",
         "views/lug_app_center_menus.xml",
+        "views/web_no_translate.xml",
     ],
     "assets": {
         "web.assets_backend": [

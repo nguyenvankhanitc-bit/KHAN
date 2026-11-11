@@ -53,11 +53,17 @@ export class StoreChecklistShell extends Component {
             canCreate: false,
             personalTab: "activity",
             reportOpen: {},
+            rights: null,
+            perm: null,
+            permQ: "",
+            permClosed: {},
+            permEdit: null,
         });
         this.history = [{ home: true }];
         onWillStart(async () => {
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
             this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
+            this.state.rights = await this.orm.call("store.perm.rule", "get_my_rights", []);
             await this.loadOverview();
         });
     }
@@ -93,7 +99,14 @@ export class StoreChecklistShell extends Component {
                 ],
             },
         ];
-        if (this.state.isManager) {
+        const rights = this.state.rights; // ma trận quyền: ẩn mục không có quyền Xem
+        if (rights) {
+            for (const sec of sections) {
+                sec.children = sec.children.filter((c) => rights[c.id]?.read);
+            }
+            sections.splice(0, sections.length, ...sections.filter((sec) => sec.children.length));
+        }
+        if (this.state.isManager || rights) {
             // Thư mục "Công việc đánh giá" nằm trong Cài đặt (shell chỉ có 2 cấp nên tự dựng cấp con, thụt lề bằng CSS)
             const evaluation = [
                 { id: "subgroup", label: "Phân nhóm đánh giá", icon: "fa-sitemap", action: "store_checklist.action_store_sub_group", sub: true },
@@ -105,17 +118,19 @@ export class StoreChecklistShell extends Component {
                 { id: "gs_benchmark", label: "Điểm chuẩn đánh giá", icon: "fa-list-ol", action: "store_checklist.action_store_benchmark_gs", sub: true },
                 { id: "gs_level", label: "Mức độ đánh giá", icon: "fa-star", action: "store_checklist.action_store_level_gs", sub: true },
             ];
+            const vis = (list) => (rights ? list.filter((c) => rights[c.id]?.read) : list);
+            const evalVis = vis(evaluation), supVis = vis(supervision);
             sections.push({
                 id: "settings",
                 label: "Cài đặt",
                 icon: "fa-cog",
                 iconTone: "settings",
                 children: [
-                    { id: "access", label: "Phân quyền", icon: "fa-shield", action: "store_checklist.action_store_groups" },
-                    { id: "evaluation", label: "Công việc đánh giá", icon: "fa-folder-open-o", folder: true },
-                    ...(this.state.openGroups.evaluation ? evaluation : []),
-                    { id: "supervision", label: "Công việc giám sát", icon: "fa-folder-open-o", folder: true },
-                    ...(this.state.openGroups.supervision ? supervision : []),
+                    ...(this.state.isManager ? [{ id: "access", label: "Phân quyền", icon: "fa-shield", action: "store_checklist.action_store_groups" }] : []),
+                    ...(evalVis.length ? [{ id: "evaluation", label: "Công việc đánh giá", icon: "fa-folder-open-o", folder: true }] : []),
+                    ...(this.state.openGroups.evaluation ? evalVis : []),
+                    ...(supVis.length ? [{ id: "supervision", label: "Công việc giám sát", icon: "fa-folder-open-o", folder: true }] : []),
+                    ...(this.state.openGroups.supervision ? supVis : []),
                 ],
             });
         }
@@ -169,6 +184,7 @@ export class StoreChecklistShell extends Component {
             this.showListFilters
             && !this.reportNavs.includes(this.state.activeNav)
             && this.state.canCreate
+            && (!this.state.rights || this.state.rights[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
         );
     }
@@ -176,7 +192,7 @@ export class StoreChecklistShell extends Component {
     // Điểm chuẩn / Mức đánh giá (Cài đặt, chỉ Quản lý): các màn mở phiếu trong hộp thoại, cũng dùng nút riêng
     get showSettingsAdd() {
         return Boolean(
-            this.state.isManager
+            (this.state.isManager || this.state.rights?.[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
             && ["benchmark", "level", "gs_benchmark", "gs_level"].includes(this.state.activeNav)
         );
@@ -184,6 +200,10 @@ export class StoreChecklistShell extends Component {
 
     onAddNew() {
         this.state.embeddedViewProps?.createRecord?.();
+    }
+
+    get canExport() {
+        return !this.state.rights || Boolean(this.state.rights[this.state.activeNav]?.export);
     }
 
     get showListFilters() {
@@ -626,11 +646,141 @@ export class StoreChecklistShell extends Component {
             this.state.embeddedViewProps = null;
             return this.loadReport();
         }
+        if (child?.id === "access") {
+            this.track({ child });
+            this.state.activeNav = "access";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            return this.loadPerm();
+        }
         if (!child?.action) {
             return;
         }
         this.track({ child });
         await this.openAction(child.action, child.id);
+    }
+
+    async loadPerm() {
+        this.state.perm = await this.orm.call("store.perm.rule", "get_rules", []);
+        this.state.permEdit = null;
+    }
+
+    get permList() {
+        const q = this.state.permQ.trim().toLowerCase();
+        return (this.state.perm?.rules || []).filter((r) => !q || (r.group || "").toLowerCase().includes(q));
+    }
+
+    get permOps() {
+        return [["read", "Xem", "fa-eye"], ["create", "Thêm", "fa-plus"], ["write", "Sửa", "fa-pencil"], ["unlink", "Xóa", "fa-trash"], ["export", "Xuất Excel", "fa-file-excel-o"]];
+    }
+
+    // Chức năng gom theo thư mục (dropdown) như sidebar
+    get permFolders() {
+        const p = this.state.perm;
+        return p.folders.map((f) => ({ ...f, menus: p.menus.filter((m) => m.folder === f.id) }));
+    }
+
+    toggleFolder(id) {
+        this.state.permClosed[id] = !this.state.permClosed[id];
+    }
+
+    folderChecked(f, op) {
+        return f.menus.every((m) => this.state.permEdit.perms[m.key][op]);
+    }
+
+    onPermFolder(f, op, ev) {
+        for (const m of f.menus) {
+            this.onPermToggle(m.key, op, ev);
+        }
+    }
+
+    permAll(r, key) {
+        return Object.values(r.perms[key]).every(Boolean);
+    }
+
+    // Mở popup thiết lập: sửa bản sao, chỉ ghi khi bấm "Lưu thay đổi"
+    onPermOpen(rule) {
+        const perms = {};
+        for (const m of this.state.perm.menus) {
+            perms[m.key] = { read: false, create: false, write: false, unlink: false, export: false, ...(rule?.perms[m.key] || {}) };
+        }
+        this.state.permEdit = {
+            src: rule || null, id: rule?.id || 0, group: rule?.group || "",
+            users: [...(rule?.users || [])], perms, lug: "",
+        };
+    }
+
+    onPermClose() {
+        this.state.permEdit = null;
+    }
+
+    onPermReset() {
+        const e = this.state.permEdit;
+        for (const k in e.perms) {
+            Object.assign(e.perms[k], { read: false, create: false, write: false, unlink: false, export: false });
+        }
+    }
+
+    onPermToggle(key, op, ev) {
+        const v = ev.target.checked;
+        for (const o of op === "all" ? ["read", "create", "write", "unlink", "export"] : [op]) {
+            this.state.permEdit.perms[key][o] = v;
+        }
+    }
+
+    onPermColumn(op, ev) {
+        for (const k in this.state.permEdit.perms) {
+            this.state.permEdit.perms[k][op] = ev.target.checked;
+        }
+    }
+
+    onPermUserAdd(ev) {
+        const e = this.state.permEdit;
+        const u = this.state.perm.users.find((x) => x.name === ev.target.value.trim());
+        ev.target.value = "";
+        if (u && !e.users.some((x) => x.id === u.id)) {
+            e.users.push(u);
+        }
+    }
+
+    // Nạp toàn bộ user của một nhóm LUG Permission
+    onPermLugGroup(ev) {
+        const e = this.state.permEdit;
+        const g = this.state.perm.groups.find((x) => x.name === ev.target.value);
+        ev.target.value = "";
+        for (const u of g?.users || []) {
+            if (!e.users.some((x) => x.id === u.id)) {
+                e.users.push(u);
+            }
+        }
+    }
+
+    onPermUserRemove(u) {
+        const e = this.state.permEdit;
+        e.users = e.users.filter((x) => x.id !== u.id);
+    }
+
+    async onPermSave() {
+        const e = this.state.permEdit;
+        if (!e.users.length) {
+            return this.notification.add("Chọn ít nhất một user.", { type: "warning" });
+        }
+        const rules = this.state.perm.rules.filter((r) => r.id !== e.id || !e.id).map(this.permPayload);
+        rules.push(this.permPayload({ id: e.id, group: e.group.trim(), users: e.users, perms: e.perms }));
+        await this.orm.call("store.perm.rule", "save_rules", [rules]);
+        this.notification.add("Đã lưu phân quyền.", { type: "success" });
+        return this.loadPerm();
+    }
+
+    async onPermDelete() {
+        const e = this.state.permEdit;
+        const rules = this.state.perm.rules.filter((r) => r.id !== e.id).map(this.permPayload);
+        await this.orm.call("store.perm.rule", "save_rules", [rules]);
+        return this.loadPerm();
+    }
+
+    permPayload(r) {
+        return { id: r.id, group: r.group, user_ids: r.users.map((u) => u.id), perms: r.perms };
     }
 
     openAudit(resId) {

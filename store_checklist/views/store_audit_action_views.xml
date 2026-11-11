@@ -36,7 +36,7 @@
         <field name="name">store.audit.action.list</field>
         <field name="model">store.audit.action</field>
         <field name="arch" type="xml">
-            <list string="Khắc phục" decoration-danger="state == 'todo' and deadline and deadline &lt; current_date">
+            <list group_edit="0" group_delete="0" string="Khắc phục" decoration-danger="state == 'todo' and deadline and deadline &lt; current_date">
                 <field name="date_found"/>
                 <field name="store_id"/>
                 <field name="audit_id" optional="show"/>

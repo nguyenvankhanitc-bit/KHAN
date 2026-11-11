@@ -15,6 +15,17 @@ CATEGORIES = [
 
 class StoreAuditTemplate(models.Model):
     _name = 'store.audit.template'
+    _inherit = 'store.perm.mixin'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return ('gs_' if self.audit_type == 'gs' else '') + 'benchmark'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return ('gs_' if (vals.get('audit_type') or 'nvbh') == 'gs' else '') + 'benchmark'
+
     _description = 'Mẫu checklist audit'
 
     name = fields.Char(string='Tên mẫu', required=True)
@@ -25,6 +36,17 @@ class StoreAuditTemplate(models.Model):
 
 class StoreAuditSubGroup(models.Model):
     _name = 'store.audit.sub.group'
+    _inherit = 'store.perm.mixin'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return ('gs_' if self.audit_type == 'gs' else '') + 'subgroup'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return ('gs_' if (vals.get('audit_type') or 'nvbh') == 'gs' else '') + 'subgroup'
+
     _description = 'Phân nhóm tiêu chí'
     _order = 'sequence, id'
 
@@ -36,6 +58,17 @@ class StoreAuditSubGroup(models.Model):
 
 class StoreAuditTemplateLine(models.Model):
     _name = 'store.audit.template.line'
+    _inherit = 'store.perm.mixin'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return ('gs_' if self.audit_type == 'gs' else '') + 'benchmark'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return ('gs_' if (self.env['store.audit.template'].sudo().browse(vals.get('template_id') or 0).audit_type or 'nvbh') == 'gs' else '') + 'benchmark'
+
     _description = 'Tiêu chí mẫu checklist'
     _order = 'sequence, id'
 

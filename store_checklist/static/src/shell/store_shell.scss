@@ -697,3 +697,37 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
    Selector dài để thắng luật "hiện lại nút Mới" của shell Internet ở đầu file. */
 .o_phan_he_shell.o_internet_master .o_internet_content .o_store_list_wrap.has-own-add .o_list_button_add { display: none !important; }
 .o_store_list_filters .o_store_add_btn { font-weight: 600; }
+
+.o_store_perm { padding: 16px 20px; background: #fff; border-radius: 10px; margin: 12px; max-width: 720px;
+    .o_store_perm_head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; h2 { font-size: 20px; margin: 0; } p { margin: 4px 0 0; font-size: 13px; } }
+    .o_store_perm_search { width: 100%; border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 12px; margin-bottom: 8px; }
+    .o_store_perm_listtitle { font-size: 15px; margin: 12px 0 8px; }
+    .o_store_perm_card { display: flex; align-items: center; gap: 12px; padding: 10px 12px; margin-bottom: 8px; background: #f8fafc; border-radius: 8px;
+        .o_store_perm_ico { width: 38px; height: 38px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; }
+        .o_store_perm_info { flex: 1; display: flex; flex-direction: column; small { color: #6b7280; } } }
+    .o_store_perm_overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 12px; }
+    .o_store_perm_modal { background: #fff; border-radius: 12px; width: 980px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden;
+        .o_store_perm_mhead { background: #2563eb; color: #fff; padding: 12px 16px; font-weight: 600; display: flex; justify-content: space-between; a { color: #fff; } }
+        .o_store_perm_mbody { padding: 14px 16px; overflow: auto; }
+        .o_store_perm_box { background: #eff6ff; border-radius: 8px; padding: 10px 12px; margin-bottom: 12px;
+            input { width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 8px; margin-top: 6px; background: #fff; }
+            .o_store_perm_name { font-weight: 600; font-size: 16px; margin: 0 0 4px; } }
+        .o_store_perm_tag { display: inline-block; background: #dcfce7; border: 1px solid #86efac; border-radius: 12px; padding: 1px 8px; margin: 2px; font-size: 13px; }
+        .o_store_perm_table { border-collapse: collapse; width: 100%;
+            th, td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: center; vertical-align: middle; font-size: 13px; }
+            thead th { background: #f1f5f9; } td.o_store_perm_menu { text-align: left; } }
+        .o_store_perm_mfoot { display: flex; gap: 8px; padding: 12px 16px; border-top: 1px solid #e5e7eb; }
+    }
+}
+
+// User thường không đổi cột hiển thị của danh sách
+.o_store_list_wrap.is-plain-user .o_optional_columns_dropdown,
+.o_store_list_wrap.is-plain-user .o_list_table th.o_list_controller { display: none !important; }
+
+.o_store_perm .o_store_perm_table {
+    .o_store_perm_folder { background: #eef2ff; cursor: pointer; td:first-child { text-align: left; } }
+    .o_store_perm_leaf { padding-left: 28px !important; }
+}
+
+// Menu bánh răng của dòng nhóm (Sửa/Xóa cửa hàng khi nhóm theo cửa hàng) đã tắt trong view: ẩn luôn nút
+.o_store_list_wrap .o_group_config { display: none !important; }

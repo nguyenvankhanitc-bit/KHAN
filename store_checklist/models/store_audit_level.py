@@ -7,6 +7,17 @@ TONES = [('green', 'Xanh lá'), ('blue', 'Xanh dương'), ('orange', 'Cam'), ('r
 
 class StoreAuditLevel(models.Model):
     _name = 'store.audit.level'
+    _inherit = 'store.perm.mixin'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return ('gs_' if self.audit_type == 'gs' else '') + 'level'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return ('gs_' if (vals.get('audit_type') or 'nvbh') == 'gs' else '') + 'level'
+
     _description = 'Mức đánh giá'
     _order = 'min_score desc, id'
 
@@ -36,5 +47,5 @@ class StoreAuditLevel(models.Model):
     @api.model
     def level_for(self, pct, audit_type='nvbh'):
         """Mức đánh giá ứng với tỷ lệ điểm pct (0..100): mức có 'Từ điểm' lớn nhất không vượt pct, theo loại checklist."""
-        levels = self.search([('audit_type', '=', audit_type or 'nvbh')], order='min_score desc')
+        levels = self.sudo().search([('audit_type', '=', audit_type or 'nvbh')], order='min_score desc')
         return next((l for l in levels if pct >= l.min_score), levels[-1:] if levels else levels)

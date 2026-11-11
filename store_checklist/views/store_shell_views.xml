@@ -37,7 +37,7 @@
         <field name="name">store.audit.template.line.benchmark.list</field>
         <field name="model">store.audit.template.line</field>
         <field name="arch" type="xml">
-            <list string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
+            <list group_edit="0" group_delete="0" string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
                 <field name="sequence" string="STT" width="60px"/>
                 <field name="category" width="200px"/>
                 <field name="sub_group_id" width="210px"/>
@@ -116,7 +116,7 @@
         <field name="name">store.audit.sub.group.list</field>
         <field name="model">store.audit.sub.group</field>
         <field name="arch" type="xml">
-            <list string="Phân nhóm" editable="bottom" default_order="sequence, id">
+            <list group_edit="0" group_delete="0" string="Phân nhóm" editable="bottom" default_order="sequence, id">
                 <field name="sequence" string="STT"/>
                 <field name="category"/>
                 <field name="name"/>
@@ -143,7 +143,7 @@
         <field name="name">store.audit.level.list</field>
         <field name="model">store.audit.level</field>
         <field name="arch" type="xml">
-            <list string="Mức đánh giá" class="o_store_level">
+            <list group_edit="0" group_delete="0" string="Mức đánh giá" class="o_store_level">
                 <field name="name" string="Xếp loại"/>
                 <field name="min_score" options="{'hide_trailing_zeros': true}"/>
                 <field name="score_range"/>

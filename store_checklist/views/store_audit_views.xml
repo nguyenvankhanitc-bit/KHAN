@@ -216,7 +216,7 @@
         <field name="name">store.audit.list</field>
         <field name="model">store.audit</field>
         <field name="arch" type="xml">
-            <list string="Phiếu Audit" class="o_store_audit_list" decoration-danger="conclusion == 'fail' and state != 'draft'">
+            <list group_edit="0" group_delete="0" string="Phiếu Audit" class="o_store_audit_list" decoration-danger="conclusion == 'fail' and state != 'draft'">
                 <field name="name" string="Mã phiếu"/>
                 <field name="audit_date" options="{'numeric': true}"/>
                 <field name="store_id" string="Cửa hàng"/>
@@ -288,7 +288,7 @@
         <field name="name">store.audit.line.list</field>
         <field name="model">store.audit.line</field>
         <field name="arch" type="xml">
-            <list string="Tiêu chí" create="false">
+            <list group_edit="0" group_delete="0" string="Tiêu chí" create="false">
                 <field name="audit_id"/>
                 <field name="store_id"/>
                 <field name="audit_date"/>

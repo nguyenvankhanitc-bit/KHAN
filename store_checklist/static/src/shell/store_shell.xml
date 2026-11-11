@@ -14,7 +14,7 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-att-class="showOwnAdd or showSettingsAdd ? 'has-own-add' : ''" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav))">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm))">
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
@@ -52,9 +52,73 @@
                         <option t-foreach="state.report.auditor_options" t-as="au" t-key="au.id" t-att-value="au.id"
                                 t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
                     </select>
-                    <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
+                <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">
+                    <div class="o_store_perm_head">
+                        <div>
+                            <h2><i class="fa fa-shield"/> Quản trị phân quyền</h2>
+                            <p class="text-muted">Chọn nhóm quyền rồi thiết lập ma trận Xem / Thêm / Sửa / Xóa cho từng chức năng. Quản lý và Admin luôn đủ quyền; user chưa thuộc nhóm nào dùng quyền theo nhóm hệ thống.</p>
+                        </div>
+                        <button type="button" class="btn btn-primary" t-on-click="() => this.onPermOpen(null)">+ Thêm nhóm quyền</button>
+                    </div>
+                    <input class="o_store_perm_search" placeholder="Tìm kiếm nhóm quyền..." t-model="state.permQ"/>
+                    <h4 class="o_store_perm_listtitle">Danh sách nhóm quyền</h4>
+                    <div class="o_store_perm_card" t-foreach="permList" t-as="r" t-key="r.id">
+                        <span class="o_store_perm_ico"><i class="fa fa-users"/></span>
+                        <div class="o_store_perm_info"><b t-esc="r.group || r.users.map((u) => u.name).join(', ') || 'Chưa có user'"/><small><t t-esc="r.users.length"/> User</small></div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" t-on-click="() => this.onPermOpen(r)"><i class="fa fa-cog"/> Thiết lập quyền</button>
+                    </div>
+                    <p class="text-muted" t-if="!permList.length">Chưa có nhóm quyền nào.</p>
+                    <datalist id="store_perm_users"><option t-foreach="state.perm.users" t-as="u" t-key="u.id" t-att-value="u.name"/></datalist>
+                    <datalist id="store_perm_groups"><option t-foreach="state.perm.groups" t-as="g" t-key="g.name" t-att-value="g.name"/></datalist>
+                    <div class="o_store_perm_overlay" t-if="state.permEdit" t-on-click.self="onPermClose">
+                        <div class="o_store_perm_modal">
+                            <div class="o_store_perm_mhead"><span><i class="fa fa-shield"/> Thiết lập quyền nhóm</span>
+                                <a href="#" t-on-click.prevent="onPermClose">✕</a></div>
+                            <div class="o_store_perm_mbody">
+                                <div class="o_store_perm_box">
+                                    <div class="o_store_perm_users">
+                                        <span class="o_store_perm_tag" t-foreach="state.permEdit.users" t-as="u" t-key="u.id"><t t-esc="u.name"/> <a href="#" t-on-click.prevent="() => this.onPermUserRemove(u)">×</a></span>
+                                        <input list="store_perm_users" placeholder="Chọn user (gõ tên để tìm)..." t-on-change="onPermUserAdd"/>
+                                        <input t-if="state.perm.groups.length" list="store_perm_groups" placeholder="Thêm cả nhóm LUG Permission..." t-on-change="onPermLugGroup"/>
+                                    </div>
+                                    <small class="text-muted">Áp dụng cho: <t t-esc="state.permEdit.users.length"/> User</small>
+                                </div>
+                                <table class="o_store_perm_table">
+                                    <thead><tr><th>Chức năng</th>
+                                        <th t-foreach="permOps" t-as="op" t-key="op[0]"><i t-attf-class="fa {{op[2]}}"/><br/><t t-esc="op[1]"/>
+                                            <br/><input type="checkbox" t-on-change="(ev) => this.onPermColumn(op[0], ev)"/></th>
+                                        <th>Tất cả</th></tr></thead>
+                                    <tbody t-foreach="permFolders" t-as="f" t-key="f.id">
+                                        <tr class="o_store_perm_folder" t-on-click="() => this.toggleFolder(f.id)">
+                                            <td><i t-attf-class="fa {{state.permClosed[f.id] ? 'fa-chevron-right' : 'fa-chevron-down'}}"/> <b t-esc="f.label"/></td>
+                                            <td t-foreach="permOps" t-as="op" t-key="op[0]" t-on-click.stop="() => {}">
+                                                <input type="checkbox" t-att-checked="folderChecked(f, op[0])" t-on-change="(ev) => this.onPermFolder(f, op[0], ev)"/>
+                                            </td>
+                                            <td/>
+                                        </tr>
+                                        <t t-foreach="state.permClosed[f.id] ? [] : f.menus" t-as="m" t-key="m.key"><tr>
+                                            <td class="o_store_perm_menu o_store_perm_leaf" t-esc="m.label"/>
+                                            <td t-foreach="permOps" t-as="op" t-key="op[0]">
+                                                <input type="checkbox" t-att-checked="state.permEdit.perms[m.key][op[0]]" t-on-change="(ev) => this.onPermToggle(m.key, op[0], ev)"/>
+                                            </td>
+                                            <td><input type="checkbox" t-att-checked="permAll(state.permEdit, m.key)" t-on-change="(ev) => this.onPermToggle(m.key, 'all', ev)"/></td>
+                                        </tr></t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="o_store_perm_mfoot">
+                                <button type="button" class="btn btn-light" t-on-click="onPermReset"><i class="fa fa-undo"/> Khôi phục mặc định</button>
+                                <button type="button" class="btn btn-light text-danger" t-if="state.permEdit.id" t-on-click="onPermDelete"><i class="fa fa-trash"/> Xóa nhóm</button>
+                                <span class="flex-grow-1"/>
+                                <button type="button" class="btn btn-light" t-on-click="onPermClose">Hủy</button>
+                                <button type="button" class="btn btn-primary" t-on-click="onPermSave"><i class="fa fa-floppy-o"/> Lưu thay đổi</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
                 <div class="o_store_personal o_store_rk" t-elif="state.activeNav === 'report_rank' and state.rankReport and state.rankStore">
                     <t t-set="rs" t-value="state.rankStore"/>
                     <div class="o_store_rk_tiles">

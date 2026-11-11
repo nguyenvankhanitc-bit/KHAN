@@ -4,7 +4,7 @@ from datetime import datetime
 
 from odoo import Command, api, fields, models
 from odoo.tools import file_open
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 from .store_audit_template import AUDIT_TYPES, CATEGORIES
 
@@ -12,7 +12,7 @@ from .store_audit_template import AUDIT_TYPES, CATEGORIES
 class StoreAudit(models.Model):
     _name = 'store.audit'
     _description = 'Phiếu Audit cửa hàng'
-    _inherit = ['mail.thread', 'mail.activity.mixin']
+    _inherit = ['store.perm.mixin', 'mail.thread', 'mail.activity.mixin']
     _order = 'audit_date desc, id desc'
 
     name = fields.Char(string='Mã phiếu', required=True, copy=False, readonly=True, default='New')
@@ -327,6 +327,15 @@ class StoreAudit(models.Model):
             'max_score': t.max_score,
         }) for t in template.line_ids if not category or t.category == category]
 
+    # --- Ma trận quyền theo mục con (store.perm.mixin) ---
+    def _perm_key(self):
+        return self.audit_type if self.audit_type in ('nvbh', 'asm', 'gs') else 'review'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        tpl = self.env['store.audit.template'].sudo().browse(vals.get('template_id') or 0)
+        return tpl.audit_type if tpl.audit_type in ('nvbh', 'asm', 'gs') else 'review'
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
@@ -421,6 +430,7 @@ class StoreAudit(models.Model):
 
     @api.model
     def export_rank_xlsx(self, domain):
+        self.env['store.perm.rule'].check_export()
         import xlsxwriter
         rows = self._rank_rows(domain)
         buf = io.BytesIO()
@@ -529,6 +539,7 @@ class StoreAudit(models.Model):
     @api.model
     def export_list_xlsx(self, domain, title='DANH SÁCH PHIẾU ĐÁNH GIÁ'):
         """Kết xuất danh sách phiếu (đúng bộ lọc đang xem) ra file Excel; trả về {name, data base64}."""
+        self.env['store.perm.rule'].check_export()
         import xlsxwriter
         audits = self.search(domain, order='store_id, audit_date desc, id desc')
         states = dict(self._fields['state'].selection)

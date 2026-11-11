@@ -30,7 +30,7 @@
         <field name="name">store.audit.template.list</field>
         <field name="model">store.audit.template</field>
         <field name="arch" type="xml">
-            <list string="Mẫu checklist">
+            <list group_edit="0" group_delete="0" string="Mẫu checklist">
                 <field name="name"/>
                 <field name="audit_type"/>
             </list>

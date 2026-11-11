@@ -34,7 +34,7 @@
         <field name="name">store.store.list</field>
         <field name="model">store.store</field>
         <field name="arch" type="xml">
-            <list string="Danh sách cửa hàng">
+            <list group_edit="0" group_delete="0" string="Danh sách cửa hàng">
                 <field name="code"/>
                 <field name="name"/>
                 <field name="province"/>

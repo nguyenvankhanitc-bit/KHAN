@@ -50,4 +50,19 @@
         <field name="res_model">store.store</field>
         <field name="view_mode">list,form</field>
     </record>
+
+    <!-- Danh sách chọn cửa hàng gọn (điện thoại mở hộp thoại "Tìm kiếm thêm"): không đọc quản lý/công ty nên không lỗi quyền -->
+    <record id="view_hr_store_pick_list" model="ir.ui.view">
+        <field name="name">hr.store.pick.list</field>
+        <field name="model">hr.store</field>
+        <field name="mode">primary</field>
+        <field name="priority">99</field>
+        <field name="arch" type="xml">
+            <list string="Cửa hàng">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="mien"/>
+            </list>
+        </field>
+    </record>
 </odoo>

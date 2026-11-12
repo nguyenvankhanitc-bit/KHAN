@@ -24,7 +24,7 @@
                     </div>
                     <group class="o_store_audit_head">
                         <group>
-                            <field name="store_id" options="{'no_create': True}" readonly="state == 'done' and not can_edit_done"/>
+                            <field name="store_id" options="{'no_create': True}" context="{'list_view_ref': 'store_checklist.view_hr_store_pick_list'}" readonly="state == 'done' and not can_edit_done"/>
                             <field name="address" string="Địa chỉ"/>
                             <field name="template_id" invisible="1"/>
                         </group>

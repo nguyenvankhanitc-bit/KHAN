@@ -4,6 +4,7 @@ from datetime import datetime
 
 from odoo import Command, api, fields, models
 from odoo.tools import file_open
+from odoo.tools.image import image_process
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 from .store_audit_template import AUDIT_TYPES, CATEGORIES
@@ -672,6 +673,18 @@ class StoreAuditLine(models.Model):
     ], string='Kết quả', compute='_compute_result', store=True)
     note = fields.Text(string='Chi tiết lỗi / Nhận xét thực tế')
     error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_count', store=True)
+    def _report_photos(self):
+        """Ảnh của dòng cho biên bản: thu về tối đa 400x500 (gấp đôi ô 200x250 để nét), giữ tỉ lệ, không phóng to."""
+        self.ensure_one()
+        out = []
+        for att in self.attachment_ids.sudo().filtered(lambda a: (a.mimetype or '').startswith('image/')):
+            try:
+                raw = image_process(att.raw, size=(400, 500), quality=90)
+            except Exception:  # ảnh hỏng thì bỏ qua, không làm hỏng cả biên bản
+                continue
+            out.append('data:%s;base64,%s' % (att.mimetype, base64.b64encode(raw).decode()))
+        return out
+
     attachment_ids = fields.Many2many(
         'ir.attachment', 'store_audit_line_attachment_rel', 'line_id', 'attachment_id',
         string='Bằng chứng')

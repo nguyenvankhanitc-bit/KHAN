@@ -74,7 +74,7 @@
                             <tr t-foreach="view.page" t-as="s" t-key="s.store">
                                 <td t-esc="state.page * view.size + s_index + 1"/><td t-esc="s.code"/><td t-esc="s.store"/>
                                 <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/><td t-esc="s.errors"/>
-                                <td><span class="o_store_pill" t-attf-style="background: #{levelTone(s.tone)}" t-esc="s.level"/></td>
+                                <td><b t-attf-style="color: #{levelTone(s.tone)}" t-esc="s.level"/></td>
                                 <td><button type="button" class="vw" t-on-click="() => props.onView(s.audit)"><i class="fa fa-search"/> Xem chi tiết</button></td>
                             </tr>
                             <tr t-if="!view.rows.length"><td colspan="8" class="text-muted">Không có cửa hàng nào.</td></tr>

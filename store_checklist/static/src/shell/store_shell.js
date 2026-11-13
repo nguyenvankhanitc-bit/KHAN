@@ -7,7 +7,7 @@ import { evaluateExpr } from "@web/core/py_js/py";
 import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { View } from "@web/views/view";
-import { StoreViolPickDialog } from "@store_checklist/violation/violation_header";
+import { StoreMgrDetailDialog, StoreViolPickDialog } from "@store_checklist/violation/violation_header";
 import { PhanHeInternetShell } from "@lug_phan_he/internet_shell/phan_he_internet_shell";
 
 function normalizeViews(act, preferredType) {
@@ -55,7 +55,6 @@ export class StoreChecklistShell extends Component {
             managerReport: null,
             mgrFilter: "",
             mgrPage: 0,
-            mgrOpen: {},
             personal: null,
             canCreate: false,
             personalTab: "activity",
@@ -838,8 +837,8 @@ export class StoreChecklistShell extends Component {
         };
     }
 
-    toggleMgr(id) {
-        this.state.mgrOpen[id] = !this.state.mgrOpen[id];
+    showMgr(row) {
+        this.dialog.add(StoreMgrDetailDialog, { row });
     }
 
     onMgrFilter(ev) {

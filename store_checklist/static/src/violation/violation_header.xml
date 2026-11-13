@@ -36,6 +36,37 @@
         </div>
     </t>
 
+    <t t-name="store_checklist.MgrDetailDialog">
+        <Dialog title="'Chi tiết: ' + props.row.name" size="'xl'">
+            <div class="o_store_mgr_dlg">
+                <div class="who">
+                    <span class="av"><i class="fa fa-user"/></span>
+                    <b t-esc="props.row.name"/><small>Quản lý cửa hàng</small><em t-esc="props.row.area"/>
+                </div>
+                <div class="tiles">
+                    <div><i class="fa fa-building-o"/><small>Số cửa hàng phụ trách</small><strong t-esc="props.row.store_count"/></div>
+                    <div class="bad"><i class="fa fa-exclamation-triangle"/><small>Tổng số lỗi</small><strong t-esc="props.row.errors"/></div>
+                    <div><i class="fa fa-bar-chart"/><small>Điểm TB</small><strong t-esc="props.row.avg"/></div>
+                    <div class="ok"><i class="fa fa-check-circle"/><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="passPct"/>%</strong></div>
+                </div>
+                <div class="list">
+                    <h5>Danh sách cửa hàng quản lý phụ trách</h5>
+                    <table>
+                        <thead><tr><th>STT</th><th>Mã cửa hàng</th><th>Tên cửa hàng</th><th>Điểm GS</th><th>Điểm ASM</th><th>Điểm đánh giá</th><th>Số lỗi</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                            <tr t-foreach="props.row.stores" t-as="s" t-key="s.store">
+                                <td t-esc="s_index + 1"/><td t-esc="s.code"/><td class="l" t-esc="s.store"/>
+                                <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/>
+                                <td><b t-esc="s.score"/></td><td t-esc="s.errors"/>
+                                <td t-att-class="s.ok ? 'okc' : 'badc'"><t t-if="s.ok"><i class="fa fa-check"/> Đạt</t><t t-else=""><i class="fa fa-times"/> Không đạt</t></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </Dialog>
+    </t>
+
     <t t-name="store_checklist.ViolPickDialog">
         <Dialog title="props.title" size="'md'">
             <p class="text-muted mb-2">Chọn cửa hàng cần <t t-esc="props.confirmLabel.toLowerCase()"/>:</p>

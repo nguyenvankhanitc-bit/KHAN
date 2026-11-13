@@ -142,6 +142,18 @@ export class StoreViolationController extends ListController {
     static components = { ...ListController.components, StoreViolationHeader };
 }
 
+// Chi tiết một quản lý: thẻ số liệu và danh sách cửa hàng phụ trách (Báo cáo theo quản lý)
+export class StoreMgrDetailDialog extends Component {
+    static template = "store_checklist.MgrDetailDialog";
+    static components = { Dialog };
+    static props = { row: Object, close: Function };
+
+    get passPct() {
+        const r = this.props.row;
+        return r.audits ? Math.round((100 * r.passed) / r.audits) : 0;
+    }
+}
+
 // Hộp chọn cửa hàng trước khi Xuất Excel / In "Danh sách xử lý sai phạm"
 export class StoreViolPickDialog extends Component {
     static template = "store_checklist.ViolPickDialog";

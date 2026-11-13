@@ -226,14 +226,7 @@
                                         <td t-att-style="r.delta === null ? '' : 'font-weight:700;color:' + (r.delta &lt; 0 ? '#dc2626' : '#16a34a')"
                                             t-esc="r.delta === null ? '—' : (r.delta &lt; 0 ? '▼ ' : '▲ +') + r.delta"/>
                                         <td class="l"><div class="o_store_mgr_bar"><i t-attf-style="width:#{pct}%;background:#{pct >= 90 ? '#16a34a' : '#2563eb'}"/></div><span class="o_store_mgr_pct"><t t-esc="pct"/>%</span></td>
-                                        <td><button type="button" class="o_store_mgr_detail" t-on-click="() => this.toggleMgr(r.id)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
-                                    </tr>
-                                    <tr t-if="state.mgrOpen[r.id]" class="o_store_mgr_sub">
-                                        <td colspan="9" class="l">
-                                            <span t-foreach="r.stores" t-as="s" t-key="s.store" class="o_store_mgr_chip">
-                                                <b t-esc="s.store"/> · GS <t t-esc="s.gs === null ? '—' : s.gs"/> · ASM <t t-esc="s.asm === null ? '—' : s.asm"/>
-                                            </span>
-                                        </td>
+                                        <td><button type="button" class="o_store_mgr_detail" t-on-click="() => this.showMgr(r)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
                                     </tr>
                                 </t>
                                 <tr t-if="!mv.rows.length"><td colspan="9" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>

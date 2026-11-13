@@ -504,27 +504,12 @@ class StoreAudit(models.Model):
                                              'audits': [], 'miens': set()})
             m['audits'].append(a)
             m['miens'].add(miens.get(a.mien) or 'Khác')
-            s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'gs': None, 'asm': None})
+            s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'code': a.store_id.code or '',
+                                                  'gs': None, 'asm': None, 'rates': [], 'errors': 0, 'ok': True})
             s[kind] = round(100 * a.pass_rate, 1)
-        return managers
-
-    @api.model
-    def _manager_rows(self, domain):
-        """Mỗi quản lý: các lần audit chốt gần nhất của từng (cửa hàng, loại GS/ASM) trong kỳ."""
-        latest = {}
-        for a in self.sudo().search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
-            if a.audit_type in ('gs', 'asm'):
-                latest.setdefault((a.store_id.id, a.audit_type), a)
-        miens = dict(self.env['hr.store']._fields['mien'].selection)
-        managers = {}
-        for (store_id, kind), a in latest.items():
-            mgr = a.store_id.manager_id
-            m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {},
-                                             'audits': [], 'miens': set()})
-            m['audits'].append(a)
-            m['miens'].add(miens.get(a.mien) or 'Khác')
-            s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'gs': None, 'asm': None})
-            s[kind] = round(100 * a.pass_rate, 1)
+            s['rates'].append(100 * a.pass_rate)
+            s['errors'] += a.error_count
+            s['ok'] = s['ok'] and a.conclusion == 'pass'
         return managers
 
     @api.model
@@ -547,7 +532,9 @@ class StoreAudit(models.Model):
                          'audits': len(au), 'passed': len([a for a in au if a.conclusion == 'pass']),
                          'errors': sum(a.error_count for a in au),
                          'p_errors': sum(a.error_count for a in pa) if pa else None,
-                         'stores': sorted(m['stores'].values(), key=lambda x: x['store'])})
+                         'stores': [{'store': s['store'], 'code': s['code'], 'gs': s['gs'], 'asm': s['asm'],
+                                     'score': round(sum(s['rates']) / len(s['rates']), 1), 'errors': s['errors'], 'ok': s['ok']}
+                                    for s in sorted(m['stores'].values(), key=lambda x: x['store'])]})
         rows.sort(key=lambda r: -r['avg'])
         return rows
 

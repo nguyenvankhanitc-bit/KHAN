@@ -1099,3 +1099,12 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 .o_store_mgr_foot { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; color: #475569;
     .pg button { min-width: 30px; height: 30px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; margin-left: 6px; &.on { background: #7c3aed; color: #fff; border-color: #7c3aed; } &:disabled { opacity: .4; } } }
 @media (max-width: 767px) { .o_store_mgr_kpis { grid-template-columns: 1fr 1fr; } .o_store_mgrrep { overflow-x: auto; } }
+
+.o_store_mgrrep .o_store_mgr_kpis { grid-template-columns: repeat(5, 1fr);
+    em { display: block; font-style: normal; font-size: 12px; color: #16a34a; &.bad { color: #dc2626; } }
+    .k5 .ico { background: #2563eb; } .k4 .ico { background: #0ea5e9; } .k1 .ico { background: #8b5cf6; } }
+.o_store_mgrrep .o_store_mgr_table thead th { background: #ede9fe !important; color: #3b0764; }
+.o_store_mgr_detail { border: 1px solid #c4b5fd; color: #6d28d9; background: #fff; border-radius: 6px; padding: 3px 10px; font-weight: 600; white-space: nowrap; }
+.o_store_mgr_sub td { background: #faf5ff; }
+.o_store_mgr_chip { display: inline-block; background: #fff; border: 1px solid #e9d5ff; border-radius: 12px; padding: 2px 10px; margin: 2px 6px 2px 0; }
+@media (max-width: 767px) { .o_store_mgrrep .o_store_mgr_kpis { grid-template-columns: 1fr 1fr; } }

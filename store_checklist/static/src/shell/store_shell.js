@@ -55,6 +55,7 @@ export class StoreChecklistShell extends Component {
             managerReport: null,
             mgrFilter: "",
             mgrPage: 0,
+            mgrOpen: {},
             personal: null,
             canCreate: false,
             personalTab: "activity",
@@ -821,11 +822,24 @@ export class StoreChecklistShell extends Component {
         const audits = rows.reduce((t, r) => t + r.audits, 0);
         const passed = rows.reduce((t, r) => t + r.passed, 0);
         const avg = audits ? rows.reduce((t, r) => t + r.avg * r.audits, 0) / audits : 0;
+        // so với tháng trước: chỉ tính trên các quản lý có số liệu tháng trước
+        const had = rows.filter((r) => r.p_errors !== null);
+        const delta = (now, before) => (had.length ? Math.round((now - before) * 10) / 10 : null);
+        const errors = rows.reduce((t, r) => t + r.errors, 0);
+        const prevAudits = had.reduce((t, r) => t + r.audits, 0);
+        const dAvg = had.length && prevAudits
+            ? delta(had.reduce((t, r) => t + r.avg * r.audits, 0) / prevAudits, had.reduce((t, r) => t + (r.avg - (r.delta ?? 0)) * r.audits, 0) / prevAudits)
+            : null;
         return {
+            errors, dCount: had.length ? rows.length - had.length : null, dErrors: delta(errors, had.reduce((t, r) => t + r.p_errors, 0)), dAvg,
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),
             avg: avg.toFixed(1), passPct: audits ? ((100 * passed) / audits).toFixed(1) : "0.0", best: rows[0],
         };
+    }
+
+    toggleMgr(id) {
+        this.state.mgrOpen[id] = !this.state.mgrOpen[id];
     }
 
     onMgrFilter(ev) {

@@ -1141,3 +1141,17 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
         .vw { border: 1px solid #c4b5fd; color: #6d28d9; background: #fff; border-radius: 8px; padding: 3px 12px; font-weight: 600; }
         .ft { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; color: #475569;
             .pg button { min-width: 30px; height: 30px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; margin-left: 6px; &.on { background: #7c3aed; color: #fff; border-color: #7c3aed; } &:disabled { opacity: .4; } } } } }
+.o_store_mgr_dlg .tiles strong.lv { font-size: 22px; }
+
+/* Báo cáo theo quản lý: thẻ KPI, biểu đồ tổng quan và theo khu vực */
+.o_store_mgrrep .o_store_mgr_kpis { grid-template-columns: repeat(4, 1fr);
+    > div b { display: block; font-size: 16px; color: #0f172a; } > div strong { font-size: 30px; } > div small { display: block; color: #64748b; } > div em { display: block; font-style: normal; font-size: 18px; font-weight: 700; }
+    .kc1 .ico { background: #2563eb; } .kc1 em { color: #2563eb; } .kc2 .ico { background: #f59e0b; } .kc2 em { color: #f59e0b; } .kc3 .ico { background: #ef4444; } .kc3 em { color: #ef4444; } }
+.o_store_mgr_charts { display: grid; grid-template-columns: 1fr 1.5fr; gap: 14px; margin-bottom: 14px;
+    .card { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(80, 70, 140, .1); border: 0; h5 { font-weight: 700; color: #1e1b4b; margin-bottom: 10px; } }
+    svg { .mid { font-size: 24px; font-weight: 700; fill: #0f172a; } .sub { font-size: 12px; fill: #475569; } }
+    .big { display: flex; align-items: center; gap: 20px; svg { width: 200px; flex: none; } ul { flex: 1; list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; i { width: 12px; height: 12px; border-radius: 50%; } span { flex: 1; } small { display: block; color: #64748b; } b { font-size: 16px; } } } }
+    .regions { display: grid; grid-template-columns: repeat(3, 1fr); > div { text-align: center; border-right: 1px solid #e5e7eb; &:last-child { border: 0; } svg { width: 130px; } ul { list-style: none; padding: 0; margin: 4px 0 0; text-align: left; display: inline-block; li { i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; } } } }
+        .rh { background: #ede9fe; border-radius: 8px; padding: 4px; font-weight: 700; margin: 0 8px 8px; } } }
+@media (max-width: 991px) { .o_store_mgr_charts { grid-template-columns: 1fr; } .o_store_mgrrep .o_store_mgr_kpis { grid-template-columns: 1fr 1fr; } }
+.o_store_mgr_charts .regions > div svg { display: block; margin: 0 auto; } .o_store_mgr_charts .regions > div ul { display: block; width: fit-content; margin: 6px auto 0; }

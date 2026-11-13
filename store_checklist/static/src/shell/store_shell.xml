@@ -23,7 +23,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_manager' ? 'Thống kê, xếp hạng theo người quản lý cửa hàng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
@@ -36,13 +36,13 @@
                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
-                    <select t-if="!reportNavs.includes(state.activeNav) or state.activeNav === 'report_manager'" t-on-change="(ev) => this.onListFilter('store', ev)">
+                    <select t-if="!reportNavs.includes(state.activeNav)" t-on-change="(ev) => this.onListFilter('store', ev)">
                         <option value="">Tất cả cửa hàng</option>
                         <option t-foreach="state.dash ? state.dash.store_options : []" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
                     <select t-if="!isPersonal" t-on-change="(ev) => this.onListFilter('mien', ev)">
-                        <option value="">Tất cả miền</option>
+                        <option value="" t-esc="state.activeNav === 'report_manager' ? 'Tất cả khu vực' : 'Tất cả miền'"/>
                         <option value="Nam">Miền Nam</option>
                         <option value="ĐTT">Miền ĐTT</option>
                         <option value="Bắc">Miền Bắc</option>
@@ -202,34 +202,59 @@
                 </div>
                 <div class="o_store_personal o_store_mgrrep" t-elif="state.activeNav === 'report_manager' and state.managerReport">
                     <t t-set="mv" t-value="mgrView"/>
-                    <t t-set="dl" t-value="(d) => d === null ? '' : (d === 0 ? '0' : (d > 0 ? '▲ +' : '▼ ') + d)"/>
                     <div class="o_store_mgr_kpis">
-                        <div class="k1"><span class="ico"><i class="fa fa-users"/></span><div><small>Tổng số Quản lý</small><strong t-esc="mv.rows.length"/><em t-if="mv.dCount !== null" t-esc="dl(mv.dCount) + ' so với tháng trước'"/></div></div>
-                        <div class="k5"><span class="ico"><i class="fa fa-check"/></span><div><small>Tổng số Lỗi</small><strong t-esc="mv.errors"/><em t-if="mv.dErrors !== null" t-att-class="mv.dErrors > 0 ? 'bad' : ''" t-esc="dl(mv.dErrors) + ' so với tháng trước'"/></div></div>
-                        <div class="k2"><span class="ico"><i class="fa fa-bar-chart"/></span><div><small>Điểm TB toàn hệ thống</small><strong t-esc="mv.avg"/><em t-if="mv.dAvg !== null" t-att-class="mv.dAvg &lt; 0 ? 'bad' : ''" t-esc="dl(mv.dAvg) + ' so với tháng trước'"/></div></div>
-                        <div class="k3"><span class="ico"><i class="fa fa-star"/></span><div><small>Quản lý xuất sắc nhất</small><strong class="sm" t-esc="mv.best ? mv.best.name : '—'"/><b t-if="mv.best"><t t-esc="mv.best.avg"/> điểm</b></div></div>
-                        <div class="k4"><span class="ico"><i class="fa fa-bullseye"/></span><div><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="mv.passPct"/>%</strong></div></div>
+                        <div class="k1"><span class="ico"><i class="fa fa-users"/></span><div><b>Tổng số Quản lý</b><strong t-esc="mv.rows.length"/><small>Quản lý</small></div></div>
+                        <div class="kc1"><span class="ico"><i class="fa fa-check"/></span><div><b>Đạt KPI</b><strong t-esc="mv.kinds[0].count"/><em t-esc="mv.kinds[0].pct + '%'"/></div></div>
+                        <div class="kc2"><span class="ico"><i class="fa fa-exclamation"/></span><div><b>Cần cải thiện</b><strong t-esc="mv.kinds[1].count"/><em t-esc="mv.kinds[1].pct + '%'"/></div></div>
+                        <div class="kc3"><span class="ico"><i class="fa fa-times"/></span><div><b>Không đạt</b><strong t-esc="mv.kinds[2].count"/><em t-esc="mv.kinds[2].pct + '%'"/></div></div>
+                    </div>
+                    <div class="o_store_mgr_charts">
+                        <div class="card">
+                            <h5><i class="fa fa-bar-chart"/> Tổng quan đánh giá KPI</h5>
+                            <div class="big">
+                                <svg viewBox="0 0 160 160">
+                                    <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="26"/>
+                                    <circle t-foreach="mv.all.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="26"
+                                            t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                    <text x="80" y="82" text-anchor="middle" class="mid" t-esc="mv.all.ok + '%'"/>
+                                    <text x="80" y="100" text-anchor="middle" class="sub">Đạt KPI</text>
+                                </svg>
+                                <ul>
+                                    <li t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><span><t t-esc="k.name"/><small t-esc="k.hint"/></span><b t-esc="k.pct + '%'"/></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <h5><i class="fa fa-trophy"/> Kết quả đánh giá theo khu vực</h5>
+                            <div class="regions">
+                                <div t-foreach="mv.regions" t-as="g" t-key="g.label">
+                                    <div class="rh" t-esc="g.label"/>
+                                    <svg viewBox="0 0 160 160">
+                                        <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="22"/>
+                                        <circle t-foreach="g.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="22"
+                                                t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                        <text x="80" y="88" text-anchor="middle" class="mid" t-esc="g.ok + '%'"/>
+                                    </svg>
+                                    <ul><li t-foreach="g.parts" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/> <t t-esc="k.name"/>: <t t-esc="k.count"/></li></ul>
+                                </div>
+                                <p class="text-muted" t-if="!mv.regions.length">Chưa có dữ liệu trong kỳ đã chọn.</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="o_store_personal_body">
-                        <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo người quản lý cửa hàng</h4>
+                        <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>
                         <table class="o_store_report_table o_store_mgr_table">
-                            <thead><tr><th>Hạng</th><th>Người quản lý</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm TB (%)</th><th>So với tháng trước</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
+                            <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm KPI (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
                             <tbody>
-                                <t t-foreach="mv.page" t-as="r" t-key="r.id">
-                                    <t t-set="rank" t-value="state.mgrPage * mv.size + r_index + 1"/>
-                                    <t t-set="pct" t-value="r.audits ? Math.round(100 * r.passed / r.audits) : 0"/>
-                                    <tr>
-                                        <td><span t-attf-class="o_store_medal m#{rank}" t-esc="rank"/></td>
-                                        <td class="l"><b t-esc="r.name"/></td>
-                                        <td t-esc="r.area"/><td><b t-esc="r.store_count"/></td><td><b t-esc="r.errors"/></td>
-                                        <td><b t-esc="r.avg"/></td>
-                                        <td t-att-style="r.delta === null ? '' : 'font-weight:700;color:' + (r.delta &lt; 0 ? '#dc2626' : '#16a34a')"
-                                            t-esc="r.delta === null ? '—' : (r.delta &lt; 0 ? '▼ ' : '▲ +') + r.delta"/>
-                                        <td><span class="o_store_pill" t-attf-style="background: #{toneColor(r.tone)}" t-esc="r.level"/></td>
-                                        <td><button type="button" class="o_store_mgr_detail" t-on-click="() => this.showMgr(r)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
-                                    </tr>
-                                </t>
-                                <tr t-if="!mv.rows.length"><td colspan="9" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
+                                <tr t-foreach="mv.page" t-as="r" t-key="r.id">
+                                    <td t-esc="state.mgrPage * mv.size + r_index + 1"/>
+                                    <td class="l"><b t-esc="r.name"/></td>
+                                    <td t-esc="r.area"/><td t-esc="r.store_count"/><td t-esc="r.errors"/>
+                                    <td><b t-esc="r.avg"/></td>
+                                    <td><span class="o_store_pill" t-attf-style="background: #{toneColor(r.tone)}" t-esc="r.level"/></td>
+                                    <td><button type="button" class="o_store_mgr_detail" t-on-click="() => this.showMgr(r)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
+                                </tr>
+                                <tr t-if="!mv.rows.length"><td colspan="8" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
                             </tbody>
                         </table>
                         <div class="o_store_mgr_foot">

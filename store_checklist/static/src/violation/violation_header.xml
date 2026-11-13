@@ -56,7 +56,7 @@
                         <div class="t1"><i class="fa fa-building-o"/><small>Số cửa hàng</small><strong t-esc="props.row.store_count"/></div>
                         <div class="bad"><i class="fa fa-exclamation-triangle"/><small>Tổng số lỗi</small><strong t-esc="props.row.errors"/></div>
                         <div class="t3"><i class="fa fa-star"/><small>Điểm TB</small><strong t-esc="props.row.avg"/></div>
-                        <div class="ok"><i class="fa fa-check-circle"/><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="passPct"/>%</strong></div>
+                        <div class="ok"><i class="fa fa-check-circle" t-att-style="'color:' + levelColor"/><small>Xếp loại</small><strong class="lv" t-att-style="'color:' + levelColor" t-esc="props.row.level"/></div>
                     </div>
                 </div>
                 <div class="list">

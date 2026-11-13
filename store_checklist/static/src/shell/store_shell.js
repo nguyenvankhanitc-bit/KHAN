@@ -818,22 +818,30 @@ export class StoreChecklistShell extends Component {
         const all = this.state.managerReport || [];
         const rows = this.state.mgrFilter ? all.filter((r) => String(r.id) === this.state.mgrFilter) : all;
         const size = 10;
-        const audits = rows.reduce((t, r) => t + r.audits, 0);
-        const passed = rows.reduce((t, r) => t + r.passed, 0);
-        const avg = audits ? rows.reduce((t, r) => t + r.avg * r.audits, 0) / audits : 0;
-        // so với tháng trước: chỉ tính trên các quản lý có số liệu tháng trước
-        const had = rows.filter((r) => r.p_errors !== null);
-        const delta = (now, before) => (had.length ? Math.round((now - before) * 10) / 10 : null);
-        const errors = rows.reduce((t, r) => t + r.errors, 0);
-        const prevAudits = had.reduce((t, r) => t + r.audits, 0);
-        const dAvg = had.length && prevAudits
-            ? delta(had.reduce((t, r) => t + r.avg * r.audits, 0) / prevAudits, had.reduce((t, r) => t + (r.avg - (r.delta ?? 0)) * r.audits, 0) / prevAudits)
-            : null;
+        // Đạt KPI >= 80, Cần cải thiện 60-79, Không đạt < 60 (điểm TB của quản lý)
+        const kinds = [
+            { key: "ok", name: "Đạt KPI", hint: "(≥ 80%)", color: "#3b82f6", test: (v) => v >= 80 },
+            { key: "mid", name: "Cần cải thiện", hint: "(60% – 79%)", color: "#f59e0b", test: (v) => v >= 60 && v < 80 },
+            { key: "bad", name: "Không đạt", hint: "(< 60%)", color: "#ef4444", test: (v) => v < 60 },
+        ];
+        const split = (list) => {
+            const total = list.length;
+            return kinds.map((k) => {
+                const count = list.filter((r) => k.test(r.avg)).length;
+                return { ...k, count, pct: total ? ((100 * count) / total).toFixed(1) : "0.0" };
+            });
+        };
+        const donut = (list) => {
+            const parts = split(list);
+            return { parts, d: this.donutFrom(parts.filter((p) => p.count), list.length || 1), ok: parts[0].pct };
+        };
+        const regions = [["Nam", "Miền Nam"], ["ĐTT", "Miền ĐTT"], ["Bắc", "Miền Bắc"]]
+            .map(([key, label]) => ({ label, ...donut(rows.filter((r) => r.mien === key)), n: rows.filter((r) => r.mien === key).length }))
+            .filter((g) => g.n);
         return {
-            errors, dCount: had.length ? rows.length - had.length : null, dErrors: delta(errors, had.reduce((t, r) => t + r.p_errors, 0)), dAvg,
+            kinds: split(rows), all: donut(rows), regions,
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),
-            avg: avg.toFixed(1), passPct: audits ? ((100 * passed) / audits).toFixed(1) : "0.0", best: rows[0],
         };
     }
 

@@ -501,9 +501,11 @@ class StoreAudit(models.Model):
         for (store_id, kind), a in latest.items():
             mgr = a.store_id.manager_id
             m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {},
-                                             'audits': [], 'miens': set()})
+                                             'audits': [], 'miens': set(), 'mc': {}})
             m['audits'].append(a)
             m['miens'].add(miens.get(a.mien) or 'Khác')
+            key = a.mien if a.mien in miens else 'other'
+            m['mc'][key] = m['mc'].get(key, 0) + 1
             s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'code': a.store_id.code or '',
                                                   'gs': None, 'asm': None, 'rates': [], 'errors': 0, 'ok': True, 'audit': False})
             if kind == 'gs' or not s['audit']:
@@ -532,7 +534,7 @@ class StoreAudit(models.Model):
             rows.append({'id': m['id'], 'name': m['name'], 'area': ', '.join(sorted(m['miens'])),
                          'store_count': len(m['stores']), 'avg': score, 'gs_avg': avg(gs), 'asm_avg': avg(asm),
                          'delta': round(score - before, 1) if before is not None else None,
-                         'level': lv.name or '', 'tone': lv.tone or 'orange',
+                         'mien': max(m['mc'], key=m['mc'].get), 'level': lv.name or '', 'tone': lv.tone or 'orange',
                          'audits': len(au), 'passed': len([a for a in au if a.conclusion == 'pass']),
                          'errors': sum(a.error_count for a in au),
                          'p_errors': sum(a.error_count for a in pa) if pa else None,

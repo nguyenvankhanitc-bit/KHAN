@@ -206,6 +206,10 @@ export class StoreMgrDetailDialog extends Component {
         this.state.page = 0;
     }
 
+    get levelColor() {
+        return { green: "#16a34a", blue: "#2563eb", orange: "#f59e0b", red: "#dc2626", darkred: "#7f1d1d" }[this.props.row.tone] || "#64748b";
+    }
+
     get passPct() {
         const r = this.props.row;
         return r.audits ? Math.round((100 * r.passed) / r.audits) : 0;

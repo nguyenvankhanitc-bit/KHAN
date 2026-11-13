@@ -6,6 +6,7 @@ import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
 import { listView } from "@web/views/list/list_view";
 import { ListController } from "@web/views/list/list_controller";
+import { ListRenderer } from "@web/views/list/list_renderer";
 
 // Tiêu đề popup "Xử lý sai phạm": tên biên bản, trạng thái và 4 thẻ số liệu, tự cập nhật khi sửa dòng trong bảng
 export class StoreViolationHeader extends Component {
@@ -137,6 +138,16 @@ export class StoreViolationHeader extends Component {
     }
 }
 
+// Dòng chỉ sửa được khi user là người phụ trách hoặc người kiểm soát; còn lại bấm vào không vào chế độ sửa (không hiện Lưu / Hủy)
+export class StoreViolationRenderer extends ListRenderer {
+    async onCellClicked(record, column, ev, newWindow) {
+        if (!(record.data.can_edit_resp || record.data.can_edit_ctrl)) {
+            return;
+        }
+        return super.onCellClicked(record, column, ev, newWindow);
+    }
+}
+
 export class StoreViolationController extends ListController {
     static template = "store_checklist.ViolationListView";
     static components = { ...ListController.components, StoreViolationHeader };
@@ -259,4 +270,4 @@ export class StoreViolPickDialog extends Component {
     }
 }
 
-registry.category("views").add("store_violation_list", { ...listView, Controller: StoreViolationController });
+registry.category("views").add("store_violation_list", { ...listView, Controller: StoreViolationController, Renderer: StoreViolationRenderer });

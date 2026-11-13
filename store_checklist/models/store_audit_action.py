@@ -88,7 +88,9 @@ class StoreAuditAction(models.Model):
             return super().web_read(specification)
         res = super().web_read({k: v for k, v in specification.items() if k != 'responsible_ids'})
         for vals in res:
-            emps = self.browse(vals['id']).sudo().responsible_ids
+            rec = self.browse(vals['id']).sudo()
+            rec.invalidate_recordset(['responsible_ids'])  # cache có thể đang giữ giá trị đã bị record rule nhân viên lọc
+            emps = rec.responsible_ids
             vals['responsible_ids'] = [{'id': e.id, 'display_name': e.display_name} for e in emps]
         return res
 

@@ -206,8 +206,12 @@ export class StoreMgrDetailDialog extends Component {
         this.state.page = 0;
     }
 
+    levelTone(tone) {
+        return { green: "#16a34a", blue: "#2563eb", orange: "#f59e0b", red: "#dc2626", darkred: "#7f1d1d" }[tone] || "#64748b";
+    }
+
     get levelColor() {
-        return { green: "#16a34a", blue: "#2563eb", orange: "#f59e0b", red: "#dc2626", darkred: "#7f1d1d" }[this.props.row.tone] || "#64748b";
+        return this.levelTone(this.props.row.tone);
     }
 
     get passPct() {

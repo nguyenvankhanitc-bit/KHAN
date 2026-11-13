@@ -69,12 +69,12 @@
                         </span>
                     </div>
                     <table>
-                        <thead><tr><th>STT</th><th>Mã cửa hàng</th><th>Tên cửa hàng</th><th>Điểm GS</th><th>Điểm ASM</th><th>Tổng số lỗi</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                        <thead><tr><th>STT</th><th>Mã cửa hàng</th><th>Tên cửa hàng</th><th>Điểm GS</th><th>Điểm ASM</th><th>Tổng số lỗi</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
                         <tbody>
                             <tr t-foreach="view.page" t-as="s" t-key="s.store">
                                 <td t-esc="state.page * view.size + s_index + 1"/><td t-esc="s.code"/><td t-esc="s.store"/>
                                 <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/><td t-esc="s.errors"/>
-                                <td><span t-att-class="'st ' + (s.ok ? 'okc' : 'badc')"><i t-att-class="'fa ' + (s.ok ? 'fa-check-circle' : 'fa-exclamation-circle')"/> <t t-esc="s.ok ? 'Đạt chuẩn' : 'Cần cải thiện'"/></span></td>
+                                <td><span class="o_store_pill" t-attf-style="background: #{levelTone(s.tone)}" t-esc="s.level"/></td>
                                 <td><button type="button" class="vw" t-on-click="() => props.onView(s.audit)"><i class="fa fa-search"/> Xem chi tiết</button></td>
                             </tr>
                             <tr t-if="!view.rows.length"><td colspan="8" class="text-muted">Không có cửa hàng nào.</td></tr>

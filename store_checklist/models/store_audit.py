@@ -517,6 +517,11 @@ class StoreAudit(models.Model):
         return managers
 
     @api.model
+    def _store_level(self, rates):
+        lv = self.env['store.audit.level'].level_for(sum(rates) / len(rates), 'gs')
+        return {'level': lv.name or '', 'tone': lv.tone or 'orange'}
+
+    @api.model
     def get_report_manager(self, domain, prev_domain=False):
         """Báo cáo theo quản lý: điểm TB (%) các cửa hàng phụ trách, so tháng trước, tỷ lệ đạt chuẩn, tách GS / ASM."""
         def avg(rs):
@@ -540,7 +545,7 @@ class StoreAudit(models.Model):
                          'p_errors': sum(a.error_count for a in pa) if pa else None,
                          'stores': [{'store': s['store'], 'code': s['code'], 'gs': s['gs'], 'asm': s['asm'],
                                      'score': round(sum(s['rates']) / len(s['rates']), 1), 'errors': s['errors'], 'ok': s['ok'],
-                                     'audit': s['audit']}
+                                     'audit': s['audit'], **self._store_level(s['rates'])}
                                     for s in sorted(m['stores'].values(), key=lambda x: x['store'])]})
         rows.sort(key=lambda r: -r['avg'])
         return rows
@@ -588,12 +593,12 @@ class StoreAudit(models.Model):
         pct = round(100 * r['passed'] / r['audits']) if r['audits'] else 0
         sheet.write(1, 0, 'Khu vực: %s   |   Số cửa hàng: %s   |   Tổng số lỗi: %s   |   Điểm TB: %s   |   Đạt chuẩn: %s%%'
                     % (r['area'], r['store_count'], r['errors'], r['avg'], pct), bold)
-        heads = ['STT', 'Mã cửa hàng', 'Tên cửa hàng', 'Điểm GS', 'Điểm ASM', 'Điểm đánh giá', 'Số lỗi', 'Trạng thái']
+        heads = ['STT', 'Mã cửa hàng', 'Tên cửa hàng', 'Điểm GS', 'Điểm ASM', 'Điểm đánh giá', 'Số lỗi', 'Xếp loại']
         for i, (h, w) in enumerate(zip(heads, [6, 16, 28, 12, 12, 14, 10, 14])):
             sheet.write(3, i, h, head)
             sheet.set_column(i, i, w)
         for n, s in enumerate(r['stores'], 1):
-            vals = [n, s['code'], s['store'], s['gs'], s['asm'], s['score'], s['errors'], 'Đạt chuẩn' if s['ok'] else 'Cần cải thiện']
+            vals = [n, s['code'], s['store'], s['gs'], s['asm'], s['score'], s['errors'], s['level']]
             for c, v in enumerate(vals):
                 sheet.write(3 + n, c, '' if v is None else v, cell if c in (1, 2) else ctr)
         book.close()

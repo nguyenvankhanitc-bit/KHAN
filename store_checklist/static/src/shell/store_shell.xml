@@ -54,7 +54,7 @@
                                 t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
                     </select>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
-                    <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    <button type="button" class="o_store_export_btn" t-if="canExport and state.activeNav !== 'report_manager'" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
                 <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">
@@ -192,6 +192,37 @@
                             </tbody>
                         </table>
                         <p class="o_store_rk_foot"><i class="fa fa-info-circle"/> Có <t t-esc="state.rankReport.length"/> bản ghi</p>
+                    </div>
+                </div>
+                <div class="o_store_personal o_store_mgrrep" t-elif="state.activeNav === 'report_manager' and state.managerReport">
+                    <div class="o_store_personal_head">
+                        <h3>Báo cáo theo quản lý <span class="o_store_badge"><t t-esc="state.managerReport.length"/> quản lý</span></h3>
+                        <p>Điểm đạt (%) trung bình của các cửa hàng do mỗi quản lý phụ trách, lần audit gần nhất trong tháng · so sánh Giám sát (GS) với ASM</p>
+                    </div>
+                    <div class="o_store_personal_body">
+                        <table class="o_store_report_table">
+                            <thead><tr><th>STT</th><th>Quản lý cửa hàng</th><th>Số cửa hàng</th><th>Điểm GS (%)</th><th>Điểm ASM (%)</th><th>Chênh lệch GS − ASM</th><th>So sánh</th></tr></thead>
+                            <tbody>
+                                <t t-foreach="state.managerReport" t-as="r" t-key="r.id">
+                                    <tr>
+                                        <td t-esc="r_index + 1"/><td class="l"><b t-esc="r.name"/></td><td t-esc="r.store_count"/>
+                                        <td t-esc="r.gs_avg === null ? '—' : r.gs_avg"/>
+                                        <td t-esc="r.asm_avg === null ? '—' : r.asm_avg"/>
+                                        <td t-att-style="r.diff === null ? '' : 'font-weight:700;color:' + (r.diff &lt; 0 ? '#dc2626' : '#16a34a')" t-esc="r.diff === null ? '—' : (r.diff &gt; 0 ? '+' : '') + r.diff"/>
+                                        <td class="l" style="min-width:180px">
+                                            <div style="background:#e5e7eb;height:8px;border-radius:4px;margin:3px 0"><div t-attf-style="background:#2563eb;height:8px;border-radius:4px;width:#{r.gs_avg || 0}%"/></div>
+                                            <div style="background:#e5e7eb;height:8px;border-radius:4px;margin:3px 0"><div t-attf-style="background:#f59e0b;height:8px;border-radius:4px;width:#{r.asm_avg || 0}%"/></div>
+                                        </td>
+                                    </tr>
+                                    <tr t-foreach="r.stores" t-as="s" t-key="s.store" class="text-muted">
+                                        <td/><td class="l" style="padding-left:28px"><t t-esc="s.store"/></td><td/>
+                                        <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/><td/><td/>
+                                    </tr>
+                                </t>
+                                <tr t-if="!state.managerReport.length"><td colspan="7" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="o_store_rk_foot"><span style="color:#2563eb">■</span> GS &#160; <span style="color:#f59e0b">■</span> ASM</p>
                     </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">

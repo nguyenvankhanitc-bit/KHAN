@@ -490,6 +490,34 @@ class StoreAudit(models.Model):
         return {'total': len(latest), 'levels': out, 'by_mien': by_mien}
 
     @api.model
+    def get_report_manager(self, domain):
+        """Báo cáo theo quản lý cửa hàng: điểm đánh giá (lần audit chốt gần nhất của mỗi cửa hàng trong kỳ)
+        của các cửa hàng do mỗi quản lý phụ trách, tách theo GS và ASM để so sánh."""
+        latest = {}  # (cửa hàng, loại checklist) -> phiếu gần nhất
+        for a in self.sudo().search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
+            if a.audit_type in ('gs', 'asm'):
+                latest.setdefault((a.store_id.id, a.audit_type), a)
+
+        def avg(rs):
+            return round(sum(100 * a.pass_rate for a in rs) / len(rs), 1) if rs else None
+
+        managers = {}
+        for (store_id, kind), a in latest.items():
+            mgr = a.store_id.manager_id
+            m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {}, 'gs': [], 'asm': []})
+            m[kind].append(a)
+            s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'gs': None, 'asm': None})
+            s[kind] = round(100 * a.pass_rate, 1)
+        rows = []
+        for m in managers.values():
+            g, s = avg(m['gs']), avg(m['asm'])
+            rows.append({'id': m['id'], 'name': m['name'], 'store_count': len(m['stores']),
+                         'gs_avg': g, 'asm_avg': s, 'diff': round(g - s, 1) if g is not None and s is not None else None,
+                         'stores': sorted(m['stores'].values(), key=lambda x: x['store'])})
+        rows.sort(key=lambda r: -(r['gs_avg'] if r['gs_avg'] is not None else (r['asm_avg'] or 0)))
+        return rows
+
+    @api.model
     def get_report_personal(self, month=None):
         """Báo cáo hoạt động giám sát cá nhân (người dùng thường): chỉ phiếu GS của chính người dùng trong tháng."""
         today = fields.Date.context_today(self)

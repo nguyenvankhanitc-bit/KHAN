@@ -52,6 +52,7 @@ export class StoreChecklistShell extends Component {
             rankReport: null,
             rankStore: null,
             rankStoreTotal: 0,
+            managerReport: null,
             personal: null,
             canCreate: false,
             personalTab: "activity",
@@ -144,6 +145,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text-o", action: "store_checklist.action_store_report_gs" },
                     { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-th-large" },
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-sort-amount-desc" },
+                    { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user-circle-o" },
                 ],
             },
             {
@@ -235,7 +237,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get reportNavs() {
-        return ["report_gs", "report_store", "report_rank"];
+        return ["report_gs", "report_store", "report_rank", "report_manager"];
     }
 
     // Nút "Thêm mới" riêng của module (thanh bộ lọc), không phụ thuộc nút mặc định của Odoo ở thanh điều khiển
@@ -306,6 +308,7 @@ export class StoreChecklistShell extends Component {
             violation_stores: "XỬ LÝ LỖI SAI PHẠM CỬA HÀNG",
             violation_all: "DANH SÁCH XỬ LÝ SAI PHẠM",
             report_rank: "Báo cáo xếp loại",
+            report_manager: "BÁO CÁO THEO QUẢN LÝ",
         }[this.state.activeNav] || "";
     }
 
@@ -774,6 +777,13 @@ export class StoreChecklistShell extends Component {
                 this.orm.call("store.audit", "get_report_rank", [domain]),
                 this.orm.call("store.audit", "get_report_store", [domain]),
                 this.orm.searchCount("hr.store", storeDomain),
+            ]);
+            return;
+        }
+        if (this.state.activeNav === "report_manager") {
+            // cả phiếu GS lẫn ASM để so sánh, không dùng reportBase (chỉ GS)
+            this.state.managerReport = await this.orm.call("store.audit", "get_report_manager", [
+                this.listDomain([["state", "!=", "draft"]]),
             ]);
             return;
         }

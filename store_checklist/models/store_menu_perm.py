@@ -19,6 +19,7 @@ MENUS = [
     ('report_gs', 'Báo cáo GS', 'report'),
     ('report_store', 'Báo cáo theo cửa hàng', 'report'),
     ('report_rank', 'Báo cáo xếp loại', 'report'),
+    ('report_manager', 'Báo cáo theo quản lý', 'report'),
     ('violation_stores', 'Cửa hàng sai phạm', 'violation'),
     ('violation_all', 'Danh sách xử lý sai phạm', 'violation'),
     ('subgroup', 'Phân nhóm đánh giá', 'evaluation'),

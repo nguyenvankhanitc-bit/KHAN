@@ -712,7 +712,7 @@ class StoreAuditLine(models.Model):
         """Ảnh của dòng cho biên bản: thu về tối đa 400x500 (gấp đôi ô 200x250 để nét), giữ tỉ lệ, không phóng to."""
         self.ensure_one()
         out = []
-        for att in self.attachment_ids.sudo().filtered(lambda a: (a.mimetype or '').startswith('image/')):
+        for att in self.sudo().attachment_ids.filtered(lambda a: (a.mimetype or '').startswith('image/')):
             try:
                 raw = image_process(att.raw, size=(400, 500), quality=90)
             except Exception:  # ảnh hỏng thì bỏ qua, không làm hỏng cả biên bản

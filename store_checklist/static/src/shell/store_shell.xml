@@ -227,6 +227,11 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="stk_note">
+                                <span><b>Tầng 1:</b> Xếp loại <i t-foreach="mv.kinds" t-as="k" t-key="k.key" class="dot" t-attf-style="background: #{k.color}"/></span>
+                                <span><b>Tầng 2:</b> Điểm đánh giá TB <i class="dot" style="background: #8b5cf6"/></span>
+                                <span><b>Tầng 3:</b> Tổng số lỗi <i class="dot" style="background: #ef4444"/> có lỗi <i class="dot" style="background: #16a34a"/> không lỗi</span>
+                            </div>
                         </div>
                         <div class="card top3">
                             <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>

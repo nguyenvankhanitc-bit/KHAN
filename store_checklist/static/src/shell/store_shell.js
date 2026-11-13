@@ -54,6 +54,7 @@ export class StoreChecklistShell extends Component {
             rankStore: null,
             rankStoreTotal: 0,
             managerReport: null,
+            mgrLevels: [],
             mgrFilter: "",
             mgrPage: 0,
             personal: null,
@@ -797,6 +798,7 @@ export class StoreChecklistShell extends Component {
                 prev = this.listDomain(base, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
             }
             this.state.mgrPage = 0;
+            this.state.mgrLevels = await this.orm.searchRead("store.audit.level", [["audit_type", "=", "gs"]], ["name", "tone", "score_range"], { order: "min_score desc" });
             this.state.managerReport = await this.orm.call("store.audit", "get_report_manager", [this.listDomain(base), prev]);
             return;
         }
@@ -822,15 +824,19 @@ export class StoreChecklistShell extends Component {
         const rows = this.state.mgrFilter ? all.filter((r) => String(r.id) === this.state.mgrFilter) : all;
         const size = 10;
         // Đạt KPI >= 80, Cần cải thiện 60-79, Không đạt < 60 (điểm TB của quản lý)
-        const kinds = [
-            { key: "ok", name: "Đạt KPI", hint: "(≥ 80%)", color: "#3b82f6", test: (v) => v >= 80 },
-            { key: "mid", name: "Cần cải thiện", hint: "(60% – 79%)", color: "#f59e0b", test: (v) => v >= 60 && v < 80 },
-            { key: "bad", name: "Không đạt", hint: "(< 60%)", color: "#ef4444", test: (v) => v < 60 },
-        ];
+        // Xếp loại + màu lấy từ bảng Mức đánh giá (GS); chưa tải được thì dùng ngưỡng mặc định
+        const lvls = this.state.mgrLevels;
+        const kinds = lvls.length
+            ? lvls.map((l) => ({ key: l.name, name: l.name, hint: `(${l.score_range})`, color: this.toneColor(l.tone), test: (v, r) => r.level === l.name }))
+            : [
+                { key: "ok", name: "Đạt KPI", hint: "(≥ 80%)", color: "#3b82f6", test: (v) => v >= 80 },
+                { key: "mid", name: "Cần cải thiện", hint: "(60% – 79%)", color: "#f59e0b", test: (v) => v >= 60 && v < 80 },
+                { key: "bad", name: "Không đạt", hint: "(< 60%)", color: "#ef4444", test: (v) => v < 60 },
+            ];
         const split = (list) => {
             const total = list.length;
             return kinds.map((k) => {
-                const count = list.filter((r) => k.test(r.avg)).length;
+                const count = list.filter((r) => k.test(r.avg, r)).length;
                 return { ...k, count, pct: total ? ((100 * count) / total).toFixed(1) : "0.0" };
             });
         };
@@ -842,13 +848,12 @@ export class StoreChecklistShell extends Component {
             .map(([key, label]) => ({ label, ...donut(rows.filter((r) => r.mien === key)), n: rows.filter((r) => r.mien === key).length }))
             .filter((g) => g.n);
         const sorted = [...rows].sort((a, b) => b.avg - a.avg);
-        const kindOf = (v) => kinds.find((k) => k.test(v));
         const deltas = rows.map((r) => r.delta).filter((d) => d !== null && d !== undefined);
         const mean = (xs) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0);
         return {
             top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
             needN: rows.filter((r) => r.avg < 80).length,
-            bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: kindOf(r.avg).color })),
+            bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: this.toneColor(r.tone) })),
             kinds: split(rows), all: donut(rows), regions,
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),

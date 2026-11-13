@@ -850,17 +850,8 @@ export class StoreChecklistShell extends Component {
         const sorted = [...rows].sort((a, b) => b.avg - a.avg);
         const deltas = rows.map((r) => r.delta).filter((d) => d !== null && d !== undefined);
         const mean = (xs) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0);
-        const cats = [
-            { name: "A. Cơ sở vật chất", color: "#6366f1" },
-            { name: "B. Tác phong & kỹ năng", color: "#f59e0b" },
-            { name: "C. Chuyên môn", color: "#ef4444" },
-        ];
-        const errRows = [...rows].sort((x, y) => y.errors - x.errors).slice(0, 20);
-        const errMax = Math.max(1, ...errRows.map((r) => r.errors));
-        const errBars = errRows.map((r) => ({ id: r.id, name: r.name, total: r.errors,
-            segs: cats.map((c, i) => ({ n: (r.err_cat || [])[i] || 0, color: c.color, w: (100 * ((r.err_cat || [])[i] || 0)) / errMax })) }));
         return {
-            errCats: cats, errBars, top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
+            top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
             needN: rows.filter((r) => r.avg < 80).length,
             bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: this.toneColor(r.tone) })),
             kinds: split(rows), all: donut(rows), regions,

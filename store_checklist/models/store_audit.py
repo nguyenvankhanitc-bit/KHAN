@@ -547,7 +547,6 @@ class StoreAudit(models.Model):
                          'mien': max(m['mc'], key=m['mc'].get), 'level': lv.name or '', 'tone': lv.tone or 'orange',
                          'audits': len(au), 'passed': len([a for a in au if a.conclusion == 'pass']),
                          'errors': sum(a.error_count for a in au),
-                         'err_cat': [sum(sum(a[f].mapped('error_count')) for a in au) for f in ('line_a_ids', 'line_b_ids', 'line_c_ids')],
                          'p_errors': sum(a.error_count for a in pa) if pa else None,
                          'stores': [{'store': s['store'], 'code': s['code'], 'gs': s['gs'], 'asm': s['asm'],
                                      'score': round(sum(s['rates']) / len(s['rates']), 1), 'errors': s['errors'], 'ok': s['ok'],

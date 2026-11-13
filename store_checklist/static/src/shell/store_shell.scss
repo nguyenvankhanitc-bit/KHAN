@@ -1200,13 +1200,3 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
         ul { list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: 10px; padding: 7px 0; i { width: 12px; height: 12px; border-radius: 50%; } span { flex: 1; } small { display: block; color: #64748b; } } } } }
 @media (max-width: 991px) { .o_store_mgr_rankrow, .o_store_mgr_bottom { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .o_store_mgr_rankrow .plot { overflow: visible; } .o_store_mgr_rankrow .bars { gap: 4px; } .o_store_mgr_rankrow .bar span { font-size: 9px; } }
-
-.o_store_mgr_errrow { margin-bottom: 14px;
-    .card { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(80, 70, 140, .1); border: 0; h5 { font-weight: 700; color: #1e3a8a; margin-bottom: 10px; } }
-    .hd { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
-    .lg { font-size: 12px; color: #334155; > span { margin-left: 12px; white-space: nowrap; } i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; } }
-    .eb { display: flex; align-items: center; gap: 10px; padding: 5px 0;
-        .nm { width: 160px; flex: none; font-size: 13px; color: #334155; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .tr { flex: 1; display: flex; height: 22px; i { display: block; height: 100%; color: #fff; font-size: 11px; font-style: normal; font-weight: 600; text-align: center; line-height: 22px; overflow: hidden; &:first-child { border-radius: 4px 0 0 4px; } &:last-child { border-radius: 0 4px 4px 0; } } }
-        b { width: 34px; text-align: right; } } }
-@media (max-width: 767px) { .o_store_mgr_errrow .eb .nm { width: 90px; } }

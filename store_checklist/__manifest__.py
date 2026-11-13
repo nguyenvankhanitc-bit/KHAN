@@ -1,6 +1,6 @@
 {
     'name': 'Checklist Đánh Giá Cửa Hàng',
-    'version': '19.0.2.18.147',
+    'version': '19.0.2.18.148',
     'category': 'Operations/Audit',
     'summary': 'Checklist audit / Mystery Shopper, chấm điểm và theo dõi khắc phục cửa hàng',
     'author': 'Nguyễn Văn Khán',

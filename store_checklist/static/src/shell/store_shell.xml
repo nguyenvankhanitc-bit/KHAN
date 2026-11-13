@@ -235,19 +235,6 @@
                             <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                         </div>
                     </div>
-                    <div class="o_store_mgr_errrow">
-                        <div class="card">
-                            <div class="hd">
-                                <h5><i class="fa fa-exclamation-triangle"/> Tổng số lỗi theo quản lý</h5>
-                                <span class="lg"><span t-foreach="mv.errCats" t-as="c" t-key="c.name"><i t-attf-style="background: #{c.color}"/><t t-esc="c.name"/></span></span>
-                            </div>
-                            <div class="eb" t-foreach="mv.errBars" t-as="e" t-key="e.id">
-                                <span class="nm" t-esc="e.name"/>
-                                <span class="tr"><i t-foreach="e.segs" t-as="g" t-key="g_index" t-if="g.n" t-attf-style="width: #{g.w}%; background: #{g.color}" t-esc="g.n"/></span>
-                                <b t-esc="e.total"/>
-                            </div>
-                        </div>
-                    </div>
                     <div class="o_store_mgr_bottom">
                     <div class="o_store_personal_body">
                         <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>

@@ -334,10 +334,6 @@
                 </div>
                 <div class="o_store_personal" t-elif="state.activeNav === 'report_gs' and state.personal">
                     <t t-set="pr" t-value="state.personal"/>
-                    <div class="o_store_personal_head">
-                        <h3>BÁO CÁO HOẠT ĐỘNG GIÁM SÁT CÁ NHÂN - <t t-esc="pr.name.toUpperCase()"/></h3>
-                        <p><i class="fa fa-filter"/> Tháng <t t-esc="pr.month.slice(5)"/>/<t t-esc="pr.month.slice(0, 4)"/><t t-if="pr.mien"> | <t t-esc="pr.mien"/> (Khu vực phụ trách)</t> | Người đánh giá: <span class="text-muted" t-esc="pr.name"/></p>
-                    </div>
                     <div class="o_store_personal_kpis">
                         <div><b>KẾ HOẠCH THÁNG</b><strong><t t-esc="pr.plan"/> <small>Cửa hàng</small></strong><span>Tiến độ đạt <t t-esc="pr.rate"/>%</span></div>
                         <div><b>ĐÃ HOÀN THÀNH</b><strong class="is-green" t-esc="pr.done"/><span>Đã chốt biên bản</span></div>

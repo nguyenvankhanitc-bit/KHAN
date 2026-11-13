@@ -219,7 +219,11 @@
                                 <div class="bars">
                                     <div class="bar" t-foreach="mv.bars" t-as="b" t-key="b.id">
                                         <b t-esc="b.avg"/>
-                                        <i t-attf-style="height: #{b.avg}%; background: #{b.color}"/>
+                                        <div class="stk" t-attf-style="height: #{b.avg}%">
+                                            <span class="t3" t-attf-style="background: #{b.errColor}"><t t-esc="b.errors"/> lỗi</span>
+                                            <span class="t2" t-attf-style="background: #{b.color}"><t t-esc="b.avg"/></span>
+                                            <span class="t1" t-attf-style="background: #{b.color}" t-esc="b.level"/>
+                                        </div>
                                         <span t-esc="b.name"/>
                                     </div>
                                 </div>

@@ -853,7 +853,7 @@ export class StoreChecklistShell extends Component {
         return {
             top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
             needN: rows.filter((r) => r.avg < 80).length,
-            bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: this.toneColor(r.tone) })),
+            bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: this.toneColor(r.tone), level: r.level, errors: r.errors, errColor: r.errors > 0 ? "#ef4444" : "#16a34a" })),
             kinds: split(rows), all: donut(rows), regions,
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),

@@ -1200,3 +1200,8 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
         ul { list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: 10px; padding: 7px 0; i { width: 12px; height: 12px; border-radius: 50%; } span { flex: 1; } small { display: block; color: #64748b; } } } } }
 @media (max-width: 991px) { .o_store_mgr_rankrow, .o_store_mgr_bottom { grid-template-columns: 1fr; } }
 @media (max-width: 767px) { .o_store_mgr_rankrow .plot { overflow: visible; } .o_store_mgr_rankrow .bars { gap: 4px; } .o_store_mgr_rankrow .bar span { font-size: 9px; } }
+
+/* Cột chồng 3 tầng: dưới = xếp loại, giữa = điểm TB, trên = tổng số lỗi */
+.o_store_mgr_rankrow .bars .bar { max-width: 110px; .stk { display: flex; flex-direction: column; width: 80%; max-width: 100px; border-radius: 6px 6px 0 0; overflow: hidden;
+    span { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: #fff; font-size: 11px; font-weight: 700; line-height: 1.1; padding: 0 2px; min-height: 0; overflow: hidden; position: static; margin: 0; width: auto; max-height: none; }
+    .t2 { filter: brightness(1.15); font-size: 14px; } } }

@@ -765,7 +765,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 // User thường không đổi cột hiển thị của danh sách
 .o_store_list_wrap.is-plain-user .o_optional_columns_dropdown,
-.o_store_list_wrap.is-plain-user .o_list_table th.o_list_controller { display: none !important; }
+.o_store_list_wrap.is-plain-user .o_list_table th.o_list_controller:not(.o_list_record_selector) { display: none !important; }
 
 .o_store_perm .o_store_perm_table {
     .o_store_perm_folder { background: #eef2ff; cursor: pointer; td:first-child { text-align: left; } }

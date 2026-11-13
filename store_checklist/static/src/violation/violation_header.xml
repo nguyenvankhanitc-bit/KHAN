@@ -40,7 +40,7 @@
         <Dialog header="false" footer="false" size="'xl'">
             <div class="o_store_mgr_dlg">
                 <div class="hd">
-                    <button type="button" class="back" t-on-click="props.close"><i class="fa fa-angle-left"/></button>
+                    <button type="button" class="back" t-on-click="props.close"><i class="fa fa-arrow-left"/></button>
                     <h4>Chi tiết: <b t-esc="props.row.name"/></h4>
                     <span class="acts">
                         <button type="button" class="o_store_print_btn" t-on-click="print"><i class="fa fa-print"/> In</button>

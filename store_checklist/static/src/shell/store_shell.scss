@@ -1126,7 +1126,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 .o_store_mgr_dlg { background: #f4f2ff; margin: -16px; padding: 14px 18px;
     .hd { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; h4 { margin: 0; color: #1e1b4b; } .acts { margin-left: auto; display: flex; gap: 8px; }
-        .back { width: 36px; height: 36px; border-radius: 50%; border: 0; background: #ede9fe; color: #6d28d9; font-size: 22px; line-height: 1; } }
+        .back { width: 36px; height: 36px; border-radius: 50%; border: 0; background: #ede9fe; color: #5b21b6; font-size: 17px; line-height: 1; i { -webkit-text-stroke: 1px currentColor; } } }
     .acts button.o_store_export_btn { background: #fff; color: #6d28d9; border-color: #6d28d9; }
     .top { display: flex; align-items: stretch; gap: 14px; background: #fff; border-radius: 12px; padding: 14px; margin-bottom: 12px; box-shadow: 0 1px 6px rgba(80, 70, 140, .08);
         .who { display: flex; align-items: center; gap: 12px; padding-right: 16px; border-right: 1px solid #e5e7eb; min-width: 260px;

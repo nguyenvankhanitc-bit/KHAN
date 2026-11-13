@@ -215,7 +215,6 @@
                             </div>
                             <div class="plot">
                                 <div class="yax"><span t-foreach="[100, 80, 60, 40, 20, 0]" t-as="y" t-key="y" t-esc="y"/></div>
-                                <div class="avgline" t-attf-style="bottom: #{mv.avg}%"><span>Trung bình: <t t-esc="mv.avg"/></span></div>
                                 <div class="bars">
                                     <div class="bar" t-foreach="mv.bars" t-as="b" t-key="b.id">
                                         <b t-esc="b.avg"/>

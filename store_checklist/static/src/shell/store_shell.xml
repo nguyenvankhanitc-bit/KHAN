@@ -244,7 +244,7 @@
                     <div class="o_store_personal_body">
                         <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>
                         <table class="o_store_report_table o_store_mgr_table">
-                            <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm KPI (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
+                            <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm đánh giá TB (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
                             <tbody>
                                 <tr t-foreach="mv.page" t-as="r" t-key="r.id">
                                     <td t-esc="state.mgrPage * mv.size + r_index + 1"/>

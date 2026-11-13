@@ -559,7 +559,7 @@ class StoreAudit(models.Model):
         cell = book.add_format({'border': 1, 'valign': 'vcenter'})
         ctr = book.add_format({'border': 1, 'align': 'center', 'num_format': '0.##'})
         sheet.merge_range(0, 0, 0, 8, 'BÁO CÁO THEO QUẢN LÝ', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
-        heads = ['Hạng', 'Người quản lý', 'Khu vực', 'Số cửa hàng', 'Tổng số lỗi', 'Điểm TB (%)', 'Điểm GS (%)', 'Điểm ASM (%)', 'Xếp loại']
+        heads = ['Hạng', 'Người quản lý', 'Khu vực', 'Số cửa hàng', 'Tổng số lỗi', 'Điểm đánh giá TB (%)', 'Điểm GS (%)', 'Điểm ASM (%)', 'Xếp loại']
         for i, (h, w) in enumerate(zip(heads, [7, 28, 18, 13, 13, 13, 13, 13, 14])):
             sheet.write(2, i, h, head)
             sheet.set_column(i, i, w)

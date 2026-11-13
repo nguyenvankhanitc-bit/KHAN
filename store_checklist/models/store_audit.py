@@ -490,32 +490,88 @@ class StoreAudit(models.Model):
         return {'total': len(latest), 'levels': out, 'by_mien': by_mien}
 
     @api.model
-    def get_report_manager(self, domain):
-        """Báo cáo theo quản lý cửa hàng: điểm đánh giá (lần audit chốt gần nhất của mỗi cửa hàng trong kỳ)
-        của các cửa hàng do mỗi quản lý phụ trách, tách theo GS và ASM để so sánh."""
-        latest = {}  # (cửa hàng, loại checklist) -> phiếu gần nhất
+    def _manager_rows(self, domain):
+        """Mỗi quản lý: các lần audit chốt gần nhất của từng (cửa hàng, loại GS/ASM) trong kỳ."""
+        latest = {}
         for a in self.sudo().search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
             if a.audit_type in ('gs', 'asm'):
                 latest.setdefault((a.store_id.id, a.audit_type), a)
-
-        def avg(rs):
-            return round(sum(100 * a.pass_rate for a in rs) / len(rs), 1) if rs else None
-
+        miens = dict(self.env['hr.store']._fields['mien'].selection)
         managers = {}
         for (store_id, kind), a in latest.items():
             mgr = a.store_id.manager_id
-            m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {}, 'gs': [], 'asm': []})
-            m[kind].append(a)
+            m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {},
+                                             'audits': [], 'miens': set()})
+            m['audits'].append(a)
+            m['miens'].add(miens.get(a.mien) or 'Khác')
             s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'gs': None, 'asm': None})
             s[kind] = round(100 * a.pass_rate, 1)
+        return managers
+
+    @api.model
+    def _manager_rows(self, domain):
+        """Mỗi quản lý: các lần audit chốt gần nhất của từng (cửa hàng, loại GS/ASM) trong kỳ."""
+        latest = {}
+        for a in self.sudo().search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
+            if a.audit_type in ('gs', 'asm'):
+                latest.setdefault((a.store_id.id, a.audit_type), a)
+        miens = dict(self.env['hr.store']._fields['mien'].selection)
+        managers = {}
+        for (store_id, kind), a in latest.items():
+            mgr = a.store_id.manager_id
+            m = managers.setdefault(mgr.id, {'id': mgr.id, 'name': mgr.name or 'Chưa gán quản lý', 'stores': {},
+                                             'audits': [], 'miens': set()})
+            m['audits'].append(a)
+            m['miens'].add(miens.get(a.mien) or 'Khác')
+            s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'gs': None, 'asm': None})
+            s[kind] = round(100 * a.pass_rate, 1)
+        return managers
+
+    @api.model
+    def get_report_manager(self, domain, prev_domain=False):
+        """Báo cáo theo quản lý: điểm TB (%) các cửa hàng phụ trách, so tháng trước, tỷ lệ đạt chuẩn, tách GS / ASM."""
+        def avg(rs):
+            return round(sum(100 * a.pass_rate for a in rs) / len(rs), 1) if rs else None
+
+        prev = {k: avg(v['audits']) for k, v in self._manager_rows(prev_domain).items()} if prev_domain else {}
         rows = []
-        for m in managers.values():
-            g, s = avg(m['gs']), avg(m['asm'])
-            rows.append({'id': m['id'], 'name': m['name'], 'store_count': len(m['stores']),
-                         'gs_avg': g, 'asm_avg': s, 'diff': round(g - s, 1) if g is not None and s is not None else None,
+        for m in self._manager_rows(domain).values():
+            au = m['audits']
+            gs, asm = [a for a in au if a.audit_type == 'gs'], [a for a in au if a.audit_type == 'asm']
+            score, before = avg(au), prev.get(m['id'])
+            rows.append({'id': m['id'], 'name': m['name'], 'area': ', '.join(sorted(m['miens'])),
+                         'store_count': len(m['stores']), 'avg': score, 'gs_avg': avg(gs), 'asm_avg': avg(asm),
+                         'delta': round(score - before, 1) if before is not None else None,
+                         'audits': len(au), 'passed': len([a for a in au if a.conclusion == 'pass']),
                          'stores': sorted(m['stores'].values(), key=lambda x: x['store'])})
-        rows.sort(key=lambda r: -(r['gs_avg'] if r['gs_avg'] is not None else (r['asm_avg'] or 0)))
+        rows.sort(key=lambda r: -r['avg'])
         return rows
+
+    @api.model
+    def export_manager_xlsx(self, domain):
+        self.env['store.perm.rule'].check_export()
+        import xlsxwriter
+        rows = self.get_report_manager(domain)
+        buf = io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        sheet = book.add_worksheet('Bao cao theo quan ly')
+        head = book.add_format({'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#6D4AFF', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        cell = book.add_format({'border': 1, 'valign': 'vcenter'})
+        ctr = book.add_format({'border': 1, 'align': 'center', 'num_format': '0.##'})
+        sheet.merge_range(0, 0, 0, 7, 'BÁO CÁO THEO QUẢN LÝ', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
+        heads = ['Hạng', 'Người quản lý', 'Khu vực', 'Số cửa hàng', 'Điểm TB (%)', 'Điểm GS (%)', 'Điểm ASM (%)', 'Đạt chuẩn (%)']
+        for i, (h, w) in enumerate(zip(heads, [7, 28, 18, 13, 13, 13, 13, 14])):
+            sheet.write(2, i, h, head)
+            sheet.set_column(i, i, w)
+        for n, r in enumerate(rows, 1):
+            vals = [n, r['name'], r['area'], r['store_count'], r['avg'], r['gs_avg'], r['asm_avg'],
+                    round(100 * r['passed'] / r['audits']) if r['audits'] else 0]
+            for c, v in enumerate(vals):
+                sheet.write(2 + n, c, '' if v is None else v, cell if c in (1, 2) else ctr)
+        sheet.freeze_panes(3, 0)
+        book.close()
+        stamp = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime('%d%m%Y_%H%M')
+        return {'name': 'Bao_cao_theo_quan_ly_%s.xlsx' % stamp, 'data': base64.b64encode(buf.getvalue()).decode()}
 
     @api.model
     def get_report_personal(self, month=None):

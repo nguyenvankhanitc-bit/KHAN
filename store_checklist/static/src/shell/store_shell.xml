@@ -23,7 +23,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_manager' ? 'Thống kê, xếp hạng theo người quản lý cửa hàng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
@@ -36,7 +36,7 @@
                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
-                    <select t-if="!reportNavs.includes(state.activeNav)" t-on-change="(ev) => this.onListFilter('store', ev)">
+                    <select t-if="!reportNavs.includes(state.activeNav) or state.activeNav === 'report_manager'" t-on-change="(ev) => this.onListFilter('store', ev)">
                         <option value="">Tất cả cửa hàng</option>
                         <option t-foreach="state.dash ? state.dash.store_options : []" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
@@ -53,8 +53,14 @@
                         <option t-foreach="state.report.auditor_options" t-as="au" t-key="au.id" t-att-value="au.id"
                                 t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
                     </select>
+                    <select t-if="state.activeNav === 'report_manager' and state.managerReport" t-on-change="onMgrFilter">
+                        <option value="">Tất cả quản lý</option>
+                        <option t-foreach="state.managerReport" t-as="mg" t-key="mg.id" t-att-value="mg.id"
+                                t-att-selected="('' + mg.id) === state.mgrFilter" t-esc="mg.name"/>
+                    </select>
+                    <button type="button" class="o_store_print_btn" t-if="state.activeNav === 'report_manager'" t-on-click="loadReport"><i class="fa fa-refresh"/> Làm mới</button>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
-                    <button type="button" class="o_store_export_btn" t-if="canExport and state.activeNav !== 'report_manager'" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
                 <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">
@@ -195,34 +201,41 @@
                     </div>
                 </div>
                 <div class="o_store_personal o_store_mgrrep" t-elif="state.activeNav === 'report_manager' and state.managerReport">
-                    <div class="o_store_personal_head">
-                        <h3>Báo cáo theo quản lý <span class="o_store_badge"><t t-esc="state.managerReport.length"/> quản lý</span></h3>
-                        <p>Điểm đạt (%) trung bình của các cửa hàng do mỗi quản lý phụ trách, lần audit gần nhất trong tháng · so sánh Giám sát (GS) với ASM</p>
+                    <t t-set="mv" t-value="mgrView"/>
+                    <div class="o_store_mgr_kpis">
+                        <div class="k1"><span class="ico"><i class="fa fa-trophy"/></span><div><small>Tổng số Quản lý</small><strong t-esc="mv.rows.length"/></div></div>
+                        <div class="k2"><span class="ico"><i class="fa fa-check"/></span><div><small>Điểm TB toàn hệ thống</small><strong t-esc="mv.avg"/></div></div>
+                        <div class="k3"><span class="ico"><i class="fa fa-star"/></span><div><small>Quản lý xuất sắc nhất</small><strong class="sm" t-esc="mv.best ? mv.best.name : '—'"/><b t-if="mv.best"><t t-esc="mv.best.avg"/> điểm</b></div></div>
+                        <div class="k4"><span class="ico"><i class="fa fa-bullseye"/></span><div><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="mv.passPct"/>%</strong></div></div>
                     </div>
                     <div class="o_store_personal_body">
-                        <table class="o_store_report_table">
-                            <thead><tr><th>STT</th><th>Quản lý cửa hàng</th><th>Số cửa hàng</th><th>Điểm GS (%)</th><th>Điểm ASM (%)</th><th>Chênh lệch GS − ASM</th><th>So sánh</th></tr></thead>
+                        <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo người quản lý cửa hàng</h4>
+                        <table class="o_store_report_table o_store_mgr_table">
+                            <thead><tr><th>Hạng</th><th>Người quản lý</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Điểm TB (%)</th><th>GS</th><th>ASM</th><th>So với tháng trước</th><th>Tiến độ đạt chuẩn</th></tr></thead>
                             <tbody>
-                                <t t-foreach="state.managerReport" t-as="r" t-key="r.id">
-                                    <tr>
-                                        <td t-esc="r_index + 1"/><td class="l"><b t-esc="r.name"/></td><td t-esc="r.store_count"/>
-                                        <td t-esc="r.gs_avg === null ? '—' : r.gs_avg"/>
-                                        <td t-esc="r.asm_avg === null ? '—' : r.asm_avg"/>
-                                        <td t-att-style="r.diff === null ? '' : 'font-weight:700;color:' + (r.diff &lt; 0 ? '#dc2626' : '#16a34a')" t-esc="r.diff === null ? '—' : (r.diff &gt; 0 ? '+' : '') + r.diff"/>
-                                        <td class="l" style="min-width:180px">
-                                            <div style="background:#e5e7eb;height:8px;border-radius:4px;margin:3px 0"><div t-attf-style="background:#2563eb;height:8px;border-radius:4px;width:#{r.gs_avg || 0}%"/></div>
-                                            <div style="background:#e5e7eb;height:8px;border-radius:4px;margin:3px 0"><div t-attf-style="background:#f59e0b;height:8px;border-radius:4px;width:#{r.asm_avg || 0}%"/></div>
-                                        </td>
-                                    </tr>
-                                    <tr t-foreach="r.stores" t-as="s" t-key="s.store" class="text-muted">
-                                        <td/><td class="l" style="padding-left:28px"><t t-esc="s.store"/></td><td/>
-                                        <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/><td/><td/>
-                                    </tr>
-                                </t>
-                                <tr t-if="!state.managerReport.length"><td colspan="7" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
+                                <tr t-foreach="mv.page" t-as="r" t-key="r.id">
+                                    <t t-set="rank" t-value="state.mgrPage * mv.size + r_index + 1"/>
+                                    <t t-set="pct" t-value="r.audits ? Math.round(100 * r.passed / r.audits) : 0"/>
+                                    <td><span t-attf-class="o_store_medal m#{rank}" t-esc="rank"/></td>
+                                    <td class="l"><b t-esc="r.name"/></td>
+                                    <td t-esc="r.area"/><td t-esc="r.store_count"/>
+                                    <td><b t-esc="r.avg"/></td>
+                                    <td t-esc="r.gs_avg === null ? '—' : r.gs_avg"/><td t-esc="r.asm_avg === null ? '—' : r.asm_avg"/>
+                                    <td t-att-style="r.delta === null ? '' : 'font-weight:700;color:' + (r.delta &lt; 0 ? '#dc2626' : '#16a34a')"
+                                        t-esc="r.delta === null ? '—' : (r.delta &lt; 0 ? '▼ ' : '▲ ') + (r.delta &gt; 0 ? '+' : '') + r.delta"/>
+                                    <td class="l"><div class="o_store_mgr_bar"><i t-attf-style="width:#{pct}%;background:#{pct >= 90 ? '#16a34a' : '#2563eb'}"/></div><span class="o_store_mgr_pct"><t t-esc="pct"/>%</span></td>
+                                </tr>
+                                <tr t-if="!mv.rows.length"><td colspan="9" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
                             </tbody>
                         </table>
-                        <p class="o_store_rk_foot"><span style="color:#2563eb">■</span> GS &#160; <span style="color:#f59e0b">■</span> ASM</p>
+                        <div class="o_store_mgr_foot">
+                            <span>Hiển thị <t t-esc="mv.rows.length ? state.mgrPage * mv.size + 1 : 0"/> - <t t-esc="Math.min((state.mgrPage + 1) * mv.size, mv.rows.length)"/> / <t t-esc="mv.rows.length"/> bản ghi</span>
+                            <span class="pg">
+                                <button type="button" t-att-disabled="state.mgrPage === 0" t-on-click="() => state.mgrPage--"><i class="fa fa-angle-left"/></button>
+                                <button type="button" t-foreach="Array.from({length: mv.pages}, (_, i) => i)" t-as="i" t-key="i" t-att-class="i === state.mgrPage ? 'on' : ''" t-on-click="() => state.mgrPage = i" t-esc="i + 1"/>
+                                <button type="button" t-att-disabled="state.mgrPage >= mv.pages - 1" t-on-click="() => state.mgrPage++"><i class="fa fa-angle-right"/></button>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">

@@ -53,6 +53,8 @@ export class StoreChecklistShell extends Component {
             rankStore: null,
             rankStoreTotal: 0,
             managerReport: null,
+            mgrFilter: "",
+            mgrPage: 0,
             personal: null,
             canCreate: false,
             personalTab: "activity",
@@ -546,6 +548,8 @@ export class StoreChecklistShell extends Component {
         }
         const file = this.state.activeNav === "violation_all"
             ? await this.orm.call("store.audit.action", "export_violation_all_xlsx", [domain])
+            : this.state.activeNav === "report_manager"
+            ? await this.orm.call("store.audit", "export_manager_xlsx", [this.listDomain([["state", "!=", "draft"]])])
             : this.state.activeNav === "report_rank"
             ? await this.orm.call("store.audit", "export_rank_xlsx", [domain])
             : await this.orm.call("store.audit", "export_list_xlsx", [domain], {
@@ -781,10 +785,16 @@ export class StoreChecklistShell extends Component {
             return;
         }
         if (this.state.activeNav === "report_manager") {
-            // cả phiếu GS lẫn ASM để so sánh, không dùng reportBase (chỉ GS)
-            this.state.managerReport = await this.orm.call("store.audit", "get_report_manager", [
-                this.listDomain([["state", "!=", "draft"]]),
-            ]);
+            // cả phiếu GS lẫn ASM (không dùng reportBase chỉ có GS); kèm tháng trước để tính chênh lệch
+            const month = this.state.listFilters.month;
+            const base = [["state", "!=", "draft"]];
+            let prev = false;
+            if (month) {
+                const [y, m] = month.split("-").map(Number);
+                prev = this.listDomain(base, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
+            }
+            this.state.mgrPage = 0;
+            this.state.managerReport = await this.orm.call("store.audit", "get_report_manager", [this.listDomain(base), prev]);
             return;
         }
         if (this.state.activeNav === "report_store") {
@@ -801,6 +811,26 @@ export class StoreChecklistShell extends Component {
             prev = this.listDomain(this.reportBase, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
         }
         this.state.report = await this.orm.call("store.audit", "get_report_gs", [this.listDomain(this.reportBase), prev]);
+    }
+
+    // Báo cáo theo quản lý: lọc quản lý, thẻ số liệu và phân trang tính trên dữ liệu đã tải
+    get mgrView() {
+        const all = this.state.managerReport || [];
+        const rows = this.state.mgrFilter ? all.filter((r) => String(r.id) === this.state.mgrFilter) : all;
+        const size = 10;
+        const audits = rows.reduce((t, r) => t + r.audits, 0);
+        const passed = rows.reduce((t, r) => t + r.passed, 0);
+        const avg = audits ? rows.reduce((t, r) => t + r.avg * r.audits, 0) / audits : 0;
+        return {
+            rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
+            page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),
+            avg: avg.toFixed(1), passPct: audits ? ((100 * passed) / audits).toFixed(1) : "0.0", best: rows[0],
+        };
+    }
+
+    onMgrFilter(ev) {
+        this.state.mgrFilter = ev.target.value;
+        this.state.mgrPage = 0;
     }
 
     toggleReportRow(id) {

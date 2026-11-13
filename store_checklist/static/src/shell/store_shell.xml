@@ -5,6 +5,7 @@
                 brand="brand"
                 navSections="navSections"
                 openGroups="state.openGroups"
+                badgeData="state.badges"
                 activeNav="state.activeNav"
                 contentMode="shellMode"
                 embeddedViewProps="state.embeddedViewProps"
@@ -22,13 +23,13 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-on-click="onAddNew">Thêm mới</button>
                 </div>
-                <div class="o_store_dash_filters o_store_list_filters" t-if="showListFilters">
+                <div class="o_store_dash_filters o_store_list_filters" t-att-class="'is-' + state.activeNav" t-if="showListFilters">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-if="showOwnAdd" t-on-click="onAddNew">Thêm mới</button>
                     <select t-on-change="(ev) => this.onListFilter('month', ev)">
                         <option value="">Tất cả tháng</option>
@@ -52,7 +53,8 @@
                         <option t-foreach="state.report.auditor_options" t-as="au" t-key="au.id" t-att-value="au.id"
                                 t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
                     </select>
-                    <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
+                    <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
                 <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">

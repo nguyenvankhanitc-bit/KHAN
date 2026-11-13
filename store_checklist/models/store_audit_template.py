@@ -80,6 +80,26 @@ class StoreAuditTemplateLine(models.Model):
     name = fields.Char(string='Tiêu chí đánh giá', required=True)
     requirement = fields.Text(string='Yêu cầu / Tiêu chuẩn')
     max_score = fields.Float(string='Điểm chuẩn', default=2.0)
+    responsible_ids = fields.Many2many(
+        'hr.employee', 'store_audit_template_line_responsible_rel', 'line_id', 'employee_id',
+        string='Người phụ trách')
+    controller_ids = fields.Many2many(
+        'res.users', 'store_audit_template_line_controller_rel', 'line_id', 'user_id',
+        string='Người kiểm soát')
+    lug_group_ids = fields.Many2many(
+        'lug.group', 'store_audit_template_line_lug_group_rel', 'line_id', 'group_id',
+        string='Group (LUG Permission)')
+
+    def web_read(self, specification):
+        """User thường không xem được hồ sơ nhân viên khác (hr_employee_self_only) nên đọc cột này báo MissingError;
+        tên người phụ trách chỉ là nhãn của tiêu chí nên đọc bằng sudo."""
+        if 'responsible_ids' not in specification:
+            return super().web_read(specification)
+        res = super().web_read({k: v for k, v in specification.items() if k != 'responsible_ids'})
+        for vals in res:
+            emps = self.browse(vals['id']).sudo().responsible_ids
+            vals['responsible_ids'] = [{'id': e.id, 'display_name': e.display_name} for e in emps]
+        return res
 
     @api.onchange('category')
     def _onchange_category(self):

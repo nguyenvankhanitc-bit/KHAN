@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.ViolationHeader">
+        <div class="o_store_viol_hdr" t-if="state.d">
+            <div class="vh_title">
+                <img class="vh_logo" t-att-src="'/web/image/res.company/' + state.d.company_id + '/logo_web'" alt="Logo công ty"/>
+                <div>
+                    <h2>BIÊN BẢN XỬ LÝ SAI PHẠM</h2>
+                    <p>Cửa hàng: <b t-esc="state.d.store"/> &#160;|&#160; Ngày kiểm tra: <t t-esc="state.d.date"/></p>
+                </div>
+            </div>
+            <div class="vh_cards">
+                <div class="vh_card is-blue">
+                    <i class="fa fa-calendar"/>
+                    <div><span>Tổng điểm đạt</span><b><t t-esc="fmt(state.d.got)"/> / <t t-esc="fmt(state.d.max)"/></b>
+                        <div class="vh_bar"><div t-attf-style="width: {{gotPct}}%"/></div></div>
+                </div>
+                <div class="vh_card is-red">
+                    <i class="fa fa-minus-circle"/>
+                    <div><span>Tổng điểm trừ</span><b class="text-danger" t-esc="fmt(state.d.deduct)"/></div>
+                </div>
+                <div class="vh_card is-green">
+                    <i class="fa fa-check-circle"/>
+                    <div><span>Số lỗi cần xử lý</span><b><t t-esc="state.d.total"/> tiêu chí</b></div>
+                </div>
+                <div class="vh_card is-gray">
+                    <i class="fa fa-percent"/>
+                    <div><span>Tiến độ khắc phục</span><b><t t-esc="state.d.done"/> / <t t-esc="state.d.total"/></b>
+                        <small>(Đã hoàn thành <t t-esc="donePct"/>%)</small></div>
+                </div>
+            </div>
+            <div class="vh_actions">
+                <button type="button" class="vh_btn is-excel" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                <button type="button" class="vh_btn is-print" t-on-click="print"><i class="fa fa-print"/> In</button>
+            </div>
+        </div>
+    </t>
+
+    <t t-name="store_checklist.ViolPickDialog">
+        <Dialog title="props.title" size="'md'">
+            <p class="text-muted mb-2">Chọn cửa hàng cần <t t-esc="props.confirmLabel.toLowerCase()"/>:</p>
+            <label class="d-flex align-items-center gap-2 fw-bold border-bottom pb-2 mb-2">
+                <input type="checkbox" t-att-checked="allPicked" t-on-change="toggleAll"/> Chọn tất cả (<t t-esc="props.stores.length"/> cửa hàng)
+            </label>
+            <div style="max-height: 320px; overflow-y: auto;">
+                <label t-foreach="props.stores" t-as="s" t-key="s.id" class="d-flex align-items-center gap-2 py-1">
+                    <input type="checkbox" t-model="state.picked[s.id]"/>
+                    <span t-esc="s.name"/> <span class="text-muted" t-esc="'(' + s.count + ' lỗi)'"/>
+                </label>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!pickedIds.length" t-on-click="confirm"><t t-esc="props.confirmLabel"/> (<t t-esc="pickedIds.length"/>)</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Hủy</button>
+            </t>
+        </Dialog>
+    </t>
+
+    <t t-name="store_checklist.ViolationListView" t-inherit="web.ListView" t-inherit-mode="primary">
+        <xpath expr="//Layout" position="before">
+            <StoreViolationHeader auditId="props.context.default_audit_id" bus="model.bus"/>
+        </xpath>
+    </t>
+</templates>

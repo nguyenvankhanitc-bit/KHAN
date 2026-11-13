@@ -509,7 +509,7 @@ class StoreAudit(models.Model):
         miens = dict(self.env['hr.store']._fields['mien'].selection)
         rows = []
         for r in mine:
-            due = min(r.action_ids.filtered(lambda a: a.state == 'todo' and a.deadline).mapped('deadline'), default=False)
+            due = min(r.action_ids.filtered(lambda a: a.state != 'done' and a.deadline).mapped('deadline'), default=False)
             rows.append({
                 'id': r.id, 'name': r.name, 'store': r.store_id.display_name or '',
                 'date': fields.Datetime.context_timestamp(self, r.audit_date).strftime('%d/%m/%Y %H:%M:%S'),
@@ -624,17 +624,52 @@ class StoreAudit(models.Model):
         self.state = 'draft'
 
     def action_create_actions(self):
-        """Tạo phiếu khắc phục cho mọi tiêu chí không đạt / đạt một phần chưa có khắc phục."""
+        """Tạo phiếu khắc phục cho mọi tiêu chí có lỗi giám sát ghi nhận (cùng số liệu "Tổng số lỗi") chưa có khắc phục."""
         self.ensure_one()
         lines = self.line_ids.filtered(
-            lambda l: l.result in ('fail', 'partial') and l not in self.action_ids.line_id)
+            lambda l: l.error_count > 0 and l not in self.action_ids.line_id)
         self.env['store.audit.action'].create([{
             'audit_id': self.id,
             'line_id': line.id,
             'date_found': fields.Date.to_date(self.audit_date),
             'issue': line.note or line.name,
         } for line in lines])
+        self._sync_action_owners()
         return self.action_view_actions()
+
+    def _sync_action_owners(self):
+        """Một chiều: "Người phụ trách" + nhân viên thuộc "Group (LUG Permission)" của tiêu chí mẫu cùng tên
+        -> cột "Người phụ trách" của biên bản xử lý sai phạm (cập nhật mỗi lần mở)."""
+        self.ensure_one()
+        owners, ctrls = {}, {}
+        for t in self.template_id.line_ids:
+            ctrls[(t.name or '').strip().casefold()] = t.controller_ids.ids
+            emps = t.responsible_ids | t.lug_group_ids.user_ids.employee_ids
+            owners[(t.name or '').strip().casefold()] = emps.ids
+        for act in self.action_ids:
+            ids = owners.get((act.line_id.name or '').strip().casefold(), [])
+            cids = ctrls.get((act.line_id.name or '').strip().casefold(), [])
+            if set(act.reviewer_ids.ids) != set(cids):
+                act.reviewer_ids = [Command.set(cids)]
+            if set(act.responsible_ids.ids) != set(ids):
+                act.responsible_ids = [Command.set(ids)]
+
+    def action_open_violation_popup(self):
+        """Popup "Xử lý sai phạm" của phiếu: bảng lỗi cần khắc phục như file Excel (tự tạo nếu chưa có)."""
+        self.ensure_one()
+        self.sudo().action_create_actions()
+        self.sudo()._sync_action_owners()  # xem biên bản là đủ để thấy việc khắc phục, không bắt buộc quyền tạo
+        view = self.env.ref('store_checklist.view_store_audit_action_violation_list')
+        date = fields.Datetime.context_timestamp(self, self.audit_date).strftime('%d/%m/%Y') if self.audit_date else ''
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Xử lý sai phạm - %s - %s' % (self.store_id.display_name or '', date),
+            'res_model': 'store.audit.action',
+            'views': [(view.id, 'list')],
+            'domain': [('audit_id', '=', self.id), ('line_id.error_count', '>', 0)],
+            'target': 'new',
+            'context': {'default_audit_id': self.id, 'dialog_size': 'extra-large', 'group_by': 'line_category'},
+        }
 
     def action_view_actions(self):
         self.ensure_one()

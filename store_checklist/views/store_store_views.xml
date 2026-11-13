@@ -52,6 +52,23 @@
     </record>
 
     <!-- Danh sách chọn cửa hàng gọn (điện thoại mở hộp thoại "Tìm kiếm thêm"): không đọc quản lý/công ty nên không lỗi quyền -->
+    <!-- Ô tìm cửa hàng: gõ tên hoặc mã (vd: kdv, Kinh Dương Vương) đều ra, không cần chọn "Mã cửa hàng" -->
+    <record id="view_hr_store_search_name_code" model="ir.ui.view">
+        <field name="name">hr.store.search.name.code</field>
+        <field name="model">hr.store</field>
+        <field name="inherit_id" ref="hr_store.view_hr_store_search"/>
+        <field name="arch" type="xml">
+            <field name="name" position="attributes">
+                <attribute name="filter_domain">['|', ('name', 'ilike', self), ('code', 'ilike', self)]</attribute>
+                <attribute name="string">Tên hoặc mã cửa hàng</attribute>
+            </field>
+            <field name="code" position="replace"/>
+            <field name="mien" position="replace"/>
+            <field name="manager_id" position="replace"/>
+            <field name="city" position="replace"/>
+        </field>
+    </record>
+
     <record id="view_hr_store_pick_list" model="ir.ui.view">
         <field name="name">hr.store.pick.list</field>
         <field name="model">hr.store</field>

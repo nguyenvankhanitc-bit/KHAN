@@ -4,9 +4,10 @@ import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
 import { evaluateExpr } from "@web/core/py_js/py";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { View } from "@web/views/view";
+import { StoreViolPickDialog } from "@store_checklist/violation/violation_header";
 import { PhanHeInternetShell } from "@lug_phan_he/internet_shell/phan_he_internet_shell";
 
 function normalizeViews(act, preferredType) {
@@ -32,7 +33,9 @@ export class StoreChecklistShell extends Component {
         this.orm = useService("orm");
         this.action = useService("action");
         this.notification = useService("notification");
+        this.dialog = useService("dialog");
         this.state = useState({
+            badges: {},
             isManager: false,
             activeNav: "overview",
             contentMode: "dashboard",
@@ -60,12 +63,57 @@ export class StoreChecklistShell extends Component {
             permEdit: null,
         });
         this.history = [{ home: true }];
+        // Popup "Xử lý sai phạm" nằm bên phải thanh menu và co giãn theo bề rộng thanh menu (biến CSS --store-sidebar-w)
+        const syncSidebarWidth = () => {
+            const side = document.querySelector(".o_internet_sidebar");
+            const w = side && window.innerWidth > 767 ? Math.round(side.getBoundingClientRect().right) : 0;
+            document.documentElement.style.setProperty("--store-sidebar-w", `${w}px`);
+        };
+        let sideObserver;
+        // Kéo mép trái của popup = kéo thanh chia của menu (menu đổi bề rộng, popup đổi theo cả hai chiều)
+        const gripSidebar = (ev) => {
+            const dlg = ev.target;
+            if (!dlg.classList?.contains("modal-dialog") || !dlg.querySelector(".o_store_violation_list")) {
+                return;
+            }
+            const handle = document.querySelector(".o_sidebar_resizer");
+            if (handle) {
+                ev.preventDefault();
+                handle.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, cancelable: true, clientX: ev.clientX, clientY: ev.clientY }));
+            }
+        };
+        onMounted(() => {
+            document.addEventListener("mousedown", gripSidebar, true);
+            const side = document.querySelector(".o_internet_sidebar");
+            if (side && window.ResizeObserver) {
+                sideObserver = new ResizeObserver(syncSidebarWidth);
+                sideObserver.observe(side);
+            }
+            window.addEventListener("resize", syncSidebarWidth);
+            syncSidebarWidth();
+        });
+        onWillUnmount(() => {
+            sideObserver?.disconnect();
+            window.removeEventListener("resize", syncSidebarWidth);
+            document.removeEventListener("mousedown", gripSidebar, true);
+            document.documentElement.style.removeProperty("--store-sidebar-w");
+        });
         onWillStart(async () => {
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
             this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
             this.state.rights = await this.orm.call("store.perm.rule", "get_my_rights", []);
             await this.loadOverview();
+            this.loadBadges();
         });
+    }
+
+    // Số phiếu có lỗi đã ghi nhận (hiện trên mục "Cửa hàng sai phạm"); lỗi quyền đọc thì bỏ qua, không chặn giao diện
+    async loadBadges() {
+        try {
+            this.state.badges.violation_stores = await this.orm.searchCount("store.audit", [["state", "!=", "draft"], ["error_count", ">", 0]]);
+        } catch {
+            this.state.badges.violation_stores = 0;
+        }
     }
 
     get brand() {
@@ -98,13 +146,25 @@ export class StoreChecklistShell extends Component {
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-sort-amount-desc" },
                 ],
             },
+            {
+                // Thư mục trống, các mục con sẽ bổ sung sau
+                id: "violation",
+                label: "Xử lý sai phạm",
+                icon: "fa-exclamation-triangle",
+                iconTone: "violation",
+                children: [
+                    // Cửa hàng đã có biên bản do giám sát kiểm tra (phiếu GS không còn ở trạng thái nháp)
+                    { id: "violation_stores", label: "Cửa hàng sai phạm", icon: "fa-file-text-o", badgeKey: "violation_stores", tone: "danger", action: "store_checklist.action_store_violation_stores" },
+                    { id: "violation_all", label: "Danh sách xử lý sai phạm", icon: "fa-list-alt", action: "store_checklist.action_store_violation_all" },
+                ],
+            },
         ];
         const rights = this.state.rights; // ma trận quyền: ẩn mục không có quyền Xem
         if (rights) {
             for (const sec of sections) {
                 sec.children = sec.children.filter((c) => rights[c.id]?.read);
             }
-            sections.splice(0, sections.length, ...sections.filter((sec) => sec.children.length));
+            sections.splice(0, sections.length, ...sections.filter((sec) => sec.children.length || sec.id === "violation"));
         }
         if (this.state.isManager || rights) {
             // Thư mục "Công việc đánh giá" nằm trong Cài đặt (shell chỉ có 2 cấp nên tự dựng cấp con, thụt lề bằng CSS)
@@ -171,7 +231,7 @@ export class StoreChecklistShell extends Component {
 
     // Các danh sách phiếu (Checklist NVBH / ASM / GS và Danh Sách Đánh Giá) có thanh lọc tháng / cửa hàng / miền
     get filterNavs() {
-        return ["review", "review_list", "nvbh", "asm", "gs", ...this.reportNavs];
+        return ["review", "review_list", "nvbh", "asm", "gs", "violation_stores", "violation_all", ...this.reportNavs];
     }
 
     get reportNavs() {
@@ -183,6 +243,7 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             this.showListFilters
             && !this.reportNavs.includes(this.state.activeNav)
+            && !["violation_stores", "violation_all"].includes(this.state.activeNav)
             && this.state.canCreate
             && (!this.state.rights || this.state.rights[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
@@ -242,19 +303,247 @@ export class StoreChecklistShell extends Component {
             gs: "DANH SÁCH CHECK LIST GIÁM SÁT CỬA HÀNG",
             review: "DANH SÁCH PHIẾU ĐÁNH GIÁ CỬA HÀNG",
             report_gs: "BÁO CÁO GIÁM SÁT CỬA HÀNG",
+            violation_stores: "XỬ LÝ LỖI SAI PHẠM CỬA HÀNG",
+            violation_all: "DANH SÁCH XỬ LÝ SAI PHẠM",
             report_rank: "Báo cáo xếp loại",
         }[this.state.activeNav] || "";
     }
 
+    // In trang báo cáo (thẻ số liệu, biểu đồ, bảng): sao chép vùng báo cáo + CSS của trang vào iframe, biểu đồ canvas đổi thành ảnh.
+    printReport() {
+        const wrap = document.querySelector(".o_store_list_wrap");
+        if (!wrap) {
+            return;
+        }
+        const clone = wrap.cloneNode(true);
+        const src = wrap.querySelectorAll("canvas");
+        clone.querySelectorAll("canvas").forEach((cv, i) => {
+            const img = document.createElement("img");
+            try {
+                img.src = src[i].toDataURL("image/png");
+            } catch {
+                return;
+            }
+            img.style.cssText = `width:${src[i].clientWidth}px;height:${src[i].clientHeight}px`;
+            cv.replaceWith(img);
+        });
+        clone.querySelectorAll(".o_store_list_filters, .o_store_export_btn, .o_store_print_btn").forEach((e) => e.remove());
+        const frame = document.createElement("iframe");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${this.listTitle || "Báo cáo"}</title><style>
+            @page { size: A4 landscape; margin: 8mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { background: #fff; } .o_store_list_wrap { overflow: visible !important; height: auto !important; max-height: none !important; }
+        </style></head><body></body></html>`);
+        let pending = 0;
+        let started = false;
+        const go = () => {
+            if (started) { return; }
+            started = true;
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(() => frame.remove(), 60000);
+        };
+        document.querySelectorAll('link[rel="stylesheet"]').forEach((l) => {
+            const n = doc.createElement("link");
+            n.rel = "stylesheet";
+            n.href = l.href;
+            pending++;
+            n.onload = n.onerror = () => { if (!--pending) { go(); } };
+            doc.head.appendChild(n);
+        });
+        doc.body.appendChild(doc.importNode(clone, true));
+        doc.close();
+        setTimeout(go, 4000); // phòng khi CSS tải chậm
+    }
+
+    // In danh sách đang xem: dựng trang riêng (tiêu đề + bảng) trong iframe rồi mở hộp thoại in để chọn máy in.
+    // shortcut: dựng từ DOM đang hiển thị (đúng bộ lọc / trang hiện tại), chưa in im lặng thẳng ra một máy in cố định.
+    async printList() {
+        let table = document.querySelector(".o_store_list_wrap table.o_list_table");
+        if (!table) {
+            return this.printReport();
+        }
+        // có dòng được tích thì chỉ in các dòng đó; nếu không thì mở hết các nhóm đang thu gọn để bảng in có đủ dòng
+        const ticked = (tr) => tr.querySelector(".o_list_record_selector input:checked");
+        const anyTicked = [...table.querySelectorAll("tr.o_data_row")].some(ticked);
+        const closed = anyTicked ? [] : [...table.querySelectorAll("tr.o_group_header:not(.o_group_open)")];
+        if (closed.length) {
+            closed.forEach((tr) => (tr.querySelector("th") || tr).click());
+            await new Promise((r) => setTimeout(r, 1200));
+            table = document.querySelector(".o_store_list_wrap table.o_list_table") || table;
+        }
+        const frame = document.createElement("iframe");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>${this.listTitle || "Danh sách"}</title><style>
+            @page { size: A4 landscape; margin: 8mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { font-family: Arial, sans-serif; font-size: 11px; color: #111; }
+            h2 { margin: 0 0 8px; font-size: 18px; color: #12285f; }
+            table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #64748b; padding: 4px 6px; }
+            th { background: #1e3a6e; color: #fff; text-align: center; } tr.grp td { background: #dce6f2; font-weight: 700; color: #1e3a8a; }
+            td.n { text-align: center; }
+        </style></head><body></body></html>`);
+        doc.close();
+        const el = (tag, cls, text) => {
+            const e = doc.createElement(tag);
+            if (cls) { e.className = cls; }
+            if (text !== undefined) { e.textContent = text; }
+            return e;
+        };
+        const out = el("table");
+        const head = el("tr");
+        const heads = [...table.querySelectorAll("thead th")].filter((th) => th.dataset.name);
+        heads.forEach((th) => head.appendChild(el("th", "", th.innerText.trim())));
+        out.appendChild(head);
+        let pendingGroup = null;
+        table.querySelectorAll("tbody tr").forEach((tr) => {
+            const row = el("tr");
+            if (tr.classList.contains("o_group_header")) {
+                row.className = "grp";
+                const td = el("td", "", tr.innerText.trim());
+                td.colSpan = heads.length;
+                row.appendChild(td);
+                if (anyTicked) {
+                    pendingGroup = row; // nhóm chỉ in khi có dòng đã tích bên trong
+                    return;
+                }
+            } else if (tr.classList.contains("o_data_row")) {
+                if (anyTicked && !ticked(tr)) {
+                    return;
+                }
+                if (pendingGroup) {
+                    out.appendChild(pendingGroup);
+                    pendingGroup = null;
+                }
+                tr.querySelectorAll("td[name]").forEach((td) => row.appendChild(el("td", "n", td.innerText.trim())));
+            } else {
+                return;
+            }
+            out.appendChild(row);
+        });
+        doc.body.append(el("h2", "", this.listTitle || "Danh sách"), out);
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        setTimeout(() => frame.remove(), 60000);
+    }
+
+    // Danh sách xử lý sai phạm: bấm Xuất Excel / In thì hỏi chọn cửa hàng trước (các cửa hàng đang có trong danh sách)
+    async pickStores(confirmLabel, onConfirm) {
+        const domain = this.state.embeddedViewProps?.domain || [];
+        const groups = await this.orm.formattedReadGroup("store.audit.action", [...domain, ["line_id.error_count", ">", 0]], ["store_id"], ["__count"]);
+        const stores = groups
+            .filter((g) => g.store_id)
+            .map((g) => ({ id: g.store_id[0], name: g.store_id[1], count: g.__count || 0 }));
+        if (!stores.length) {
+            this.notification.add("Không có cửa hàng nào để chọn", { type: "warning" });
+            return;
+        }
+        this.dialog.add(StoreViolPickDialog, { title: confirmLabel + " danh sách xử lý sai phạm", confirmLabel, stores, onConfirm });
+    }
+
+    // Lỗi khi xuất / in được báo ra thông báo (không im lặng)
+    async onExport() {
+        try {
+            if (this.state.activeNav === "violation_all") {
+                return await this.pickStores("Xuất Excel", (ids) => this.exportExcel(ids).catch((e) => this.notifyError(e)));
+            }
+            return await this.exportExcel();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onPrint() {
+        try {
+            if (this.state.activeNav === "violation_all") {
+                return await this.pickStores("In", (ids) => this.printViolationAll(ids).catch((e) => this.notifyError(e)));
+            }
+            return await this.printList();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // In danh sách xử lý sai phạm của các cửa hàng đã chọn: dữ liệu lấy từ máy chủ (không phụ thuộc nhóm đang mở)
+    async printViolationAll(storeIds) {
+        const domain = [...(this.state.embeddedViewProps?.domain || []), ["store_id", "in", storeIds]];
+        const data = await this.orm.call("store.audit.action", "violation_all_print_data", [domain]);
+        const frame = document.createElement("iframe");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(`<!doctype html><html><head><meta charset="utf-8"><title>Danh sách xử lý sai phạm</title><style>
+            @page { size: A4 landscape; margin: 8mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { font-family: Arial, sans-serif; font-size: 10px; color: #111; }
+            h2 { margin: 0 0 8px; font-size: 18px; color: #12285f; }
+            table { border-collapse: collapse; width: 100%; } th, td { border: 1px solid #64748b; padding: 3px 4px; vertical-align: top; }
+            th { background: #1e3a6e; color: #fff; text-align: center; } th.g1 { background: #15803d; } th.g2 { background: #c2410c; }
+            td.g2 { background: #fff1e0; } tr.grp td { background: #dce6f2; font-weight: 700; color: #1e3a8a; } td.n { text-align: center; }
+            td img { width: 70px; height: auto; } tr { page-break-inside: avoid; }
+        </style></head><body></body></html>`);
+        doc.close();
+        const el = (tag, cls, text) => {
+            const e = doc.createElement(tag);
+            if (cls) { e.className = cls; }
+            if (text !== undefined) { e.textContent = text; }
+            return e;
+        };
+        const table = el("table");
+        const head = el("tr");
+        data.headers.forEach(([name, grp]) => head.appendChild(el("th", grp ? `g${grp}` : "", name)));
+        table.appendChild(head);
+        data.groups.forEach((g) => {
+            const gr = el("tr", "grp");
+            const gt = el("td", "", g.title);
+            gt.colSpan = data.headers.length;
+            gr.appendChild(gt);
+            table.appendChild(gr);
+            g.rows.forEach((r) => {
+                const tr = el("tr");
+                r.cells.forEach((v, i) => {
+                    const grp = data.headers[i][1];
+                    const td = el("td", ([0, 3, 4, 7, 10, 11].includes(i) ? "n " : "") + (grp === 2 ? "g2" : ""), i === 6 ? "" : String(v));
+                    if (i === 6 && r.photo) {
+                        const img = doc.createElement("img");
+                        img.src = `/web/image/${r.photo}`;
+                        td.appendChild(img);
+                    }
+                    tr.appendChild(td);
+                });
+                table.appendChild(tr);
+            });
+        });
+        doc.body.append(el("h2", "", "DANH SÁCH XỬ LÝ SAI PHẠM"), table);
+        const imgs = [...doc.images];
+        await Promise.all(imgs.map((i) => (i.complete ? null : new Promise((r) => { i.onload = i.onerror = r; }))));
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+        setTimeout(() => frame.remove(), 60000);
+    }
+
     // Kết xuất Excel đúng theo bộ lọc tháng / cửa hàng / miền đang chọn
-    async exportExcel() {
+    async exportExcel(storeIds) {
         let domain = this.reportNavs.includes(this.state.activeNav)
             ? this.listDomain(this.reportBase)
             : this.state.embeddedViewProps?.domain || [];
         if (this.isPersonal) {
             domain = this.listDomain([["audit_type", "=", "gs"], ["auditor_id", "=", user.userId]]);
         }
-        const file = this.state.activeNav === "report_rank"
+        if (Array.isArray(storeIds)) {
+            domain = [...domain, ["store_id", "in", storeIds]];
+        }
+        const file = this.state.activeNav === "violation_all"
+            ? await this.orm.call("store.audit.action", "export_violation_all_xlsx", [domain])
+            : this.state.activeNav === "report_rank"
             ? await this.orm.call("store.audit", "export_rank_xlsx", [domain])
             : await this.orm.call("store.audit", "export_list_xlsx", [domain], {
                   title: this.listTitle || "DANH SÁCH PHIẾU ĐÁNH GIÁ",
@@ -635,9 +924,17 @@ export class StoreChecklistShell extends Component {
     }
 
     async onNavChild(child) {
+        this.loadBadges();
         if (child?.folder) {
             this.state.openGroups[child.id] = !this.state.openGroups[child.id];
             return;
+        }
+        // popup đang mở (ví dụ Xử lý sai phạm) không che nội dung mục vừa chọn: đóng lại khi chuyển mục
+        if (document.querySelector(".modal")) {
+            // chốt dòng đang sửa (lưu xong) rồi mới đóng, tránh lỗi "Component is destroyed" khi lưu dở
+            document.activeElement?.blur?.();
+            await new Promise((resolve) => setTimeout(resolve, 600));
+            this.dialog.closeAll();
         }
         if (this.reportNavs.includes(child?.id)) {
             this.track({ child });
@@ -834,11 +1131,64 @@ export class StoreChecklistShell extends Component {
         this.state.contentMode = "list";
     }
 
+    // Xử lý sai phạm: bấm "Xử lý sai phạm" (hoặc dòng phiếu) thì mở popup bảng lỗi cần khắc phục như file Excel
+    async openViolation(id) {
+        try {
+            await this.action.doAction(await this.orm.call("store.audit", "action_open_violation_popup", [[id]]));
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // Ghi lại các nhóm đang mở + vị trí cuộn của danh sách để khôi phục sau khi nạp lại (lưu xong không bị về đầu / mất nhóm)
+    snapshotList() {
+        const wrap = document.querySelector(".o_store_list_wrap");
+        const scrollers = wrap ? [wrap, ...wrap.querySelectorAll(".o_list_renderer, .o_content")] : [];
+        return {
+            open: [...document.querySelectorAll(".o_store_list_wrap tr.o_group_header.o_group_open")].map((tr) => tr.innerText.trim()),
+            scroll: scrollers.map((el) => [el, el.scrollLeft, el.scrollTop]),
+            page: [document.scrollingElement.scrollLeft, document.scrollingElement.scrollTop],
+        };
+    }
+
+    async restoreList(keep) {
+        for (let i = 0; i < 12; i++) {
+            await new Promise((r) => setTimeout(r, 250));
+            const heads = [...document.querySelectorAll(".o_store_list_wrap tr.o_group_header")];
+            if (!heads.length) { continue; }
+            let clicked = false;
+            heads.forEach((tr) => {
+                if (!tr.classList.contains("o_group_open") && keep.open.includes(tr.innerText.trim())) {
+                    (tr.querySelector("th") || tr).click();
+                    clicked = true;
+                }
+            });
+            if (!clicked) { break; }
+        }
+        await new Promise((r) => setTimeout(r, 400));
+        const wrap = document.querySelector(".o_store_list_wrap");
+        const now = wrap ? [wrap, ...wrap.querySelectorAll(".o_list_renderer, .o_content")] : [];
+        keep.scroll.forEach(([old, left, top], i) => {
+            const el = now[i] && now[i].isConnected ? now[i] : old.isConnected ? old : null;
+            if (el) { el.scrollLeft = left; el.scrollTop = top; }
+        });
+        document.scrollingElement.scrollLeft = keep.page[0];
+        document.scrollingElement.scrollTop = keep.page[1];
+    }
+
     openRecord(act, navId, resId) {
-        if (!["benchmark", "review", "review_list", "level", "gs_benchmark", "gs_level", "nvbh", "asm", "gs", "report_gs"].includes(navId)) {
+        if (navId === "violation_stores" && resId) {
+            return this.openViolation(resId);
+        }
+        if (navId === "violation_all" && resId) {
+            // bấm dòng lỗi thì mở popup xử lý sai phạm của biên bản chứa dòng đó
+            return this.orm.read("store.audit.action", [resId], ["audit_id"]).then(([row]) => row && this.openViolation(row.audit_id[0]));
+        }
+        if (!["benchmark", "review", "review_list", "level", "gs_benchmark", "gs_level", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
             return this.showWindow(act, navId, "form", resId);
         }
-        // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách
+        // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách (giữ nguyên nhóm đang mở và vị trí cuộn)
+        const keep = this.snapshotList();
         return this.action.doAction(
             {
                 type: "ir.actions.act_window",
@@ -851,6 +1201,7 @@ export class StoreChecklistShell extends Component {
             {
                 onClose: () => {
                     this.state.viewKey += 1;
+                    this.restoreList(keep);
                 },
             }
         );

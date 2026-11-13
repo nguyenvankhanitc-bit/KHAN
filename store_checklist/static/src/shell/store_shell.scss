@@ -154,6 +154,13 @@
     }
 }
 
+/* Cố định tiêu đề bảng + dòng nhóm khi cuộn trang (bỏ các khung cuộn trung gian để sticky bám khung cuộn ngoài) */
+.o_store_benchmark .o_list_renderer, .o_store_benchmark .o_content { overflow: visible !important; }
+.o_internet_content:has(.o_store_benchmark) { padding-top: 0 !important; }
+.o_internet_content:has(.o_store_benchmark) .o_store_list_wrap { padding-top: 30px; }
+.o_store_benchmark table.o_list_table thead th { position: sticky !important; top: 0; z-index: 3; }
+.o_store_benchmark table.o_list_table tr.o_group_header th, .o_store_benchmark table.o_list_table tr.o_group_header td { position: sticky; top: 37px; z-index: 2; }
+
 .o_store_benchmark table.o_list_table td[name="category"],
 .o_store_benchmark table.o_list_table td[name="sub_group_id"],
 .o_store_benchmark table.o_list_table td[name="name"] {
@@ -591,6 +598,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     &.is-icon-audit { background: #e0edff !important; color: #1d4ed8 !important; > i:first-child { color: #2563eb !important; } }
     &.is-icon-settings { background: #ffedd5 !important; color: #c2410c !important; > i:first-child { color: #ea580c !important; } }
 }
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_section.is-icon-violation { background: #fee2e2 !important; color: #b91c1c !important; > i:first-child { color: #dc2626 !important; } }
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_section.is-icon-report { background: #dcfce7 !important; color: #15803d !important; > i:first-child { color: #16a34a !important; } }
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub {
     &.store-tn-report_gs > i:first-child { color: #16a34a !important; }
@@ -769,3 +777,307 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Nhãn các trường thông tin phiếu (Cửa hàng, Địa chỉ, Ngày giờ audit, Người đánh giá) in đậm */
 .o_store_audit_form .o_inner_group .o_form_label, .o_store_audit_form .o_inner_group .o_td_label label { font-weight: 700 !important; color: #1e293b; }
+
+/* Xử lý sai phạm: popup bảng lỗi cần khắc phục, kẻ ô như file Excel (đầu cột xanh đậm, chữ trắng) */
+/* nằm bên phải thanh menu, không đè lên menu; menu đổi bề rộng thì popup đổi theo */
+.modal-dialog:has(.o_store_violation_list) { max-width: none !important; width: calc(100vw - var(--store-sidebar-w, 0px) - 12px) !important; margin: 3vh 0 0 var(--store-sidebar-w, 0px) !important; }
+/* Mép trái popup là thanh kéo: kéo sang trái / phải để đổi bề rộng menu, popup co giãn theo */
+.modal-dialog:has(.o_store_violation_list)::before {
+    content: ""; position: absolute; top: 0; bottom: 0; left: -7px; width: 12px; z-index: 5; cursor: col-resize; pointer-events: auto;
+    background: linear-gradient(to right, transparent 3px, rgba(109, 40, 217, .35) 3px, rgba(109, 40, 217, .35) 6px, transparent 6px);
+}
+.modal-dialog:has(.o_store_violation_list):hover::before { background: linear-gradient(to right, transparent 2px, #8b5cf6 2px, #8b5cf6 7px, transparent 7px); }
+
+/* Popup cao cố định: bảng có thanh cuộn dọc (tiêu đề dính ở trên) và cuộn ngang riêng */
+.modal-dialog:has(.o_store_violation_list) {
+    .modal-content { height: 92vh; }
+    .modal-body { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+    .o_action, .o_view_controller { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow: hidden; }
+    .o_content { flex: 1 1 auto; min-height: 0; overflow: auto !important; }
+    .o_list_renderer { overflow: visible !important; }
+    table.o_list_table thead th { position: sticky !important; top: 0; z-index: 3; }
+    .o_content::-webkit-scrollbar { width: 14px; height: 14px; }
+    .o_content::-webkit-scrollbar-track { background: #e8edf5; }
+    .o_content::-webkit-scrollbar-thumb { background: #8b9bb4; border-radius: 8px; border: 3px solid #e8edf5; }
+    .o_content::-webkit-scrollbar-thumb:hover { background: #5f7391; }
+}
+.o_store_violation_list table.o_list_table { border-collapse: collapse;
+    th, td { border: 1px solid #b6bfcc; white-space: normal; vertical-align: middle; }
+    thead th { background: #1f3864; color: #fff; text-align: center; font-weight: 700; }
+    .o_group_header th, .o_group_header td { background: #dce6f1; font-weight: 700; color: #1e3a8a; } }
+
+/* Tiêu đề popup Xử lý sai phạm: tên biên bản + trạng thái + 4 thẻ số liệu */
+.modal:has(.o_store_violation_list) .modal-title { visibility: hidden; }
+.modal:has(.o_store_violation_list) .modal-header { padding: 6px 18px 0 8px; min-height: 0; border: 0; }
+.modal:has(.o_store_violation_list) .modal-header .btn-close { width: 30px !important; height: 30px !important; padding: 0 !important; margin: 0 !important; opacity: 1; border-radius: 50%; background-color: #eef1f6; background-size: 12px; }
+.modal:has(.o_store_violation_list) .modal-header .btn-close:hover { background-color: #fde8ea; }
+.o_store_viol_hdr { display: flex; align-items: center; justify-content: space-between; gap: 18px; flex-wrap: wrap; padding: 0 20px 10px;
+    .vh_title { display: flex; align-items: center; justify-content: center; flex: 1 1 auto; gap: 14px;
+        .vh_logo { height: 84px; max-width: 260px; width: auto; object-fit: contain; }
+        h2 { margin: 0; font-size: 1.6rem; font-weight: 800; color: #12285f; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        p { margin: 2px 0 0; color: #475569; font-size: .95rem; }
+        .vh_pill { font-size: .8rem; font-weight: 700; padding: 4px 12px; border-radius: 999px; background: #fbbf24; color: #78350f; border: 1px solid #f59e0b;
+            &.is-done { background: #86efac; color: #14532d; border-color: #22c55e; } }
+        .vh_warn { color: #dc2626; font-size: 1.5rem; } }
+    .vh_cards { display: flex; gap: 12px; flex-wrap: wrap;
+        .vh_card { display: flex; align-items: center; gap: 12px; min-width: 190px; padding: 10px 16px; border-radius: 12px; border: 1px solid #dbe4f3;
+            > i { font-size: 1.5rem; }
+            span { display: block; font-size: .8rem; font-weight: 600; color: #334155; }
+            b { display: block; font-size: 1.45rem; line-height: 1.2; color: #12285f; }
+            small { display: block; color: #64748b; font-size: .72rem; }
+            .vh_bar { height: 6px; border-radius: 4px; background: #cbd5e1; margin-top: 4px; > div { height: 100%; border-radius: 4px; background: #f59e0b; } }
+            &.is-blue { background: #e8f0ff; > i { color: #2563eb; } }
+            &.is-red { background: #fde8ea; border-color: #fbcfd5; > i { color: #dc2626; } }
+            &.is-green { background: #e6f7ec; border-color: #bfe8cd; > i { color: #16a34a; } }
+            &.is-gray { background: #eef1f6; > i { color: #64748b; } } } }
+}
+
+/* Popup Xử lý sai phạm: ô tìm kiếm thu gọn và dồn về góc phải, sát bộ chuyển trang */
+.modal:has(.o_store_violation_list) {
+    .o_control_panel { padding-top: 0 !important; padding-bottom: 8px !important; }
+    .o_control_panel_actions { margin-left: auto; flex: 0 0 auto !important; width: auto !important; justify-content: flex-end !important; }
+    .o_control_panel_breadcrumbs { display: none !important; }
+    .o_control_panel_navigation { flex: 0 0 auto !important; }
+    .o_cp_searchview { width: 240px; flex: 0 0 240px; }
+}
+
+/* Desktop: thanh tìm kiếm + số trang nằm cùng hàng với bộ lọc và nút Xuất Excel */
+@media (min-width: 768px) {
+    .o_store_list_wrap:has(.o_store_export_btn) .o_control_panel {
+        margin-top: -52px; position: relative; z-index: 1; padding-left: 540px !important; padding-right: 270px !important; background: transparent !important; border: 0 !important; }
+    .o_store_list_wrap:has(.o_store_export_btn) .o_control_panel .o_control_panel_actions { margin-left: 0 !important; }
+}
+
+/* Điện thoại: tiêu đề popup gọn, 4 thẻ số liệu xếp 2x2 */
+@media (max-width: 767.98px) {
+    .o_store_viol_hdr { padding: 0 10px 8px; gap: 8px;
+        .vh_title { width: 100%; gap: 10px; .vh_logo { height: 44px; max-width: 110px; } h2 { font-size: 1.05rem; } p { font-size: .8rem; } }
+        .vh_cards { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            .vh_card { min-width: 0; padding: 8px 10px; gap: 8px; > i { font-size: 1.1rem; } b { font-size: 1.05rem; } span { font-size: .7rem; } } } }
+}
+
+/* Điện thoại: bảng xử lý sai phạm hiển thị mỗi tiêu chí là một thẻ đủ nội dung */
+@media (max-width: 767.98px) {
+    .o_store_violation_list {
+        .o_list_renderer { overflow-x: visible !important; }
+        table.o_list_table { display: block; width: 100% !important; border: 0; }
+        table.o_list_table thead { display: none !important; }
+        table.o_list_table tbody { display: block; }
+        tr.o_group_header { display: block; margin-top: 10px;
+            > :not(:first-child) { display: none !important; }
+            > :first-child { display: block; width: auto !important; background: #dbeafe; color: #1e3a8a; font-weight: 700; border-radius: 8px; padding: 8px 12px !important; } }
+        table.o_list_table tbody tr.o_data_row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 10px;
+            border: 1px solid #dbe4f3 !important; border-radius: 12px; margin: 8px 0; padding: 10px 12px; background: #fff !important; }
+        table.o_list_table tbody tr.o_data_row td { display: block; border: 0 !important; padding: 0 !important; width: auto !important; max-width: none !important;
+            text-align: left !important; white-space: normal !important; overflow: visible !important; min-width: 0; }
+        table.o_list_table tbody tr.o_data_row td.o_list_record_selector { display: none; }
+        table.o_list_table tbody tr.o_data_row td[name]::before { display: block; font-size: .7rem; font-weight: 700; color: #dc2626; }
+        td[name="line_id"] { grid-column: 1 / -1; font-weight: 700; font-size: 1rem; color: #12285f; }
+        td[name="line_id"]::before { content: "Tiêu chí sai phạm"; }
+        td[name="issue"] { grid-column: 1 / -1; } td[name="issue"]::before { content: "Chi tiết lỗi giám sát ghi nhận"; }
+        td[name="line_max_score"]::before { content: "Điểm chuẩn"; }
+        td[name="line_actual_score"]::before { content: "Điểm đạt"; }
+        td[name="score_deduct"]::before { content: "Điểm trừ"; }
+        td[name="responsible_ids"] { grid-column: 1 / -1; } td[name="responsible_ids"]::before { content: "Người phụ trách"; }
+        td[name="action_plan"] { grid-column: 1 / -1; } td[name="action_plan"]::before { content: "Nội dung khắc phục"; }
+        td[name="date_done"] { grid-column: span 2; } td[name="date_done"]::before { content: "Ngày hoàn thành"; }
+        td[name="state"]::before { content: "Trạng thái xử lý"; }
+        td[name="reviewer_ids"] { grid-column: span 2; } td[name="reviewer_ids"]::before { content: "Kiểm Soát"; }
+        td[name="control_done"]::before { content: "Kết quả kiểm soát"; }
+    }
+}
+
+/* Điện thoại: mỗi ô trong thẻ xử lý sai phạm có đường kẻ gạch chân (kể cả ô trống) */
+@media (max-width: 767.98px) {
+    .o_store_violation_list table.o_list_table tbody tr.o_data_row td[name]:not([name="line_id"]) {
+        border-bottom: 1px solid #94a3b8 !important; min-height: 44px; padding-bottom: 4px !important; }
+}
+
+/* Điện thoại: popup xử lý sai phạm - ô tìm kiếm nằm cùng hàng với nút Tìm và số trang */
+@media (max-width: 767.98px) {
+    .modal:has(.o_store_violation_list) .o_control_panel { display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; align-items: center; gap: 6px; padding: 4px 10px !important;
+        .o_control_panel_main { display: contents !important; }
+        .o_control_panel_navigation { order: 1; flex: 0 0 auto !important; margin: 0 !important; }
+        .o_control_panel_actions { order: 2; flex: 1 1 0 !important; min-width: 0 !important; width: auto !important; margin: 0 !important; }
+        .o_cp_searchview, .o_searchview { width: 100% !important; max-width: 100% !important; flex: 1 1 auto !important; margin: 0 !important; min-width: 0; }
+        .o_searchview_input_container { flex-wrap: nowrap !important; overflow: hidden; } }
+}
+
+/* Điện thoại: ô tìm kiếm popup thu gọn */
+@media (max-width: 767.98px) {
+    .modal:has(.o_store_violation_list) .o_control_panel {
+        .o_control_panel_actions { flex: 0 1 150px !important; }
+        .o_searchview { font-size: .75rem; min-height: 28px; padding: 0 4px !important; }
+        .o_searchview_input { min-width: 30px; }
+        .o_searchview_input_container .o_searchview_facet { display: none; } }
+}
+
+/* Điện thoại: pager + Tìm + ô tìm kiếm thu nhỏ trên đúng một dòng */
+@media (max-width: 767.98px) {
+    .modal:has(.o_store_violation_list) .o_control_panel {
+        .o_control_panel_navigation { flex-wrap: nowrap !important; align-items: center; gap: 4px !important; }
+        .o_control_panel_navigation .btn { padding: 2px 8px; font-size: .8rem; min-height: 28px; }
+        .o_control_panel_actions { flex: 1 1 0 !important; }
+        .o_cp_searchview { flex-wrap: nowrap !important; width: 100% !important; }
+        .o_cp_searchview .btn { padding: 2px 5px; min-height: 28px; }
+        .o_searchview { flex: 1 1 0 !important; min-width: 0; } }
+}
+
+/* Điện thoại, Cửa hàng có biên bản: Xuất Excel nằm đầu dòng, cùng hàng với số trang + nút Tìm */
+@media (max-width: 767.98px) {
+    .o_store_list_filters.is-violation_stores { position: relative;
+        .o_store_export_btn { position: absolute; left: 0; bottom: -53px; margin: 0; transform: none; } }
+}
+
+/* Điện thoại: bỏ ô trống thừa (dòng đệm/chân bảng) dưới tiêu đề nhóm trong popup xử lý sai phạm */
+@media (max-width: 767.98px) {
+    .o_store_violation_list table.o_list_table tfoot,
+    .o_store_violation_list table.o_list_table tbody tr:not(.o_data_row):not(.o_group_header) { display: none !important; }
+}
+
+/* Cửa hàng sai phạm: tiêu đề cột căn giữa, in đậm */
+.o_store_viol_stores table.o_list_table thead th { text-align: center !important; font-weight: 800 !important; color: #12285f; }
+
+/* Điện thoại: STT tiêu chí nằm đầu thẻ */
+@media (max-width: 767.98px) {
+    .o_store_violation_list td[name="line_sequence"] { grid-column: 1 / -1; }
+    .o_store_violation_list td[name="line_sequence"]::before { content: "STT tiêu chí"; }
+}
+
+/* Desktop: popup xử lý sai phạm không che menu trái - vẫn chọn được ứng dụng / mục menu khi popup đang mở */
+@media (min-width: 768px) {
+    body:has(.o_store_violation_list) .modal-backdrop { display: none !important; }
+    .modal:has(.o_store_violation_list) { left: var(--store-sidebar-w, 0px) !important; width: auto !important; }
+    .modal-dialog:has(.o_store_violation_list) { margin-left: 0 !important; }
+}
+
+/* Popup xử lý sai phạm: cột Kiểm Soát + Trạng thái kiểm soát nền cam nhạt, ô tích viền đậm, căn giữa */
+.o_store_violation_list table.o_list_table tbody tr.o_data_row {
+    td[name="reviewer_ids"], td[name="control_done"] { background: #fff1e0 !important; }
+    td[name="control_done"] { text-align: center !important;
+        .o-checkbox, .form-check { display: flex; justify-content: center; align-items: center; margin: 0; padding: 0; min-height: 0; }
+        input[type="checkbox"] { border: 2px solid #475569 !important; width: 1.15em; height: 1.15em; margin: 0 !important; float: none; opacity: 1 !important; } }
+}
+
+/* Popup xử lý sai phạm: tiêu đề nhóm cột xử lý (xanh lá) và nhóm kiểm soát (cam) khác màu các cột còn lại */
+.o_store_violation_list table.o_list_table thead th {
+    &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; color: #fff !important; }
+    &[data-name="reviewer_ids"], &[data-name="control_done"] { background: #c2410c !important; color: #fff !important; }
+}
+
+
+/* Popup xử lý sai phạm: nút Xuất Excel / In nằm bên trái ô tìm kiếm */
+.o_store_viol_hdr { position: relative;
+    .vh_actions { position: absolute; right: 395px; bottom: -32px; z-index: 5; display: flex; gap: 8px;
+        .vh_btn { height: 30px; padding: 0 12px; border-radius: 6px; font-size: .8rem; font-weight: 700; border: 1px solid; background: #fff; white-space: nowrap;
+            &.is-excel { color: #15803d; border-color: #15803d; } &.is-print { color: #1e3a8a; border-color: #1e3a8a; }
+            &:hover { background: #f1f5f9; } i { margin-right: 4px; } } } }
+@media (max-width: 767.98px) {
+    .o_store_viol_hdr .vh_actions { position: static; width: 100%; }
+}
+
+/* Nút In cạnh Xuất Excel ở danh sách */
+.o_store_list_filters .o_store_print_btn { margin-left: auto; border: 1px solid #1e3a8a; border-radius: 8px; padding: 8px 16px; background: #fff; color: #1e3a8a; font-weight: 700;
+    i { margin-right: 6px; } &:hover { background: #f1f5f9; } }
+@media (min-width: 768px) { .o_store_list_filters .o_store_print_btn + .o_store_export_btn { margin-left: 8px; } }
+@media (max-width: 767.98px) { .o_store_list_filters .o_store_print_btn { display: none; } }
+
+/* Cửa hàng sai phạm: cột "Biên bản" nền hồng nhạt, chữ "Xử lý sai phạm" màu đỏ */
+.o_store_viol_stores table.o_list_table {
+    thead th:nth-last-child(2) { background: #fecaca !important; color: #991b1b !important; }
+    tbody td.o_list_button { background: #fff1f2 !important; }
+    .o_store_violation_btn, .o_store_violation_btn * { color: #dc2626 !important; font-weight: 700; }
+}
+
+/* Popup xử lý sai phạm: mọi tiêu đề cột căn giữa; STT và các cột điểm căn giữa */
+.o_store_violation_list table.o_list_table {
+    thead th, thead th .o_column_title { text-align: center !important; justify-content: center !important; }
+    thead th > div, thead th > span { justify-content: center !important; text-align: center !important; width: 100%; }
+    tbody td[name="line_sequence"], tbody td[name="line_max_score"], tbody td[name="line_actual_score"], tbody td[name="score_deduct"] { text-align: center !important; }
+}
+
+/* Điện thoại: thẻ xử lý sai phạm viền ngoài đậm, các thẻ cách nhau và xen kẽ màu nền để phân biệt STT */
+@media (max-width: 767.98px) {
+    .o_store_violation_list table.o_list_table tbody tr.o_data_row {
+        border: 2px solid #1e3a6e !important; border-radius: 12px; margin: 14px 0; box-shadow: 0 2px 6px rgba(30, 58, 110, .25);
+        &:nth-of-type(odd) { background: #fff !important; }
+        &:nth-of-type(even) { background: #eef4ff !important; }
+        td[name="line_sequence"] { background: #1e3a6e; color: #fff; font-weight: 800; border-radius: 6px; padding: 3px 8px !important; width: fit-content !important; }
+        td[name="line_sequence"]::before { color: #fff !important; display: inline !important; margin-right: 6px; }
+    }
+}
+
+/* Điện thoại: dải "STT tiêu chí" tô xám, rộng hết thẻ */
+@media (max-width: 767.98px) {
+    .o_store_violation_list table.o_list_table tbody tr.o_data_row td[name="line_sequence"] {
+        background: #d1d5db !important; color: #111827 !important; width: auto !important; border-radius: 6px; padding: 5px 10px !important; }
+    .o_store_violation_list table.o_list_table tbody tr.o_data_row td[name="line_sequence"]::before { color: #374151 !important; }
+}
+
+/* Điện thoại: 4 thẻ số liệu thu nhỏ thêm một chút */
+@media (max-width: 767.98px) {
+    .o_store_viol_hdr .vh_cards { gap: 6px;
+        .vh_card { padding: 5px 8px; gap: 6px; border-radius: 9px;
+            > i { font-size: .9rem; } b { font-size: .9rem; line-height: 1.15; } span { font-size: .62rem; } small { font-size: .56rem; }
+            .vh_bar { height: 4px; margin-top: 2px; } } }
+}
+
+/* Danh sách xử lý sai phạm: tiêu đề bảng 1 (checklist giám sát) navy, bảng 2 (xử lý) xanh lá + cam; chữ tiêu đề căn giữa, in đậm */
+.o_store_viol_all table.o_list_table thead th { text-align: center !important; font-weight: 800 !important; background: #1e3a6e !important; color: #fff !important; white-space: normal !important;
+    &[data-name="score_deduct"], &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; }
+    &[data-name="reviewer_ids"], &[data-name="control_done"] { background: #c2410c !important; } }
+.o_store_viol_all table.o_list_table tbody td { vertical-align: middle; }
+.o_store_viol_all table.o_list_table tbody td[name="reviewer_ids"], .o_store_viol_all table.o_list_table tbody td[name="control_done"] { background: #fff1e0; }
+
+/* Danh sách xử lý sai phạm: ẩn dấu tích "Uploaded" mặc định của Odoo cạnh ảnh (danh sách chỉ xem) */
+.o_store_viol_all .o_attachment_uploaded { display: none !important; }
+
+/* Danh sách xử lý sai phạm: cột Hình ảnh chỉ hiện ảnh gốc (ẩn tên tệp, loại tệp, dấu tích), ảnh to hơn */
+.o_store_viol_all td[name="line_attachment_ids"] {
+    .o_attachment { width: auto !important; }
+    .o_attachment .caption, .o_attachment .o_attachment_uploaded, .o_attachment .o_attachment_delete { display: none !important; }
+    .o_attachment .o_image_box { float: none !important; margin: 0 !important; }
+    .o_attachment .o_preview_image { width: 100px !important; height: auto !important; max-height: 100px; object-fit: contain; }
+}
+
+/* Desktop: thanh tìm kiếm được kéo lên đè hàng bộ lọc, nên hàng bộ lọc (Xuất Excel / In / ô chọn) phải nằm trên và chỉ nhận chuột ở các nút của nó */
+@media (min-width: 768px) {
+    .o_store_list_wrap:has(.o_store_export_btn) .o_store_list_filters { position: relative; z-index: 3; pointer-events: none;
+        > * { pointer-events: auto; } }
+}
+
+/* ===== Điện thoại: Danh sách xử lý sai phạm - mỗi dòng lỗi là một thẻ có nhãn (đè kiểu thẻ chung của danh sách phiếu) ===== */
+@media (max-width: 767.98px) {
+    .o_store_list_filters.is-violation_all { position: relative;
+        .o_store_export_btn { position: absolute; left: 0; bottom: -53px; margin: 0; transform: none; } }
+    .o_store_viol_all {
+        table.o_list_table tbody tr.o_data_row { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px 10px !important;
+            padding: 10px 12px !important; margin: 14px 0 !important; border: 2px solid #1e3a6e !important; border-radius: 12px !important; background: #fff !important;
+            box-shadow: 0 2px 6px rgba(30, 58, 110, .25); position: static !important; overflow: visible !important;
+            &:nth-of-type(even) { background: #eef4ff !important; }
+            td[name]:not(.x1):not(.x2):not(.x3) { display: block !important; grid-template-columns: none !important; border: 0 !important; border-bottom: 1px solid #94a3b8 !important;
+                padding: 0 0 4px !important; width: auto !important; max-width: none !important; min-width: 0; text-align: left !important; white-space: normal !important;
+                overflow: visible !important; position: static !important; min-height: 40px; background: transparent !important; color: inherit !important; }
+            td[name]:not(.x1):not(.x2):not(.x3)::before { display: block !important; position: static !important; font-size: .7rem; font-weight: 700; color: #dc2626; text-align: left !important; }
+            td[name]:not(.x1):not(.x2):not(.x3)::after { display: none !important; }
+            td[name="line_sequence"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; background: #d1d5db !important; color: #111827 !important; font-weight: 800; border-radius: 6px; padding: 5px 10px !important; min-height: 0; }
+            td[name="line_sequence"]::before { content: "STT tiêu chí"; color: #374151; }
+            td[name="line_id"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; font-weight: 700; color: #12285f !important; } td[name="line_id"]::before { content: "Tiêu chuẩn, yêu cầu"; }
+            td[name="line_requirement"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; } td[name="line_requirement"]::before { content: "Quy định cơ bản"; }
+            td[name="line_max_score"]::before { content: "Điểm chuẩn"; }
+            td[name="line_actual_score"]::before { content: "Điểm đánh giá"; }
+            td[name="score_deduct"]::before { content: "Điểm trừ"; }
+            td[name="issue"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; } td[name="issue"]::before { content: "Chi tiết lỗi"; }
+            td[name="line_attachment_ids"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; } td[name="line_attachment_ids"]::before { content: "Hình ảnh"; }
+            td[name="responsible_ids"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; } td[name="responsible_ids"]::before { content: "Người phụ trách"; }
+            td[name="action_plan"]:not(.x1):not(.x2):not(.x3) { grid-column: 1 / -1 !important; } td[name="action_plan"]::before { content: "Nội dung khắc phục"; }
+            td[name="date_done"]:not(.x1):not(.x2):not(.x3) { grid-column: span 2 !important; } td[name="date_done"]::before { content: "Ngày hoàn thành"; }
+            td[name="state"]::before { content: "Trạng thái xử lý"; }
+            td[name="reviewer_ids"]:not(.x1):not(.x2):not(.x3) { grid-column: span 2 !important; background: #fff1e0 !important; } td[name="reviewer_ids"]::before { content: "Kiểm Soát"; }
+            td[name="control_done"] { background: #fff1e0 !important; text-align: center !important; } td[name="control_done"]::before { content: "Kết quả kiểm soát"; }
+            td[name="line_max_score"]:not(.x1):not(.x2):not(.x3), td[name="line_actual_score"]:not(.x1):not(.x2):not(.x3), td[name="score_deduct"]:not(.x1):not(.x2):not(.x3),
+            td[name="state"]:not(.x1):not(.x2):not(.x3), td[name="control_done"]:not(.x1):not(.x2):not(.x3) { grid-column: span 1 !important; }
+            td.o_list_record_selector { display: none !important; }
+        }
+    }
+}

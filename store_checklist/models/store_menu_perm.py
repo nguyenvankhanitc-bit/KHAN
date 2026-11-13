@@ -6,6 +6,7 @@ from odoo.exceptions import AccessError
 FOLDERS = [
     ('audit', 'Checklist Audit'),
     ('report', 'Báo cáo'),
+    ('violation', 'Xử lý sai phạm'),
     ('evaluation', 'Cài đặt › Công việc đánh giá'),
     ('supervision', 'Cài đặt › Công việc giám sát'),
 ]
@@ -18,6 +19,8 @@ MENUS = [
     ('report_gs', 'Báo cáo GS', 'report'),
     ('report_store', 'Báo cáo theo cửa hàng', 'report'),
     ('report_rank', 'Báo cáo xếp loại', 'report'),
+    ('violation_stores', 'Cửa hàng sai phạm', 'violation'),
+    ('violation_all', 'Danh sách xử lý sai phạm', 'violation'),
     ('subgroup', 'Phân nhóm đánh giá', 'evaluation'),
     ('benchmark', 'Điểm chuẩn đánh giá', 'evaluation'),
     ('level', 'Mức Đánh giá', 'evaluation'),

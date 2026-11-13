@@ -23,6 +23,67 @@
         <field name="context">{'store_audit_type': 'gs', 'search_default_group_store': 1}</field>
     </record>
 
+    <!-- Xử lý sai phạm: cửa hàng đã có biên bản do giám sát kiểm tra -->
+    <record id="view_store_audit_list_violation" model="ir.ui.view">
+        <field name="name">store.audit.list.violation</field>
+        <field name="model">store.audit</field>
+        <field name="inherit_id" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" group_edit="0" group_delete="0" string="Cửa hàng sai phạm" class="o_store_audit_list o_store_viol_stores">
+                <field name="name" string="Mã phiếu" width="190px"/>
+                <field name="audit_date" options="{'numeric': true}"/>
+                <field name="store_id" string="Cửa hàng" width="130px"/>
+                <field name="auditor_id"/>
+                <field name="error_count" string="Tổng số lỗi" width="140px" class="text-danger fw-bold"/>
+                <button name="action_open_violation_popup" type="object" icon="fa-wrench" string="Xử lý sai phạm" class="btn btn-link o_store_violation_btn"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_violation_stores" model="ir.actions.act_window">
+        <field name="name">Cửa hàng sai phạm</field>
+        <field name="res_model">store.audit</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_store_audit_list_violation"/>
+        <field name="domain">[('state', '!=', 'draft'), ('error_count', '>', 0)]</field>
+        <field name="context">{'search_default_group_store': 1}</field>
+    </record>
+
+    <!-- Danh sách xử lý sai phạm: tổng thể mọi dòng lỗi của các biên bản giám sát + 6 cột xử lý -->
+    <record id="view_store_audit_action_violation_all" model="ir.ui.view">
+        <field name="name">store.audit.action.violation.all</field>
+        <field name="model">store.audit.action</field>
+        <field name="arch" type="xml">
+            <list create="0" delete="0" edit="0" string="Danh sách xử lý sai phạm" class="o_store_audit_list o_store_viol_all" default_group_by="store_id">
+                <field name="line_sequence" string="STT" width="55px"/>
+                <field name="line_id" string="Tiêu chuẩn, yêu cầu" width="200px"/>
+                <field name="line_requirement" string="Quy định cơ bản" width="280px"/>
+                <field name="line_max_score" string="Điểm chuẩn" width="80px" options="{'hide_trailing_zeros': true}"/>
+                <field name="line_actual_score" string="Điểm đánh giá" width="90px" options="{'hide_trailing_zeros': true}"/>
+                <field name="issue" string="Chi tiết lỗi" width="200px"/>
+                <field name="line_attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
+                <field name="score_deduct" width="80px" options="{'hide_trailing_zeros': true}"/>
+                <field name="responsible_ids" widget="many2many_tags" width="150px"/>
+                <field name="action_plan" string="Nội dung khắc phục" width="200px"/>
+                <field name="date_done" width="110px" options="{'numeric': true}"/>
+                <field name="state" string="Trạng thái xử lý" width="110px"
+                       decoration-warning="state == 'doing'" decoration-success="state == 'done'" decoration-muted="state == 'todo'"/>
+                <field name="reviewer_ids" widget="many2many_tags" width="130px"/>
+                <field name="control_done" width="110px"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_violation_all" model="ir.actions.act_window">
+        <field name="name">Danh sách xử lý sai phạm</field>
+        <field name="res_model">store.audit.action</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_audit_action_violation_all"/>
+        <field name="domain">[('line_id.error_count', '>', 0), ('audit_id.state', '!=', 'draft')]</field>
+        <field name="context">{'sync_violations': True}</field>
+    </record>
+
     <!-- Báo cáo GS: các cửa hàng đã được kiểm tra (phiếu giám sát không còn ở trạng thái nháp) -->
     <record id="action_store_report_gs" model="ir.actions.act_window">
         <field name="name">Báo cáo GS</field>
@@ -39,10 +100,13 @@
         <field name="arch" type="xml">
             <list group_edit="0" group_delete="0" string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
                 <field name="sequence" string="STT" width="60px"/>
-                <field name="category" width="200px"/>
-                <field name="sub_group_id" width="210px"/>
-                <field name="name" width="260px"/>
-                <field name="requirement"/>
+                <field name="category" width="150px"/>
+                <field name="sub_group_id" width="170px"/>
+                <field name="name" width="220px"/>
+                <field name="requirement" width="700px"/>
+                <field name="responsible_ids" widget="many2many_tags" width="160px"/>
+                <field name="controller_ids" widget="many2many_tags" width="150px"/>
+                <field name="lug_group_ids" widget="many2many_tags" width="140px"/>
                 <field name="max_score" sum="Tổng"/>
                 <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa"/>
                 <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger"
@@ -67,6 +131,9 @@
                         <group>
                             <field name="sequence" string="STT"/>
                             <field name="max_score"/>
+                            <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}"/>
+                            <field name="controller_ids" widget="many2many_tags" options="{'no_create': true}"/>
+                            <field name="lug_group_ids" widget="many2many_tags" options="{'no_create': true}"/>
                         </group>
                     </group>
                     <group>

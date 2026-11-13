@@ -37,35 +37,57 @@
     </t>
 
     <t t-name="store_checklist.MgrDetailDialog">
-        <Dialog title="'Chi tiết: ' + props.row.name" size="'xl'">
+        <Dialog header="false" footer="false" size="'xl'">
             <div class="o_store_mgr_dlg">
-                <div class="who">
-                    <span class="av"><i class="fa fa-user"/></span>
-                    <b t-esc="props.row.name"/><small>Quản lý cửa hàng</small><em t-esc="props.row.area"/>
+                <div class="hd">
+                    <button type="button" class="back" t-on-click="props.close"><i class="fa fa-angle-left"/></button>
+                    <h4>Chi tiết: <b t-esc="props.row.name"/></h4>
                     <span class="acts">
                         <button type="button" class="o_store_print_btn" t-on-click="print"><i class="fa fa-print"/> In</button>
-                        <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                        <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-download"/> Xuất Excel</button>
                     </span>
                 </div>
-                <div class="tiles">
-                    <div><i class="fa fa-building-o"/><small>Số cửa hàng phụ trách</small><strong t-esc="props.row.store_count"/></div>
-                    <div class="bad"><i class="fa fa-exclamation-triangle"/><small>Tổng số lỗi</small><strong t-esc="props.row.errors"/></div>
-                    <div><i class="fa fa-bar-chart"/><small>Điểm TB</small><strong t-esc="props.row.avg"/></div>
-                    <div class="ok"><i class="fa fa-check-circle"/><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="passPct"/>%</strong></div>
+                <div class="top">
+                    <div class="who">
+                        <span class="av"><i class="fa fa-user"/></span>
+                        <div><b t-esc="props.row.name"/><small>Quản lý cửa hàng</small><em><i class="fa fa-map-marker"/> <t t-esc="props.row.area"/></em></div>
+                    </div>
+                    <div class="tiles">
+                        <div class="t1"><i class="fa fa-building-o"/><small>Số cửa hàng</small><strong t-esc="props.row.store_count"/></div>
+                        <div class="bad"><i class="fa fa-exclamation-triangle"/><small>Tổng số lỗi</small><strong t-esc="props.row.errors"/></div>
+                        <div class="t3"><i class="fa fa-star"/><small>Điểm TB</small><strong t-esc="props.row.avg"/></div>
+                        <div class="ok"><i class="fa fa-check-circle"/><small>Tỷ lệ đạt chuẩn</small><strong><t t-esc="passPct"/>%</strong></div>
+                    </div>
                 </div>
                 <div class="list">
-                    <h5>Danh sách cửa hàng quản lý phụ trách</h5>
+                    <div class="lh">
+                        <h5><i class="fa fa-building-o"/> Danh sách cửa hàng quản lý phụ trách</h5>
+                        <span class="pills">
+                            <button type="button" t-att-class="state.tab === 'all' ? 'on' : ''" t-on-click="() => this.setTab('all')">Tất cả</button>
+                            <button type="button" t-att-class="state.tab === 'ok' ? 'on' : ''" t-on-click="() => this.setTab('ok')">Đạt chuẩn</button>
+                            <button type="button" t-att-class="state.tab === 'bad' ? 'on' : ''" t-on-click="() => this.setTab('bad')">Cần cải thiện</button>
+                        </span>
+                    </div>
                     <table>
-                        <thead><tr><th>STT</th><th>Mã cửa hàng</th><th>Tên cửa hàng</th><th>Điểm GS</th><th>Điểm ASM</th><th>Điểm đánh giá</th><th>Số lỗi</th><th>Trạng thái</th></tr></thead>
+                        <thead><tr><th>STT</th><th>Mã cửa hàng</th><th>Tên cửa hàng</th><th>Điểm GS</th><th>Điểm ASM</th><th>Tổng số lỗi</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
                         <tbody>
-                            <tr t-foreach="props.row.stores" t-as="s" t-key="s.store">
-                                <td t-esc="s_index + 1"/><td t-esc="s.code"/><td class="l" t-esc="s.store"/>
-                                <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/>
-                                <td><b t-esc="s.score"/></td><td t-esc="s.errors"/>
-                                <td t-att-class="s.ok ? 'okc' : 'badc'"><t t-if="s.ok"><i class="fa fa-check"/> Đạt</t><t t-else=""><i class="fa fa-times"/> Không đạt</t></td>
+                            <tr t-foreach="view.page" t-as="s" t-key="s.store">
+                                <td t-esc="state.page * view.size + s_index + 1"/><td t-esc="s.code"/><td t-esc="s.store"/>
+                                <td t-esc="s.gs === null ? '—' : s.gs"/><td t-esc="s.asm === null ? '—' : s.asm"/><td t-esc="s.errors"/>
+                                <td><span t-att-class="'st ' + (s.ok ? 'okc' : 'badc')"><i t-att-class="'fa ' + (s.ok ? 'fa-check-circle' : 'fa-exclamation-circle')"/> <t t-esc="s.ok ? 'Đạt chuẩn' : 'Cần cải thiện'"/></span></td>
+                                <td><button type="button" class="vw" t-on-click="() => props.onView(s.audit)"><i class="fa fa-search"/> Xem chi tiết</button></td>
                             </tr>
+                            <tr t-if="!view.rows.length"><td colspan="8" class="text-muted">Không có cửa hàng nào.</td></tr>
                         </tbody>
                     </table>
+                    <div class="ft">
+                        <span><i class="fa fa-info-circle"/> Tổng cộng: <t t-esc="props.row.stores.length"/> cửa hàng • <t t-esc="view.errors"/> lỗi</span>
+                        <span class="pg">
+                            <button type="button" t-att-disabled="state.page === 0" t-on-click="() => state.page--"><i class="fa fa-angle-left"/></button>
+                            <button type="button" t-foreach="Array.from({length: view.pages}, (_, i) => i)" t-as="i" t-key="i" t-att-class="i === state.page ? 'on' : ''" t-on-click="() => state.page = i" t-esc="i + 1"/>
+                            <button type="button" t-att-disabled="state.page >= view.pages - 1" t-on-click="() => state.page++"><i class="fa fa-angle-right"/></button>
+                        </span>
+                    </div>
                 </div>
             </div>
         </Dialog>

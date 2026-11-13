@@ -838,7 +838,11 @@ export class StoreChecklistShell extends Component {
     }
 
     showMgr(row) {
-        this.dialog.add(StoreMgrDetailDialog, { row, domain: this.listDomain([["state", "!=", "draft"]]) });
+        this.dialog.add(StoreMgrDetailDialog, {
+            row,
+            domain: this.listDomain([["state", "!=", "draft"]]),
+            onView: (id) => this.action.doAction({ type: "ir.actions.act_window", res_model: "store.audit", res_id: id, views: [[false, "form"]], target: "new" }),
+        });
     }
 
     onMgrFilter(ev) {

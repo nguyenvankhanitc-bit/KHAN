@@ -146,9 +146,10 @@ export class StoreViolationController extends ListController {
 export class StoreMgrDetailDialog extends Component {
     static template = "store_checklist.MgrDetailDialog";
     static components = { Dialog };
-    static props = { row: Object, domain: Array, close: Function };
+    static props = { row: Object, domain: Array, onView: Function, close: Function };
 
     setup() {
+        this.state = useState({ tab: "all", page: 0 });
         this.orm = useService("orm");
         this.notification = useService("notification");
     }
@@ -186,6 +187,23 @@ export class StoreMgrDetailDialog extends Component {
             frame.contentWindow.print();
             setTimeout(() => frame.remove(), 1500);
         }, 600);
+    }
+
+    // lọc Tất cả / Đạt chuẩn / Cần cải thiện + phân trang 8 dòng
+    get view() {
+        const size = 8;
+        const all = this.props.row.stores;
+        const rows = all.filter((s) => this.state.tab === "all" || (this.state.tab === "ok") === s.ok);
+        return {
+            rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
+            page: rows.slice(this.state.page * size, (this.state.page + 1) * size),
+            errors: all.reduce((t, s) => t + s.errors, 0),
+        };
+    }
+
+    setTab(tab) {
+        this.state.tab = tab;
+        this.state.page = 0;
     }
 
     get passPct() {

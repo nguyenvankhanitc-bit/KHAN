@@ -505,7 +505,9 @@ class StoreAudit(models.Model):
             m['audits'].append(a)
             m['miens'].add(miens.get(a.mien) or 'Khác')
             s = m['stores'].setdefault(store_id, {'store': a.store_id.display_name or '', 'code': a.store_id.code or '',
-                                                  'gs': None, 'asm': None, 'rates': [], 'errors': 0, 'ok': True})
+                                                  'gs': None, 'asm': None, 'rates': [], 'errors': 0, 'ok': True, 'audit': False})
+            if kind == 'gs' or not s['audit']:
+                s['audit'] = a.id
             s[kind] = round(100 * a.pass_rate, 1)
             s['rates'].append(100 * a.pass_rate)
             s['errors'] += a.error_count
@@ -533,7 +535,8 @@ class StoreAudit(models.Model):
                          'errors': sum(a.error_count for a in au),
                          'p_errors': sum(a.error_count for a in pa) if pa else None,
                          'stores': [{'store': s['store'], 'code': s['code'], 'gs': s['gs'], 'asm': s['asm'],
-                                     'score': round(sum(s['rates']) / len(s['rates']), 1), 'errors': s['errors'], 'ok': s['ok']}
+                                     'score': round(sum(s['rates']) / len(s['rates']), 1), 'errors': s['errors'], 'ok': s['ok'],
+                                     'audit': s['audit']}
                                     for s in sorted(m['stores'].values(), key=lambda x: x['store'])]})
         rows.sort(key=lambda r: -r['avg'])
         return rows
@@ -586,7 +589,7 @@ class StoreAudit(models.Model):
             sheet.write(3, i, h, head)
             sheet.set_column(i, i, w)
         for n, s in enumerate(r['stores'], 1):
-            vals = [n, s['code'], s['store'], s['gs'], s['asm'], s['score'], s['errors'], 'Đạt' if s['ok'] else 'Không đạt']
+            vals = [n, s['code'], s['store'], s['gs'], s['asm'], s['score'], s['errors'], 'Đạt chuẩn' if s['ok'] else 'Cần cải thiện']
             for c, v in enumerate(vals):
                 sheet.write(3 + n, c, '' if v is None else v, cell if c in (1, 2) else ctr)
         book.close()

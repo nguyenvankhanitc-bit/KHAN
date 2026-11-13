@@ -37,6 +37,7 @@ export class StoreChecklistShell extends Component {
         this.state = useState({
             badges: {},
             isManager: false,
+            isSupervisor: false,
             activeNav: "overview",
             contentMode: "dashboard",
             openGroups: { audit: true, evaluation: true, supervision: true, settings: true },
@@ -104,6 +105,7 @@ export class StoreChecklistShell extends Component {
         onWillStart(async () => {
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
             this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
+            this.state.isSupervisor = await this.orm.call("store.audit", "is_gs_supervisor", []);
             this.state.rights = await this.orm.call("store.perm.rule", "get_my_rights", []);
             await this.loadOverview();
             this.loadBadges();
@@ -569,7 +571,8 @@ export class StoreChecklistShell extends Component {
     }
 
     get isPersonal() {
-        return this.state.activeNav === "report_gs" && !this.state.isManager;
+        // Báo cáo GS: chỉ người có chức danh Giám sát thấy báo cáo cá nhân (lọc theo người đánh giá); người khác thấy toàn bộ
+        return this.state.activeNav === "report_gs" && !this.state.isManager && this.state.isSupervisor;
     }
 
     toneColor(tone) {
@@ -800,7 +803,7 @@ export class StoreChecklistShell extends Component {
         if (this.state.activeNav === "report_store") {
             return this.loadStoreReport();
         }
-        if (!this.state.isManager) {
+        if (this.isPersonal) {
             this.state.personal = await this.orm.call("store.audit", "get_report_personal", [this.state.listFilters.month || false]);
             return;
         }

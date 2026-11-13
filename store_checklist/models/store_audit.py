@@ -356,6 +356,11 @@ class StoreAudit(models.Model):
         return res
 
     @api.model
+    def is_gs_supervisor(self):
+        """Chức danh có chữ "Giám sát": chỉ thấy phiếu do mình đánh giá (cùng điều kiện với quy tắc truy cập)."""
+        return 'giám sát' in (self.env.user.employee_id.job_title or '').strip().lower()
+
+    @api.model
     def get_report_gs(self, domain, prev_domain=False):
         """Dashboard quản trị & hoạt động giám sát: KPI, phân loại, năng suất từng giám sát (theo domain đang lọc)."""
         audits = self.search(domain, order='audit_date desc, id desc')

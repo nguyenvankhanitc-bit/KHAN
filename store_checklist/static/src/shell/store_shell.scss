@@ -1155,3 +1155,19 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
         .rh { background: #ede9fe; border-radius: 8px; padding: 4px; font-weight: 700; margin: 0 8px 8px; } } }
 @media (max-width: 991px) { .o_store_mgr_charts { grid-template-columns: 1fr; } .o_store_mgrrep .o_store_mgr_kpis { grid-template-columns: 1fr 1fr; } }
 .o_store_mgr_charts .regions > div svg { display: block; margin: 0 auto; } .o_store_mgr_charts .regions > div ul { display: block; width: fit-content; margin: 6px auto 0; }
+/* Điện thoại: bảng xếp hạng quản lý chuyển thành thẻ, không tràn ngang */
+@media (max-width: 767px) {
+    .o_store_mgrrep { overflow-x: visible; }
+    .o_store_mgr_table { display: block; border: 0;
+        thead { display: none; }
+        tbody { display: block; }
+        tr { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; background: #fff; }
+        td { display: block; border: 0 !important; padding: 0 !important; text-align: left !important;
+            &[data-label]::before { content: attr(data-label); display: block; font-size: 11px; color: #64748b; font-weight: 600; }
+            &:first-child { display: none; }
+            &:nth-child(2) { grid-column: 1 / -1; font-size: 16px; }
+            &.act { grid-column: 1 / -1; } } }
+    .o_store_mgr_foot { flex-wrap: wrap; gap: 8px; }
+    .o_store_mgr_charts .big { flex-direction: column; }
+    .o_store_mgr_charts .regions { grid-template-columns: 1fr 1fr; }
+}

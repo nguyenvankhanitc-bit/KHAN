@@ -246,12 +246,12 @@
                             <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm đánh giá TB (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
                             <tbody>
                                 <tr t-foreach="mv.page" t-as="r" t-key="r.id">
-                                    <td t-esc="state.mgrPage * mv.size + r_index + 1"/>
-                                    <td class="l"><b t-esc="r.name"/></td>
-                                    <td t-esc="r.area"/><td t-esc="r.store_count"/><td t-esc="r.errors"/>
-                                    <td><b t-esc="r.avg"/></td>
-                                    <td><span class="o_store_pill" t-attf-style="background: #{toneColor(r.tone)}" t-esc="r.level"/></td>
-                                    <td><button type="button" class="o_store_mgr_detail" t-on-click="() => this.showMgr(r)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
+                                    <td data-label="STT" t-esc="state.mgrPage * mv.size + r_index + 1"/>
+                                    <td class="l" data-label="Họ và tên"><b t-esc="r.name"/></td>
+                                    <td data-label="Khu vực phụ trách" t-esc="r.area"/><td data-label="Số cửa hàng" t-esc="r.store_count"/><td data-label="Tổng số lỗi" t-esc="r.errors"/>
+                                    <td data-label="Điểm đánh giá TB (%)"><b t-esc="r.avg"/></td>
+                                    <td data-label="Xếp loại"><span class="o_store_pill" t-attf-style="background: #{toneColor(r.tone)}" t-esc="r.level"/></td>
+                                    <td class="act"><button type="button" class="o_store_mgr_detail" t-on-click="() => this.showMgr(r)"><i class="fa fa-eye"/> Xem chi tiết</button></td>
                                 </tr>
                                 <tr t-if="!mv.rows.length"><td colspan="8" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
                             </tbody>

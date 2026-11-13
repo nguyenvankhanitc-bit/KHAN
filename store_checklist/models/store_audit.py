@@ -526,11 +526,13 @@ class StoreAudit(models.Model):
             au = m['audits']
             gs, asm = [a for a in au if a.audit_type == 'gs'], [a for a in au if a.audit_type == 'asm']
             score, before = avg(au), prev.get(m['id'])
+            lv = self.env['store.audit.level'].level_for(score, 'gs')
             pa = before['audits'] if before else []
             before = avg(pa)
             rows.append({'id': m['id'], 'name': m['name'], 'area': ', '.join(sorted(m['miens'])),
                          'store_count': len(m['stores']), 'avg': score, 'gs_avg': avg(gs), 'asm_avg': avg(asm),
                          'delta': round(score - before, 1) if before is not None else None,
+                         'level': lv.name or '', 'tone': lv.tone or 'orange',
                          'audits': len(au), 'passed': len([a for a in au if a.conclusion == 'pass']),
                          'errors': sum(a.error_count for a in au),
                          'p_errors': sum(a.error_count for a in pa) if pa else None,
@@ -555,13 +557,13 @@ class StoreAudit(models.Model):
         cell = book.add_format({'border': 1, 'valign': 'vcenter'})
         ctr = book.add_format({'border': 1, 'align': 'center', 'num_format': '0.##'})
         sheet.merge_range(0, 0, 0, 8, 'BÁO CÁO THEO QUẢN LÝ', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
-        heads = ['Hạng', 'Người quản lý', 'Khu vực', 'Số cửa hàng', 'Tổng số lỗi', 'Điểm TB (%)', 'Điểm GS (%)', 'Điểm ASM (%)', 'Đạt chuẩn (%)']
+        heads = ['Hạng', 'Người quản lý', 'Khu vực', 'Số cửa hàng', 'Tổng số lỗi', 'Điểm TB (%)', 'Điểm GS (%)', 'Điểm ASM (%)', 'Xếp loại']
         for i, (h, w) in enumerate(zip(heads, [7, 28, 18, 13, 13, 13, 13, 13, 14])):
             sheet.write(2, i, h, head)
             sheet.set_column(i, i, w)
         for n, r in enumerate(rows, 1):
             vals = [n, r['name'], r['area'], r['store_count'], r['errors'], r['avg'], r['gs_avg'], r['asm_avg'],
-                    round(100 * r['passed'] / r['audits']) if r['audits'] else 0]
+                    r['level']]
             for c, v in enumerate(vals):
                 sheet.write(2 + n, c, '' if v is None else v, cell if c in (1, 2) else ctr)
         sheet.freeze_panes(3, 0)

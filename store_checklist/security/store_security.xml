@@ -44,9 +44,11 @@
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
     <record id="rule_store_audit_line_user_scope" model="ir.rule">
-        <field name="name">Chi tiết phiếu audit: Giám sát chỉ xem phiếu của mình</field>
+        <field name="name">Chi tiết phiếu audit: Giám sát chỉ sửa phiếu của mình</field>
         <field name="model_id" ref="model_store_audit_line"/>
         <field name="groups" eval="[(4, ref('group_store_user'))]"/>
+        <!-- Đọc không bị chặn: xem hình ảnh lỗi trong Danh sách xử lý sai phạm cần quyền đọc dòng chi tiết -->
+        <field name="perm_read" eval="False"/>
         <field name="domain_force">[('audit_id.auditor_id', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
     </record>
     <record id="rule_store_audit_action_manager_all" model="ir.rule">
@@ -56,9 +58,11 @@
         <field name="domain_force">[(1, '=', 1)]</field>
     </record>
     <record id="rule_store_audit_action_user_scope" model="ir.rule">
-        <field name="name">Khắc phục: Giám sát chỉ xem phiếu của mình</field>
+        <field name="name">Khắc phục: Giám sát chỉ sửa phiếu của mình hoặc việc được giao</field>
         <field name="model_id" ref="model_store_audit_action"/>
         <field name="groups" eval="[(4, ref('group_store_user'))]"/>
-        <field name="domain_force">[('audit_id.auditor_id', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
+        <!-- Đọc không bị chặn (xem theo ma trận phân quyền; ảnh đính kèm cũng kiểm tra quyền đọc dòng này) -->
+        <field name="perm_read" eval="False"/>
+        <field name="domain_force">['|', '|', ('audit_id.auditor_id', '=', user.id), ('responsible_ids.user_id', '=', user.id), ('reviewer_ids', '=', user.id)] if 'giám sát' in (user.employee_id.job_title or '').strip().lower() else [(1, '=', 1)]</field>
     </record>
 </odoo>

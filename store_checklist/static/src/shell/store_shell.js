@@ -841,7 +841,14 @@ export class StoreChecklistShell extends Component {
         const regions = [["Nam", "Miền Nam"], ["ĐTT", "Miền ĐTT"], ["Bắc", "Miền Bắc"]]
             .map(([key, label]) => ({ label, ...donut(rows.filter((r) => r.mien === key)), n: rows.filter((r) => r.mien === key).length }))
             .filter((g) => g.n);
+        const sorted = [...rows].sort((a, b) => b.avg - a.avg);
+        const kindOf = (v) => kinds.find((k) => k.test(v));
+        const deltas = rows.map((r) => r.delta).filter((d) => d !== null && d !== undefined);
+        const mean = (xs) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0);
         return {
+            top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
+            needN: rows.filter((r) => r.avg < 80).length,
+            bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: kindOf(r.avg).color })),
             kinds: split(rows), all: donut(rows), regions,
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),

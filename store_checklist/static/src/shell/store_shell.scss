@@ -1171,3 +1171,33 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .o_store_mgr_charts .big { flex-direction: column; }
     .o_store_mgr_charts .regions { grid-template-columns: 1fr 1fr; }
 }
+
+/* Báo cáo theo quản lý: bố cục xếp hạng + Top 3 + bảng/donut */
+.o_store_mgrrep .o_store_mgr_kpis {
+    .k2 .ico { background: #f59e0b; } .k3 .ico { background: #16a34a; } .k4 .ico { background: #ef4444; }
+    > div strong small, > div em small { font-size: 13px; color: #64748b; font-weight: 500; }
+    > div strong.sm { font-size: 20px; } > div em { color: #2563eb; font-size: 20px; }
+    .dl { display: block; font-size: 12px; font-weight: 600; &.up { color: #16a34a; } &.dn { color: #ef4444; } } }
+.o_store_mgr_rankrow, .o_store_mgr_bottom { display: grid; gap: 14px; margin-bottom: 14px; }
+.o_store_mgr_rankrow { grid-template-columns: 1fr 300px;
+    .card { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(80, 70, 140, .1); border: 0; h5 { font-weight: 700; color: #1e3a8a; margin-bottom: 10px; } }
+    .hd { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 6px; }
+    .lg { font-size: 12px; color: #334155; > span { margin-left: 12px; white-space: nowrap; } i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 4px; } }
+    .plot { position: relative; height: 270px; padding-left: 4px;
+        background: repeating-linear-gradient(to top, #eef2f7 0, #eef2f7 1px, transparent 1px, transparent 20%); background-position: 0 -1px; margin-bottom: 4px; }
+    .avgline { position: absolute; left: 0; right: 0; border-top: 2px dashed #60a5fa; z-index: 2; pointer-events: none; span { position: absolute; right: 0; top: -20px; font-size: 12px; color: #2563eb; background: #fff; padding: 0 4px; } }
+    .bars { position: absolute; inset: 0 0 -46px 0; display: flex; align-items: flex-end; gap: 10px; padding-bottom: 46px;
+        .bar { flex: 1; min-width: 0; height: 100%; position: relative; display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+            b { font-size: 12px; color: #0f172a; margin-bottom: 2px; } i { display: block; width: 70%; max-width: 44px; border-radius: 4px 4px 0 0; }
+            span { position: absolute; top: 100%; margin-top: 4px; font-size: 11px; text-align: center; line-height: 1.2; color: #334155; width: 100%; max-height: 40px; overflow: hidden; } } }
+    .plot { margin-bottom: 52px; margin-left: 28px; }
+    .yax { position: absolute; left: -28px; top: 0; bottom: 0; width: 24px; display: flex; flex-direction: column; justify-content: space-between; text-align: right; font-size: 11px; color: #64748b; line-height: 1; transform: translateY(-5px); height: calc(100% + 0px); }
+    .top3 .t3 { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid #f1f5f9; &:last-child { border: 0; }
+        > div { flex: 1; b { display: block; } strong { color: #1e40af; small { color: #64748b; font-weight: 500; } } }
+        .o_store_medal { flex: none; width: 34px; height: 34px; } } }
+.o_store_mgr_bottom { grid-template-columns: 1fr 340px; align-items: start; margin-bottom: 0;
+    .card { background: #fff; border-radius: 12px; padding: 14px 18px; box-shadow: 0 1px 6px rgba(80, 70, 140, .1); border: 0; h5 { font-weight: 700; color: #1e3a8a; } }
+    .donutcard { svg { display: block; width: 190px; margin: 6px auto; .mid { font-size: 26px; font-weight: 700; fill: #0f172a; } .sub { font-size: 12px; fill: #475569; } }
+        ul { list-style: none; margin: 0; padding: 0; li { display: flex; align-items: center; gap: 10px; padding: 7px 0; i { width: 12px; height: 12px; border-radius: 50%; } span { flex: 1; } small { display: block; color: #64748b; } } } } }
+@media (max-width: 991px) { .o_store_mgr_rankrow, .o_store_mgr_bottom { grid-template-columns: 1fr; } }
+@media (max-width: 767px) { .o_store_mgr_rankrow .plot { overflow: visible; } .o_store_mgr_rankrow .bars { gap: 4px; } .o_store_mgr_rankrow .bar span { font-size: 9px; } }

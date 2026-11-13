@@ -201,39 +201,41 @@
                 </div>
                 <div class="o_store_personal o_store_mgrrep" t-elif="state.activeNav === 'report_manager' and state.managerReport">
                     <t t-set="mv" t-value="mgrView"/>
-                    <div class="o_store_mgr_charts">
+                    <div class="o_store_mgr_kpis">
+                        <div class="k1"><span class="ico"><i class="fa fa-users"/></span><div><b>Tổng số Quản lý</b><strong t-esc="mv.rows.length"/><small>Quản lý</small></div></div>
+                        <div class="k2"><span class="ico"><i class="fa fa-trophy"/></span><div><b>Quản lý xuất sắc nhất</b><strong class="sm" t-esc="mv.top[0] ? mv.top[0].name : '—'"/><em t-if="mv.top[0]"><t t-esc="mv.top[0].avg"/> <small>/ 100</small></em></div></div>
+                        <div class="k3"><span class="ico"><i class="fa fa-line-chart"/></span><div><b>Điểm trung bình hệ thống</b><strong><t t-esc="mv.avg"/> <small>/ 100</small></strong><span t-if="mv.delta !== null" t-attf-class="dl #{mv.delta >= 0 ? 'up' : 'dn'}"><t t-esc="(mv.delta >= 0 ? '▲ +' : '▼ ') + mv.delta"/> so với kỳ trước</span></div></div>
+                        <div class="k4"><span class="ico"><i class="fa fa-exclamation-triangle"/></span><div><b>Quản lý cần cải thiện</b><strong t-esc="mv.needN"/><span class="dl dn">( Dưới 80 điểm )</span></div></div>
+                    </div>
+                    <div class="o_store_mgr_rankrow">
                         <div class="card">
-                            <h5><i class="fa fa-bar-chart"/> Tổng quan đánh giá KPI</h5>
-                            <div class="big">
-                                <svg viewBox="0 0 160 160">
-                                    <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="26"/>
-                                    <circle t-foreach="mv.all.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="26"
-                                            t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
-                                    <text x="80" y="82" text-anchor="middle" class="mid" t-esc="mv.all.ok + '%'"/>
-                                    <text x="80" y="100" text-anchor="middle" class="sub">Đạt KPI</text>
-                                </svg>
-                                <ul>
-                                    <li t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><span><t t-esc="k.name"/><small t-esc="k.hint"/></span><b t-esc="k.pct + '%'"/></li>
-                                </ul>
+                            <div class="hd">
+                                <h5><i class="fa fa-bar-chart"/> Xếp hạng hiệu suất <t t-esc="mv.rows.length"/> Quản lý</h5>
+                                <span class="lg"><span t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><t t-esc="k.name"/> <t t-esc="k.hint"/></span></span>
+                            </div>
+                            <div class="plot">
+                                <div class="yax"><span t-foreach="[100, 80, 60, 40, 20, 0]" t-as="y" t-key="y" t-esc="y"/></div>
+                                <div class="avgline" t-attf-style="bottom: #{mv.avg}%"><span>Trung bình: <t t-esc="mv.avg"/></span></div>
+                                <div class="bars">
+                                    <div class="bar" t-foreach="mv.bars" t-as="b" t-key="b.id">
+                                        <b t-esc="b.avg"/>
+                                        <i t-attf-style="height: #{b.avg}%; background: #{b.color}"/>
+                                        <span t-esc="b.name"/>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="card">
-                            <h5><i class="fa fa-trophy"/> Kết quả đánh giá theo khu vực</h5>
-                            <div class="regions">
-                                <div t-foreach="mv.regions" t-as="g" t-key="g.label">
-                                    <div class="rh" t-esc="g.label"/>
-                                    <svg viewBox="0 0 160 160">
-                                        <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="22"/>
-                                        <circle t-foreach="g.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="22"
-                                                t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
-                                        <text x="80" y="88" text-anchor="middle" class="mid" t-esc="g.ok + '%'"/>
-                                    </svg>
-                                    <ul><li t-foreach="g.parts" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/> <t t-esc="k.name"/>: <t t-esc="k.count"/></li></ul>
-                                </div>
-                                <p class="text-muted" t-if="!mv.regions.length">Chưa có dữ liệu trong kỳ đã chọn.</p>
+                        <div class="card top3">
+                            <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>
+                            <div class="t3" t-foreach="mv.top" t-as="t" t-key="t.id">
+                                <span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/>
+                                <div><b t-esc="t.name"/><strong><t t-esc="t.avg"/> <small>/ 100</small></strong></div>
+                                <span class="o_store_pill" t-attf-style="background: #{toneColor(t.tone)}" t-esc="t.level"/>
                             </div>
+                            <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                         </div>
                     </div>
+                    <div class="o_store_mgr_bottom">
                     <div class="o_store_personal_body">
                         <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>
                         <table class="o_store_report_table o_store_mgr_table">
@@ -258,6 +260,20 @@
                                 <button type="button" t-att-disabled="state.mgrPage >= mv.pages - 1" t-on-click="() => state.mgrPage++"><i class="fa fa-angle-right"/></button>
                             </span>
                         </div>
+                    </div>
+                    <div class="card donutcard">
+                        <h5><i class="fa fa-pie-chart"/> Kết quả đánh giá theo xếp loại</h5>
+                        <svg viewBox="0 0 160 160">
+                            <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="26"/>
+                            <circle t-foreach="mv.all.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="26"
+                                    t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                            <text x="80" y="82" text-anchor="middle" class="mid" t-esc="mv.avg"/>
+                            <text x="80" y="100" text-anchor="middle" class="sub">Điểm TB</text>
+                        </svg>
+                        <ul>
+                            <li t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><span><t t-esc="k.name"/><small t-esc="k.hint"/></span><b t-esc="k.pct + '%'"/></li>
+                        </ul>
+                    </div>
                     </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">

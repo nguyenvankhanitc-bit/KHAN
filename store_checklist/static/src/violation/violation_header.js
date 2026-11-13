@@ -148,6 +148,11 @@ export class StoreViolationRenderer extends ListRenderer {
     }
 }
 
+// Danh sách xử lý sai phạm chỉ để xem: bấm vào dòng không mở biểu mẫu (tránh lỗi owl khi user không đủ quyền)
+export class StoreViolationReadonlyRenderer extends ListRenderer {
+    async onCellClicked() {}
+}
+
 export class StoreViolationController extends ListController {
     static template = "store_checklist.ViolationListView";
     static components = { ...ListController.components, StoreViolationHeader };
@@ -270,4 +275,5 @@ export class StoreViolPickDialog extends Component {
     }
 }
 
+registry.category("views").add("store_violation_readonly", { ...listView, Renderer: StoreViolationReadonlyRenderer });
 registry.category("views").add("store_violation_list", { ...listView, Controller: StoreViolationController, Renderer: StoreViolationRenderer });

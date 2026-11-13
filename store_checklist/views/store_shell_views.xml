@@ -55,7 +55,7 @@
         <field name="name">store.audit.action.violation.all</field>
         <field name="model">store.audit.action</field>
         <field name="arch" type="xml">
-            <list create="0" delete="0" edit="0" string="Danh sách xử lý sai phạm" class="o_store_audit_list o_store_viol_all" default_group_by="store_id">
+            <list js_class="store_violation_readonly" create="0" delete="0" edit="0" string="Danh sách xử lý sai phạm" class="o_store_audit_list o_store_viol_all" default_group_by="store_id">
                 <field name="line_sequence" string="STT" width="55px"/>
                 <field name="line_id" string="Tiêu chuẩn, yêu cầu" width="200px"/>
                 <field name="line_requirement" string="Quy định cơ bản" width="280px"/>

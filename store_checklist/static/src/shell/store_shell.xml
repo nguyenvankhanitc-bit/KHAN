@@ -201,12 +201,6 @@
                 </div>
                 <div class="o_store_personal o_store_mgrrep" t-elif="state.activeNav === 'report_manager' and state.managerReport">
                     <t t-set="mv" t-value="mgrView"/>
-                    <div class="o_store_mgr_kpis">
-                        <div class="k1"><span class="ico"><i class="fa fa-users"/></span><div><b>Tổng số Quản lý</b><strong t-esc="mv.rows.length"/><small>Quản lý</small></div></div>
-                        <div class="kc1"><span class="ico"><i class="fa fa-check"/></span><div><b>Đạt KPI</b><strong t-esc="mv.kinds[0].count"/><em t-esc="mv.kinds[0].pct + '%'"/></div></div>
-                        <div class="kc2"><span class="ico"><i class="fa fa-exclamation"/></span><div><b>Cần cải thiện</b><strong t-esc="mv.kinds[1].count"/><em t-esc="mv.kinds[1].pct + '%'"/></div></div>
-                        <div class="kc3"><span class="ico"><i class="fa fa-times"/></span><div><b>Không đạt</b><strong t-esc="mv.kinds[2].count"/><em t-esc="mv.kinds[2].pct + '%'"/></div></div>
-                    </div>
                     <div class="o_store_mgr_charts">
                         <div class="card">
                             <h5><i class="fa fa-bar-chart"/> Tổng quan đánh giá KPI</h5>

@@ -58,7 +58,6 @@
                         <option t-foreach="state.managerReport" t-as="mg" t-key="mg.id" t-att-value="mg.id"
                                 t-att-selected="('' + mg.id) === state.mgrFilter" t-esc="mg.name"/>
                     </select>
-                    <button type="button" class="o_store_print_btn" t-if="state.activeNav === 'report_manager'" t-on-click="loadReport"><i class="fa fa-refresh"/> Làm mới</button>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
                     <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>

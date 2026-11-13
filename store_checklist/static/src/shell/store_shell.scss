@@ -1218,3 +1218,8 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     > .o_control_panel { height: 40px; padding: 0 !important; margin: 0 0 14px 520px !important; width: fit-content; max-width: calc(100% - 760px); pointer-events: auto; z-index: 2;
         .o_control_panel_main { flex-wrap: nowrap; gap: 14px; align-items: center; } }
     > .o_content { pointer-events: auto; } }
+
+/* Tiêu đề cột canh giữa cả ngang lẫn dọc (kể cả tiêu đề 2 dòng) */
+.o_store_viol_all table.o_list_table thead th, .o_store_violation_list table.o_list_table thead th { vertical-align: middle !important; text-align: center !important;
+    > div { align-items: center; }
+    span { text-align: center !important; white-space: normal !important; text-overflow: clip !important; } }

@@ -838,7 +838,7 @@ export class StoreChecklistShell extends Component {
     }
 
     showMgr(row) {
-        this.dialog.add(StoreMgrDetailDialog, { row });
+        this.dialog.add(StoreMgrDetailDialog, { row, domain: this.listDomain([["state", "!=", "draft"]]) });
     }
 
     onMgrFilter(ev) {

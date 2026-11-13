@@ -146,7 +146,47 @@ export class StoreViolationController extends ListController {
 export class StoreMgrDetailDialog extends Component {
     static template = "store_checklist.MgrDetailDialog";
     static components = { Dialog };
-    static props = { row: Object, close: Function };
+    static props = { row: Object, domain: Array, close: Function };
+
+    setup() {
+        this.orm = useService("orm");
+        this.notification = useService("notification");
+    }
+
+    async exportExcel() {
+        try {
+            const file = await this.orm.call("store.audit", "export_manager_xlsx", [this.props.domain], { manager_id: this.props.row.id });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (e) {
+            this.notification.add(e?.data?.message || e?.message || "Không xuất được Excel", { type: "danger" });
+        }
+    }
+
+    // In: sao chép nội dung popup + CSS của trang vào iframe ẩn rồi gọi print
+    print() {
+        const src = document.querySelector(".o_store_mgr_dlg");
+        if (!src) {
+            return;
+        }
+        const frame = document.createElement("iframe");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        const css = [...document.querySelectorAll("link[rel=stylesheet], style")].map((n) => n.outerHTML).join("");
+        doc.open();
+        doc.write(`<html><head><base href="${location.origin}/">${css}<style>.o_store_mgr_dlg .acts{display:none}body{padding:16px;background:#fff}</style></head><body>${src.outerHTML}</body></html>`);
+        doc.close();
+        setTimeout(() => {
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(() => frame.remove(), 1500);
+        }, 600);
+    }
 
     get passPct() {
         const r = this.props.row;

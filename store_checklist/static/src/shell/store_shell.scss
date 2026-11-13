@@ -1115,3 +1115,11 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .list h5 { font-weight: 700; margin-bottom: 8px; }
     table { width: 100%; border-collapse: collapse; th, td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: center; } td.l { text-align: left; } th { background: #ede9fe; color: #3b0764; } .okc { color: #16a34a; font-weight: 600; } .badc { color: #dc2626; font-weight: 600; } } }
 @media (max-width: 767px) { .o_store_mgr_dlg .tiles { grid-template-columns: 1fr 1fr; } .o_store_mgr_dlg .list { overflow-x: auto; } }
+
+.modal-dialog:has(.o_store_mgr_dlg) { max-width: none; width: calc(100vw - 300px) !important; margin: 70px 14px 0 290px !important;
+    .modal-content { min-height: calc(100vh - 160px); } }
+.o_store_mgr_dlg .who .acts { margin-left: auto; display: flex; gap: 8px; }
+@media (max-width: 991px) { .modal-dialog:has(.o_store_mgr_dlg) { width: auto; margin: 10px; } }
+.o_store_mgr_dlg .acts button { border-radius: 8px; padding: 6px 16px; font-weight: 700; cursor: pointer;
+    &.o_store_print_btn { background: #fff; color: #1d4ed8; border: 1px solid #1d4ed8; }
+    &.o_store_export_btn { background: #16a34a; color: #fff; border: 1px solid #16a34a; } }

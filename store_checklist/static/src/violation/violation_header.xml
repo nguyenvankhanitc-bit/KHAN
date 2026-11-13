@@ -42,6 +42,10 @@
                 <div class="who">
                     <span class="av"><i class="fa fa-user"/></span>
                     <b t-esc="props.row.name"/><small>Quản lý cửa hàng</small><em t-esc="props.row.area"/>
+                    <span class="acts">
+                        <button type="button" class="o_store_print_btn" t-on-click="print"><i class="fa fa-print"/> In</button>
+                        <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    </span>
                 </div>
                 <div class="tiles">
                     <div><i class="fa fa-building-o"/><small>Số cửa hàng phụ trách</small><strong t-esc="props.row.store_count"/></div>

@@ -539,10 +539,12 @@ class StoreAudit(models.Model):
         return rows
 
     @api.model
-    def export_manager_xlsx(self, domain):
+    def export_manager_xlsx(self, domain, manager_id=None):
         self.env['store.perm.rule'].check_export()
         import xlsxwriter
         rows = self.get_report_manager(domain)
+        if manager_id is not None:
+            return self._manager_detail_xlsx([r for r in rows if r['id'] == manager_id])
         buf = io.BytesIO()
         book = xlsxwriter.Workbook(buf, {'in_memory': True})
         sheet = book.add_worksheet('Bao cao theo quan ly')
@@ -563,6 +565,33 @@ class StoreAudit(models.Model):
         book.close()
         stamp = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime('%d%m%Y_%H%M')
         return {'name': 'Bao_cao_theo_quan_ly_%s.xlsx' % stamp, 'data': base64.b64encode(buf.getvalue()).decode()}
+
+    @api.model
+    def _manager_detail_xlsx(self, rows):
+        import xlsxwriter
+        r = rows[0] if rows else {'name': '', 'area': '', 'store_count': 0, 'errors': 0, 'avg': 0, 'audits': 0, 'passed': 0, 'stores': []}
+        buf = io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        sheet = book.add_worksheet('Chi tiet quan ly')
+        head = book.add_format({'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#6D4AFF', 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        cell = book.add_format({'border': 1, 'valign': 'vcenter'})
+        ctr = book.add_format({'border': 1, 'align': 'center', 'num_format': '0.##'})
+        bold = book.add_format({'bold': True})
+        sheet.merge_range(0, 0, 0, 7, 'CHI TIẾT QUẢN LÝ: %s' % r['name'], book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
+        pct = round(100 * r['passed'] / r['audits']) if r['audits'] else 0
+        sheet.write(1, 0, 'Khu vực: %s   |   Số cửa hàng: %s   |   Tổng số lỗi: %s   |   Điểm TB: %s   |   Đạt chuẩn: %s%%'
+                    % (r['area'], r['store_count'], r['errors'], r['avg'], pct), bold)
+        heads = ['STT', 'Mã cửa hàng', 'Tên cửa hàng', 'Điểm GS', 'Điểm ASM', 'Điểm đánh giá', 'Số lỗi', 'Trạng thái']
+        for i, (h, w) in enumerate(zip(heads, [6, 16, 28, 12, 12, 14, 10, 14])):
+            sheet.write(3, i, h, head)
+            sheet.set_column(i, i, w)
+        for n, s in enumerate(r['stores'], 1):
+            vals = [n, s['code'], s['store'], s['gs'], s['asm'], s['score'], s['errors'], 'Đạt' if s['ok'] else 'Không đạt']
+            for c, v in enumerate(vals):
+                sheet.write(3 + n, c, '' if v is None else v, cell if c in (1, 2) else ctr)
+        book.close()
+        stamp = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime('%d%m%Y_%H%M')
+        return {'name': 'Chi_tiet_quan_ly_%s.xlsx' % stamp, 'data': base64.b64encode(buf.getvalue()).decode()}
 
     @api.model
     def get_report_personal(self, month=None):

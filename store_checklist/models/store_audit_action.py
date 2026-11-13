@@ -1,7 +1,8 @@
 import base64
 import io
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import AccessError
 
 PHOTO_COL_PX = 24 * 7 + 5  # độ rộng cột Hình ảnh (24 ký tự) theo pixel của Excel
 
@@ -44,6 +45,31 @@ class StoreAuditAction(models.Model):
     line_requirement = fields.Text(related='line_id.requirement', string='Quy định cơ bản')
     line_attachment_ids = fields.Many2many(related='line_id.attachment_ids', string='Hình ảnh', readonly=True)
     score_deduct = fields.Float(string='Điểm trừ', compute='_compute_score_deduct', store=True)
+
+    can_edit_resp = fields.Boolean(compute='_compute_can_edit')
+    can_edit_ctrl = fields.Boolean(compute='_compute_can_edit')
+
+    @api.depends('responsible_ids', 'reviewer_ids')
+    @api.depends_context('uid')
+    def _compute_can_edit(self):
+        """Khắc phục: chỉ user gắn với "Người phụ trách"; kiểm soát: chỉ user trong "Kiểm Soát" của bảng điểm đánh giá."""
+        uid = self.env.uid
+        for rec in self:
+            rec.can_edit_resp = uid in rec.sudo().responsible_ids.user_id.ids
+            rec.can_edit_ctrl = uid in rec.reviewer_ids.ids
+
+    def write(self, vals):
+        if not self.env.su:  # code hệ thống (sudo/cron) không bị chặn
+            resp = {'action_plan', 'date_done', 'state'} & set(vals)
+            ctrl = {'control_done', 'review_note'} & set(vals)
+            for rec in self:
+                if 'issue' in vals and vals['issue'] != rec.issue:
+                    raise AccessError(_('Chi tiết lỗi là nội dung của người đánh giá, không được chỉnh sửa.'))
+                if resp and not rec.can_edit_resp:
+                    raise AccessError(_('Chỉ người phụ trách của tiêu chí này mới được cập nhật việc khắc phục.'))
+                if ctrl and not rec.can_edit_ctrl:
+                    raise AccessError(_('Chỉ người kiểm soát của tiêu chí này mới được cập nhật kết quả kiểm soát.'))
+        return super().write(vals)
 
     @api.depends('line_id.max_score', 'line_id.actual_score')
     def _compute_score_deduct(self):

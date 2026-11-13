@@ -78,17 +78,19 @@
             <list js_class="store_violation_list" editable="bottom" create="0" delete="0" group_edit="0" group_delete="0" string="Xử lý sai phạm" class="o_store_violation_list">
                 <field name="line_sequence" string="STT" width="60px" readonly="1"/>
                 <field name="line_id" string="Tiêu chí sai phạm" width="200px" readonly="1"/>
-                <field name="issue" string="Chi tiết lỗi giám sát ghi nhận" width="260px"/>
+                <field name="can_edit_resp" column_invisible="1"/>
+                <field name="can_edit_ctrl" column_invisible="1"/>
+                <field name="issue" string="Chi tiết lỗi giám sát ghi nhận" width="260px" readonly="1"/>
                 <field name="line_max_score" width="85px" readonly="1" options="{'hide_trailing_zeros': true}"/>
                 <field name="line_actual_score" width="85px" readonly="1" options="{'hide_trailing_zeros': true}"/>
                 <field name="score_deduct" width="85px" readonly="1" options="{'hide_trailing_zeros': true}"/>
-                <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}" width="150px"/>
-                <field name="action_plan" string="Nội dung khắc phục" width="260px"/>
-                <field name="date_done" width="125px" options="{'numeric': true}"/>
-                <field name="state" string="Trạng thái xử lý" width="115px"
+                <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}" width="150px" readonly="1"/>
+                <field name="action_plan" string="Nội dung khắc phục" width="260px" readonly="not can_edit_resp"/>
+                <field name="date_done" width="125px" options="{'numeric': true}" readonly="not can_edit_resp"/>
+                <field name="state" string="Trạng thái xử lý" width="115px" readonly="not can_edit_resp"
                        decoration-warning="state == 'doing'" decoration-success="state == 'done'" decoration-muted="state == 'todo'"/>
-                <field name="reviewer_ids" widget="many2many_tags" options="{'no_create': true}" width="130px"/>
-                <field name="control_done" width="140px"/>
+                <field name="reviewer_ids" widget="many2many_tags" options="{'no_create': true}" width="130px" readonly="1"/>
+                <field name="control_done" width="140px" readonly="not can_edit_ctrl"/>
             </list>
         </field>
     </record>

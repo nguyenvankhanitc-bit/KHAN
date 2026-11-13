@@ -230,7 +230,7 @@ class StoreAuditAction(models.Model):
     @api.model
     def violation_all_print_data(self, domain):
         """Dữ liệu in "Danh sách xử lý sai phạm" (cùng 14 cột như Excel), nhóm theo phiếu của từng cửa hàng."""
-        acts = self.search(list(domain) + [('line_id.error_count', '>', 0)],
+        acts = self._violation_all_scope(True).search(list(domain) + [('line_id.error_count', '>', 0)],
                            order='store_id, audit_date desc, audit_id, line_category, line_sequence')
         states = dict(self._fields['state'].selection)
         headers = [('STT', 0), ('Tiêu chuẩn, yêu cầu', 0), ('Quy định cơ bản', 0), ('Điểm chuẩn', 0),
@@ -261,7 +261,7 @@ class StoreAuditAction(models.Model):
         self.env['store.perm.rule'].check_export()
         import xlsxwriter
         from odoo.tools.image import image_process
-        acts = self.search(list(domain) + [('line_id.error_count', '>', 0)],
+        acts = self._violation_all_scope(True).search(list(domain) + [('line_id.error_count', '>', 0)],
                            order='store_id, audit_date desc, audit_id, line_category, line_sequence')
         states = dict(self._fields['state'].selection)
         buf = io.BytesIO()
@@ -340,14 +340,29 @@ class StoreAuditAction(models.Model):
         for audit in audits:
             audit.action_create_actions()
 
+    def _violation_all_scope(self, force=False):
+        """"Danh sách xử lý sai phạm" (chế độ xem): user được phân quyền Xem mục này thì thấy mọi dòng,
+        không bị rule "giám sát chỉ xem phiếu của mình" cắt mất."""
+        if force or self.env.context.get('sync_violations'):
+            rights = self.env['store.perm.rule']._rights()
+            if rights is not None and rights['violation_all']['read']:
+                return self.sudo()
+        return self
+
     @api.model
     def web_search_read(self, *args, **kwargs):  # không đánh dấu readonly: có thể tạo dòng khắc phục còn thiếu
+        scoped = self._violation_all_scope()
+        if scoped is not self:
+            return scoped.web_search_read(*args, **kwargs)
         if self.env.context.get('sync_violations'):
             self._sync_violation_actions()
         return super().web_search_read(*args, **kwargs)
 
     @api.model
     def web_read_group(self, *args, **kwargs):
+        scoped = self._violation_all_scope()
+        if scoped is not self:
+            return scoped.web_read_group(*args, **kwargs)
         if self.env.context.get('sync_violations'):
             self._sync_violation_actions()
         return super().web_read_group(*args, **kwargs)

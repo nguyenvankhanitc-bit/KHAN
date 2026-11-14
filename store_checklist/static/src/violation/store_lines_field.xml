@@ -6,6 +6,7 @@
                 <t t-set="gi" t-value="groupInfo(record)"/>
                 <i t-attf-class="fa #{grp.closed[groupKey(record)] ? 'fa-chevron-right' : 'fa-chevron-down'}"/>
                 <b t-esc="groupTitle(record)"/>
+                <small class="gc"><t t-esc="gi.count"/> tiêu chí</small>
                 <span class="gs"><t t-esc="gi.got"/> / <t t-esc="gi.max"/> điểm</span>
             </td>
         </tr>

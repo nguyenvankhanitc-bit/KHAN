@@ -118,7 +118,8 @@ export class StoreChecklistShell extends Component {
     // Số phiếu có lỗi đã ghi nhận (hiện trên mục "Cửa hàng sai phạm"); lỗi quyền đọc thì bỏ qua, không chặn giao diện
     async loadBadges() {
         try {
-            this.state.badges.violation_stores = await this.orm.searchCount("store.audit", [["state", "!=", "draft"], ["error_count", ">", 0]]);
+            const scope = await this.orm.call("store.audit", "get_violation_scope", []);
+            this.state.badges.violation_stores = await this.orm.searchCount("store.audit", [["state", "!=", "draft"], ["error_count", ">", 0], ...scope]);
         } catch {
             this.state.badges.violation_stores = 0;
         }
@@ -1240,6 +1241,11 @@ export class StoreChecklistShell extends Component {
     async openAction(xmlid, navId) {
         try {
             const act = await this.action.loadAction(xmlid);
+            if (navId === "violation_stores") {
+                // chỉ các phiếu thuộc hạng mục mình phụ trách / kiểm soát (Quản lý thấy tất cả)
+                const scope = await this.orm.call("store.audit", "get_violation_scope", []);
+                act.domain = [...this.evalActionValue(act.domain, []), ...scope];
+            }
             const type = String(act.view_mode || "list,form").split(",")[0] === "form" ? "form" : "list";
             this.showWindow(act, navId, type, false);
             return act;

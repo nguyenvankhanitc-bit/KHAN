@@ -809,6 +809,17 @@ class StoreAudit(models.Model):
             if set(act.responsible_ids.ids) != set(ids):
                 act.responsible_ids = [Command.set(ids)]
 
+    @api.model
+    def get_violation_scope(self):
+        """"Cửa hàng sai phạm": Quản lý / Admin thấy tất cả; user khác chỉ thấy phiếu do mình đánh giá hoặc phiếu có lỗi thuộc hạng mục
+        mình là Người phụ trách / Người kiểm soát."""
+        user = self.env.user
+        if self.env.su or user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
+            return []
+        self.env['store.audit.action'].sudo()._sync_violation_actions()  # phiếu mới chốt chưa có dòng khắc phục thì tạo bù để lọc đúng
+        return ['|', ('auditor_id', '=', user.id), ('action_ids', 'any', [
+            ('line_id.error_count', '>', 0), '|', ('responsible_ids.user_id', '=', user.id), ('reviewer_ids', '=', user.id)])]
+
     def action_open_violation_popup(self):
         """Popup "Xử lý sai phạm" của phiếu: bảng lỗi cần khắc phục như file Excel (tự tạo nếu chưa có)."""
         self.ensure_one()
@@ -816,12 +827,17 @@ class StoreAudit(models.Model):
         self.sudo()._sync_action_owners()  # xem biên bản là đủ để thấy việc khắc phục, không bắt buộc quyền tạo
         view = self.env.ref('store_checklist.view_store_audit_action_violation_list')
         date = fields.Datetime.context_timestamp(self, self.audit_date).strftime('%d/%m/%Y') if self.audit_date else ''
+        user = self.env.user
+        domain = [('audit_id', '=', self.id), ('line_id.error_count', '>', 0)]
+        if not (self.env.su or user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager')
+                or self.sudo().auditor_id == user):  # chỉ hiện hạng mục mình phụ trách / kiểm soát
+            domain += ['|', ('responsible_ids.user_id', '=', user.id), ('reviewer_ids', '=', user.id)]
         return {
             'type': 'ir.actions.act_window',
             'name': 'Xử lý sai phạm - %s - %s' % (self.store_id.display_name or '', date),
             'res_model': 'store.audit.action',
             'views': [(view.id, 'list')],
-            'domain': [('audit_id', '=', self.id), ('line_id.error_count', '>', 0)],
+            'domain': domain,
             'target': 'new',
             'context': {'default_audit_id': self.id, 'dialog_size': 'extra-large', 'group_by': 'line_category'},
         }

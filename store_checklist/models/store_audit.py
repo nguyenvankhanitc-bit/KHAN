@@ -560,7 +560,9 @@ class StoreAudit(models.Model):
         """Sơ đồ quy trình vận hành: số liệu 3 phân hệ (chấm điểm GS, xử lý sai phạm kiểu Kanban, báo cáo KPI)."""
         tmpl = self.env['store.audit.template'].sudo().search([('audit_type', '=', 'gs')], order='id desc')
         tmpl = tmpl.filtered('line_ids')[:1]
-        audits = self.sudo().search(domain).filtered(lambda a: a.state != 'draft')
+        # phiếu mới chốt chưa ai mở danh sách xử lý sai phạm thì chưa có dòng khắc phục -> tạo bù trước khi đếm
+        self.env['store.audit.action'].sudo()._sync_violation_actions()
+        audits = self.sudo().search(list(domain) + [('audit_type', '=', 'gs')]).filtered(lambda a: a.state != 'draft')
         acts = self.env['store.audit.action'].sudo().search(
             [('audit_id', 'in', audits.ids), ('line_id.error_count', '>', 0)], order='deadline, id')
         today = fields.Date.context_today(self)

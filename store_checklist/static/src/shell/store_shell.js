@@ -153,7 +153,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
-                    { id: "report_flow", label: "Sơ đồ quy trình vận hành", icon: "fa-sitemap" },
+                    { id: "report_flow", label: "Sơ đồ quy trình vận hành giám sát", icon: "fa-sitemap" },
                 ],
             },
             {
@@ -317,7 +317,7 @@ export class StoreChecklistShell extends Component {
             violation_all: "DANH SÁCH XỬ LÝ SAI PHẠM",
             report_rank: "Báo cáo xếp loại",
             report_manager: "BÁO CÁO THEO QUẢN LÝ",
-            report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH",
+            report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH GIÁM SÁT",
         }[this.state.activeNav] || "";
     }
 

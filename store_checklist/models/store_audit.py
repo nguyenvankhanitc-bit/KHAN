@@ -556,6 +556,29 @@ class StoreAudit(models.Model):
         return rows
 
     @api.model
+    def get_flow_stats(self, domain):
+        """Sơ đồ quy trình vận hành: số liệu 3 phân hệ (chấm điểm GS, xử lý sai phạm kiểu Kanban, báo cáo KPI)."""
+        tmpl = self.env['store.audit.template'].sudo().search([('audit_type', '=', 'gs')], order='id desc')
+        tmpl = tmpl.filtered('line_ids')[:1]
+        audits = self.sudo().search(domain).filtered(lambda a: a.state != 'draft')
+        acts = self.env['store.audit.action'].sudo().search(
+            [('audit_id', 'in', audits.ids), ('line_id.error_count', '>', 0)], order='deadline, id')
+        today = fields.Date.context_today(self)
+
+        def card(a):
+            return {'id': a.id, 'store': a.store_id.code or a.store_id.display_name or '', 'issue': a.line_id.name or a.issue or '',
+                    'late': bool(a.deadline and a.deadline < today and not a.control_done)}
+
+        green = acts.filtered('control_done')
+        red = acts - green
+        return {
+            'criteria': len(tmpl.line_ids), 'max_score': round(sum(tmpl.line_ids.mapped('max_score')), 1),
+            'audits': len(audits), 'stores': len(audits.mapped('store_id')),
+            'red': len(red), 'late': len([a for a in red if card(a)['late']]), 'green': len(green),
+            'red_cards': [card(a) for a in red[:3]], 'green_cards': [card(a) for a in green[:3]],
+        }
+
+    @api.model
     def export_manager_xlsx(self, domain, manager_id=None):
         self.env['store.perm.rule'].check_export()
         import xlsxwriter

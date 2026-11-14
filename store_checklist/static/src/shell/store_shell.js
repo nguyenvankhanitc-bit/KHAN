@@ -56,6 +56,7 @@ export class StoreChecklistShell extends Component {
             managerReport: null,
             mgrLevels: [],
             mgrTab: "rank",
+            flowStats: null,
             mgrFilter: "",
             mgrPage: 0,
             personal: null,
@@ -803,6 +804,9 @@ export class StoreChecklistShell extends Component {
             this.state.mgrPage = 0;
             this.state.mgrLevels = await this.orm.searchRead("store.audit.level", [["audit_type", "=", "gs"]], ["name", "tone", "score_range"], { order: "min_score desc" });
             this.state.managerReport = await this.orm.call("store.audit", "get_report_manager", [this.listDomain(base), prev]);
+            if (this.state.activeNav === "report_flow") {
+                this.state.flowStats = await this.orm.call("store.audit", "get_flow_stats", [this.listDomain(base)]);
+            }
             return;
         }
         if (this.state.activeNav === "report_store") {

@@ -345,6 +345,34 @@
                         </div>
                         <div class="fl_side is-up"><span class="arrow"/><span class="txt">CẤP DƯỚI<br/>BÁO CÁO KHẮC PHỤC &amp; ĐỀ XUẤT</span></div>
                     </div>
+                    <div class="fl_modules" t-if="state.flowStats">
+                        <t t-set="fs" t-value="state.flowStats"/>
+                        <div class="fl_mod_title"><span>3 PHÂN HỆ NGHIỆP VỤ ODOO LIÊN KẾT TRỰC TIẾP</span></div>
+                        <div class="fl_mod_grid">
+                            <div class="fl_mod m1">
+                                <div class="mh"><span class="ic"><i class="fa fa-check-square-o"/></span><b>Chấm điểm Checklist GS</b></div>
+                                <p>Thực hiện phiếu đánh giá <b t-esc="fs.criteria"/> tiêu chí (tổng <b t-esc="fs.max_score"/> điểm) tại cửa hàng.</p>
+                                <div class="chips"><span><b t-esc="fs.audits"/> phiếu đã chốt</span><span><b t-esc="fs.stores"/> cửa hàng</span></div>
+                            </div>
+                            <div class="fl_mod m2">
+                                <div class="mh"><span class="ic"><i class="fa fa-columns"/></span><b>Quản lý xử lý sai phạm</b></div>
+                                <p>Theo dõi trạng thái khắc phục lỗi theo Kanban: thẻ đỏ quá hạn / chờ xử lý, thẻ xanh đã kiểm soát hoàn tất.</p>
+                                <div class="kanban">
+                                    <div class="col red"><h6>Quá hạn / chờ xử lý <em t-esc="fs.red"/></h6>
+                                        <div class="kc" t-foreach="fs.red_cards" t-as="c" t-key="c.id"><b t-esc="c.store"/><span t-esc="c.issue"/><small t-if="c.late">Quá hạn</small></div>
+                                        <div class="kc empty" t-if="!fs.red_cards.length">Không có</div></div>
+                                    <div class="col green"><h6>Đã kiểm soát hoàn tất <em t-esc="fs.green"/></h6>
+                                        <div class="kc" t-foreach="fs.green_cards" t-as="c" t-key="c.id"><b t-esc="c.store"/><span t-esc="c.issue"/></div>
+                                        <div class="kc empty" t-if="!fs.green_cards.length">Chưa có</div></div>
+                                </div>
+                            </div>
+                            <div class="fl_mod m3">
+                                <div class="mh"><span class="ic"><i class="fa fa-bar-chart"/></span><b>Báo cáo &amp; Xếp hạng KPI</b></div>
+                                <p>Tự động tổng hợp điểm trung bình và xếp loại theo cửa hàng, miền và quản lý khu vực.</p>
+                                <div class="chips"><span>Điểm TB: <b t-esc="fv.avg"/></span><span><b t-esc="fv.rows.length"/> quản lý</span><span t-foreach="fv.kinds" t-as="k" t-key="k.key"><i class="dot" t-attf-style="background: #{k.color}"/><t t-esc="k.name"/>: <b t-esc="k.count"/></span></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">
                     <t t-set="sr" t-value="state.storeReport"/>

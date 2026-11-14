@@ -138,8 +138,8 @@ export class StoreChecklistShell extends Component {
                     { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh" },
                     { id: "asm", label: "Checklist ASM", icon: "fa-users", action: "store_checklist.action_store_audit_asm" },
                     { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
-                    { id: "review", label: "Phiếu Đánh Giá", icon: "fa-clipboard", action: "store_checklist.action_store_audit" },
-                    { id: "review_list", label: "Danh Sách Đánh Giá", icon: "fa-list", action: "store_checklist.action_store_audit" },
+                    { id: "review", label: "Phiếu Đánh Giá", icon: "fa-pencil-square-o", action: "store_checklist.action_store_audit" },
+                    { id: "review_list", label: "Danh Sách Đánh Giá", icon: "fa-tasks", action: "store_checklist.action_store_audit" },
                 ],
             },
             {
@@ -148,10 +148,10 @@ export class StoreChecklistShell extends Component {
                 icon: "fa-bar-chart",
                 iconTone: "report",
                 children: [
-                    { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text-o", action: "store_checklist.action_store_report_gs" },
-                    { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-th-large" },
-                    { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-sort-amount-desc" },
-                    { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user-circle-o" },
+                    { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text", action: "store_checklist.action_store_report_gs" },
+                    { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-building" },
+                    { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-trophy" },
+                    { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
                 ],
             },
             {
@@ -162,8 +162,8 @@ export class StoreChecklistShell extends Component {
                 iconTone: "violation",
                 children: [
                     // Cửa hàng đã có biên bản do giám sát kiểm tra (phiếu GS không còn ở trạng thái nháp)
-                    { id: "violation_stores", label: "Cửa hàng sai phạm", icon: "fa-file-text-o", badgeKey: "violation_stores", tone: "danger", action: "store_checklist.action_store_violation_stores" },
-                    { id: "violation_all", label: "Danh sách xử lý sai phạm", icon: "fa-list-alt", action: "store_checklist.action_store_violation_all" },
+                    { id: "violation_stores", label: "Cửa hàng sai phạm", icon: "fa-ban", badgeKey: "violation_stores", tone: "danger", action: "store_checklist.action_store_violation_stores" },
+                    { id: "violation_all", label: "Danh sách xử lý sai phạm", icon: "fa-wrench", action: "store_checklist.action_store_violation_all" },
                 ],
             },
         ];

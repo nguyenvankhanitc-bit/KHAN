@@ -1279,3 +1279,14 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .o_store_mgr_bar { width: 100%; min-width: 120px; display: block; } }
 @media (max-width: 767px) { .o_store_mgr_scroll { max-height: none; overflow: visible; border: 0; } .o_store_mgr_scroll table.o_store_mgr_plain { min-width: 0; } }
 .o_store_mgr_scroll table td { text-align: center !important; &.l { text-align: left !important; } }
+
+/* Sidebar theo mẫu: màu icon từng mục + icon/chữ lớn hơn một chút */
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub {
+    &.store-tn-report_store > i:first-child { color: #334155 !important; }
+    &.store-tn-report_rank > i:first-child { color: #2563eb !important; }
+    &.store-tn-report_manager > i:first-child { color: #4f46e5 !important; }
+    &.store-tn-violation_stores > i:first-child { color: #dc2626 !important; }
+    &.store-tn-violation_all > i:first-child { color: #475569 !important; }
+    &[class*="store-tn-"] > i:first-child { font-size: 17px; width: 22px; text-align: center; }
+    &[class*="store-tn-"] { font-size: 13.5px; }
+}

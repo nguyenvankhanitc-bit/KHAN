@@ -1,3 +1,4 @@
+from . import store_notify
 from . import store_menu_perm
 from . import store_store
 from . import store_audit_template

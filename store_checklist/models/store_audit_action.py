@@ -1,8 +1,13 @@
+import logging
 import base64
 import io
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError
+
+from .store_notify import bot_send, card
+
+_logger = logging.getLogger(__name__)
 
 PHOTO_COL_PX = 24 * 7 + 5  # độ rộng cột Hình ảnh (24 ký tự) theo pixel của Excel
 
@@ -46,6 +51,7 @@ class StoreAuditAction(models.Model):
     line_attachment_ids = fields.Many2many(related='line_id.attachment_ids', string='Hình ảnh', readonly=True)
     score_deduct = fields.Float(string='Điểm trừ', compute='_compute_score_deduct', store=True)
 
+    done_notified = fields.Boolean(string='Đã báo hoàn thành', copy=False)
     can_edit_resp = fields.Boolean(compute='_compute_can_edit')
     can_edit_ctrl = fields.Boolean(compute='_compute_can_edit')
 
@@ -69,7 +75,36 @@ class StoreAuditAction(models.Model):
                     raise AccessError(_('Chỉ người phụ trách của tiêu chí này mới được cập nhật việc khắc phục.'))
                 if ctrl and not rec.can_edit_ctrl:
                     raise AccessError(_('Chỉ người kiểm soát của tiêu chí này mới được cập nhật kết quả kiểm soát.'))
-        return super().write(vals)
+        res = super().write(vals)
+        if 'state' in vals:
+            if vals['state'] == 'done':
+                self.filtered(lambda a: not a.done_notified)._notify_done()
+            else:  # mở lại việc thì lần hoàn thành sau báo lại
+                self.filtered('done_notified').sudo().write({'done_notified': False})
+        return res
+
+    def _notify_done(self):
+        """Người phụ trách khắc phục xong: báo giám sát (người đánh giá) và người kiểm soát, mỗi lần hoàn thành 1 tin."""
+        for act in self:
+            try:
+                with self.env.cr.savepoint():
+                    audit = act.audit_id.sudo()
+                    users = (audit.auditor_id | act.reviewer_ids) - self.env.user
+                    done = act.date_done or fields.Date.context_today(act)
+                    if users:
+                        bot_send(self.env, users, card('SAI PHẠM ĐÃ ĐƯỢC KHẮC PHỤC XONG', [
+                            ('Người thực hiện', self.env.user.name),
+                            ('Cửa hàng', audit.store_id.display_name),
+                            ('Tiêu chí', act.line_id.name),
+                            ('Lỗi ghi nhận', (act.issue or '').replace('\n', '; ')),
+                            ('Nội dung khắc phục', (act.action_plan or '').replace('\n', '; ')),
+                            ('Hạn', act.deadline.strftime('%d/%m/%Y') if act.deadline else '—'),
+                            ('Ngày hoàn thành', done.strftime('%d/%m/%Y')),
+                            ('Đề nghị', 'Người kiểm soát xác nhận kết quả'),
+                        ]))
+                    act.sudo().write({'done_notified': True})
+            except Exception:
+                _logger.exception('store_checklist: báo hoàn thành khắc phục thất bại, dòng %s', act.id)
 
     @api.depends('line_id.max_score', 'line_id.actual_score')
     def _compute_score_deduct(self):

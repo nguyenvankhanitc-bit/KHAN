@@ -1,3 +1,4 @@
+import logging
 import base64
 import io
 from datetime import datetime
@@ -6,6 +7,10 @@ from odoo import Command, api, fields, models
 from odoo.tools import file_open
 from odoo.tools.image import image_process
 from odoo.exceptions import AccessError, UserError, ValidationError
+
+from .store_notify import bot_send, card
+
+_logger = logging.getLogger(__name__)
 
 from .store_audit_template import AUDIT_TYPES, CATEGORIES
 
@@ -857,6 +862,7 @@ class StoreAuditLine(models.Model):
         ('fail', 'Không đạt'),
     ], string='Kết quả', compute='_compute_result', store=True)
     note = fields.Text(string='Chi tiết lỗi / Nhận xét thực tế')
+    owner_notified = fields.Boolean(string='Đã báo người phụ trách', copy=False)
     error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_count', store=True)
     def _report_photos(self):
         """Ảnh của dòng cho biên bản: thu về tối đa 400x500 (gấp đôi ô 200x250 để nét), giữ tỉ lệ, không phóng to."""
@@ -906,7 +912,9 @@ class StoreAuditLine(models.Model):
         for vals in vals_list:
             if (vals.get('note') or '').strip():
                 vals.update(actual_score=0.0, is_scored=True)
-        return super().create(vals_list)
+        res = super().create(vals_list)
+        res._notify_new_errors()
+        return res
 
     def write(self, vals):
         res = super().write(vals)
@@ -914,7 +922,49 @@ class StoreAuditLine(models.Model):
             bad = self.filtered(lambda l: l._has_error_note() and (l.actual_score or not l.is_scored))
             if bad:
                 super(StoreAuditLine, bad).write({'actual_score': 0.0, 'is_scored': True})
+        if 'note' in vals:
+            self._notify_new_errors()
         return res
+
+    def _notify_new_errors(self):
+        """Giám sát nhập "Chi tiết lỗi" và lưu: tra tiêu chuẩn đánh giá (điểm chuẩn của mẫu) -> báo người phụ trách và
+        người kiểm soát của tiêu chí đó, mỗi dòng đúng 1 lần."""
+        for line in self.filtered(lambda l: l.error_count and not l.owner_notified):
+            try:
+                with self.env.cr.savepoint():
+                    line._notify_owners()
+            except Exception:
+                _logger.exception('store_checklist: báo người phụ trách thất bại, dòng %s', line.id)
+
+    def _notify_owners(self):
+        self.ensure_one()
+        key = (self.name or '').strip().casefold()
+        tmpl = self.audit_id.sudo().template_id.line_ids.filtered(lambda t: (t.name or '').strip().casefold() == key)[:1]
+        if not tmpl:
+            return
+        owners = (tmpl.responsible_ids | tmpl.lug_group_ids.user_ids.employee_ids).mapped('user_id')
+        ctrls = tmpl.controller_ids
+        roles = {}
+        for user in owners - self.env.user:
+            roles.setdefault(user, []).append('Người phụ trách khắc phục')
+        for user in ctrls - self.env.user:
+            roles.setdefault(user, []).append('Người kiểm soát')
+        if not roles:
+            return
+        audit = self.audit_id.sudo()
+        auditor = audit.auditor_id.name or self.env.user.name
+        note = '; '.join(ln.strip() for ln in (self.note or '').splitlines() if ln.strip())
+        for user, role in roles.items():
+            bot_send(self.env, user, card('PHÁT HIỆN SAI PHẠM CẦN XỬ LÝ', [
+                ('Người đánh giá', auditor),
+                ('Cửa hàng', audit.store_id.display_name),
+                ('Tiêu chí', self.name),
+                ('Tiêu chuẩn', self.requirement or tmpl.requirement),
+                ('Chi tiết lỗi', note),
+                ('Điểm trừ', '-%g (điểm chuẩn %g)' % (tmpl.max_score or self.max_score, tmpl.max_score or self.max_score)),
+                ('Vai trò của bạn', ' + '.join(role)),
+            ]))
+        super(StoreAuditLine, self.sudo()).write({'owner_notified': True})
 
     @api.onchange('actual_score')
     def _onchange_actual_score(self):

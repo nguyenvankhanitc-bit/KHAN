@@ -1249,3 +1249,12 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
         .o_store_medal { flex: none; width: 34px; height: 34px; } } }
 @media (max-width: 991px) { .o_store_mgr_rankrow { grid-template-columns: 1fr; } }
 .o_store_mgr_rankrow .plot { height: 250px; }
+
+/* Phân bố kết quả theo khu vực: nằm dưới Top 3, bảng xếp hạng chiếm cả hai hàng */
+.o_store_mgr_bottom { > .o_store_personal_body { grid-row: 1 / span 2; }
+    .areacard { grid-column: 2; background: #fff; border-radius: 14px; padding: 14px 18px; box-shadow: 0 2px 10px rgba(91, 33, 182, .08); h5 { font-weight: 700; color: #1e3a8a; margin-bottom: 10px; i { color: #7c3aed; } }
+        .ar { display: flex; align-items: center; gap: 10px; padding: 7px 0; font-size: 13px;
+            .nm { width: 78px; flex: none; text-align: right; color: #334155; font-weight: 600; }
+            .tr { flex: 1; height: 12px; background: #eef0f6; border-radius: 6px; overflow: hidden; i { display: block; height: 100%; border-radius: 6px; } }
+            b { width: 38px; text-align: center; } em { font-style: normal; font-weight: 700; color: #6d28d9; background: #ede9fe; border-radius: 12px; padding: 1px 10px; min-width: 52px; text-align: center; } } } }
+@media (max-width: 991px) { .o_store_mgr_bottom > .o_store_personal_body { grid-row: auto; } .o_store_mgr_bottom .areacard { grid-column: auto; } }

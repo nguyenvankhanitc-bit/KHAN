@@ -848,10 +848,22 @@ export class StoreChecklistShell extends Component {
             .map(([key, label]) => ({ label, ...donut(rows.filter((r) => r.mien === key)), n: rows.filter((r) => r.mien === key).length }))
             .filter((g) => g.n);
         const sorted = [...rows].sort((a, b) => b.avg - a.avg);
+        // Phân bố theo khu vực: số quản lý đạt (điểm TB >= 80) / tổng quản lý của khu vực
+        const known = ["Nam", "ĐTT", "Bắc"];
+        const areas = [["Nam", "Miền Nam", "#3b82f6"], ["ĐTT", "Miền ĐTT", "#fbbf24"], ["Bắc", "Miền Bắc", "#34d399"]]
+            .map(([key, label, color]) => ({ label, color, list: rows.filter((r) => r.mien === key) }));
+        const other = rows.filter((r) => !known.includes(r.mien));
+        if (other.length) {
+            areas.push({ label: "Khác", color: "#8b5cf6", list: other });
+        }
+        const areaList = areas.map((a) => {
+            const ok = a.list.filter((r) => r.avg >= 80).length;
+            return { label: a.label, color: a.color, ok, n: a.list.length, pct: a.list.length ? Math.round((100 * ok) / a.list.length) : 0 };
+        });
         const deltas = rows.map((r) => r.delta).filter((d) => d !== null && d !== undefined);
         const mean = (xs) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : 0);
         return {
-            top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
+            areas: areaList, top: sorted.slice(0, 3), avg: mean(rows.map((r) => r.avg)), delta: deltas.length ? mean(deltas) : null,
             needN: rows.filter((r) => r.avg < 80).length,
             bars: sorted.slice(0, 20).map((r) => ({ id: r.id, name: r.name, avg: r.avg, color: this.toneColor(r.tone), level: r.level, errors: r.errors, errColor: r.errors > 0 ? "#ef4444" : "#16a34a" })),
             kinds: split(rows), all: donut(rows), regions,

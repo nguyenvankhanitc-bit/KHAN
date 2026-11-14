@@ -282,6 +282,15 @@
                         </div>
                         <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                     </div>
+                    <div class="card areacard">
+                        <h5><i class="fa fa-map-marker"/> Phân bố kết quả theo khu vực</h5>
+                        <div class="ar" t-foreach="mv.areas" t-as="a" t-key="a.label">
+                            <span class="nm" t-esc="a.label"/>
+                            <span class="tr"><i t-attf-style="width: #{a.pct}%; background: #{a.color}"/></span>
+                            <b><t t-esc="a.ok"/> / <t t-esc="a.n"/></b>
+                            <em t-esc="a.pct + '%'"/>
+                        </div>
+                    </div>
                     </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">

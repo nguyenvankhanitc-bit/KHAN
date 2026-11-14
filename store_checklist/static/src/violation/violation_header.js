@@ -138,17 +138,21 @@ export class StoreViolationHeader extends Component {
     }
 }
 
-// Điểm chuẩn đánh giá: đóng popup chỉnh sửa xong thì thu gọn lại các nhóm (không giữ nhóm đang mở)
+// Điểm chuẩn đánh giá: sửa trong popup xong thì giữ nguyên các nhóm đang mở và vị trí cuộn của bảng
 export class StoreBenchmarkController extends ListController {
     setup() {
         super.setup();
         let wasOpen = false;
+        let keep = null;
         let timer;
         const observer = new MutationObserver(() => {
             const open = Boolean(document.querySelector(".modal .o_form_view"));
-            if (wasOpen && !open) {
+            if (!wasOpen && open) {
+                keep = this.snapshot();
+            } else if (wasOpen && !open && keep) {
+                const saved = keep;
                 clearTimeout(timer);
-                timer = setTimeout(() => this.collapseGroups(), 900);
+                timer = setTimeout(() => this.restore(saved), 700);
             }
             wasOpen = open;
         });
@@ -159,12 +163,28 @@ export class StoreBenchmarkController extends ListController {
         });
     }
 
-    async collapseGroups() {
+    snapshot() {
+        const scrollers = [...document.querySelectorAll(".o_store_list_wrap, .o_list_renderer, .o_content")];
+        return {
+            open: (this.model.root.groups || []).filter((g) => !g.isFolded).map((g) => g.displayName),
+            scroll: scrollers.map((el) => [el, el.scrollLeft, el.scrollTop]),
+            page: [document.scrollingElement.scrollLeft, document.scrollingElement.scrollTop],
+        };
+    }
+
+    async restore(saved) {
         for (const group of this.model.root.groups || []) {
-            if (!group.isFolded) {
+            if (group.isFolded && saved.open.includes(group.displayName)) {
                 await group.toggle();
             }
         }
+        setTimeout(() => {
+            saved.scroll.forEach(([el, left, top]) => {
+                el.scrollLeft = left;
+                el.scrollTop = top;
+            });
+            document.scrollingElement.scrollTo(saved.page[0], saved.page[1]);
+        }, 150);
     }
 }
 

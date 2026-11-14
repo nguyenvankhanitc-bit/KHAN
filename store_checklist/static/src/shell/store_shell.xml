@@ -23,7 +23,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_flow' ? 'Phối hợp giữa ban giám đốc, quản lý khu vực, giám sát viên và cửa hàng' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
@@ -313,6 +313,37 @@
                             </table>
                         </div>
                     </div>
+                    </div>
+                </div>
+                <div class="o_store_flow" t-elif="state.activeNav === 'report_flow' and state.managerReport">
+                    <t t-set="fv" t-value="mgrView"/>
+                    <div class="fl_head">
+                        <h2>SƠ ĐỒ QUY TRÌNH VẬN HÀNH &amp; KIỂM SOÁT CHECKLIST AUDIT</h2>
+                        <h3>CHUẨN - GỌN - NHANH - NHÀN - NHẠY</h3>
+                    </div>
+                    <div class="fl_body">
+                        <div class="fl_side is-down"><span class="arrow"/><span class="txt">CẤP TRÊN GIAO CHỈ TIÊU &amp; GIÁM SÁT TIẾN ĐỘ</span></div>
+                        <div class="fl_tree">
+                            <div class="fl_top"><span>BAN GIÁM ĐỐC /<br/>TRƯỞNG BỘ PHẬN</span></div>
+                            <div class="fl_row_label l1">QUẢN LÝ KHU VỰC</div>
+                            <div class="fl_mgrs">
+                                <div class="fl_mgr" t-foreach="fv.rows" t-as="m" t-key="m.id">
+                                    <div class="fl_card">
+                                        <span class="chk" t-attf-style="background: #{toneColor(m.tone)}"><i class="fa fa-check"/></span>
+                                        <span class="av"><i class="fa fa-user"/></span>
+                                        <div class="info"><b t-esc="m.name"/><small><t t-esc="m.area"/> · <t t-esc="m.store_count"/> cửa hàng</small><small>Điểm TB: <strong t-esc="m.avg"/> · <t t-esc="m.level"/></small></div>
+                                    </div>
+                                    <div class="fl_stores">
+                                        <span class="st" t-foreach="m.stores.slice(0, 8)" t-as="s" t-key="s_index" t-att-title="s.store"><i class="fa fa-user"/> <t t-esc="s.code or s.store"/></span>
+                                        <span class="st more" t-if="m.stores.length > 8">+<t t-esc="m.stores.length - 8"/></span>
+                                    </div>
+                                </div>
+                                <p class="text-muted" t-if="!fv.rows.length">Chưa có dữ liệu trong kỳ đã chọn.</p>
+                            </div>
+                            <div class="fl_row_label l2">GIÁM SÁT VIÊN<br/>&amp; CỬA HÀNG</div>
+                            <div class="fl_coop"><span class="bar"/><span class="txt">PHỐI HỢP XỬ LÝ SAI PHẠM &amp; HẬU KIỂM</span></div>
+                        </div>
+                        <div class="fl_side is-up"><span class="arrow"/><span class="txt">CẤP DƯỚI<br/>BÁO CÁO KHẮC PHỤC &amp; ĐỀ XUẤT</span></div>
                     </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">

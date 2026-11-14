@@ -152,6 +152,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
+                    { id: "report_flow", label: "Sơ đồ quy trình vận hành", icon: "fa-sitemap" },
                 ],
             },
             {
@@ -243,7 +244,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get reportNavs() {
-        return ["report_gs", "report_store", "report_rank", "report_manager"];
+        return ["report_gs", "report_store", "report_rank", "report_manager", "report_flow"];
     }
 
     // Nút "Thêm mới" riêng của module (thanh bộ lọc), không phụ thuộc nút mặc định của Odoo ở thanh điều khiển
@@ -272,7 +273,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get canExport() {
-        return !this.state.rights || Boolean(this.state.rights[this.state.activeNav]?.export);
+        return this.state.activeNav !== "report_flow" && (!this.state.rights || Boolean(this.state.rights[this.state.activeNav]?.export));
     }
 
     get showListFilters() {
@@ -315,6 +316,7 @@ export class StoreChecklistShell extends Component {
             violation_all: "DANH SÁCH XỬ LÝ SAI PHẠM",
             report_rank: "Báo cáo xếp loại",
             report_manager: "BÁO CÁO THEO QUẢN LÝ",
+            report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH",
         }[this.state.activeNav] || "";
     }
 
@@ -789,7 +791,7 @@ export class StoreChecklistShell extends Component {
             ]);
             return;
         }
-        if (this.state.activeNav === "report_manager") {
+        if (["report_manager", "report_flow"].includes(this.state.activeNav)) {
             // cả phiếu GS lẫn ASM (không dùng reportBase chỉ có GS); kèm tháng trước để tính chênh lệch
             const month = this.state.listFilters.month;
             const base = [["state", "!=", "draft"]];

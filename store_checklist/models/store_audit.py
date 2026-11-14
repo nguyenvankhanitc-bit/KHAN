@@ -574,6 +574,10 @@ class StoreAudit(models.Model):
         return {
             'criteria': len(tmpl.line_ids), 'max_score': round(sum(tmpl.line_ids.mapped('max_score')), 1),
             'audits': len(audits), 'stores': len(audits.mapped('store_id')),
+            'errors': sum(audits.mapped('error_count')), 'auditors': len(audits.mapped('auditor_id')),
+            'total': len(acts), 'resp': len(acts.filtered('responsible_ids')), 'plan': len(acts.filtered(lambda a: (a.action_plan or '').strip())),
+            'done': len(acts.filtered(lambda a: a.state == 'done')),
+            'wait_ctrl': len(acts.filtered(lambda a: a.state == 'done' and not a.control_done)),
             'red': len(red), 'late': len([a for a in red if card(a)['late']]), 'green': len(green),
             'red_cards': [card(a) for a in red[:3]], 'green_cards': [card(a) for a in green[:3]],
         }

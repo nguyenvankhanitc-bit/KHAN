@@ -233,14 +233,18 @@
                                 <span><b>Tầng 3:</b> Tổng số lỗi <i class="dot" style="background: #ef4444"/> có lỗi <i class="dot" style="background: #16a34a"/> không lỗi</span>
                             </div>
                         </div>
-                        <div class="card top3">
-                            <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>
-                            <div class="t3" t-foreach="mv.top" t-as="t" t-key="t.id">
-                                <span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/>
-                                <div><b t-esc="t.name"/><strong><t t-esc="t.avg"/> <small>/ 100</small></strong></div>
-                                <span class="o_store_pill" t-attf-style="background: #{toneColor(t.tone)}" t-esc="t.level"/>
-                            </div>
-                            <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
+                        <div class="card donutcard">
+                            <h5><i class="fa fa-pie-chart"/> Kết quả đánh giá theo xếp loại</h5>
+                            <svg viewBox="0 0 160 160">
+                                <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="26"/>
+                                <circle t-foreach="mv.all.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="26"
+                                        t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
+                                <text x="80" y="82" text-anchor="middle" class="mid" t-esc="mv.avg"/>
+                                <text x="80" y="100" text-anchor="middle" class="sub">Điểm TB</text>
+                            </svg>
+                            <ul>
+                                <li t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><span><t t-esc="k.name"/><small t-esc="k.hint"/></span><b t-esc="k.pct + '%'"/></li>
+                            </ul>
                         </div>
                     </div>
                     <div class="o_store_mgr_bottom">
@@ -269,18 +273,14 @@
                             </span>
                         </div>
                     </div>
-                    <div class="card donutcard">
-                        <h5><i class="fa fa-pie-chart"/> Kết quả đánh giá theo xếp loại</h5>
-                        <svg viewBox="0 0 160 160">
-                            <circle cx="80" cy="80" r="62" fill="none" stroke="#e5e7eb" stroke-width="26"/>
-                            <circle t-foreach="mv.all.d.segments" t-as="sg" t-key="sg.name" cx="80" cy="80" r="62" fill="none" t-att-stroke="sg.color" stroke-width="26"
-                                    t-att-stroke-dasharray="sg.dash" t-att-stroke-dashoffset="sg.offset" transform="rotate(-90 80 80)"/>
-                            <text x="80" y="82" text-anchor="middle" class="mid" t-esc="mv.avg"/>
-                            <text x="80" y="100" text-anchor="middle" class="sub">Điểm TB</text>
-                        </svg>
-                        <ul>
-                            <li t-foreach="mv.kinds" t-as="k" t-key="k.key"><i t-attf-style="background: #{k.color}"/><span><t t-esc="k.name"/><small t-esc="k.hint"/></span><b t-esc="k.pct + '%'"/></li>
-                        </ul>
+                    <div class="card top3">
+                        <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>
+                        <div class="t3" t-foreach="mv.top" t-as="t" t-key="t.id">
+                            <span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/>
+                            <div><b t-esc="t.name"/><strong><t t-esc="t.avg"/> <small>/ 100</small></strong></div>
+                            <span class="o_store_pill" t-attf-style="background: #{toneColor(t.tone)}" t-esc="t.level"/>
+                        </div>
+                        <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                     </div>
                     </div>
                 </div>

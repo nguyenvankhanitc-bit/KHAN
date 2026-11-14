@@ -1374,3 +1374,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
             .kc { background: #fff; border-radius: 6px; padding: 3px 6px; margin-bottom: 4px; font-size: 10.5px; box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
                 b { display: block; color: #12285f; } span { display: block; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } small { color: #b91c1c; font-weight: 700; } &.empty { color: #94a3b8; text-align: center; } } } } }
 @media (max-width: 991px) { .o_store_flow .fl_steps { flex-direction: column; gap: 14px; .fl_next { display: none; } } }
+
+.o_store_flow .fl_steps .fl_step .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    .tile { border-radius: 10px; padding: 10px 8px; text-align: center; em { display: block; font-style: normal; font-size: 30px; font-weight: 800; line-height: 1.1; } span { font-size: 11px; font-weight: 700; line-height: 1.3; }
+        &.red { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; } &.green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; } } }

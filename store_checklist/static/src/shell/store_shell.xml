@@ -347,13 +347,9 @@
                                 <span class="no">B3</span>
                                 <div class="mh"><span class="ic"><i class="fa fa-shield"/></span><h4>Kiểm soát</h4></div>
                                 <p>Người kiểm soát xác nhận kết quả khắc phục: thẻ đỏ quá hạn / chờ xử lý, thẻ xanh đã kiểm soát hoàn tất.</p>
-                                <div class="kanban">
-                                    <div class="col red"><h6>Quá hạn / chờ xử lý <em t-esc="fs.red"/></h6>
-                                        <div class="kc" t-foreach="fs.red_cards.slice(0, 2)" t-as="c" t-key="c.id"><b t-esc="c.store"/><span t-esc="c.issue"/><small t-if="c.late">Quá hạn</small></div>
-                                        <div class="kc empty" t-if="!fs.red_cards.length">Không có</div></div>
-                                    <div class="col green"><h6>Đã kiểm soát <em t-esc="fs.green"/></h6>
-                                        <div class="kc" t-foreach="fs.green_cards.slice(0, 2)" t-as="c" t-key="c.id"><b t-esc="c.store"/><span t-esc="c.issue"/></div>
-                                        <div class="kc empty" t-if="!fs.green_cards.length">Chưa có</div></div>
+                                <div class="tiles">
+                                    <div class="tile red"><em t-esc="fs.red"/><span>Thẻ đỏ<br/>Quá hạn / chờ xử lý</span></div>
+                                    <div class="tile green"><em t-esc="fs.green"/><span>Thẻ xanh<br/>Đã kiểm soát hoàn tất</span></div>
                                 </div>
                                 <div class="chips"><span>Chờ kiểm soát: <b t-esc="fs.wait_ctrl"/></span><span class="bad">Quá hạn: <b t-esc="fs.late"/></span></div>
                             </div>

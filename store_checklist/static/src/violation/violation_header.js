@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
@@ -135,6 +135,36 @@ export class StoreViolationHeader extends Component {
     get donePct() {
         const d = this.state.d;
         return d && d.total ? Math.round((d.done / d.total) * 100) : 0;
+    }
+}
+
+// Điểm chuẩn đánh giá: đóng popup chỉnh sửa xong thì thu gọn lại các nhóm (không giữ nhóm đang mở)
+export class StoreBenchmarkController extends ListController {
+    setup() {
+        super.setup();
+        let wasOpen = false;
+        let timer;
+        const observer = new MutationObserver(() => {
+            const open = Boolean(document.querySelector(".modal .o_form_view"));
+            if (wasOpen && !open) {
+                clearTimeout(timer);
+                timer = setTimeout(() => this.collapseGroups(), 900);
+            }
+            wasOpen = open;
+        });
+        onMounted(() => observer.observe(document.body, { childList: true, subtree: true }));
+        onWillUnmount(() => {
+            observer.disconnect();
+            clearTimeout(timer);
+        });
+    }
+
+    async collapseGroups() {
+        for (const group of this.model.root.groups || []) {
+            if (!group.isFolded) {
+                await group.toggle();
+            }
+        }
     }
 }
 
@@ -275,5 +305,6 @@ export class StoreViolPickDialog extends Component {
     }
 }
 
+registry.category("views").add("store_benchmark_list", { ...listView, Controller: StoreBenchmarkController });
 registry.category("views").add("store_violation_readonly", { ...listView, Renderer: StoreViolationReadonlyRenderer });
 registry.category("views").add("store_violation_list", { ...listView, Controller: StoreViolationController, Renderer: StoreViolationRenderer });

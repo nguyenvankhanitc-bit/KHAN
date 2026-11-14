@@ -98,7 +98,7 @@
         <field name="name">store.audit.template.line.benchmark.list</field>
         <field name="model">store.audit.template.line</field>
         <field name="arch" type="xml">
-            <list group_edit="0" group_delete="0" string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
+            <list js_class="store_benchmark_list" group_edit="0" group_delete="0" string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
                 <field name="sequence" string="STT" width="60px"/>
                 <field name="category" width="150px"/>
                 <field name="sub_group_id" width="170px"/>

@@ -1381,3 +1381,10 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 .o_store_list_filters .o_store_import_btn { border: 1px solid #2563eb; background: #fff; color: #2563eb; border-radius: 8px; padding: 6px 16px; font-weight: 700; margin-left: 8px; i { margin-right: 6px; } &:hover { background: #eff6ff; } }
 .o_store_list_filters .o_store_export_btn { margin-left: 8px; }
+
+/* Phiếu đánh giá: tiêu đề nhóm (Phân nhóm) trong bảng tiêu chí */
+.o_store_audit_lines tr.o_store_subgroup_row { cursor: pointer;
+    td { background: #e3edff !important; color: #12285f; font-weight: 800; padding: 8px 12px !important; border-top: 2px solid #b8cdf5; text-transform: uppercase; font-size: 13px;
+        i { margin-right: 8px; color: #2563eb; width: 12px; }
+        .gs { float: right; background: #fff; border: 1px solid #b8cdf5; color: #1d4ed8; border-radius: 14px; padding: 1px 12px; text-transform: none; font-size: 12px; } }
+    &:hover td { background: #d6e5ff !important; } }

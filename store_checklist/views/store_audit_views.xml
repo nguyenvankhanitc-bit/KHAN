@@ -102,7 +102,7 @@
                                 <span class="o_store_bar_act"><field name="score_a" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục A: <strong><field name="score_a" options="{'hide_trailing_zeros': true}"/> / <field name="max_a" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_a_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_a_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -130,7 +130,7 @@
                                 <span class="o_store_bar_act"><field name="score_b" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục B: <strong><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_b_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_b_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -158,7 +158,7 @@
                                 <span class="o_store_bar_act"><field name="score_c" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục C: <strong><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_c_ids" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_c_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>

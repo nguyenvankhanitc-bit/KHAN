@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.LineRow">
+        <tr t-if="isGroupStart(record)" class="o_store_subgroup_row" t-on-click="() => this.toggleGroup(record)">
+            <td t-att-colspan="nbCols">
+                <t t-set="gi" t-value="groupInfo(record)"/>
+                <i t-attf-class="fa #{grp.closed[groupKey(record)] ? 'fa-chevron-right' : 'fa-chevron-down'}"/>
+                <b t-esc="groupTitle(record)"/>
+                <span class="gs"><t t-esc="gi.got"/> / <t t-esc="gi.max"/> điểm</span>
+            </td>
+        </tr>
+        <t t-if="!grp.closed[groupKey(record)]">
+            <t t-call="web.ListRenderer.RecordRow"/>
+        </t>
+    </t>
+</templates>

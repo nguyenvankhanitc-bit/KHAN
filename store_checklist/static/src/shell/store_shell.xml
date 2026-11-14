@@ -255,6 +255,7 @@
                     </div>
                     <div class="o_store_personal_body" t-if="state.mgrTab === 'rank'">
                         <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>
+                        <div class="o_store_mgr_scroll">
                         <table class="o_store_report_table o_store_mgr_table">
                             <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm đánh giá TB (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
                             <tbody>
@@ -269,6 +270,7 @@
                                 <tr t-if="!mv.rows.length"><td colspan="8" class="text-muted">Chưa có cửa hàng nào được đánh giá trong kỳ đã chọn.</td></tr>
                             </tbody>
                         </table>
+                        </div>
                         <div class="o_store_mgr_foot">
                             <span>Hiển thị <t t-esc="mv.rows.length ? state.mgrPage * mv.size + 1 : 0"/> - <t t-esc="Math.min((state.mgrPage + 1) * mv.size, mv.rows.length)"/> / <t t-esc="mv.rows.length"/> bản ghi</span>
                             <span class="pg">
@@ -280,20 +282,35 @@
                     </div>
                     <div class="card top3" t-if="state.mgrTab === 'top'">
                         <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>
-                        <div class="t3" t-foreach="mv.top" t-as="t" t-key="t.id">
-                            <span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/>
-                            <div><b t-esc="t.name"/><strong><t t-esc="t.avg"/> <small>/ 100</small></strong></div>
-                            <span class="o_store_pill" t-attf-style="background: #{toneColor(t.tone)}" t-esc="t.level"/>
+                        <div class="o_store_mgr_scroll">
+                            <table class="o_store_report_table o_store_mgr_table o_store_mgr_plain">
+                                <thead><tr><th>Hạng</th><th>Họ và tên</th><th>Điểm đánh giá TB (/100)</th><th>Xếp loại</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="mv.top" t-as="t" t-key="t.id">
+                                        <td><span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/></td>
+                                        <td class="l"><b t-esc="t.name"/></td>
+                                        <td><b t-esc="t.avg"/></td>
+                                        <td><span class="o_store_pill" t-attf-style="background: #{toneColor(t.tone)}" t-esc="t.level"/></td>
+                                    </tr>
+                                    <tr t-if="!mv.top.length"><td colspan="4" class="text-muted">Chưa có dữ liệu.</td></tr>
+                                </tbody>
+                            </table>
                         </div>
-                        <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                     </div>
                     <div class="card areacard" t-if="state.mgrTab === 'area'">
                         <h5><i class="fa fa-map-marker"/> Phân bố kết quả theo khu vực</h5>
-                        <div class="ar" t-foreach="mv.areas" t-as="a" t-key="a.label">
-                            <span class="nm" t-esc="a.label"/>
-                            <span class="tr"><i t-attf-style="width: #{a.pct}%; background: #{a.color}"/></span>
-                            <b><t t-esc="a.ok"/> / <t t-esc="a.n"/></b>
-                            <em t-esc="a.pct + '%'"/>
+                        <div class="o_store_mgr_scroll">
+                            <table class="o_store_report_table o_store_mgr_table o_store_mgr_plain">
+                                <thead><tr><th>Khu vực</th><th>Biểu đồ</th><th>Đạt / Tổng quản lý</th><th>Tỷ lệ đạt (%)</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="mv.areas" t-as="a" t-key="a.label">
+                                        <td class="l"><b t-esc="a.label"/></td>
+                                        <td><span class="o_store_mgr_bar"><i t-attf-style="width: #{a.pct}%; background: #{a.color}"/></span></td>
+                                        <td><b t-esc="a.ok"/> / <t t-esc="a.n"/></td>
+                                        <td><b t-esc="a.pct + '%'"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                     </div>

@@ -248,7 +248,12 @@
                         </div>
                     </div>
                     <div class="o_store_mgr_bottom">
-                    <div class="o_store_personal_body">
+                    <div class="o_store_mgr_tabs">
+                        <button type="button" class="t1" t-att-class="state.mgrTab === 'rank' ? 'on' : ''" t-on-click="() => state.mgrTab = 'rank'">BẢNG XẾP HẠNG THEO QUẢN LÝ</button>
+                        <button type="button" class="t2" t-att-class="state.mgrTab === 'top' ? 'on' : ''" t-on-click="() => state.mgrTab = 'top'">TOP 3 QUẢN LÝ XUẤT SẮC</button>
+                        <button type="button" class="t3" t-att-class="state.mgrTab === 'area' ? 'on' : ''" t-on-click="() => state.mgrTab = 'area'">PHÂN BỐ KẾT QUẢ THEO KHU VỰC</button>
+                    </div>
+                    <div class="o_store_personal_body" t-if="state.mgrTab === 'rank'">
                         <h4><i class="fa fa-trophy"/> Bảng xếp hạng theo quản lý</h4>
                         <table class="o_store_report_table o_store_mgr_table">
                             <thead><tr><th>STT</th><th>Họ và tên</th><th>Khu vực phụ trách</th><th>Số cửa hàng</th><th>Tổng số lỗi</th><th>Điểm đánh giá TB (%)</th><th>Xếp loại</th><th>Thao tác</th></tr></thead>
@@ -273,7 +278,7 @@
                             </span>
                         </div>
                     </div>
-                    <div class="card top3">
+                    <div class="card top3" t-if="state.mgrTab === 'top'">
                         <h5><i class="fa fa-star"/> Top 3 Quản lý Xuất Sắc</h5>
                         <div class="t3" t-foreach="mv.top" t-as="t" t-key="t.id">
                             <span t-attf-class="o_store_medal m#{t_index + 1}" t-esc="t_index + 1"/>
@@ -282,7 +287,7 @@
                         </div>
                         <p class="text-muted" t-if="!mv.top.length">Chưa có dữ liệu.</p>
                     </div>
-                    <div class="card areacard">
+                    <div class="card areacard" t-if="state.mgrTab === 'area'">
                         <h5><i class="fa fa-map-marker"/> Phân bố kết quả theo khu vực</h5>
                         <div class="ar" t-foreach="mv.areas" t-as="a" t-key="a.label">
                             <span class="nm" t-esc="a.label"/>

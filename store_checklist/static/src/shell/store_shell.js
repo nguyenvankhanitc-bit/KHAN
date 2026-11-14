@@ -55,6 +55,7 @@ export class StoreChecklistShell extends Component {
             rankStoreTotal: 0,
             managerReport: null,
             mgrLevels: [],
+            mgrTab: "rank",
             mgrFilter: "",
             mgrPage: 0,
             personal: null,

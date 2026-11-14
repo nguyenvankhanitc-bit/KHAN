@@ -52,6 +52,7 @@ class StoreAuditAction(models.Model):
     score_deduct = fields.Float(string='Điểm trừ', compute='_compute_score_deduct', store=True)
 
     done_notified = fields.Boolean(string='Đã báo hoàn thành', copy=False)
+    resp_locked = fields.Boolean(string='Đã khóa việc khắc phục', copy=False, help='Bật khi lưu Hoàn thành: người phụ trách không sửa lại được nữa')
     can_edit_resp = fields.Boolean(compute='_compute_can_edit')
     can_edit_ctrl = fields.Boolean(compute='_compute_can_edit')
 
@@ -73,11 +74,14 @@ class StoreAuditAction(models.Model):
                     raise AccessError(_('Chi tiết lỗi là nội dung của người đánh giá, không được chỉnh sửa.'))
                 if resp and not rec.can_edit_resp:
                     raise AccessError(_('Chỉ người phụ trách của tiêu chí này mới được cập nhật việc khắc phục.'))
+                if resp and rec.resp_locked:
+                    raise AccessError(_('Việc khắc phục đã hoàn thành và đã lưu, không được chỉnh sửa nữa.'))
                 if ctrl and not rec.can_edit_ctrl:
                     raise AccessError(_('Chỉ người kiểm soát của tiêu chí này mới được cập nhật kết quả kiểm soát.'))
         res = super().write(vals)
         if 'state' in vals:
             if vals['state'] == 'done':
+                self.filtered(lambda a: not a.resp_locked).sudo().write({'resp_locked': True})
                 self.filtered(lambda a: not a.done_notified)._notify_done()
             else:  # mở lại việc thì lần hoàn thành sau báo lại
                 self.filtered('done_notified').sudo().write({'done_notified': False})

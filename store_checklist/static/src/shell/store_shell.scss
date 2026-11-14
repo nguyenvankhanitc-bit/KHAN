@@ -1406,7 +1406,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
             .nav-item:nth-child(3) .nav-link.active { background: #f59e0b !important; color: #fff !important; }
             .nav-item:nth-child(4) .nav-link.active { background: #7c3aed !important; color: #fff !important; }
             .nav-link:not(.active) { opacity: .4; } }
-        .o_store_audit_bar { background: #dbeafe; border-radius: 12px; padding: 12px 14px !important; margin-bottom: 4px;
+        .o_store_audit_bar { display: none !important; background: #dbeafe; border-radius: 12px; padding: 12px 14px !important; margin-bottom: 4px;
             > span:first-child { font-size: 15px; font-weight: 800; }
             > span:last-child { font-size: 0; strong { font-size: 22px; } } }
     }

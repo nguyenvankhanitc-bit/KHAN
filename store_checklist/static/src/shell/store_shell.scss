@@ -544,6 +544,7 @@
 .o_store_audit_form .o_notebook_headers .nav-item:nth-child(2) .nav-link.active { background: #86efac; }
 .o_store_audit_form .o_notebook_headers .nav-item:nth-child(3) .nav-link.active { background: #fde047; }
 .o_store_audit_form .o_notebook_headers .nav-item:nth-child(4) .nav-link.active { background: #f9a8d4; }
+.o_store_audit_form .o_notebook_headers .nav-link:not(.active) { opacity: .4; }
 
 /* Danh sách Check list giám sát: tiêu đề dạng banner + nút xuất Excel */
 .o_store_list_banner {

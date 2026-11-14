@@ -28,6 +28,8 @@
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-on-click="onAddNew">Thêm mới</button>
+                    <button type="button" class="o_store_import_btn" t-if="isBenchmarkNav" t-on-click="onImportBenchmark"><i class="fa fa-upload"/> Nhập Excel</button>
+                    <button type="button" class="o_store_export_btn" t-if="isBenchmarkNav and canExport" t-on-click="onExportBenchmark"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-att-class="'is-' + state.activeNav" t-if="showListFilters">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-if="showOwnAdd" t-on-click="onAddNew">Thêm mới</button>

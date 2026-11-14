@@ -273,6 +273,55 @@ export class StoreChecklistShell extends Component {
         this.state.embeddedViewProps?.createRecord?.();
     }
 
+    // Điểm chuẩn đánh giá: xuất / nhập Excel (giám sát = gs_benchmark, NVBH + ASM = benchmark)
+    get isBenchmarkNav() {
+        return ["benchmark", "gs_benchmark"].includes(this.state.activeNav);
+    }
+
+    get benchmarkScope() {
+        return this.state.activeNav === "gs_benchmark" ? "gs" : "other";
+    }
+
+    async onExportBenchmark() {
+        try {
+            const file = await this.orm.call("store.audit.template.line", "export_xlsx", [this.benchmarkScope]);
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onImportBenchmark() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = ".xlsx";
+        input.onchange = async () => {
+            const file = input.files[0];
+            if (!file) {
+                return;
+            }
+            try {
+                const bytes = new Uint8Array(await file.arrayBuffer());
+                let bin = "";
+                for (let i = 0; i < bytes.length; i += 0x8000) {
+                    bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+                }
+                const res = await this.orm.call("store.audit.template.line", "import_xlsx", [this.benchmarkScope, btoa(bin)]);
+                const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";
+                this.notification.add(`Đã nhập: thêm ${res.created}, cập nhật ${res.updated}${warn}`, { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count) });
+                this.state.viewKey += 1;
+            } catch (error) {
+                this.notifyError(error);
+            }
+        };
+        input.click();
+    }
+
     get canExport() {
         return this.state.activeNav !== "report_flow" && (!this.state.rights || Boolean(this.state.rights[this.state.activeNav]?.export));
     }

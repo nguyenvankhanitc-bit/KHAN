@@ -18,7 +18,7 @@
                             <field name="sub_group_id" domain="category and [('category', '=', category)] or []"/>
                             <field name="name"/>
                             <field name="requirement"/>
-                            <field name="max_score" sum="Tổng"/>
+                            <field name="max_score" sum="Tổng" options="{'hide_trailing_zeros': true}"/>
                         </list>
                     </field>
                 </sheet>

@@ -107,7 +107,7 @@
                 <field name="responsible_ids" widget="many2many_tags" width="160px"/>
                 <field name="controller_ids" widget="many2many_tags" width="150px"/>
                 <field name="lug_group_ids" widget="many2many_tags" width="140px"/>
-                <field name="max_score" sum="Tổng"/>
+                <field name="max_score" sum="Tổng" options="{'hide_trailing_zeros': true}"/>
                 <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa"/>
                 <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger"
                         confirm="Xóa hạng mục này?"/>
@@ -130,7 +130,7 @@
                         </group>
                         <group>
                             <field name="sequence" string="STT"/>
-                            <field name="max_score"/>
+                            <field name="max_score" options="{'hide_trailing_zeros': true}"/>
                             <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}"/>
                             <field name="controller_ids" widget="many2many_tags" options="{'no_create': true}"/>
                             <field name="lug_group_ids" widget="many2many_tags" options="{'no_create': true}"/>

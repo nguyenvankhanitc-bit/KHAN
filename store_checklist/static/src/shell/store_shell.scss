@@ -1566,3 +1566,9 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Banner tím (Báo cáo theo quản lý): logo đặt trên nền trắng bo tròn cho rõ chữ */
 .o_store_list_wrap:has(.o_store_mgrrep) .o_store_list_banner .o_store_logo { mix-blend-mode: normal; background: #fff; border-radius: 12px; border-right: 0; padding: 4px 14px; height: 64px; margin-right: 8px; }
+
+/* Cố định cỡ hiển thị toàn bộ nội dung module (danh sách, báo cáo, dashboard, phiếu) tương đương trình duyệt zoom 90% trên máy tính */
+@media (min-width: 768px) {
+    .o_store_list_wrap, .o_store_shell_home { zoom: 0.9; }
+    .o_store_list_wrap .o_store_audit_form { zoom: 1; }
+}

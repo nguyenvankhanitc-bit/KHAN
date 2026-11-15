@@ -1580,3 +1580,6 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     td:not(.text-danger) { color: #212529 !important; }
     td.o_list_button { background: #dcfce7 !important; }
     .o_store_violation_btn, .o_store_violation_btn * { color: #15803d !important; } }
+
+/* Popup Xử lý sai phạm: hàng 4 thẻ số liệu nằm riêng một dòng và canh giữa (trước đó dính trái khi xuống dòng) */
+.o_store_viol_hdr .vh_cards { flex: 1 1 100%; justify-content: center; }

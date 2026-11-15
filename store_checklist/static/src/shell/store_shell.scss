@@ -1537,8 +1537,8 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .o_store_sup .sp_hbar, .o_store_sup .sp_axis { grid-template-columns: 80px 1fr; }
 }
 
-/* Phiếu đánh giá mở trong khung chính: zoom 0.9 làm form chỉ rộng 90% khung, bù lại để bảng tiêu chí rộng hết khung */
-.o_store_list_wrap > .o_store_audit_form { width: calc(100% / 0.9); }
+/* Phiếu đánh giá mở trong khung chính: bỏ giới hạn bề rộng của tờ phiếu để bảng tiêu chí rộng hết khung */
+.o_store_list_wrap > .o_store_audit_form { .o_form_sheet_bg, .o_form_sheet { max-width: none !important; width: 100%; } }
 
 /* Phiếu đánh giá mở trong khung chính: ẩn thanh nút trạng thái (Hoàn tất / Tạo khắc phục / Về nháp và các bước Nháp → Hoàn tất) */
 .o_store_list_wrap > .o_store_audit_form .o_form_statusbar { display: none !important; }

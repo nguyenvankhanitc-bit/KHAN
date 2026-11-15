@@ -505,6 +505,43 @@
     .o_store_list_filters { flex-wrap: wrap !important; select { flex: 1 1 45% !important; min-width: 0 !important; } }
 }
 
+/* Điện thoại: nút Xuất Excel và nút Tìm nhỏ lại */
+@media (max-width: 767.98px) {
+    .o_store_list_filters .o_store_export_btn { height: 26px !important; padding: 0 9px !important; font-size: .72rem !important; border-radius: 6px;
+        i { margin-right: 4px; font-size: .8rem; } }
+    .o_store_list_wrap .o_control_panel .o_searchview_dropdown_toggler,
+    .o_store_list_wrap .o_control_panel .o_cp_searchview > .btn,
+    .o_store_list_wrap .o_control_panel .o_control_panel_actions .btn { height: 26px !important; min-height: 0 !important; padding: 0 9px !important;
+        font-size: .72rem !important; line-height: 24px !important; border-radius: 6px; }
+}
+
+/* Điện thoại: banner đầu danh sách gọn lại để nhường chỗ cho thẻ phiếu */
+@media (max-width: 767.98px) {
+    .o_store_list_banner { padding: 6px 10px !important; gap: 8px !important; margin-bottom: 6px !important;
+        .o_store_audit_icon { width: 34px !important; height: 34px !important; }
+        h2 { font-size: .85rem !important; line-height: 1.15; }
+        img { max-height: 52px; width: auto; max-width: 100%; } }
+    .o_store_list_wrap { gap: 6px !important; }
+}
+
+/* Điện thoại: thu nhỏ thẻ phiếu + chừa chỗ cho thanh menu dưới để không bị che mất phần cuối */
+@media (max-width: 767.98px) {
+    .o_store_list_wrap, .o_store_audit_list { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important; }
+    .o_store_audit_list {
+        table.o_list_table tbody tr.o_data_row { margin: 6px 0; border-radius: 12px; }
+        table.o_list_table tbody tr.o_data_row td[name="name"] { padding: 7px 110px 7px 10px !important; font-size: .82rem; }
+        table.o_list_table tbody tr.o_data_row td[name="state"] { top: 6px; right: 8px; font-size: .72rem; }
+        table.o_list_table tbody tr.o_data_row td[name]:not([name="name"]):not([name="state"]) {
+            grid-template-columns: 34px minmax(0, 1fr); padding: 5px 6px !important; font-size: .78rem; }
+        table.o_list_table tbody tr.o_data_row td[name]:not([name="name"]):not([name="state"])::after {
+            width: 26px; height: 26px; font-size: 12px; line-height: 26px; }
+        table.o_list_table tbody tr.o_data_row td[name]:not([name="name"]):not([name="state"])::before,
+        td[name="error_count"]::before { font-size: .62rem; }
+        td.o_list_button .btn { padding: 5px 2px; font-size: .66rem; }
+        td.o_list_button .btn i { font-size: .95rem; }
+    }
+}
+
 /* ===== Điện thoại: Tổng quan — thẻ số 2x2, biểu đồ nhỏ lại xếp 2x2, bảng cửa hàng chưa audit ở cuối ===== */
 @media (max-width: 767.98px) {
     .o_store_dash { display: grid !important; grid-template-columns: 1fr 1fr; gap: 10px; padding: 10px !important;

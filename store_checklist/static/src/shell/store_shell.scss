@@ -1542,3 +1542,12 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Phiếu đánh giá mở trong khung chính: ẩn thanh nút trạng thái (Hoàn tất / Tạo khắc phục / Về nháp và các bước Nháp → Hoàn tất) */
 .o_store_list_wrap > .o_store_audit_form .o_form_statusbar { display: none !important; }
+
+/* Phiếu đánh giá: cột Hình ảnh hiện ảnh thật (giống file PDF) thay cho ô nhỏ kèm tên file */
+.o_store_audit_form td[name="attachment_ids"] {
+    .o_attachment { width: 100% !important; margin: 0 !important; }
+    .o_attachment_wrap { background: transparent !important; border: 0 !important; padding: 0 !important; }
+    .o_image_box { float: none !important; margin: 0 !important; }
+    .o_preview_image { display: block; width: 130px !important; height: auto !important; max-height: none !important; object-fit: contain; margin: 4px auto; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; }
+    .caption, .o_attachment_uploaded { display: none !important; }
+}

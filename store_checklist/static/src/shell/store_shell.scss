@@ -845,7 +845,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 /* Desktop: thanh tìm kiếm + số trang nằm cùng hàng với bộ lọc và nút Xuất Excel */
 @media (min-width: 768px) {
     .o_store_list_wrap:has(.o_store_export_btn) .o_control_panel {
-        margin-top: -52px; position: relative; z-index: 1; padding-left: 540px !important; padding-right: 270px !important; background: transparent !important; border: 0 !important; }
+        margin-top: -52px; position: relative; z-index: 1; padding-left: 650px !important; padding-right: 270px !important; background: transparent !important; border: 0 !important; }
     .o_store_list_wrap:has(.o_store_export_btn) .o_control_panel .o_control_panel_actions { margin-left: 0 !important; }
 }
 

@@ -515,6 +515,25 @@
         font-size: .72rem !important; line-height: 24px !important; border-radius: 6px; }
 }
 
+/* Điện thoại: khóa cuộn ngang, nội dung phiếu luôn nằm giữa và vừa khít màn hình (không bị kéo lệch trái/phải) */
+@media (max-width: 767.98px) {
+    body.modal-open, body:has(.o_store_audit_form), .o_action_manager:has(.o_store_audit_form) { overflow-x: hidden !important; }
+    .modal:has(.o_store_audit_form) { overflow-x: hidden !important; touch-action: pan-y; }
+    .modal:has(.o_store_audit_form) .modal-dialog, .modal:has(.o_store_audit_form) .modal-content,
+    .modal:has(.o_store_audit_form) .modal-body, .modal:has(.o_store_audit_form) .o_form_view,
+    .modal:has(.o_store_audit_form) .o_form_sheet_bg, .modal:has(.o_store_audit_form) .o_form_sheet,
+    .modal:has(.o_store_audit_form) .o_notebook, .modal:has(.o_store_audit_form) .tab-content {
+        max-width: 100% !important; box-sizing: border-box; overflow-x: hidden !important; margin-left: 0 !important; margin-right: 0 !important; }
+    .modal:has(.o_store_audit_form) .modal-body { touch-action: pan-y; overscroll-behavior-x: none; }
+    /* các tab A/B/Chuyên môn/Tổng hợp: xuống dòng, chia đều chiều rộng, không tràn ra ngoài */
+    .modal:has(.o_store_audit_form) .o_notebook_headers { max-width: 100% !important; overflow: visible !important; margin: 0 !important; }
+    .modal:has(.o_store_audit_form) .o_notebook_headers .nav-tabs { display: flex !important; flex-wrap: wrap !important; width: 100% !important; gap: 6px; }
+    .modal:has(.o_store_audit_form) .o_notebook_headers .nav-item { flex: 1 1 calc(50% - 6px); min-width: 0; margin: 0 !important; }
+    .modal:has(.o_store_audit_form) .o_notebook_headers .nav-link { width: 100%; white-space: normal !important; text-align: center; padding: 8px 6px; font-size: .78rem; }
+    .o_store_audit_form, .o_store_audit_form .o_form_sheet { max-width: 100%; overflow-x: hidden; }
+    .o_store_audit_form img, .o_store_audit_form table, .o_store_audit_form .o_field_widget { max-width: 100%; }
+}
+
 /* Điện thoại: banner đầu danh sách gọn lại để nhường chỗ cho thẻ phiếu */
 @media (max-width: 767.98px) {
     .o_store_list_banner { padding: 6px 10px !important; gap: 8px !important; margin-bottom: 6px !important;

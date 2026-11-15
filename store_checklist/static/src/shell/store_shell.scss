@@ -1557,3 +1557,12 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 .o_store_audit_title .o_store_logo { height: 88px; }
 .sp_head .o_store_logo { height: 76px; }
 @media (max-width: 767px) { .o_store_logo, .o_store_audit_title .o_store_logo, .sp_head .o_store_logo { height: 52px; max-width: 130px; padding-right: 10px; } }
+
+/* Báo cáo theo quản lý: biểu đồ xếp hạng lấp đầy chiều cao thẻ (hết khoảng trống), chú thích Tầng 1-2-3 nằm một dòng dưới đáy */
+.o_store_mgr_rankrow > .card:first-child { display: flex; flex-direction: column;
+    .plot { flex: 1 1 auto; height: auto; min-height: 250px; }
+    .stk_note { margin-top: 0; flex-wrap: nowrap; gap: 6px 18px; white-space: nowrap; overflow-x: auto; } }
+@media (max-width: 767px) { .o_store_mgr_rankrow > .card:first-child .stk_note { flex-wrap: wrap; white-space: normal; } }
+
+/* Banner tím (Báo cáo theo quản lý): logo đặt trên nền trắng bo tròn cho rõ chữ */
+.o_store_list_wrap:has(.o_store_mgrrep) .o_store_list_banner .o_store_logo { mix-blend-mode: normal; background: #fff; border-radius: 12px; border-right: 0; padding: 4px 14px; height: 64px; margin-right: 8px; }

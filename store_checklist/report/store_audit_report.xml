@@ -21,7 +21,7 @@
         <field name="paperformat_id" ref="paperformat_store_audit"/>
         <!-- cache PDF; tên chứa mốc sửa cuối của phiếu và các dòng nên sửa điểm là tự dựng lại -->
         <field name="attachment_use" eval="True"/>
-        <field name="attachment">'Bien-ban-v8-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]))</field>
+        <field name="attachment">'Bien-ban-v9-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]))</field>
     </record>
 
     <template id="report_store_audit">
@@ -129,7 +129,7 @@
                         <div style="border-bottom:1px dotted #000; height:24px;"/>
                         <div style="border-bottom:1px dotted #000; height:24px;"/>
                         <div style="border-bottom:1px dotted #000; height:24px;"/>
-                        <div style="margin-top:6px;">Ngày <t t-esc="context_timestamp(o.audit_date).strftime('%d')"/> tháng <t t-esc="context_timestamp(o.audit_date).strftime('%m')"/> năm <t t-esc="context_timestamp(o.audit_date).strftime('%Y')"/></div>
+                        <div style="margin-top:6px; width:20%; text-align:center;">Ngày <t t-esc="context_timestamp(o.audit_date).strftime('%d')"/> tháng <t t-esc="context_timestamp(o.audit_date).strftime('%m')"/> năm <t t-esc="context_timestamp(o.audit_date).strftime('%Y')"/></div>
                         <table style="width:100%; border:0; margin-top:6px; text-align:center;">
                             <tr style="font-weight:bold;">
                                 <td style="width:20%">Người lập</td><td style="width:20%">Trưởng bộ phận</td>

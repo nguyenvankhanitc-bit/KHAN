@@ -60,6 +60,7 @@ export class StoreChecklistShell extends Component {
             mgrFilter: "",
             mgrPage: 0,
             supQ: "",
+            supStores: [],
             supPage: 0,
             personal: null,
             canCreate: false,
@@ -876,6 +877,9 @@ export class StoreChecklistShell extends Component {
             const [y, m] = month.split("-").map(Number);
             prev = this.listDomain(this.reportBase, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
         }
+        if (this.state.activeNav === "report_sup" && !this.state.supStores.length) {
+            this.state.supStores = (await this.orm.searchRead("hr.store", [], ["display_name"], { order: "name" })).map((s) => ({ id: s.id, name: s.display_name }));
+        }
         this.state.report = await this.orm.call("store.audit", "get_report_gs", [this.listDomain(this.reportBase), prev]);
     }
 
@@ -964,7 +968,9 @@ export class StoreChecklistShell extends Component {
             rows: list.slice(page * size, (page + 1) * size).map((s, i) => ({ ...s, no: page * size + i + 1 })),
             total: list.length, from: list.length ? page * size + 1 : 0, to: Math.min(list.length, (page + 1) * size),
             page, pages,
-            nums: Array.from({ length: pages }, (_, i) => i).filter((i) => i === 0 || i === pages - 1 || Math.abs(i - page) <= 1),
+            // số trang gần trang hiện tại + trang đầu/cuối; -1 = dấu "…"
+            nums: Array.from({ length: pages }, (_, i) => i).filter((i) => i === 0 || i === pages - 1 || Math.abs(i - page) <= 1)
+                .flatMap((i, k, a) => (k && i - a[k - 1] > 1 ? [-1, i] : [i])),
         };
     }
 
@@ -974,7 +980,7 @@ export class StoreChecklistShell extends Component {
     }
 
     levelTone(name) {
-        return this.toneColor(this.state.report?.levels.find((l) => l.name === name)?.tone);
+        return this.state.report?.levels.find((l) => l.name === name)?.tone || "orange";
     }
 
     showMgr(row) {

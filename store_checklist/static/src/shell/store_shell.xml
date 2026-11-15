@@ -19,7 +19,7 @@
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
-                <div class="o_store_list_banner" t-if="listTitle">
+                <div class="o_store_list_banner" t-if="listTitle and state.activeNav !== 'report_sup'">
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
@@ -38,19 +38,19 @@
                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
-                    <select t-if="!reportNavs.includes(state.activeNav)" t-on-change="(ev) => this.onListFilter('store', ev)">
+                    <select t-if="!reportNavs.includes(state.activeNav) or state.activeNav === 'report_sup'" t-on-change="(ev) => this.onListFilter('store', ev)">
                         <option value="">Tất cả cửa hàng</option>
-                        <option t-foreach="state.dash ? state.dash.store_options : []" t-as="st" t-key="st.id" t-att-value="st.id"
+                        <option t-foreach="state.activeNav === 'report_sup' ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
                     <select t-if="!isPersonal" t-on-change="(ev) => this.onListFilter('mien', ev)">
-                        <option value="" t-esc="state.activeNav === 'report_manager' ? 'Tất cả khu vực' : 'Tất cả miền'"/>
+                        <option value="" t-esc="['report_manager', 'report_sup'].includes(state.activeNav) ? 'Tất cả khu vực' : 'Tất cả miền'"/>
                         <option value="Nam">Miền Nam</option>
                         <option value="ĐTT">Miền ĐTT</option>
                         <option value="Bắc">Miền Bắc</option>
                         <option value="other">Khác</option>
                     </select>
-                    <select t-if="state.activeNav === 'report_gs' and !isPersonal and state.report" t-on-change="(ev) => this.onListFilter('auditor', ev)">
+                    <select t-if="['report_gs', 'report_sup'].includes(state.activeNav) and !isPersonal and state.report" t-on-change="(ev) => this.onListFilter('auditor', ev)">
                         <option value="">Tất cả giám sát</option>
                         <option t-foreach="state.report.auditor_options" t-as="au" t-key="au.id" t-att-value="au.id"
                                 t-att-selected="('' + au.id) === state.listFilters.auditor" t-esc="au.name"/>
@@ -319,6 +319,10 @@
                 </div>
                 <div class="o_store_sup" t-elif="state.activeNav === 'report_sup' and state.report">
                     <t t-set="sv" t-value="supView"/>
+                    <div class="sp_head">
+                        <span class="ico"><i class="fa fa-bar-chart"/></span>
+                        <div><h2>BÁO CÁO GIÁM SÁT</h2><p>Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng</p></div>
+                    </div>
                     <div class="sp_kpis">
                         <div><i class="fa fa-shopping-bag" style="color:#2563eb"/><b>Tổng cửa hàng Audit</b><strong style="color:#2563eb" t-esc="sv.kpi.stores"/><span>Cửa hàng</span></div>
                         <div><i class="fa fa-users" style="color:#16a34a"/><b>Tổng giám sát</b><strong style="color:#16a34a" t-esc="sv.kpi.auditors"/><span>Nhân sự</span></div>
@@ -351,7 +355,7 @@
                     <div class="sp_card sp_detail">
                         <div class="sp_dhead">
                             <h4><i class="fa fa-list"/> CHI TIẾT CỬA HÀNG ĐÃ ĐƯỢC GIÁM SÁT KIỂM TRA</h4>
-                            <input type="search" placeholder="Tìm cửa hàng..." t-att-value="state.supQ" t-on-input="onSupSearch"/>
+                            <span class="sp_search"><i class="fa fa-search"/><input type="search" placeholder="Tìm cửa hàng..." t-att-value="state.supQ" t-on-input="onSupSearch"/></span>
                         </div>
                         <div class="o_store_mgr_scroll">
                             <table class="o_store_report_table o_store_mgr_table">
@@ -360,7 +364,7 @@
                                     <tr t-foreach="sv.rows" t-as="r" t-key="r.id">
                                         <td t-esc="r.no"/><td class="l" t-esc="r.store"/><td t-esc="r.auditor"/><td t-esc="r.date.slice(0, 10)"/>
                                         <td><t t-esc="r.score"/>%</td>
-                                        <td><span class="sp_pill" t-attf-style="background: #{levelTone(r.level)}" t-esc="r.level"/></td>
+                                        <td><span t-attf-class="sp_pill t-#{levelTone(r.level)}" t-esc="r.level"/></td>
                                         <td t-esc="r.errors"/>
                                         <td><button type="button" class="sp_view" t-on-click="() => this.openAudit(r.id)"><i class="fa fa-eye"/> Xem</button></td>
                                     </tr>
@@ -371,8 +375,12 @@
                         <div class="sp_pager">
                             <span>Hiển thị <t t-esc="sv.from"/> - <t t-esc="sv.to"/> / <t t-esc="sv.total"/> bản ghi</span>
                             <span class="pg">
+                                <button type="button" t-att-disabled="sv.page === 0" t-on-click="() => state.supPage = 0">«</button>
                                 <button type="button" t-att-disabled="sv.page === 0" t-on-click="() => state.supPage = sv.page - 1">‹</button>
-                                <button type="button" t-foreach="sv.nums" t-as="n" t-key="n" t-att-class="n === sv.page ? 'is-on' : ''" t-on-click="() => state.supPage = n" t-esc="n + 1"/>
+                                <t t-foreach="sv.nums" t-as="n" t-key="n_index">
+                                    <span class="dots" t-if="n &lt; 0">…</span>
+                                    <button type="button" t-else="" t-att-class="n === sv.page ? 'is-on' : ''" t-on-click="() => state.supPage = n" t-esc="n + 1"/>
+                                </t>
                                 <button type="button" t-att-disabled="sv.page >= sv.pages - 1" t-on-click="() => state.supPage = sv.page + 1">›</button>
                             </span>
                         </div>

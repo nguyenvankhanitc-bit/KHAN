@@ -335,19 +335,17 @@
                             <p>So sánh năng suất kiểm tra của từng giám sát trong tháng</p>
                             <div class="sp_hbar" t-foreach="sv.bars" t-as="b" t-key="b.id">
                                 <span class="nm" t-esc="b.name"/>
-                                <span class="tr"><i t-attf-style="width: #{b.pct}%"/></span>
-                                <b t-esc="b.n"/>
+                                <span class="tr"><i t-attf-style="width: #{b.pct}%"/><b t-esc="b.n"/></span>
                             </div>
-                            <div class="sp_axis"><span class="nm"/><span class="tr"><span t-foreach="sv.ticks" t-as="t" t-key="t_index" t-esc="t"/></span><b/></div>
+                            <div class="sp_axis"><span class="nm"/><span class="tr"><span t-foreach="sv.ticks" t-as="t" t-key="t_index" t-esc="t"/></span></div>
                             <p class="text-muted" t-if="!sv.bars.length">Chưa có phiếu giám sát đã chốt trong kỳ đã chọn.</p>
                         </div>
                         <div class="sp_card">
-                            <h4><i class="fa fa-pie-chart"/> 2. KẾT QUẢ XẾP LOẠI CỬA HÀNG THEO GIÁM SÁT</h4>
+                            <h4 class="is-pie"><i class="fa fa-pie-chart"/> 2. KẾT QUẢ XẾP LOẠI CỬA HÀNG THEO GIÁM SÁT</h4>
                             <p>Chất lượng đánh giá của các cửa hàng</p>
                             <div class="sp_hbar" t-foreach="sv.stacks" t-as="b" t-key="b.id">
                                 <span class="nm" t-esc="b.name"/>
-                                <span class="tr is-stack"><span class="st" t-attf-style="width: #{b.pct}%"><i t-foreach="b.segs" t-as="g" t-key="g.name" t-attf-style="flex: #{g.n}; background: #{g.color}" t-att-title="g.name" t-esc="g.n"/></span></span>
-                                <b t-esc="b.total"/>
+                                <span class="tr is-stack"><span class="st" t-attf-style="width: #{b.pct}%"><i t-foreach="b.segs" t-as="g" t-key="g.name" t-attf-style="flex: #{g.n}; background: #{g.color}" t-att-title="g.name" t-esc="g.n"/></span><b t-esc="b.total"/></span>
                             </div>
                             <div class="sp_legend"><span t-foreach="sv.legend" t-as="l" t-key="l.name"><i t-attf-style="background: #{l.color}"/> <t t-esc="l.name"/></span></div>
                         </div>

@@ -947,7 +947,8 @@ export class StoreChecklistShell extends Component {
         r.stores.forEach((s) => latest.has(s.store) || latest.set(s.store, s));
         const good = levels.find((l) => l.name.toLowerCase() === "tốt");
         const axis = (max) => {
-            const step = Math.max(1, Math.ceil(max / 4));
+            const raw = Math.max(1, Math.ceil(max / 4));
+            const step = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].find((s) => s >= raw) || raw;
             return { top: step * 4, ticks: [0, 1, 2, 3, 4].map((i) => i * step) };
         };
         const ax = axis(Math.max(1, ...done.map((x) => x.done)));

@@ -20,6 +20,7 @@
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
                 <div class="o_store_list_banner" t-if="listTitle and !isSupLayout">
+                    <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
@@ -320,6 +321,7 @@
                 <div class="o_store_sup" t-elif="isSupLayout and state.report">
                     <t t-set="sv" t-value="supView"/>
                     <div class="sp_head">
+                        <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                         <span class="ico"><i class="fa fa-bar-chart"/></span>
                         <div><h2>BÁO CÁO GIÁM SÁT</h2><p>Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng</p></div>
                     </div>
@@ -673,6 +675,7 @@
             <div class="o_store_shell_home o_store_dash" t-elif="state.dash">
                 <div class="o_store_dash_top">
                     <div class="o_store_dash_title">
+                        <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                         <i class="fa fa-bar-chart"/>
                         <div>
                             <h1>Dashboard Checklist Audit</h1>

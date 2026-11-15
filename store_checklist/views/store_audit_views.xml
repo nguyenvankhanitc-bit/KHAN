@@ -15,6 +15,7 @@
                 <sheet>
                     <field name="name" invisible="1"/>
                     <div class="o_store_audit_title">
+                        <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                         <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                         <div class="o_store_audit_text">
                             <h2><field name="form_title"/></h2>

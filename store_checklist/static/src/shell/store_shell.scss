@@ -1551,3 +1551,9 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .o_preview_image { display: block; width: 130px !important; height: auto !important; max-height: none !important; object-fit: contain; margin: 4px auto; border: 1px solid #cbd5e1; border-radius: 4px; background: #fff; }
     .caption, .o_attachment_uploaded { display: none !important; }
 }
+
+/* Logo công ty ở đầu mọi tiêu đề của module (banner danh sách, báo cáo, dashboard, phiếu) */
+.o_store_logo { mix-blend-mode: multiply; height: 56px; max-width: 170px; width: auto; object-fit: contain; flex: none; padding-right: 20px; margin-right: 4px; border-right: 1px solid #cfd9ec; }
+.o_store_audit_title .o_store_logo { height: 52px; }
+.sp_head .o_store_logo { height: 52px; }
+@media (max-width: 767px) { .o_store_logo { height: 36px; max-width: 96px; padding-right: 10px; } }

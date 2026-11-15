@@ -4235,7 +4235,8 @@ body.o_ews_resizing {
 @media (max-width: 767.98px) {
     .o_daily_work_employee_ws.o_ews_phone:has(.o_ews_form_panel.o_ews_form_open) {
         .o_ews_pin, .o_ews_mchips, .o_ews_mobile_board { display: none !important; }
-        .o_ews_form_panel.o_ews_form_open { z-index: 100000 !important; scroll-padding-top: 0; }
+        /* form toàn màn hình nằm dưới thanh Odoo (avatar/menu) + thanh tím "CÔNG VIỆC" nên dời xuống để không bị che đầu form */
+        .o_ews_form_panel.o_ews_form_open { z-index: 100000 !important; top: var(--ews-form-top, 124px) !important; height: auto !important; max-height: none !important; bottom: 0 !important; }
         .o_ews_form_panel.o_ews_form_open .o_ews_form_title { position: sticky; top: 0; z-index: 2; background: #fff; }
         .o_ews_form_panel.o_ews_form_open .o_ews_task_form { padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px)) !important; }
     }

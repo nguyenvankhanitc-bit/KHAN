@@ -63,6 +63,7 @@ class StoreAudit(models.Model):
         compute='_compute_scores', store=True)
     summary = fields.Text(string='Đánh giá tổng thể')
     error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_total', store=True)
+    violation_done = fields.Boolean(string='Đã xử lý xong sai phạm', compute='_compute_violation_done')
 
     # Mức đánh giá từng mục A/B/C và tổng (theo bảng Cài đặt > Mức Đánh giá), tính realtime, không lưu
     lvl_a = fields.Char(compute='_compute_levels')
@@ -241,6 +242,13 @@ class StoreAudit(models.Model):
             rec.can_edit_done = can
 
     @api.depends('audit_type')
+    @api.depends('action_ids.state', 'action_ids.line_id.error_count')
+    def _compute_violation_done(self):
+        # xong khi mọi hạng mục có lỗi đều đã Hoàn thành (user thường không đọc được action của người khác nên dùng sudo)
+        for rec in self:
+            acts = rec.sudo().action_ids.filtered(lambda a: a.line_id.error_count > 0)
+            rec.violation_done = bool(acts) and all(a.state == 'done' for a in acts)
+
     def _compute_form_title(self):
         for rec in self:
             rec.form_title = 'CHECK LIST GIÁM SÁT' if rec.audit_type == 'gs' else 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'

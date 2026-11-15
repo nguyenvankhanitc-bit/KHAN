@@ -190,6 +190,11 @@ export class StoreBenchmarkController extends ListController {
 
 // Dòng chỉ sửa được khi user là người phụ trách hoặc người kiểm soát; còn lại bấm vào không vào chế độ sửa (không hiện Lưu / Hủy)
 export class StoreViolationRenderer extends ListRenderer {
+    getCellClass(column, record) {
+        const cls = super.getCellClass(column, record);
+        // cột Trạng thái xử lý: Hoàn thành = xanh nhạt, chưa xử lý / đang làm = hồng nhạt
+        return column.name === "state" ? `${cls} ${record.data.state === "done" ? "o_sv_done" : "o_sv_todo"}` : cls;
+    }
     async onCellClicked(record, column, ev, newWindow) {
         if (!(record.data.can_edit_resp || record.data.can_edit_ctrl)) {
             return;
@@ -201,6 +206,11 @@ export class StoreViolationRenderer extends ListRenderer {
 // Danh sách xử lý sai phạm chỉ để xem: bấm vào dòng không mở biểu mẫu (tránh lỗi owl khi user không đủ quyền)
 export class StoreViolationReadonlyRenderer extends ListRenderer {
     async onCellClicked() {}
+    getCellClass(column, record) {
+        const cls = super.getCellClass(column, record);
+        // cột Trạng thái xử lý: Hoàn thành = xanh nhạt, chưa xử lý / đang làm = hồng nhạt
+        return column.name === "state" ? `${cls} ${record.data.state === "done" ? "o_sv_done" : "o_sv_todo"}` : cls;
+    }
 }
 
 export class StoreViolationController extends ListController {

@@ -1572,3 +1572,11 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .o_store_list_wrap, .o_store_shell_home { zoom: 0.9; }
     .o_store_list_wrap .o_store_audit_form { zoom: 1; }
 }
+
+/* Biên bản sai phạm: Hoàn thành = nền xanh nhạt, chưa xử lý = nền hồng nhạt (cột Trạng thái xử lý và cột Biên bản ở Cửa hàng sai phạm) */
+.o_store_violation_list, .o_store_viol_all { table.o_list_table tbody td.o_sv_done { background: #dcfce7 !important; color: #15803d !important; font-weight: 600; }
+    table.o_list_table tbody td.o_sv_todo { background: #ffe4e6 !important; color: #be123c !important; font-weight: 600; } }
+.o_store_viol_stores table.o_list_table tbody tr.text-success {
+    td:not(.text-danger) { color: #212529 !important; }
+    td.o_list_button { background: #dcfce7 !important; }
+    .o_store_violation_btn, .o_store_violation_btn * { color: #15803d !important; } }

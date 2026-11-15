@@ -30,7 +30,8 @@
         <field name="inherit_id" eval="False"/>
         <field name="mode">primary</field>
         <field name="arch" type="xml">
-            <list create="0" delete="0" group_edit="0" group_delete="0" string="Cửa hàng sai phạm" class="o_store_audit_list o_store_viol_stores">
+            <list create="0" delete="0" group_edit="0" group_delete="0" string="Cửa hàng sai phạm" class="o_store_audit_list o_store_viol_stores" decoration-success="violation_done">
+                <field name="violation_done" column_invisible="1"/>
                 <field name="name" string="Mã phiếu" width="190px"/>
                 <field name="audit_date" options="{'numeric': true}"/>
                 <field name="store_id" string="Cửa hàng" width="130px"/>

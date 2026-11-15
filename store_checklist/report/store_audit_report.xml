@@ -21,7 +21,7 @@
         <field name="paperformat_id" ref="paperformat_store_audit"/>
         <!-- cache PDF; tên chứa mốc sửa cuối của phiếu và các dòng nên sửa điểm là tự dựng lại -->
         <field name="attachment_use" eval="True"/>
-        <field name="attachment">'Bien-ban-v12-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]))</field>
+        <field name="attachment">'Bien-ban-v14-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]))</field>
     </record>
 
     <template id="report_store_audit">
@@ -37,12 +37,12 @@
                         .red { color: #f00; }
                     </style>
                     <t t-set="dt" t-value="context_timestamp(o.audit_date)"/>
-                    <table t-att-style="'width:100%; border-collapse:collapse; margin-bottom:12px; height:84px; background-color:#144ab8; background-image:url(' + o._report_image('report_banner.png') + '); background-repeat:no-repeat; background-size:100% 100%; -webkit-background-size:100% 100%; border-radius:14px;'">
-                        <tr>
-                            <td style="width:20%; text-align:center; vertical-align:middle; padding:6px 10px;"><img t-att-src="o._report_image('company_logo.png')" style="height:60px;"/></td>
-                            <td style="width:8%; text-align:right; vertical-align:middle; padding-right:14px;"><span style="display:inline-block; width:54px; height:54px; line-height:62px; text-align:center; background:#1c4fb5; border:2px solid #5d8de0; border-radius:12px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M9 18v-4M13 18v-7M17 18v-3"/></svg></span></td>
-                            <td style="width:3px; padding:0; vertical-align:middle;"><div style="width:2px; height:46px; background:#9db9ee;"/></td>
-                            <td style="padding:0 18px; color:#fff; vertical-align:middle; text-align:center;">
+                    <table t-att-style="'width:100%; border-collapse:collapse; margin-bottom:12px; height:84px; border:0; border-spacing:0; background-color:#144ab8; background-image:url(' + o._report_image('report_banner.png') + '); background-repeat:no-repeat; background-size:100% 100%; -webkit-background-size:100% 100%; border-radius:14px;'">
+                        <tr style="border:0;">
+                            <td style="border:0; width:20%; text-align:center; vertical-align:middle; padding:6px 10px;"><img t-att-src="o._report_image('company_logo.png')" style="height:60px;"/></td>
+                            <td style="border:0; width:8%; text-align:right; vertical-align:middle; padding-right:14px;"><span style="display:inline-block; width:54px; height:54px; line-height:62px; text-align:center; background:#1c4fb5; border:2px solid #5d8de0; border-radius:12px;"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h9l5 5v15H6z"/><path d="M9 18v-4M13 18v-7M17 18v-3"/></svg></span></td>
+                            <td style="border:0; width:3px; padding:0; vertical-align:middle;"><div style="width:2px; height:46px; background:#9db9ee;"/></td>
+                            <td style="border:0; padding:0 18px; color:#fff; vertical-align:middle; text-align:center;">
                                 <div style="font-size:26px; line-height:30px; font-weight:bold; letter-spacing:.3px;">PHIẾU ĐÁNH GIÁ CỬA HÀNG</div>
                                 <div style="font-size:17px; line-height:22px; margin-top:2px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg> &#160;Tháng <t t-esc="dt.month"/>/<t t-esc="dt.year"/></div>
                             </td>
@@ -51,7 +51,7 @@
                     <table style="width:100%; border-collapse:separate; border-spacing:0; margin-bottom:12px;">
                         <tr>
                             <td style="width:52%; vertical-align:top; padding:0 12px 0 0;">
-                                <div style="display:inline-block; background:#1e3a8a; color:#fff; font-weight:bold; font-size:14px; padding:6px 22px 6px 12px; border-radius:8px 18px 0 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg> Thông tin chung</div>
+                                <div style="white-space:nowrap; display:inline-block; background:#1e3a8a; color:#fff; font-weight:bold; font-size:14px; padding:6px 22px 6px 12px; border-radius:8px 18px 0 0;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg> Thông tin chung</div>
                                 <table style="width:100%; border:1px solid #cfdcf2; border-radius:0 8px 8px 8px; font-size:13px; border-collapse:separate; border-spacing:0;">
                                     <tr><td style="width:34px; padding:19px 4px 19px 14px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11h16V9"/><path d="M9 20v-6h6v6"/></svg></td><td style="width:30%; padding:19px 8px;">Tên cửa hàng</td><td style="width:14px;">:</td><td style="font-weight:bold; padding:19px 8px;"><t t-esc="o.store_id.display_name"/></td></tr>
                                     <tr><td style="padding:19px 4px 19px 14px; border-top:1px dotted #b8c7e3;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s7-7 7-12a7 7 0 0 0-14 0c0 5 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg></td><td style="padding:19px 8px; border-top:1px dotted #b8c7e3;">Địa điểm</td><td style="border-top:1px dotted #b8c7e3;">:</td><td style="font-weight:bold; padding:19px 8px; border-top:1px dotted #b8c7e3;"><t t-esc="o.address or o.province"/></td></tr>
@@ -62,7 +62,7 @@
                             <td style="vertical-align:bottom; padding:0;"><img t-att-src="o._report_image('report_store.png')" style="width:100%; border-radius:10px;"/></td>
                         </tr>
                     </table>
-                    <div style="display:inline-block; background:#143c96; color:#fff; font-weight:bold; font-size:17px; padding:9px 30px 9px 16px; border-radius:10px 26px 0 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="12" width="5" height="9" rx="1"/><rect x="10" y="4" width="5" height="17" rx="1"/><rect x="17" y="9" width="5" height="12" rx="1"/></svg> &#160;TỔNG QUAN ĐÁNH GIÁ</div>
+                    <div style="white-space:nowrap; display:inline-block; background:#143c96; color:#fff; font-weight:bold; font-size:17px; padding:9px 30px 9px 16px; border-radius:10px 26px 0 0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><rect x="3" y="12" width="5" height="9" rx="1"/><rect x="10" y="4" width="5" height="17" rx="1"/><rect x="17" y="9" width="5" height="12" rx="1"/></svg> &#160;TỔNG QUAN ĐÁNH GIÁ</div>
                     <div style="border:2px solid #1d55bd; border-radius:0 12px 12px 12px; padding:8px 10px 10px; margin-bottom:14px; background:#fff;">
                     <table style="width:100%; border-collapse:separate; border-spacing:0; font-size:15px;">
                         <tr>

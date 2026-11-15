@@ -636,6 +636,11 @@ export class StoreChecklistShell extends Component {
         return ["report_sup", "report_gs"].includes(this.state.activeNav);
     }
 
+    // Phiếu đang mở trong khung chính (bấm Xem): phiếu có tiêu đề riêng nên ẩn banner danh sách phía trên cho khỏi trùng
+    get isFormOpen() {
+        return this.state.embeddedViewProps?.type === "form";
+    }
+
     get isPersonal() {
         // Báo cáo GS: chỉ người có chức danh Giám sát thấy báo cáo cá nhân (lọc theo người đánh giá); người khác thấy toàn bộ
         return this.state.activeNav === "report_gs" && !this.state.isManager && this.state.isSupervisor;

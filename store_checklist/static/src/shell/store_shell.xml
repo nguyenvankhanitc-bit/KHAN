@@ -19,7 +19,7 @@
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
-                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout">
+                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen">
                     <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>

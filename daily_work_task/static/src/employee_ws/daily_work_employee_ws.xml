@@ -6,12 +6,19 @@
             <div class="o_ews_pin" t-ref="pin">
                 <div class="o_ews_header">
                     <div class="o_ews_header_left">
-                        <h2 class="o_ews_page_title" t-on-click="() => state.isPhone and this.openMobileForm()">
-                            <t t-if="isActiveTab('board')">CÔNG VIỆC HÔM NAY</t>
-                            <t t-elif="isActiveTab('month')">BÁO CÁO THÁNG</t>
-                            <t t-else="">QUẢN LÝ CÔNG VIỆC</t>
-                        </h2>
-                        <nav class="o_ews_tabs" aria-label="Chức năng không gian làm việc">
+                        <div class="o_ews_title_row">
+                            <h2 class="o_ews_page_title" t-on-click="() => state.isPhone and this.openMobileForm()">
+                                <t t-if="isActiveTab('board')">CÔNG VIỆC HÔM NAY</t>
+                                <t t-elif="isActiveTab('month')">BÁO CÁO THÁNG</t>
+                                <t t-else="">QUẢN LÝ CÔNG VIỆC</t>
+                            </h2>
+                            <!-- Điện thoại: menu chức năng gọn thành nút xổ xuống -->
+                            <button type="button" class="o_ews_menu_btn" t-on-click.stop="() => state.phoneMenuOpen = !state.phoneMenuOpen">
+                                Menu công việc <i t-att-class="'fa ' + (state.phoneMenuOpen ? 'fa-caret-up' : 'fa-caret-down')"/>
+                            </button>
+                        </div>
+                        <div t-if="state.phoneMenuOpen" class="o_ews_menu_backdrop" t-on-click="() => state.phoneMenuOpen = false"/>
+                        <nav t-att-class="'o_ews_tabs' + (state.phoneMenuOpen ? ' is-open' : '')" aria-label="Chức năng không gian làm việc" t-on-click="() => state.phoneMenuOpen = false">
                             <button type="button"
                                     t-att-class="'o_ews_tab' + (isActiveTab('recurring') ? ' active' : '')"
                                     t-on-click="() => this.setActiveTab('recurring')">

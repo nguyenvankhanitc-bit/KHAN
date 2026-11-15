@@ -151,6 +151,7 @@ export class DailyWorkEmployeeWs extends Component {
             // Bộ lọc bảng Danh sách việc của tôi (giống mẫu Quản lý công việc)
             listFilter: { q: "", cat: "", state: "", time: "" },
             isPhone: false,
+            phoneMenuOpen: false,
             detailTask: false,
             listChip: "all",
             boardChip: "all",

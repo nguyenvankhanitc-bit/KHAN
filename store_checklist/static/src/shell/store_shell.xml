@@ -23,7 +23,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
@@ -315,6 +315,67 @@
                             </table>
                         </div>
                     </div>
+                    </div>
+                </div>
+                <div class="o_store_sup" t-elif="state.activeNav === 'report_sup' and state.report">
+                    <t t-set="sv" t-value="supView"/>
+                    <div class="sp_kpis">
+                        <div><i class="fa fa-shopping-bag" style="color:#2563eb"/><b>Tổng cửa hàng Audit</b><strong style="color:#2563eb" t-esc="sv.kpi.stores"/><span>Cửa hàng</span></div>
+                        <div><i class="fa fa-users" style="color:#16a34a"/><b>Tổng giám sát</b><strong style="color:#16a34a" t-esc="sv.kpi.auditors"/><span>Nhân sự</span></div>
+                        <div><i class="fa fa-trophy" style="color:#7c3aed"/><b>Điểm Audit trung bình</b><strong style="color:#7c3aed"><t t-esc="sv.kpi.avg"/>%</strong><span>Điểm đánh giá</span></div>
+                        <div><i class="fa fa-star" style="color:#16a34a"/><b>Cửa hàng đạt loại Tốt</b><strong style="color:#16a34a" t-esc="sv.kpi.good"/><span>Cửa hàng</span></div>
+                    </div>
+                    <div class="sp_charts">
+                        <div class="sp_card">
+                            <h4><i class="fa fa-bar-chart"/> 1. SỐ LƯỢNG CỬA HÀNG ĐÃ KIỂM TRA THEO GIÁM SÁT</h4>
+                            <p>So sánh năng suất kiểm tra của từng giám sát trong tháng</p>
+                            <div class="sp_hbar" t-foreach="sv.bars" t-as="b" t-key="b.id">
+                                <span class="nm" t-esc="b.name"/>
+                                <span class="tr"><i t-attf-style="width: #{b.pct}%"/></span>
+                                <b t-esc="b.n"/>
+                            </div>
+                            <div class="sp_axis"><span class="nm"/><span class="tr"><span t-foreach="sv.ticks" t-as="t" t-key="t_index" t-esc="t"/></span><b/></div>
+                            <p class="text-muted" t-if="!sv.bars.length">Chưa có phiếu giám sát đã chốt trong kỳ đã chọn.</p>
+                        </div>
+                        <div class="sp_card">
+                            <h4><i class="fa fa-pie-chart"/> 2. KẾT QUẢ XẾP LOẠI CỬA HÀNG THEO GIÁM SÁT</h4>
+                            <p>Chất lượng đánh giá của các cửa hàng</p>
+                            <div class="sp_hbar" t-foreach="sv.stacks" t-as="b" t-key="b.id">
+                                <span class="nm" t-esc="b.name"/>
+                                <span class="tr is-stack"><span class="st" t-attf-style="width: #{b.pct}%"><i t-foreach="b.segs" t-as="g" t-key="g.name" t-attf-style="flex: #{g.n}; background: #{g.color}" t-att-title="g.name" t-esc="g.n"/></span></span>
+                                <b t-esc="b.total"/>
+                            </div>
+                            <div class="sp_legend"><span t-foreach="sv.legend" t-as="l" t-key="l.name"><i t-attf-style="background: #{l.color}"/> <t t-esc="l.name"/></span></div>
+                        </div>
+                    </div>
+                    <div class="sp_card sp_detail">
+                        <div class="sp_dhead">
+                            <h4><i class="fa fa-list"/> CHI TIẾT CỬA HÀNG ĐÃ ĐƯỢC GIÁM SÁT KIỂM TRA</h4>
+                            <input type="search" placeholder="Tìm cửa hàng..." t-att-value="state.supQ" t-on-input="onSupSearch"/>
+                        </div>
+                        <div class="o_store_mgr_scroll">
+                            <table class="o_store_report_table o_store_mgr_table">
+                                <thead><tr><th>STT</th><th>Cửa hàng</th><th>Người giám sát</th><th>Ngày Audit</th><th>Điểm đánh giá</th><th>Xếp loại</th><th>Tổng số lỗi</th><th>Thao tác</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="sv.rows" t-as="r" t-key="r.id">
+                                        <td t-esc="r.no"/><td class="l" t-esc="r.store"/><td t-esc="r.auditor"/><td t-esc="r.date.slice(0, 10)"/>
+                                        <td><t t-esc="r.score"/>%</td>
+                                        <td><span class="sp_pill" t-attf-style="background: #{levelTone(r.level)}" t-esc="r.level"/></td>
+                                        <td t-esc="r.errors"/>
+                                        <td><button type="button" class="sp_view" t-on-click="() => this.openAudit(r.id)"><i class="fa fa-eye"/> Xem</button></td>
+                                    </tr>
+                                    <tr t-if="!sv.rows.length"><td colspan="8" class="text-muted">Không có cửa hàng nào.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="sp_pager">
+                            <span>Hiển thị <t t-esc="sv.from"/> - <t t-esc="sv.to"/> / <t t-esc="sv.total"/> bản ghi</span>
+                            <span class="pg">
+                                <button type="button" t-att-disabled="sv.page === 0" t-on-click="() => state.supPage = sv.page - 1">‹</button>
+                                <button type="button" t-foreach="sv.nums" t-as="n" t-key="n" t-att-class="n === sv.page ? 'is-on' : ''" t-on-click="() => state.supPage = n" t-esc="n + 1"/>
+                                <button type="button" t-att-disabled="sv.page >= sv.pages - 1" t-on-click="() => state.supPage = sv.page + 1">›</button>
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <div class="o_store_flow" t-elif="state.activeNav === 'report_flow' and state.managerReport">

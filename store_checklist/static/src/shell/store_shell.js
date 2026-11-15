@@ -59,6 +59,8 @@ export class StoreChecklistShell extends Component {
             flowStats: null,
             mgrFilter: "",
             mgrPage: 0,
+            supQ: "",
+            supPage: 0,
             personal: null,
             canCreate: false,
             personalTab: "activity",
@@ -154,6 +156,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
+                    { id: "report_sup", label: "Báo cáo giám sát", icon: "fa-line-chart" },
                     { id: "report_flow", label: "Sơ đồ quy trình vận hành giám sát", icon: "fa-sitemap" },
                 ],
             },
@@ -246,7 +249,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get reportNavs() {
-        return ["report_gs", "report_store", "report_rank", "report_manager", "report_flow"];
+        return ["report_gs", "report_store", "report_rank", "report_manager", "report_sup", "report_flow"];
     }
 
     // Nút "Thêm mới" riêng của module (thanh bộ lọc), không phụ thuộc nút mặc định của Odoo ở thanh điều khiển
@@ -367,6 +370,7 @@ export class StoreChecklistShell extends Component {
             violation_all: "DANH SÁCH XỬ LÝ SAI PHẠM",
             report_rank: "Báo cáo xếp loại",
             report_manager: "BÁO CÁO THEO QUẢN LÝ",
+            report_sup: "BÁO CÁO GIÁM SÁT",
             report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH GIÁM SÁT",
         }[this.state.activeNav] || "";
     }
@@ -927,6 +931,50 @@ export class StoreChecklistShell extends Component {
             rows, size, pages: Math.max(1, Math.ceil(rows.length / size)),
             page: rows.slice(this.state.mgrPage * size, (this.state.mgrPage + 1) * size),
         };
+    }
+
+    // Báo cáo giám sát: mọi tổng là công thức cộng từ dữ liệu get_report_gs (state.report), tự đổi theo bộ lọc
+    get supView() {
+        const r = this.state.report;
+        const levels = r.levels;
+        const done = r.rows.filter((x) => x.done).sort((a, b) => b.done - a.done);
+        // phiếu mới nhất của mỗi cửa hàng (r.stores đã xếp mới → cũ)
+        const latest = new Map();
+        r.stores.forEach((s) => latest.has(s.store) || latest.set(s.store, s));
+        const good = levels.find((l) => l.name.toLowerCase() === "tốt");
+        const axis = (max) => {
+            const step = Math.max(1, Math.ceil(max / 4));
+            return { top: step * 4, ticks: [0, 1, 2, 3, 4].map((i) => i * step) };
+        };
+        const ax = axis(Math.max(1, ...done.map((x) => x.done)));
+        const q = (this.state.supQ || "").trim().toLowerCase();
+        const list = r.stores.filter((s) => !q || `${s.store} ${s.auditor}`.toLowerCase().includes(q));
+        const size = 10;
+        const pages = Math.max(1, Math.ceil(list.length / size));
+        const page = Math.min(this.state.supPage, pages - 1);
+        return {
+            kpi: { stores: latest.size, auditors: done.length, avg: r.avg, good: good ? [...latest.values()].filter((s) => s.level === good.name).length : 0 },
+            ticks: ax.ticks,
+            bars: done.map((x) => ({ id: x.id, name: x.name, n: x.done, pct: (100 * x.done) / ax.top })),
+            legend: levels.map((l) => ({ name: l.name, color: this.toneColor(l.tone) })),
+            stacks: done.map((x) => ({
+                id: x.id, name: x.name, total: x.by_level.reduce((a, b) => a + b, 0),
+                segs: x.by_level.map((n, i) => ({ n, color: this.toneColor(levels[i].tone), name: levels[i].name })).filter((s) => s.n),
+            })).map((s, _i, all) => ({ ...s, pct: (100 * s.total) / Math.max(1, ...all.map((a) => a.total)) })),
+            rows: list.slice(page * size, (page + 1) * size).map((s, i) => ({ ...s, no: page * size + i + 1 })),
+            total: list.length, from: list.length ? page * size + 1 : 0, to: Math.min(list.length, (page + 1) * size),
+            page, pages,
+            nums: Array.from({ length: pages }, (_, i) => i).filter((i) => i === 0 || i === pages - 1 || Math.abs(i - page) <= 1),
+        };
+    }
+
+    onSupSearch(ev) {
+        this.state.supQ = ev.target.value;
+        this.state.supPage = 0;
+    }
+
+    levelTone(name) {
+        return this.toneColor(this.state.report?.levels.find((l) => l.name === name)?.tone);
     }
 
     showMgr(row) {

@@ -1451,3 +1451,37 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
     .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="attachment_ids"] .oe_fileupload:not(:has(.oe_add))::before { content: "\f030"; font-family: FontAwesome; font-weight: 400; }
     .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="attachment_ids"] .oe_fileupload:not(:has(.oe_add))::after { content: "Chụp hình"; }
 }
+
+/* Báo cáo giám sát (report_sup): KPI, 2 biểu đồ thanh ngang, bảng chi tiết có tìm kiếm + phân trang */
+.o_store_sup { display: flex; flex-direction: column; gap: 14px; padding: 4px 0 20px;
+    .sp_kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;
+        > div { background: #fff; border: 1px solid #e3e8f4; border-radius: 12px; padding: 14px 10px; text-align: center; display: grid; justify-items: center; gap: 2px; position: relative;
+            i { position: absolute; left: 16px; top: 18px; font-size: 30px; }
+            b { font-size: 14px; color: #12285f; margin-left: 40px; }
+            strong { font-size: 36px; line-height: 1.2; }
+            span { font-size: 13px; color: #64748b; } } }
+    .sp_charts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sp_card { background: #fff; border: 1px solid #e3e8f4; border-radius: 12px; padding: 14px 16px;
+        h4 { margin: 0; font-size: 15px; font-weight: 800; color: #12285f; i { color: #2563eb; margin-right: 6px; } }
+        > p { margin: 2px 0 12px; font-size: 12.5px; color: #64748b; } }
+    .sp_hbar, .sp_axis { display: grid; grid-template-columns: 130px 1fr 36px; align-items: center; gap: 8px; margin: 7px 0; font-size: 13px;
+        .nm { text-align: right; color: #1f2a44; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tr { display: block; height: 20px; border-left: 1px solid #cbd5e1;
+            > i { display: block; height: 100%; background: #3b82f6; border-radius: 0 3px 3px 0; min-width: 2px; }
+            .st { display: flex; height: 100%; border-radius: 0 3px 3px 0; overflow: hidden;
+                i { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 12px; font-weight: 700; font-style: normal; border-right: 1px solid #fff; } } }
+        b { font-weight: 800; } }
+    .sp_axis .tr { display: flex; justify-content: space-between; height: auto; border: 0; border-top: 1px solid #cbd5e1; font-size: 12px; color: #64748b; padding-top: 2px; }
+    .sp_legend { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; margin-top: 10px; font-size: 12.5px;
+        i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; } }
+    .sp_dhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+        input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 12px; min-width: 240px; } }
+    .sp_pill { display: inline-block; padding: 2px 12px; border-radius: 12px; color: #fff; font-size: 12px; font-weight: 700; white-space: nowrap; }
+    .sp_view { border: 1px solid #cbd5e1; background: #fff; border-radius: 8px; padding: 3px 12px; color: #1d4ed8; font-weight: 600; }
+    .sp_pager { display: flex; justify-content: space-between; align-items: center; margin-top: 10px; font-size: 13px; flex-wrap: wrap; gap: 8px;
+        .pg button { border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; min-width: 32px; height: 32px; margin-left: 4px;
+            &.is-on { background: #7c3aed; color: #fff; border-color: #7c3aed; } } }
+}
+@media (max-width: 767px) {
+    .o_store_sup { .sp_kpis { grid-template-columns: 1fr 1fr; } .sp_charts { grid-template-columns: 1fr; } .sp_hbar, .sp_axis { grid-template-columns: 80px 1fr 28px; } }
+}

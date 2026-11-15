@@ -20,6 +20,7 @@ MENUS = [
     ('report_store', 'Báo cáo theo cửa hàng', 'report'),
     ('report_rank', 'Báo cáo xếp loại', 'report'),
     ('report_manager', 'Báo cáo theo quản lý', 'report'),
+    ('report_sup', 'Báo cáo giám sát', 'report'),
     ('report_flow', 'Sơ đồ quy trình vận hành giám sát', 'report'),
     ('violation_stores', 'Cửa hàng sai phạm', 'violation'),
     ('violation_all', 'Danh sách xử lý sai phạm', 'violation'),

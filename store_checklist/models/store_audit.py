@@ -382,7 +382,7 @@ class StoreAudit(models.Model):
             return {
                 'id': a.id, 'store': a.store_id.display_name or '', 'auditor': a.auditor_id.name or '',
                 'date': fields.Datetime.context_timestamp(self, a.audit_date).strftime('%d/%m/%Y %H:%M:%S'),
-                'score': round(100 * a.pass_rate, 1), 'level': a.lvl_t or '',
+                'score': round(100 * a.pass_rate, 1), 'level': a.lvl_t or '', 'errors': a.error_count,
             }
 
         rows = []

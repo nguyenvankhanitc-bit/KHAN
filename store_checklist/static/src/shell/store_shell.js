@@ -157,7 +157,6 @@ export class StoreChecklistShell extends Component {
                     { id: "report_store", label: "Báo cáo theo cửa hàng", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
-                    { id: "report_sup", label: "Báo cáo giám sát", icon: "fa-line-chart" },
                     { id: "report_flow", label: "Sơ đồ quy trình vận hành giám sát", icon: "fa-sitemap" },
                 ],
             },
@@ -630,6 +629,11 @@ export class StoreChecklistShell extends Component {
         return [["audit_type", "=", "gs"], ["state", "!=", "draft"]];
     }
 
+    // Báo cáo GS (người xem toàn bộ) dùng giao diện "Báo cáo giám sát" theo mẫu
+    get isSupLayout() {
+        return this.state.activeNav === "report_sup" || (this.state.activeNav === "report_gs" && !this.isPersonal);
+    }
+
     get isPersonal() {
         // Báo cáo GS: chỉ người có chức danh Giám sát thấy báo cáo cá nhân (lọc theo người đánh giá); người khác thấy toàn bộ
         return this.state.activeNav === "report_gs" && !this.state.isManager && this.state.isSupervisor;
@@ -877,7 +881,7 @@ export class StoreChecklistShell extends Component {
             const [y, m] = month.split("-").map(Number);
             prev = this.listDomain(this.reportBase, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
         }
-        if (this.state.activeNav === "report_sup" && !this.state.supStores.length) {
+        if (this.isSupLayout && !this.state.supStores.length) {
             this.state.supStores = (await this.orm.searchRead("hr.store", [], ["display_name"], { order: "name" })).map((s) => ({ id: s.id, name: s.display_name }));
         }
         this.state.report = await this.orm.call("store.audit", "get_report_gs", [this.listDomain(this.reportBase), prev]);

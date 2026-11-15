@@ -19,7 +19,7 @@
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
-                <div class="o_store_list_banner" t-if="listTitle and state.activeNav !== 'report_sup'">
+                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout">
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
@@ -31,20 +31,20 @@
                     <button type="button" class="o_store_import_btn" t-if="isBenchmarkNav" t-on-click="onImportBenchmark"><i class="fa fa-upload"/> Nhập Excel</button>
                     <button type="button" class="o_store_export_btn" t-if="isBenchmarkNav and canExport" t-on-click="onExportBenchmark"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
-                <div class="o_store_dash_filters o_store_list_filters" t-att-class="'is-' + state.activeNav" t-if="showListFilters">
+                <div class="o_store_dash_filters o_store_list_filters" t-att-class="'is-' + state.activeNav + (isSupLayout ? ' sp_filters' : '')" t-if="showListFilters">
                     <button type="button" class="btn btn-primary o_store_add_btn" t-if="showOwnAdd" t-on-click="onAddNew">Thêm mới</button>
                     <select t-on-change="(ev) => this.onListFilter('month', ev)">
                         <option value="">Tất cả tháng</option>
                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
-                    <select t-if="!reportNavs.includes(state.activeNav) or state.activeNav === 'report_sup'" t-on-change="(ev) => this.onListFilter('store', ev)">
+                    <select t-if="!reportNavs.includes(state.activeNav) or isSupLayout" t-on-change="(ev) => this.onListFilter('store', ev)">
                         <option value="">Tất cả cửa hàng</option>
-                        <option t-foreach="state.activeNav === 'report_sup' ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
+                        <option t-foreach="isSupLayout ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
                     <select t-if="!isPersonal" t-on-change="(ev) => this.onListFilter('mien', ev)">
-                        <option value="" t-esc="['report_manager', 'report_sup'].includes(state.activeNav) ? 'Tất cả khu vực' : 'Tất cả miền'"/>
+                        <option value="" t-esc="(['report_manager'].includes(state.activeNav) or isSupLayout) ? 'Tất cả khu vực' : 'Tất cả miền'"/>
                         <option value="Nam">Miền Nam</option>
                         <option value="ĐTT">Miền ĐTT</option>
                         <option value="Bắc">Miền Bắc</option>
@@ -317,7 +317,7 @@
                     </div>
                     </div>
                 </div>
-                <div class="o_store_sup" t-elif="state.activeNav === 'report_sup' and state.report">
+                <div class="o_store_sup" t-elif="isSupLayout and state.report">
                     <t t-set="sv" t-value="supView"/>
                     <div class="sp_head">
                         <span class="ico"><i class="fa fa-bar-chart"/></span>

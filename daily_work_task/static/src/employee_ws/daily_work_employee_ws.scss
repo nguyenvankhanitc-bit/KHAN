@@ -4254,7 +4254,7 @@ body.o_ews_resizing {
         .o_ews_menu_backdrop { display: block; position: fixed; inset: 0; z-index: 1199; background: transparent; }
         .o_ews_tabs { display: none !important; }
         .o_ews_tabs.is-open { display: flex !important; flex-direction: column; align-items: stretch; flex-wrap: nowrap !important;
-            position: absolute; top: 100%; right: 0; left: auto; z-index: 1200; width: min(280px, 92vw); margin-top: 6px;
+            position: absolute; top: 100%; right: 0; left: auto; z-index: 1200; width: 280px; max-width: 92vw; margin-top: 6px;
             padding: 6px !important; gap: 0 !important; background: #fff; border: 1px solid #e2e8f0 !important; border-radius: 12px;
             box-shadow: 0 10px 28px rgba(15, 23, 42, .18); max-height: 70vh; overflow-y: auto; }
         .o_ews_tabs.is-open .o_ews_tab_sep { display: none; }

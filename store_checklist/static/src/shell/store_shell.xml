@@ -43,7 +43,7 @@
                         <option t-foreach="isSupLayout ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
-                    <select t-if="!isPersonal" t-on-change="(ev) => this.onListFilter('mien', ev)">
+                    <select t-if="!isPersonal or isSupLayout" t-on-change="(ev) => this.onListFilter('mien', ev)">
                         <option value="" t-esc="(['report_manager'].includes(state.activeNav) or isSupLayout) ? 'Tất cả khu vực' : 'Tất cả miền'"/>
                         <option value="Nam">Miền Nam</option>
                         <option value="ĐTT">Miền ĐTT</option>

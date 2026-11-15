@@ -626,12 +626,14 @@ export class StoreChecklistShell extends Component {
     }
 
     get reportBase() {
-        return [["audit_type", "=", "gs"], ["state", "!=", "draft"]];
+        const base = [["audit_type", "=", "gs"], ["state", "!=", "draft"]];
+        // người dùng giám sát thường chỉ xem phiếu do chính mình đánh giá
+        return this.isPersonal ? [...base, ["auditor_id", "=", user.userId]] : base;
     }
 
     // Báo cáo GS (người xem toàn bộ) dùng giao diện "Báo cáo giám sát" theo mẫu
     get isSupLayout() {
-        return this.state.activeNav === "report_sup" || (this.state.activeNav === "report_gs" && !this.isPersonal);
+        return ["report_sup", "report_gs"].includes(this.state.activeNav);
     }
 
     get isPersonal() {
@@ -871,10 +873,6 @@ export class StoreChecklistShell extends Component {
         if (this.state.activeNav === "report_store") {
             return this.loadStoreReport();
         }
-        if (this.isPersonal) {
-            this.state.personal = await this.orm.call("store.audit", "get_report_personal", [this.state.listFilters.month || false]);
-            return;
-        }
         const month = this.state.listFilters.month;
         let prev = false;
         if (month) {
@@ -882,7 +880,11 @@ export class StoreChecklistShell extends Component {
             prev = this.listDomain(this.reportBase, `${m === 1 ? y - 1 : y}-${String(m === 1 ? 12 : m - 1).padStart(2, "0")}`);
         }
         if (this.isSupLayout && !this.state.supStores.length) {
-            this.state.supStores = (await this.orm.searchRead("hr.store", [], ["display_name"], { order: "name" })).map((s) => ({ id: s.id, name: s.display_name }));
+            try {
+                this.state.supStores = (await this.orm.searchRead("hr.store", [], ["display_name"], { order: "name" })).map((s) => ({ id: s.id, name: s.display_name }));
+            } catch {
+                this.state.supStores = []; // user không đọc được danh sách cửa hàng: bỏ qua bộ lọc cửa hàng
+            }
         }
         this.state.report = await this.orm.call("store.audit", "get_report_gs", [this.listDomain(this.reportBase), prev]);
     }

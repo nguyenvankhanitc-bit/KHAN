@@ -91,7 +91,7 @@ export class StoreViolationHeader extends Component {
         const out = el("table");
         const head = el("tr");
         const heads = [...table.querySelectorAll("thead th")].filter((th) => th.dataset.name);
-        const grp = (name) => (["responsible_ids", "action_plan", "date_done", "state"].includes(name) ? "g1" : ["reviewer_ids", "control_done"].includes(name) ? "g2" : "");
+        const grp = (name) => (["responsible_ids", "action_plan", "attachment_ids", "resp_note", "date_done", "state"].includes(name) ? "g1" : ["reviewer_ids", "control_done"].includes(name) ? "g2" : "");
         heads.forEach((th) => head.appendChild(el("th", grp(th.dataset.name), th.innerText.trim())));
         out.appendChild(head);
         table.querySelectorAll("tbody tr").forEach((tr) => {

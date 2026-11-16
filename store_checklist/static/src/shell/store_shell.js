@@ -608,7 +608,7 @@ export class StoreChecklistShell extends Component {
                 const tr = el("tr");
                 r.cells.forEach((v, i) => {
                     const grp = data.headers[i][1];
-                    const td = el("td", ([0, 3, 4, 7, 10, 11].includes(i) ? "n " : "") + (grp === 2 ? "g2" : ""), i === 6 ? "" : String(v));
+                    const td = el("td", ([0, 3, 4, 7, 12, 13].includes(i) ? "n " : "") + (grp === 2 ? "g2" : ""), i === 6 ? "" : String(v));
                     if (i === 6 && r.photo) {
                         const img = doc.createElement("img");
                         img.src = `/web/image/${r.photo}`;

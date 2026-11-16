@@ -419,6 +419,8 @@
                 display: block; font-size: .7rem; color: #dc2626; font-weight: 700; }
             table.o_list_table tbody tr td[name="note"], td[name="attachment_ids"] { grid-column: 1 / -1; }
             table.o_list_table tbody tr td[name="note"] { border-top: 1px dashed #dbe4f3 !important; padding-top: 6px !important; }
+            table.o_list_table tbody tr td[name="remark"] { grid-column: 1 / -1; }
+            table.o_list_table tbody tr td[name="remark"]::before { content: "Ghi chú"; display: block; font-size: .7rem; color: #2563eb; font-weight: 700; }
             table.o_list_table tbody tr td * { text-align: left !important; justify-content: flex-start; }
         }
     }
@@ -1033,7 +1035,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Popup xử lý sai phạm: tiêu đề nhóm cột xử lý (xanh lá) và nhóm kiểm soát (cam) khác màu các cột còn lại */
 .o_store_violation_list table.o_list_table thead th {
-    &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; color: #fff !important; }
+    &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="attachment_ids"], &[data-name="resp_note"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; color: #fff !important; }
     &[data-name="reviewer_ids"], &[data-name="control_done"] { background: #c2410c !important; color: #fff !important; }
 }
 
@@ -1096,7 +1098,7 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Danh sách xử lý sai phạm: tiêu đề bảng 1 (checklist giám sát) navy, bảng 2 (xử lý) xanh lá + cam; chữ tiêu đề căn giữa, in đậm */
 .o_store_viol_all table.o_list_table thead th { text-align: center !important; font-weight: 800 !important; background: #1e3a6e !important; color: #fff !important; white-space: normal !important;
-    &[data-name="score_deduct"], &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; }
+    &[data-name="score_deduct"], &[data-name="responsible_ids"], &[data-name="action_plan"], &[data-name="attachment_ids"], &[data-name="resp_note"], &[data-name="date_done"], &[data-name="state"] { background: #15803d !important; }
     &[data-name="reviewer_ids"], &[data-name="control_done"] { background: #c2410c !important; } }
 .o_store_viol_all table.o_list_table tbody td { vertical-align: middle; }
 .o_store_viol_all table.o_list_table tbody td[name="reviewer_ids"], .o_store_viol_all table.o_list_table tbody td[name="control_done"] { background: #fff1e0; }
@@ -1654,3 +1656,29 @@ body:has(.o_store_audit_form) .o-autocomplete--dropdown-menu { margin-top: 14px 
 
 /* Popup Xử lý sai phạm: hàng 4 thẻ số liệu nằm riêng một dòng và canh giữa (trước đó dính trái khi xuống dòng) */
 .o_store_viol_hdr .vh_cards { flex: 1 1 100%; justify-content: center; }
+
+/* Popup xử lý sai phạm: Ghi chú / Nội dung khắc phục tự xuống dòng và dãn chiều cao ô theo nội dung */
+.o_store_violation_list table.o_list_table tbody td[name="resp_note"], .o_store_violation_list table.o_list_table tbody td[name="action_plan"] {
+    white-space: pre-wrap !important; word-break: break-word; overflow: visible !important; text-overflow: clip !important; vertical-align: top;
+    textarea { min-height: 60px; overflow: hidden; resize: none; white-space: pre-wrap; } }
+
+/* Điện thoại: ô Ghi chú của thẻ tiêu chí cùng kiểu ô Chi tiết lỗi (nhãn nằm trong ô, nền xám nhạt, tự dãn dòng) */
+@media (max-width: 767px) {
+    .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="remark"] { position: relative !important; grid-column: 1 / -1; margin-top: 10px !important; background: linear-gradient(#f1f5f9, #f1f5f9) left bottom / 100% calc(100% - 28px) no-repeat !important; border-radius: 12px; padding: 40px 14px 12px !important; min-height: 76px; white-space: pre-wrap !important; }
+    .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="remark"]::before { content: "GHI CHÚ"; position: absolute; top: 6px; left: 2px; color: #2563eb !important; font-size: 12px !important; font-weight: 800 !important; }
+    .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="remark"] > * { background: transparent; padding: 0; margin: 0; min-height: 0; }
+    .modal-dialog:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_data_row td[name="remark"]:empty::after { content: "Nhập ghi chú..."; color: #94a3b8; }
+}
+
+/* Điện thoại: bỏ khoảng trống giữa hàng tab A/B/C và thẻ tiêu chí đầu tiên */
+@media (max-width: 767px) {
+    .modal:has(.o_store_audit_form) .o_notebook .tab-content > .tab-pane { padding-top: 0 !important; margin-top: 0 !important; }
+    .modal:has(.o_store_audit_form) .o_notebook_headers { padding-bottom: 4px !important; margin-bottom: 0 !important; }
+    .modal:has(.o_store_audit_form) .o_store_audit_lines, .modal:has(.o_store_audit_form) .o_store_audit_lines .o_list_renderer { margin-top: 0 !important; padding-top: 0 !important; }
+    .modal:has(.o_store_audit_form) .o_store_audit_lines table.o_list_table tbody tr.o_store_subgroup_row:first-child { margin-top: 0 !important; }
+}
+
+/* Điện thoại: ẩn khối "Kết luận chung" trong phiếu đánh giá */
+@media (max-width: 767px) {
+    .o_store_audit_form .o_store_ov_final { display: none !important; }
+}

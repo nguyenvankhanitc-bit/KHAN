@@ -87,6 +87,8 @@
                 <field name="score_deduct" width="85px" readonly="1" options="{'hide_trailing_zeros': true}"/>
                 <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}" width="150px" readonly="1"/>
                 <field name="action_plan" string="Nội dung khắc phục" width="260px" readonly="not can_edit_resp or resp_locked"/>
+                <field name="attachment_ids" string="File đính kèm" widget="many2many_binary" width="170px" readonly="not can_edit_resp or resp_locked"/>
+                <field name="resp_note" string="Ghi chú" width="180px" readonly="not can_edit_resp or resp_locked"/>
                 <field name="date_done" width="125px" options="{'numeric': true}" readonly="not can_edit_resp or resp_locked"/>
                 <field name="state" string="Trạng thái xử lý" width="115px" readonly="not can_edit_resp or resp_locked"
                        decoration-warning="state == 'doing'" decoration-success="state == 'done'" decoration-muted="state == 'todo'"/>

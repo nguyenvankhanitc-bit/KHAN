@@ -38,7 +38,8 @@ class StoreAuditAction(models.Model):
     control_done = fields.Boolean(string='Kết quả kiểm soát', help='Tích chọn = kiểm soát đã hoàn thành')
     review_note = fields.Char(string='Giám sát nghiệm thu')
     attachment_ids = fields.Many2many(
-        'ir.attachment', 'store_audit_action_attachment_rel', 'action_id', 'attachment_id', string='Bằng chứng')
+        'ir.attachment', 'store_audit_action_attachment_rel', 'action_id', 'attachment_id', string='File đính kèm')
+    resp_note = fields.Text(string='Ghi chú')
     line_sequence = fields.Integer(related='line_id.sequence', string='STT tiêu chí')
     line_category = fields.Selection(related='line_id.category', string='Nhóm tiêu chí', store=True)
     line_max_score = fields.Float(related='line_id.max_score', string='Điểm chuẩn')
@@ -67,7 +68,7 @@ class StoreAuditAction(models.Model):
 
     def write(self, vals):
         if not self.env.su:  # code hệ thống (sudo/cron) không bị chặn
-            resp = {'action_plan', 'date_done', 'state'} & set(vals)
+            resp = {'action_plan', 'attachment_ids', 'resp_note', 'date_done', 'state'} & set(vals)
             ctrl = {'control_done', 'review_note'} & set(vals)
             for rec in self:
                 if 'issue' in vals and vals['issue'] != rec.issue:
@@ -199,7 +200,8 @@ class StoreAuditAction(models.Model):
         cols = [('STT', 6, '#1E3A6E'), ('Tiêu chí sai phạm', 30, '#1E3A6E'),
                 ('Chi tiết lỗi giám sát ghi nhận', 36, '#1E3A6E'), ('Điểm chuẩn', 11, '#1E3A6E'),
                 ('Điểm đạt', 11, '#1E3A6E'), ('Điểm trừ', 11, '#1E3A6E'), ('Người phụ trách', 24, '#15803D'),
-                ('Nội dung khắc phục', 36, '#15803D'), ('Ngày hoàn thành', 16, '#15803D'),
+                ('Nội dung khắc phục', 36, '#15803D'), ('File đính kèm', 24, '#15803D'), ('Ghi chú', 24, '#15803D'),
+                ('Ngày hoàn thành', 16, '#15803D'),
                 ('Trạng thái xử lý', 16, '#15803D'), ('Kiểm Soát', 24, '#C2410C'),
                 ('Kết quả kiểm soát', 18, '#C2410C')]
         n = len(cols)
@@ -251,11 +253,12 @@ class StoreAuditAction(models.Model):
             a = a.sudo()
             row = [a.line_sequence, a.line_id.name, a.issue or '', a.line_max_score, a.line_actual_score,
                    a.score_deduct, ', '.join(a.responsible_ids.mapped('name')), a.action_plan or '',
+                   ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
                    a.date_done.strftime('%d/%m/%Y') if a.date_done else '', states.get(a.state, ''),
                    ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa']
             for i, v in enumerate(row):
-                bg = orange if i >= 10 else None
-                align = 'center' if i in (0, 3, 4, 5, 8, 9, 11) else None
+                bg = orange if i >= 12 else None
+                align = 'center' if i in (0, 3, 4, 5, 10, 11, 13) else None
                 sheet.write(r, i, v, body(bg, align))
             r += 1
         sheet.freeze_panes(top + 1, 0)
@@ -274,7 +277,7 @@ class StoreAuditAction(models.Model):
         states = dict(self._fields['state'].selection)
         headers = [('STT', 0), ('Tiêu chuẩn, yêu cầu', 0), ('Quy định cơ bản', 0), ('Điểm chuẩn', 0),
                    ('Điểm đánh giá', 0), ('Chi tiết lỗi', 0), ('Hình ảnh', 0), ('Điểm trừ', 1),
-                   ('Người phụ trách', 1), ('Nội dung khắc phục', 1), ('Ngày hoàn thành', 1),
+                   ('Người phụ trách', 1), ('Nội dung khắc phục', 1), ('File đính kèm', 1), ('Ghi chú', 1), ('Ngày hoàn thành', 1),
                    ('Trạng thái xử lý', 1), ('Kiểm Soát', 2), ('Kết quả kiểm soát', 2)]
         groups, last = [], None
         for a in acts.sudo():
@@ -288,6 +291,7 @@ class StoreAuditAction(models.Model):
             groups[-1]['rows'].append({'photo': photo.id or 0, 'cells': [
                 a.line_sequence, a.line_id.name, a.line_requirement or '', a.line_max_score, a.line_actual_score,
                 a.issue or '', '', a.score_deduct, ', '.join(a.responsible_ids.mapped('name')), a.action_plan or '',
+                ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
                 a.date_done.strftime('%d/%m/%Y') if a.date_done else '', states.get(a.state, ''),
                 ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa']})
         return {'headers': headers, 'groups': groups}
@@ -321,7 +325,8 @@ class StoreAuditAction(models.Model):
         cols = [('STT', 7, '#1E3A6E'), ('Tiêu chuẩn, yêu cầu', 30, '#1E3A6E'), ('Quy định cơ bản', 40, '#1E3A6E'),
                 ('Điểm chuẩn', 10, '#1E3A6E'), ('Điểm đánh giá', 11, '#1E3A6E'), ('Chi tiết lỗi', 34, '#1E3A6E'),
                 ('Hình ảnh', 24, '#1E3A6E'), ('Điểm trừ', 10, '#15803D'), ('Người phụ trách', 22, '#15803D'),
-                ('Nội dung khắc phục', 34, '#15803D'), ('Ngày hoàn thành', 15, '#15803D'),
+                ('Nội dung khắc phục', 34, '#15803D'), ('File đính kèm', 24, '#15803D'), ('Ghi chú', 24, '#15803D'),
+                ('Ngày hoàn thành', 15, '#15803D'),
                 ('Trạng thái xử lý', 15, '#15803D'), ('Kiểm Soát', 22, '#C2410C'), ('Kết quả kiểm soát', 17, '#C2410C')]
         n = len(cols)
         sheet.merge_range(0, 0, 0, n - 1, 'DANH SÁCH XỬ LÝ SAI PHẠM', big)
@@ -340,14 +345,15 @@ class StoreAuditAction(models.Model):
                 r += 1
             row = [a.line_sequence, a.line_id.name, a.line_requirement or '', a.line_max_score, a.line_actual_score,
                    a.issue or '', '', a.score_deduct, ', '.join(a.responsible_ids.mapped('name')),
-                   a.action_plan or '', a.date_done.strftime('%d/%m/%Y') if a.date_done else '',
+                   a.action_plan or '', ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
+                   a.date_done.strftime('%d/%m/%Y') if a.date_done else '',
                    states.get(a.state, ''), ', '.join(a.reviewer_ids.mapped('name')),
                    'Đã kiểm soát' if a.control_done else 'Chưa']
             for i, v in enumerate(row):
-                if i >= 12:
-                    f = orange_c if i == 13 else orange
+                if i >= 14:
+                    f = orange_c if i == 15 else orange
                 else:
-                    f = ctr if i in (0, 3, 4, 7, 10, 11) else cell
+                    f = ctr if i in (0, 3, 4, 7, 12, 13) else cell
                 sheet.write(r, i, v, f)
             # Ảnh phủ kín đúng ô (không lề) và ô cao theo tỉ lệ ảnh: kéo giãn cột / dòng thì ảnh co giãn theo ("move and size with cells")
             sheet.set_row(r, 75)

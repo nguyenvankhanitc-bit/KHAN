@@ -895,6 +895,7 @@ class StoreAuditLine(models.Model):
         ('fail', 'Không đạt'),
     ], string='Kết quả', compute='_compute_result', store=True)
     note = fields.Text(string='Chi tiết lỗi / Nhận xét thực tế')
+    remark = fields.Text(string='Ghi chú')
     owner_notified = fields.Boolean(string='Đã báo người phụ trách', copy=False)
     error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_count', store=True)
     def _report_photos(self):

@@ -120,6 +120,7 @@
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
                                     <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
+                                    <field name="remark" string="Ghi chú" width="200px"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>
@@ -148,6 +149,7 @@
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
                                     <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
+                                    <field name="remark" string="Ghi chú" width="200px"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>
@@ -176,6 +178,7 @@
                                            decoration-danger="result == 'fail'"/>
                                     <field name="note" string="Chi tiết lỗi" width="200px"/>
                                     <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
+                                    <field name="remark" string="Ghi chú" width="200px"/>
                                     <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
                                 </list>
                             </field>

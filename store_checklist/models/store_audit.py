@@ -152,19 +152,28 @@ class StoreAudit(models.Model):
             pct = round(100 * len(audited(y, m + 1)) / len(stores)) if stores else 0
             trend.append({'label': 'T%d/%d' % (m + 1, y), 'done': pct, 'todo': 100 - pct if stores else 0})
         todo = stores.filtered(lambda st: st.id not in done)
+        done_stores = stores.filtered(lambda st: st.id in done)
+        ny, nm = (year + 1, 1) if mon == 12 else (year, mon + 1)
         last = {r[0].id: r[1] for r in self._read_group(
             [('store_id', 'in', todo.ids)], ['store_id'], ['audit_date:max'])}
+        done_last = {r[0].id: r[1] for r in self._read_group(
+            [('store_id', 'in', done_stores.ids), ('audit_date', '>=', datetime(year, mon, 1)),
+             ('audit_date', '<', datetime(ny, nm, 1))], ['store_id'], ['audit_date:max'])}
         mien_label = dict(labels)
         todo_rows = [{
             'id': st.id, 'store': st.display_name, 'mien': mien_label[bucket(st)],
             'key': bucket(st), 'last': last[st.id].strftime('%d/%m/%Y') if last.get(st.id) else '',
         } for st in todo.sorted('name')]
+        done_rows = [{
+            'id': st.id, 'store': st.display_name, 'mien': mien_label[bucket(st)],
+            'key': bucket(st), 'last': done_last[st.id].strftime('%d/%m/%Y') if done_last.get(st.id) else '',
+        } for st in done_stores.sorted('name')]
         total = len(stores)
         return {
             'month': '%04d-%02d' % (year, mon),
             'total': total, 'done': len(done), 'todo': total - len(done),
             'rate': round(100 * len(done) / total) if total else 0,
-            'by_mien': by_mien, 'trend': trend, 'todo_rows': todo_rows,
+            'by_mien': by_mien, 'trend': trend, 'todo_rows': todo_rows, 'done_rows': done_rows,
             'store_options': [{'id': st.id, 'name': st.display_name}
                               for st in self.env['hr.store'].search([], order='name')],
         }

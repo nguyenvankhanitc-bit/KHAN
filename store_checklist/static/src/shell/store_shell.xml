@@ -779,24 +779,46 @@
 
                 <div class="o_store_dash_row two">
                     <div class="o_store_dash_panel">
-                        <h3><i class="fa fa-table"/> 4. Danh sách cửa hàng chưa Audit
-                            <a t-if="state.dash.todo_rows.length > 5" href="#" t-on-click.prevent="() => state.showAllTodo = !state.showAllTodo">
-                                <t t-esc="state.showAllTodo ? 'Thu gọn' : 'Xem tất cả →'"/></a></h3>
-                        <table class="o_store_dash_table">
-                            <thead><tr><th>Miền</th><th>Cửa hàng</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
-                            <tbody>
-                                <tr t-foreach="todoRows" t-as="r" t-key="r.id">
-                                    <td><i class="dot" t-attf-style="background: #{miencolor(r.key)}"/> <t t-esc="r.mien"/></td>
-                                    <td t-esc="r.store"/>
-                                    <td><span class="o_store_dash_badge">Chưa Audit</span></td>
-                                    <td><t t-esc="r.last or '—'"/></td>
-                                </tr>
-                                <tr t-if="!todoRows.length"><td colspan="4" class="empty">Tất cả cửa hàng đã được Audit</td></tr>
-                            </tbody>
-                        </table>
+                        <h3><i class="fa fa-table"/> 4. Danh sách cửa hàng chưa Audit</h3>
+                        <div class="o_store_dash_table_scroll">
+                            <table class="o_store_dash_table">
+                                <thead><tr><th class="stt">STT</th><th>Miền</th><th>Cửa hàng</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="todoRows" t-as="r" t-key="r.id">
+                                        <td class="stt" t-esc="r_index + 1"/>
+                                        <td><i class="dot" t-attf-style="background: #{miencolor(r.key)}"/> <t t-esc="r.mien"/></td>
+                                        <td t-esc="r.store"/>
+                                        <td><span class="o_store_dash_badge">Chưa Audit</span></td>
+                                        <td><t t-esc="r.last or '—'"/></td>
+                                    </tr>
+                                    <tr t-if="!todoRows.length"><td colspan="5" class="empty">Tất cả cửa hàng đã được Audit</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                     <div class="o_store_dash_panel">
-                        <h3><i class="fa fa-line-chart"/> 5. Xu hướng thực hiện Audit</h3>
+                        <h3><i class="fa fa-check-square-o"/> 5. Danh sách cửa hàng đã Audit</h3>
+                        <div class="o_store_dash_table_scroll">
+                            <table class="o_store_dash_table">
+                                <thead><tr><th class="stt">STT</th><th>Miền</th><th>Cửa hàng</th><th>Trạng thái</th><th>Thời gian</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="doneRows" t-as="r" t-key="r.id">
+                                        <td class="stt" t-esc="r_index + 1"/>
+                                        <td><i class="dot" t-attf-style="background: #{miencolor(r.key)}"/> <t t-esc="r.mien"/></td>
+                                        <td t-esc="r.store"/>
+                                        <td><span class="o_store_dash_badge is-done">Đã Audit</span></td>
+                                        <td><t t-esc="r.last or '—'"/></td>
+                                    </tr>
+                                    <tr t-if="!doneRows.length"><td colspan="5" class="empty">Chưa có cửa hàng nào được Audit</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_store_dash_row one">
+                    <div class="o_store_dash_panel">
+                        <h3><i class="fa fa-line-chart"/> 6. Xu hướng thực hiện Audit</h3>
                         <t t-set="ln" t-value="lineData()"/>
                         <div class="o_store_dash_legend"><span><i style="background:#2f80ed"/> Tỷ lệ Audit</span>
                             <span><i style="background:#93c5fd"/> Tỷ lệ chưa Audit</span></div>

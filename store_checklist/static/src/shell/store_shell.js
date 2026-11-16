@@ -235,12 +235,43 @@ export class StoreChecklistShell extends Component {
 
     async loadOverview() {
         const f = this.state.filters;
-        this.state.dash = await this.orm.call("store.audit", "get_dashboard_data", [], {
+        const dash = await this.orm.call("store.audit", "get_dashboard_data", [], {
             month: f.month || false,
             mien: f.mien || false,
             store_id: f.store ? Number(f.store) : false,
         });
-        f.month = this.state.dash.month;
+        f.month = dash.month;
+        if (!Array.isArray(dash.done_rows)) {
+            if (dash.done > 0) {
+                const [y, m] = dash.month.split("-").map(Number);
+                const ny = m === 12 ? y + 1 : y;
+                const nm = m === 12 ? 1 : m + 1;
+                const dom = [
+                    ["audit_date", ">=", `${y}-${String(m).padStart(2, "0")}-01 00:00:00`],
+                    ["audit_date", "<", `${ny}-${String(nm).padStart(2, "0")}-01 00:00:00`],
+                ];
+                if (f.store) {
+                    dom.push(["store_id", "=", Number(f.store)]);
+                }
+                const audits = await this.orm.searchRead("store.audit", dom, ["store_id", "mien", "audit_date"], { order: "audit_date desc" });
+                const map = new Map();
+                const labels = { Nam: "Miền Nam", "ĐTT": "Miền ĐTT", "Bắc": "Miền Bắc", other: "Khác" };
+                for (const a of audits) {
+                    if (!a.store_id) continue;
+                    const sid = a.store_id[0];
+                    const key = ["Nam", "ĐTT", "Bắc"].includes(a.mien) ? a.mien : "other";
+                    if (f.mien && key !== f.mien) continue;
+                    if (!map.has(sid)) {
+                        const dt = a.audit_date ? a.audit_date.slice(0, 10).split("-").reverse().join("/") : "";
+                        map.set(sid, { id: sid, store: a.store_id[1], mien: labels[key], key, last: dt });
+                    }
+                }
+                dash.done_rows = [...map.values()].sort((a, b) => a.store.localeCompare(b.store));
+            } else {
+                dash.done_rows = [];
+            }
+        }
+        this.state.dash = dash;
     }
 
     // Các danh sách phiếu (Checklist NVBH / ASM / GS và Danh Sách Đánh Giá) có thanh lọc tháng / cửa hàng / miền
@@ -1037,8 +1068,11 @@ export class StoreChecklistShell extends Component {
     }
 
     get todoRows() {
-        const rows = this.state.dash?.todo_rows || [];
-        return this.state.showAllTodo ? rows : rows.slice(0, 5);
+        return this.state.dash?.todo_rows || [];
+    }
+
+    get doneRows() {
+        return this.state.dash?.done_rows || [];
     }
 
     miencolor(key) {
@@ -1087,7 +1121,7 @@ export class StoreChecklistShell extends Component {
     // Biểu đồ đường: tỷ lệ cửa hàng đã / chưa audit theo tháng
     lineData() {
         const trend = this.state.dash?.trend || [];
-        const W = 520, H = 190, L = 40, R = 16, T = 16, B = 28;
+        const W = 920, H = 190, L = 40, R = 16, T = 16, B = 28;
         const x = (i) => L + ((W - L - R) * i) / Math.max(trend.length - 1, 1);
         const y = (v) => T + (H - T - B) * (1 - v / 100);
         const pts = (k) => trend.map((t, i) => ({ x: x(i), y: y(t[k]), v: t[k], label: t.label }));

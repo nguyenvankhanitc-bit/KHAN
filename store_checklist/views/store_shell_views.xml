@@ -67,11 +67,14 @@
                 <field name="score_deduct" width="80px" options="{'hide_trailing_zeros': true}"/>
                 <field name="responsible_ids" widget="many2many_tags" width="150px"/>
                 <field name="action_plan" string="Nội dung khắc phục" width="200px"/>
+                <field name="attachment_ids" string="File đính kèm" widget="many2many_binary" width="150px"/>
+                <field name="resp_note" string="Ghi chú" width="180px"/>
                 <field name="date_done" width="110px" options="{'numeric': true}"/>
                 <field name="state" string="Trạng thái xử lý" width="110px"
                        decoration-warning="state == 'doing'" decoration-success="state == 'done'" decoration-muted="state == 'todo'"/>
                 <field name="reviewer_ids" widget="many2many_tags" width="130px"/>
                 <field name="control_done" width="110px"/>
+                <field name="review_note" string="Ghi chú kiểm soát" width="180px"/>
             </list>
         </field>
     </record>

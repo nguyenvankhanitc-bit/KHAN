@@ -20,18 +20,17 @@
                         <div class="o_store_audit_text">
                             <h2><field name="form_title"/></h2>
                             <field name="audit_type" invisible="1"/>
-                            <p>Bí mật giám hàng cửa hàng tiện ích</p>
                         </div>
                     </div>
                     <group class="o_store_audit_head">
                         <group>
-                            <field name="store_id" options="{'no_create': True}" context="{'list_view_ref': 'store_checklist.view_hr_store_pick_list'}" readonly="state == 'done' and not can_edit_done"/>
+                            <field name="store_id" options="{'no_create': True}" context="{'list_view_ref': 'store_checklist.view_hr_store_pick_list'}" readonly="is_locked or (state == 'done' and not can_edit_done)"/>
                             <field name="address" string="Địa chỉ"/>
                             <field name="template_id" invisible="1"/>
                         </group>
                         <group>
-                            <field name="audit_date" options="{'numeric': true}" readonly="state == 'done' and not can_edit_done"/>
-                            <field name="auditor_id" readonly="state == 'done' and not can_edit_done"/>
+                            <field name="audit_date" options="{'numeric': true}" readonly="is_locked or (state == 'done' and not can_edit_done)"/>
+                            <field name="auditor_id" readonly="is_locked or (state == 'done' and not can_edit_done)"/>
                         </group>
                     </group>
                     <div class="o_store_audit_kpis">
@@ -103,7 +102,7 @@
                                 <span class="o_store_bar_act"><field name="score_a" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục A: <strong><field name="score_a" options="{'hide_trailing_zeros': true}"/> / <field name="max_a" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_a_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_a_ids" widget="store_lines" readonly="is_locked or (state == 'done' and not can_edit_done)" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -132,7 +131,7 @@
                                 <span class="o_store_bar_act"><field name="score_b" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục B: <strong><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_b_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_b_ids" widget="store_lines" readonly="is_locked or (state == 'done' and not can_edit_done)" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -161,7 +160,7 @@
                                 <span class="o_store_bar_act"><field name="score_c" options="{'hide_trailing_zeros': true}"/></span>
                                 <span>Tổng điểm mục C: <strong><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></strong></span>
                             </div>
-                            <field name="line_c_ids" widget="store_lines" readonly="state == 'done' and not can_edit_done" nolabel="1">
+                            <field name="line_c_ids" widget="store_lines" readonly="is_locked or (state == 'done' and not can_edit_done)" nolabel="1">
                                 <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
                                       decoration-muted="result == 'todo'">
                                     <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
@@ -204,10 +203,17 @@
                                     <div class="o_row"><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></div>
                                 </group>
                                 <group>
-                                    <field name="pass_threshold" readonly="state != 'draft' and not can_edit_done"/>
+                                    <field name="pass_threshold" readonly="is_locked or (state != 'draft' and not can_edit_done)"/>
                                     <field name="can_edit_done" invisible="1"/>
+                                    <field name="is_locked" invisible="1"/>
                                     <field name="summary" placeholder="Nhận xét tổng thể về cửa hàng..."/>
                                 </group>
+                            </group>
+                        </page>
+                        <page string="D. Biên bản" name="minutes">
+                            <group>
+                                <field name="minutes_note" placeholder="Nội dung biên bản..." readonly="is_locked"/>
+                                <field name="minutes_attachment_ids" widget="many2many_binary" readonly="is_locked"/>
                             </group>
                         </page>
                     </notebook>
@@ -238,11 +244,15 @@
                 <field name="state" widget="badge"/>
                 <button name="action_view_report" type="object" icon="fa-eye" title="Xem biên bản"/>
                 <button name="action_download_report" type="object" icon="fa-download" title="Tải biên bản"/>
-                <!-- field chen giữa để cột sửa / xóa tách khỏi cột xem / tải biên bản -->
+                <!-- field chen giữa để các nhóm nút tách thành cột riêng: Phiếu đánh giá | Biên bản | Thao tác -->
+                <field name="has_minutes" column_invisible="1"/>
+                <button name="action_view_minutes" type="object" icon="fa-eye" title="Xem biên bản" invisible="not has_minutes"/>
+                <button name="action_download_minutes" type="object" icon="fa-download" title="Tải biên bản" invisible="not has_minutes"/>
                 <field name="can_edit_done" column_invisible="1"/>
-                <button name="action_edit_popup" type="object" icon="fa-pencil" title="Chỉnh sửa phiếu" invisible="not can_edit_done"/>
+                <field name="is_locked" column_invisible="1"/>
+                <button name="action_edit_popup" type="object" icon="fa-pencil" title="Chỉnh sửa phiếu" invisible="not can_edit_done or is_locked"/>
                 <button name="unlink" type="object" icon="fa-trash" title="Xóa phiếu" class="text-danger"
-                        groups="store_checklist.group_store_manager"
+                        groups="store_checklist.group_store_manager" invisible="is_locked"
                         confirm="Xóa phiếu đánh giá này? Thao tác không thể hoàn tác."/>
             </list>
         </field>

@@ -1,7 +1,7 @@
 import logging
 import base64
 import io
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from odoo import Command, api, fields, models
 from odoo.tools import file_open
@@ -76,6 +76,11 @@ class StoreAudit(models.Model):
     tone_t = fields.Char(compute='_compute_levels')
     conclusion_text = fields.Char(compute='_compute_levels')
     can_edit_done = fields.Boolean(compute='_compute_can_edit_done')
+    minutes_note = fields.Text(string='Nội dung biên bản')
+    minutes_attachment_ids = fields.Many2many(
+        'ir.attachment', 'store_audit_minutes_attachment_rel', 'audit_id', 'attachment_id', string='File biên bản')
+    has_minutes = fields.Boolean(compute='_compute_has_minutes')
+    is_locked = fields.Boolean(compute='_compute_is_locked', help='Quá thời hạn cho phép chỉnh sửa kể từ lúc lưu biên bản')
     form_title = fields.Char(compute='_compute_form_title')
 
     # Thẻ số liệu trên đầu phiếu: tính realtime từ các dòng A/B/C của chính phiếu này, không lưu
@@ -243,6 +248,35 @@ class StoreAudit(models.Model):
         for rec in self:
             rec.error_count = sum((rec.line_a_ids | rec.line_b_ids | rec.line_c_ids).mapped('error_count'))
 
+    @api.depends('minutes_attachment_ids')
+    def _compute_has_minutes(self):
+        for rec in self:
+            rec.has_minutes = bool(rec.minutes_attachment_ids)
+
+    @api.model
+    def _edit_lock_hours(self):
+        """Số giờ được chỉnh sửa kể từ lúc lưu phiếu (tham số hệ thống store_checklist.edit_lock_hours, mặc định 6)."""
+        try:
+            return float(self.env['ir.config_parameter'].sudo().get_param('store_checklist.edit_lock_hours', 6))
+        except ValueError:
+            return 6.0
+
+    @api.depends_context('uid')
+    def _compute_is_locked(self):
+        # Quản trị hệ thống không bị khóa; người khác bị khóa khi đã quá số giờ kể từ lúc lưu (tạo) phiếu
+        admin = self.env.user.has_group('base.group_system')
+        limit = fields.Datetime.now() - timedelta(hours=self._edit_lock_hours())
+        for rec in self:
+            rec.is_locked = not admin and bool(rec.create_date) and rec.create_date < limit
+
+    def _check_edit_window(self):
+        """Chặn sửa / xóa phiếu đã quá hạn (code hệ thống chạy sudo thì không bị chặn)."""
+        if self.env.su:
+            return
+        if self.filtered('is_locked'):
+            raise UserError('Phiếu đã quá %g giờ kể từ lúc lưu biên bản nên hệ thống đã khóa, không thể chỉnh sửa. '
+                            'Vui lòng liên hệ quản trị viên nếu cần điều chỉnh.' % self._edit_lock_hours())
+
     @api.depends_context('uid')
     def _compute_can_edit_done(self):
         # Quản lý (gồm Administrator) được sửa phiếu đã Hoàn tất; người dùng thường thì phiếu Hoàn tất bị khóa
@@ -260,7 +294,7 @@ class StoreAudit(models.Model):
 
     def _compute_form_title(self):
         for rec in self:
-            rec.form_title = 'CHECK LIST GIÁM SÁT' if rec.audit_type == 'gs' else 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
+            rec.form_title = 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
 
     @api.depends('score_a', 'max_a', 'score_b', 'max_b', 'score_c', 'max_c', 'total_score', 'max_score', 'audit_date')
     def _compute_levels(self):
@@ -279,6 +313,22 @@ class StoreAudit(models.Model):
         self.ensure_one()
         return {'type': 'ir.actions.act_url', 'target': 'new',
                 'url': f'/report/pdf/store_checklist.report_store_audit/{self.id}'}
+
+    def _first_minutes_file(self):
+        self.ensure_one()
+        att = self.sudo().minutes_attachment_ids[:1]
+        if not att:
+            raise UserError('Phiếu chưa có file biên bản đính kèm (tab D. Biên bản).')
+        return att
+
+    def action_view_minutes(self):
+        """Mở file biên bản đính kèm (tab D) ở tab mới."""
+        att = self._first_minutes_file()
+        return {'type': 'ir.actions.act_url', 'target': 'new', 'url': f'/web/content/{att.id}?download=false'}
+
+    def action_download_minutes(self):
+        att = self._first_minutes_file()
+        return {'type': 'ir.actions.act_url', 'target': 'self', 'url': f'/web/content/{att.id}?download=true'}
 
     def action_edit_popup(self):
         """Mở phiếu ở popup để chỉnh sửa (nút bút chì trong danh sách, dành cho Quản lý)."""
@@ -372,10 +422,16 @@ class StoreAudit(models.Model):
         return audits
 
     def write(self, vals):
+        if any(not k.startswith(('message_', 'activity_')) for k in vals):
+            self._check_edit_window()
         res = super().write(vals)
         if 'state' not in vals:  # "Về nháp" chủ động thì giữ nguyên
             self._auto_state()
         return res
+
+    def unlink(self):
+        self._check_edit_window()
+        return super().unlink()
 
     @api.model
     def is_gs_supervisor(self):
@@ -951,6 +1007,8 @@ class StoreAuditLine(models.Model):
         return res
 
     def write(self, vals):
+        if set(vals) - {'owner_notified'}:
+            self.mapped('audit_id')._check_edit_window()
         res = super().write(vals)
         if 'note' in vals or 'actual_score' in vals or 'is_scored' in vals:
             bad = self.filtered(lambda l: l._has_error_note() and (l.actual_score or not l.is_scored))
@@ -959,6 +1017,10 @@ class StoreAuditLine(models.Model):
         if 'note' in vals:
             self._notify_new_errors()
         return res
+
+    def unlink(self):
+        self.mapped('audit_id')._check_edit_window()
+        return super().unlink()
 
     def _notify_new_errors(self):
         """Giám sát nhập "Chi tiết lỗi" và lưu: tra tiêu chuẩn đánh giá (điểm chuẩn của mẫu) -> báo người phụ trách và

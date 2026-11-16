@@ -36,7 +36,7 @@ class StoreAuditAction(models.Model):
     reviewer_ids = fields.Many2many(
         'res.users', 'store_audit_action_reviewer_rel', 'action_id', 'user_id', string='Kiểm Soát')
     control_done = fields.Boolean(string='Kết quả kiểm soát', help='Tích chọn = kiểm soát đã hoàn thành')
-    review_note = fields.Char(string='Giám sát nghiệm thu')
+    review_note = fields.Text(string='Ghi chú kiểm soát')
     attachment_ids = fields.Many2many(
         'ir.attachment', 'store_audit_action_attachment_rel', 'action_id', 'attachment_id', string='File đính kèm')
     resp_note = fields.Text(string='Ghi chú')
@@ -56,15 +56,18 @@ class StoreAuditAction(models.Model):
     resp_locked = fields.Boolean(string='Đã khóa việc khắc phục', copy=False, help='Bật khi lưu Hoàn thành: người phụ trách không sửa lại được nữa')
     can_edit_resp = fields.Boolean(compute='_compute_can_edit')
     can_edit_ctrl = fields.Boolean(compute='_compute_can_edit')
+    is_admin = fields.Boolean(compute='_compute_can_edit')
 
     @api.depends('responsible_ids', 'reviewer_ids')
     @api.depends_context('uid')
     def _compute_can_edit(self):
         """Khắc phục: chỉ user gắn với "Người phụ trách"; kiểm soát: chỉ user trong "Kiểm Soát" của bảng điểm đánh giá."""
         uid = self.env.uid
+        admin = self.env.user.has_group('base.group_system')  # quản trị hệ thống có toàn quyền, kể cả sửa việc đã khóa
         for rec in self:
-            rec.can_edit_resp = uid in rec.sudo().responsible_ids.user_id.ids
-            rec.can_edit_ctrl = uid in rec.reviewer_ids.ids
+            rec.is_admin = admin
+            rec.can_edit_resp = admin or uid in rec.sudo().responsible_ids.user_id.ids
+            rec.can_edit_ctrl = admin or uid in rec.reviewer_ids.ids
 
     def write(self, vals):
         if not self.env.su:  # code hệ thống (sudo/cron) không bị chặn
@@ -75,7 +78,7 @@ class StoreAuditAction(models.Model):
                     raise AccessError(_('Chi tiết lỗi là nội dung của người đánh giá, không được chỉnh sửa.'))
                 if resp and not rec.can_edit_resp:
                     raise AccessError(_('Chỉ người phụ trách của tiêu chí này mới được cập nhật việc khắc phục.'))
-                if resp and rec.resp_locked:
+                if resp and rec.resp_locked and not rec.is_admin:
                     raise AccessError(_('Việc khắc phục đã hoàn thành và đã lưu, không được chỉnh sửa nữa.'))
                 if ctrl and not rec.can_edit_ctrl:
                     raise AccessError(_('Chỉ người kiểm soát của tiêu chí này mới được cập nhật kết quả kiểm soát.'))
@@ -203,7 +206,7 @@ class StoreAuditAction(models.Model):
                 ('Nội dung khắc phục', 36, '#15803D'), ('File đính kèm', 24, '#15803D'), ('Ghi chú', 24, '#15803D'),
                 ('Ngày hoàn thành', 16, '#15803D'),
                 ('Trạng thái xử lý', 16, '#15803D'), ('Kiểm Soát', 24, '#C2410C'),
-                ('Kết quả kiểm soát', 18, '#C2410C')]
+                ('Kết quả kiểm soát', 18, '#C2410C'), ('Ghi chú kiểm soát', 28, '#C2410C')]
         n = len(cols)
         for i, (_name, width, _bg) in enumerate(cols):
             sheet.set_column(i, i, width)
@@ -255,7 +258,8 @@ class StoreAuditAction(models.Model):
                    a.score_deduct, ', '.join(a.responsible_ids.mapped('name')), a.action_plan or '',
                    ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
                    a.date_done.strftime('%d/%m/%Y') if a.date_done else '', states.get(a.state, ''),
-                   ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa']
+                   ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa',
+                   a.review_note or '']
             for i, v in enumerate(row):
                 bg = orange if i >= 12 else None
                 align = 'center' if i in (0, 3, 4, 5, 10, 11, 13) else None
@@ -278,7 +282,7 @@ class StoreAuditAction(models.Model):
         headers = [('STT', 0), ('Tiêu chuẩn, yêu cầu', 0), ('Quy định cơ bản', 0), ('Điểm chuẩn', 0),
                    ('Điểm đánh giá', 0), ('Chi tiết lỗi', 0), ('Hình ảnh', 0), ('Điểm trừ', 1),
                    ('Người phụ trách', 1), ('Nội dung khắc phục', 1), ('File đính kèm', 1), ('Ghi chú', 1), ('Ngày hoàn thành', 1),
-                   ('Trạng thái xử lý', 1), ('Kiểm Soát', 2), ('Kết quả kiểm soát', 2)]
+                   ('Trạng thái xử lý', 1), ('Kiểm Soát', 2), ('Kết quả kiểm soát', 2), ('Ghi chú kiểm soát', 2)]
         groups, last = [], None
         for a in acts.sudo():
             if a.audit_id != last:
@@ -293,7 +297,8 @@ class StoreAuditAction(models.Model):
                 a.issue or '', '', a.score_deduct, ', '.join(a.responsible_ids.mapped('name')), a.action_plan or '',
                 ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
                 a.date_done.strftime('%d/%m/%Y') if a.date_done else '', states.get(a.state, ''),
-                ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa']})
+                ', '.join(a.reviewer_ids.mapped('name')), 'Đã kiểm soát' if a.control_done else 'Chưa',
+                a.review_note or '']})
         return {'headers': headers, 'groups': groups}
 
     @api.model
@@ -327,7 +332,8 @@ class StoreAuditAction(models.Model):
                 ('Hình ảnh', 24, '#1E3A6E'), ('Điểm trừ', 10, '#15803D'), ('Người phụ trách', 22, '#15803D'),
                 ('Nội dung khắc phục', 34, '#15803D'), ('File đính kèm', 24, '#15803D'), ('Ghi chú', 24, '#15803D'),
                 ('Ngày hoàn thành', 15, '#15803D'),
-                ('Trạng thái xử lý', 15, '#15803D'), ('Kiểm Soát', 22, '#C2410C'), ('Kết quả kiểm soát', 17, '#C2410C')]
+                ('Trạng thái xử lý', 15, '#15803D'), ('Kiểm Soát', 22, '#C2410C'), ('Kết quả kiểm soát', 17, '#C2410C'),
+                ('Ghi chú kiểm soát', 28, '#C2410C')]
         n = len(cols)
         sheet.merge_range(0, 0, 0, n - 1, 'DANH SÁCH XỬ LÝ SAI PHẠM', big)
         sheet.set_row(2, 32)
@@ -348,7 +354,7 @@ class StoreAuditAction(models.Model):
                    a.action_plan or '', ', '.join(a.attachment_ids.mapped('name')), a.resp_note or '',
                    a.date_done.strftime('%d/%m/%Y') if a.date_done else '',
                    states.get(a.state, ''), ', '.join(a.reviewer_ids.mapped('name')),
-                   'Đã kiểm soát' if a.control_done else 'Chưa']
+                   'Đã kiểm soát' if a.control_done else 'Chưa', a.review_note or '']
             for i, v in enumerate(row):
                 if i >= 14:
                     f = orange_c if i == 15 else orange

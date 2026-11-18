@@ -10,15 +10,16 @@ _logger = logging.getLogger(__name__)
 SHELL_URL = '/odoo/action-store_checklist.action_store_shell'
 
 
-def card(title, rows, label='Xem chi tiết'):
+def card(title, rows, label='Xem chi tiết', check_id=None):
     """Thẻ tin nhắn: tiêu đề đậm, các dòng "Nhãn: giá trị" và nút Xem chi tiết (dẫn tới ứng dụng Checklist Audit)."""
+    url = '%s?store_check=%s' % (SHELL_URL, int(check_id)) if check_id else SHELL_URL  # có check_id: mở thẳng phiếu cần đánh giá
     body = Markup('<b>%s</b><br/>') % title
     for key, value in rows:
         body += Markup('%s: <b>%s</b><br/>') % (key, value or '—')
     return body + Markup(
         '<a href="%s" target="_self" style="display:inline-block;margin-top:10px;padding:8px 18px;'
         'background-color:#714B67;cursor:pointer;color:#ffffff;border-radius:6px;text-decoration:none;'
-        'font-weight:600;font-size:14px;line-height:1.2;">%s</a>') % (SHELL_URL, label)
+        'font-weight:600;font-size:14px;line-height:1.2;">%s</a>') % (url, label)
 
 
 def bot_send(env, users, body):

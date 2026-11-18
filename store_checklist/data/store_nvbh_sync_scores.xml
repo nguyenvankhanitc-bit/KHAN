@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Đồng bộ điểm các dòng checklist đã tạo theo Điểm chuẩn hiện tại trong Cài đặt (chạy mỗi lần nâng cấp module) -->
+    <function model="store.nvbh.task" name="_sync_all_check_line_scores"/>
+    <!-- Quy đổi phiếu cũ sang luồng đánh giá nhiều cấp (chạy một lần) -->
+    <function model="store.nvbh.check" name="_migrate_workflow_steps"/>
+</odoo>

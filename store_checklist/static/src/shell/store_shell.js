@@ -3,12 +3,15 @@
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { user } from "@web/core/user";
+import { ConfirmationDialog } from "@web/core/confirmation_dialog/confirmation_dialog";
 import { evaluateExpr } from "@web/core/py_js/py";
 import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 import { View } from "@web/views/view";
+import { DateTimeInput } from "@web/core/datetime/datetime_input";
 import { StoreMgrDetailDialog, StoreViolPickDialog } from "@store_checklist/violation/violation_header";
 import { PhanHeInternetShell } from "@lug_phan_he/internet_shell/phan_he_internet_shell";
+import { StoreCheckViewDialog, StoreStaffPickDialog } from "@store_checklist/shell/store_check_view_dialog";
 
 function normalizeViews(act, preferredType) {
     const views = Array.isArray(act.views) ? act.views.map((view) => [...view]) : [];
@@ -26,7 +29,7 @@ function normalizeViews(act, preferredType) {
 
 export class StoreChecklistShell extends Component {
     static template = "store_checklist.Shell";
-    static components = { PhanHeInternetShell, View };
+    static components = { PhanHeInternetShell, View, DateTimeInput };
     static props = { ...standardActionServiceProps };
 
     setup() {
@@ -40,7 +43,11 @@ export class StoreChecklistShell extends Component {
             isSupervisor: false,
             activeNav: "overview",
             contentMode: "dashboard",
-            openGroups: { audit: true, evaluation: true, supervision: true, settings: true },
+            shiftTab: "morning", shiftStats: { total: 0, types: 0 },
+            job: { date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
+            done: { month: "", storeId: "", mien: "", q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
+            mg: { month: "", date: "", storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
+            openGroups: { audit: true, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
             embeddedViewProps: null,
             viewKey: 1,
             dash: null,
@@ -64,6 +71,7 @@ export class StoreChecklistShell extends Component {
             supPage: 0,
             personal: null,
             canCreate: false,
+            sched: { ndays: 30, rows: [], loading: false },
             personalTab: "activity",
             reportOpen: {},
             rights: null,
@@ -101,6 +109,11 @@ export class StoreChecklistShell extends Component {
             }
             window.addEventListener("resize", syncSidebarWidth);
             syncSidebarWidth();
+            if (this._deepCheckId) {
+                const id = this._deepCheckId;
+                this._deepCheckId = 0;
+                this.onDoneDay({ id });
+            }
         });
         onWillUnmount(() => {
             sideObserver?.disconnect();
@@ -108,6 +121,13 @@ export class StoreChecklistShell extends Component {
             document.removeEventListener("mousedown", gripSidebar, true);
             document.documentElement.style.removeProperty("--store-sidebar-w");
         });
+        // liên kết từ tin nhắn OdooBot (?store_check=ID): mở thẳng phiếu cần đánh giá sau khi màn hình tải xong
+        try {
+            const raw = new URLSearchParams(window.location.search).get("store_check");
+            this._deepCheckId = raw ? Number(raw) || 0 : 0;
+        } catch {
+            this._deepCheckId = 0;
+        }
         onWillStart(async () => {
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
             this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
@@ -141,10 +161,14 @@ export class StoreChecklistShell extends Component {
                 iconTone: "audit",
                 children: [
                     { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh" },
-                    { id: "asm", label: "Checklist ASM", icon: "fa-users", action: "store_checklist.action_store_audit_asm" },
-                    { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
-                    { id: "review", label: "Phiếu Đánh Giá", icon: "fa-pencil-square-o", action: "store_checklist.action_store_audit" },
-                    { id: "review_list", label: "Danh Sách Đánh Giá", icon: "fa-tasks", action: "store_checklist.action_store_audit" },
+                    // Mục con của Checklist NVBH: bấm là mở popup nhập thông tin nhân sự (không đổi màn hình), dùng quyền của mục NVBH
+                    { id: "nvbh_staff", label: "Nhân sự", icon: "fa-id-badge", sub: true, permId: "nvbh", action: "store_checklist.action_store_nvbh_staff" },
+                    // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
+                    { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh", action: "store_checklist.action_store_nvbh_jobs" },
+                    // Danh sách nhân viên đã check list (đã bấm Lưu); bấm vào tên để xem nội dung
+                    { id: "nvbh_done", label: "Danh sách checklist NV", icon: "fa-check-square-o", sub: true, permId: "nvbh", action: "store_checklist.action_store_nvbh_done" },
+                    // Quản lý & đánh giá checklist NVBH: 2 tab Bảng Nhân viên (theo tháng) / Bảng Đánh giá (theo ngày)
+                    { id: "nvbh_mg_staff", label: "Quản lý & đánh giá", icon: "fa-th-list", sub: true, permId: "nvbh", action: "store_checklist.action_store_nvbh_done" },
                 ],
             },
             {
@@ -176,7 +200,7 @@ export class StoreChecklistShell extends Component {
         const rights = this.state.rights; // ma trận quyền: ẩn mục không có quyền Xem
         if (rights) {
             for (const sec of sections) {
-                sec.children = sec.children.filter((c) => rights[c.id]?.read);
+                sec.children = sec.children.filter((c) => rights[c.permId || c.id]?.read);
             }
             sections.splice(0, sections.length, ...sections.filter((sec) => sec.children.length || sec.id === "violation"));
         }
@@ -192,8 +216,13 @@ export class StoreChecklistShell extends Component {
                 { id: "gs_benchmark", label: "Điểm chuẩn đánh giá", icon: "fa-list-ol", action: "store_checklist.action_store_benchmark_gs", sub: true },
                 { id: "gs_level", label: "Mức độ đánh giá", icon: "fa-star", action: "store_checklist.action_store_level_gs", sub: true },
             ];
+            const nvbhWork = [
+                { id: "shift", label: "Danh mục ca", icon: "fa-clock-o", action: "store_checklist.action_store_shift", sub: true },
+                { id: "nvbh_task", label: "Danh sách công việc NVBH", icon: "fa-list-ul", action: "store_checklist.action_store_nvbh_task", sub: true },
+                { id: "nvbh_rating", label: "Xếp loại", icon: "fa-trophy", action: "store_checklist.action_store_nvbh_rating", sub: true },
+            ];
             const vis = (list) => (rights ? list.filter((c) => rights[c.id]?.read) : list);
-            const evalVis = vis(evaluation), supVis = vis(supervision);
+            const evalVis = vis(evaluation), supVis = vis(supervision), nvbhVis = vis(nvbhWork);
             sections.push({
                 id: "settings",
                 label: "Cài đặt",
@@ -205,6 +234,8 @@ export class StoreChecklistShell extends Component {
                     ...(this.state.openGroups.evaluation ? evalVis : []),
                     ...(supVis.length ? [{ id: "supervision", label: "Công việc giám sát", icon: "fa-folder-open-o", folder: true }] : []),
                     ...(this.state.openGroups.supervision ? supVis : []),
+                    ...(nvbhVis.length ? [{ id: "nvbh_work", label: "Công việc checklist NVBH", icon: "fa-folder-open-o", folder: true }] : []),
+                    ...(this.state.openGroups.nvbh_work ? nvbhVis : []),
                 ],
             });
         }
@@ -219,9 +250,937 @@ export class StoreChecklistShell extends Component {
         this.state.openGroups[groupId] = !this.state.openGroups[groupId];
     }
 
+    // 2 tab của màn Công việc (Checklist NVBH > Công việc)
+    get jobTabs() {
+        return [
+            { id: "nvbh_jobs", label: "Check list công việc", action: "store_checklist.action_store_nvbh_jobs" },
+            { id: "nvbh_schedule", label: "Lịch xếp ca", action: "store_checklist.action_store_nvbh_schedule" },
+        ];
+    }
+
+    get isJobTabs() {
+        return ["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav);
+    }
+
+    // ---- In (chọn máy in trong hộp thoại in của trình duyệt) và Xuất Excel cho các bảng: Bảng checklist Tổng / Bảng Nhân viên / Bảng Đánh giá ----
+    tableMeta() {
+        const nav = this.state.activeNav;
+        const dmy = (ymd) => (ymd ? ymd.split("-").reverse().join("/") : "");
+        if (nav === "nvbh_done") {
+            return {
+                selector: ".o_store_total_table", title: "BẢNG CHECKLIST TỔNG", file: "Bang_checklist_tong",
+                sub: `Nhân viên: ${this.state.done.staff} | Tháng: ${this.doneMonthLabel}`,
+            };
+        }
+        const mg = this.state.mg;
+        if (nav === "nvbh_mg_eval") {
+            const week = mg.evalMode === "week";
+            return {
+                selector: ".o_store_mg_page .o_store_mg_table", file: week ? "Bang_danh_gia_tuan" : "Bang_danh_gia_ngay",
+                title: "BẢNG ĐÁNH GIÁ CHECKLIST NVBH", sub: week ? `Tuần: ${mg.week.week_label}` : `Ngày: ${dmy(mg.date)}`,
+            };
+        }
+        return {
+            selector: ".o_store_mg_page .o_store_mg_table", file: "Bang_nhan_vien", title: "BẢNG NHÂN VIÊN CHECKLIST NVBH",
+            sub: `Tháng: ${mg.month ? mg.month.slice(5) + "/" + mg.month.slice(0, 4) : ""}`,
+        };
+    }
+
+    // đọc bảng đang hiển thị: tiêu đề cột, các dòng, dòng tổng (bỏ cột Thao tác)
+    readTable(selector) {
+        const table = document.querySelector(selector);
+        if (!table) {
+            return null;
+        }
+        const cellText = (td) => {
+            const wk = td.querySelector(".wk");
+            if (wk) {
+                return wk.classList.contains("ok") ? "✓" : wk.classList.contains("bad") ? "✗" : wk.classList.contains("wait") ? "…" : "OFF";
+            }
+            const text = td.textContent.replace(/\s+/g, " ").trim();
+            // số kiểu Việt Nam (1.234,5) -> số để Excel tính được
+            if (/^-?\d+$/.test(text)) {
+                return Number(text);
+            }
+            if (/^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(text) || /^-?\d+,\d+$/.test(text)) {
+                return Number(text.replace(/\./g, "").replace(",", "."));
+            }
+            return text;
+        };
+        const expand = (tr) => {
+            const out = [];
+            for (const td of tr.children) {
+                out.push(cellText(td));
+                for (let i = 1; i < (td.colSpan || 1); i++) {
+                    out.push("");
+                }
+            }
+            return out;
+        };
+        const headers = [...table.querySelectorAll("thead th")].map((th) => th.textContent.replace(/\s+/g, " ").trim());
+        const drop = headers.indexOf("Thao tác");
+        const keep = (arr) => (drop < 0 ? arr : arr.filter((_v, i) => i !== drop));
+        const rows = [...table.querySelectorAll("tbody tr")].map((tr) => keep(expand(tr)));
+        const footTr = table.querySelector("tfoot tr");
+        return { headers: keep(headers), rows, foot: footTr ? keep(expand(footTr)) : null };
+    }
+
+    async onTableExport() {
+        if (this.state.activeNav === "nvbh_done") {
+            return this.pickStaff("Xuất Excel", (names) => this.exportDoneStaff(names));
+        }
+        try {
+            const meta = this.tableMeta();
+            const data = this.readTable(meta.selector);
+            if (!data || !data.rows.length) {
+                this.notification.add("Không có dữ liệu để xuất", { type: "warning" });
+                return;
+            }
+            const file = await this.orm.call("store.nvbh.check", "export_table_xlsx", [], {
+                title: meta.title, subtitle: meta.sub, headers: data.headers, rows: data.rows, foot: data.foot, filename: meta.file,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onTablePrint() {
+        if (this.state.activeNav === "nvbh_done") {
+            return this.pickStaff("In", (names) => this.printDoneStaff(names));
+        }
+        const meta = this.tableMeta();
+        const data = this.readTable(meta.selector);
+        if (!data || !data.rows.length) {
+            this.notification.add("Không có dữ liệu để in", { type: "warning" });
+            return;
+        }
+        this.printPages([{ title: meta.title, sub: meta.sub, headers: data.headers, rows: data.rows, foot: data.foot }]);
+    }
+
+    // mỗi phần tử của pages (title, sub, headers, rows, foot) là một trang in; mở hộp thoại in để chọn máy in
+    printPages(pages) {
+        const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+        const fmt = (v) => (typeof v === "number" ? this.fmtNum(v) : esc(v));
+        const tr = (cells, tag = "td") => `<tr>${cells.map((v) => `<${tag}>${fmt(v)}</${tag}>`).join("")}</tr>`;
+        const section = (p, i) => `<section class="${i ? "brk" : ""}">
+            <div class="head"><img src="/web/binary/company_logo" alt=""/><div><h1>${esc(p.title)}</h1><div class="sub">${esc(p.sub)}</div></div></div>
+            <table><thead>${tr(p.headers, "th")}</thead><tbody>${p.rows.map((r) => tr(r)).join("")}</tbody>
+            ${p.foot ? `<tfoot>${tr(p.foot)}</tfoot>` : ""}</table>
+            <div class="foot">In ngày ${new Date().toLocaleDateString("vi-VN")}</div></section>`;
+        const html = `<!doctype html><html><head><meta charset="utf-8"><title>${esc(pages[0].title)}</title><style>
+            @page { size: A4 landscape; margin: 8mm; }
+            * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            body { font-family: Arial, sans-serif; font-size: 11px; color: #0f172a; margin: 0; }
+            .brk { page-break-before: always; }
+            .head { display: flex; align-items: center; gap: 14px; border-bottom: 2px solid #1e3a6e; padding-bottom: 8px; margin-bottom: 10px; }
+            .head img { height: 42px; } h1 { font-size: 18px; margin: 0; color: #1e3a6e; } .sub { color: #475569; margin-top: 3px; }
+            table { width: 100%; border-collapse: collapse; } th, td { border: 1px solid #94a3b8; padding: 4px 6px; text-align: center; }
+            th { background: #dbeafe; font-weight: 700; } tfoot td { background: #dbe7f5; font-weight: 700; }
+            thead { display: table-header-group; } tr { page-break-inside: avoid; }
+            .foot { margin-top: 10px; color: #64748b; font-size: 10px; text-align: right; }
+        </style></head><body>${pages.map(section).join("")}</body></html>`;
+        const frame = document.createElement("iframe");
+        frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
+        document.body.appendChild(frame);
+        const doc = frame.contentDocument;
+        doc.open();
+        doc.write(html);
+        doc.close();
+        let started = false;
+        const go = () => {
+            if (started) { return; }
+            started = true;
+            frame.contentWindow.focus();
+            frame.contentWindow.print();
+            setTimeout(() => frame.remove(), 60000);
+        };
+        const imgs = [...doc.querySelectorAll("img")].filter((i) => !i.complete);
+        if (imgs.length) {
+            let left = imgs.length;
+            imgs.forEach((i) => (i.onload = i.onerror = () => { if (!--left) { go(); } }));
+            setTimeout(go, 3000);
+        } else {
+            go();
+        }
+    }
+
+    // ---- Bảng checklist Tổng: chọn nhân viên rồi in / xuất (mỗi nhân viên một trang / một sheet) ----
+    pickStaff(confirmLabel, onConfirm) {
+        const items = this.doneStaffOptions.map((o) => ({ key: o.name, label: o.label }));
+        if (!items.length) {
+            this.notification.add("Không có nhân viên nào để chọn", { type: "warning" });
+            return;
+        }
+        this.dialog.add(StoreStaffPickDialog, {
+            title: `${confirmLabel} Bảng checklist Tổng`, confirmLabel, items, selected: [this.state.done.staff], onConfirm,
+        });
+    }
+
+    async exportDoneStaff(names) {
+        try {
+            const d = this.state.done;
+            const file = await this.orm.call("store.nvbh.check", "export_done_monthly_xlsx", [], {
+                month: d.month || false, staff_names: names, store_id: d.storeId ? Number(d.storeId) : false, only_work: d.onlyWork,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async printDoneStaff(names) {
+        try {
+            const d = this.state.done;
+            const pages = [];
+            for (const name of names) {
+                const data = await this.orm.call("store.nvbh.check", "get_done_monthly", [], {
+                    month: d.month || false, staff_name: name, store_id: d.storeId ? Number(d.storeId) : false,
+                });
+                const t = data.total || {};
+                const pct = (v) => `${this.fmtNum(v)}%`;
+                pages.push({
+                    title: "BẢNG CHECKLIST TỔNG",
+                    sub: `Nhân viên: ${name} | Tháng: ${this.doneMonthLabel}`,
+                    headers: ["Ngày", "Cửa hàng", "Mã ca", "Trạng thái ngày", "Tổng việc ca", "Đã làm", "Số lỗi", "Điểm đạt", "Điểm chuẩn ca", "Điểm CHT đánh giá", "Điểm ASM đánh giá", "Tỷ lệ đạt (%)", "Kết quả", "Ghi chú / Tóm tắt công việc"],
+                    rows: data.rows.filter((r) => !d.onlyWork || r.kind !== "off").map((r) => [
+                        r.date, r.store || "-", r.kind === "off" ? "OFF" : r.shift, r.status, r.total, r.done, r.errors,
+                        r.kind === "off" || r.evaluated ? r.points : "-", r.max_points, r.pts_cht == null ? "-" : r.pts_cht, r.pts_asm == null ? "-" : r.pts_asm,
+                        r.kind === "off" || r.evaluated ? pct(r.pct) : "-", r.control, r.note || "-",
+                    ]),
+                    foot: [`TỔNG CỘNG KỲ ${this.doneMonthLabel} (${t.days || 0} ngày công thực tế)`, "", "", "", t.total || 0, t.done || 0, t.errors || 0,
+                        t.avg_points == null ? "-" : t.avg_points, t.max_points || 0, t.avg_cht == null ? "-" : t.avg_cht, t.avg_asm == null ? "-" : t.avg_asm,
+                        t.avg_pct == null ? "-" : pct(t.avg_pct), `${t.valid || 0}/${t.days || 0} công hợp lệ`, "Tự động liên kết sang dữ liệu Odoo"],
+                });
+            }
+            this.printPages(pages);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // 2 tab của màn Quản lý & đánh giá checklist NVBH
+    get mgTabs() {
+        return [
+            { id: "nvbh_mg_staff", label: "Bảng Nhân viên" },
+            { id: "nvbh_mg_eval", label: "Bảng Đánh giá" },
+        ];
+    }
+
+    get isMgTabs() {
+        return ["nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav);
+    }
+
+    // ---- Quản lý & đánh giá checklist NVBH ----
+    async openManagePage(tab = "nvbh_mg_staff") {
+        try {
+            this.state.activeNav = tab;
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            const mg = this.state.mg;
+            if (!mg.date) {
+                mg.date = this.jobToday();
+            }
+            if (!mg.month) {
+                mg.month = mg.date.slice(0, 7);
+            }
+            if (!this.state.job.stores.length) {
+                this.state.job.stores = await this.orm.call("store.nvbh.check", "get_my_stores", []);
+            }
+            await this.loadManage();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadManage() {
+        const mg = this.state.mg;
+        const store_id = mg.storeId ? Number(mg.storeId) : false;
+        const search = mg.q.trim() || false;
+        // ô chọn nhân viên: lọc theo đúng tên đã chọn
+        const name = mg.name || false;
+        const pick = (rows) => (name ? rows.filter((r) => r.name === name) : rows);
+        if (this.state.activeNav === "nvbh_mg_eval" && mg.evalMode === "week") {
+            const w = await this.orm.call("store.nvbh.check", "get_manage_week", [], { work_date: mg.date || false, store_id, search });
+            w.rows = pick(w.rows);
+            mg.week = w;
+            if (!search && !name) {
+                mg.names = [...new Set(w.rows.map((r) => r.name))];
+            }
+        } else if (this.state.activeNav === "nvbh_mg_eval") {
+            mg.evalRows = pick(await this.orm.call("store.nvbh.check", "get_manage_eval", [], { work_date: mg.date || false, store_id, search }));
+            mg.evalRows.forEach((r, i) => (r.stt = i + 1));
+            if (!search && !name) {
+                mg.names = [...new Set(mg.evalRows.map((r) => r.name))];
+            }
+        } else {
+            mg.rows = pick(await this.orm.call("store.nvbh.check", "get_manage_staff", [], {
+                month: mg.month || false, store_id, search, errors_only: mg.errors, active_only: mg.active,
+            }));
+            mg.rows.forEach((r, i) => (r.stt = i + 1));
+            if (!search && !name) {
+                mg.names = [...new Set(mg.rows.map((r) => r.name))];
+            }
+        }
+    }
+
+    onMgName(ev) {
+        this.state.mg.name = ev.target.value;
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    onMgActive(ev) {
+        this.state.mg.active = ev.target.checked;
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    onMgEvalMode(mode) {
+        if (this.state.mg.evalMode !== mode) {
+            this.state.mg.evalMode = mode;
+            return this.loadManage().catch((e) => this.notifyError(e));
+        }
+    }
+
+    onMgAddStaff() {
+        return this.openStaffForm(false, () => this.loadManage());
+    }
+
+    mgWeekIcon(st) {
+        return { ok: "fa-check", bad: "fa-times", wait: "fa-circle-o", off: "" }[st] || "";
+    }
+
+    mgShiftWeek(delta) {
+        return this.onMgShiftDate(delta * 7);
+    }
+
+    onMgTab(tab) {
+        return this.state.activeNav === tab.id ? null : this.openManagePage(tab.id);
+    }
+
+    onMgFilter(key, ev) {
+        const mg = this.state.mg;
+        mg[key] = ev.target.value;
+        if (key === "storeId") {
+            mg.name = "";
+        }
+        if (key === "date" && mg.date) {
+            mg.month = mg.date.slice(0, 7);
+        }
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    onMgShiftDate(delta) {
+        const mg = this.state.mg;
+        const d = new Date(`${mg.date || this.jobToday()}T00:00:00`);
+        d.setDate(d.getDate() + delta);
+        mg.date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        mg.month = mg.date.slice(0, 7);
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    onMgSearch(ev) {
+        this.state.mg.q = ev.target.value;
+        clearTimeout(this._mgTimer);
+        this._mgTimer = setTimeout(() => this.loadManage().catch((e) => this.notifyError(e)), 300);
+    }
+
+    onMgErrors() {
+        this.state.mg.errors = !this.state.mg.errors;
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    // "Chấm điểm" / "Xem": mở popup checklist của nhân viên trong ngày (tạo phiếu nếu ngày đó chưa có)
+    async onMgOpen(row) {
+        try {
+            const payload = await this.orm.call("store.nvbh.check", "get_checklist", [row.line_id]);
+            if (payload) {
+                this.dialog.add(StoreCheckViewDialog, { payload, onSaved: () => this.loadManage() });
+            }
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // "Chi tiết" ở Bảng Nhân viên: sang Bảng Đánh giá, lọc theo tên nhân viên đó
+    onMgStaffDetail(row) {
+        this.state.mg.q = row.name;
+        this.state.mg.evalMode = "day";
+        return this.openManagePage("nvbh_mg_eval");
+    }
+
+    get mgCount() {
+        const mg = this.state.mg;
+        if (this.state.activeNav !== "nvbh_mg_eval") {
+            return mg.rows.length;
+        }
+        return mg.evalMode === "week" ? mg.week.rows.length : mg.evalRows.length;
+    }
+
+    mgScore(row) {
+        return `${this.fmtNum(row.points)} / ${this.fmtNum(row.max_points)}`;
+    }
+
+    // ---- Danh sách checklist nhân viên: tổng hợp theo nhân viên trong tháng, bấm tên để xem từng ngày ----
+    async openDonePage() {
+        try {
+            this.state.activeNav = "nvbh_done";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            const d = this.state.done;
+            if (!d.month) {
+                const now = new Date();
+                d.month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+            }
+            if (!this.state.job.stores.length) {
+                this.state.job.stores = await this.orm.call("store.nvbh.check", "get_my_stores", []);
+            }
+            await this.loadDone();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadDone() {
+        const d = this.state.done;
+        d.rows = await this.orm.call("store.nvbh.check", "get_done_summary", [], {
+            month: d.month || false,
+            store_id: d.storeId ? Number(d.storeId) : false,
+            mien: d.mien || false,
+            search: d.q.trim() || false,
+            today: d.today,
+            errors: d.errors,
+        });
+        if (d.rows.length && !d.rows.some((r) => d.open[r.key])) {
+            d.open[d.rows[0].key] = true; // mở sẵn nhân viên đầu tiên
+        }
+        if (d.tab === "total") {
+            d.storeStaff = await this.orm.call("store.nvbh.check", "get_store_staff_options", [], {
+                month: d.month || false, store_id: d.storeId ? Number(d.storeId) : false,
+            });
+            await this.loadDoneMonthly();
+        }
+    }
+
+    // 2 tab của màn Danh sách checklist NV: DS Nhân viên check list / Bảng checklist Tổng
+    get doneTabs() {
+        return [
+            { id: "list", label: "DS Nhân viên check list" },
+            { id: "total", label: "Bảng checklist Tổng" },
+        ];
+    }
+
+    get doneStaffNames() {
+        return this.doneStaffOptions.map((o) => o.name);
+    }
+
+    // danh sách chọn nhân viên: "Họ tên (ID: mã)" - gồm toàn bộ nhân viên của cửa hàng, không chỉ người đã có checklist
+    get doneStaffOptions() {
+        const seen = new Map();
+        for (const r of [...(this.state.done.storeStaff || []), ...this.state.done.rows]) {
+            if (!seen.has(r.name) || (!seen.get(r.name).code && r.code)) {
+                seen.set(r.name, { name: r.name, code: r.code || "" });
+            }
+        }
+        return [...seen.values()].map((o) => ({ name: o.name, label: o.code ? `${o.name} (ID: ${o.code})` : o.name }));
+    }
+
+    async onDoneTab(tab) {
+        if (this.state.done.tab !== tab.id) {
+            this.state.done.tab = tab.id;
+            await this.loadDone().catch((e) => this.notifyError(e));
+        }
+    }
+
+    async loadDoneMonthly() {
+        const d = this.state.done;
+        const names = this.doneStaffNames;
+        if (!names.includes(d.staff)) {
+            d.staff = names[0] || "";
+        }
+        d.monthly = d.staff
+            ? await this.orm.call("store.nvbh.check", "get_done_monthly", [], {
+                month: d.month || false, staff_name: d.staff, store_id: d.storeId ? Number(d.storeId) : false,
+            })
+            : null;
+    }
+
+    onDoneStaff(ev) {
+        this.state.done.staff = ev.target.value;
+        return this.loadDoneMonthly().catch((e) => this.notifyError(e));
+    }
+
+    // "Chỉ hiện ngày đi làm" / "Tất cả N ngày"
+    get doneMonthlyRows() {
+        const rows = this.state.done.monthly?.rows || [];
+        return this.state.done.onlyWork ? rows.filter((r) => r.kind !== "off") : rows;
+    }
+
+    get doneWorkCount() {
+        return (this.state.done.monthly?.rows || []).filter((r) => r.kind !== "off").length;
+    }
+
+    get doneMonthLabel() {
+        const m = this.state.done.month || "";
+        return m ? `${m.slice(5)}/${m.slice(0, 4)}` : "";
+    }
+
+    onDoneOnlyWork(flag) {
+        this.state.done.onlyWork = flag;
+    }
+
+    onDoneMonthlyRow(row) {
+        return row.id ? this.onDoneDay({ id: row.id }) : null;
+    }
+
+    onDoneFilter(key, ev) {
+        this.state.done[key] = ev.target.value;
+        return this.loadDone().catch((e) => this.notifyError(e));
+    }
+
+    onDoneToggle(key) {
+        this.state.done[key] = !this.state.done[key];
+        return this.loadDone().catch((e) => this.notifyError(e));
+    }
+
+    onDoneSearch(ev) {
+        this.state.done.q = ev.target.value;
+        clearTimeout(this._doneTimer);
+        this._doneTimer = setTimeout(() => this.loadDone().catch((e) => this.notifyError(e)), 300);
+    }
+
+    // bấm Xem chi tiết: mở popup công việc theo ngày của đúng nhân viên đó
+    toggleDoneEmp(key) {
+        this.state.done.popup = key;
+        this.state.done.dayPick = "";
+    }
+
+    closeDonePopup() {
+        this.state.done.popup = "";
+    }
+
+    get donePopupEmp() {
+        const key = this.state.done.popup;
+        return key ? this.state.done.rows.find((r) => r.key === key) || null : null;
+    }
+
+    // ngày ASM đã đánh giá xong thì ẩn khỏi bảng chi tiết (bật "Hiện cả ngày ASM đã đánh giá" để xem lại)
+    // dayPick: "" = tất cả các ngày nhân viên đã check list (mặc định); "todo" = chỉ ngày ASM chưa đánh giá xong; còn lại = đúng ngày được chọn
+    visibleDays(emp) {
+        const pick = this.state.done.dayPick;
+        if (pick === "todo") {
+            return emp.days.filter((d) => !d.asm_done);
+        }
+        if (pick) {
+            return emp.days.filter((d) => d.date === pick);
+        }
+        return emp.days;
+    }
+
+    onDonePickDay(ev) {
+        this.state.done.dayPick = ev.target.value;
+        this.state.done.all = {};
+    }
+
+    doneDays(emp) {
+        return this.visibleDays(emp);
+    }
+
+    // 3 ngày gần nhất theo lịch: hôm kia, hôm qua, hôm nay (từ cũ đến mới); ngày không có phiếu hiện ô trống "Chưa có"
+    recentDays(emp) {
+        const out = [];
+        const pad = (n) => String(n).padStart(2, "0");
+        for (let back = 2; back >= 0; back--) {
+            const d = new Date();
+            d.setDate(d.getDate() - back);
+            const key = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+            out.push(emp.days.find((x) => x.date === key) || { id: 0, date: key, empty: true, pct: null, errors: 0 });
+        }
+        return out;
+    }
+
+    // thống kê trạng thái các ngày của nhân viên: chờ đánh giá (chưa đánh giá xong) / đã đánh giá xong
+    pendingCount(emp) {
+        return emp.days.filter((d) => !d.evaluated).length;
+    }
+
+    evaluatedCount(emp) {
+        return emp.days.filter((d) => d.evaluated).length;
+    }
+
+    onRecentDay(day) {
+        if (day.id) {
+            return this.onDoneDay(day);
+        }
+    }
+
+    dayTone(day) {
+        if (day.empty) {
+            return "is-empty";
+        }
+        return day.errors > 0 ? "is-bad" : day.evaluated ? "is-ok" : "is-wait";
+    }
+
+    dayIcon(day) {
+        if (day.empty) {
+            return "fa-minus-circle";
+        }
+        return day.errors > 0 ? "fa-exclamation-circle" : day.evaluated ? "fa-check-circle" : "fa-clock-o";
+    }
+
+    dayLabel(day) {
+        if (day.empty) {
+            return "Chưa có";
+        }
+        if (day.state === "draft") {
+            return "Đang làm";
+        }
+        return day.errors > 0 ? "Lỗi" : day.evaluated ? "Đạt" : "Chờ";
+    }
+
+    showAllDoneDays(emp) {
+        this.state.done.all[emp.key] = true;
+    }
+
+    fmtNum(n) {
+        return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(n || 0);
+    }
+
+    get isAdminUser() {
+        return Boolean(user.isSystem || user.isAdmin);
+    }
+
+    // Quản trị viên: xóa checklist đã lưu (một ngày hoặc toàn bộ ngày của nhân viên trong khoảng đang xem)
+    onDoneDelete(days, label) {
+        const ids = (days || []).map((d) => d.id).filter(Boolean);
+        if (!ids.length) {
+            return;
+        }
+        this.dialog.add(ConfirmationDialog, {
+            title: "Xóa checklist",
+            body: `Xóa ${ids.length} checklist của "${label}"? Thao tác này không hoàn tác được.`,
+            confirmLabel: "Xóa",
+            confirm: async () => {
+                try {
+                    await this.orm.call("store.nvbh.check", "delete_checks", [ids]);
+                    this.notification.add(`Đã xóa ${ids.length} checklist`, { type: "success" });
+                    await this.loadDone();
+                } catch (error) {
+                    this.notifyError(error);
+                }
+            },
+            cancel: () => {},
+        });
+    }
+
+    async onDoneDay(day) {
+        try {
+            const payload = await this.orm.call("store.nvbh.check", "read_checklist", [day.id]);
+            if (payload) {
+                this.dialog.add(StoreCheckViewDialog, { payload, onSaved: () => this.loadDone() });
+            }
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- Trang "Check list công việc": Ngày + Cửa hàng + Nhân viên (từ Lịch làm việc), tích là lưu ngay ----
+    jobToday() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    }
+
+    async openJobsPage() {
+        try {
+            this.state.activeNav = "nvbh_jobs";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            const job = this.state.job;
+            if (!job.date) {
+                job.date = this.jobToday();
+            }
+            if (!job.stores.length) {
+                job.stores = await this.orm.call("store.nvbh.check", "get_my_stores", []);
+            }
+            if (!job.storeId && job.stores.length === 1) {
+                job.storeId = String(job.stores[0].id);
+            }
+            if (!job.storeId) {
+                // tự chọn cửa hàng của người dùng đang đăng nhập; không tra được thì để trống như cũ
+                const sid = await this.orm.call("store.nvbh.check", "get_user_store", []).catch(() => false);
+                if (sid && job.stores.some((st) => st.id === sid)) {
+                    job.storeId = String(sid);
+                }
+            }
+            await this.loadJobStaff();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadJobStaff() {
+        const job = this.state.job;
+        await this.refreshJobStaff();
+        if (!job.staff.some((st) => String(st.id) === String(job.lineId))) {
+            // mặc định chọn nhân viên đầu tiên chưa check list xong
+            const first = job.staff.find((st) => !st.finished) || job.staff[0];
+            job.lineId = first ? String(first.id) : "";
+        }
+        await this.loadJobChecklist();
+    }
+
+    // danh sách nhân viên có lịch trong ngày (thẻ nhân viên), kèm tiến độ; nhân viên đã check list xong sẽ mờ đi
+    async refreshJobStaff() {
+        const job = this.state.job;
+        const ov = job.storeId && job.date
+            ? await this.orm.call("store.nvbh.check", "get_job_overview", [Number(job.storeId), job.date])
+            : { staff: [], off: [], store_staff: 0 };
+        job.staff = ov.staff;
+        job.off = ov.off;
+        job.storeStaff = ov.store_staff;
+    }
+
+    onJobPick(sf) {
+        if (String(sf.id) === String(this.state.job.lineId)) {
+            return;
+        }
+        if (!this.jobConfirmLeave()) {
+            return;
+        }
+        this.state.job.lineId = String(sf.id);
+        return this.loadJobChecklist().catch((e) => this.notifyError(e));
+    }
+
+    jobStaffNum(n) {
+        return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(n || 0);
+    }
+
+    async loadJobChecklist() {
+        const job = this.state.job;
+        job.check = job.lineId ? await this.orm.call("store.nvbh.check", "get_checklist", [Number(job.lineId)]) : null;
+        job.snap = this.jobSnapshot();
+    }
+
+    // ảnh chụp trạng thái đã lưu của các dòng, để biết có thay đổi chưa lưu hay không
+    jobSnapshot() {
+        return JSON.stringify((this.state.job.check?.lines || []).map((l) => [l.id, l.is_done, (l.note || "").trim()]));
+    }
+
+    get jobDirty() {
+        return Boolean(this.state.job.check) && this.jobSnapshot() !== this.state.job.snap;
+    }
+
+    // KPI và trạng thái tính ngay trên màn hình theo ô tích / ghi chú đang nhập (chưa lưu)
+    jobLineStatus(line) {
+        return line.is_done ? "done" : (line.note || "").trim() ? "doing" : "todo";
+    }
+
+    get jobKpi() {
+        const lines = this.state.job.check?.lines || [];
+        const count = (st) => lines.filter((l) => this.jobLineStatus(l) === st).length;
+        const num = (v) => Math.round((v || 0) * 100) / 100;
+        return {
+            total: lines.length, doing: count("doing"), done: count("done"), todo: count("todo"),
+            // điểm đạt = điểm quản lý đã đánh giá (Đạt = điểm chuẩn, T.Bình = điểm chuẩn / 2, Không đạt = 0); điểm tối đa = tổng Điểm chuẩn
+            points: num(lines.reduce((sum, l) => sum + (l.actual_score || 0), 0)),
+            maxPoints: num(lines.reduce((sum, l) => sum + (l.score || 0), 0)),
+        };
+    }
+
+    // đổi ngày / cửa hàng / nhân viên khi còn thay đổi chưa lưu: hỏi trước
+    jobConfirmLeave() {
+        return !this.jobDirty || window.confirm("Có thay đổi chưa lưu, nếu tiếp tục sẽ bị mất. Tiếp tục?");
+    }
+
+    // ô chọn ngày hiển thị dd/mm/yyyy (không phụ thuộc ngôn ngữ trình duyệt)
+    ymdToDt(ymd) {
+        return ymd ? luxon.DateTime.fromISO(ymd) : false;
+    }
+
+    dtToYmd(dt) {
+        return dt && dt.isValid ? dt.toFormat("yyyy-MM-dd") : "";
+    }
+
+    onJobDatePick(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.job.date) {
+            return;
+        }
+        if (!this.jobConfirmLeave()) {
+            this.state.job.dateKey = (this.state.job.dateKey || 0) + 1; // dựng lại ô ngày về giá trị cũ
+            return;
+        }
+        this.state.job.date = ymd;
+        return this.loadJobStaff().catch((e) => this.notifyError(e));
+    }
+
+    onMgDatePick(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.mg.date) {
+            return;
+        }
+        this.state.mg.date = ymd;
+        this.state.mg.month = ymd.slice(0, 7);
+        return this.loadManage().catch((e) => this.notifyError(e));
+    }
+
+    onJobDate(ev) {
+        if (!this.jobConfirmLeave()) {
+            ev.target.value = this.state.job.date;
+            return;
+        }
+        this.state.job.date = ev.target.value;
+        return this.loadJobStaff().catch((e) => this.notifyError(e));
+    }
+
+    onJobStore(ev) {
+        if (!this.jobConfirmLeave()) {
+            ev.target.value = this.state.job.storeId;
+            return;
+        }
+        this.state.job.storeId = ev.target.value;
+        this.state.job.lineId = "";
+        return this.loadJobStaff().catch((e) => this.notifyError(e));
+    }
+
+    onJobStaff(ev) {
+        if (!this.jobConfirmLeave()) {
+            ev.target.value = this.state.job.lineId;
+            return;
+        }
+        this.state.job.lineId = ev.target.value;
+        return this.loadJobChecklist().catch((e) => this.notifyError(e));
+    }
+
+    get jobLocked() {
+        return Boolean(this.state.job.check) && this.state.job.check.can_execute === false;
+    }
+
+    onJobToggle(line) {
+        if (this.jobLocked) {
+            return;
+        }
+        line.is_done = !line.is_done;
+    }
+
+    onJobNote(line, ev) {
+        line.note = ev.target.value;
+    }
+
+    onJobAll(ev) {
+        if (this.jobLocked) {
+            ev.target.checked = this.jobAllDone;
+            return;
+        }
+        for (const line of this.state.job.check?.lines || []) {
+            line.is_done = ev.target.checked;
+        }
+    }
+
+    async onJobSave() {
+        const check = this.state.job.check;
+        if (!check || !this.jobDirty) {
+            return;
+        }
+        try {
+            const changes = check.lines.map((l) => ({ id: l.id, is_done: l.is_done, note: (l.note || "").trim() }));
+            this.state.job.check = await this.orm.call("store.nvbh.check", "save_checklist", [check.id, changes]);
+            this.state.job.snap = this.jobSnapshot();
+            await this.refreshJobStaff(); // cập nhật thẻ nhân viên: nhân viên đã xong sẽ mờ đi
+            this.notification.add("Đã lưu checklist công việc", { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+            return;
+        }
+        // lưu xong mà đã làm đủ mọi công việc: tự gửi phiếu cho người đánh giá tiếp theo
+        if (this.jobCanSubmit && this.jobAllDone) {
+            try {
+                this.state.job.check = await this.orm.call("store.nvbh.check", "submit_to_reviewer", [this.state.job.check.id]);
+                this.state.job.snap = this.jobSnapshot();
+                await this.refreshJobStaff();
+                this.notification.add(`Đã tự động gửi cấp trên đánh giá: ${this.state.job.check.reviewer_name}`, { type: "success" });
+            } catch (error) {
+                this.notifyError(error); // đã lưu rồi; không gửi được (vd. chưa có quản lý) thì báo lý do, vẫn có nút gửi tay
+            }
+        }
+    }
+
+    // Gửi cấp trên đánh giá: chốt phần làm của nhân viên, khóa tick và thông báo cho người đánh giá
+    async onJobSubmit() {
+        const check = this.state.job.check;
+        if (!check || this.jobDirty) {
+            return;
+        }
+        try {
+            this.state.job.check = await this.orm.call("store.nvbh.check", "submit_to_reviewer", [check.id]);
+            this.state.job.snap = this.jobSnapshot();
+            await this.refreshJobStaff();
+            this.notification.add(`Đã gửi cấp trên đánh giá: ${this.state.job.check.reviewer_name}`, { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    get jobCanSubmit() {
+        const c = this.state.job.check;
+        return Boolean(c) && c.can_submit === true && c.state === "draft";
+    }
+
+    async onJobCancel() {
+        try {
+            await this.loadJobChecklist();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    get jobAllDone() {
+        const lines = this.state.job.check?.lines || [];
+        return lines.length > 0 && lines.every((l) => l.is_done);
+    }
+
+    // gom công việc theo Nhóm công việc: dòng đầu mỗi nhóm hiện tiêu đề (thu gọn / mở rộng)
+    jobGroupStart(index) {
+        const lines = this.state.job.check?.lines || [];
+        return index === 0 || lines[index - 1].group !== lines[index].group;
+    }
+
+    jobGroupInfo(group) {
+        const rows = (this.state.job.check?.lines || []).filter((l) => l.group === group);
+        return { count: rows.length, done: rows.filter((l) => l.is_done).length };
+    }
+
+    toggleJobGroup(group) {
+        this.state.job.closed[group] = !this.state.job.closed[group];
+    }
+
+    jobSel(a, b) {
+        return String(a) === String(b);
+    }
+
+    jobStatusLabel(status) {
+        return { todo: "Chưa làm", doing: "Đang làm", done: "Đã làm" }[status] || "";
+    }
+
+    async onJobTab(tab) {
+        if (this.state.activeNav !== tab.id) {
+            await this.openAction(tab.action, tab.id);
+        }
+    }
+
     navChildClass(child) {
         const cls = ["store-tn-" + child.id];
-        if (this.state.activeNav === child.id) {
+        // mục "Công việc" vẫn sáng khi đang ở tab Lịch làm việc
+        if (this.state.activeNav === child.id || (child.id === "nvbh_jobs" && this.state.activeNav === "nvbh_schedule") || (child.id === "nvbh_mg_staff" && this.state.activeNav === "nvbh_mg_eval")) {
             cls.push("is-active");
         }
         if (child.sub) {
@@ -276,7 +1235,7 @@ export class StoreChecklistShell extends Component {
 
     // Các danh sách phiếu (Checklist NVBH / ASM / GS và Danh Sách Đánh Giá) có thanh lọc tháng / cửa hàng / miền
     get filterNavs() {
-        return ["review", "review_list", "nvbh", "asm", "gs", "violation_stores", "violation_all", ...this.reportNavs];
+        return ["review", "review_list", "nvbh", "nvbh_staff", "nvbh_schedule", "asm", "gs", "violation_stores", "violation_all", ...this.reportNavs];
     }
 
     get reportNavs() {
@@ -288,10 +1247,10 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             this.showListFilters
             && !this.reportNavs.includes(this.state.activeNav)
-            && !["violation_stores", "violation_all"].includes(this.state.activeNav)
+            && !["violation_stores", "violation_all", "nvbh_done", "nvbh_staff"].includes(this.state.activeNav)
             && this.state.canCreate
-            && (!this.state.rights || this.state.rights[this.state.activeNav]?.create)
-            && this.state.embeddedViewProps
+            && (!this.state.rights || this.state.rights[this.permKey]?.create)
+            && (this.state.embeddedViewProps || this.isScheduleNav)
         );
     }
 
@@ -300,17 +1259,49 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             (this.state.isManager || this.state.rights?.[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
-            && ["benchmark", "level", "gs_benchmark", "gs_level"].includes(this.state.activeNav)
+            && ["benchmark", "level", "gs_benchmark", "gs_level", "shift", "nvbh_task", "nvbh_rating"].includes(this.state.activeNav)
         );
     }
 
     onAddNew() {
+        if (this.isScheduleNav) {
+            return this.openScheduleForm();
+        }
         this.state.embeddedViewProps?.createRecord?.();
     }
 
     // Điểm chuẩn đánh giá: xuất / nhập Excel (giám sát = gs_benchmark, NVBH + ASM = benchmark)
     get isBenchmarkNav() {
-        return ["benchmark", "gs_benchmark"].includes(this.state.activeNav);
+        return ["benchmark", "gs_benchmark", "nvbh_task"].includes(this.state.activeNav);
+    }
+
+    // model + tham số của hàm export_xlsx / import_xlsx (Công việc NVBH không có scope)
+    get excelModel() {
+        if (this.state.activeNav === "nvbh_schedule") {
+            return "store.nvbh.schedule.line";
+        }
+        return this.state.activeNav === "nvbh_task" ? "store.nvbh.task" : "store.audit.template.line";
+    }
+
+    excelArgs(extra = []) {
+        if (this.state.activeNav === "nvbh_schedule") {
+            // xuất theo bộ lọc đang chọn (tháng / cửa hàng / miền); nhập chỉ gửi file
+            const month = this.state.listFilters.month;
+            return extra.length ? [...extra, month] : [this.listDomain(this.listBase || []), month];
+        }
+        return this.state.activeNav === "nvbh_task" ? extra : [this.benchmarkScope, ...extra];
+    }
+
+    get isScheduleNav() {
+        return this.state.activeNav === "nvbh_schedule";
+    }
+
+    get canImportSchedule() {
+        return !this.state.rights || Boolean(this.state.rights.nvbh?.create);
+    }
+
+    get canExportSchedule() {
+        return !this.state.rights || Boolean(this.state.rights.nvbh?.export);
     }
 
     get benchmarkScope() {
@@ -319,7 +1310,7 @@ export class StoreChecklistShell extends Component {
 
     async onExportBenchmark() {
         try {
-            const file = await this.orm.call("store.audit.template.line", "export_xlsx", [this.benchmarkScope]);
+            const file = await this.orm.call(this.excelModel, "export_xlsx", this.excelArgs());
             const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
@@ -346,10 +1337,13 @@ export class StoreChecklistShell extends Component {
                 for (let i = 0; i < bytes.length; i += 0x8000) {
                     bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
                 }
-                const res = await this.orm.call("store.audit.template.line", "import_xlsx", [this.benchmarkScope, btoa(bin)]);
+                const res = await this.orm.call(this.excelModel, "import_xlsx", this.excelArgs([btoa(bin)]));
                 const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";
-                this.notification.add(`Đã nhập: thêm ${res.created}, cập nhật ${res.updated}${warn}`, { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count) });
+                this.notification.add(`Đã nhập lịch ca: thêm ${res.created}, cập nhật ${res.updated}${res.removed ? `, xóa ${res.removed} ca không còn trong file` : ""} · Nhân sự: thêm ${res.staff_created || 0}, cập nhật ${res.staff_updated || 0}${warn}`, { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count) });
                 this.state.viewKey += 1;
+                if (this.isScheduleNav) {
+                    await this.loadSchedule();
+                }
             } catch (error) {
                 this.notifyError(error);
             }
@@ -357,8 +1351,44 @@ export class StoreChecklistShell extends Component {
         input.click();
     }
 
+    // Danh mục ca làm việc (Cài đặt > Mã ca): tab theo loại ca
+    get shiftTabs() {
+        return [
+            { id: "morning", label: "SÁNG" },
+            { id: "afternoon", label: "CHIỀU" },
+            { id: "full", label: "FULL" },
+            { id: "split_am", label: "GÃY SÁNG" },
+            { id: "split_pm", label: "GÃY CHIỀU" },
+        ];
+    }
+
+    shiftDomain() {
+        return [...(this.listBase || []), ["shift_type", "=", this.state.shiftTab]];
+    }
+
+    async loadShiftStats() {
+        try {
+            const rows = await this.orm.searchRead("store.shift", [], ["shift_type"]);
+            this.state.shiftStats = { total: rows.length, types: new Set(rows.map((r) => r.shift_type)).size };
+        } catch {
+            this.state.shiftStats = { total: 0, types: 0 };
+        }
+    }
+
+    onShiftTab(tab) {
+        this.state.shiftTab = tab.id;
+        this.state.embeddedViewProps = { ...this.state.embeddedViewProps, domain: this.shiftDomain() };
+        this.state.viewKey += 1;
+        this.loadShiftStats();
+    }
+
+    // Mục con Nhân sự dùng quyền của Checklist NVBH
+    get permKey() {
+        return ["nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) ? "nvbh" : this.state.activeNav;
+    }
+
     get canExport() {
-        return this.state.activeNav !== "report_flow" && (!this.state.rights || Boolean(this.state.rights[this.state.activeNav]?.export));
+        return !["report_flow", "nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) && (!this.state.rights || Boolean(this.state.rights[this.permKey]?.export));
     }
 
     get showListFilters() {
@@ -376,7 +1406,11 @@ export class StoreChecklistShell extends Component {
         if (auditor) {
             domain.push(["auditor_id", "=", Number(auditor)]);
         }
-        if (month) {
+        if (month && ["nvbh_jobs", "nvbh_schedule", "nvbh_done"].includes(this.state.activeNav)) {
+            const [y, m] = month.split("-").map(Number);
+            const ymd = (yy, mm) => `${yy}-${String(mm).padStart(2, "0")}-01`;
+            domain.push(["work_date", ">=", ymd(y, m)], ["work_date", "<", m === 12 ? ymd(y + 1, 1) : ymd(y, m + 1)]);
+        } else if (month) {
             const [y, m] = month.split("-").map(Number);
             const fmt = (d) => d.toISOString().slice(0, 19).replace("T", " ");
             domain.push(["audit_date", ">=", fmt(new Date(y, m - 1, 1))], ["audit_date", "<", fmt(new Date(y, m, 1))]);
@@ -395,6 +1429,12 @@ export class StoreChecklistShell extends Component {
     get listTitle() {
         return {
             gs: "DANH SÁCH CHECK LIST GIÁM SÁT CỬA HÀNG",
+            nvbh_staff: "DANH SÁCH NHÂN SỰ",
+            nvbh_jobs: "CHECKLIST CÔNG VIỆC NVBH",
+            nvbh_schedule: "LỊCH XẾP CA",
+            nvbh_done: this.state.done.tab === "total" ? "BẢNG CHECKLIST TỔNG" : "DANH SÁCH CHECKLIST NHÂN VIÊN",
+            nvbh_mg_staff: "QUẢN LÝ & ĐÁNH GIÁ CHECKLIST NVBH",
+            nvbh_mg_eval: "QUẢN LÝ & ĐÁNH GIÁ CHECKLIST NVBH",
             review: "DANH SÁCH PHIẾU ĐÁNH GIÁ CỬA HÀNG",
             report_gs: "BÁO CÁO GIÁM SÁT CỬA HÀNG",
             violation_stores: "XỬ LÝ LỖI SAI PHẠM CỬA HÀNG",
@@ -917,7 +1957,7 @@ export class StoreChecklistShell extends Component {
         }
         if (this.isSupLayout && !this.state.supStores.length) {
             try {
-                this.state.supStores = (await this.orm.searchRead("hr.store", [], ["display_name"], { order: "name" })).map((s) => ({ id: s.id, name: s.display_name }));
+                this.state.supStores = (await this.orm.call("store.nvbh.check", "get_my_stores", [])).map((s) => ({ id: s.id, name: s.display_name }));
             } catch {
                 this.state.supStores = []; // user không đọc được danh sách cửa hàng: bỏ qua bộ lọc cửa hàng
             }
@@ -1047,6 +2087,9 @@ export class StoreChecklistShell extends Component {
         this.state.listFilters[key] = ev.target.value;
         if (this.reportNavs.includes(this.state.activeNav)) {
             return this.loadReport();
+        }
+        if (this.isScheduleNav) {
+            return this.loadSchedule();
         }
         const props = this.state.embeddedViewProps;
         this.state.embeddedViewProps = { ...props, domain: this.listDomain(this.listBase) };
@@ -1206,6 +2249,72 @@ export class StoreChecklistShell extends Component {
         await this.openAction(child.action, child.id);
     }
 
+    // Lịch làm việc dạng lưới "Xếp ca": mỗi nhân viên một dòng, cột N1..Nn là Mã ca từng ngày
+    async loadSchedule() {
+        const sc = this.state.sched;
+        const month = this.state.listFilters.month;
+        if (!month) {
+            sc.rows = [];
+            sc.empty = "Hãy chọn một tháng cụ thể ở bộ lọc Tháng để xem lịch.";
+            return;
+        }
+        sc.empty = "";
+        sc.loading = true;
+        try {
+            const res = await this.orm.call("store.nvbh.schedule.line", "get_matrix", [this.listDomain(this.listBase || []), month]);
+            sc.ndays = res.ndays;
+            sc.rows = res.rows;
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            sc.loading = false;
+        }
+    }
+
+    get schedDays() {
+        return Array.from({ length: this.state.sched.ndays }, (_, i) => i + 1);
+    }
+
+    onSchedCell(row, day) {
+        const cell = row.days?.[day];
+        return this.openScheduleForm(cell ? cell.schedule_id : false);
+    }
+
+    openScheduleForm(resId = false) {
+        return this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "store.nvbh.schedule",
+                res_id: resId,
+                views: [[false, "form"]],
+                target: "new",
+                context: { dialog_size: "extra-large" },
+            },
+            { onClose: () => { this.state.viewKey += 1; if (this.isScheduleNav) { this.loadSchedule(); } } }
+        );
+    }
+
+    // Popup "Thêm thông tin nhân viên" (Checklist NVBH > Nhân sự): form phiếu NVBH ở chế độ chỉ nhập nhân sự (context staff_form)
+    openStaffForm(resId = false, afterClose = null) {
+        return this.action.doAction(
+            {
+                type: "ir.actions.act_window",
+                res_model: "store.audit",
+                res_id: resId,
+                views: [[false, "form"]],
+                target: "new",
+                context: { store_audit_type: "nvbh", staff_form: true, dialog_size: "extra-large" },
+            },
+            {
+                onClose: () => {
+                    this.state.viewKey += 1;
+                    this.loadBadges();
+                    afterClose?.();
+                },
+            }
+        );
+    }
+
     async loadPerm() {
         this.state.perm = await this.orm.call("store.perm.rule", "get_rules", []);
         this.state.permEdit = null;
@@ -1339,6 +2448,25 @@ export class StoreChecklistShell extends Component {
     }
 
     async openAction(xmlid, navId) {
+        if (navId === "nvbh_schedule") {
+            this.state.activeNav = "nvbh_schedule";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            this.listBase = [];
+            if (!this.state.dash) {
+                this.loadOverview().catch(() => {});
+            }
+            return this.loadSchedule();
+        }
+        if (navId === "nvbh_jobs") {
+            return this.openJobsPage();
+        }
+        if (navId === "nvbh_done") {
+            return this.openDonePage();
+        }
+        if (navId === "nvbh_mg_staff" || navId === "nvbh_mg_eval") {
+            return this.openManagePage(navId);
+        }
         try {
             const act = await this.action.loadAction(xmlid);
             if (navId === "violation_stores") {
@@ -1374,6 +2502,14 @@ export class StoreChecklistShell extends Component {
         }
         if (type === "form") {
             viewProps.resId = resId || false;
+        }
+        // đặt màn hiện tại trước khi tính domain lọc: listDomain chọn trường ngày (audit_date / work_date) theo activeNav
+        this.state.activeNav = navId;
+        if (navId === "shift") {
+            // Danh mục ca làm việc: mỗi tab = một loại ca
+            this.listBase = viewProps.domain;
+            viewProps.domain = this.shiftDomain();
+            this.loadShiftStats();
         }
         if (this.filterNavs.includes(navId)) {
             this.listBase = viewProps.domain; // không đặt vào viewProps: ListController từ chối prop lạ
@@ -1430,7 +2566,37 @@ export class StoreChecklistShell extends Component {
         document.scrollingElement.scrollTop = keep.page[1];
     }
 
-    openRecord(act, navId, resId) {
+    async openRecord(act, navId, resId) {
+        if (navId === "nvbh_done") {
+            // bấm tên nhân viên -> popup nội dung checklist đã lưu
+            try {
+                const payload = resId ? await this.orm.call("store.nvbh.check", "read_checklist", [resId]) : false;
+                if (payload) {
+                    this.dialog.add(StoreCheckViewDialog, { payload, onSaved: () => { this.state.viewKey += 1; } });
+                }
+            } catch (error) {
+                this.notifyError(error);
+            }
+            return;
+        }
+        if (navId === "nvbh_schedule") {
+            // dòng lịch -> popup lịch làm việc chứa dòng đó; Thêm mới -> popup trống
+            let scheduleId = false;
+            if (resId) {
+                const [row] = await this.orm.read("store.nvbh.schedule.line", [resId], ["schedule_id"]);
+                scheduleId = row?.schedule_id?.[0] || false;
+            }
+            return this.openScheduleForm(scheduleId);
+        }
+        if (navId === "nvbh_staff") {
+            // dòng nhân sự -> popup form nhân sự của phiếu chứa nó; Thêm mới -> popup trống
+            let auditId = false;
+            if (resId) {
+                const [row] = await this.orm.read("store.audit.staff", [resId], ["audit_id"]);
+                auditId = row?.audit_id?.[0] || false;
+            }
+            return this.openStaffForm(auditId);
+        }
         if (navId === "violation_stores" && resId) {
             return this.openViolation(resId);
         }
@@ -1438,7 +2604,7 @@ export class StoreChecklistShell extends Component {
             // bấm dòng lỗi thì mở popup xử lý sai phạm của biên bản chứa dòng đó
             return this.orm.read("store.audit.action", [resId], ["audit_id"]).then(([row]) => row && this.openViolation(row.audit_id[0]));
         }
-        if (!["benchmark", "review", "review_list", "level", "gs_benchmark", "gs_level", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
+        if (!["benchmark", "review", "review_list", "level", "nvbh_jobs", "gs_benchmark", "gs_level", "shift", "nvbh_task", "nvbh_rating", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
             return this.showWindow(act, navId, "form", resId);
         }
         // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách (giữ nguyên nhóm đang mở và vị trí cuộn)
@@ -1450,7 +2616,11 @@ export class StoreChecklistShell extends Component {
                 res_id: resId || false,
                 views: [[false, "form"]],
                 target: "new",
-                context: { ...this.evalActionValue(act.context, {}), dialog_size: "extra-large" },
+                context: {
+                    ...this.evalActionValue(act.context, {}),
+                    dialog_size: "extra-large",
+                    ...(navId === "shift" ? { default_shift_type: this.state.shiftTab } : {}),
+                },
             },
             {
                 onClose: () => {

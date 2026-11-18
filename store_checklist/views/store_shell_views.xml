@@ -1,10 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Phiếu theo loại checklist: mở từ sidebar NVBH / ASM / GS -->
+    <!-- Checklist NVBH > Nhân sự: danh sách nhân sự đã nhập (Thêm mới / mở dòng = popup form nhân sự) -->
+    <record id="view_store_audit_staff_list" model="ir.ui.view">
+        <field name="name">store.audit.staff.list</field>
+        <field name="model">store.audit.staff</field>
+        <field name="arch" type="xml">
+            <list string="Nhân sự" create="false" edit="false" default_order="audit_date desc, id desc">
+                <field name="stt"/>
+                <field name="store_id"/>
+                <field name="name" string="Họ và tên NV"/>
+                <field name="position"/>
+                <field name="work_status" optional="show"/>
+                <field name="employee_code"/>
+                <field name="phone"/>
+                <field name="manager"/>
+                <field name="staff_state" widget="badge" decoration-success="staff_state == 'active'" decoration-muted="staff_state == 'inactive'"/>
+                <button name="action_edit_staff" type="object" icon="fa-pencil" title="Chỉnh sửa" groups="base.group_system"/>
+                <button name="action_delete_staff" type="object" icon="fa-trash" title="Xóa" groups="base.group_system"
+                        confirm="Xóa nhân sự này khỏi danh sách?"/>
+                <field name="audit_date" widget="date" options="{'numeric': true}" width="120px" optional="hide"/>
+                <field name="mien" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_store_nvbh_staff" model="ir.actions.act_window">
+        <field name="name">Nhân sự</field>
+        <field name="res_model">store.audit.staff</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_audit_staff_list"/>
+        <field name="domain">[('audit_id.audit_type', '=', 'nvbh')]</field>
+    </record>
+
+    <!-- Danh sách Checklist NVBH: tiêu đề khớp form "Thêm thông tin nhân viên" -->
+    <record id="view_store_audit_list_nvbh" model="ir.ui.view">
+        <field name="name">store.audit.list.nvbh</field>
+        <field name="model">store.audit</field>
+        <field name="inherit_id" ref="store_checklist.view_store_audit_list"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <field name="audit_date" position="attributes">
+                <attribute name="string">Ngày hiệu lực</attribute>
+            </field>
+            <field name="auditor_id" position="replace">
+                <field name="manager" string="ASM phụ trách"/>
+            </field>
+        </field>
+    </record>
     <record id="action_store_audit_nvbh" model="ir.actions.act_window">
         <field name="name">Checklist NVBH</field>
         <field name="res_model">store.audit</field>
         <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_store_audit_list_nvbh"/>
         <field name="domain">[('audit_type', '=', 'nvbh')]</field>
         <field name="context">{'store_audit_type': 'nvbh', 'search_default_group_store': 1}</field>
     </record>
@@ -257,6 +304,191 @@
         <field name="view_mode">list</field>
         <field name="domain">[('audit_type', '=', 'gs')]</field>
         <field name="context">{'default_audit_type': 'gs'}</field>
+    </record>
+
+    <!-- Cài đặt > Công việc checklist NVBH > Xếp loại -->
+    <record id="view_store_nvbh_rating_list" model="ir.ui.view">
+        <field name="name">store.nvbh.rating.list</field>
+        <field name="model">store.nvbh.rating</field>
+        <field name="arch" type="xml">
+            <list group_edit="0" group_delete="0" string="Xếp loại" class="o_store_level">
+                <field name="name" string="Xếp loại"/>
+                <field name="min_score" options="{'hide_trailing_zeros': true}"/>
+                <field name="score_range"/>
+                <field name="tone" widget="badge"
+                       decoration-success="tone == 'green'" decoration-info="tone == 'blue'"
+                       decoration-warning="tone == 'orange'" decoration-danger="tone in ('red', 'darkred')"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa xếp loại này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_nvbh_rating_form" model="ir.ui.view">
+        <field name="name">store.nvbh.rating.form</field>
+        <field name="model">store.nvbh.rating</field>
+        <field name="arch" type="xml">
+            <form string="Xếp loại">
+                <sheet>
+                    <group>
+                        <field name="name" string="Xếp loại"/>
+                        <field name="min_score" options="{'hide_trailing_zeros': true}"/>
+                        <field name="tone"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_store_nvbh_rating" model="ir.actions.act_window">
+        <field name="name">Xếp loại</field>
+        <field name="res_model">store.nvbh.rating</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_store_shift_list" model="ir.ui.view">
+        <field name="name">store.shift.list</field>
+        <field name="model">store.shift</field>
+        <field name="arch" type="xml">
+            <list group_edit="0" group_delete="0" string="Mã ca" class="o_store_shift">
+                <field name="code"/>
+                <field name="shift_name"/>
+                <field name="start_time" widget="float_time"/>
+                <field name="end_time" widget="float_time"/>
+                <field name="hours"/>
+                <field name="group_id" optional="hide"/>
+                <field name="shift_type" widget="badge" optional="hide"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa mã ca này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_shift_form" model="ir.ui.view">
+        <field name="name">store.shift.form</field>
+        <field name="model">store.shift</field>
+        <field name="arch" type="xml">
+            <form string="Mã ca">
+                <sheet>
+                    <group>
+                        <field name="code"/>
+                        <field name="shift_name"/>
+                        <field name="group_id"/>
+                        <field name="shift_type"/>
+                        <field name="start_time" widget="float_time"/>
+                        <field name="end_time" widget="float_time"/>
+                        <field name="hours"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_shift_search" model="ir.ui.view">
+        <field name="name">store.shift.search</field>
+        <field name="model">store.shift</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="code"/>
+                <field name="shift_name"/>
+                <field name="group_id"/>
+                <group>
+                    <filter name="g_shift_type" string="Loại ca" context="{'group_by': 'shift_type'}"/>
+                    <filter name="g_shift_group" string="Nhóm mã ca" context="{'group_by': 'group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_store_shift" model="ir.actions.act_window">
+        <field name="name">Danh mục ca</field>
+        <field name="res_model">store.shift</field>
+        <field name="view_mode">list</field>
+        <field name="context">{}</field>
+    </record>
+
+    <record id="view_store_nvbh_task_list" model="ir.ui.view">
+        <field name="name">store.nvbh.task.list</field>
+        <field name="model">store.nvbh.task</field>
+        <field name="arch" type="xml">
+            <list group_edit="0" group_delete="0" string="Danh sách công việc NVBH" class="o_store_shift o_store_task">
+                <field name="name"/>
+                <field name="task_group"/>
+                <field name="shift_type_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                <field name="store_type"/>
+                <field name="time_slot"/>
+                <field name="executor"/>
+                <field name="controller"/>
+                <field name="final_check"/>
+                <field name="score" sum="Tổng điểm chuẩn"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa công việc này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_nvbh_task_form" model="ir.ui.view">
+        <field name="name">store.nvbh.task.form</field>
+        <field name="model">store.nvbh.task</field>
+        <field name="arch" type="xml">
+            <form string="Công việc NVBH">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="task_group"/>
+                            <field name="shift_type_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="shift_codes"/>
+                            <field name="store_type"/>
+                            <field name="time_slot"/>
+                        </group>
+                        <group>
+                            <field name="executor"/>
+                            <field name="controller"/>
+                            <field name="final_check"/>
+                            <field name="score"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_nvbh_task_search" model="ir.ui.view">
+        <field name="name">store.nvbh.task.search</field>
+        <field name="model">store.nvbh.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="executor"/>
+                <field name="final_check"/>
+                <filter name="f_morning" string="Ca sáng" domain="[('shift_type_ids.code', '=', 'morning')]"/>
+                <filter name="f_full" string="Ca Full" domain="[('shift_type_ids.code', '=', 'full')]"/>
+                <filter name="f_afternoon" string="Ca chiều" domain="[('shift_type_ids.code', '=', 'afternoon')]"/>
+                <group>
+                    <filter name="g_group" string="Nhóm công việc" context="{'group_by': 'task_group'}"/>
+                    <filter name="g_shift" string="Loại ca áp dụng" context="{'group_by': 'shift_type_ids'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_store_nvbh_task" model="ir.actions.act_window">
+        <field name="name">Danh sách công việc NVBH</field>
+        <field name="res_model">store.nvbh.task</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_g_group': 1}</field>
+    </record>
+
+    <!-- Checklist NVBH > Công việc: danh sách phiếu checklist công việc NVBH (dòng việc lấy từ Cài đặt > Danh sách công việc NVBH) -->
+    <record id="action_store_nvbh_jobs" model="ir.actions.act_window">
+        <field name="name">Công việc</field>
+        <field name="res_model">store.nvbh.check</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_store_nvbh_check_list"/>
     </record>
 
     <record id="action_store_groups" model="ir.actions.act_window">

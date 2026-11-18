@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Checklist công việc NVBH: phiếu theo cửa hàng / ca / ngày, dòng công việc lấy từ Danh sách công việc NVBH -->
+    <record id="view_store_nvbh_check_form" model="ir.ui.view">
+        <field name="name">store.nvbh.check.form</field>
+        <field name="model">store.nvbh.check</field>
+        <field name="arch" type="xml">
+            <form string="Checklist công việc NVBH" class="o_store_audit_form o_store_check_form">
+                <sheet>
+                    <field name="name" invisible="1"/>
+                    <div class="o_store_audit_title">
+                        <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
+                        <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
+                        <div class="o_store_audit_text">
+                            <h2>CHECKLIST CÔNG VIỆC NVBH</h2>
+                            <p>Thực hiện và báo cáo công việc theo ca làm việc hằng ngày</p>
+                        </div>
+                    </div>
+                    <div class="o_store_check_info"
+                         style="display:grid;grid-template-columns:repeat(5,1fr);gap:16px;padding:10px 12px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px;">
+                        <div><div class="fw-bold mb-1">Cửa hàng</div>
+                            <field name="store_id" nolabel="1" options="{'no_create': True}"/></div>
+                        <div><div class="fw-bold mb-1">Ca</div>
+                            <field name="shift_id" nolabel="1" options="{'no_create': True}" placeholder="Chọn ca"/></div>
+                        <div><div class="fw-bold mb-1">Loại ca</div>
+                            <field name="shift_type" nolabel="1"/></div>
+                        <div><div class="fw-bold mb-1">Ngày</div>
+                            <field name="work_date" nolabel="1" options="{'numeric': true}"/></div>
+                        <div><div class="fw-bold mb-1">NVBH</div>
+                            <field name="staff_id" nolabel="1" options="{'no_create': True}" placeholder="Chọn nhân viên"/></div>
+                    </div>
+                    <div class="o_store_audit_kpis" style="grid-template-columns:repeat(3,1fr);">
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico o_store_kpi_blue"><i class="fa fa-list-ul"/></span>
+                            <div><div class="o_store_kpi_lbl">Tổng việc</div>
+                                <div class="o_store_kpi_val"><field name="cnt_total"/></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico bg-success"><i class="fa fa-check"/></span>
+                            <div><div class="o_store_kpi_lbl">Đang làm</div>
+                                <div class="o_store_kpi_val"><field name="cnt_doing"/></div></div></div>
+                        <div class="o_store_kpi"><span class="o_store_kpi_ico bg-secondary"><i class="fa fa-clock-o"/></span>
+                            <div><div class="o_store_kpi_lbl">Chưa làm</div>
+                                <div class="o_store_kpi_val"><field name="cnt_todo"/></div></div></div>
+                    </div>
+                    <field name="line_ids" nolabel="1">
+                        <list editable="bottom" create="false" delete="false" class="o_store_audit_lines">
+                            <field name="sequence" column_invisible="1"/>
+                            <field name="name" string="Công việc" readonly="1" force_save="1"/>
+                            <field name="time_slot" string="Thời gian" readonly="1" force_save="1" width="170px"/>
+                            <field name="is_done" string="Có làm" widget="boolean" width="110px"/>
+                            <field name="status" string="Trạng thái" widget="badge" readonly="1" width="150px"
+                                   decoration-muted="status == 'todo'" decoration-info="status == 'doing'" decoration-success="status == 'done'"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_nvbh_check_list" model="ir.ui.view">
+        <field name="name">store.nvbh.check.list</field>
+        <field name="model">store.nvbh.check</field>
+        <field name="arch" type="xml">
+            <list string="Checklist công việc NVBH" create="false" edit="false" default_order="work_date desc, id desc">
+                <field name="name"/>
+                <field name="store_id"/>
+                <field name="shift_id"/>
+                <field name="shift_type"/>
+                <field name="work_date" options="{'numeric': true}"/>
+                <field name="staff_id" string="NVBH"/>
+                <field name="cnt_total"/>
+                <field name="cnt_doing"/>
+                <field name="cnt_todo"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Checklist NVBH > Danh sách checklist NV: các checklist đã lưu, chỉ hiện nhân viên; bấm vào mở popup nội dung -->
+    <record id="view_store_nvbh_done_list" model="ir.ui.view">
+        <field name="name">store.nvbh.check.done.list</field>
+        <field name="model">store.nvbh.check</field>
+        <field name="arch" type="xml">
+            <list string="Danh sách checklist NV" create="false" edit="false" delete="false" default_order="work_date desc, submit_date desc, id desc">
+                <field name="staff_name" string="Nhân viên"/>
+                <field name="store_id"/>
+                <field name="work_date" options="{'numeric': true}"/>
+                <field name="shift_id"/>
+                <field name="cnt_done" string="Đã làm"/>
+                <field name="cnt_total" string="Tổng việc"/>
+                <field name="error_total" string="Số lỗi"/>
+                <field name="points" string="Điểm đạt" options="{'hide_trailing_zeros': true}"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_nvbh_done" model="ir.actions.act_window">
+        <field name="name">Danh sách checklist NV</field>
+        <field name="res_model">store.nvbh.check</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_nvbh_done_list"/>
+        <field name="domain">[('submitted', '=', True)]</field>
+    </record>
+</odoo>

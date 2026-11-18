@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lịch xếp ca NVBH: nhân sự (bảng Nhân sự) + Mã ca (Cài đặt > Mã ca) -->
+    <record id="view_store_nvbh_schedule_form" model="ir.ui.view">
+        <field name="name">store.nvbh.schedule.form</field>
+        <field name="model">store.nvbh.schedule</field>
+        <field name="arch" type="xml">
+            <form string="Lịch xếp ca" class="o_store_audit_form o_store_check_form">
+                <sheet>
+                    <field name="name" invisible="1"/>
+                    <div class="o_store_audit_title">
+                        <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
+                        <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
+                        <div class="o_store_audit_text">
+                            <h2>LỊCH XẾP CA</h2>
+                            <p>Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày</p>
+                        </div>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px;padding:10px 12px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);margin-bottom:14px;">
+                        <div><div class="fw-bold mb-1">Cửa hàng</div>
+                            <field name="store_id" nolabel="1" options="{'no_create': True}"/></div>
+                        <div><div class="fw-bold mb-1">Ngày</div>
+                            <field name="work_date" nolabel="1" options="{'numeric': true}"/></div>
+                    </div>
+                    <field name="line_ids" nolabel="1">
+                        <list editable="bottom" string="Lịch xếp ca">
+                            <field name="sequence" widget="handle"/>
+                            <field name="stt"/>
+                            <field name="staff_name" string="Họ và tên NV" required="1" placeholder="Nhập họ và tên"/>
+                            <field name="employee_code" string="ID"/>
+                            <field name="position" string="Chức vụ"/>
+                            <field name="work_status" string="Trạng thái nhân viên"/>
+                            <field name="shift_id" string="Mã ca" options="{'no_create': True}"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_nvbh_schedule_line_list" model="ir.ui.view">
+        <field name="name">store.nvbh.schedule.line.list</field>
+        <field name="model">store.nvbh.schedule.line</field>
+        <field name="arch" type="xml">
+            <list string="Lịch xếp ca" create="false" edit="false" default_order="work_date desc, schedule_id desc, sequence, id">
+                <field name="stt"/>
+                <field name="staff_name" string="Họ và tên NV"/>
+                <field name="employee_code"/>
+                <field name="position"/>
+                <field name="shift_id"/>
+                <field name="store_id"/>
+                <field name="work_date" options="{'numeric': true}"/>
+                <field name="mien" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_store_nvbh_schedule" model="ir.actions.act_window">
+        <field name="name">Lịch xếp ca</field>
+        <field name="res_model">store.nvbh.schedule.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_nvbh_schedule_line_list"/>
+    </record>
+</odoo>

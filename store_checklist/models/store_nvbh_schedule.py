@@ -1,0 +1,363 @@
+import base64
+import calendar
+import logging
+import io
+import re
+from datetime import date
+
+from odoo import Command, _, api, fields, models
+from odoo.exceptions import UserError
+
+
+_logger = logging.getLogger(__name__)
+
+
+class StoreNvbhSchedule(models.Model):
+    """Lịch làm việc NVBH: 1 cửa hàng / 1 ngày, mỗi dòng gắn một nhân sự (bảng Nhân sự) với một Mã ca (Cài đặt > Mã ca)."""
+    _name = 'store.nvbh.schedule'
+    _description = 'Lịch xếp ca NVBH'
+    _order = 'work_date desc, id desc'
+
+    name = fields.Char(string='Mã lịch', required=True, copy=False, readonly=True, default='New')
+    store_id = fields.Many2one('hr.store', string='Cửa hàng', required=True, index=True)
+    work_date = fields.Date(string='Ngày', required=True, default=fields.Date.context_today)
+    line_ids = fields.One2many('store.nvbh.schedule.line', 'schedule_id', string='Lịch xếp ca', copy=True)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get('name', 'New') == 'New':
+                vals['name'] = self._next_name(vals.get('store_id'), vals.get('work_date'))
+        return super().create(vals_list)
+
+    def _next_name(self, store_id, work_date):
+        store = self.env['hr.store'].browse(store_id)
+        day = fields.Date.to_date(work_date) or fields.Date.context_today(self)
+        prefix = 'LLV/%s/%s' % (store.code or store.display_name or 'CH', day.strftime('%d%m%Y'))
+        n = self.search_count([('name', '=like', prefix + '\\_%')]) + 1
+        while self.search_count([('name', '=', '%s_%d' % (prefix, n))]):
+            n += 1
+        return '%s_%d' % (prefix, n)
+
+
+class StoreNvbhScheduleLine(models.Model):
+    _name = 'store.nvbh.schedule.line'
+    _description = 'Dòng lịch làm việc NVBH'
+    _order = 'work_date desc, schedule_id desc, sequence, id'
+
+    schedule_id = fields.Many2one('store.nvbh.schedule', required=True, ondelete='cascade', index=True)
+    sequence = fields.Integer(default=10)
+    stt = fields.Integer(string='STT', compute='_compute_stt')
+    # Họ và tên NV nhập tay (bắt buộc ở giao diện); staff_id chỉ còn để giữ dữ liệu cũ lấy từ bảng Nhân sự
+    staff_name = fields.Char(string='Họ và tên NV')
+    staff_id = fields.Many2one('store.audit.staff', string='Nhân sự (cũ)')
+    employee_code = fields.Char(string='ID')
+    position = fields.Char(string='Chức vụ', default='NVBH', help='Mã chức vụ theo file xếp ca: NVBH, NT, CHT, ASMTT, PT...')
+    work_status = fields.Char(string='Trạng thái nhân viên')
+    shift_id = fields.Many2one('store.shift', string='Mã ca', required=True)
+    # thông tin phiếu mẹ để lọc / hiển thị trong danh sách
+    store_id = fields.Many2one('hr.store', related='schedule_id.store_id', string='Cửa hàng', store=True, index=True)
+    mien = fields.Selection(related='schedule_id.store_id.mien', string='Miền')
+    work_date = fields.Date(related='schedule_id.work_date', string='Ngày', store=True, index=True)
+
+    def init(self):
+        """Dòng lịch cũ chọn nhân sự từ bảng Nhân sự -> chép họ tên / ID / chức vụ sang các ô nhập tay (chạy một lần)."""
+        cr = self.env.cr
+        cr.execute("SELECT count(*) FROM information_schema.columns WHERE table_name = 'store_nvbh_schedule_line' "
+                   "AND column_name IN ('staff_name', 'employee_code', 'position', 'staff_id')")
+        if cr.fetchone()[0] < 4:
+            return
+        cr.execute("""
+            UPDATE store_nvbh_schedule_line l
+               SET staff_name = s.name, employee_code = s.employee_code, position = s.position
+              FROM store_audit_staff s
+             WHERE s.id = l.staff_id AND (l.staff_name IS NULL OR l.staff_name = '')
+        """)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        if not self.env.context.get('no_staff_sync'):
+            lines._sync_staff_from_lines()
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get('no_staff_sync') and {'staff_name', 'employee_code', 'position', 'work_status'} & set(vals):
+            self._sync_staff_from_lines()
+        return res
+
+    def _sync_staff_from_lines(self):
+        """Nhân sự luôn lấy thông tin mới nhất từ Lịch làm việc: dòng lịch mới nhất của mỗi nhân viên (theo ngày) quyết định
+        Họ tên / Chức vụ / Trạng thái trong Checklist NVBH > Nhân sự."""
+        people = {}
+        for ln in self.filtered(lambda l: l.store_id and (l.staff_name or '').strip()).sorted(lambda l: (l.work_date or date.min, l.id)):
+            name = ln.staff_name.strip()
+            emp_id = (ln.employee_code or '').strip()
+            people[(ln.store_id.id, emp_id or name.casefold())] = {
+                'store': ln.store_id, 'name': name, 'emp_id': emp_id, 'position': ln.position or 'NVBH',
+                'work_status': (ln.work_status or '').strip()}
+        if people:
+            errors = []
+            self.sudo()._sync_staff(people, errors)
+            for e in errors:
+                _logger.warning('Đồng bộ nhân sự từ lịch làm việc: %s', e)
+
+    @api.model
+    def resync_all_staff(self):
+        """Đồng bộ lại toàn bộ Nhân sự từ Lịch làm việc (dùng khi cần đồng bộ dữ liệu có sẵn)."""
+        self.search([])._sync_staff_from_lines()
+        return True
+
+    @api.depends('schedule_id.line_ids', 'schedule_id.line_ids.sequence')
+    def _compute_stt(self):
+        for rec in self:
+            rows = rec.schedule_id.line_ids.sorted('sequence')
+            rec.stt = (list(rows).index(rec) + 1) if rec in rows else 0
+
+    @api.model
+    def _month_range(self, month):
+        """'YYYY-MM' -> (ngày đầu tháng, số ngày trong tháng)."""
+        try:
+            y, m = [int(x) for x in (month or '').split('-')]
+            return date(y, m, 1), calendar.monthrange(y, m)[1]
+        except Exception:
+            raise UserError(_('Hãy chọn một tháng cụ thể ở bộ lọc "Tháng" trước khi nhập / xuất Excel.'))
+
+    @api.model
+    def get_matrix(self, domain, month):
+        """Dữ liệu lưới "Xếp ca" cho màn hình: mỗi cửa hàng một dòng tiêu đề, dưới là mỗi nhân viên một dòng với Mã ca từng ngày."""
+        first, ndays = self._month_range(month)
+        lines = self.search(domain or [], order='store_id, sequence, id')
+        rows = []
+        for store in lines.store_id.sorted('name'):
+            rows.append({'kind': 'store', 'key': 's%s' % store.id, 'mien': store.mien or '', 'store_code': store.code or '',
+                         'store_name': store.name or ''})
+            people = {}
+            for ln in lines.filtered(lambda l: l.store_id == store):
+                key = (ln.employee_code or '').strip() or (ln.staff_name or '').strip().casefold()
+                person = people.setdefault(key, {
+                    'kind': 'emp', 'key': 'e%s_%s' % (store.id, len(people)), 'mien': store.mien or '',
+                    'store_code': store.code or '', 'employee_code': ln.employee_code or '',
+                    'staff_name': ln.staff_name or '', 'position': ln.position or '', 'work_status': ln.work_status or '', 'days': {}})
+                person['days'][ln.work_date.day] = {'code': ln.shift_id.code or '', 'schedule_id': ln.schedule_id.id}
+            rows.extend(people.values())
+        return {'ndays': ndays, 'rows': rows, 'month': month}
+
+    @api.model
+    def export_xlsx(self, domain, month):
+        """Xuất Lịch làm việc của tháng đang chọn theo mẫu "Xếp ca": mỗi nhân viên một dòng, cột N1..Nn là Mã ca từng ngày.
+        File xuất ra nhập lại được."""
+        self.env['store.perm.rule'].check_export()
+        import xlsxwriter
+        first, ndays = self._month_range(month)
+        lines = self.search(domain or [], order='store_id, sequence, id')
+        buf = io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        sheet = book.add_worksheet('Xep ca')
+        bold = book.add_format({'bold': True})
+        title = book.add_format({'bold': True, 'font_size': 16, 'align': 'center'})
+        head = book.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
+        cell = book.add_format({'border': 1})
+        store_fmt = book.add_format({'border': 1, 'bold': True})
+        company = self.env.company
+        sheet.write(0, 0, company.name or '', bold)
+        sheet.write(1, 0, ', '.join(x for x in [company.street, company.street2, company.city] if x), bold)
+        ncol = 6 + ndays
+        sheet.merge_range(2, 0, 2, ncol - 1, 'Xếp ca - Tháng %02d/%d' % (first.month, first.year), title)
+        heads = ['Miền', 'Mã bộ phận', 'ID HRM', 'HỌ VÀ TÊN (dấu)', 'Mã chức vụ', 'TRẠNG THÁI NHÂN VIÊN'] + ['N%d' % d for d in range(1, ndays + 1)]
+        for i, h in enumerate(heads):
+            sheet.write(3, i, h, head)
+        sheet.set_column(0, 2, 12)
+        sheet.set_column(3, 3, 30)
+        sheet.set_column(4, 4, 12)
+        sheet.set_column(5, 5, 22)
+        sheet.set_column(6, ncol - 1, 6)
+        row = 4
+        for store in lines.store_id:
+            sheet.write(row, 0, store.mien or '', store_fmt)
+            sheet.write(row, 1, store.code or store.name or '', store_fmt)
+            sheet.write(row, 2, '', store_fmt)
+            sheet.write(row, 3, store.name or '', store_fmt)
+            for c in range(4, ncol):
+                sheet.write(row, c, '', cell)
+            row += 1
+            people = {}
+            for ln in lines.filtered(lambda l: l.store_id == store):
+                key = (ln.employee_code or '').strip() or (ln.staff_name or '').strip().casefold()
+                person = people.setdefault(key, {'line': ln, 'days': {}})
+                person['days'][ln.work_date.day] = ln.shift_id.code or ''
+            for person in people.values():
+                ln = person['line']
+                sheet.write(row, 0, store.mien or '', cell)
+                sheet.write(row, 1, store.code or store.name or '', cell)
+                sheet.write(row, 2, ln.employee_code or '', cell)
+                sheet.write(row, 3, ln.staff_name or '', cell)
+                sheet.write(row, 4, ln.position or '', cell)
+                sheet.write(row, 5, ln.work_status or '', cell)
+                for d in range(1, ndays + 1):
+                    sheet.write(row, 5 + d, person['days'].get(d, ''), cell)
+                row += 1
+        sheet.freeze_panes(4, 4)
+        book.close()
+        return {'name': 'Xep_ca_%s.xlsx' % month, 'data': base64.b64encode(buf.getvalue()).decode()}
+
+    @api.model
+    def import_xlsx(self, data, month):
+        """Nhập Lịch làm việc theo mẫu "Xếp ca" cho tháng đang chọn: mỗi dòng một nhân viên (Mã bộ phận, ID HRM, Họ và tên,
+        Mã chức vụ), cột N1..N31 là Mã ca từng ngày (ô trống = không xếp ca, giữ nguyên). Các cột khác (Miền, Trạng thái,
+        Ngày vào làm...) và dòng tên cửa hàng được bỏ qua. Dòng lỗi được bỏ qua và báo lại."""
+        self = self.with_context(no_staff_sync=True)
+        if not self.env['store.nvbh.schedule'].has_access('create'):
+            raise UserError(_('Bạn không có quyền nhập Lịch xếp ca.'))
+        first, ndays = self._month_range(month)
+        try:
+            from openpyxl import load_workbook
+        except ImportError:
+            raise UserError(_('Máy chủ chưa cài thư viện openpyxl để đọc file Excel.'))
+        try:
+            wb = load_workbook(io.BytesIO(base64.b64decode(data)), data_only=True, read_only=True)
+            rows = list(wb.worksheets[0].iter_rows(values_only=True))
+        except Exception:
+            raise UserError(_('Không đọc được file. Hãy dùng file .xlsx theo mẫu Xếp ca.'))
+
+        def txt(v):
+            if isinstance(v, float) and v.is_integer():
+                v = int(v)
+            return ('%s' % v).strip() if v is not None else ''
+
+        hi = next((i for i, r in enumerate(rows) if 'mã bộ phận' in [txt(c).casefold() for c in r]), None)
+        if hi is None:
+            raise UserError(_('Không tìm thấy dòng tiêu đề có cột "Mã bộ phận".'))
+        col = {txt(c).casefold(): i for i, c in enumerate(rows[hi]) if txt(c)}
+        name_col = next((i for k, i in col.items() if k.startswith('họ và tên')), None)
+        if name_col is None:
+            raise UserError(_('Thiếu cột "HỌ VÀ TÊN".'))
+        id_col = col.get('id hrm', col.get('id'))
+        status_col = next((i for k, i in col.items() if k.startswith('trạng thái')), None)
+        pos_col = next((i for k, i in col.items() if k.startswith('mã chức vụ') or k == 'chức vụ'), None)
+        day_cols = {}
+        for k, i in col.items():
+            m = re.fullmatch(r'n(\d{1,2})', k)
+            if m and 1 <= int(m.group(1)) <= 31:
+                day_cols[int(m.group(1))] = i
+        if not day_cols:
+            raise UserError(_('Không thấy các cột ngày N1, N2, ...'))
+
+        def cell(r, i):
+            return txt(r[i]) if i is not None and i < len(r) else ''
+
+        stores = {}
+        for st in self.env['hr.store'].search([]):
+            for k in (st.code, st.name):
+                if k:
+                    stores.setdefault(k.strip().casefold(), st)
+        shifts = {sh.code.strip().casefold(): sh for sh in self.env['store.shift'].search([]) if sh.code}
+        Schedule = self.env['store.nvbh.schedule']
+        schedules = {}
+        created = updated = 0
+        errors = []
+        store = None
+        kept = self.browse()
+        people = {}
+        file_stores = self.env['hr.store']
+        for n, r in enumerate(rows[hi + 1:], hi + 2):
+            code = cell(r, col['mã bộ phận'])
+            emp_id = cell(r, id_col)
+            name = cell(r, name_col)
+            cells = {d: cell(r, i) for d, i in day_cols.items() if d <= ndays and cell(r, i)}
+            if code:
+                store = stores.get(code.casefold())
+                if not store:
+                    errors.append('Dòng %s: không tìm thấy cửa hàng "%s"' % (n, code))
+                    continue
+            if not emp_id and not cells:
+                continue  # dòng tên cửa hàng / dòng trống
+            if store is None:
+                errors.append('Dòng %s: chưa có Mã bộ phận' % n)
+                continue
+            if not name:
+                errors.append('Dòng %s: thiếu Họ và tên' % n)
+                continue
+            pos = cell(r, pos_col).upper()
+            status = cell(r, status_col)
+            people[(store.id, emp_id or name.casefold())] = {
+                'store': store, 'name': name, 'emp_id': emp_id, 'position': pos or 'NVBH', 'work_status': status}
+            for d, sc in sorted(cells.items()):
+                shift = shifts.get(sc.casefold())
+                if not shift:
+                    errors.append('Dòng %s, N%s: Mã ca "%s" không tồn tại' % (n, d, sc))
+                    continue
+                day = first.replace(day=d)
+                vals = {'staff_name': name, 'employee_code': emp_id, 'shift_id': shift.id}
+                if pos:
+                    vals['position'] = pos
+                if status:
+                    vals['work_status'] = status
+                try:
+                    with self.env.cr.savepoint():
+                        key = (store.id, day)
+                        if key not in schedules:
+                            schedules[key] = Schedule.search([('store_id', '=', store.id), ('work_date', '=', day)], limit=1) \
+                                or Schedule.create({'store_id': store.id, 'work_date': day})
+                        sch = schedules[key]
+                        line = sch.line_ids.filtered(
+                            lambda l: (emp_id and l.employee_code == emp_id) or (not emp_id and (l.staff_name or '').casefold() == name.casefold()))[:1]
+                        if line:
+                            line.write(vals)
+                            updated += 1
+                        else:
+                            vals['sequence'] = max(sch.line_ids.mapped('sequence') or [0]) + 10
+                            vals['schedule_id'] = sch.id
+                            line = self.create(vals)
+                            created += 1
+                        kept |= line
+                        file_stores |= store
+                except Exception as e:  # lỗi quyền / dữ liệu: bỏ qua ô và báo lại
+                    errors.append('Dòng %s, N%s: %s' % (n, d, getattr(e, 'args', [e])[0]))
+        # File là lịch mới nhất: với các cửa hàng có trong file, xóa các dòng lịch của tháng không còn trong file
+        removed = 0
+        if file_stores:
+            last = first.replace(day=ndays)
+            old = self.search([('store_id', 'in', file_stores.ids), ('work_date', '>=', first), ('work_date', '<=', last)]) - kept
+            schedules_touched = old.schedule_id
+            removed = len(old)
+            old.unlink()
+            schedules_touched.filtered(lambda sc: not sc.line_ids).unlink()
+        staff_new, staff_upd = self._sync_staff(people, errors)
+        return {'created': created, 'updated': updated, 'removed': removed, 'staff_created': staff_new, 'staff_updated': staff_upd,
+                'errors': errors[:20], 'error_count': len(errors)}
+
+    @api.model
+    def _sync_staff(self, people, errors):
+        """Đồng bộ Checklist NVBH > Nhân sự theo lịch ca vừa nhập: nhân viên (cửa hàng + ID HRM, hoặc họ tên) đã có thì cập nhật
+        Họ tên / Chức vụ / Trạng thái, chưa có thì thêm vào phiếu nhân sự của cửa hàng (tự tạo phiếu nếu cửa hàng chưa có)."""
+        Staff = self.env['store.audit.staff']
+        Audit = self.env['store.audit'].with_context(store_audit_type='nvbh', staff_form=True)
+        audits = {}
+        created = updated = 0
+        for p in people.values():
+            store = p['store']
+            status = p['work_status']
+            inactive = any(w in status.casefold() for w in ('nghỉ', 'ngừng'))
+            vals = {'name': p['name'], 'position': p['position'], 'employee_code': p['emp_id'], 'work_status': status,
+                    'staff_state': 'inactive' if inactive else 'active'}
+            try:
+                with self.env.cr.savepoint():
+                    who = [('employee_code', '=', p['emp_id'])] if p['emp_id'] else [('name', '=ilike', p['name'])]
+                    staff = Staff.search([('store_id', '=', store.id), ('audit_id.audit_type', '=', 'nvbh')] + who, limit=1)
+                    if staff:
+                        upd = {k: v for k, v in vals.items() if v or k == 'name'}
+                        if not status:
+                            upd.pop('staff_state', None)
+                        staff.write(upd)
+                        updated += 1
+                    else:
+                        if store.id not in audits:
+                            audits[store.id] = Audit.search([('store_id', '=', store.id), ('audit_type', '=', 'nvbh')], order='id', limit=1) \
+                                or Audit.create({'store_id': store.id})
+                        Staff.create(dict(vals, audit_id=audits[store.id].id))
+                        created += 1
+            except Exception as e:
+                errors.append('Nhân sự %s: %s' % (p['name'], getattr(e, 'args', [e])[0]))
+        return created, updated

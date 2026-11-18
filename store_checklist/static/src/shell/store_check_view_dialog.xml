@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.CheckViewDialog">
+        <Dialog size="'xl'" title="'Checklist công việc - ' + props.payload.staff_name">
+            <div class="o_store_check_form o_store_job_page">
+                <div class="o_store_job_info">
+                    <span>Nhân viên: <b t-esc="props.payload.staff_name"/></span>
+                    <span>Cửa hàng: <b t-esc="props.payload.store"/></span>
+                    <span>Ngày: <b t-esc="props.payload.date"/></span>
+                    <span>Ca: <b t-esc="props.payload.shift"/></span>
+                </div>
+                <div class="o_store_job_kpis">
+                    <span class="k total"><i class="fa fa-list-ul"/> Tổng việc: <b t-esc="props.payload.kpi.total"/></span>
+                    <span class="k doing"><i class="fa fa-refresh"/> Đang làm: <b t-esc="props.payload.kpi.doing"/></span>
+                    <span class="k done"><i class="fa fa-check"/> Đã làm: <b t-esc="props.payload.kpi.done"/></span>
+                    <span class="k todo"><i class="fa fa-times"/> Chưa làm: <b t-esc="props.payload.kpi.todo"/></span>
+                    <span class="k errors"><i class="fa fa-exclamation-triangle"/> Tổng số lỗi: <b t-esc="errorTotal"/></span>
+                    <span class="k points"><i class="fa fa-star"/> Tổng điểm đạt: <b t-esc="points"/> / <t t-esc="props.payload.max_points"/></span>
+                </div>
+                <table class="o_store_job_table">
+                    <thead>
+                        <tr>
+                            <th class="c" rowspan="2">STT</th><th rowspan="2">Tên công việc</th><th class="c" rowspan="2">Thời gian</th><th class="c" rowspan="2">Điểm</th>
+                            <th class="c" rowspan="2">Có làm</th><th class="c" rowspan="2">Trạng thái</th><th rowspan="2">Ghi chú</th><th class="c" rowspan="2">Số lỗi</th>
+                            <th t-foreach="steps" t-as="st" t-key="st.no" colspan="3" t-att-class="'c sx-head ' + stepClass(st_index)"><t t-esc="st.label"/></th>
+                        </tr>
+                        <tr>
+                            <t t-foreach="steps" t-as="st" t-key="st.no">
+                                <th t-att-class="'c sx-head ' + stepClass(st_index)">Người đánh giá</th>
+                                <th t-att-class="'c sx-head ' + stepClass(st_index)">KQ đánh giá</th>
+                                <th t-att-class="'sx-head ' + stepClass(st_index)">Chi tiết lỗi</th>
+                            </t>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="state.lines" t-as="line" t-key="line.id">
+                            <tr t-if="groupStart(line_index)" class="o_store_job_group">
+                                <td t-att-colspan="steps.length ? 9 : 8">
+                                    <t t-set="gi" t-value="groupInfo(line.group)"/>
+                                    <b t-esc="line.group"/> <span class="cnt">(<t t-esc="gi.count"/>)</span>
+                                    <span class="prog" t-if="!steps.length"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span>
+                                </td>
+                                <t t-foreach="steps" t-as="st" t-key="st.no">
+                                    <td t-if="st_index > 0" class="sx-col sx-grp"/>
+                                    <td class="c sx-cell sx-grp" title="Tích cho cả hạng mục">
+                                        <label t-foreach="results" t-as="r" t-key="r[0]" t-att-class="'ev ev-' + r[0]">
+                                            <input type="checkbox" t-att-checked="groupAll(line.group, st_index, r[0])" t-att-disabled="!st.can_edit" t-on-change="() => this.setGroupResult(line.group, st_index, r[0])"/>
+                                            <t t-esc="r[1]"/>
+                                        </label>
+                                    </td>
+                                    <td class="sx-col sx-grp"><span class="prog" t-if="st_index === 0"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span></td>
+                                </t>
+                            </tr>
+                            <tr t-att-class="'is-' + line.status">
+                                <td class="c" t-esc="line.stt"/>
+                                <td t-esc="line.name"/>
+                                <td class="c" t-esc="line.time_slot"/>
+                                <td class="c" t-esc="line.score"/>
+                                <td class="c"><input type="checkbox" disabled="disabled" t-att-checked="line.is_done"/></td>
+                                <td class="c"><span t-att-class="'st st-' + line.status" t-esc="statusLabel(line.status)"/></td>
+                                <td t-esc="line.note"/>
+                                <td class="c"><span t-att-class="'err-count' + (lineErrors(line) ? ' has' : '')" t-esc="lineErrors(line)"/></td>
+                                <t t-foreach="steps" t-as="st" t-key="st.no">
+                                    <t t-set="cc" t-value="(!st.can_edit and !st.done ? ' sx-off' : '') + (line.ev[st_index].result ? '' : ' sx-unrated')"/>
+                                    <td t-att-class="'c sx-col' + cc"><b t-esc="st.name || '—'"/></td>
+                                    <td t-att-class="'c sx-cell' + cc">
+                                        <label t-foreach="results" t-as="r" t-key="r[0]" t-att-class="'ev ev-' + r[0]">
+                                            <input type="checkbox" t-att-checked="line.ev[st_index].result === r[0]" t-att-disabled="!st.can_edit" t-on-change="() => this.setResult(line, st_index, r[0])"/>
+                                            <t t-esc="r[1]"/>
+                                        </label>
+                                    </td>
+                                    <td t-att-class="'sx-col' + cc"><textarea class="note ev-detail" rows="1" t-att-disabled="!st.can_edit" t-att-value="line.ev[st_index].detail" placeholder="Mỗi dòng là một lỗi..." t-on-input="(ev) => this.setDetail(line, st_index, ev)"/></td>
+                                </t>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-if="canEval" t-att-disabled="state.saving or (!dirty and !allRated)" t-on-click="save"
+                        title="Lưu đánh giá; chấm đủ mọi đầu việc thì hoàn tất cấp này và chuyển cho cấp tiếp theo"><i class="fa fa-save"/> Lưu (<t t-esc="editStep.code"/>)</button>
+                <button class="btn btn-info text-white" t-if="canSubmit" t-att-disabled="!allDone or state.saving" t-on-click="submitToReviewer"
+                        t-att-title="allDone ? '' : 'Hoàn tất tất cả công việc trước khi gửi'"><i class="fa fa-paper-plane"/> Gửi cấp trên đánh giá</button>
+                <button class="btn btn-secondary" t-on-click="() => props.close()">Đóng</button>
+                <span class="o_store_job_role" t-att-class="state.meta.state === 'approved' ? '' : (canEval || canSubmit ? '' : 'is-locked')">
+                    <i class="fa fa-sitemap"/> <t t-esc="stateText"/>
+                    <t t-if="state.meta.state === 'draft' and !canSubmit and !canEval"> · Bạn không có quyền gửi phiếu này.</t>
+                    <t t-if="state.meta.state === 'pending_review' and !canEval"> · Chưa đến lượt bạn đánh giá (chỉ xem).</t>
+                </span>
+                <span class="o_store_job_dirty" t-if="dirty"><i class="fa fa-exclamation-circle"/> Có thay đổi chưa lưu</span>
+            </t>
+        </Dialog>
+    </t>
+    <t t-name="store_checklist.StaffPickDialog">
+        <Dialog title="props.title" size="'md'">
+            <p class="text-muted mb-2">Chọn nhân viên cần <t t-esc="props.confirmLabel.toLowerCase()"/> (mỗi nhân viên một sheet / một trang):</p>
+            <input type="text" class="form-control mb-2" placeholder="Tìm nhân viên..." t-model="state.q"/>
+            <label class="d-flex align-items-center gap-2 fw-bold border-bottom pb-2 mb-2">
+                <input type="checkbox" t-att-checked="allPicked" t-on-change="toggleAll"/> Chọn tất cả (<t t-esc="props.items.length"/> nhân viên)
+            </label>
+            <div style="max-height: 320px; overflow-y: auto;">
+                <label t-foreach="shown" t-as="i" t-key="i.key" class="d-flex align-items-center gap-2 py-1">
+                    <input type="checkbox" t-model="state.picked[i.key]"/>
+                    <span t-esc="i.label"/>
+                </label>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-primary" t-att-disabled="!pickedKeys.length" t-on-click="confirm"><t t-esc="props.confirmLabel"/> (<t t-esc="pickedKeys.length"/>)</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Hủy</button>
+            </t>
+        </Dialog>
+    </t>
+</templates>

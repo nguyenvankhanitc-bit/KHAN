@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Phân tầng 6 cấp: Mã chức vụ (suy ra từ Chức danh) và Cửa hàng phụ trách dùng để tìm người kiểm tra checklist -->
+    <record id="view_employee_form_checklist_role" model="ir.ui.view">
+        <field name="name">hr.employee.form.checklist.role</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Checklist Audit" name="store_checklist_role">
+                    <group>
+                        <group string="Cấp bậc 6 tầng">
+                            <field name="checklist_role_code" readonly="1"/>
+                            <field name="checklist_level" readonly="1"/>
+                        </group>
+                        <group string="Phụ trách cửa hàng">
+                            <field name="checklist_store_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

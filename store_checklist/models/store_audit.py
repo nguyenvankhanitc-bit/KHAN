@@ -24,7 +24,8 @@ class StoreAudit(models.Model):
     name = fields.Char(string='Mã phiếu', required=True, copy=False, readonly=True, default='New')
 
     # Danh mục cửa hàng của hồ sơ nhân viên (module hr_store)
-    store_id = fields.Many2one('hr.store', string='Cửa hàng / Gian hàng', required=True, tracking=True)
+    store_id = fields.Many2one('hr.store', string='Cửa hàng / Gian hàng', required=True, tracking=True,
+                               default=lambda self: self._default_store())
     store_code = fields.Char(related='store_id.code', store=True)
     mien = fields.Selection(related='store_id.mien', string='Miền')
     address = fields.Char(related='store_id.street')
@@ -38,6 +39,10 @@ class StoreAudit(models.Model):
     audit_date = fields.Datetime(string='Ngày giờ audit', default=fields.Datetime.now, required=True)
     auditor_id = fields.Many2one('res.users', string='Người đánh giá', default=lambda self: self.env.user)
     period = fields.Char(string='Kỳ đánh giá')
+    # Form mở từ mục Checklist NVBH > Nhân sự (context staff_form): chỉ hiện phần nhập nhân sự, không lưu
+    staff_mode = fields.Boolean(compute='_compute_staff_mode')
+    # Chỉ dùng để lọc danh sách cửa hàng ở form Thêm mới (không lưu)
+    mien_pick = fields.Selection([('Bắc', 'Miền Bắc'), ('Nam', 'Miền Nam'), ('ĐTT', 'ĐTT'), ('VP', 'VP')], string='Miền')
     pass_threshold = fields.Float(string='Ngưỡng đạt (%)', default=80.0)
 
     line_ids = fields.One2many('store.audit.line', 'audit_id', string='Chi tiết tiêu chí', copy=True)
@@ -46,6 +51,7 @@ class StoreAudit(models.Model):
     line_b_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', '=', 'b')], default=lambda self: self._default_lines('b'), string='B. Tác phong & kỹ năng')
     line_c_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', '=', 'c')], default=lambda self: self._default_lines('c'), string='C. Chuyên môn')
     action_ids = fields.One2many('store.audit.action', 'audit_id', string='Khắc phục')
+    staff_ids = fields.One2many('store.audit.staff', 'audit_id', string='Nhân sự', copy=True)
     action_count = fields.Integer(compute='_compute_action_count')
 
     score_a = fields.Float(string='Điểm A', compute='_compute_scores', store=True)
@@ -102,6 +108,15 @@ class StoreAudit(models.Model):
     ], string='Trạng thái', default='draft', required=True, tracking=True)
 
     @api.model
+    def _default_store(self):
+        """Form Nhân sự: gợi ý sẵn cửa hàng được phép của người đăng nhập; phiếu checklist thường không đặt mặc định."""
+        if not self.env.context.get('staff_form'):
+            return False
+        user = self.env.user
+        allowed = user._linkq_allowed_hr_store_ids() if hasattr(user, '_linkq_allowed_hr_store_ids') else []
+        return allowed[0] if allowed else False
+
+    @api.model
     def _default_template(self):
         audit_type = self.env.context.get('store_audit_type')
         domain = [('audit_type', '=', audit_type)] if audit_type else []
@@ -111,6 +126,11 @@ class StoreAudit(models.Model):
     def _default_lines(self, category):
         template = self._default_template()
         return self._template_line_commands(template, category)
+
+    @api.onchange('store_id')
+    def _onchange_store_id_mien(self):
+        if self.store_id.mien:
+            self.mien_pick = self.store_id.mien
 
     @api.onchange('template_id')
     def _onchange_template_id(self):
@@ -180,8 +200,39 @@ class StoreAudit(models.Model):
             'rate': round(100 * len(done) / total) if total else 0,
             'by_mien': by_mien, 'trend': trend, 'todo_rows': todo_rows, 'done_rows': done_rows,
             'store_options': [{'id': st.id, 'name': st.display_name}
-                              for st in self.env['hr.store'].search([], order='name')],
+                              for st in self._filter_stores_for_user(self.env['hr.store'].search([], order='name'))],
         }
+
+    @api.model
+    def _user_store_scope(self):
+        """Danh sách id cửa hàng người dùng được xem; None nghĩa là không giới hạn (admin / sudo / chưa gán cửa hàng)."""
+        if self.env.su or self.env.user._is_admin() or not hasattr(self.env.user, '_linkq_allowed_hr_store_ids'):
+            return None
+        try:
+            allowed = list(self.env.user._linkq_allowed_hr_store_ids())
+        except Exception:
+            return None
+        return allowed or None
+
+    @api.model
+    def _search(self, domain, *args, **kwargs):
+        # phiếu checklist chỉ hiển thị đúng cửa hàng của người dùng (list, nhóm, đếm, xuất Excel đều đi qua đây)
+        scope = self._user_store_scope()
+        if scope is not None:
+            domain = [('store_id', 'in', scope)] + list(domain or [])
+        return super()._search(domain, *args, **kwargs)
+
+    @api.model
+    def _filter_stores_for_user(self, stores):
+        """Người dùng thuộc cửa hàng nào thì bộ lọc chỉ liệt kê đúng cửa hàng đó; quản trị / không có ràng buộc cửa hàng thì giữ nguyên."""
+        user = self.env.user
+        if user._is_admin() or not hasattr(user, '_linkq_allowed_hr_store_ids'):
+            return stores
+        try:
+            allowed = set(user._linkq_allowed_hr_store_ids())
+        except Exception:
+            return stores
+        return stores.filtered(lambda st: st.id in allowed) if allowed else stores
 
     @api.model
     def get_shell_overview(self):
@@ -292,9 +343,17 @@ class StoreAudit(models.Model):
             acts = rec.sudo().action_ids.filtered(lambda a: a.line_id.error_count > 0)
             rec.violation_done = bool(acts) and all(a.state == 'done' for a in acts)
 
+    @api.depends_context('staff_form')
+    def _compute_staff_mode(self):
+        flag = bool(self.env.context.get('staff_form'))
+        for rec in self:
+            rec.staff_mode = flag
+
+    @api.depends_context('staff_form')
     def _compute_form_title(self):
         for rec in self:
-            rec.form_title = 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
+            # phiếu mới (form Thêm mới chỉ nhập nhân sự) -> tiêu đề riêng; phiếu đã lưu giữ nguyên tiêu đề cũ
+            rec.form_title = 'THÊM THÔNG TIN NHÂN VIÊN' if rec.staff_mode else 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
 
     @api.depends('score_a', 'max_a', 'score_b', 'max_b', 'score_c', 'max_c', 'total_score', 'max_score', 'audit_date')
     def _compute_levels(self):

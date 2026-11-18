@@ -15,7 +15,7 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm))">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
@@ -24,7 +24,475 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc và báo cáo công việc theo ca làm việc hằng ngày' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                    </div>
+                </div>
+                <div class="o_store_shift_head" t-if="state.activeNav === 'shift'">
+                    <div class="o_store_shift_row">
+                        <h3>DANH MỤC CA LÀM VIỆC</h3>
+                        <span class="o_store_pill ok">Đang hoạt động</span>
+                    </div>
+                    <div class="o_store_shift_row sub">
+                        <span>Quản lý <t t-esc="state.shiftStats.total"/> mẫu ca làm việc</span>
+                        <span class="o_store_pill info"><t t-esc="state.shiftStats.types"/> nhóm ca</span>
+                    </div>
+                    <div class="o_store_shift_tabs">
+                        <button type="button" t-foreach="shiftTabs" t-as="tab" t-key="tab.id"
+                                t-att-class="state.shiftTab === tab.id ? 'active' : ''" t-on-click="() => this.onShiftTab(tab)" t-esc="tab.label"/>
+                    </div>
+                </div>
+                <div class="o_store_job_tabs" t-if="isJobTabs">
+                    <button type="button" t-foreach="jobTabs" t-as="tab" t-key="tab.id"
+                            t-att-class="state.activeNav === tab.id ? 'active' : ''" t-on-click="() => this.onJobTab(tab)" t-esc="tab.label"/>
+                </div>
+                <div class="o_store_mg_page" t-if="isMgTabs">
+                    <div class="o_store_mg_tabs">
+                        <button type="button" t-foreach="mgTabs" t-as="tab" t-key="tab.id"
+                                t-att-class="state.activeNav === tab.id ? 'active' : ''" t-on-click="() => this.onMgTab(tab)" t-esc="tab.label"/>
+                    </div>
+                    <div class="o_store_mg_bar">
+                    <span class="o_store_tools">
+                        <button type="button" class="o_store_tool print" t-on-click="onTablePrint"><i class="fa fa-print"/> In</button>
+                        <button type="button" class="o_store_tool excel" t-on-click="onTableExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    </span>
+                        <t t-if="state.activeNav === 'nvbh_mg_eval'">
+                            <span class="o_store_mg_mode">
+                                <button type="button" t-att-class="state.mg.evalMode === 'day' ? 'active' : ''" t-on-click="() => this.onMgEvalMode('day')">Theo ngày</button>
+                                <button type="button" t-att-class="state.mg.evalMode === 'week' ? 'active' : ''" t-on-click="() => this.onMgEvalMode('week')">Theo tuần</button>
+                            </span>
+                            <span class="o_store_mg_date">
+                                <i class="fa fa-calendar"/>
+                                <DateTimeInput t-key="state.mg.date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(state.mg.date)" onChange.bind="onMgDatePick" class="'o_store_date_input'"/>
+                                <button type="button" title="Trước" t-on-click="() => this.onMgShiftDate(state.mg.evalMode === 'week' ? -7 : -1)"><i class="fa fa-caret-left"/></button>
+                                <button type="button" title="Sau" t-on-click="() => this.onMgShiftDate(state.mg.evalMode === 'week' ? 7 : 1)"><i class="fa fa-caret-right"/></button>
+                            </span>
+                            <span class="o_store_mg_weeklbl" t-if="state.mg.evalMode === 'week'">Tuần: <t t-esc="state.mg.week.week_label"/></span>
+                        </t>
+                        <t t-else="">
+                            <select t-on-change="(ev) => this.onMgFilter('month', ev)">
+                                <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === state.mg.month" t-esc="'Tháng đánh giá: ' + m.label.replace('Tháng ', '')"/>
+                            </select>
+                        </t>
+                        <select t-on-change="(ev) => this.onMgFilter('storeId', ev)">
+                            <option value="">Tất cả cửa hàng</option>
+                            <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.mg.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
+                        </select>
+                        <select t-on-change="onMgName">
+                            <option value="">Tất cả nhân viên (<t t-esc="state.mg.names.length"/>)</option>
+                            <option t-foreach="state.mg.names" t-as="n" t-key="n" t-att-value="n" t-att-selected="n === state.mg.name" t-esc="n"/>
+                        </select>
+                        <span class="o_store_mg_spacer"/>
+                        <label class="o_store_mg_switch" t-if="state.activeNav === 'nvbh_mg_staff'">
+                            <input type="checkbox" t-att-checked="state.mg.active" t-on-change="onMgActive"/>
+                            <span class="track"/> <span>Đang làm việc</span>
+                        </label>
+                    </div>
+                    <div class="o_store_done_search">
+                        <i class="fa fa-search"/><span class="facet">Nhân viên</span>
+                        <input type="text" placeholder="Tìm kiếm..." t-att-value="state.mg.q" t-on-input="onMgSearch"/>
+                        <span class="pager"><t t-esc="mgCount"/> nhân viên</span>
+                    </div>
+
+                    <!-- Bảng Nhân viên -->
+                    <table class="o_store_mg_table" t-if="state.activeNav === 'nvbh_mg_staff' and state.mg.rows.length">
+                        <thead>
+                            <tr>
+                                <th class="c">STT</th><th>Mã NV (ID)</th><th>Họ và tên NVBH</th><th>Chức vụ</th><th>Lịch ca</th>
+                                <th class="c">Ngày công</th><th class="c">Tiến độ việc<br/>(Đã làm / Tổng)</th><th class="c">Số lỗi</th>
+                                <th class="c">Điểm TB tháng</th><th class="c">Xếp loại</th><th class="c">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.mg.rows" t-as="r" t-key="r.key">
+                                <td class="c" t-esc="r.stt"/>
+                                <td t-esc="r.code"/>
+                                <td><b t-esc="r.name"/><div class="sub" t-esc="r.store"/></td>
+                                <td t-esc="r.position"/>
+                                <td t-esc="r.shift"/>
+                                <td class="c"><t t-esc="r.work_days"/>/<t t-esc="r.days_in_month"/></td>
+                                <td class="c"><t t-esc="fmtNum(r.done)"/> / <t t-esc="fmtNum(r.total)"/></td>
+                                <td class="c" t-esc="r.errors"/>
+                                <td class="c"><t t-if="r.avg !== null"><t t-esc="r.avg"/>%</t><t t-else="">-</t></td>
+                                <td class="c"><span t-att-class="'rate rate-' + r.rating_key" t-esc="r.rating"/></td>
+                                <td class="c"><button type="button" class="o_store_btn_view" t-on-click="() => this.onMgStaffDetail(r)"><i class="fa fa-edit"/> Chi tiết</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- Bảng Đánh giá -->
+                    <table class="o_store_mg_table" t-if="state.activeNav === 'nvbh_mg_eval' and state.mg.evalMode === 'day' and state.mg.evalRows.length">
+                        <thead>
+                            <tr>
+                                <th class="c">STT</th><th>Nhân viên bán hàng</th><th>Ca làm việc</th><th class="c">Tiến độ khai báo</th>
+                                <th class="c">Số lỗi</th><th class="c">Điểm CHT chấm</th>
+                                <th class="c">Trạng thái</th><th class="c">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.mg.evalRows" t-as="r" t-key="r.line_id">
+                                <td class="c" t-esc="r.stt"/>
+                                <td><b t-esc="r.name"/><div class="sub" t-esc="r.store"/></td>
+                                <td t-esc="r.shift"/>
+                                <td class="c">
+                                    <div class="o_store_mg_progress">
+                                        <span class="bar"><span t-attf-class="fill #{r.pct >= 100 ? 'full' : 'part'}" t-attf-style="width: #{r.pct}%"/></span>
+                                        <b><t t-esc="r.pct"/>%</b>
+                                        <small><t t-esc="r.done"/>/<t t-esc="r.total"/></small>
+                                    </div>
+                                </td>
+                                <td class="c" t-esc="r.errors"/>
+                                <td class="c" t-esc="mgScore(r)"/>
+                                <td class="c"><span t-att-class="'o_store_mg_state ' + r.state" t-esc="r.state === 'approved' ? 'Đã đánh giá' : 'Chờ đánh giá'"/></td>
+                                <td class="c">
+                                    <t t-if="r.state === 'approved'">
+                                        <button type="button" class="o_store_btn_view" t-on-click="() => this.onMgOpen(r)"><i class="fa fa-eye"/> Xem</button>
+                                    </t>
+                                    <t t-else="">
+                                        <button type="button" class="o_store_mg_score" t-on-click="() => this.onMgOpen(r)">Đánh giá</button>
+                                    </t>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <!-- Bảng Đánh giá theo tuần -->
+                    <table class="o_store_mg_table o_store_mg_week" t-if="state.activeNav === 'nvbh_mg_eval' and state.mg.evalMode === 'week' and state.mg.week.rows.length">
+                        <thead>
+                            <tr>
+                                <th>Nhân viên</th>
+                                <th class="c" t-foreach="state.mg.week.days" t-as="d" t-key="d.date"><t t-esc="d.label"/><div class="sub" t-esc="d.date"/></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.mg.week.rows" t-as="r" t-key="r.key">
+                                <td><b t-esc="r.name"/><div class="sub" t-esc="r.store"/></td>
+                                <td class="c" t-foreach="r.cells" t-as="c" t-key="c_index">
+                                    <span t-if="c === 'off'" class="wk off">OFF</span>
+                                    <span t-else="" t-att-class="'wk ' + c"><i t-attf-class="fa #{mgWeekIcon(c)}"/></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="o_store_mg_legend" t-if="state.activeNav === 'nvbh_mg_eval' and state.mg.evalMode === 'week'">
+                        <span><span class="wk ok"><i class="fa fa-check"/></span> Đã đánh giá</span>
+                        <span><span class="wk bad"><i class="fa fa-times"/></span> Có lỗi</span>
+                        <span><span class="wk wait"><i class="fa fa-circle-o"/></span> Chờ đánh giá</span>
+                        <span><span class="wk off">OFF</span> Nghỉ / không có lịch</span>
+                    </div>
+                    <div class="o_store_job_empty" t-if="!mgCount">
+                        <i class="fa fa-info-circle"/> <t t-esc="state.activeNav === 'nvbh_mg_eval' ? 'Không có nhân viên nào có lịch xếp ca trong ngày / cửa hàng đã chọn.' : 'Không có nhân viên nào có lịch xếp ca trong tháng / cửa hàng đã chọn.'"/>
+                    </div>
+                </div>
+                <div class="o_store_done_page" t-if="state.activeNav === 'nvbh_done'">
+                    <div class="o_store_done_tabs">
+                        <button type="button" t-foreach="doneTabs" t-as="tab" t-key="tab.id"
+                                t-att-class="state.done.tab === tab.id ? 'active' : ''" t-on-click="() => this.onDoneTab(tab)" t-esc="tab.label"/>
+                    </div>
+                    <div class="o_store_done_bar" t-if="state.done.tab !== 'total'">
+                        <select t-on-change="(ev) => this.onDoneFilter('month', ev)">
+                            <option value="">Tất cả tháng</option>
+                            <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === state.done.month" t-esc="m.label"/>
+                        </select>
+                        <select t-on-change="(ev) => this.onDoneFilter('storeId', ev)">
+                            <option value="">Tất cả cửa hàng</option>
+                            <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.done.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
+                        </select>
+                        <select t-on-change="(ev) => this.onDoneFilter('mien', ev)">
+                            <option value="">Tất cả miền</option>
+                            <option value="Nam" t-att-selected="state.done.mien === 'Nam'">Nam</option>
+                            <option value="ĐTT" t-att-selected="state.done.mien === 'ĐTT'">ĐTT</option>
+                            <option value="Bắc" t-att-selected="state.done.mien === 'Bắc'">Bắc</option>
+                            <option value="other" t-att-selected="state.done.mien === 'other'">Khác</option>
+                        </select>
+                        <span class="o_store_done_toggle" t-if="state.done.tab !== 'total'">
+                            <button type="button" t-att-class="state.done.today ? 'active' : ''" t-on-click="() => this.onDoneToggle('today')">Hôm nay</button>
+                            <button type="button" t-att-class="state.done.errors ? 'active' : ''" t-on-click="() => this.onDoneToggle('errors')">Có lỗi</button>
+                        </span>
+                    </div>
+                    <div class="o_store_done_search" t-if="state.done.tab !== 'total'">
+                        <i class="fa fa-search"/><span class="facet">Nhân viên</span>
+                        <input type="text" placeholder="Tìm kiếm..." t-att-value="state.done.q" t-on-input="onDoneSearch"/>
+                        <span class="pager"><t t-esc="state.done.rows.length ? '1-' + state.done.rows.length + ' / ' + state.done.rows.length : '0'"/></span>
+                    </div>
+                    <table class="o_store_done_table o_store_done_summary" t-if="state.done.tab !== 'total' and state.done.rows.length">
+                        <thead>
+                            <tr>
+                                <th>Nhân viên / Ngày công</th><th class="c">3 ngày gần nhất</th><th class="c">Tổng công việc</th>
+                                <th class="c">Số lỗi</th><th class="c">Trạng thái</th><th class="c">Điểm TB / 26 ngày</th><th class="c">Xếp loại</th><th class="c">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="state.done.rows" t-as="emp" t-key="emp.key">
+                                <tr class="emp" t-on-click="() => this.toggleDoneEmp(emp.key)">
+                                    <td class="emp_name">
+                                        <span class="emp_ava"><i class="fa fa-user"/></span>
+                                        <span class="emp_txt"><b t-esc="emp.name"/><span class="cnt">(<t t-esc="emp.day_count"/> ngày công) · <t t-esc="emp.store"/></span></span>
+                                    </td>
+                                    <td class="c emp_recent">
+                                        <div class="rc_wrap">
+                                            <span t-foreach="recentDays(emp)" t-as="d" t-key="d.date" t-att-class="'rc_chip ' + dayTone(d)" t-on-click.stop="() => this.onRecentDay(d)">
+                                                <span class="rc_date" t-esc="d.date.slice(0, 5)"/>
+                                                <span class="rc_st"><i t-attf-class="fa #{dayIcon(d)}"/> <t t-esc="dayLabel(d)"/></span>
+                                                <b class="rc_pct" t-esc="d.pct === null ? '—' : d.pct + '%'"/>
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td class="c emp_num" t-esc="fmtNum(emp.total)"/>
+                                    <td class="c emp_num" t-esc="fmtNum(emp.errors)"/>
+                                    <td class="c emp_daystat">
+                                        <div><i class="fa fa-clock-o"/> Chờ đánh giá: <b t-att-class="pendingCount(emp) ? 'pend_n' : 'pend_n is-zero'" t-esc="pendingCount(emp)"/></div>
+                                        <div class="ok_line"><i class="fa fa-check-circle"/> Đã đánh giá: <b t-esc="evaluatedCount(emp)"/></div>
+                                    </td>
+                                    <td class="c emp_pts">
+                                        <div class="pts_top"><t t-esc="emp.avg.toFixed(2).replace('.', ',')"/> điểm</div>
+                                        <div class="pts_bar"><span t-attf-style="width: #{Math.min(emp.avg_pct || 0, 100)}%"/></div>
+                                        <div class="pts_sub">≈ <t t-esc="emp.avg_pct || 0"/>%</div>
+                                    </td>
+                                    <td class="c emp_status">
+                                        <div t-att-class="'st_ok ' + (emp.status === 'Đã đánh giá' ? 'is-done' : 'is-wait')"><i t-attf-class="fa #{emp.status === 'Đã đánh giá' ? 'fa-check-circle' : 'fa-clock-o'}"/> <t t-esc="emp.status"/></div>
+                                        <span t-att-class="'rate rate-' + emp.rating_key"><i class="fa fa-trophy" t-if="emp.rating_key !== 'wait'"/> <t t-esc="emp.rating"/></span>
+                                    </td>
+                                    <td class="c"><button type="button" class="o_store_btn_view o_store_btn_toggle" t-on-click.stop="() => this.toggleDoneEmp(emp.key)"><i class="fa fa-eye"/> Xem chi tiết</button>
+                                        <t t-if="isAdminUser">
+                                            <button type="button" class="o_store_btn_icon is-edit" title="Chỉnh sửa checklist ngày gần nhất" t-on-click.stop="() => this.onDoneDay(emp.days[0])"><i class="fa fa-pencil"/></button>
+                                            <button type="button" class="o_store_btn_icon is-del" title="Xóa toàn bộ checklist của nhân viên trong khoảng đã chọn" t-on-click.stop="() => this.onDoneDelete(emp.days, emp.name)"><i class="fa fa-trash"/></button>
+                                        </t></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                    <div class="o_store_done_popup" t-if="state.done.tab !== 'total' and donePopupEmp" t-on-click.self="closeDonePopup">
+                        <t t-set="emp" t-value="donePopupEmp"/>
+                        <div class="o_store_done_detail">
+                            <div class="dd_head">
+                                <b><i class="fa fa-list-alt"/> Chi tiết công việc theo ngày — <t t-esc="emp.name"/> <span class="cnt">(<t t-esc="emp.store"/>)</span></b>
+                                <span class="dd_pend">Chờ đánh giá: <b class="pend_n" t-esc="pendingCount(emp)"/></span>
+                                <label class="dd_toggle"><i class="fa fa-calendar"/> Chọn ngày xem
+                                    <select t-on-change="onDonePickDay">
+                                        <option value="" t-att-selected="!state.done.dayPick">Tất cả các ngày</option>
+                                        <option value="todo" t-att-selected="state.done.dayPick === 'todo'">Chỉ ngày chưa hoàn tất</option>
+                                        <option t-foreach="emp.days" t-as="d" t-key="d.id" t-att-value="d.date" t-att-selected="state.done.dayPick === d.date">
+                                            <t t-esc="d.date"/><t t-if="d.asm_done"> · đã đánh giá xong</t>
+                                        </option>
+                                    </select>
+                                </label>
+                                <span class="dd_legend"><i class="fa fa-check-circle ok"/> Hoàn thành <i class="fa fa-exclamation-circle bad"/> Có lỗi <i class="fa fa-minus-circle wait"/> Chưa làm</span>
+                                <button type="button" class="dd_close" title="Đóng" t-on-click="closeDonePopup"><i class="fa fa-times"/></button>
+                            </div>
+                            <div class="dd_body">
+                            <table class="o_store_done_table o_store_done_days">
+                                <thead>
+                                    <tr><th class="c">Ngày</th><th class="c">Ca làm</th><th class="c">Tổng việc</th><th class="c">Số lỗi</th><th class="c">Điểm đạt</th><th class="c">Điểm chuẩn</th><th class="c">Trạng thái</th><th class="c">Xếp loại</th><th class="c">Thao tác</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="day" t-foreach="doneDays(emp)" t-as="day" t-key="day.id" t-on-click="() => this.onDoneDay(day)">
+                                        <td class="c" t-esc="day.date"/>
+                                        <td class="c" t-esc="day.shift"/>
+                                        <td class="c" t-esc="day.total"/>
+                                        <td class="c" t-esc="day.errors"/>
+                                        <td class="c"><b t-esc="fmtNum(day.points)"/></td>
+                                        <td class="c" t-esc="fmtNum(day.std_points)"/>
+                                        <td class="c"><span t-att-class="'day_pill ' + dayTone(day)"><i t-attf-class="fa #{dayIcon(day)}"/> <t t-esc="dayLabel(day)"/></span></td>
+                                        <td class="c" t-esc="day.rating"/>
+                                        <td class="c"><button type="button" class="o_store_btn_view" t-on-click.stop="() => this.onDoneDay(day)"><i class="fa fa-eye"/> Xem</button>
+                                            <t t-if="isAdminUser">
+                                                <button type="button" class="o_store_btn_icon is-edit" title="Chỉnh sửa" t-on-click.stop="() => this.onDoneDay(day)"><i class="fa fa-pencil"/></button>
+                                                <button type="button" class="o_store_btn_icon is-del" title="Xóa checklist ngày này" t-on-click.stop="() => this.onDoneDelete([day], day.date)"><i class="fa fa-trash"/></button>
+                                            </t></td>
+                                    </tr>
+                                    <tr class="empty" t-if="!visibleDays(emp).length">
+                                        <td colspan="9" class="c">Không có ngày nào phù hợp với lựa chọn.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="o_store_job_empty" t-if="state.done.tab !== 'total' and !state.done.rows.length">
+                        <i class="fa fa-info-circle"/> Chưa có nhân viên nào check list và lưu trong khoảng đã chọn.
+                    </div>
+                    <div class="o_store_total_page" t-if="state.done.tab === 'total'">
+                        <div class="o_store_total_filters">
+                            <span class="o_store_tools">
+                                <button type="button" class="o_store_tool print" t-on-click="onTablePrint"><i class="fa fa-print"/> In</button>
+                                <button type="button" class="o_store_tool excel" t-on-click="onTableExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                            </span>
+                            <label class="f"><i class="fa fa-user"/>
+                                <select t-on-change="onDoneStaff">
+                                    <option t-foreach="doneStaffOptions" t-as="n" t-key="n.name" t-att-value="n.name" t-att-selected="n.name === state.done.staff" t-esc="'Nhân viên: ' + n.label"/>
+                                </select></label>
+                            <label class="f"><i class="fa fa-users"/>
+                                <select t-on-change="(ev) => this.onDoneFilter('storeId', ev)">
+                                    <option value="">Tất cả cửa hàng</option>
+                                    <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.done.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
+                                </select></label>
+                            <label class="f"><i class="fa fa-calendar"/>
+                                <select t-on-change="(ev) => this.onDoneFilter('month', ev)">
+                                    <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === state.done.month" t-esc="'Tháng: ' + m.label.replace('Tháng ', '')"/>
+                                </select></label>
+                        </div>
+                        <t t-if="state.done.monthly">
+                            <div class="o_store_total_summary">
+                                <button type="button" class="back" t-on-click="() => this.onDoneTab(doneTabs[0])"><i class="fa fa-arrow-left"/> Quay lại</button>
+                                <span class="o_store_total_toggle">
+                                    <button type="button" t-att-class="state.done.onlyWork ? 'active' : ''" t-on-click="() => this.onDoneOnlyWork(true)">
+                                        <span class="sw"/> Chỉ hiện ngày đi làm (<t t-esc="doneWorkCount"/>)</button>
+                                    <button type="button" t-att-class="!state.done.onlyWork ? 'active' : ''" t-on-click="() => this.onDoneOnlyWork(false)">Tất cả <t t-esc="state.done.monthly.days_in_month"/> ngày</button>
+                                </span>
+                                <span class="chips">
+                                    <span class="chip c-blue">Ngày công: <t t-esc="state.done.monthly.total.days"/>/<t t-esc="state.done.monthly.days_in_month"/></span>
+                                    <span class="chip c-sky">Đã làm: <t t-esc="fmtNum(state.done.monthly.total.done)"/>/<t t-esc="fmtNum(state.done.monthly.total.total)"/></span>
+                                    <span class="chip c-pink">Số lỗi: <t t-esc="fmtNum(state.done.monthly.total.errors)"/></span>
+                                    <span class="chip c-green">Điểm lũy kế: <t t-esc="fmtNum(state.done.monthly.total.points)"/> / <t t-esc="fmtNum(state.done.monthly.total.max_points)"/> (<t t-esc="fmtNum(state.done.monthly.total.pct)"/>%)</span>
+                                </span>
+                            </div>
+                            <div class="o_store_total_scroll">
+                                <table class="o_store_total_table">
+                                    <thead>
+                                        <tr>
+                                            <th>Ngày</th><th>Cửa hàng</th><th>Mã ca</th><th>Trạng thái ngày</th>
+                                            <th>Tổng việc ca</th><th>Đã làm</th><th>Số lỗi</th><th>Điểm đạt</th><th>Điểm chuẩn ca</th><th>Điểm CHT đánh giá</th><th>Điểm ASM đánh giá</th><th>Tỷ lệ đạt (%)</th>
+                                            <th>Kết quả</th><th class="note">Ghi chú / Tóm tắt công việc</th><th>Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="doneMonthlyRows" t-as="r" t-key="r_index" t-att-class="'k-' + r.kind" t-on-click="() => this.onDoneMonthlyRow(r)">
+                                            <td t-esc="r.date"/>
+                                            <td t-esc="r.store || '-'"/>
+                                            <td><span t-if="r.kind === 'off'" class="st st-offcode">OFF</span><t t-else="" t-esc="r.shift"/></td>
+                                            <td><span t-att-class="'st st-' + r.kind" t-esc="r.status"/></td>
+                                            <td t-esc="r.total"/>
+                                            <td t-esc="r.done"/>
+                                            <td t-att-class="r.errors ? 'warn' : ''" t-esc="r.errors"/>
+                                            <td t-esc="(r.kind === 'off' or r.evaluated) ? fmtNum(r.points) : '-'"/>
+                                            <td t-esc="fmtNum(r.max_points)"/>
+                                            <td t-att-class="r.pts_cht == null ? '' : 'pts_red'" t-esc="r.pts_cht == null ? '-' : fmtNum(r.pts_cht)"/>
+                                            <td t-att-class="r.pts_asm == null ? '' : 'pts_red'" t-esc="r.pts_asm == null ? '-' : fmtNum(r.pts_asm)"/>
+                                            <td><t t-if="r.kind === 'off' or r.evaluated"><t t-esc="fmtNum(r.pct)"/>%</t><t t-else="">-</t></td>
+                                            <td t-att-class="(r.id and !r.evaluated) ? 'warn' : ''" t-esc="r.control"/>
+                                            <td class="note"><span class="clamp" t-att-title="r.note" t-esc="r.note || '-'"/></td>
+                                            <td><button type="button" class="o_store_total_view" t-if="r.id" t-on-click.stop="() => this.onDoneMonthlyRow(r)"><i class="fa fa-eye"/> Xem</button></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4" class="r" title="Số ngày công thực tế = số ngày có phiếu checklist trong tháng">TỔNG CỘNG KỲ <t t-esc="doneMonthLabel"/> (<t t-esc="state.done.monthly.total.days"/> ngày công thực tế)</td>
+                                            <td title="Công thức: SUM(Tổng việc ca) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.total)"/>
+                                            <td title="Công thức: SUM(Đã làm) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.done)"/>
+                                            <td title="Công thức: SUM(Số lỗi) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.errors)"/>
+                                            <td title="Công thức: AVERAGE(Điểm đạt) — trung bình các ngày đã đánh giá xong (ngày chưa đánh giá / không có phiếu bỏ qua)" t-esc="state.done.monthly.total.avg_points == null ? '-' : fmtNum(state.done.monthly.total.avg_points)"/>
+                                            <td title="Công thức: SUM(Điểm chuẩn ca) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.max_points)"/>
+                                            <td title="Công thức: AVERAGE(Điểm CHT đánh giá) — trung bình các ngày CHT đã chấm đủ" t-att-class="state.done.monthly.total.avg_cht == null ? '' : 'pts_red'" t-esc="state.done.monthly.total.avg_cht == null ? '-' : fmtNum(state.done.monthly.total.avg_cht)"/>
+                                            <td title="Công thức: AVERAGE(Điểm ASM đánh giá) — trung bình các ngày ASM đã chấm đủ" t-att-class="state.done.monthly.total.avg_asm == null ? '' : 'pts_red'" t-esc="state.done.monthly.total.avg_asm == null ? '-' : fmtNum(state.done.monthly.total.avg_asm)"/>
+                                            <td title="Công thức: AVERAGE(Tỷ lệ đạt %) — trung bình tỷ lệ đạt (Điểm đạt ÷ Điểm chuẩn ca) của các ngày đã đánh giá xong"><t t-if="state.done.monthly.total.avg_pct == null">-</t><t t-else=""><t t-esc="fmtNum(state.done.monthly.total.avg_pct)"/>%</t></td>
+                                            <td title="Số ngày đã đánh giá xong / số ngày công thực tế"><t t-esc="state.done.monthly.total.valid"/>/<t t-esc="state.done.monthly.total.days"/> công hợp lệ</td>
+                                            <td class="note">Tự động liên kết sang dữ liệu Odoo</td>
+                                            <td/>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="o_store_total_formula">
+                                <b><i class="fa fa-info-circle"/> Công thức dòng "TỔNG CỘNG KỲ":</b>
+                                <span><b>Tổng việc ca, Đã làm, Số lỗi, Điểm chuẩn ca</b> = SUM() cộng các ngày.</span>
+                                <span><b>Điểm đạt</b> = AVERAGE() điểm đạt các ngày đã đánh giá xong.</span>
+                                <span><b>Điểm CHT / ASM đánh giá</b> = AVERAGE() điểm do CHT / ASM chấm (chỉ ngày đã chấm đủ).</span>
+                                <span><b>Tỷ lệ đạt (%)</b> = AVERAGE() tỷ lệ đạt từng ngày, tỷ lệ ngày = Điểm đạt ÷ Điểm chuẩn ca × 100.</span>
+                                <span>Ô "-" (chưa có số liệu) không tính vào trung bình.</span>
+                            </div>
+                        </t>
+                        <div class="o_store_job_empty" t-else="">
+                            <i class="fa fa-info-circle"/> Chưa có nhân viên nào check list và lưu trong khoảng đã chọn.
+                        </div>
+                    </div>
+
+                </div>
+                <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs'">
+                    <div class="o_store_job_bar">
+                        <label><span>Ngày làm việc:</span>
+                            <DateTimeInput t-key="state.job.date + '|' + (state.job.dateKey or 0)" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(state.job.date)" onChange.bind="onJobDatePick" class="'o_store_date_input'"/></label>
+                        <label><span>Cửa hàng:</span>
+                            <select t-on-change="onJobStore">
+                                <option value="">Chọn cửa hàng</option>
+                                <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                        t-att-selected="jobSel(st.id, state.job.storeId)" t-esc="st.display_name"/>
+                            </select></label>
+                        <span class="o_store_job_sum" t-if="state.job.storeId">
+                            Có lịch làm: <b t-esc="state.job.staff.length"/>/<t t-esc="state.job.storeStaff"/> NV
+                            <t t-if="state.job.off.length"> (Nghỉ OFF: <t t-esc="state.job.off.length"/>)</t>
+                        </span>
+                    </div>
+                    <div class="o_store_job_cards" t-if="state.job.staff.length or state.job.off.length">
+                        <button type="button" t-foreach="state.job.staff" t-as="sf" t-key="sf.id"
+                                t-att-class="(jobSel(sf.id, state.job.lineId) ? 'active ' : '') + (sf.finished ? 'finished' : '')"
+                                t-on-click="() => this.onJobPick(sf)">
+                            <i t-attf-class="fa #{sf.finished ? 'fa-check-circle' : 'fa-user'}"/>
+                            <span class="nm"><t t-esc="sf.stt"/>. <t t-esc="sf.name"/> · Ca <t t-esc="sf.shift"/></span>
+                            <span class="pg">(<t t-esc="sf.done"/>/<t t-esc="sf.total"/> - <t t-esc="jobStaffNum(sf.points)"/>đ)</span>
+                        </button>
+                        <span class="k off" t-if="state.job.off.length"><i class="fa fa-moon-o"/> Nghỉ OFF (<t t-esc="state.job.off.length"/>): <t t-esc="state.job.off.join(', ')"/></span>
+                    </div>
+                    <t t-if="state.job.check">
+                        <div class="o_store_job_kpis">
+                            <span class="k total"><i class="fa fa-list-ul"/> Tổng việc: <b t-esc="jobKpi.total"/></span>
+                            <span class="k doing"><i class="fa fa-refresh"/> Đang làm: <b t-esc="jobKpi.doing"/></span>
+                            <span class="k done"><i class="fa fa-check"/> Đã làm: <b t-esc="jobKpi.done"/></span>
+                            <span class="k todo"><i class="fa fa-times"/> Chưa làm: <b t-esc="jobKpi.todo"/></span>
+                            <span class="k points"><i class="fa fa-star"/> Tổng điểm đạt: <b t-esc="jobKpi.points"/> / <t t-esc="jobKpi.maxPoints"/></span>
+                        </div>
+                        <div class="o_store_job_role" t-att-class="jobLocked ? 'is-locked' : ''">
+                            <i t-attf-class="fa #{jobLocked ? 'fa-lock' : 'fa-sitemap'}"/>
+                            <span>Cấp <b t-esc="state.job.check.level"/> (<b t-esc="state.job.check.role_code"/>)</span>
+                            <span> · Luồng đánh giá:
+                                <t t-if="!(state.job.check.steps || []).length"><b>Chưa có (chưa gắn cấp trên phụ trách cửa hàng)</b></t>
+                                <t t-foreach="state.job.check.steps || []" t-as="st" t-key="st.no">
+                                    <t t-if="st_index > 0"> → </t><b t-esc="st.code"/><t t-if="st.name"> (<t t-esc="st.name"/>)</t>
+                                </t></span>
+                            <span class="lock" t-if="jobLocked"> · <t t-if="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
+                        </div>
+                        <table class="o_store_job_table o_store_job_cardtbl">
+                            <thead>
+                                <tr>
+                                    <th class="c">STT</th><th>Tên công việc</th><th class="c">Thời gian</th><th class="c">Điểm</th><th class="c">Có làm</th>
+                                    <th class="c">Trạng thái</th><th>Ghi chú</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.job.check.lines" t-as="line" t-key="line.id">
+                                    <tr t-if="jobGroupStart(line_index)" class="o_store_job_group" t-on-click="() => this.toggleJobGroup(line.group)">
+                                        <t t-set="gi" t-value="jobGroupInfo(line.group)"/>
+                                        <td colspan="4">
+                                            <i t-attf-class="fa #{state.job.closed[line.group] ? 'fa-caret-right' : 'fa-caret-down'}"/>
+                                            <b t-esc="line.group"/> <span class="cnt">(<t t-esc="gi.count"/>)</span>
+                                        </td>
+                                        <td class="c" t-on-click.stop="() => {}">
+                                            <input type="checkbox" t-if="line_index === 0" t-att-checked="jobAllDone" t-att-disabled="jobLocked" t-on-change="onJobAll" title="Chọn tất cả"/>
+                                        </td>
+                                        <td colspan="2"><span class="prog"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span></td>
+                                    </tr>
+                                    <tr t-if="!state.job.closed[line.group]" t-att-class="'is-' + jobLineStatus(line)">
+                                        <td class="c" t-esc="line.stt"/>
+                                        <td t-esc="line.name"/>
+                                        <td class="c" t-esc="line.time_slot"/>
+                                        <td class="c" t-esc="line.score"/>
+                                        <td class="c"><input type="checkbox" t-att-checked="line.is_done" t-att-disabled="jobLocked" t-on-change="() => this.onJobToggle(line)"/></td>
+                                        <td class="c"><span t-att-class="'st st-' + jobLineStatus(line)" t-esc="jobStatusLabel(jobLineStatus(line))"/></td>
+                                        <td><input type="text" class="note" t-att-value="line.note" placeholder="Nhập ghi chú..." t-att-disabled="jobLocked" t-on-input="(ev) => this.onJobNote(line, ev)"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        <div class="o_store_job_actions">
+                            <button type="button" class="btn btn-primary" t-att-disabled="!jobDirty or jobLocked" t-on-click="onJobSave"><i class="fa fa-save"/> Lưu</button>
+                            <button type="button" class="btn btn-secondary" t-att-disabled="!jobDirty" t-on-click="onJobCancel">Hủy</button>
+                            <button type="button" class="btn btn-info text-white" t-if="jobCanSubmit" t-att-disabled="jobDirty or !jobAllDone" t-on-click="onJobSubmit"
+                                    t-att-title="jobAllDone ? 'Lưu xong rồi gửi cấp trên' : 'Hoàn tất tất cả công việc trước khi gửi'"><i class="fa fa-paper-plane"/> Gửi cấp trên đánh giá</button>
+                            <span class="dirty" t-if="jobDirty"><i class="fa fa-exclamation-circle"/> Có thay đổi chưa lưu</span>
+                        </div>
+                    </t>
+                    <div class="o_store_job_empty" t-else="">
+                        <i class="fa fa-info-circle"/>
+                        <t t-if="!state.job.storeId">Chọn cửa hàng để xem nhân viên có lịch xếp ca trong ngày.</t>
+                        <t t-elif="!state.job.staff.length">Chưa có lịch xếp ca cho cửa hàng này vào ngày đã chọn. Hãy thêm ở tab Lịch xếp ca.</t>
                     </div>
                 </div>
                 <div class="o_store_dash_filters o_store_list_filters" t-if="showSettingsAdd">
@@ -61,10 +529,55 @@
                         <option t-foreach="state.managerReport" t-as="mg" t-key="mg.id" t-att-value="mg.id"
                                 t-att-selected="('' + mg.id) === state.mgrFilter" t-esc="mg.name"/>
                     </select>
+                    <button type="button" class="o_store_sch_btn is-import" t-if="isScheduleNav and canImportSchedule and showOwnAdd" t-on-click="onImportBenchmark"><i class="fa fa-upload"/> Nhập Excel</button>
+                    <button type="button" class="o_store_sch_btn is-export" t-if="isScheduleNav and canExportSchedule" t-on-click="onExportBenchmark"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
                     <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
+                <div class="o_store_sched" t-elif="isScheduleNav">
+                    <div class="o_store_job_empty" t-if="state.sched.empty"><i class="fa fa-info-circle"/> <t t-esc="state.sched.empty"/></div>
+                    <div class="o_store_job_empty" t-elif="!state.sched.rows.length and !state.sched.loading"><i class="fa fa-info-circle"/> Chưa có lịch xếp ca trong tháng này.</div>
+                    <div class="o_store_sched_scroll" t-else="">
+                        <table class="o_store_sched_table">
+                            <thead>
+                                <tr>
+                                    <th class="c-mien">Miền</th>
+                                    <th class="c-store">Mã bộ phận</th>
+                                    <th class="c-id">ID HRM</th>
+                                    <th class="c-name">HỌ VÀ TÊN (dấu)</th>
+                                    <th class="c-pos">Mã chức vụ</th>
+                                    <th class="c-status">TRẠNG THÁI NHÂN VIÊN</th>
+                                    <th class="c-day" t-foreach="schedDays" t-as="d" t-key="d">N<t t-esc="d"/></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.sched.rows" t-as="row" t-key="row.key">
+                                    <tr t-if="row.kind === 'store'" class="is-store">
+                                        <td t-esc="row.mien"/>
+                                        <td t-esc="row.store_code"/>
+                                        <td/>
+                                        <td class="c-name" t-esc="row.store_name"/>
+                                        <td/>
+                                        <td/>
+                                        <td t-foreach="schedDays" t-as="d" t-key="d"/>
+                                    </tr>
+                                    <tr t-else="">
+                                        <td t-esc="row.mien"/>
+                                        <td t-esc="row.store_code"/>
+                                        <td t-esc="row.employee_code"/>
+                                        <td class="c-name" t-esc="row.staff_name"/>
+                                        <td t-esc="row.position"/>
+                                        <td t-esc="row.work_status"/>
+                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day" t-att-class="row.days[d] ? 'has-shift' : ''" t-on-click="() => this.onSchedCell(row, d)">
+                                            <t t-esc="row.days[d] ? row.days[d].code : ''"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                 <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">
                     <div class="o_store_perm_head">
                         <div>

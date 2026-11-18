@@ -9,6 +9,7 @@ FOLDERS = [
     ('violation', 'Xử lý sai phạm'),
     ('evaluation', 'Cài đặt › Công việc đánh giá'),
     ('supervision', 'Cài đặt › Công việc giám sát'),
+    ('nvbh_work', 'Cài đặt › Công việc checklist NVBH'),
 ]
 MENUS = [
     ('nvbh', 'Checklist NVBH', 'audit'),
@@ -29,6 +30,9 @@ MENUS = [
     ('gs_subgroup', 'Phân nhóm đánh giá', 'supervision'),
     ('gs_benchmark', 'Điểm chuẩn đánh giá', 'supervision'),
     ('gs_level', 'Mức độ đánh giá', 'supervision'),
+    ('shift', 'Danh mục ca', 'nvbh_work'),
+    ('nvbh_task', 'Danh sách công việc NVBH', 'nvbh_work'),
+    ('nvbh_rating', 'Xếp loại', 'nvbh_work'),
 ]
 OPS = ('read', 'create', 'write', 'unlink', 'export')
 

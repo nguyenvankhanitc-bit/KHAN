@@ -5,7 +5,7 @@
         <field name="model">store.audit</field>
         <field name="arch" type="xml">
             <form string="Phiếu Audit" class="o_store_audit_form">
-                <header>
+                <header invisible="staff_mode">
                     <button name="action_audit" type="object" string="Lưu" class="btn-primary" invisible="state != 'draft'"/>
                     <button name="action_done" type="object" string="Hoàn tất" class="btn-primary" invisible="state != 'audited'"/>
                     <button name="action_create_actions" type="object" string="Tạo khắc phục" invisible="state == 'draft'"/>
@@ -22,7 +22,20 @@
                             <field name="audit_type" invisible="1"/>
                         </div>
                     </div>
-                    <group class="o_store_audit_head">
+                    <div class="o_store_new_head" invisible="not staff_mode"
+                         style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:12px 8px;">
+                        <div><div class="fw-bold mb-1">Miền</div>
+                            <field name="mien_pick" nolabel="1" placeholder="Chọn miền" readonly="is_locked"/></div>
+                        <div><div class="fw-bold mb-1">Cửa hàng (Store)</div>
+                            <field name="store_id" nolabel="1" options="{'no_create': True}" domain="mien_pick and [('mien', '=', mien_pick)] or []" context="{'list_view_ref': 'store_checklist.view_hr_store_pick_list'}" readonly="is_locked"/></div>
+                        <div><div class="fw-bold mb-1">ASM phụ trách</div>
+                            <field name="manager" nolabel="1" readonly="1"/></div>
+                        <div><div class="fw-bold mb-1">Ngày vào làm</div>
+                            <field name="audit_date" nolabel="1" widget="date" options="{'numeric': true}" readonly="is_locked"/></div>
+                        <field name="auditor_id" invisible="1"/>
+                    </div>
+                    <field name="staff_mode" invisible="1"/>
+                    <group class="o_store_audit_head" invisible="staff_mode">
                         <group>
                             <field name="store_id" options="{'no_create': True}" context="{'list_view_ref': 'store_checklist.view_hr_store_pick_list'}" readonly="is_locked or (state == 'done' and not can_edit_done)"/>
                             <field name="address" string="Địa chỉ"/>
@@ -33,7 +46,21 @@
                             <field name="auditor_id" readonly="is_locked or (state == 'done' and not can_edit_done)"/>
                         </group>
                     </group>
-                    <div class="o_store_audit_kpis">
+                    <div class="o_store_audit_staff" invisible="audit_type != 'nvbh' or (not id and not staff_mode)">
+                        <field name="staff_ids" readonly="is_locked or (state == 'done' and not can_edit_done)">
+                            <list editable="bottom" string="Nhân sự">
+                                <field name="sequence" widget="handle"/>
+                                <field name="stt"/>
+                                <field name="name" string="Họ và tên NV"/>
+                                <field name="position" string="Chức vụ"/>
+                                <field name="employee_code" string="ID"/>
+                                <field name="phone" string="Số điện thoại"/>
+                                <field name="work_status" string="Trạng thái nhân viên" optional="show"/>
+                                <field name="staff_state" widget="badge" string="Trạng thái" decoration-success="staff_state == 'active'" decoration-muted="staff_state == 'inactive'"/>
+                            </list>
+                        </field>
+                    </div>
+                    <div class="o_store_audit_kpis" invisible="staff_mode">
                         <div class="o_store_kpi"><span class="o_store_kpi_ico o_store_kpi_blue"><i class="fa fa-shopping-bag"/></span>
                             <div><div class="o_store_kpi_lbl">Tổng phiếu check list</div>
                                 <div class="o_store_kpi_val"><field name="kpi_total"/></div></div></div>
@@ -50,7 +77,7 @@
                             <div><div class="o_store_kpi_lbl">Tổng Điểm Đánh Giá</div>
                                 <div class="o_store_kpi_val"><field name="kpi_avg" options="{'hide_trailing_zeros': true}"/> <small>/ <field name="kpi_max" options="{'hide_trailing_zeros': true}"/></small> <small class="pill purple"><field name="kpi_score_pct" widget="float" digits="[3,2]"/>%</small></div></div></div>
                     </div>
-                    <div class="o_store_mobile">
+                    <div class="o_store_mobile" invisible="staff_mode">
                         <div class="o_store_mobile_title"><i class="fa fa-bar-chart"/> TỔNG QUAN ĐÁNH GIÁ</div>
                         <div class="o_store_ov">
                         <div class="o_store_ov_tile is-a">
@@ -94,7 +121,7 @@
                     <field name="tone_b" invisible="1"/>
                     <field name="tone_c" invisible="1"/>
                     <field name="tone_t" invisible="1"/>
-                    <notebook>
+                    <notebook invisible="staff_mode">
                         <page string="A. Điểm cơ sở vật chất" name="lines_a">
                             <div class="o_store_audit_bar">
                                 <span>A. ĐIỂM CƠ SỞ VẬT CHẤT</span>

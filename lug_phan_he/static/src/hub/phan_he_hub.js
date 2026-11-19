@@ -21,6 +21,14 @@ const SERVICE_APPS = [
         enabled: true,
     },
     {
+        code: "camera_checklist",
+        rightCode: "camera",
+        name: "Check Camera",
+        icon: "/lug_phan_he/static/description/icon_hub_camera.png",
+        action: "camera_checklist.action_camera_shell",
+        enabled: true,
+    },
+    {
         code: "attendance",
         name: "Máy chấm công",
         icon: "/lug_phan_he/static/description/icon_hub_attendance.png",
@@ -106,7 +114,7 @@ export class PhanHeHub extends Component {
                 if (!app.enabled) {
                     return false;
                 }
-                const right = this.state.rights[app.code];
+                const right = this.state.rights[app.rightCode || app.code];
                 return Boolean(right && right.view);
             });
             this.state.cards = this.state.apps.slice();

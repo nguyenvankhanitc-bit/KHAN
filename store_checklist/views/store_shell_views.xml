@@ -416,6 +416,13 @@
             <list group_edit="0" group_delete="0" string="Danh sách công việc NVBH" class="o_store_shift o_store_task">
                 <field name="name"/>
                 <field name="task_group"/>
+                <field name="wd_mon" width="38px"/>
+                <field name="wd_tue" width="38px"/>
+                <field name="wd_wed" width="38px"/>
+                <field name="wd_thu" width="38px"/>
+                <field name="wd_fri" width="38px"/>
+                <field name="wd_sat" width="38px"/>
+                <field name="wd_sun" width="38px"/>
                 <field name="shift_type_ids" widget="many2many_tags" options="{'no_create': True}"/>
                 <field name="store_type"/>
                 <field name="time_slot"/>
@@ -451,6 +458,13 @@
                             <field name="final_check"/>
                             <field name="score"/>
                         </group>
+                    </group>
+                    <group string="Thứ áp dụng (tích chọn các thứ công việc này được làm)">
+                        <div class="d-flex flex-wrap gap-4 ms-2">
+                            <span><field name="wd_mon"/> T2</span><span><field name="wd_tue"/> T3</span><span><field name="wd_wed"/> T4</span>
+                            <span><field name="wd_thu"/> T5</span><span><field name="wd_fri"/> T6</span><span><field name="wd_sat"/> T7</span>
+                            <span><field name="wd_sun"/> CN</span>
+                        </div>
                     </group>
                 </sheet>
             </form>

@@ -10,16 +10,19 @@
                 contentMode="shellMode"
                 embeddedViewProps="state.embeddedViewProps"
                 viewKey="state.viewKey"
+                showOverview="showOverviewNav"
                 onOverview.bind="onOverview"
                 onToggleGroup.bind="toggleGroup"
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+                <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
                 <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen">
+                    <button type="button" class="o_store_page_close" title="Đóng trang (về Tổng quan)" aria-label="Đóng" t-on-click="onOverview"><i class="fa fa-times"/></button>
                     <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
@@ -74,7 +77,7 @@
                             </select>
                         </t>
                         <select t-on-change="(ev) => this.onMgFilter('storeId', ev)">
-                            <option value="">Tất cả cửa hàng</option>
+                            <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
                             <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.mg.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
                         </select>
                         <select t-on-change="onMgName">
@@ -93,6 +96,18 @@
                         <span class="pager"><t t-esc="mgCount"/> nhân viên</span>
                     </div>
 
+                    <div class="o_store_pickstores" t-if="needStorePick">
+                        <span class="lbl"><i class="fa fa-building"/> Cửa hàng (<t t-esc="(state.job.stores || []).length"/>) - bấm để xem dữ liệu:
+                            <em class="legend"><i class="d done"/> Đã đánh giá xong <i class="d todo"/> Đã gửi check list, chờ đánh giá <i class="d none"/> Chưa gửi check list</em></span>
+                        <div class="grp" t-foreach="mgPickGroups" t-as="g" t-key="g.key">
+                            <div class="grp_h" t-on-click="() => this.toggleMienGroup(g.key)">
+                                <i t-attf-class="fa #{isMienOpen(g.key, '') ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <t t-esc="g.label"/> (<t t-esc="g.stores.length"/>)
+                            </div>
+                            <div class="grp_b" t-if="isMienOpen(g.key, '')">
+                                <button type="button" t-att-class="'chip ' + (state.mg.storeStatus[st.id] === 'done' ? 'is-done' : state.mg.storeStatus[st.id] === 'pending' ? 'is-pending' : 'is-none')" t-foreach="g.stores" t-as="st" t-key="st.id" t-on-click="() => this.onMgPickStore(st)" t-esc="st.display_name"/>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Bảng Nhân viên -->
                     <table class="o_store_mg_table" t-if="state.activeNav === 'nvbh_mg_staff' and state.mg.rows.length">
                         <thead>
@@ -193,7 +208,7 @@
                             <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === state.done.month" t-esc="m.label"/>
                         </select>
                         <select t-on-change="(ev) => this.onDoneFilter('storeId', ev)">
-                            <option value="">Tất cả cửa hàng</option>
+                            <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
                             <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.done.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
                         </select>
                         <select t-on-change="(ev) => this.onDoneFilter('mien', ev)">
@@ -212,6 +227,19 @@
                         <i class="fa fa-search"/><span class="facet">Nhân viên</span>
                         <input type="text" placeholder="Tìm kiếm..." t-att-value="state.done.q" t-on-input="onDoneSearch"/>
                         <span class="pager"><t t-esc="state.done.rows.length ? '1-' + state.done.rows.length + ' / ' + state.done.rows.length : '0'"/></span>
+                    </div>
+                    <div class="o_store_pickstores" t-if="state.done.tab !== 'total' and !state.done.storeId and !state.done.q.trim() and (state.needStore or state.done.mien)">
+                        <span class="lbl"><i class="fa fa-building"/> Cửa hàng<t t-if="state.done.mien"> miền <t t-esc="state.done.mien === 'other' ? 'Khác' : state.done.mien"/></t> (<t t-esc="donePickStores.length"/>) - bấm để xem dữ liệu:
+                            <em class="legend"><i class="d done"/> Đã đánh giá xong <i class="d todo"/> Đã gửi check list, chờ đánh giá <i class="d none"/> Chưa gửi check list</em></span>
+                        <div class="grp" t-foreach="donePickGroups" t-as="g" t-key="g.key">
+                            <div class="grp_h" t-on-click="() => this.toggleMienGroup(g.key)">
+                                <i t-attf-class="fa #{isMienOpen(g.key) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <t t-esc="g.label"/> (<t t-esc="g.stores.length"/>)
+                            </div>
+                            <div class="grp_b" t-if="isMienOpen(g.key)">
+                                <button type="button" t-att-class="'chip ' + (state.done.storeStatus[st.id] === 'done' ? 'is-done' : state.done.storeStatus[st.id] === 'pending' ? 'is-pending' : 'is-none')" t-foreach="g.stores" t-as="st" t-key="st.id" t-on-click="() => this.onDonePickStore(st)" t-esc="st.display_name"/>
+                            </div>
+                        </div>
+                        <span class="none" t-if="!donePickStores.length">Không có cửa hàng nào thuộc miền này.</span>
                     </div>
                     <table class="o_store_done_table o_store_done_summary" t-if="state.done.tab !== 'total' and state.done.rows.length">
                         <thead>
@@ -263,8 +291,13 @@
                     <div class="o_store_done_popup" t-if="state.done.tab !== 'total' and donePopupEmp" t-on-click.self="closeDonePopup">
                         <t t-set="emp" t-value="donePopupEmp"/>
                         <div class="o_store_done_detail">
+                            <t t-set="st" t-value="doneStats(emp)"/>
                             <div class="dd_head">
-                                <b><i class="fa fa-list-alt"/> Chi tiết công việc theo ngày — <t t-esc="emp.name"/> <span class="cnt">(<t t-esc="emp.store"/>)</span></b>
+                                <span class="dd_ico"><i class="fa fa-clipboard"/></span>
+                                <div class="dd_title">
+                                    <div class="t1">Chỉ tiêu công việc theo ngày</div>
+                                    <div class="t2"><t t-esc="emp.name"/> <span class="cnt">(<t t-esc="emp.store"/>)</span></div>
+                                </div>
                                 <span class="dd_pend">Chờ đánh giá: <b class="pend_n" t-esc="pendingCount(emp)"/></span>
                                 <label class="dd_toggle"><i class="fa fa-calendar"/> Chọn ngày xem
                                     <select t-on-change="onDonePickDay">
@@ -279,9 +312,20 @@
                                 <button type="button" class="dd_close" title="Đóng" t-on-click="closeDonePopup"><i class="fa fa-times"/></button>
                             </div>
                             <div class="dd_body">
+                            <div class="dd_kpis">
+                                <div class="kpi k-blue"><span class="ico"><i class="fa fa-briefcase"/></span><div><div class="lb">Tổng việc</div><div class="big" t-esc="st.total"/></div></div>
+                                <div class="kpi k-red"><span class="ico"><i class="fa fa-exclamation"/></span><div><div class="lb">Tổng số lỗi</div><div class="big bad" t-esc="st.errors"/></div></div>
+                                <div class="kpi k-gray"><span class="ico"><i class="fa fa-calendar-check-o"/></span><div><div class="lb">Điểm chuẩn trung bình</div><div class="big"><t t-esc="fmtNum(st.avgStd)"/> <small>đ/ngày</small></div><div class="sub">Tổng <t t-esc="fmtNum(st.sumStd)"/>đ / <t t-esc="st.days"/> ngày công</div></div></div>
+                                <div class="kpi k-green"><span class="ico"><i class="fa fa-trophy"/></span><div><div class="lb">Điểm đạt trung bình</div><div class="big ok"><t t-esc="fmtNum(st.avgPts)"/> <small>đ/ngày</small></div><div class="sub">Tổng <t t-esc="fmtNum(st.sumPts)"/>đ / <t t-esc="st.doneDays"/> ngày đã duyệt</div></div></div>
+                                <div class="kpi k-purple"><span class="ico"><i class="fa fa-star"/></span><div><div class="lb">Xếp loại tạm tính</div><div class="big rate"><t t-esc="st.rating"/> (<t t-esc="st.pct"/>%)</div><div class="sub">Tính trên <t t-esc="fmtNum(st.sumPts)"/>/<t t-esc="fmtNum(st.sumStdDone)"/> điểm đã duyệt<t t-if="st.drafts">, đang làm <t t-esc="st.drafts"/> ngày</t></div></div></div>
+                            </div>
+                            <div class="dd_sec">
+                                <span class="t"><i class="fa fa-list"/> Chi tiết công việc theo ngày</span>
+                                <button type="button" class="dd_btn" t-on-click="() => this.onDoneExport(emp)"><i class="fa fa-download"/> Xuất Excel</button>
+                            </div>
                             <table class="o_store_done_table o_store_done_days">
                                 <thead>
-                                    <tr><th class="c">Ngày</th><th class="c">Ca làm</th><th class="c">Tổng việc</th><th class="c">Số lỗi</th><th class="c">Điểm đạt</th><th class="c">Điểm chuẩn</th><th class="c">Trạng thái</th><th class="c">Xếp loại</th><th class="c">Thao tác</th></tr>
+                                    <tr><th class="c">Ngày</th><th class="c">Ca làm</th><th class="c">Tổng việc</th><th class="c">Số lỗi</th><th class="c">Điểm đạt</th><th class="c">Điểm chuẩn</th><th class="c">Kết quả</th><th class="c">Xếp loại</th><th class="c">Thao tác</th></tr>
                                 </thead>
                                 <tbody>
                                     <tr class="day" t-foreach="doneDays(emp)" t-as="day" t-key="day.id" t-on-click="() => this.onDoneDay(day)">
@@ -291,8 +335,8 @@
                                         <td class="c" t-esc="day.errors"/>
                                         <td class="c"><b t-esc="fmtNum(day.points)"/></td>
                                         <td class="c" t-esc="fmtNum(day.std_points)"/>
-                                        <td class="c"><span t-att-class="'day_pill ' + dayTone(day)"><i t-attf-class="fa #{dayIcon(day)}"/> <t t-esc="dayLabel(day)"/></span></td>
-                                        <td class="c" t-esc="day.rating"/>
+                                        <td class="c"><span t-att-class="'day_pill ' + (day.evaluated ? 'is-ok' : 'is-wait')"><i t-attf-class="fa #{day.evaluated ? 'fa-check-circle' : 'fa-clock-o'}"/> <t t-esc="day.status"/></span></td>
+                                        <td class="c" t-esc="day.state === 'draft' ? 'Chờ duyệt' : day.rating"/>
                                         <td class="c"><button type="button" class="o_store_btn_view" t-on-click.stop="() => this.onDoneDay(day)"><i class="fa fa-eye"/> Xem</button>
                                             <t t-if="isAdminUser">
                                                 <button type="button" class="o_store_btn_icon is-edit" title="Chỉnh sửa" t-on-click.stop="() => this.onDoneDay(day)"><i class="fa fa-pencil"/></button>
@@ -303,6 +347,18 @@
                                         <td colspan="9" class="c">Không có ngày nào phù hợp với lựa chọn.</td>
                                     </tr>
                                 </tbody>
+                                <tfoot t-if="visibleDays(emp).length">
+                                    <tr class="sum">
+                                        <td class="c" colspan="2">TỔNG CỘNG / TRUNG BÌNH</td>
+                                        <td class="c" t-esc="st.total"/>
+                                        <td class="c" t-esc="st.errors"/>
+                                        <td class="c">TB: <t t-esc="fmtNum(st.avgPts)"/></td>
+                                        <td class="c">TB: <t t-esc="fmtNum(st.avgStd)"/></td>
+                                        <td class="c"><t t-esc="st.evalDays"/>/<t t-esc="st.days"/> Đã đánh giá</td>
+                                        <td class="c"><t t-esc="st.rating"/> (<t t-esc="st.pct"/>%)</td>
+                                        <td class="c">-</td>
+                                    </tr>
+                                </tfoot>
                             </table>
                             </div>
                         </div>
@@ -322,13 +378,26 @@
                                 </select></label>
                             <label class="f"><i class="fa fa-users"/>
                                 <select t-on-change="(ev) => this.onDoneFilter('storeId', ev)">
-                                    <option value="">Tất cả cửa hàng</option>
+                                    <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
                                     <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, state.done.storeId)" t-esc="'Cửa hàng: ' + st.display_name"/>
                                 </select></label>
                             <label class="f"><i class="fa fa-calendar"/>
                                 <select t-on-change="(ev) => this.onDoneFilter('month', ev)">
                                     <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === state.done.month" t-esc="'Tháng: ' + m.label.replace('Tháng ', '')"/>
                                 </select></label>
+                        </div>
+                        <div class="o_store_pickstores" t-if="state.needStore and !state.done.storeId">
+                            <span class="lbl"><i class="fa fa-building"/> Cửa hàng<t t-if="state.done.mien"> miền <t t-esc="state.done.mien === 'other' ? 'Khác' : state.done.mien"/></t> (<t t-esc="donePickStores.length"/>) - bấm để xem dữ liệu:
+                                <em class="legend"><i class="d done"/> Đã đánh giá xong <i class="d todo"/> Đã gửi check list, chờ đánh giá <i class="d none"/> Chưa gửi check list</em></span>
+                            <div class="grp" t-foreach="donePickGroups" t-as="g" t-key="g.key">
+                                <div class="grp_h" t-on-click="() => this.toggleMienGroup(g.key)">
+                                    <i t-attf-class="fa #{isMienOpen(g.key) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <t t-esc="g.label"/> (<t t-esc="g.stores.length"/>)
+                                </div>
+                                <div class="grp_b" t-if="isMienOpen(g.key)">
+                                    <button type="button" t-att-class="'chip ' + (state.done.storeStatus[st.id] === 'done' ? 'is-done' : state.done.storeStatus[st.id] === 'pending' ? 'is-pending' : 'is-none')" t-foreach="g.stores" t-as="st" t-key="st.id" t-on-click="() => this.onDonePickStore(st)" t-esc="st.display_name"/>
+                                </div>
+                            </div>
+                            <span class="none" t-if="!donePickStores.length">Không có cửa hàng nào thuộc miền này.</span>
                         </div>
                         <t t-if="state.done.monthly">
                             <div class="o_store_total_summary">
@@ -406,9 +475,233 @@
                     </div>
 
                 </div>
+                <div class="o_store_kpi_page" t-if="state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat'">
+                    <t t-set="kp" t-value="state.kpi"/>
+                    <div class="kp_tabs" t-if="kp.profile === 'kpi'">
+                        <button type="button" t-att-class="kp.tab === 'staff' ? 'active' : ''" t-on-click="() => this.onKpiTab('staff')">Phiếu KPI cá nhân</button>
+                        <button type="button" t-att-class="kp.tab === 'compare' ? 'active' : ''" t-on-click="() => this.onKpiTab('compare')">Bảng So Sánh Tổng Thể</button>
+                    </div>
+                    <div class="kp_bar">
+                        <label><span>Tháng:</span><DateTimeInput t-key="'kpi' + kp.month" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(kp.month + '-01')" onChange.bind="onKpiMonthPick" class="'o_store_date_input'"/></label>
+                        <label><span>Miền:</span>
+                            <select t-on-change="onKpiMien">
+                                <option value="" t-att-selected="!kp.mien">Tất cả miền</option>
+                                <option value="Nam" t-att-selected="kp.mien === 'Nam'">Miền Nam</option>
+                                <option value="ĐTT" t-att-selected="kp.mien === 'ĐTT'">Miền ĐTT</option>
+                                <option value="Bắc" t-att-selected="kp.mien === 'Bắc'">Miền Bắc</option>
+                                <option value="VP" t-att-selected="kp.mien === 'VP'">Văn phòng</option>
+                            </select></label>
+                        <label><span>Cửa hàng:</span>
+                            <select t-on-change="onKpiStore">
+                                <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
+                                <option t-foreach="kpiStores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, kp.storeId)" t-esc="st.display_name"/>
+                            </select></label>
+                        <label t-if="kp.tab === 'staff'"><span>Nhân viên:</span>
+                            <select t-on-change="onKpiStaff">
+                                <option t-foreach="kp.staffOpts" t-as="o" t-key="o.name" t-att-value="o.name" t-att-selected="o.name === kp.staff" t-esc="o.code ? o.name + ' (ID: ' + o.code + ')' : o.name"/>
+                            </select></label>
+                        <button type="button" class="btn btn-success text-white" t-on-click="onKpiExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    </div>
+                    <div class="o_store_pickstores" t-if="needStorePick">
+                        <span class="lbl"><i class="fa fa-building"/> Cửa hàng<t t-if="kp.mien"> miền <t t-esc="kp.mien"/></t> (<t t-esc="kpiStores.length"/>) - bấm để xem dữ liệu:
+                            <em class="legend"><i class="d done"/> Đã đánh giá xong <i class="d todo"/> Đã gửi check list, chờ đánh giá <i class="d none"/> Chưa gửi check list</em></span>
+                        <div class="grp" t-foreach="kpiPickGroups" t-as="g" t-key="g.key">
+                            <div class="grp_h" t-on-click="() => this.toggleMienGroup(g.key)">
+                                <i t-attf-class="fa #{isMienOpen(g.key, kp.mien) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <t t-esc="g.label"/> (<t t-esc="g.stores.length"/>)
+                            </div>
+                            <div class="grp_b" t-if="isMienOpen(g.key, kp.mien)">
+                                <button type="button" t-att-class="'chip ' + (kp.storeStatus[st.id] === 'done' ? 'is-done' : kp.storeStatus[st.id] === 'pending' ? 'is-pending' : 'is-none')" t-foreach="g.stores" t-as="st" t-key="st.id" t-on-click="() => this.onKpiPickStore(st)" t-esc="st.display_name"/>
+                            </div>
+                        </div>
+                        <span class="none" t-if="!kpiStores.length">Không có cửa hàng nào thuộc miền này.</span>
+                    </div>
+                    <t t-if="kp.tab === 'compare' and kp.profile === 'kpi'">
+                        <div class="kp_head"><div class="t1">BẢNG SO SÁNH TỔNG THỂ KPI NHÂN VIÊN BÁN HÀNG</div>
+                            <div class="t2">Tháng <t t-esc="kp.overview ? kp.overview.month_label : ''"/> | Nhóm theo cửa hàng, xếp hạng theo tổng điểm KPI giảm dần trong từng cửa hàng | Bấm một dòng để xem phiếu cá nhân</div></div>
+                        <div class="kp_mcards" t-if="kp.overview and kp.overview.rows.length">
+                            <t t-foreach="kpiOverviewGroups" t-as="g" t-key="g.store">
+                                <div class="mc_grp"><i class="fa fa-building"/> <b t-esc="g.store"/> <span class="cnt"><t t-esc="g.rows.length"/> NV · TB <t t-esc="fmtKpi(g.avg)"/></span></div>
+                                <div class="mc" t-foreach="g.rows" t-as="r" t-key="r.name" t-on-click="() =&gt; this.onKpiOpen(r)">
+                                    <div class="mc_top">
+                                        <span t-attf-class="mc_rank r#{r.rank_in_store &lt;= 3 ? r.rank_in_store : 0}" t-esc="r.rank_in_store"/>
+                                        <div class="mc_who"><b t-esc="r.name"/><small><t t-esc="r.code or '-'"/> · <t t-esc="r.store"/></small></div>
+                                        <div class="mc_tot"><strong t-esc="fmtKpi(r.kpi_total)"/><small><t t-esc="r.rank"/> · <t t-esc="r.bonus + '%'"/></small></div>
+                                    </div>
+                                    <div class="mc_meta">
+                                        <span>Ca <b t-esc="r.shifts"/></span><span>Việc <b t-esc="r.jobs"/></span><span>NS <b t-esc="r.productivity"/></span><span class="bad">Lỗi <b t-esc="r.errors"/></span>
+                                    </div>
+                                    <div class="mc_grid">
+                                        <div><small>Checklist/40</small><b t-esc="fmtKpi(r.kpi_checklist)"/></div>
+                                        <div><small>Hoàn thành/15</small><b t-esc="fmtKpi(r.kpi_complete)"/></div>
+                                        <div><small>Kỷ luật/15</small><b t-esc="fmtKpi(r.kpi_discipline)"/></div>
+                                        <div><small>Doanh số/20</small><b t-esc="fmtKpi(r.kpi_sales)"/></div>
+                                        <div><small>Thái độ/10</small><b t-esc="fmtKpi(r.kpi_attitude)"/></div>
+                                    </div>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="kp_scroll kp_desktop" t-if="kp.overview and kp.overview.rows.length">
+                        <table class="kp_table kp_cmp">
+                            <thead><tr>
+                                <th>Hạng</th><th>Nhân viên</th><th>Mã NV</th><th>Cửa hàng</th><th>Ca HT / Lịch</th><th>Việc làm / Giao</th><th>Năng suất Checklist</th><th>Số lỗi</th>
+                                <th>KPI Checklist (40)</th><th>Hoàn thành việc (15)</th><th>Kỷ luật (15)</th><th>Doanh số (20)</th><th>Thái độ (10)</th><th>TỔNG KPI (100)</th><th>Xếp loại</th><th>Hệ số thưởng</th>
+                            </tr></thead>
+                            <tbody>
+                                <t t-foreach="kpiOverviewGroups" t-as="g" t-key="g.store">
+                                    <tr class="kp_grp"><td colspan="16"><i class="fa fa-building"/> Cửa hàng: <b t-esc="g.store"/> <span class="cnt">(<t t-esc="g.rows.length"/> nhân viên · TB KPI <t t-esc="fmtKpi(g.avg)"/>)</span></td></tr>
+                                    <tr t-foreach="g.rows" t-as="r" t-key="r.name" class="kp_click" t-on-click="() => this.onKpiOpen(r)">
+                                        <td class="c" t-esc="r.rank_in_store"/><td class="b" t-esc="r.name"/><td class="c" t-esc="r.code or '-'"/><td t-esc="r.store"/>
+                                        <td class="c" t-esc="r.shifts"/><td class="c" t-esc="r.jobs"/><td class="c" t-esc="r.productivity"/><td class="c" t-esc="r.errors"/>
+                                        <td class="c" t-esc="fmtKpi(r.kpi_checklist)"/><td class="c" t-esc="fmtKpi(r.kpi_complete)"/><td class="c" t-esc="fmtKpi(r.kpi_discipline)"/>
+                                        <td class="c" t-esc="fmtKpi(r.kpi_sales)"/><td class="c" t-esc="fmtKpi(r.kpi_attitude)"/><td class="c b" t-esc="fmtKpi(r.kpi_total)"/>
+                                        <td class="c b" t-esc="r.rank"/><td class="c" t-esc="r.bonus + '%'"/>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có nhân viên nào có lịch hoặc checklist trong tháng đã chọn.</div>
+                    </t>
+                    <t t-elif="kp.data">
+                        <t t-set="kd" t-value="kp.data"/>
+                        <t t-if="kp.profile === 'productivity'">
+                        <div class="kd_wrap">
+                            <div class="kd_top">
+                                <span class="ico"><i class="fa fa-line-chart"/></span>
+                                <div class="ttl"><t t-esc="kd.labels.title"/> — <t t-esc="kd.staff.toUpperCase()"/></div>
+                                <span class="chip"><i class="fa fa-calendar"/> Tháng <t t-esc="kd.month_label"/></span>
+                                <span class="chip"><i class="fa fa-building"/> Cửa hàng: <t t-esc="kd.store"/></span>
+                            </div>
+                            <div class="kd_info">
+                                <span><i class="fa fa-user"/> Mã NV: <b t-esc="kd.code or '-'"/></span>
+                                <span t-if="kd.asm"><i class="fa fa-star"/> Cấp đánh giá: <b><t t-esc="kd.asm"/> (ASM)</b></span>
+                                <span><i class="fa fa-refresh"/> <t t-esc="kd.labels.subtitle_extra"/></span>
+                            </div>
+                            <div class="kd_cards">
+                                <div class="cd"><span class="ic blue"><i class="fa fa-calendar-check-o"/></span><div class="tx"><span class="lb">Số ca hoàn thành / Lịch</span>
+                                    <b t-esc="kd.summary.shifts"/><div class="bar"><i t-attf-style="width: #{Math.min(kd.summary.shifts_pct, 100)}%"/></div></div></div>
+                                <div class="cd"><span class="ic green"><i class="fa fa-check"/></span><div class="tx"><span class="lb">Tổng việc đã làm / Giao</span>
+                                    <b class="ok" t-esc="kd.summary.jobs"/><div class="bar g"><i t-attf-style="width: #{Math.min(kd.summary.jobs_pct, 100)}%"/></div></div></div>
+                                <div class="cd"><span class="ic purple"><i class="fa fa-trophy"/></span><div class="tx"><span class="lb">Tỷ lệ HT đầu việc</span><b class="pp" t-esc="kd.summary.complete"/></div></div>
+                                <div class="cd"><span class="ic amber"><i class="fa fa-star"/></span><div class="tx"><span class="lb">Điểm đạt / Điểm chuẩn</span><b t-esc="kd.summary.points"/></div></div>
+                                <div class="cd"><span class="ic teal"><i class="fa fa-tachometer"/></span><div class="tx"><span class="lb">Hiệu suất Checklist</span><b class="tl" t-esc="kd.summary.productivity"/></div></div>
+                                <div class="cd red"><span class="ic redic"><i class="fa fa-exclamation"/></span><div class="tx"><span class="lb">Số lỗi vi phạm</span><b class="bad" t-esc="kd.summary.errors"/></div></div>
+                                <div class="cd"><span class="ic green2"><i class="fa fa-star"/></span><div class="tx"><span class="lb">Điểm TB / Ca</span><b class="ok" t-esc="kd.summary.avg"/></div></div>
+                            </div>
+                            <div class="kd_sec"><i class="fa fa-list"/> CHI TIẾT TỪNG TIÊU CHÍ ĐÁNH GIÁ</div>
+                            <div class="kp_scroll">
+                            <table class="kd_table">
+                                <thead><tr>
+                                    <th>STT</th><th t-esc="kd.labels.col_first"/><th t-esc="kd.labels.col_source"/><th>Trọng số<br/>(%)</th><th>Điểm tối đa<br/>(Thang 100)</th>
+                                    <th>Tỷ lệ đạt<br/>thực tế (%)</th><th class="hl" t-esc="kd.labels.col_kpi"/><th>Chỉ tiêu<br/>chuẩn</th><th>Ghi chú &amp; Diễn giải chi tiết</th>
+                                </tr></thead>
+                                <tbody>
+                                    <tr t-foreach="kd.groups" t-as="g" t-key="g.no">
+                                        <td class="c"><span t-attf-class="bdg b#{g_index % 5}" t-esc="g.no"/></td>
+                                        <td class="nm" t-esc="g.title"/><td class="c" t-esc="g.source"/>
+                                        <td class="c" t-esc="fmtKpiPct(g.weight)"/><td class="c" t-esc="fmtKpi(g.max)"/>
+                                        <td class="c pc" t-esc="fmtKpiPct(g.pct)"/><td class="c pt" t-esc="fmtKpi(g.kpi)"/>
+                                        <td class="c" t-esc="g.target"/><td class="nt" t-esc="g.note"/>
+                                    </tr>
+                                    <tr class="sumrow">
+                                        <td class="c"><i class="fa fa-star"/></td><td class="nm" t-esc="kd.labels.sub_label"/><td/>
+                                        <td class="c b" t-esc="fmtKpiPct(kd.sub.weight)"/><td class="c b" t-esc="fmtKpi(kd.sub.max)"/><td class="c b" t-esc="fmtKpiPct(kd.sub.pct)"/>
+                                        <td class="c"><span class="pill" t-esc="fmtKpi(kd.sub.kpi)"/></td><td class="c b" t-esc="kd.sub.target"/><td class="nt" t-esc="kd.sub.note"/>
+                                    </tr>
+                                    <tr t-foreach="kd.others" t-as="o" t-key="o.no" class="pillar">
+                                        <td class="c"><span class="bdg bn" t-esc="o.no"/></td>
+                                        <td class="nm" t-esc="o.title"/><td class="c" t-esc="o.source"/>
+                                        <td class="c" t-esc="fmtKpiPct(o.weight)"/><td class="c" t-esc="fmtKpi(o.max)"/>
+                                        <td class="c pc"><t t-if="o.extra"><t t-esc="o.extra"/> (<t t-esc="fmtKpiPct(o.pct)"/>)</t><t t-else=""><t t-esc="fmtKpiPct(o.pct)"/></t></td>
+                                        <td class="c pt" t-esc="fmtKpi(o.kpi)"/><td class="c" t-esc="o.target"/><td class="nt" t-esc="o.note"/>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            </div>
+                            <div class="kd_foot">
+                                <div class="f1">
+                                    <div class="l"><i class="fa fa-trophy"/> <t t-esc="kd.labels.total_label.replace('%s', kd.month_label).replace('%d', kd.total.weight)"/></div>
+                                    <div class="mid">
+                                        <div class="nums"><b t-esc="fmtKpiPct(kd.total.pct)"/><i/><b class="s"><t t-esc="fmtKpi(kd.total.kpi)"/> / <t t-esc="kd.total.weight"/> đ</b></div>
+                                        <div class="dn" t-attf-style="--p: #{Math.min(kd.total.pct, 100)}"><span t-esc="fmtKpiPct(kd.total.pct)"/></div>
+                                    </div>
+                                    <div class="tag"><i class="fa fa-check-circle"/> <t t-esc="kd.labels.total_note"/></div>
+                                </div>
+                                <div class="f2">
+                                    <div class="h"><i class="fa fa-star"/> <t t-esc="kd.labels.rank_label"/></div>
+                                    <div class="rk" t-esc="kd.rank"/>
+                                    <div class="th">Ngưỡng chuẩn:<br/>≥95đ Hạng A | 85–94.9đ Hạng B | 75–84.9đ Hạng C | &lt;75đ Hạng D</div>
+                                </div>
+                            </div>
+                        </div>
+                        </t>
+                        <t t-else="">
+                        <div class="kp_head">
+                            <div class="t1"><t t-esc="kd.labels.title"/> — <t t-esc="kd.staff.toUpperCase()"/></div>
+                            <div class="t2">Cửa hàng: <t t-esc="kd.store"/> | Mã NV: <t t-esc="kd.code or '-'"/> | Kỳ: Tháng <t t-esc="kd.month_label"/><t t-if="kd.asm"> | Cấp đánh giá: <t t-esc="kd.asm"/> (ASM)</t><t t-if="kd.labels.subtitle_extra"> | <t t-esc="kd.labels.subtitle_extra"/></t></div>
+                        </div>
+                        <div class="kp_sum">
+                            <div><span>Mã NV</span><b t-esc="kd.code or '-'"/></div>
+                            <div><span>Số ca hoàn thành / Lịch</span><b t-esc="kd.summary.shifts"/></div>
+                            <div><span>Tổng việc đã làm / Giao</span><b t-esc="kd.summary.jobs"/></div>
+                            <div><span>Tỷ lệ HT đầu việc</span><b t-esc="kd.summary.complete"/></div>
+                            <div><span>Điểm đạt / Điểm chuẩn</span><b t-esc="kd.summary.points"/></div>
+                            <div><span>Năng suất Checklist</span><b t-esc="kd.summary.productivity"/></div>
+                            <div><span>Số lỗi vi phạm</span><b t-esc="kd.summary.errors"/></div>
+                            <div><span>Điểm TB / Ca</span><b t-esc="kd.summary.avg"/></div>
+                            <div><span t-esc="kd.labels.status_label"/><b t-esc="kd.summary.status"/></div>
+                        </div>
+                        <div class="kp_scroll">
+                        <table class="kp_table">
+                            <thead><tr>
+                                <th>STT</th><th t-esc="kd.labels.col_first"/><th t-esc="kd.labels.col_source"/><th>Trọng số (%)</th><th>Điểm tối đa<br/>(Thang 100)</th>
+                                <th>Tỷ lệ đạt thực tế (%)</th><th t-esc="kd.labels.col_kpi"/><th>Chỉ tiêu chuẩn</th><th>Ghi chú &amp; Diễn giải kết quả</th>
+                            </tr></thead>
+                            <tbody>
+                                <tr t-foreach="kd.groups" t-as="g" t-key="g.no">
+                                    <td class="c" t-esc="g.no"/><td t-esc="g.title"/><td class="c" t-esc="g.source"/>
+                                    <td class="c" t-esc="fmtKpiPct(g.weight)"/><td class="c" t-esc="fmtKpi(g.max)"/><td class="c" t-esc="fmtKpiPct(g.pct)"/>
+                                    <td class="c b" t-esc="fmtKpi(g.kpi)"/><td class="c" t-esc="g.target"/><td t-esc="g.note"/>
+                                </tr>
+                                <tr class="sec">
+                                    <td/><td t-esc="kd.labels.sub_label"/><td/>
+                                    <td class="c" t-esc="fmtKpiPct(kd.sub.weight)"/><td class="c" t-esc="fmtKpi(kd.sub.max)"/><td class="c" t-esc="fmtKpiPct(kd.sub.pct)"/>
+                                    <td class="c" t-esc="fmtKpi(kd.sub.kpi)"/><td class="c" t-esc="kd.sub.target"/><td t-esc="kd.sub.note"/>
+                                </tr>
+                                <tr t-foreach="kd.others" t-as="o" t-key="o.no">
+                                    <td class="c" t-esc="o.no"/><td class="b" t-esc="o.title"/><td class="c" t-esc="o.source"/>
+                                    <td class="c" t-esc="fmtKpiPct(o.weight)"/><td class="c" t-esc="fmtKpi(o.max)"/>
+                                    <td class="c">
+                                        <t t-if="o.manual">
+                                            <input type="text" class="kp_in" t-att-value="o.pct === null ? '' : String(o.pct).replace('.', ',')" placeholder="% (0-100)"
+                                                   t-att-disabled="!state.isManager" t-on-change="(ev) => this.onKpiManual(o, ev)"/>
+                                        </t>
+                                        <t t-elif="o.extra"><t t-esc="o.extra"/> (<t t-esc="fmtKpiPct(o.pct)"/>)</t>
+                                        <t t-else=""><t t-esc="fmtKpiPct(o.pct)"/></t>
+                                    </td>
+                                    <td class="c b" t-esc="fmtKpi(o.kpi)"/><td class="c" t-esc="o.target"/><td t-esc="o.note"/>
+                                </tr>
+                                <tr class="tot">
+                                    <td/><td t-esc="kd.labels.total_label.replace('%s', kd.month_label).replace('%d', kd.total.weight)"/><td/>
+                                    <td class="c" t-esc="fmtKpiPct(kd.total.weight)"/><td class="c" t-esc="fmtKpi(kd.total.max)"/><td class="c" t-esc="fmtKpiPct(kd.total.pct)"/>
+                                    <td class="c" t-esc="fmtKpi(kd.total.kpi)"/><td class="c" t-esc="kd.total.target"/><td t-esc="kd.total.note"/>
+                                </tr>
+                            </tbody>
+                        </table>
+                        </div>
+                        <div class="kp_rank">
+                            <div><span t-esc="kd.labels.rank_label"/><b t-esc="kd.rank"/>
+                                <em>Ngưỡng chuẩn: ≥95đ Hạng A | 85–94.9đ Hạng B | 75–84.9đ Hạng C | &lt;75đ Hạng D</em></div>
+                            <div><span t-esc="kd.labels.bonus_label"/><b t-esc="kd.bonus + '%'"/>
+                                <em>Hạng A: 120% | Hạng B: 100% | Hạng C: 80% | Hạng D: 0%</em></div>
+                        </div>
+                        </t>
+                    </t>
+                    <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có nhân viên nào có lịch hoặc checklist trong tháng đã chọn.</div>
+                </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs'">
                     <div class="o_store_job_bar">
-                        <label><span>Ngày làm việc:</span>
+                        <label><span>Ngày check list:</span>
                             <DateTimeInput t-key="state.job.date + '|' + (state.job.dateKey or 0)" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(state.job.date)" onChange.bind="onJobDatePick" class="'o_store_date_input'"/></label>
                         <label><span>Cửa hàng:</span>
                             <select t-on-change="onJobStore">
@@ -416,6 +709,7 @@
                                 <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
                                         t-att-selected="jobSel(st.id, state.job.storeId)" t-esc="st.display_name"/>
                             </select></label>
+                        <button type="button" class="btn btn-success text-white o_store_job_export" t-if="state.job.check" t-on-click="onJobExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                         <span class="o_store_job_sum" t-if="state.job.storeId">
                             Có lịch làm: <b t-esc="state.job.staff.length"/>/<t t-esc="state.job.storeStaff"/> NV
                             <t t-if="state.job.off.length"> (Nghỉ OFF: <t t-esc="state.job.off.length"/>)</t>
@@ -447,7 +741,7 @@
                                 <t t-foreach="state.job.check.steps || []" t-as="st" t-key="st.no">
                                     <t t-if="st_index > 0"> → </t><b t-esc="st.code"/><t t-if="st.name"> (<t t-esc="st.name"/>)</t>
                                 </t></span>
-                            <span class="lock" t-if="jobLocked"> · <t t-if="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
+                            <span class="lock" t-if="jobLocked"> · <t t-if="state.job.check.locked_expired">Đã quá 4 ngày so với ngày check list nên hệ thống tự khóa (hạn chỉnh sửa từ ngày <t t-esc="state.job.check.edit_deadline"/>); phiếu chưa được đánh giá tính điểm mặc định 0đ.</t><t t-elif="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
                         </div>
                         <table class="o_store_job_table o_store_job_cardtbl">
                             <thead>
@@ -508,7 +802,7 @@
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
                     <select t-if="!reportNavs.includes(state.activeNav) or isSupLayout" t-on-change="(ev) => this.onListFilter('store', ev)">
-                        <option value="">Tất cả cửa hàng</option>
+                        <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
                         <option t-foreach="isSupLayout ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
@@ -560,7 +854,7 @@
                                         <td class="c-name" t-esc="row.store_name"/>
                                         <td/>
                                         <td/>
-                                        <td t-foreach="schedDays" t-as="d" t-key="d"/>
+                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day c-wd" t-att-class="schedWeekday(d) === 'CN' ? 'is-sun' : ''" t-esc="schedWeekday(d)"/>
                                     </tr>
                                     <tr t-else="">
                                         <td t-esc="row.mien"/>
@@ -1186,6 +1480,7 @@
                 </div>
             </div>
             <div class="o_store_shell_home o_store_dash" t-elif="state.dash">
+                <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
                 <div class="o_store_dash_top">
                     <div class="o_store_dash_title">
                         <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
@@ -1208,7 +1503,7 @@
                             <option value="other">Khác</option>
                         </select>
                         <select t-on-change="(ev) => this.onFilter('store', ev)">
-                            <option value="">Tất cả cửa hàng</option>
+                            <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
                             <option t-foreach="state.dash.store_options" t-as="st" t-key="st.id" t-att-value="st.id" t-esc="st.name"/>
                         </select>
                     </div>

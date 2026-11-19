@@ -284,6 +284,10 @@ export class PhanHeAppSidebar extends Component {
         this.open("lug_phan_he.action_phan_he_dashboard_camera");
     }
 
+    onCheckCamera() {
+        this.open("camera_checklist.action_camera_shell");
+    }
+
     onAttendance() {
         this.open("lug_phan_he.action_phan_he_dashboard_attendance");
     }

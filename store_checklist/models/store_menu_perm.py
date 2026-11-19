@@ -12,14 +12,21 @@ FOLDERS = [
     ('nvbh_work', 'Cài đặt › Công việc checklist NVBH'),
 ]
 MENUS = [
+    ('overview', 'Tổng quan', 'audit'),
     ('nvbh', 'Checklist NVBH', 'audit'),
+    ('nvbh_staff', 'Checklist NVBH › Nhân sự', 'audit'),
+    ('nvbh_jobs', 'Checklist NVBH › Công việc check list', 'audit'),
+    ('nvbh_done', 'Checklist NVBH › Danh sách checklist NV', 'audit'),
+    ('nvbh_mg', 'Checklist NVBH › Quản lý & đánh giá', 'audit'),
     ('asm', 'Checklist ASM', 'audit'),
     ('gs', 'Checklist GS', 'audit'),
     ('review', 'Phiếu Đánh Giá', 'audit'),
     ('review_list', 'Danh Sách Đánh Giá', 'audit'),
     ('report_gs', 'Báo cáo GS', 'report'),
-    ('report_store', 'Báo cáo theo cửa hàng', 'report'),
-    ('report_rank', 'Báo cáo xếp loại', 'report'),
+    ('report_nvbh', 'BC Checklist NVBH KPI', 'report'),
+    ('report_nsuat', 'BC Năng suất NVBH', 'report'),
+    ('report_store', 'Báo cáo Audit CH', 'report'),
+    ('report_rank', 'Báo cáo xếp loại Audit CH', 'report'),
     ('report_manager', 'Báo cáo theo quản lý', 'report'),
     ('report_flow', 'Sơ đồ quy trình vận hành giám sát', 'report'),
     ('violation_stores', 'Cửa hàng sai phạm', 'violation'),
@@ -35,6 +42,20 @@ MENUS = [
     ('nvbh_rating', 'Xếp loại', 'nvbh_work'),
 ]
 OPS = ('read', 'create', 'write', 'unlink', 'export')
+# Mục mới chưa có trong ma trận đã lưu thì kế thừa quyền của mục cũ tương ứng (để user hiện có không bị mất quyền sau khi cập nhật)
+PERM_INHERIT = {
+    'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
+    'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs',
+}
+NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
+
+
+def perm_of(perms, key):
+    """Quyền {op: bool} của một mục trong ma trận đã lưu; mục chưa có thì lấy theo mục kế thừa."""
+    perms = perms or {}
+    if key in perms:
+        return perms[key] or {}
+    return perms.get(PERM_INHERIT.get(key), {}) or {}
 
 
 class StorePermMixin(models.AbstractModel):
@@ -109,7 +130,10 @@ class StorePermRule(models.Model):
         rules = self.sudo().search([('user_ids', 'in', user.id)])
         if not rules:
             return None
-        return {key: {op: any((r.perms or {}).get(key, {}).get(op) for r in rules) for op in OPS} for key, _l, _f in MENUS}
+        rights = {key: {op: any(perm_of(r.perms, key).get(op) for r in rules) for op in OPS} for key, _l, _f in MENUS}
+        for op in OPS:  # 'nvbh' (phiếu / dữ liệu NVBH) mở khi có ít nhất một mục con NVBH
+            rights['nvbh'][op] = rights['nvbh'][op] or any(rights[k][op] for k in NVBH_SUB_KEYS)
+        return rights
 
     @api.model
     def check_export(self):
@@ -142,7 +166,7 @@ class StorePermRule(models.Model):
             'rules': [{
                 'id': r.id, 'group': r.group_label or '',
                 'users': [{'id': u.id, 'name': u.name} for u in r.user_ids],
-                'perms': {k: {**blank, **(r.perms or {}).get(k, {})} for k, _l, _f in MENUS},
+                'perms': {k: {**blank, **perm_of(r.perms, k)} for k, _l, _f in MENUS},
             } for r in self.sudo().search([])],
         }
 

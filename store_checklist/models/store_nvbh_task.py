@@ -18,6 +18,9 @@ TASK_SHIFTS = [
     ('afternoon', 'Ca chiều'),
 ]
 TASK_STORE_TYPES = [('ALL', 'ALL'), ('TTTM', 'TTTM')]
+# Thứ áp dụng của công việc: (trường, nhãn, chỉ số thứ theo date.weekday())
+TASK_WEEKDAYS = [('wd_mon', 'T2', 0), ('wd_tue', 'T3', 1), ('wd_wed', 'T4', 2), ('wd_thu', 'T5', 3),
+                 ('wd_fri', 'T6', 4), ('wd_sat', 'T7', 5), ('wd_sun', 'CN', 6)]
 
 
 class StoreNvbhTask(models.Model):
@@ -49,6 +52,32 @@ class StoreNvbhTask(models.Model):
     controller = fields.Char(string='Người kiểm soát', default='CHT')
     final_check = fields.Char(string='Bộ phận phúc tra cuối')
     score = fields.Integer(string='Điểm chuẩn', default=5)
+    # Thứ áp dụng: mặc định làm việc từ T2 đến CN; bỏ tick thứ nào thì công việc không xuất hiện trong checklist của ngày thứ đó
+    wd_mon = fields.Boolean(string='T2', default=True)
+    wd_tue = fields.Boolean(string='T3', default=True)
+    wd_wed = fields.Boolean(string='T4', default=True)
+    wd_thu = fields.Boolean(string='T5', default=True)
+    wd_fri = fields.Boolean(string='T6', default=True)
+    wd_sat = fields.Boolean(string='T7', default=True)
+    wd_sun = fields.Boolean(string='CN', default=True)
+    weekdays_label = fields.Char(string='Thứ áp dụng', compute='_compute_weekdays_label')
+
+    @api.depends('wd_mon', 'wd_tue', 'wd_wed', 'wd_thu', 'wd_fri', 'wd_sat', 'wd_sun')
+    def _compute_weekdays_label(self):
+        for rec in self:
+            days = [label for fname, label, _i in TASK_WEEKDAYS if rec[fname]]
+            rec.weekdays_label = 'T2 - CN' if len(days) == 7 else ', '.join(days)
+
+    def runs_on(self, work_date):
+        """Công việc có áp dụng cho ngày work_date (theo thứ trong tuần) hay không; không có ngày thì coi là có."""
+        self.ensure_one()
+        if not work_date:
+            return True
+        day = fields.Date.to_date(work_date)
+        for fname, _label, idx in TASK_WEEKDAYS:
+            if idx == day.weekday():
+                return bool(self[fname])
+        return True
 
     @api.depends('shift_type_ids')
     def _compute_shift_codes(self):
@@ -61,6 +90,9 @@ class StoreNvbhTask(models.Model):
         res = super().write(vals)
         if 'score' in vals:
             self._sync_check_line_scores()
+        if {'wd_mon', 'wd_tue', 'wd_wed', 'wd_thu', 'wd_fri', 'wd_sat', 'wd_sun', 'shift_type_ids'} & set(vals):
+            # đổi Thứ / Loại ca áp dụng: cập nhật lại các phiếu đang thực hiện
+            self.env['store.nvbh.check']._sync_open_checks_by_weekday()
         return res
 
     def _sync_check_line_scores(self):
@@ -101,7 +133,7 @@ class StoreNvbhTask(models.Model):
         }
 
     _XLS_HEAD = ['STT', 'Nhóm công việc', 'Tên công việc', 'Loại ca áp dụng', 'Loại cửa hàng', 'Khung giờ / Thời hạn',
-                 'Người thực hiện', 'Người kiểm soát', 'Bộ phận phúc tra cuối', 'Điểm chuẩn']
+                 'Người thực hiện', 'Người kiểm soát', 'Bộ phận phúc tra cuối', 'Điểm chuẩn', 'Thứ áp dụng']
 
     @api.model
     def export_xlsx(self):
@@ -117,12 +149,12 @@ class StoreNvbhTask(models.Model):
                                 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
         cell = book.add_format({'border': 1, 'valign': 'top', 'text_wrap': True})
         num = book.add_format({'border': 1, 'valign': 'top', 'num_format': '0.##'})
-        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [6, 30, 52, 28, 14, 26, 26, 18, 22, 12])):
+        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [6, 30, 52, 28, 14, 26, 26, 18, 22, 12, 22])):
             sheet.write(0, i, h, head)
             sheet.set_column(i, i, w)
         for r, t in enumerate(tasks, 1):
             vals = [t.sequence, groups.get(t.task_group, ''), t.name, ', '.join(t.shift_type_ids.mapped('name')), t.store_type or '',
-                    t.time_slot or '', t.executor or '', t.controller or '', t.final_check or '', t.score]
+                    t.time_slot or '', t.executor or '', t.controller or '', t.final_check or '', t.score, t.weekdays_label]
             for c, v in enumerate(vals):
                 sheet.write(r, c, v, num if c in (0, 9) else cell)
         sheet.write(len(tasks) + 1, 8, 'Tổng', head)
@@ -228,6 +260,18 @@ class StoreNvbhTask(models.Model):
                                ('Người kiểm soát', 'controller'), ('Bộ phận phúc tra cuối', 'final_check')):
                 if xls.casefold() in col:
                     vals[fname] = get(r, xls)
+            if 'thứ áp dụng' in col and get(r, 'Thứ áp dụng'):
+                wtxt = get(r, 'Thứ áp dụng').upper().replace(' ', '')
+                if wtxt in ('T2-CN', 'T2–CN', 'CẢTUẦN', 'ALL'):
+                    picked = {f for f, _l, _i in TASK_WEEKDAYS}
+                else:
+                    labels = {label: f for f, label, _i in TASK_WEEKDAYS}
+                    tokens = [x for x in wtxt.replace(';', ',').replace('|', ',').split(',') if x]
+                    if not tokens or any(t not in labels for t in tokens):
+                        errors.append('Dòng %s: Thứ áp dụng "%s" không hợp lệ (T2, T3, T4, T5, T6, T7, CN; cách nhau dấu phẩy)' % (n, get(r, 'Thứ áp dụng')))
+                        continue
+                    picked = {labels[t] for t in tokens}
+                vals.update({f: f in picked for f, _l, _i in TASK_WEEKDAYS})
             rec = self.search([('name', '=', name)], limit=1)
             try:
                 if rec:

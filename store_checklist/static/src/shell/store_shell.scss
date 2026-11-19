@@ -1805,7 +1805,9 @@
 .o_store_done_page .day_pill.is-wait{background: #f1f5f9; color: #64748b;}
 
 /* Popup chi tiết công việc theo ngày của nhân viên */
-.o_store_done_page .o_store_done_popup{position: fixed; top: 108px; left: 306px; right: 0; bottom: 0; z-index: 1040; background: rgba(15, 23, 42, .45); display: flex; align-items: stretch; justify-content: stretch; padding: 6px 6px 30px 0;}
+.o_store_done_page .o_store_done_popup::before{content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 12px; z-index: 5; cursor: col-resize; background: linear-gradient(to right, transparent 3px, rgba(109, 40, 217, 0.35) 3px, rgba(109, 40, 217, 0.35) 6px, transparent 6px);}
+.o_store_done_page .o_store_done_popup:hover::before{background: linear-gradient(to right, transparent 2px, #8b5cf6 2px, #8b5cf6 7px, transparent 7px);}
+.o_store_done_page .o_store_done_popup{position: fixed; top: 108px; left: var(--store-sidebar-w, 306px); right: 0; bottom: 0; z-index: 1040; background: rgba(15, 23, 42, .45); display: flex; align-items: stretch; justify-content: stretch; padding: 6px 6px 30px 0;}
 .o_store_done_page .o_store_done_popup .o_store_done_detail{margin: 0; width: 100%; height: 100%; display: flex; flex-direction: column; box-shadow: 0 20px 50px rgba(15, 23, 42, .35);}
 .o_store_done_page .o_store_done_popup .dd_head{gap: 14px;}
 .o_store_done_page .o_store_done_popup .dd_head b{flex: 1 1 auto;}
@@ -1813,6 +1815,36 @@
 .o_store_done_page .o_store_done_popup .dd_close{border: 0; background: transparent; font-size: 1.2rem; color: #475569; cursor: pointer; padding: 2px 8px;}
 .o_store_done_page .o_store_done_popup .dd_close:hover{color: #dc2626;}
 .o_store_done_page .o_store_done_popup .dd_body{overflow: auto;}
+/* Popup "Chỉ tiêu công việc theo ngày" theo mẫu: tiêu đề + 5 thẻ KPI + bảng có dòng tổng */
+.o_store_done_page .o_store_done_popup .o_store_done_detail{background: #f5f7fb; border-radius: 14px; padding: 14px 18px;}
+.o_store_done_page .o_store_done_popup .dd_head{padding-bottom: 12px; border-bottom: 1px solid #d6dbea; margin-bottom: 14px;}
+.o_store_done_page .o_store_done_popup .dd_head .dd_ico{width: 44px; height: 44px; border-radius: 12px; background: #6d4fc9; color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; flex: 0 0 auto;}
+.o_store_done_page .o_store_done_popup .dd_head .dd_title{flex: 1 1 auto;}
+.o_store_done_page .o_store_done_popup .dd_head .dd_title .t1{font-size: 1.35rem; font-weight: 800; color: #1e1b4b;}
+.o_store_done_page .o_store_done_popup .dd_head .dd_title .t2{font-weight: 700; color: #4338ca; text-transform: uppercase; font-size: .95rem;}
+.o_store_done_page .o_store_done_popup .dd_head .dd_toggle, .o_store_done_page .o_store_done_popup .dd_head .dd_pend{background: #fff; border: 1px solid #d6dbea; border-radius: 10px; padding: 6px 12px;}
+.o_store_done_page .o_store_done_popup .dd_kpis{display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px;}
+.o_store_done_page .o_store_done_popup .kpi{display: flex; align-items: center; gap: 12px; padding: 14px; border-radius: 14px; border: 1px solid #e2e8f0; background: #fff;}
+.o_store_done_page .o_store_done_popup .kpi .ico{width: 46px; height: 46px; flex: 0 0 auto; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.3rem; color: #fff;}
+.o_store_done_page .o_store_done_popup .kpi .lb{font-size: .85rem; color: #475569;}
+.o_store_done_page .o_store_done_popup .kpi .big{font-size: 1.6rem; font-weight: 800; color: #0f172a; line-height: 1.2;}
+.o_store_done_page .o_store_done_popup .kpi .big small{font-size: .9rem; font-weight: 700;}
+.o_store_done_page .o_store_done_popup .kpi .big.bad{color: #dc2626;}
+.o_store_done_page .o_store_done_popup .kpi .big.ok{color: #15803d;}
+.o_store_done_page .o_store_done_popup .kpi .big.rate{font-size: 1.25rem; color: #1e1b4b;}
+.o_store_done_page .o_store_done_popup .kpi .sub{font-size: .78rem; color: #64748b;}
+.o_store_done_page .o_store_done_popup .kpi.k-blue{background: #eef5ff;} .o_store_done_page .o_store_done_popup .kpi.k-blue .ico{background: #3b82f6;}
+.o_store_done_page .o_store_done_popup .kpi.k-red{background: #fff1f1;} .o_store_done_page .o_store_done_popup .kpi.k-red .ico{background: #ef4444;}
+.o_store_done_page .o_store_done_popup .kpi.k-gray .ico{background: #22a06b;}
+.o_store_done_page .o_store_done_popup .kpi.k-green{background: #effaf3;} .o_store_done_page .o_store_done_popup .kpi.k-green .ico{background: #22a06b;}
+.o_store_done_page .o_store_done_popup .kpi.k-purple{background: #f5f0ff;} .o_store_done_page .o_store_done_popup .kpi.k-purple .ico{background: #8b5cf6;}
+.o_store_done_page .o_store_done_popup .dd_sec{display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;}
+.o_store_done_page .o_store_done_popup .dd_sec .t{font-weight: 800; color: #1e1b4b; font-size: 1.05rem;}
+.o_store_done_page .o_store_done_popup .dd_btn{border: 1px solid #c7cbe6; background: #fff; border-radius: 8px; padding: 5px 12px; color: #3730a3; font-weight: 600; cursor: pointer;}
+.o_store_done_page .o_store_done_popup table.o_store_done_days tfoot tr.sum td{background: #e4e5fb; font-weight: 800; color: #1e1b4b;}
+@media (max-width: 1400px){.o_store_done_page .o_store_done_popup .dd_kpis{grid-template-columns: repeat(3, minmax(0, 1fr));}}
+@media (max-width: 767.98px){.o_store_done_page .o_store_done_popup .dd_kpis{grid-template-columns: repeat(2, minmax(0, 1fr));}}
+
 /* Popup chi tiết theo ngày: kẻ khung đầy đủ mọi ô */
 .o_store_done_page .o_store_done_popup table.o_store_done_days{border-collapse: collapse; border-radius: 0; border: 1px solid #93b4e6; overflow: visible;}
 .o_store_done_page .o_store_done_popup table.o_store_done_days th, .o_store_done_page .o_store_done_popup table.o_store_done_days td{border: 1px solid #93b4e6;}
@@ -1919,4 +1951,305 @@
     .o_store_job_cardtbl tbody tr.o_store_job_group{display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; background: #e8eef7; border-color: #bfd3f2;}
     .o_store_job_cardtbl tbody tr.o_store_job_group td{grid-column: auto; font-weight: 700;}
     .o_store_job_cardtbl tbody tr.o_store_job_group td::before{content: none !important;}
+}
+
+/* BC Checklist NVBH: Phiếu đánh giá năng suất & tính KPI cá nhân */
+.o_store_kpi_page .kp_bar{display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 12px;}
+.o_store_kpi_page .kp_bar label{display: flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; color: #334155;}
+.o_store_kpi_page .kp_bar input, .o_store_kpi_page .kp_bar select{height: 36px; min-width: 170px; padding: 3px 10px; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; font-weight: 400;}
+.o_store_kpi_page .kp_head{background: #1e3a6e; color: #fff; padding: 12px 16px; border-radius: 8px 8px 0 0;}
+.o_store_kpi_page .kp_head .t1{font-size: 1.2rem; font-weight: 800;}
+.o_store_kpi_page .kp_head .t2{font-style: italic; opacity: .9; margin-top: 2px;}
+.o_store_kpi_page .kp_sum{display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); border: 1px solid #cbd5e1; border-top: 0;}
+.o_store_kpi_page .kp_sum div{padding: 6px 8px; text-align: center; background: #f1f5fb; border-right: 1px solid #dbe3f0;}
+.o_store_kpi_page .kp_sum span{display: block; font-size: .72rem; color: #64748b;}
+.o_store_kpi_page .kp_sum b{display: block; background: #eaf2fc; margin-top: 4px; padding: 4px 0; font-size: .92rem;}
+.o_store_kpi_page .kp_scroll{overflow-x: auto; margin-top: 12px;}
+.o_store_kpi_page table.kp_table{width: 100%; border-collapse: collapse; min-width: 1100px;}
+.o_store_kpi_page table.kp_table th{background: #1e3a6e; color: #fff; padding: 8px 6px; text-align: center; border: 1px solid #fff; font-size: .85rem;}
+.o_store_kpi_page table.kp_table td{padding: 7px 8px; border: 1px solid #cbd5e1; background: #fff; vertical-align: middle;}
+.o_store_kpi_page table.kp_table td.c{text-align: center;}
+.o_store_kpi_page table.kp_table td.b{font-weight: 700;}
+.o_store_kpi_page table.kp_table tr.sec td{background: #eaf2fc; font-weight: 800;}
+.o_store_kpi_page table.kp_table tr.tot td{background: #dbe7f5; font-weight: 800; font-size: 1.02rem;}
+.o_store_kpi_page .kp_in{width: 92px; height: 30px; text-align: center; border: 1px solid #94a3b8; border-radius: 6px;}
+.o_store_kpi_page .kp_rank{margin-top: 12px; display: grid; gap: 8px;}
+.o_store_kpi_page .kp_rank > div{display: flex; flex-wrap: wrap; align-items: center; gap: 14px;}
+.o_store_kpi_page .kp_rank span{font-weight: 800; min-width: 360px; text-align: right;}
+.o_store_kpi_page .kp_rank b{min-width: 190px; text-align: center; padding: 6px 10px; background: #e6f4ea; color: #15803d; border: 1px solid #bbdfc6;}
+.o_store_kpi_page .kp_rank em{color: #475569; font-style: normal;}
+@media (max-width: 1200px){.o_store_kpi_page .kp_sum{grid-template-columns: repeat(3, minmax(0, 1fr));}}
+/* Dải thông tin tổng hợp của phiếu KPI: chữ đen, in đậm */
+.o_store_kpi_page .kp_sum span{color: #000 !important; font-weight: 800 !important;}
+.o_store_kpi_page .kp_sum b{color: #000 !important; font-weight: 800 !important;}
+
+.o_store_kpi_page .kp_tabs{display: flex; gap: 6px; margin-bottom: 10px;}
+.o_store_kpi_page .kp_tabs button{border: 1px solid #c7d2e5; background: #f1f5fb; color: #1e3a6e; font-weight: 700; padding: 7px 16px; border-radius: 8px 8px 0 0; cursor: pointer;}
+.o_store_kpi_page .kp_tabs button.active{background: #1e3a6e; color: #fff;}
+.o_store_kpi_page table.kp_cmp{min-width: 1300px;}
+.o_store_kpi_page table.kp_cmp tr.kp_click{cursor: pointer;}
+.o_store_kpi_page table.kp_cmp tr.kp_click:hover td{background: #eef4ff;}
+/* Dải thông tin phiếu: mọi ô cùng chiều cao, chữ không xuống dòng */
+.o_store_kpi_page .kp_sum{align-items: stretch;}
+.o_store_kpi_page .kp_sum div{display: flex; flex-direction: column; justify-content: center;}
+.o_store_kpi_page .kp_sum span, .o_store_kpi_page .kp_sum b{white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.o_store_kpi_page .kp_sum b{font-size: .88rem;}
+
+/* Báo cáo năng suất NVBH: giao diện dashboard theo mẫu */
+.o_store_kpi_page .kd_wrap{display: flex; flex-direction: column; gap: 12px;}
+.o_store_kpi_page .kd_top{display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding: 14px 18px; border-radius: 14px; color: #fff; background: linear-gradient(90deg, #1e3a8a, #2563eb);}
+.o_store_kpi_page .kd_top .ico{width: 46px; height: 46px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.5rem; background: rgba(255, 255, 255, .18);}
+.o_store_kpi_page .kd_top .ttl{flex: 1 1 320px; font-size: 1.25rem; font-weight: 800; line-height: 1.25;}
+.o_store_kpi_page .kd_top .chip{background: rgba(255, 255, 255, .16); border: 1px solid rgba(255, 255, 255, .4); border-radius: 999px; padding: 6px 14px; font-weight: 600; white-space: nowrap;}
+.o_store_kpi_page .kd_info{display: flex; flex-wrap: wrap; gap: 28px; align-items: center; padding: 9px 16px; background: #f1f5fb; border: 1px solid #dbe3f0; border-radius: 10px; color: #1e293b;}
+.o_store_kpi_page .kd_info i{color: #2563eb; margin-right: 6px;}
+.o_store_kpi_page .kd_cards{display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px;}
+.o_store_kpi_page .kd_cards .cd{display: flex; align-items: center; gap: 10px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; box-shadow: 0 1px 3px rgba(15, 23, 42, .06);}
+.o_store_kpi_page .kd_cards .cd.red{background: #fff5f5; border-color: #fecaca;}
+.o_store_kpi_page .kd_cards .ic{width: 40px; height: 40px; flex: 0 0 auto; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; font-size: 1.15rem; color: #fff;}
+.o_store_kpi_page .kd_cards .ic.blue{background: #3b82f6;} .o_store_kpi_page .kd_cards .ic.green{background: #22a06b;} .o_store_kpi_page .kd_cards .ic.purple{background: #8b5cf6;}
+.o_store_kpi_page .kd_cards .ic.amber{background: #f59e0b;} .o_store_kpi_page .kd_cards .ic.teal{background: #0d9488;} .o_store_kpi_page .kd_cards .ic.redic{background: #ef4444;} .o_store_kpi_page .kd_cards .ic.green2{background: #16a34a;}
+.o_store_kpi_page .kd_cards .tx{min-width: 0; flex: 1 1 auto;}
+.o_store_kpi_page .kd_cards .lb{display: block; font-size: .72rem; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+.o_store_kpi_page .kd_cards b{display: block; font-size: 1.3rem; font-weight: 800; color: #1e3a8a; white-space: nowrap;}
+.o_store_kpi_page .kd_cards b.ok{color: #15803d;} .o_store_kpi_page .kd_cards b.pp{color: #6d28d9;} .o_store_kpi_page .kd_cards b.tl{color: #0f766e;} .o_store_kpi_page .kd_cards b.bad{color: #dc2626;}
+.o_store_kpi_page .kd_cards .bar{height: 5px; border-radius: 4px; background: #dbe7fb; margin-top: 4px; overflow: hidden;}
+.o_store_kpi_page .kd_cards .bar i{display: block; height: 100%; background: #3b82f6;} .o_store_kpi_page .kd_cards .bar.g{background: #d6efe0;} .o_store_kpi_page .kd_cards .bar.g i{background: #22a06b;}
+.o_store_kpi_page .kd_sec{background: #1e4fb3; color: #fff; font-weight: 800; padding: 10px 16px; border-radius: 10px;}
+.o_store_kpi_page .kd_sec i{margin-right: 8px;}
+.o_store_kpi_page table.kd_table{width: 100%; border-collapse: separate; border-spacing: 0 6px; min-width: 1100px;}
+.o_store_kpi_page table.kd_table th{background: #e8effb; color: #1e3a8a; font-size: .8rem; text-align: center; padding: 8px 6px; border-top: 1px solid #d3def3; border-bottom: 1px solid #d3def3;}
+.o_store_kpi_page table.kd_table th.hl{background: #cfe0fb;}
+.o_store_kpi_page table.kd_table td{background: #fff; padding: 9px 8px; border-top: 1px solid #e5eaf3; border-bottom: 1px solid #e5eaf3; vertical-align: middle;}
+.o_store_kpi_page table.kd_table td:first-child{border-left: 1px solid #e5eaf3; border-radius: 10px 0 0 10px;}
+.o_store_kpi_page table.kd_table td:last-child{border-right: 1px solid #e5eaf3; border-radius: 0 10px 10px 0;}
+.o_store_kpi_page table.kd_table td.c{text-align: center;} .o_store_kpi_page table.kd_table td.b{font-weight: 800;}
+.o_store_kpi_page table.kd_table td.nm{font-weight: 700; color: #0f172a;} .o_store_kpi_page table.kd_table td.nt{font-size: .85rem; color: #334155;}
+.o_store_kpi_page table.kd_table td.pc{font-weight: 700; color: #15803d;} .o_store_kpi_page table.kd_table td.pt{font-weight: 800; color: #1d4ed8; font-size: 1.05rem;}
+.o_store_kpi_page table.kd_table .bdg{display: inline-block; min-width: 34px; padding: 4px 6px; border-radius: 8px; font-weight: 800; font-size: .8rem; color: #fff;}
+.o_store_kpi_page table.kd_table .bdg.b0{background: #60a5fa;} .o_store_kpi_page table.kd_table .bdg.b1{background: #4ade80;} .o_store_kpi_page table.kd_table .bdg.b2{background: #fb923c;}
+.o_store_kpi_page table.kd_table .bdg.b3{background: #a78bfa;} .o_store_kpi_page table.kd_table .bdg.b4{background: #34d399;} .o_store_kpi_page table.kd_table .bdg.bn{background: #2563eb; border-radius: 50%; min-width: 26px;}
+.o_store_kpi_page table.kd_table tr.sumrow td{background: #eaf2ff; font-weight: 800; color: #1e3a8a; border-color: #bcd1f5;}
+.o_store_kpi_page table.kd_table tr.sumrow .pill{display: inline-block; background: #2563eb; color: #fff; border-radius: 8px; padding: 6px 18px; font-size: 1.1rem;}
+.o_store_kpi_page table.kd_table tr.pillar td.nm{color: #1d4ed8;}
+.o_store_kpi_page .kd_foot{display: grid; grid-template-columns: 1.35fr 1fr; gap: 12px;}
+.o_store_kpi_page .kd_foot > div{border-radius: 14px; padding: 14px 16px;}
+.o_store_kpi_page .kd_foot .h{font-weight: 800; color: #7c4a03; margin-bottom: 8px;}
+.o_store_kpi_page .kd_foot .f1{background: linear-gradient(135deg, #1e3a8a, #2563eb); color: #fff;}
+.o_store_kpi_page .kd_foot .f1 .l{font-weight: 800; font-size: 1rem;}
+.o_store_kpi_page .kd_foot .f1 .mid{display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 8px 0;}
+.o_store_kpi_page .kd_foot .f1 .nums{display: flex; align-items: center; gap: 14px;}
+.o_store_kpi_page .kd_foot .f1 .nums b{font-size: 1.9rem; font-weight: 800;} .o_store_kpi_page .kd_foot .f1 .nums b.s{color: #fcd34d; font-size: 1.6rem;}
+.o_store_kpi_page .kd_foot .f1 .nums i{width: 1px; align-self: stretch; background: rgba(255, 255, 255, .5);}
+.o_store_kpi_page .kd_foot .dn{--p: 0; width: 84px; height: 84px; border-radius: 50%; flex: 0 0 auto; display: flex; align-items: center; justify-content: center; background: conic-gradient(#22c55e calc(var(--p) * 1%), rgba(255, 255, 255, .25) 0);}
+.o_store_kpi_page .kd_foot .dn span{width: 62px; height: 62px; border-radius: 50%; background: #1e40af; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: .9rem;}
+.o_store_kpi_page .kd_foot .tag{display: inline-block; background: rgba(34, 197, 94, .25); border: 1px solid rgba(255, 255, 255, .35); border-radius: 999px; padding: 4px 12px; font-size: .8rem;}
+.o_store_kpi_page .kd_foot .f2{background: #fff8e6; border: 1px solid #fde4a6; text-align: center;}
+.o_store_kpi_page .kd_foot .f2 .rk{background: #fbbf24; color: #5b3b02; font-weight: 800; font-size: 1.3rem; border-radius: 10px; padding: 10px;}
+.o_store_kpi_page .kd_foot .f2 .th{margin-top: 8px; font-size: .78rem; color: #475569;}
+.o_store_kpi_page .kd_foot .f3{background: #fff8e6; border: 1px solid #fde4a6;}
+.o_store_kpi_page .kd_foot .f3 .row3{display: flex; align-items: center; gap: 14px;}
+.o_store_kpi_page .kd_foot .f3 .bn{font-size: 2.2rem; font-weight: 800; color: #15803d;}
+.o_store_kpi_page .kd_foot .f3 .lg{list-style: none; margin: 0; padding: 0; font-size: .85rem; flex: 1 1 auto;}
+.o_store_kpi_page .kd_foot .f3 .lg .d{display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px;}
+.o_store_kpi_page .kd_foot .f3 .d.g{background: #22c55e;} .o_store_kpi_page .kd_foot .f3 .d.b{background: #3b82f6;} .o_store_kpi_page .kd_foot .f3 .d.y{background: #eab308;} .o_store_kpi_page .kd_foot .f3 .d.r{background: #ef4444;}
+.o_store_kpi_page .kd_foot .f3 .cup{font-size: 3rem; color: #f59e0b;}
+@media (max-width: 1400px){.o_store_kpi_page .kd_cards{grid-template-columns: repeat(4, minmax(0, 1fr));} .o_store_kpi_page .kd_foot{grid-template-columns: 1fr;}}
+@media (max-width: 767.98px){.o_store_kpi_page .kd_cards{grid-template-columns: repeat(2, minmax(0, 1fr));}}
+
+.o_store_pick_notice{margin: 0 0 12px; padding: 10px 14px; border-radius: 8px; background: #fff7e0; border: 1px solid #f5d98a; color: #7a5200; font-weight: 600;}
+.o_store_pick_notice i{margin-right: 8px;}
+
+/* Danh sách cửa hàng theo Miền dưới ô tìm kiếm (Danh sách checklist NV) */
+.o_store_done_page .o_store_pickstores{display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0;}
+.o_store_done_page .o_store_pickstores .lbl{font-weight: 700; color: #1e3a8a; width: 100%;}
+.o_store_done_page .o_store_pickstores .chip{border: 1px solid #bfd3f2; background: #fff; color: #1e3a8a; border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer;}
+.o_store_done_page .o_store_pickstores .chip:hover{background: #1e4fb3; color: #fff; border-color: #1e4fb3;}
+.o_store_done_page .o_store_pickstores .none{color: #64748b;}
+
+/* Lịch xếp ca: dòng cửa hàng hiện Thứ của từng ngày */
+.o_store_sched_table td.c-wd{text-align: center; font-weight: 700; color: #1d4ed8;}
+.o_store_sched_table td.c-wd.is-sun{color: #dc2626;}
+.o_store_done_page .o_store_pickstores .grp{width: 100%; margin-bottom: 6px;}
+.o_store_done_page .o_store_pickstores .grp_h{font-weight: 800; color: #0f172a; margin: 6px 0; padding-bottom: 4px; border-bottom: 2px solid #dbe7f5;}
+.o_store_done_page .o_store_pickstores .grp_h i{color: #2563eb; margin-right: 6px;}
+.o_store_done_page .o_store_pickstores .grp_b{display: flex; flex-wrap: wrap; gap: 8px;}
+.o_store_done_page .o_store_pickstores .grp_h{cursor: pointer; user-select: none;}
+.o_store_done_page .o_store_pickstores .grp_h:hover{color: #1d4ed8;}
+.o_store_done_page .o_store_pickstores .grp_h .fa-caret-down, .o_store_done_page .o_store_pickstores .grp_h .fa-caret-right{width: 12px; color: #64748b;}
+/* Nút cửa hàng: xanh lá = đã check list đánh giá nhân viên, cam = chưa check list */
+.o_store_done_page .o_store_pickstores .chip.is-done{background: #dcfce7; border-color: #86efac; color: #166534;}
+.o_store_done_page .o_store_pickstores .chip.is-pending{background: #ffedd5; border-color: #fdba74; color: #9a3412;}
+.o_store_done_page .o_store_pickstores .chip.is-done:hover{background: #16a34a; border-color: #16a34a; color: #fff;}
+.o_store_done_page .o_store_pickstores .chip.is-pending:hover{background: #ea580c; border-color: #ea580c; color: #fff;}
+.o_store_done_page .o_store_pickstores .lbl .legend{font-style: normal; font-weight: 600; font-size: .85rem; color: #475569; margin-left: 14px;}
+.o_store_done_page .o_store_pickstores .lbl .legend .d{display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin: 0 4px 0 12px; vertical-align: middle;}
+.o_store_done_page .o_store_pickstores .lbl .legend .d.done{background: #86efac; border: 1px solid #16a34a;}
+.o_store_done_page .o_store_pickstores .lbl .legend .d.todo{background: #fdba74; border: 1px solid #ea580c;}
+.o_store_done_page .o_store_pickstores .chip.is-none{background: #fff; border-color: #cbd5e1; color: #334155;}
+.o_store_done_page .o_store_pickstores .chip.is-none:hover{background: #1e4fb3; border-color: #1e4fb3; color: #fff;}
+.o_store_done_page .o_store_pickstores .lbl .legend .d.none{background: #fff; border: 1px solid #94a3b8;}
+
+/* Báo cáo KPI / Năng suất: cùng kiểu danh sách cửa hàng theo Miền */
+.o_store_kpi_page .o_store_pickstores{display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0;}
+.o_store_kpi_page .o_store_pickstores .lbl{font-weight: 700; color: #1e3a8a; width: 100%;}
+.o_store_kpi_page .o_store_pickstores .chip{border: 1px solid #bfd3f2; background: #fff; color: #1e3a8a; border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer;}
+.o_store_kpi_page .o_store_pickstores .chip:hover{background: #1e4fb3; color: #fff; border-color: #1e4fb3;}
+.o_store_kpi_page .o_store_pickstores .none{color: #64748b;}
+.o_store_kpi_page .o_store_pickstores .grp{width: 100%; margin-bottom: 6px;}
+.o_store_kpi_page .o_store_pickstores .grp_h{font-weight: 800; color: #0f172a; margin: 6px 0; padding-bottom: 4px; border-bottom: 2px solid #dbe7f5;}
+.o_store_kpi_page .o_store_pickstores .grp_h i{color: #2563eb; margin-right: 6px;}
+.o_store_kpi_page .o_store_pickstores .grp_b{display: flex; flex-wrap: wrap; gap: 8px;}
+.o_store_kpi_page .o_store_pickstores .grp_h{cursor: pointer; user-select: none;}
+.o_store_kpi_page .o_store_pickstores .grp_h:hover{color: #1d4ed8;}
+.o_store_kpi_page .o_store_pickstores .grp_h .fa-caret-down, .o_store_kpi_page .o_store_pickstores .grp_h .fa-caret-right{width: 12px; color: #64748b;}
+.o_store_kpi_page .o_store_pickstores .chip.is-done{background: #dcfce7; border-color: #86efac; color: #166534;}
+.o_store_kpi_page .o_store_pickstores .chip.is-pending{background: #ffedd5; border-color: #fdba74; color: #9a3412;}
+.o_store_kpi_page .o_store_pickstores .chip.is-done:hover{background: #16a34a; border-color: #16a34a; color: #fff;}
+.o_store_kpi_page .o_store_pickstores .chip.is-pending:hover{background: #ea580c; border-color: #ea580c; color: #fff;}
+.o_store_kpi_page .o_store_pickstores .lbl .legend{font-style: normal; font-weight: 600; font-size: .85rem; color: #475569; margin-left: 14px;}
+.o_store_kpi_page .o_store_pickstores .lbl .legend .d{display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin: 0 4px 0 12px; vertical-align: middle;}
+.o_store_kpi_page .o_store_pickstores .lbl .legend .d.done{background: #86efac; border: 1px solid #16a34a;}
+.o_store_kpi_page .o_store_pickstores .lbl .legend .d.todo{background: #fdba74; border: 1px solid #ea580c;}
+.o_store_kpi_page .o_store_pickstores .chip.is-none{background: #fff; border-color: #cbd5e1; color: #334155;}
+.o_store_kpi_page .o_store_pickstores .chip.is-none:hover{background: #1e4fb3; border-color: #1e4fb3; color: #fff;}
+.o_store_kpi_page .o_store_pickstores .lbl .legend .d.none{background: #fff; border: 1px solid #94a3b8;}
+
+/* Quản lý & đánh giá: cùng kiểu danh sách cửa hàng theo Miền */
+.o_store_mg_page .o_store_pickstores{display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 10px 0;}
+.o_store_mg_page .o_store_pickstores .lbl{font-weight: 700; color: #1e3a8a; width: 100%;}
+.o_store_mg_page .o_store_pickstores .chip{border: 1px solid #bfd3f2; background: #fff; color: #1e3a8a; border-radius: 999px; padding: 6px 14px; font-weight: 600; cursor: pointer;}
+.o_store_mg_page .o_store_pickstores .chip:hover{background: #1e4fb3; color: #fff; border-color: #1e4fb3;}
+.o_store_mg_page .o_store_pickstores .none{color: #64748b;}
+.o_store_mg_page .o_store_pickstores .grp{width: 100%; margin-bottom: 6px;}
+.o_store_mg_page .o_store_pickstores .grp_h{font-weight: 800; color: #0f172a; margin: 6px 0; padding-bottom: 4px; border-bottom: 2px solid #dbe7f5;}
+.o_store_mg_page .o_store_pickstores .grp_h i{color: #2563eb; margin-right: 6px;}
+.o_store_mg_page .o_store_pickstores .grp_b{display: flex; flex-wrap: wrap; gap: 8px;}
+.o_store_mg_page .o_store_pickstores .grp_h{cursor: pointer; user-select: none;}
+.o_store_mg_page .o_store_pickstores .grp_h:hover{color: #1d4ed8;}
+.o_store_mg_page .o_store_pickstores .grp_h .fa-caret-down, .o_store_mg_page .o_store_pickstores .grp_h .fa-caret-right{width: 12px; color: #64748b;}
+.o_store_mg_page .o_store_pickstores .chip.is-done{background: #dcfce7; border-color: #86efac; color: #166534;}
+.o_store_mg_page .o_store_pickstores .chip.is-pending{background: #ffedd5; border-color: #fdba74; color: #9a3412;}
+.o_store_mg_page .o_store_pickstores .chip.is-done:hover{background: #16a34a; border-color: #16a34a; color: #fff;}
+.o_store_mg_page .o_store_pickstores .chip.is-pending:hover{background: #ea580c; border-color: #ea580c; color: #fff;}
+.o_store_mg_page .o_store_pickstores .lbl .legend{font-style: normal; font-weight: 600; font-size: .85rem; color: #475569; margin-left: 14px;}
+.o_store_mg_page .o_store_pickstores .lbl .legend .d{display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin: 0 4px 0 12px; vertical-align: middle;}
+.o_store_mg_page .o_store_pickstores .lbl .legend .d.done{background: #86efac; border: 1px solid #16a34a;}
+.o_store_mg_page .o_store_pickstores .lbl .legend .d.todo{background: #fdba74; border: 1px solid #ea580c;}
+.o_store_mg_page .o_store_pickstores .chip.is-none{background: #fff; border-color: #cbd5e1; color: #334155;}
+.o_store_mg_page .o_store_pickstores .chip.is-none:hover{background: #1e4fb3; border-color: #1e4fb3; color: #fff;}
+.o_store_mg_page .o_store_pickstores .lbl .legend .d.none{background: #fff; border: 1px solid #94a3b8;}
+
+/* Popup chi tiết quản lý: dấu x để đóng */
+.o_store_mgr_dlg .hd .x_close{border: 0; background: transparent; font-size: 1.25rem; color: #475569; cursor: pointer; padding: 2px 10px; margin-left: 8px; border-radius: 6px;}
+.o_store_mgr_dlg .hd .x_close:hover{color: #dc2626; background: #fde8ea;}
+
+/* Mọi popup (hộp thoại Odoo) trong ứng dụng Checklist Audit: dấu x đóng luôn hiện rõ ở góc phải trên cùng */
+body:has(.o_internet_master) .modal .modal-header .btn-close{
+    opacity: 1 !important; flex: 0 0 auto; width: 30px; height: 30px; padding: 0; margin: 0 0 0 8px; border: 0; border-radius: 50%;
+    background: #eef1f6 url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23475569'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e") center / 12px no-repeat !important;
+    filter: none !important;
+}
+body:has(.o_internet_master) .modal .modal-header .btn-close:hover{background-color: #fde8ea !important;}
+body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: center;}
+
+/* Popup checklist công việc của nhân viên: thanh tiêu đề riêng có dấu x đóng */
+.o_store_check_form .o_store_dlg_head{display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0;}
+.o_store_check_form .o_store_dlg_head h4{margin: 0; font-size: 1.15rem; font-weight: 800; color: #1e3a8a;}
+.o_store_check_form .o_store_dlg_head .x_close{border: 0; background: #eef1f6; color: #475569; width: 32px; height: 32px; border-radius: 50%; font-size: 1.05rem; cursor: pointer; flex: 0 0 auto;}
+.o_store_check_form .o_store_dlg_head .x_close:hover{background: #fde8ea; color: #dc2626;}
+
+/* Mọi trang / bảng có banner: dấu x ở góc phải trên cùng để đóng trang (về Tổng quan) */
+.o_store_list_banner{position: relative;}
+.o_store_list_banner .o_store_page_close{position: absolute; top: 8px; right: 10px; z-index: 6; width: 32px; height: 32px; border-radius: 50%; border: 0; background: rgba(255, 255, 255, .92); color: #475569; font-size: 1.05rem; cursor: pointer; box-shadow: 0 1px 4px rgba(15, 23, 42, .25); display: inline-flex; align-items: center; justify-content: center; padding: 0;}
+.o_store_list_banner .o_store_page_close:hover{background: #fde8ea; color: #dc2626;}
+.o_store_kpi_page table.kp_cmp tr.kp_grp td{background: #dbe7f5; color: #1e3a8a; font-weight: 800; padding: 8px 10px; border-top: 2px solid #93b4e6;}
+.o_store_kpi_page table.kp_cmp tr.kp_grp .cnt{font-weight: 600; color: #475569; margin-left: 8px;}
+.o_store_kpi_page table.kp_cmp tr.kp_grp i{margin-right: 6px; color: #2563eb;}
+
+/* ===== KPI mobile redesign ===== */
+.o_store_kpi_page .kp_mcards{display: none;}
+@media (max-width: 767.98px){
+  .o_store_kpi_page .kp_tabs{gap: 0; background: #e8eef8; border-radius: 12px; padding: 3px; margin-bottom: 10px;}
+  .o_store_kpi_page .kp_tabs button{flex: 1; border: 0; border-radius: 10px; background: transparent; padding: 9px 6px; font-size: .85rem;}
+  .o_store_kpi_page .kp_tabs button.active{background: #1e3a6e; box-shadow: 0 2px 6px rgba(30, 58, 110, .3);}
+  .o_store_kpi_page .kp_bar{display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px; box-shadow: 0 1px 4px rgba(0, 0, 0, .06);}
+  .o_store_kpi_page .kp_bar label{flex-direction: column; align-items: stretch; gap: 3px; font-size: .75rem; color: #64748b; min-width: 0;}
+  .o_store_kpi_page .kp_bar input, .o_store_kpi_page .kp_bar select{min-width: 0; width: 100%; height: 38px; font-size: .9rem;}
+  .o_store_kpi_page .kp_bar .btn{grid-column: 1 / -1; height: 40px; border-radius: 10px; font-weight: 700;}
+  .o_store_kpi_page .kp_head{border-radius: 12px; padding: 12px 14px; background: linear-gradient(135deg, #1e3a6e, #2f5bb7);}
+  .o_store_kpi_page .kp_head .t1{font-size: 1rem; line-height: 1.25;}
+  .o_store_kpi_page .kp_head .t2{font-size: .75rem; margin-top: 4px;}
+  .o_store_kpi_page .kp_desktop{display: none;}
+  .o_store_kpi_page .kp_mcards{display: block; padding: 10px 0 calc(90px + env(safe-area-inset-bottom, 0px));}
+  .o_store_kpi_page .kp_mcards .mc_grp{background: #dbe7f5; color: #1e3a8a; border-radius: 10px; padding: 8px 12px; margin: 12px 0 8px; display: flex; align-items: center; gap: 6px; font-weight: 800;}
+  .o_store_kpi_page .kp_mcards .mc_grp .cnt{margin-left: auto; font-size: .75rem; font-weight: 600; color: #475569;}
+  .o_store_kpi_page .kp_mcards .mc{background: #fff; border: 1px solid #e2e8f0; border-radius: 14px; padding: 12px; margin-bottom: 10px; box-shadow: 0 1px 5px rgba(15, 23, 42, .07);}
+  .o_store_kpi_page .kp_mcards .mc:active{background: #f1f5fb;}
+  .o_store_kpi_page .kp_mcards .mc_top{display: flex; align-items: center; gap: 10px;}
+  .o_store_kpi_page .kp_mcards .mc_rank{flex: none; width: 34px; height: 34px; border-radius: 50%; background: #e2e8f0; color: #334155; font-weight: 800; display: flex; align-items: center; justify-content: center;}
+  .o_store_kpi_page .kp_mcards .mc_rank.r1{background: #fbbf24; color: #5b3b02;}
+  .o_store_kpi_page .kp_mcards .mc_rank.r2{background: #cbd5e1; color: #1e293b;}
+  .o_store_kpi_page .kp_mcards .mc_rank.r3{background: #fdba74; color: #7c2d12;}
+  .o_store_kpi_page .kp_mcards .mc_who{flex: 1; min-width: 0; display: flex; flex-direction: column;}
+  .o_store_kpi_page .kp_mcards .mc_who b{color: #12285f; text-transform: uppercase; font-size: .88rem; line-height: 1.2;}
+  .o_store_kpi_page .kp_mcards .mc_who small{color: #64748b; font-size: .72rem;}
+  .o_store_kpi_page .kp_mcards .mc_tot{text-align: right; display: flex; flex-direction: column;}
+  .o_store_kpi_page .kp_mcards .mc_tot strong{font-size: 1.4rem; line-height: 1; color: #15803d;}
+  .o_store_kpi_page .kp_mcards .mc_tot small{font-size: .7rem; color: #64748b; margin-top: 3px;}
+  .o_store_kpi_page .kp_mcards .mc_meta{display: flex; gap: 6px; margin: 10px 0; flex-wrap: wrap;}
+  .o_store_kpi_page .kp_mcards .mc_meta span{background: #f1f5f9; border-radius: 999px; padding: 2px 9px; font-size: .72rem; color: #475569;}
+  .o_store_kpi_page .kp_mcards .mc_meta span.bad{background: #fee2e2; color: #b91c1c;}
+  .o_store_kpi_page .kp_mcards .mc_grid{display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;}
+  .o_store_kpi_page .kp_mcards .mc_grid div{background: #f8fafc; border-radius: 8px; padding: 5px 2px; text-align: center; display: flex; flex-direction: column; min-width: 0;}
+  .o_store_kpi_page .kp_mcards .mc_grid small{font-size: .58rem; color: #64748b; line-height: 1.1;}
+  .o_store_kpi_page .kp_mcards .mc_grid b{font-size: .85rem; color: #12285f;}
+}
+
+/* ===== KPI personal sheet: mobile cards (CSS-only, bảng -> thẻ) ===== */
+@media (max-width: 767.98px){
+  .o_store_kpi_page .kp_sum{grid-template-columns: 1fr 1fr !important; gap: 6px;}
+  .o_store_kpi_page .kp_sum > div{padding: 8px; border-radius: 10px; min-width: 0;}
+  .o_store_kpi_page .kp_sum span{font-size: .7rem; display: block;}
+  .o_store_kpi_page .kp_sum b{font-size: .95rem;}
+  .o_store_kpi_page .kp_scroll{overflow-x: visible; margin-top: 10px;}
+  .o_store_kpi_page table.kp_table, .o_store_kpi_page table.kd_table{min-width: 0 !important; display: block; border-spacing: 0;}
+  .o_store_kpi_page table.kp_table thead, .o_store_kpi_page table.kd_table thead{display: none;}
+  .o_store_kpi_page table.kp_table tbody, .o_store_kpi_page table.kd_table tbody{display: block;}
+  .o_store_kpi_page table.kp_table tr, .o_store_kpi_page table.kd_table tr{display: flex; flex-wrap: wrap; align-items: center; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; margin-bottom: 10px; padding: 10px; gap: 6px 0; box-shadow: 0 1px 4px rgba(15, 23, 42, .06);}
+  .o_store_kpi_page table.kp_table td, .o_store_kpi_page table.kd_table td{display: block; border: 0 !important; background: transparent !important; padding: 2px 4px !important; border-radius: 0 !important; text-align: left !important;}
+  .o_store_kpi_page table.kp_table td:empty, .o_store_kpi_page table.kd_table td:empty{display: none;}
+  /* hàng đầu: STT + tên */
+  .o_store_kpi_page table.kp_table td:nth-child(1), .o_store_kpi_page table.kd_table td:nth-child(1){flex: 0 0 auto; font-weight: 800; color: #1e4fb3;}
+  .o_store_kpi_page table.kp_table td:nth-child(2), .o_store_kpi_page table.kd_table td:nth-child(2){flex: 1 1 0; min-width: 0; font-weight: 700; color: #12285f; font-size: .9rem; line-height: 1.3;}
+  /* các ô số liệu: 3 cột nhỏ có nhãn */
+  .o_store_kpi_page table.kp_table td:nth-child(n+3), .o_store_kpi_page table.kd_table td:nth-child(n+3){flex: 0 0 33.333%; box-sizing: border-box; font-size: .85rem;}
+  .o_store_kpi_page table.kp_table td:nth-child(n+3)::before, .o_store_kpi_page table.kd_table td:nth-child(n+3)::before{display: block; font-size: .62rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .02em;}
+  .o_store_kpi_page table.kp_table td:nth-child(3)::before, .o_store_kpi_page table.kd_table td:nth-child(3)::before{content: "Nguồn";}
+  .o_store_kpi_page table.kp_table td:nth-child(4)::before, .o_store_kpi_page table.kd_table td:nth-child(4)::before{content: "Trọng số";}
+  .o_store_kpi_page table.kp_table td:nth-child(5)::before, .o_store_kpi_page table.kd_table td:nth-child(5)::before{content: "Điểm tối đa";}
+  .o_store_kpi_page table.kp_table td:nth-child(6)::before, .o_store_kpi_page table.kd_table td:nth-child(6)::before{content: "Tỷ lệ đạt";}
+  .o_store_kpi_page table.kp_table td:nth-child(7)::before, .o_store_kpi_page table.kd_table td:nth-child(7)::before{content: "Điểm KPI";}
+  .o_store_kpi_page table.kp_table td:nth-child(8)::before, .o_store_kpi_page table.kd_table td:nth-child(8)::before{content: "Chỉ tiêu";}
+  .o_store_kpi_page table.kp_table td:nth-child(7), .o_store_kpi_page table.kd_table td:nth-child(7){font-weight: 800; color: #1d4ed8;}
+  .o_store_kpi_page table.kp_table td:nth-child(9), .o_store_kpi_page table.kd_table td:nth-child(9){flex: 0 0 100%; margin-top: 4px; padding-top: 6px !important; border-top: 1px dashed #cbd5e1 !important; font-size: .78rem; color: #475569; font-weight: 400;}
+  .o_store_kpi_page table.kp_table td:nth-child(9)::before, .o_store_kpi_page table.kd_table td:nth-child(9)::before{content: "Ghi chú"; display: block; font-size: .62rem; font-weight: 600; color: #64748b; text-transform: uppercase;}
+  .o_store_kpi_page table.kp_table td:nth-child(n+3):empty, .o_store_kpi_page table.kd_table td:nth-child(n+3):empty{display: none;}
+  /* dòng cộng nhóm / tổng */
+  .o_store_kpi_page table.kp_table tr.sec, .o_store_kpi_page table.kd_table tr.sumrow{background: #eaf2fc; border-color: #bcd1f5;}
+  .o_store_kpi_page table.kp_table tr.tot{background: linear-gradient(135deg, #1e3a6e, #2f5bb7); border: 0;}
+  .o_store_kpi_page table.kp_table tr.tot td{color: #fff !important;}
+  .o_store_kpi_page table.kp_table tr.tot td::before{color: #cbd5e1 !important;}
+  .o_store_kpi_page table.kp_table tr.tot td:nth-child(2){font-size: .95rem;}
+  .o_store_kpi_page table.kp_table tr.tot td:nth-child(7){font-size: 1.2rem; color: #fde68a !important;}
+  .o_store_kpi_page table.kp_table tr.sec td:nth-child(2), .o_store_kpi_page table.kd_table tr.sumrow td:nth-child(2){color: #1e3a8a;}
+  .o_store_kpi_page table.kp_table .kp_in{width: 100%; max-width: 90px;}
+  /* xếp loại + hệ số thưởng */
+  .o_store_kpi_page .kp_rank{gap: 10px;}
+  .o_store_kpi_page .kp_rank > div{flex-direction: column; align-items: stretch; gap: 6px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px;}
+  .o_store_kpi_page .kp_rank span{min-width: 0; text-align: left; font-size: .85rem;}
+  .o_store_kpi_page .kp_rank b{min-width: 0; border-radius: 8px; font-size: 1.05rem;}
+  .o_store_kpi_page .kp_rank em{font-size: .72rem;}
+  .o_store_kpi_page .kd_foot{grid-template-columns: 1fr; padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));}
+  .o_store_kpi_page .kd_top{flex-wrap: wrap;}
 }

@@ -204,15 +204,56 @@ class StoreAudit(models.Model):
         }
 
     @api.model
+    def _lug_extra_store_ids(self, user):
+        """Cửa hàng bổ sung theo cấu hình LUG Permission trên user (tab "Phạm vi dữ liệu"):
+        COMPANY -> None (toàn bộ); REGION -> mọi cửa hàng cùng Miền với nhân viên; STORE -> các "Mã bộ phận được xem"."""
+        user = user.sudo()
+        scope = getattr(user, 'lug_data_scope', False)
+        Store = self.env['hr.store'].sudo()
+        if scope == 'company':
+            return None
+        ids = set()
+        if scope == 'region':
+            mien = getattr(user, 'employee_mien', False) or (user.employee_id.mien if 'mien' in user.employee_id._fields else False)
+            if mien:
+                ids.update(Store.search([('mien', '=', mien)]).ids)
+        elif scope == 'store' and 'assigned_ma_bo_phan_ids' in user._fields:
+            ids.update(c.store_id.id for c in user.assigned_ma_bo_phan_ids if c.store_id)
+        return ids
+
+    @api.model
     def _user_store_scope(self):
-        """Danh sách id cửa hàng người dùng được xem; None nghĩa là không giới hạn (admin / sudo / chưa gán cửa hàng)."""
-        if self.env.su or self.env.user._is_admin() or not hasattr(self.env.user, '_linkq_allowed_hr_store_ids'):
+        """Danh sách id cửa hàng người dùng được xem; None nghĩa là không giới hạn (admin / sudo / phạm vi COMPANY / chưa gán cửa hàng).
+        Gồm: ma trận phân quyền cửa hàng + cửa hàng trên hồ sơ nhân viên + "Mã bộ phận được xem (STORE)" / Miền của LUG Permission."""
+        user = self.env.user
+        if self.env.su or user._is_admin() or not hasattr(user, '_linkq_allowed_hr_store_ids'):
             return None
         try:
-            allowed = list(self.env.user._linkq_allowed_hr_store_ids())
+            allowed = set(user._linkq_allowed_hr_store_ids())
         except Exception:
             return None
-        return allowed or None
+        extra = self._lug_extra_store_ids(user)
+        if extra is None:
+            return None
+        allowed |= extra
+        return list(allowed) or None
+
+    @api.model
+    def needs_store_pick(self):
+        """True: user (không phải Admin / Quản lý / phạm vi COMPANY) chưa có cửa hàng nào hoặc phụ trách từ 2 cửa hàng trở lên
+        -> màn hình thu lại, chỉ hiện dữ liệu sau khi chọn một cửa hàng ở ô lọc."""
+        user = self.env.user
+        if self.env.su or user._is_admin() or user.has_group('store_checklist.group_store_manager'):
+            return False
+        if not hasattr(user, '_linkq_allowed_hr_store_ids'):
+            return False
+        try:
+            allowed = set(user._linkq_allowed_hr_store_ids())
+        except Exception:
+            return False
+        extra = self._lug_extra_store_ids(user)
+        # chưa có cửa hàng nào, hoặc phụ trách từ 2 cửa hàng trở lên: phải chọn cửa hàng ở ô lọc rồi mới hiện dữ liệu
+        return extra is not None and len(allowed | extra) != 1
 
     @api.model
     def _search(self, domain, *args, **kwargs):
@@ -225,14 +266,8 @@ class StoreAudit(models.Model):
     @api.model
     def _filter_stores_for_user(self, stores):
         """Người dùng thuộc cửa hàng nào thì bộ lọc chỉ liệt kê đúng cửa hàng đó; quản trị / không có ràng buộc cửa hàng thì giữ nguyên."""
-        user = self.env.user
-        if user._is_admin() or not hasattr(user, '_linkq_allowed_hr_store_ids'):
-            return stores
-        try:
-            allowed = set(user._linkq_allowed_hr_store_ids())
-        except Exception:
-            return stores
-        return stores.filtered(lambda st: st.id in allowed) if allowed else stores
+        scope = self._user_store_scope()
+        return stores if scope is None else stores.filtered(lambda st: st.id in scope)
 
     @api.model
     def get_shell_overview(self):
@@ -586,7 +621,7 @@ class StoreAudit(models.Model):
         num = book.add_format({'border': 1, 'num_format': '0.##', 'align': 'center'})
         pct = book.add_format({'border': 1, 'num_format': '0.00', 'align': 'center'})
         wrap = book.add_format({'border': 1, 'valign': 'vcenter', 'text_wrap': True})
-        sheet.merge_range(0, 0, 0, 6, 'BÁO CÁO XẾP LOẠI', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
+        sheet.merge_range(0, 0, 0, 6, 'BÁO CÁO XẾP LOẠI AUDIT CH', book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'}))
         for i, (name, width) in enumerate(zip(['STT', 'Cửa hàng', 'Điểm chuẩn', 'Điểm đánh giá', 'Tỷ lệ đạt (%)', 'Chi tiết lỗi', 'Xếp loại'],
                                               [6, 24, 14, 16, 14, 16, 18])):
             sheet.write(2, i, name, head)

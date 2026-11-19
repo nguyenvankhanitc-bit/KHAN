@@ -3,7 +3,8 @@
     <t t-name="lug_phan_he.GuideDocsManageDialog">
         <Dialog size="'xl'" contentClass="'o_guide_manage_dialog'" header="false" footer="false" withBodyPadding="false">
             <div class="o_guide_manage">
-                <div class="o_guide_manage_header">
+                <div class="o_guide_manage_header position-relative">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-2" aria-label="Đóng" title="Đóng" t-on-click="() => this.props.close()"/>
                     <h2>TÀI LIỆU HƯỚNG DẪN</h2>
                     <p>Quản lý và cấu hình tài liệu hướng dẫn sử dụng LinkQ ERP</p>
                 </div>

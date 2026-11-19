@@ -32,6 +32,10 @@
                     <span class="sidebar-ico ico-rose"><i class="fa fa-video-camera"/></span>
                     <span>Dịch vụ Camera</span>
                 </button>
+                <button type="button" class="sidebar-row" t-if="state.visible.camera" t-att-class="isActive('camera_checklist') ? 'is-active' : ''" t-on-click="onCheckCamera">
+                    <span class="sidebar-ico ico-rose"><i class="fa fa-check-square-o"/></span>
+                    <span>Check Camera</span>
+                </button>
                 <button type="button" class="sidebar-row" t-if="state.visible.attendance" t-att-class="isActive('attendance') ? 'is-active' : ''" t-on-click="onAttendance">
                     <span class="sidebar-ico ico-amber"><i class="fa fa-mobile"/></span>
                     <span>Máy chấm công</span>

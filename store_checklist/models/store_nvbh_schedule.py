@@ -53,6 +53,17 @@ class StoreNvbhScheduleLine(models.Model):
     staff_id = fields.Many2one('store.audit.staff', string='Nhân sự (cũ)')
     employee_code = fields.Char(string='ID')
     position = fields.Char(string='Chức vụ', default='NVBH', help='Mã chức vụ theo file xếp ca: NVBH, NT, CHT, ASMTT, PT...')
+
+    @api.model
+    def _search(self, domain, *args, **kwargs):
+        # lịch xếp ca: cùng phạm vi cửa hàng và phạm vi theo người như phiếu checklist
+        scope = self.env['store.audit']._user_store_scope()
+        extra = list(self.env['store.nvbh.check']._user_person_domain(False))
+        if scope is not None:
+            extra = [('store_id', 'in', scope)] + extra
+        if extra:
+            domain = extra + list(domain or [])
+        return super()._search(domain, *args, **kwargs)
     work_status = fields.Char(string='Trạng thái nhân viên')
     shift_id = fields.Many2one('store.shift', string='Mã ca', required=True)
     # thông tin phiếu mẹ để lọc / hiển thị trong danh sách

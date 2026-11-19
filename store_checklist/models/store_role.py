@@ -1,4 +1,5 @@
 import re
+from datetime import timedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
@@ -22,6 +23,8 @@ ROLE_LEVEL_MAP = {
     'QLBH': 6,
 }
 MAX_LEVEL = 6
+EDIT_WINDOW_DAYS = 4  # chỉ được check list / đánh giá trong ngày hôm nay và 3 ngày trước đó (ví dụ hôm nay 19/11 thì lùi được tới 16/11)
+LEVEL1_CODES = [c for c, lv in ROLE_LEVEL_MAP.items() if lv == 1]  # NVBH, NV, NT, NTTT, PT
 # mã dài khớp trước (ASMTT trước ASM, CHTTT trước CHT, NTTT trước NT, GSTT trước GS)
 _CODES_LONG_FIRST = sorted(ROLE_LEVEL_MAP, key=len, reverse=True)
 # Chức danh (job_title) viết bằng chữ -> mã chức vụ, dùng khi chức danh không chứa sẵn mã
@@ -117,18 +120,70 @@ class StoreNvbhCheckRole(models.Model):
     step_log_ids = fields.One2many('store.nvbh.check.step', 'check_id', string='Lịch sử đánh giá')
 
     @api.model
+    def _user_person_domain(self, on_check=True):
+        """Giới hạn theo NGƯỜI (cộng thêm giới hạn cửa hàng):
+        - Nhân viên (NVBH, NT, PT...) chỉ thấy dữ liệu của chính mình;
+        - CHT chỉ thấy dữ liệu của chính mình + nhân viên cấp 1 (NVBH / NT / PT) tại cửa hàng mình;
+        - ASM, RSM, GS, QLBH...: theo phạm vi cửa hàng; Quản lý / Admin / phạm vi COMPANY: không giới hạn.
+        on_check=True: domain cho phiếu checklist; False: domain cho dòng Lịch xếp ca."""
+        user = self.env.user
+        if self.env.su or user._is_admin() or user.has_group('store_checklist.group_store_manager'):
+            return []
+        if getattr(user.sudo(), 'lug_data_scope', False) == 'company':
+            return []
+        emp = user.sudo().employee_id
+        if not emp:
+            return []
+        level = role_level(emp.sudo().checklist_role_code)
+        if level not in (1, 2):
+            return []
+        # so khớp họ tên không phân biệt hoa/thường (so ở Python vì ILIKE của PostgreSQL không đổi hoa/thường chữ có dấu theo locale)
+        key = (emp.name or '').strip().casefold()
+        variants = {(n or '').strip() for n in
+                    [g[0] for g in self.env['store.nvbh.schedule.line'].sudo()._read_group([], ['staff_name'])]
+                    + [g[0] for g in self.sudo()._read_group([], ['staff_name'])]}
+        names = sorted(n for n in variants if n and n.casefold() == key) or [emp.name or '']
+        own = ('staff_name', 'in', names)
+        if level == 1:
+            return [own]
+        pos = ('schedule_line_id.position' if on_check else 'position', 'in', LEVEL1_CODES)
+        return ['|', own, pos]
+
+    @api.model
     def _search(self, domain, *args, **kwargs):
-        # người dùng thuộc cửa hàng nào thì chỉ thấy phiếu checklist của cửa hàng đó (admin / không giới hạn thì thấy hết)
+        # phiếu checklist: giới hạn theo cửa hàng (gồm Mã bộ phận được xem) và theo người (NVBH chỉ của mình, CHT: mình + NVBH/PT)
         scope = self.env['store.audit']._user_store_scope()
+        extra = list(self._user_person_domain(True))
         if scope is not None:
-            domain = [('store_id', 'in', scope)] + list(domain or [])
+            extra = [('store_id', 'in', scope)] + extra
+        if extra:
+            domain = extra + list(domain or [])
         return super()._search(domain, *args, **kwargs)
+
+    @api.model
+    def my_checklist_role(self):
+        """Mã chức vụ Checklist của người dùng đang đăng nhập (NVBH, CHT, ASM, RSM...); rỗng nếu không có hồ sơ nhân viên."""
+        emp = self.env.user.sudo().employee_id
+        return (emp.sudo().checklist_role_code or '') if emp else ''
+
+    @api.model
+    def get_store_check_status(self, month=None):
+        """Tình trạng check list của từng cửa hàng trong tháng: {store_id: 'done' | 'pending'}; cửa hàng chưa gửi phiếu nào thì không có trong kết quả (màu trắng).
+        pending (cam) = đã gửi check list, còn phiếu chờ đánh giá; done (xanh lá) = mọi phiếu đã gửi đều được đánh giá xong ở mọi cấp."""
+        start, end, _days = self._month_range(month)
+        groups = self._read_group([('work_date', '>=', start), ('work_date', '<', end), ('submitted', '=', True)],
+                                  ['store_id', 'state'], ['__count'])
+        ok = {}
+        for store, state, _count in groups:
+            if store:
+                ok[store.id] = ok.get(store.id, True) and state == 'approved'
+        return {str(k): ('done' if v else 'pending') for k, v in ok.items()}
 
     @api.model
     def get_my_stores(self):
         """Danh sách cửa hàng cho các ô lọc: người dùng chỉ thấy cửa hàng của mình (admin / không giới hạn thì thấy hết)."""
         stores = self.env['store.audit']._filter_stores_for_user(self.env['hr.store'].search([], order='name'))
-        return [{'id': st.id, 'display_name': st.display_name} for st in stores]
+        return [{'id': st.id, 'display_name': st.display_name, 'mien': st.mien or ''} for st in stores]
 
     # ------------------------------------------------------------------
     # Phân tầng: người thực hiện -> các cấp đánh giá (luồng động theo Sơ đồ tổ chức)
@@ -233,6 +288,8 @@ class StoreNvbhCheckRole(models.Model):
         else:
             # từ Cấp 2: bắt buộc User Odoo cá nhân của chính người đó, tài khoản CH_ bị khóa
             may_execute = own and not shared
+        # quá hạn chỉnh sửa (> 4 ngày so với hôm nay): khóa mọi người, trừ Quản trị / Quản lý Checklist
+        locked_expired = self._is_expired() and not (is_admin or user.has_group('store_checklist.group_store_manager'))
         chain = self._approval_chain()
         # bước đang đến lượt: phiếu đã gửi -> cấp kế tiếp; phiếu còn "Đang thực hiện" -> cấp đầu tiên được đánh giá luôn (tự chuyển sang giai đoạn đánh giá)
         if self.state == 'pending_review' and self.step_done < len(chain):
@@ -245,28 +302,46 @@ class StoreNvbhCheckRole(models.Model):
         for i, st in enumerate(chain, 1):
             u = st['user']
             if st['admin_only']:
-                can_edit = cur == i and is_admin
+                can_edit = cur == i and is_admin and not locked_expired
             else:
                 # chỉ người được phân công đúng cấp (hoặc Quản trị viên) mới đánh giá; cấp dưới không đánh giá cấp trên;
                 # cấp chưa có User Odoo thì nhóm Quản lý Checklist thay thế
                 mine = bool(u and u.id == user.id) or (not u and user.has_group('store_checklist.group_store_manager') and not shared)
-                can_edit = cur == i and (is_admin or mine)
+                can_edit = cur == i and (is_admin or mine) and not locked_expired
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit))
         first = steps[0] if steps else {}
         return {
             'chain': steps, 'cur': cur, 'role_code': code, 'level': level, 'subject': subject,
             'reviewer': first.get('employee') or self.env['hr.employee'], 'reviewer_user': first.get('user') or self.env['res.users'],
             # tick / ghi chú: chỉ khi đang thực hiện (sau khi gửi cấp trên thì khóa)
-            'can_execute': may_execute and self.state == 'draft',
-            'can_submit': may_execute and self.state == 'draft',
+            'can_execute': may_execute and self.state == 'draft' and not locked_expired,
+            'can_submit': may_execute and self.state == 'draft' and not locked_expired,
             'shared': shared,
+            'locked_expired': locked_expired,
         }
+
+    @api.model
+    def _edit_cutoff(self):
+        """Ngày cũ nhất còn được chỉnh sửa (hôm nay lùi EDIT_WINDOW_DAYS - 1 ngày)."""
+        return fields.Date.context_today(self) - timedelta(days=EDIT_WINDOW_DAYS - 1)
+
+    def _is_expired(self):
+        """Quá hạn chỉnh sửa: ngày check list cách hôm nay quá 4 ngày -> hệ thống tự khóa, điểm mặc định 0đ nếu chưa được đánh giá."""
+        self.ensure_one()
+        return bool(self.work_date) and self.work_date < self._edit_cutoff()
+
+    def _expired_message(self):
+        return _('Đã quá %d ngày so với ngày check list (%s) nên hệ thống tự khóa, không chỉnh sửa hay đánh giá được nữa; '
+                 'phiếu chưa được đánh giá tính điểm mặc định 0đ. Hạn chỉnh sửa hiện tại: từ ngày %s.') % (
+                     EDIT_WINDOW_DAYS, self.work_date.strftime('%d/%m/%Y') if self.work_date else '', self._edit_cutoff().strftime('%d/%m/%Y'))
 
     def _assert_can_execute(self):
         for check in self:
             info = check._role_info()
             if info['can_execute']:
                 continue
+            if info['locked_expired']:
+                raise AccessError(check._expired_message())
             if check.state != 'draft':
                 raise AccessError(_('Checklist này đã gửi cấp trên đánh giá nên không thể sửa nữa.'))
             raise AccessError(_('Bạn không có quyền thực hiện checklist này: tài khoản chung CH_ chỉ tick cho Cấp 1 '
@@ -288,6 +363,8 @@ class StoreNvbhCheckRole(models.Model):
             } for s in steps],
             'can_execute': info['can_execute'],
             'can_submit': info['can_submit'],
+            'locked_expired': info['locked_expired'],
+            'edit_deadline': self._edit_cutoff().strftime('%d/%m/%Y'),
             'reviewer_name': steps[0]['employee'].name if steps and steps[0]['employee'] else '',
             'reviewer_role': steps[0]['code'] if steps else '',
         })
@@ -346,6 +423,8 @@ class StoreNvbhCheckRole(models.Model):
         info = check._role_info()
         step = next((s for s in info['chain'] if s['no'] == step_no), None)
         if not step or not step['can_edit']:
+            if info['locked_expired']:
+                raise AccessError(check._expired_message())
             if check.state == 'draft':
                 raise AccessError(_('Phiếu chưa được gửi cấp trên đánh giá.'))
             if check.state == 'approved':

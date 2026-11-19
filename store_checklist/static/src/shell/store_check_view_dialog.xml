@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
     <t t-name="store_checklist.CheckViewDialog">
-        <Dialog size="'xl'" title="'Checklist công việc - ' + props.payload.staff_name">
+        <Dialog size="'xl'" header="false">
             <div class="o_store_check_form o_store_job_page">
+                <div class="o_store_dlg_head">
+                    <h4>Checklist công việc - <t t-esc="props.payload.staff_name"/></h4>
+                    <button type="button" class="x_close" title="Đóng" aria-label="Đóng" t-on-click="props.close"><i class="fa fa-times"/></button>
+                </div>
                 <div class="o_store_job_info">
                     <span>Nhân viên: <b t-esc="props.payload.staff_name"/></span>
                     <span>Cửa hàng: <b t-esc="props.payload.store"/></span>

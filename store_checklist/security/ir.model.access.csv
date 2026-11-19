@@ -39,3 +39,5 @@ access_store_nvbh_rating_user,store.nvbh.rating user,model_store_nvbh_rating,gro
 access_store_nvbh_rating_manager,store.nvbh.rating manager,model_store_nvbh_rating,group_store_manager,1,1,1,1
 access_store_nvbh_check_step_user,store.nvbh.check.step user,model_store_nvbh_check_step,group_store_user,1,0,0,0
 access_store_nvbh_check_step_manager,store.nvbh.check.step manager,model_store_nvbh_check_step,group_store_manager,1,1,1,1
+access_store_nvbh_kpi_input_user,store.nvbh.kpi.input user,model_store_nvbh_kpi_input,group_store_user,1,0,0,0
+access_store_nvbh_kpi_input_manager,store.nvbh.kpi.input manager,model_store_nvbh_kpi_input,group_store_manager,1,1,1,1

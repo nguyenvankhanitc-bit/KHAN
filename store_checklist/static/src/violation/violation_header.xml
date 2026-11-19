@@ -46,6 +46,7 @@
                         <button type="button" class="o_store_print_btn" t-on-click="print"><i class="fa fa-print"/> In</button>
                         <button type="button" class="o_store_export_btn" t-on-click="exportExcel"><i class="fa fa-download"/> Xuất Excel</button>
                     </span>
+                    <button type="button" class="x_close" title="Đóng" t-on-click="props.close"><i class="fa fa-times"/></button>
                 </div>
                 <div class="top">
                     <div class="who">

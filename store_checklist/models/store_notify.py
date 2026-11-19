@@ -12,7 +12,7 @@ SHELL_URL = '/odoo/action-store_checklist.action_store_shell'
 
 def card(title, rows, label='Xem chi tiết', check_id=None):
     """Thẻ tin nhắn: tiêu đề đậm, các dòng "Nhãn: giá trị" và nút Xem chi tiết (dẫn tới ứng dụng Checklist Audit)."""
-    url = '%s?store_check=%s' % (SHELL_URL, int(check_id)) if check_id else SHELL_URL  # có check_id: mở thẳng phiếu cần đánh giá
+    url = '/store_checklist/open/%s' % int(check_id) if check_id else SHELL_URL  # có check_id: mở thẳng phiếu cần đánh giá (qua cookie, không phụ thuộc tham số URL)
     body = Markup('<b>%s</b><br/>') % title
     for key, value in rows:
         body += Markup('%s: <b>%s</b><br/>') % (key, value or '—')

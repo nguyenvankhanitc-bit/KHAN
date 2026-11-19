@@ -88,12 +88,13 @@ class StoreNvbhCheck(models.Model):
             rec.cnt_todo = len(lines.filtered(lambda l: l.status == 'todo'))
 
     @api.model
-    def _task_line_commands(self, shift):
-        """Một dòng cho mỗi công việc áp dụng cho Loại ca của Mã ca (theo thứ tự trong bảng công việc NVBH)."""
+    def _task_line_commands(self, shift, work_date=None):
+        """Một dòng cho mỗi công việc áp dụng cho Loại ca của Mã ca và cho Thứ của ngày làm việc (theo thứ tự trong bảng công việc NVBH)."""
         groups = dict(TASK_GROUPS)
         if not shift or not shift.shift_type_id:
             return []
         tasks = self.env['store.nvbh.task'].search([('shift_type_ids', 'in', shift.shift_type_id.id)], order='task_group, sequence, id')
+        tasks = tasks.filtered(lambda t: t.runs_on(work_date))
         return [Command.create({
             'task_id': t.id,
             'sequence': t.sequence,
@@ -105,11 +106,45 @@ class StoreNvbhCheck(models.Model):
             'is_done': False,
         }) for t in tasks]
 
+    def _fully_evaluated(self):
+        """Phiếu đã được đánh giá xong ở MỌI cấp trong luồng (CHT -> ASM -> ...), nghĩa là trạng thái "Đã hoàn tất đánh giá" và mọi dòng đã có kết quả.
+        Phiếu mới qua cấp 1 (CHT) mà cấp trên (ASM) chưa đánh giá vẫn tính là "Chờ đánh giá"."""
+        self.ensure_one()
+        if not self.line_ids:
+            return False
+        if self.state == 'approved' and all(ln._final_eval()[0] for ln in self.line_ids):
+            return True
+        # quá hạn chỉnh sửa (hệ thống đã tự khóa) mà chưa đánh giá xong: chốt với điểm hiện có, chưa đánh giá thì mặc định 0đ
+        return self._is_expired()
+
+    @api.model
+    def _sync_open_checks_by_weekday(self, domain=None):
+        """Cập nhật lại các phiếu "Đang thực hiện" theo Thứ áp dụng của công việc (Cài đặt > Danh sách công việc NVBH):
+        bỏ các dòng công việc không áp dụng cho thứ của ngày làm việc và thêm các dòng còn thiếu.
+        Dòng nhân viên đã tích / ghi chú / đã được đánh giá thì giữ nguyên để không mất dữ liệu. Trả về (số dòng bỏ, số dòng thêm)."""
+        removed = added = 0
+        checks = self.sudo().search([('state', '=', 'draft'), ('submitted', '=', False)] + list(domain or []))
+        for chk in checks:
+            if not chk.shift_id or not chk.shift_id.shift_type_id:
+                continue
+            wanted = self._task_line_commands(chk.shift_id, chk.work_date)
+            wanted_ids = {cmd[2]['task_id'] for cmd in wanted}
+            have = {ln.task_id.id: ln for ln in chk.line_ids if ln.task_id}
+            drop = chk.line_ids.filtered(
+                lambda ln: ln.task_id and ln.task_id.id not in wanted_ids
+                and not (ln.is_done or ln.note or ln.eval_result or ln.asm_eval_result or ln.rsm_eval_result or ln.adm_eval_result or ln.error_detail))
+            missing = [cmd for cmd in wanted if cmd[2]['task_id'] not in have]
+            if drop or missing:
+                chk.write({'line_ids': [Command.delete(ln.id) for ln in drop] + missing})
+                removed += len(drop)
+                added += len(missing)
+        return removed, added
+
     @api.onchange('shift_id')
     def _onchange_shift_id(self):
         # chọn Ca -> nạp công việc áp dụng cho Mã ca đó (chỉ khi phiếu mới)
         if not self._origin.id:
-            self.line_ids = [Command.clear()] + self._task_line_commands(self.shift_id)
+            self.line_ids = [Command.clear()] + self._task_line_commands(self.shift_id, self.work_date)
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -152,7 +187,7 @@ class StoreNvbhCheck(models.Model):
         staff = []
         for i, l in enumerate(lines, 1):
             c = checks.get(l.id)
-            total = c.cnt_total if c else len(self._task_line_commands(l.shift_id))
+            total = c.cnt_total if c else len(self._task_line_commands(l.shift_id, work_date))
             staff.append({
                 'id': l.id, 'stt': i, 'name': l.staff_name or '', 'shift': l.shift_id.code or '',
                 'done': c.cnt_done if c else 0, 'total': total, 'points': c.points if c else 0.0,
@@ -194,7 +229,7 @@ class StoreNvbhCheck(models.Model):
                 'shift_id': line.shift_id.id,
                 'staff_name': line.staff_name,
                 'schedule_line_id': line.id,
-                'line_ids': self._task_line_commands(line.shift_id),
+                'line_ids': self._task_line_commands(line.shift_id, line.work_date),
             })
         return check._checklist_payload()
 
@@ -312,7 +347,7 @@ class StoreNvbhCheck(models.Model):
                                         'days': [], 'done': 0, 'total': 0, 'errors': 0, 'points': 0.0, 'max_points': 0.0,
                                         'evaluated': 0})
             max_points = sum(c.line_ids.mapped('max_score'))
-            evaluated = bool(c.line_ids) and all(l._final_eval()[0] for l in c.line_ids)  # đã đánh giá đủ mọi dòng
+            evaluated = c._fully_evaluated()  # đã đánh giá xong ở mọi cấp trong luồng
             pct = 100.0 * c.points / max_points if max_points else 0.0
             g['days'].append({
                 'id': c.id,
@@ -403,7 +438,7 @@ class StoreNvbhCheck(models.Model):
                 g['done'] += c.cnt_done
                 g['total'] += c.cnt_total
                 g['errors'] += c.error_total
-                if c.line_ids and all(x._final_eval()[0] for x in c.line_ids) and mp:
+                if c._fully_evaluated() and mp:
                     g['pct_n'] += 1
                     g['points'] += c.points
                     g['max_points'] += mp
@@ -479,7 +514,7 @@ class StoreNvbhCheck(models.Model):
                 st = 'wait'
             elif c.error_total:
                 st = 'bad'
-            elif all(x._final_eval()[0] for x in c.line_ids):
+            elif c._fully_evaluated():
                 st = 'ok'
             else:
                 st = 'wait'
@@ -539,7 +574,7 @@ class StoreNvbhCheck(models.Model):
             for c in items:
                 lines = c.line_ids
                 mp = sum(lines.mapped('max_score'))
-                evaluated = bool(lines) and all(x._final_eval()[0] for x in lines)  # đã đánh giá đủ mọi dòng
+                evaluated = c._fully_evaluated()  # đã đánh giá xong ở mọi cấp trong luồng
                 pct = round(100.0 * c.points / mp, 1) if mp else 0.0
                 done_all = bool(c.cnt_total) and c.cnt_todo == 0
                 # Ghi chú / Tóm tắt công việc (lấy từ các dòng checklist công việc của phiếu)
@@ -620,9 +655,11 @@ class StoreNvbhCheck(models.Model):
                                   'border': 1, 'text_wrap': True})
         f_cell = book.add_format({'border': 1, 'valign': 'vcenter', 'text_wrap': True})
         f_mid = book.add_format({'border': 1, 'valign': 'vcenter', 'align': 'center', 'text_wrap': True})
-        f_num = book.add_format({'border': 1, 'valign': 'vcenter', 'align': 'center', 'num_format': '#,##0.##'})
+        f_num = book.add_format({'border': 1, 'valign': 'vcenter', 'align': 'center', 'num_format': '#,##0;-#,##0;"-"'})
+        f_num_dec = book.add_format({'border': 1, 'valign': 'vcenter', 'align': 'center', 'num_format': '#,##0.0#;-#,##0.0#;"-"'})
         f_foot = book.add_format({'bold': True, 'border': 1, 'bg_color': '#DBE7F5', 'valign': 'vcenter', 'text_wrap': True})
-        f_foot_num = book.add_format({'bold': True, 'border': 1, 'bg_color': '#DBE7F5', 'align': 'center', 'num_format': '#,##0.##'})
+        f_foot_num = book.add_format({'bold': True, 'border': 1, 'bg_color': '#DBE7F5', 'align': 'center', 'num_format': '#,##0;-#,##0;"-"'})
+        f_foot_dec = book.add_format({'bold': True, 'border': 1, 'bg_color': '#DBE7F5', 'align': 'center', 'num_format': '#,##0.0#;-#,##0.0#;"-"'})
         used = set()
         for sh in sheets:
             name = re.sub(r'[\[\]:*?/\\]', ' ', sh.get('name') or 'Bang checklist').strip()[:31] or 'Bang checklist'
@@ -644,6 +681,9 @@ class StoreNvbhCheck(models.Model):
 
             def put(r, c, v, text_fmt, num_fmt):
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
+                    # số nguyên: không hiện dấu thập phân thừa ("8," -> "8"); số 0 hiện "-"
+                    if v != int(v):
+                        num_fmt = f_foot_dec if num_fmt is f_foot_num else f_num_dec
                     sheet.write_number(r, c, v, num_fmt)
                     size = len(str(v))
                 else:
@@ -676,6 +716,12 @@ class StoreNvbhCheck(models.Model):
         """Xuất bảng đang hiển thị (Bảng Nhân viên / Bảng Đánh giá) ra Excel: tiêu đề, dòng tiêu đề cột, dữ liệu, dòng tổng."""
         self.env['store.perm.rule'].check_export()
         return self._xlsx_book([{'name': 'Bang checklist', 'title': title, 'subtitle': subtitle, 'headers': headers, 'rows': rows, 'foot': foot}], filename)
+
+    @api.model
+    def export_sheets_xlsx(self, sheets, filename='Bang_checklist'):
+        """Xuất nhiều sheet (mỗi sheet gồm name, title, subtitle, headers, rows, foot) ra một file Excel."""
+        self.env['store.perm.rule'].check_export()
+        return self._xlsx_book(sheets, filename)
 
     _MONTHLY_HEADERS = ['Ngày', 'Cửa hàng', 'Mã ca', 'Trạng thái ngày', 'Tổng việc ca', 'Đã làm', 'Số lỗi', 'Điểm đạt', 'Điểm chuẩn ca',
                         'Điểm CHT đánh giá', 'Điểm ASM đánh giá', 'Tỷ lệ đạt (%)', 'Kết quả', 'Ghi chú / Tóm tắt công việc']

@@ -17,6 +17,7 @@ Quản lý tài sản (EAM / CMMS)
         "mail",
         "maintenance",
         "hr",
+        "lug_permission",
     ],
     "data": [
         "security/eam_security.xml",

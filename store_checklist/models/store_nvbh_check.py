@@ -801,7 +801,11 @@ class StoreNvbhCheck(models.Model):
     def init(self):
         cr = self.env.cr
         cr.execute("SELECT 1 FROM information_schema.columns WHERE table_name = 'store_nvbh_check' AND column_name = 'submitted'")
-        if cr.fetchone():
+        has_col = cr.fetchone()
+        # bảng dòng có thể chưa được tạo (nâng cấp từ bản cũ) -> bỏ qua, lần nâng cấp sau sẽ chạy
+        cr.execute("SELECT to_regclass('store_nvbh_check_line')")
+        has_line = cr.fetchone()[0]
+        if has_col and has_line:
             cr.execute("""
                 UPDATE store_nvbh_check c SET submitted = TRUE, submit_date = COALESCE(c.submit_date, c.write_date)
                  WHERE c.submitted IS NOT TRUE AND EXISTS (

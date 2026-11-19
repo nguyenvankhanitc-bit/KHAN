@@ -2763,3 +2763,26 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
   .o_store_mgr_dlg .list td:nth-child(8) .vw{width: 100%; padding: 7px;}
   .o_store_mgr_dlg .list td[colspan]{grid-column: 1 / -1; display: block; text-align: center !important;}
 }
+
+/* Mobile: nút In / Xuất Excel gọn lại, chữ không bị cắt */
+@media (max-width: 767.98px){
+  .o_store_tools .o_store_tool, .o_store_list_filters :is(.o_store_print_btn, .o_store_export_btn){font-size: .72rem !important; padding: 0 8px !important; height: 34px; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; gap: 4px;}
+  .o_store_tools .o_store_tool i, .o_store_list_filters :is(.o_store_print_btn, .o_store_export_btn) i{font-size: .78rem; margin-right: 0;}
+}
+
+/* Mobile: bộ lọc Xếp hạng ASM canh đều thẳng hàng */
+@media (max-width: 767.98px){
+  .o_store_asm_kpi_page .asm_rank_top .ttl{font-size: .95rem; line-height: 1.25;}
+  .o_store_asm_kpi_page .asm_rank_top .lg_wrap{width: 100%; justify-content: space-between; gap: 6px; font-size: .74rem; flex-wrap: nowrap;}
+  .o_store_asm_kpi_page .asm_rank_top .lg{white-space: nowrap; gap: 4px;}
+  .o_store_asm_kpi_page .asm_pills{display: grid !important; grid-template-columns: repeat(3, 1fr); gap: 6px;}
+  .o_store_asm_kpi_page .asm_pills > button{width: 100%; min-width: 0; margin: 0; padding: 8px 4px; font-size: .8rem; text-align: center; white-space: nowrap;}
+  .o_store_asm_kpi_page .asm_rk_filters{display: grid !important; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-top: 8px;}
+  .o_store_asm_kpi_page .asm_rk_filters > button{width: 100%; min-width: 0; margin: 0; padding: 7px 2px; font-size: .75rem; text-align: center; white-space: nowrap;}
+  .o_store_asm_kpi_page .asm_rank_ctrl{display: block;}
+}
+
+/* Mobile: ẩn biểu tượng con rệp (menu debug) trên thanh trên cùng */
+@media (max-width: 767.98px){
+  .o_navbar .o_debug_manager, .o_main_navbar .o_debug_manager{display: none !important;}
+}

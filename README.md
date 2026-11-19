@@ -11,6 +11,7 @@ Repository module Odoo tùy chỉnh.
 | `lug_phan_he` | Quản lý dịch vụ (Internet, thanh toán, Calendar, dashboard) |
 | `lug_eam` | Quản lý tài sản / EAM |
 | `lug_project` | Quản lý dự án Sáng Tâm (danh sách, giai đoạn, shell UI) |
+| `store_checklist` | Checklist đánh giá cửa hàng: Audit / Mystery Shopper, Checklist NVBH (đánh giá nhiều cấp CHT/ASM), KPI, báo cáo, giao diện điện thoại |
 | `appscript_kiem_ke` | App Script kiểm kê |
 
 ## Cài đặt

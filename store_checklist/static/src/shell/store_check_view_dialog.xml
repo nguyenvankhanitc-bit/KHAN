@@ -66,14 +66,14 @@
                                 <td class="c"><span t-att-class="'err-count' + (lineErrors(line) ? ' has' : '')" t-esc="lineErrors(line)"/></td>
                                 <t t-foreach="steps" t-as="st" t-key="st.no">
                                     <t t-set="cc" t-value="(!st.can_edit and !st.done ? ' sx-off' : '') + (line.ev[st_index].result ? '' : ' sx-unrated')"/>
-                                    <td t-att-class="'c sx-col' + cc"><b t-esc="st.name || '—'"/></td>
-                                    <td t-att-class="'c sx-cell' + cc">
+                                    <td t-att-class="'c sx-col' + cc" t-att-data-label="st.label + ' · Người đánh giá'"><b t-esc="st.name || '—'"/></td>
+                                    <td t-att-class="'c sx-cell' + cc" t-att-data-label="st.label + ' · KQ đánh giá'">
                                         <label t-foreach="results" t-as="r" t-key="r[0]" t-att-class="'ev ev-' + r[0]">
                                             <input type="checkbox" t-att-checked="line.ev[st_index].result === r[0]" t-att-disabled="!st.can_edit" t-on-change="() => this.setResult(line, st_index, r[0])"/>
                                             <t t-esc="r[1]"/>
                                         </label>
                                     </td>
-                                    <td t-att-class="'sx-col' + cc"><textarea class="note ev-detail" rows="1" t-att-disabled="!st.can_edit" t-att-value="line.ev[st_index].detail" placeholder="Mỗi dòng là một lỗi..." t-on-input="(ev) => this.setDetail(line, st_index, ev)"/></td>
+                                    <td t-att-class="'sx-col' + cc" t-att-data-label="st.label + ' · Chi tiết lỗi'"><textarea class="note ev-detail" rows="1" t-att-disabled="!st.can_edit" t-att-value="line.ev[st_index].detail" placeholder="Mỗi dòng là một lỗi..." t-on-input="(ev) => this.setDetail(line, st_index, ev)"/></td>
                                 </t>
                             </tr>
                         </t>

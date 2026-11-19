@@ -255,27 +255,35 @@ class StoreNvbhCheckKpi(models.Model):
         return {'month_label': start.strftime('%m/%Y'), 'rows': rows}
 
     @api.model
-    def export_kpi_overview_xlsx(self, month=None, store_id=None, mien=None):
+    def export_kpi_overview_xlsx(self, month=None, store_id=None, mien=None, stores=None):
+        """Xuất Bảng So Sánh Tổng Thể; `stores` = tên các cửa hàng được chọn, mỗi cửa hàng một sheet."""
         self.env['store.perm.rule'].check_export()
         data = self.get_kpi_overview(month, store_id, mien)
+        if stores:
+            data['rows'] = [r for r in data['rows'] if r['store'] in stores]
         if not data['rows']:
             raise UserError(_('Không có dữ liệu để xuất.'))
         headers = ['Hạng', 'Nhân viên', 'Mã NV', 'Cửa hàng', 'Ca hoàn thành / Lịch', 'Việc đã làm / Giao', 'Năng suất Checklist', 'Số lỗi',
                    'KPI Checklist (40)', 'KPI Hoàn thành việc (15)', 'KPI Kỷ luật (15)', 'KPI Doanh số (20)', 'KPI Thái độ (10)', 'TỔNG KPI (100)',
                    'Xếp loại', 'Hệ số thưởng (%)']
-        rows = []
-        stores = sorted({r['store'] for r in data['rows']})
-        for store in stores:  # nhóm theo cửa hàng, hạng tính trong từng cửa hàng
+        sheets, used = [], set()
+        for store in sorted({r['store'] for r in data['rows']}):  # mỗi cửa hàng một sheet, hạng tính trong từng cửa hàng
             grp = [r for r in data['rows'] if r['store'] == store]
-            rows.append(['', 'CỬA HÀNG: %s (%d nhân viên)' % (store or '-', len(grp))] + [''] * 14)
-            for i, r in enumerate(grp, 1):
-                rows.append([i, r['name'], r['code'] or '-', r['store'], r['shifts'], r['jobs'], r['productivity'], r['errors'], r['kpi_checklist'],
-                             r['kpi_complete'], r['kpi_discipline'], r['kpi_sales'], r['kpi_attitude'], r['kpi_total'], r['rank'], r['bonus']])
-        n = len(data['rows'])
-        foot = ['', 'TRUNG BÌNH (%d nhân viên)' % n, '', '', '', '', '', '', *[round(sum(r[k] for r in data['rows']) / n, 2) for k in (
-            'kpi_checklist', 'kpi_complete', 'kpi_discipline', 'kpi_sales', 'kpi_attitude', 'kpi_total')], '', '']
-        return self._xlsx_book([{'name': 'So sanh tong the', 'title': 'BẢNG SO SÁNH TỔNG THỂ KPI NHÂN VIÊN BÁN HÀNG',
-                                 'subtitle': 'Tháng %s' % data['month_label'], 'headers': headers, 'rows': rows, 'foot': foot}], 'Bang_so_sanh_tong_the')
+            rows = [[i, r['name'], r['code'] or '-', r['store'], r['shifts'], r['jobs'], r['productivity'], r['errors'], r['kpi_checklist'],
+                     r['kpi_complete'], r['kpi_discipline'], r['kpi_sales'], r['kpi_attitude'], r['kpi_total'], r['rank'], r['bonus']]
+                    for i, r in enumerate(grp, 1)]
+            n = len(grp)
+            foot = ['', 'TRUNG BÌNH (%d nhân viên)' % n, '', '', '', '', '', '', *[round(sum(r[k] for r in grp) / n, 2) for k in (
+                'kpi_checklist', 'kpi_complete', 'kpi_discipline', 'kpi_sales', 'kpi_attitude', 'kpi_total')], '', '']
+            name = ''.join(ch for ch in (store or 'Khac') if ch not in '[]:*?/\\')[:31] or 'Khac'
+            base, k = name, 2
+            while name.lower() in used:
+                name = '%s %d' % (base[:28], k)
+                k += 1
+            used.add(name.lower())
+            sheets.append({'name': name, 'title': 'BẢNG SO SÁNH TỔNG THỂ KPI NHÂN VIÊN BÁN HÀNG - CỬA HÀNG %s' % (store or '-'),
+                           'subtitle': 'Tháng %s' % data['month_label'], 'headers': headers, 'rows': rows, 'foot': foot})
+        return self._xlsx_book(sheets, 'Bang_so_sanh_tong_the')
 
     @api.model
     def save_kpi_input(self, month, store_id, staff_name, field, pct, note=''):
@@ -441,3 +449,220 @@ class StoreNvbhCheckKpi(models.Model):
         book.close()
         import base64
         return {'name': '%s_%s.xlsx' % (PROFILES.get(profile, PROFILES['kpi'])['labels']['file'], fields.Date.context_today(self).strftime('%Y%m%d')), 'data': base64.b64encode(buf.getvalue()).decode()}
+
+
+    @api.model
+    def get_kpi_asm_report(self, month=None, mien=None, asm_id=None):
+        """Báo cáo quản trị khu vực theo ASM: tổng hợp KPI 5 nhóm Checklist + 4 tiêu chí theo từng cửa hàng và từng ASM."""
+        start, end, _days = self._month_range(month)
+        mkey = start.strftime('%Y-%m')
+        dom = [('work_date', '>=', start), ('work_date', '<', end)]
+        if mien:
+            dom.append(('store_id.mien', '=', mien))
+
+        # Thu thập toàn bộ (store_id, staff_name) có lịch hoặc checklist trong tháng/miền
+        pairs = {}
+        for ln in self.env['store.nvbh.schedule.line'].search(dom):
+            nm = (ln.staff_name or '').strip()
+            if nm and ln.store_id:
+                pairs.setdefault((ln.store_id.id, nm.casefold()), (ln.store_id, nm))
+        for chk in self.search(dom):
+            nm = (chk.staff_name or '').strip()
+            if nm and chk.store_id:
+                pairs.setdefault((chk.store_id.id, nm.casefold()), (chk.store_id, nm))
+
+        by_store = {}
+        for (_sid, _nc), (store, nm) in pairs.items():
+            d = self.get_kpi_report(mkey, store.id, nm, 'kpi')
+            if not d:
+                continue
+            other = {r['no']: r for r in d['others']}
+            grps = d['groups']
+            s_entry = by_store.setdefault(store.id, {'store': store, 'staff': []})
+            s_entry['staff'].append({
+                'name': d['staff'], 'code': d['code'],
+                'g1': grps[0]['kpi'] if len(grps) > 0 else 0.0,
+                'g2': grps[1]['kpi'] if len(grps) > 1 else 0.0,
+                'g3': grps[2]['kpi'] if len(grps) > 2 else 0.0,
+                'g4': grps[3]['kpi'] if len(grps) > 3 else 0.0,
+                'g5': grps[4]['kpi'] if len(grps) > 4 else 0.0,
+                'complete': other['2']['kpi'], 'discipline': other['3']['kpi'],
+                'sales': other['4']['kpi'], 'attitude': other['5']['kpi'],
+                'kpi_total': d['total']['kpi'],
+                'shifts_pct': d['summary']['shifts_pct'],
+                'rank': d['rank'], 'bonus': d['bonus'],
+            })
+
+        def avg_key(items, key):
+            return round(sum(x[key] for x in items) / len(items), 2) if items else 0.0
+
+        def short_rank(score):
+            if score >= 80.0:
+                return 'Hạng A', 'A'
+            if score >= 70.0:
+                return 'Hạng B', 'B'
+            return 'Hạng C', 'C'
+
+        asm_map = {}
+        for sid, sdata in by_store.items():
+            store = sdata['store']
+            staff = sdata['staff']
+            if not staff:
+                continue
+            mgr = store.manager_id
+            aid = mgr.id or 0
+            aname = mgr.name or 'Chưa gán ASM'
+            st_row = {
+                'store_id': store.id, 'store': store.display_name or store.name or '-',
+                'staff_count': len(staff),
+                'g1': avg_key(staff, 'g1'), 'g2': avg_key(staff, 'g2'), 'g3': avg_key(staff, 'g3'),
+                'g4': avg_key(staff, 'g4'), 'g5': avg_key(staff, 'g5'),
+                'complete': avg_key(staff, 'complete'), 'discipline': avg_key(staff, 'discipline'),
+                'sales': avg_key(staff, 'sales'), 'attitude': avg_key(staff, 'attitude'),
+                'kpi_total': avg_key(staff, 'kpi_total'),
+                'shifts_pct': avg_key(staff, 'shifts_pct'),
+                'staff': sorted(staff, key=lambda x: (-x['kpi_total'], x['name'])),
+            }
+            st_row['passed'] = st_row['kpi_total'] >= 72.0
+            st_row['status'] = 'ĐẠT' if st_row['passed'] else 'CHƯA ĐẠT'
+            st_row['rank_short'], st_row['rank_code'] = short_rank(st_row['kpi_total'])
+            a = asm_map.setdefault(aid, {'id': aid, 'name': aname, 'stores': []})
+            a['stores'].append(st_row)
+
+        all_asms = []
+        w1, w2, w3, w4, w5 = [g[2] for g in KPI_GROUPS]
+        w_chk = w1 + w2 + w3 + w4 + w5
+        for aid, a in asm_map.items():
+            stores = sorted(a['stores'], key=lambda s: (-s['kpi_total'], s['store']))
+            g1, g2, g3, g4, g5 = [avg_key(stores, k) for k in ('g1', 'g2', 'g3', 'g4', 'g5')]
+            comp = avg_key(stores, 'complete')
+            disc = avg_key(stores, 'discipline')
+            sales = avg_key(stores, 'sales')
+            att = avg_key(stores, 'attitude')
+            tot = avg_key(stores, 'kpi_total')
+            sh_pct = avg_key(stores, 'shifts_pct')
+            r_short, r_code = short_rank(tot)
+            # 5 nhóm Checklist (%) + Tổng 5 nhóm cho biểu đồ xếp hạng ASM
+            p1 = round(100.0 * g1 / w1, 1) if w1 else 0.0
+            p2 = round(100.0 * g2 / w2, 1) if w2 else 0.0
+            p3 = round(100.0 * g3 / w3, 1) if w3 else 0.0
+            p4 = round(100.0 * g4 / w4, 1) if w4 else 0.0
+            p5 = round(100.0 * g5 / w5, 1) if w5 else 0.0
+            p_all5 = round(100.0 * (g1 + g2 + g3 + g4 + g5) / w_chk, 1) if w_chk else 0.0
+            # 6 trục (%) theo chiều kim đồng hồ cho biểu đồ Radar lục giác: Kỷ luật, Thái độ, Tỷ lệ đi ca, Doanh số, Hàng hóa, Hoàn thành
+            radar = [
+                round(100.0 * disc / W_DISCIPLINE, 1),
+                round(100.0 * att / W_ATTITUDE, 1),
+                round(min(sh_pct, 100.0), 1),
+                round(100.0 * sales / W_SALES, 1),
+                round(100.0 * (g1 + g2 + g3 + g4 + g5) / w_chk, 1) if w_chk else 0.0,
+                round(100.0 * comp / W_COMPLETE, 1),
+            ]
+            all_asms.append({
+                'id': aid, 'name': a['name'],
+                'store_count': len(stores), 'staff_count': sum(s['staff_count'] for s in stores),
+                'g1': g1, 'g2': g2, 'g3': g3, 'g4': g4, 'g5': g5,
+                'complete': comp, 'discipline': disc, 'sales': sales, 'attitude': att,
+                'kpi_total': tot, 'shifts_pct': sh_pct,
+                'rank_short': r_short, 'rank_code': r_code,
+                'pillars': [p1, p2, p3, p4, p5, p_all5],
+                'radar': radar,
+                'stores': stores,
+            })
+
+        all_asms.sort(key=lambda x: (-x['kpi_total'], x['name']))
+        for idx, a in enumerate(all_asms, 1):
+            a['rank_no'] = idx
+
+        asm_opts = [{'id': a['id'], 'name': a['name']} for a in all_asms]
+        if asm_id not in (None, '', False):
+            target = int(asm_id)
+            asms = [a for a in all_asms if a['id'] == target]
+        else:
+            asms = all_asms
+
+        all_stores = [s for a in asms for s in a['stores']]
+        region = {
+            'store_count': len(all_stores),
+            'staff_count': sum(s['staff_count'] for s in all_stores),
+            'avg_kpi': round(sum(s['kpi_total'] for s in all_stores) / len(all_stores), 2) if all_stores else 0.0,
+            'pillar_avgs': [round(sum(a['pillars'][i] for a in all_asms) / len(all_asms), 1) if all_asms else 0.0 for i in range(6)],
+            'rank_counts': {
+                'all': len(asms),
+                'A': sum(1 for a in asms if a['rank_code'] == 'A'),
+                'B': sum(1 for a in asms if a['rank_code'] == 'B'),
+                'C': sum(1 for a in asms if a['rank_code'] == 'C'),
+            },
+        }
+
+        return {
+            'month': mkey, 'month_label': start.strftime('%m/%Y'),
+            'updated_at': fields.Date.context_today(self).strftime('%d/%m/%Y'),
+            'weights': {'g1': w1, 'g2': w2, 'g3': w3, 'g4': w4, 'g5': w5,
+                        'complete': W_COMPLETE, 'discipline': W_DISCIPLINE, 'sales': W_SALES, 'attitude': W_ATTITUDE},
+            'region': region,
+            'asm_opts': asm_opts,
+            'asms': asms,
+        }
+
+    @api.model
+    def export_kpi_asm_xlsx(self, month=None, mien=None, asm_id=None):
+        """Xuất Báo cáo Checklist NVBH theo ASM ra Excel: sheet Tổng hợp + mỗi ASM một sheet."""
+        self.env['store.perm.rule'].check_export()
+        data = self.get_kpi_asm_report(month, mien, asm_id)
+        if not data['asms']:
+            raise UserError(_('Không có dữ liệu ASM để xuất.'))
+        w = data['weights']
+        headers = [
+            'Hạng', 'ASM', 'Cửa hàng',
+            'Nhóm I (%gđ)' % w['g1'], 'Nhóm II (%gđ)' % w['g2'], 'Nhóm III (%gđ)' % w['g3'],
+            'Nhóm IV (%gđ)' % w['g4'], 'Nhóm V (%gđ)' % w['g5'],
+            'Hoàn thành việc (%gđ)' % w['complete'], 'Kỷ luật (%gđ)' % w['discipline'],
+            'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
+            'Tổng KPI (100)', 'Xếp loại',
+        ]
+        all_rows = []
+        for a in data['asms']:
+            all_rows.append([
+                a['rank_no'], '%s (TB · %d CH, %d NV)' % (a['name'], a['store_count'], a['staff_count']), '',
+                a['g1'], a['g2'], a['g3'], a['g4'], a['g5'],
+                a['complete'], a['discipline'], a['sales'], a['attitude'], a['kpi_total'], a['rank_short'],
+            ])
+            for s in a['stores']:
+                all_rows.append([
+                    '', a['name'], '%s (%d NV)' % (s['store'], s['staff_count']),
+                    s['g1'], s['g2'], s['g3'], s['g4'], s['g5'],
+                    s['complete'], s['discipline'], s['sales'], s['attitude'], s['kpi_total'], s['status'],
+                ])
+        sheets = [{
+            'name': 'Tong hop ASM',
+            'title': 'BÁO CÁO QUẢN TRỊ KHU VỰC THEO ASM - THÁNG %s' % data['month_label'],
+            'subtitle': 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM',
+            'headers': headers, 'rows': all_rows, 'foot': None,
+        }]
+        used = {'tong hop asm'}
+        for a in data['asms']:
+            srows = [
+                [i, a['name'], '%s (%d NV)' % (s['store'], s['staff_count']),
+                 s['g1'], s['g2'], s['g3'], s['g4'], s['g5'],
+                 s['complete'], s['discipline'], s['sales'], s['attitude'], s['kpi_total'], s['status']]
+                for i, s in enumerate(a['stores'], 1)
+            ]
+            foot = [
+                '', 'TRUNG BÌNH %s (%d CH, %d NV)' % (a['name'], a['store_count'], a['staff_count']), '',
+                a['g1'], a['g2'], a['g3'], a['g4'], a['g5'],
+                a['complete'], a['discipline'], a['sales'], a['attitude'], a['kpi_total'], a['rank_short'],
+            ]
+            sname = ''.join(ch for ch in (a['name'] or 'ASM') if ch not in '[]:*?/\\')[:31] or 'ASM'
+            base, k = sname, 2
+            while sname.lower() in used:
+                sname = '%s %d' % (base[:28], k)
+                k += 1
+            used.add(sname.lower())
+            sheets.append({
+                'name': sname,
+                'title': 'BÁO CÁO KPI CỬA HÀNG - %s (THÁNG %s)' % (a['name'].upper(), data['month_label']),
+                'subtitle': '%d cửa hàng · %d nhân viên · TB KPI %s (%s)' % (a['store_count'], a['staff_count'], _vn(a['kpi_total'], 2), a['rank_short']),
+                'headers': headers, 'rows': srows, 'foot': foot,
+            })
+        return self._xlsx_book(sheets, 'Bao_cao_Checklist_NVBH_ASM')

@@ -48,7 +48,8 @@ export class StoreChecklistShell extends Component {
             done: { month: "", storeId: "", mien: "", mienOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
             myRole: "",
-            kpi: { month: "", mien: "", storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
+            kpi: { month: "", mien: "", closedStores: {}, storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
+            kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
             mg: { month: "", date: "", storeStatus: {}, storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
             openGroups: { audit: true, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
             embeddedViewProps: null,
@@ -204,6 +205,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text", action: "store_checklist.action_store_report_gs" },
                     { id: "report_nvbh", label: "BC Checklist NVBH KPI", icon: "fa-clipboard", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_nsuat", label: "BC Năng suất NVBH", icon: "fa-line-chart", action: "store_checklist.action_store_nvbh_done" },
+                    { id: "report_nvbh_asm", label: "BC Checklist NVBH ASM", icon: "fa-users", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_store", label: "Báo cáo Audit CH", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại Audit CH", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
@@ -1052,7 +1054,7 @@ export class StoreChecklistShell extends Component {
             const d = new Date();
             d.setDate(d.getDate() - back);
             const key = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
-            out.push(emp.days.find((x) => x.date === key) || { id: 0, date: key, empty: true, pct: null, errors: 0 });
+            out.push(emp.days.find((x) => x.date === key) || { id: 0, date: key, empty: true, off: (emp.off_dates || []).includes(key), pct: null, errors: 0 });
         }
         return out;
     }
@@ -1073,6 +1075,9 @@ export class StoreChecklistShell extends Component {
     }
 
     dayTone(day) {
+        if (day.off) {
+            return "is-empty is-off";
+        }
         if (day.empty) {
             return "is-empty";
         }
@@ -1080,6 +1085,9 @@ export class StoreChecklistShell extends Component {
     }
 
     dayIcon(day) {
+        if (day.off) {
+            return "fa-moon-o";
+        }
         if (day.empty) {
             return "fa-minus-circle";
         }
@@ -1087,6 +1095,9 @@ export class StoreChecklistShell extends Component {
     }
 
     dayLabel(day) {
+        if (day.off) {
+            return "OFF";
+        }
         if (day.empty) {
             return "Chưa có";
         }
@@ -1232,11 +1243,35 @@ export class StoreChecklistShell extends Component {
         return this.onKpiTab("staff");
     }
 
-    async onKpiOverviewExport() {
+    // thu gọn / mở rộng nhóm cửa hàng ở Bảng So Sánh Tổng Thể (áp dụng cho mọi user)
+    isKpiStoreOpen(store) {
+        return !this.state.kpi.closedStores[store];
+    }
+
+    toggleKpiStore(store) {
+        this.state.kpi.closedStores[store] = !this.state.kpi.closedStores[store];
+    }
+
+    // Xuất Excel Bảng So Sánh: chọn cửa hàng, mỗi cửa hàng một sheet
+    onKpiOverviewExport() {
+        const groups = this.kpiOverviewGroups;
+        if (!groups.length) {
+            this.notification.add("Không có dữ liệu để xuất", { type: "warning" });
+            return;
+        }
+        this.dialog.add(StoreStaffPickDialog, {
+            title: "Xuất Excel Bảng So Sánh - chọn cửa hàng (mỗi cửa hàng một sheet)", confirmLabel: "Xuất Excel",
+            items: groups.map((g) => ({ key: g.store, label: `${g.store} (${g.rows.length} NV)` })),
+            selected: this.state.kpi.storeId ? groups.map((g) => g.store) : [],
+            onConfirm: (stores) => this.exportKpiOverview(stores),
+        });
+    }
+
+    async exportKpiOverview(stores) {
         try {
             const k = this.state.kpi;
             const file = await this.orm.call("store.nvbh.check", "export_kpi_overview_xlsx", [], {
-                month: k.month || false, store_id: k.storeId ? Number(k.storeId) : false, mien: k.mien || false,
+                month: k.month || false, store_id: k.storeId ? Number(k.storeId) : false, mien: k.mien || false, stores: stores || [],
             });
             const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
             const link = document.createElement("a");
@@ -1337,6 +1372,221 @@ export class StoreChecklistShell extends Component {
 
     fmtKpiPct(n) {
         return n === null || n === undefined ? "-" : new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n) + "%";
+    }
+
+    // ---- BC Checklist NVBH ASM: Báo cáo quản trị khu vực theo ASM ----
+    async openKpiAsmPage() {
+        try {
+            const ka = this.state.kpiAsm;
+            this.state.activeNav = "report_nvbh_asm";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            if (!ka.month) {
+                const d = new Date();
+                ka.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            }
+            await this.loadKpiAsm();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadKpiAsm() {
+        const ka = this.state.kpiAsm;
+        ka.busy = true;
+        try {
+            ka.data = await this.orm.call("store.nvbh.check", "get_kpi_asm_report", [], {
+                month: ka.month || false,
+                mien: ka.mien || false,
+                asm_id: ka.asmId !== "" ? Number(ka.asmId) : false,
+            });
+            if (ka.asmId !== "" && !ka.data.asm_opts.some((o) => String(o.id) === String(ka.asmId))) {
+                ka.asmId = "";
+            }
+        } finally {
+            ka.busy = false;
+        }
+    }
+
+    onKpiAsmTab(tab) {
+        const ka = this.state.kpiAsm;
+        ka.tab = tab;
+        if (tab === "detail" && ka.asmId === "" && ka.data?.asm_opts?.length) {
+            ka.asmId = String(ka.data.asm_opts[0].id);
+            return this.loadKpiAsm().catch((e) => this.notifyError(e));
+        }
+        if (tab === "compare" && ka.asmId !== "") {
+            ka.asmId = "";
+            return this.loadKpiAsm().catch((e) => this.notifyError(e));
+        }
+    }
+
+    get kpiAsmMonthOptions() {
+        return this.monthOptions.map((m) => ({ value: m.value, label: `Tháng ${Number(m.value.slice(5))}` }));
+    }
+
+    onKpiAsmMonth(ev) {
+        const ym = ev.target.value;
+        if (!ym || ym === this.state.kpiAsm.month) {
+            return;
+        }
+        this.state.kpiAsm.month = ym;
+        return this.loadKpiAsm().catch((e) => this.notifyError(e));
+    }
+
+    onKpiAsmMonthPick(dt) {
+        const ym = dt && dt.isValid ? dt.toFormat("yyyy-MM") : "";
+        if (!ym || ym === this.state.kpiAsm.month) {
+            return;
+        }
+        this.state.kpiAsm.month = ym;
+        return this.loadKpiAsm().catch((e) => this.notifyError(e));
+    }
+
+    onKpiAsmMien(ev) {
+        this.state.kpiAsm.mien = ev.target.value;
+        this.state.kpiAsm.asmId = "";
+        this.state.kpiAsm.rankFilter = "";
+        return this.loadKpiAsm().catch((e) => this.notifyError(e));
+    }
+
+    onKpiAsmPick(ev) {
+        this.state.kpiAsm.asmId = ev.target.value;
+        this.state.kpiAsm.rankFilter = "";
+        return this.loadKpiAsm().catch((e) => this.notifyError(e));
+    }
+
+    onKpiAsmOpenDetail(asm) {
+        this.state.kpiAsm.asmId = String(asm.id);
+        this.state.kpiAsm.tab = "detail";
+        this.state.kpiAsm.rankFilter = "";
+        return this.loadKpiAsm().catch((e) => this.notifyError(e));
+    }
+
+    onKpiAsmPillar(idx) {
+        this.state.kpiAsm.pillarIdx = idx;
+    }
+
+    onKpiAsmRankFilter(rk) {
+        this.state.kpiAsm.rankFilter = rk;
+    }
+
+    isKpiAsmOpen(id) {
+        return !this.state.kpiAsm.closed[id];
+    }
+
+    toggleKpiAsmRow(id) {
+        this.state.kpiAsm.closed[id] = !this.state.kpiAsm.closed[id];
+    }
+
+    isKpiAsmStoreOpen(storeId) {
+        return Boolean(this.state.kpiAsm.openStores[storeId]);
+    }
+
+    toggleKpiAsmStore(storeId) {
+        this.state.kpiAsm.openStores[storeId] = !this.state.kpiAsm.openStores[storeId];
+    }
+
+    async onKpiAsmExport() {
+        try {
+            const ka = this.state.kpiAsm;
+            const file = await this.orm.call("store.nvbh.check", "export_kpi_asm_xlsx", [], {
+                month: ka.month || false,
+                mien: ka.mien || false,
+                asm_id: ka.asmId !== "" ? Number(ka.asmId) : false,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    kpiAsmColor(idx) {
+        const palette = ["#2563eb", "#f97316", "#16a34a", "#7c3aed", "#0891b2", "#e11d48"];
+        return palette[idx % palette.length];
+    }
+
+    get kpiAsmPillarTabs() {
+        return [
+            { label: "Nhóm I", desc: "Nhóm I: Trang thiết bị, vệ sinh, mở/đóng cửa" },
+            { label: "Nhóm II", desc: "Nhóm II: Hàng hóa, trưng bày, tem giá, kho" },
+            { label: "Nhóm III", desc: "Nhóm III: Tác phong, đồng phục, tư vấn bán hàng" },
+            { label: "Nhóm IV", desc: "Nhóm IV: Email, bàn giao ca, chứng từ, nộp tiền" },
+            { label: "Nhóm V", desc: "Nhóm V: Media, TV/LED, báo cáo Lark, FB/GGB" },
+            { label: "Tổng 5 nhóm", desc: "Tổng hợp chất lượng thực hiện Checklist (5 nhóm)" },
+        ];
+    }
+
+    get kpiAsmActivePillar() {
+        return this.kpiAsmPillarTabs[this.state.kpiAsm.pillarIdx || 0];
+    }
+
+    get kpiAsmRegionPillarAvg() {
+        return this.state.kpiAsm.data?.region?.pillar_avgs?.[this.state.kpiAsm.pillarIdx || 0] || 0;
+    }
+
+    get kpiAsmRegionPillarAvgInt() {
+        return Math.round(this.kpiAsmRegionPillarAvg);
+    }
+
+    get kpiAsmFilteredAsms() {
+        const asms = this.state.kpiAsm.data?.asms || [];
+        const rk = this.state.kpiAsm.rankFilter;
+        return rk ? asms.filter((a) => a.rank_code === rk) : asms;
+    }
+
+    get kpiAsmRankedRows() {
+        const idx = this.state.kpiAsm.pillarIdx || 0;
+        const avg = this.kpiAsmRegionPillarAvg;
+        return [...this.kpiAsmFilteredAsms]
+            .sort((a, b) => (b.pillars[idx] || 0) - (a.pillars[idx] || 0) || b.kpi_total - a.kpi_total || a.name.localeCompare(b.name))
+            .map((a, i) => {
+                const score = a.pillars[idx] || 0;
+                return {
+                    ...a,
+                    pos: i + 1,
+                    score,
+                    scoreInt: Math.round(score),
+                    barPct: Math.max(2, Math.min(100, score)),
+                    above: score >= avg,
+                };
+            });
+    }
+
+    get kpiAsmRadarList() {
+        return this.kpiAsmFilteredAsms.slice(0, 6);
+    }
+
+    get kpiAsmRadarAxes() {
+        const labels = ["Kỷ luật", "Thái độ", "Tỷ lệ đi ca", "Doanh số", "Hàng hóa", "Hoàn thành"];
+        const cx = 160, cy = 112, r = 64, lr = 82;
+        return labels.map((label, i) => {
+            const ang = -Math.PI / 2 + (i * Math.PI) / 3;
+            const x = +(cx + r * Math.cos(ang)).toFixed(1);
+            const y = +(cy + r * Math.sin(ang)).toFixed(1);
+            const lx = +(cx + lr * Math.cos(ang)).toFixed(1);
+            const ly = +(cy + lr * Math.sin(ang)).toFixed(1);
+            const anchor = Math.abs(Math.cos(ang)) < 0.2 ? "middle" : Math.cos(ang) > 0 ? "start" : "end";
+            return { label, x, y, lx, ly, anchor };
+        });
+    }
+
+    kpiAsmRadarPolygon(values, scale = 1) {
+        const cx = 160, cy = 112, r = 64;
+        return values.map((v, i) => {
+            const ang = -Math.PI / 2 + (i * Math.PI) / 3;
+            const pct = Math.max(0, Math.min(100, Number(v) || 0)) / 100 * scale;
+            return `${(cx + r * pct * Math.cos(ang)).toFixed(1)},${(cy + r * pct * Math.sin(ang)).toFixed(1)}`;
+        }).join(" ");
+    }
+
+    fmtKpiWeight(n) {
+        return String(n).replace(".", ",") + "đ";
     }
 
     async openJobsPage() {
@@ -1883,6 +2133,7 @@ export class StoreChecklistShell extends Component {
             nvbh_schedule: "LỊCH XẾP CA",
             report_nvbh: "BÁO CÁO CHECKLIST NVBH - PHIẾU KPI CÁ NHÂN",
             report_nsuat: "BÁO CÁO NĂNG SUẤT NVBH THEO TIÊU CHÍ CÔNG VIỆC",
+            report_nvbh_asm: `BÁO CÁO QUẢN TRỊ KHU VỰC THEO ASM${this.state.kpiAsm.data?.month_label ? " · THÁNG " + this.state.kpiAsm.data.month_label : ""}`,
             nvbh_done: this.state.done.tab === "total" ? "BẢNG CHECKLIST TỔNG" : "DANH SÁCH CHECKLIST NHÂN VIÊN",
             nvbh_mg_staff: "QUẢN LÝ & ĐÁNH GIÁ CHECKLIST NVBH",
             nvbh_mg_eval: "QUẢN LÝ & ĐÁNH GIÁ CHECKLIST NVBH",
@@ -2944,6 +3195,9 @@ export class StoreChecklistShell extends Component {
         }
         if (navId === "report_nvbh" || navId === "report_nsuat") {
             return this.openKpiPage(navId === "report_nsuat" ? "productivity" : "kpi");
+        }
+        if (navId === "report_nvbh_asm") {
+            return this.openKpiAsmPage();
         }
         if (navId === "nvbh_done") {
             return this.openDonePage();

@@ -25,6 +25,7 @@ MENUS = [
     ('report_gs', 'Báo cáo GS', 'report'),
     ('report_nvbh', 'BC Checklist NVBH KPI', 'report'),
     ('report_nsuat', 'BC Năng suất NVBH', 'report'),
+    ('report_nvbh_asm', 'BC Checklist NVBH ASM', 'report'),
     ('report_store', 'Báo cáo Audit CH', 'report'),
     ('report_rank', 'Báo cáo xếp loại Audit CH', 'report'),
     ('report_manager', 'Báo cáo theo quản lý', 'report'),
@@ -45,7 +46,7 @@ OPS = ('read', 'create', 'write', 'unlink', 'export')
 # Mục mới chưa có trong ma trận đã lưu thì kế thừa quyền của mục cũ tương ứng (để user hiện có không bị mất quyền sau khi cập nhật)
 PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
-    'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs',
+    'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
 }
 NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 

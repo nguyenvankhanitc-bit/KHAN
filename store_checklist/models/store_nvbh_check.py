@@ -371,6 +371,16 @@ class StoreNvbhCheck(models.Model):
                 g['points'] += c.points
                 g['max_points'] += max_points
             g['evaluated'] += 1 if evaluated else 0
+        # 3 ngày gần nhất: ngày không có lịch làm việc (hoặc ca OFF) -> hiển thị OFF thay vì "Chưa có"
+        today_d = fields.Date.context_today(self)
+        recent = [today_d - timedelta(days=i) for i in (2, 1, 0)]
+        sched_ok = set()
+        for ln in self.env['store.nvbh.schedule.line'].search([('work_date', 'in', recent)]):
+            if (ln.shift_id.code or '').strip().upper() != 'OFF':
+                sched_ok.add(((ln.staff_name or '').strip().casefold(), ln.store_id.id, ln.work_date))
+        for key, g in groups.items():
+            nm, sid = key.rsplit('|', 1)
+            g['off_dates'] = [d.strftime('%d/%m/%Y') for d in recent if (nm, int(sid), d) not in sched_ok]
         rows = []
         for g in groups.values():
             label, tone = rating(g['points'], g['max_points'], g['evaluated'])

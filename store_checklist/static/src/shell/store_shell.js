@@ -42,6 +42,7 @@ export class StoreChecklistShell extends Component {
             isManager: false,
             isSupervisor: false,
             activeNav: "overview",
+            schedImport: null,
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             job: { date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
@@ -1981,7 +1982,7 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             this.showListFilters
             && !this.reportNavs.includes(this.state.activeNav)
-            && !["violation_stores", "violation_all", "nvbh_done", "nvbh_staff"].includes(this.state.activeNav)
+            && !["violation_stores", "violation_all", "nvbh_done", "nvbh_staff", "nvbh_schedule"].includes(this.state.activeNav)
             && this.state.canCreate
             && (!this.state.rights || this.state.rights[this.permKey]?.create)
             && (this.state.embeddedViewProps || this.isScheduleNav)
@@ -2071,20 +2072,70 @@ export class StoreChecklistShell extends Component {
                 for (let i = 0; i < bytes.length; i += 0x8000) {
                     bin += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
                 }
+                if (this.isScheduleNav) {
+                    // Lịch xếp ca: xem trước các ô sẽ thay đổi, bấm Lưu mới ghi vào hệ thống
+                    const data = btoa(bin);
+                    const preview = await this.orm.call(this.excelModel, "preview_import_xlsx", this.excelArgs([data]));
+                    this.state.schedImport = { data, file: file.name, res: preview, busy: false, filter: "all" };
+                    return;
+                }
                 const res = await this.orm.call(this.excelModel, "import_xlsx", this.excelArgs([btoa(bin)]));
+                this.importDone(res);
+            } catch (error) {
+                this.notifyError(error);
+            }
+        };
+        input.click();
+    }
+
+    importDone(res) {
+        {
+            {
                 const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";
                 const kept = (res.skipped_past || 0) + (res.skipped_locked || 0);
                 const keptTxt = kept ? ` · Giữ nguyên ${kept} ô (${res.skipped_past || 0} ô trước ngày ${res.ref_date || "hôm nay"}, ${res.skipped_locked || 0} ô đã check list / lưu / duyệt)` : "";
                 this.notification.add(`Đã nhập lịch ca: thêm ${res.created}, cập nhật ${res.updated}${res.unchanged ? `, không đổi ${res.unchanged}` : ""}${res.removed ? `, xóa ${res.removed} ca không còn trong file` : ""}${keptTxt} · Nhân sự: thêm ${res.staff_created || 0}, cập nhật ${res.staff_updated || 0}${warn}`, { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count || kept) });
                 this.state.viewKey += 1;
                 if (this.isScheduleNav) {
-                    await this.loadSchedule();
+                    this.loadSchedule();
                 }
-            } catch (error) {
-                this.notifyError(error);
             }
-        };
-        input.click();
+        }
+    }
+
+    // ---- Xem trước nhập Excel Lịch xếp ca ----
+    get schedImportRows() {
+        const si = this.state.schedImport;
+        const rows = si?.res?.details || [];
+        return si.filter === "all" ? rows : rows.filter((r) => r.kind === si.filter);
+    }
+
+    schedImportCount(kind) {
+        return (this.state.schedImport?.res?.details || []).filter((r) => r.kind === kind).length;
+    }
+
+    onSchedImportFilter(kind) {
+        this.state.schedImport.filter = kind;
+    }
+
+    onSchedImportCancel() {
+        this.state.schedImport = null;
+    }
+
+    async onSchedImportSave() {
+        const si = this.state.schedImport;
+        if (!si || si.busy) {
+            return;
+        }
+        si.busy = true;
+        try {
+            const res = await this.orm.call(this.excelModel, "import_xlsx", this.excelArgs([si.data]));
+            this.state.schedImport = null;
+            this.importDone(res);
+        } catch (error) {
+            si.busy = false;
+            this.notifyError(error);
+        }
     }
 
     // Danh mục ca làm việc (Cài đặt > Mã ca): tab theo loại ca
@@ -3110,7 +3161,7 @@ export class StoreChecklistShell extends Component {
             return "Nhân viên đã check list / bấm Lưu: không được đổi ca";
         }
         if (cell.changed) {
-            return cell.prev ? `Đổi từ ${cell.prev} → ${cell.code} (lần nhập Excel gần nhất)` : "Ca mới thêm (lần nhập Excel gần nhất)";
+            return cell.prev ? `Đã đổi ca: ${cell.prev} → ${cell.code}` : "Ca mới thêm";
         }
         return "";
     }

@@ -262,6 +262,9 @@ class StoreNvbhScheduleLine(models.Model):
     def create(self, vals_list):
         lines = super().create(vals_list)
         lines._guard_locked('thêm')
+        if not self.env.context.get('schedule_import'):
+            # thêm ca bằng tay (form): tô màu "ca mới" như khi nhập Excel
+            lines.with_context(schedule_import=True).write({'import_changed': True, 'import_prev_code': False})
         if not self.env.context.get('no_staff_sync'):
             lines._sync_staff_from_lines()
         return lines
@@ -298,7 +301,16 @@ class StoreNvbhScheduleLine(models.Model):
     def write(self, vals):
         if set(vals) - self._GUARD_FREE:
             self._guard_locked('sửa')
+        # đổi Mã ca bằng tay (form): ghi lại mã ca cũ để tô màu ô trên lưới như khi nhập Excel
+        track = 'shift_id' in vals and not self.env.context.get('schedule_import')
+        prev = {ln.id: ln.shift_id.code or '' for ln in self} if track else {}
         res = super().write(vals)
+        if track:
+            for ln in self.filtered(lambda l: prev[l.id] != (l.shift_id.code or '')):
+                # đổi nhiều lần: giữ mã ca ban đầu; đổi về đúng mã ca ban đầu thì bỏ tô màu
+                origin = ln.import_prev_code if ln.import_changed else prev[ln.id]
+                back = bool(origin) and origin == (ln.shift_id.code or '')
+                super(StoreNvbhScheduleLine, ln).write({'import_changed': not back, 'import_prev_code': False if back else (origin or False)})
         if 'schedule_id' in vals:
             self._guard_locked('chuyển')
         if not self.env.context.get('no_staff_sync') and {'staff_name', 'employee_code', 'position', 'work_status'} & set(vals):
@@ -577,14 +589,14 @@ class StoreNvbhScheduleLine(models.Model):
                                     # phiếu mở sẵn nhưng chưa làm: xóa để tạo lại theo công việc của ca mới
                                     self.env['store.nvbh.check'].sudo().search([('schedule_line_id', '=', line.id)]).unlink()
                                 prev_code = line.shift_id.code or ''
-                                line.write(vals)
+                                line.with_context(schedule_import=True).write(vals)
                                 updated += 1
                                 if prev_code != (shift.code or ''):
                                     changed[line.id] = prev_code
                         else:
                             vals['sequence'] = max(sch.line_ids.mapped('sequence') or [0]) + 10
                             vals['schedule_id'] = sch.id
-                            line = self.create(vals)
+                            line = self.with_context(schedule_import=True).create(vals)
                             created += 1
                             changed[line.id] = ''
                         kept |= line
@@ -594,6 +606,7 @@ class StoreNvbhScheduleLine(models.Model):
         # File là lịch mới nhất: với các cửa hàng có trong file, xóa các dòng lịch không còn trong file —
         # chỉ từ ngày mốc trở đi và chỉ dòng chưa check list / lưu / duyệt (ngày đã qua, ngày đã khóa giữ nguyên)
         removed = 0
+        removed_rows = []
         last = first.replace(day=ndays)
         if file_stores and last >= ref:
             old = self.search([('store_id', 'in', file_stores.ids), ('work_date', '>=', max(first, ref)), ('work_date', '<=', last)]) - kept
@@ -604,6 +617,9 @@ class StoreNvbhScheduleLine(models.Model):
             self.env['store.nvbh.check'].sudo().search([('schedule_line_id', 'in', old.ids)]).unlink()  # phiếu rỗng của dòng bị xóa
             schedules_touched = old.schedule_id
             removed = len(old)
+            removed_rows = [{'kind': 'removed', 'store': l.store_id.code or l.store_id.name or '', 'name': l.staff_name or '',
+                             'date': l.work_date.strftime('%d/%m/%Y'), 'sort': (l.store_id.code or '', l.staff_name or '', l.work_date),
+                             'old': l.shift_id.code or '', 'new': ''} for l in old]
             old.unlink()
             schedules_touched.filtered(lambda sc: not sc.line_ids).unlink()
         # tô màu ô: chỉ giữ dấu của lần nhập này (bỏ dấu của lần nhập trước) trong tháng / cửa hàng của file
@@ -611,13 +627,38 @@ class StoreNvbhScheduleLine(models.Model):
             self.sudo().search([('store_id', 'in', file_stores.ids), ('work_date', '>=', first), ('work_date', '<=', last),
                                 ('import_changed', '=', True), ('id', 'not in', list(changed))]).write(
                 {'import_changed': False, 'import_prev_code': False})
+        details = list(removed_rows)
         for line in self.sudo().browse(list(changed)).exists():
             line.write({'import_changed': True, 'import_prev_code': changed[line.id] or False})
+            details.append({'kind': 'changed' if changed[line.id] else 'new', 'store': line.store_id.code or line.store_id.name or '',
+                            'name': line.staff_name or '', 'date': line.work_date.strftime('%d/%m/%Y'),
+                            'sort': (line.store_id.code or '', line.staff_name or '', line.work_date),
+                            'old': changed[line.id], 'new': line.shift_id.code or ''})
+        details.sort(key=lambda r: r.pop('sort'))
         staff_new, staff_upd = self._sync_staff(people, errors)
         return {'created': created, 'updated': updated, 'unchanged': unchanged, 'removed': removed,
                 'skipped_past': skipped_past, 'skipped_locked': skipped_locked, 'ref_date': ref.strftime('%d/%m/%Y'),
                 'staff_created': staff_new, 'staff_updated': staff_upd,
+                'details': details[:1000], 'detail_count': len(details),
                 'errors': errors[:20], 'error_count': len(errors)}
+
+    @api.model
+    def preview_import_xlsx(self, data, month):
+        """Xem trước file nhập: chạy đúng luồng import_xlsx trong savepoint rồi hoàn tác toàn bộ, trả về số liệu + danh sách ô
+        sẽ thay đổi. Chỉ khi user bấm Lưu (gọi import_xlsx) dữ liệu mới được ghi."""
+        class _Rollback(Exception):
+            pass
+        res = {}
+        try:
+            with self.env.cr.savepoint():
+                res = self.import_xlsx(data, month)
+                raise _Rollback()
+        except _Rollback:
+            pass
+        finally:
+            self.env.invalidate_all()
+        res['preview'] = True
+        return res
 
     @api.model
     def _sync_staff(self, people, errors):

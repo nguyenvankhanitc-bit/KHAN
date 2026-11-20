@@ -2892,3 +2892,34 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 .o_store_sched_table th.c-day.is-past, .o_store_sched_table td.c-day.is-past{background: #f1f5f9; color: #94a3b8; opacity: .6;}
 .o_store_sched_table td.c-day.is-past.has-shift:hover{background: #e2e8f0;}
 .o_store_sched_table td.c-day.is-locked:not(.is-past){position: relative; box-shadow: inset 0 -2px 0 #94a3b8;}
+
+/* Xem trước nhập Excel Lịch xếp ca */
+.o_store_simp_overlay{position: fixed; inset: 0; background: rgba(15, 23, 42, .45); z-index: 1050; display: flex; align-items: center; justify-content: center; padding: 12px;}
+.o_store_simp_modal{background: #fff; border-radius: 12px; width: 900px; max-width: 100%; max-height: 92vh; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,.25);}
+.o_store_simp_head{background: #2563eb; color: #fff; padding: 12px 16px; font-weight: 600; display: flex; justify-content: space-between; gap: 12px;
+    a{color: #fff; text-decoration: none;}}
+.o_store_simp_body{padding: 14px 16px; overflow: auto; display: flex; flex-direction: column; gap: 10px; min-height: 0;}
+.o_store_simp_note{background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; border-radius: 8px; padding: 8px 12px;}
+.o_store_simp_chips{display: flex; flex-wrap: wrap; gap: 6px;
+    .chip{border: 1px solid #cbd5e1; background: #fff; border-radius: 999px; padding: 4px 12px; font-size: 13px; color: #334155;}
+    button.chip{cursor: pointer;}
+    .chip.on{background: #1e293b; border-color: #1e293b; color: #fff;}
+    .chip.is-changed:not(.on){border-color: #f59e0b; background: #fef3c7;}
+    .chip.is-new:not(.on){border-color: #22c55e; background: #dcfce7;}
+    .chip.is-removed:not(.on){border-color: #f87171; background: #fee2e2;}
+    .chip.muted{background: #f1f5f9; border-color: #e2e8f0; color: #64748b;}}
+.o_store_simp_err{background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412; border-radius: 8px; padding: 8px 12px; font-size: 13px; max-height: 120px; overflow: auto;}
+.o_store_simp_table{border: 1px solid #e2e8f0; border-radius: 8px; overflow: auto; max-height: 50vh;
+    table{width: 100%; border-collapse: collapse; font-size: 13px;}
+    th{position: sticky; top: 0; background: #f8fafc; padding: 6px 8px; border-bottom: 1px solid #e2e8f0; text-align: left; white-space: nowrap;}
+    td{padding: 5px 8px; border-bottom: 1px solid #f1f5f9;}
+    td.c{text-align: center;} td.b{font-weight: 700;}
+    tr.is-changed td.b{background: #fde68a; color: #92400e;}
+    tr.is-new td.b{background: #bbf7d0; color: #166534;}
+    tr.is-removed td{color: #b91c1c; text-decoration: line-through;}
+    .tag{font-size: 12px; padding: 1px 8px; border-radius: 999px; background: #f1f5f9;}
+    tr.is-changed .tag{background: #fef3c7; color: #92400e;}
+    tr.is-new .tag{background: #dcfce7; color: #166534;}
+    tr.is-removed .tag{background: #fee2e2; color: #b91c1c; text-decoration: none; display: inline-block;}}
+.o_store_simp_foot{display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid #e2e8f0;}
+@media (max-width: 640px){ .o_store_simp_foot{flex-wrap: wrap;} }

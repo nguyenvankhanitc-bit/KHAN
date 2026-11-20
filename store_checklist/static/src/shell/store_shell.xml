@@ -1052,7 +1052,7 @@
                         <option t-foreach="state.managerReport" t-as="mg" t-key="mg.id" t-att-value="mg.id"
                                 t-att-selected="('' + mg.id) === state.mgrFilter" t-esc="mg.name"/>
                     </select>
-                    <button type="button" class="o_store_sch_btn is-import" t-if="isScheduleNav and canImportSchedule and showOwnAdd" t-on-click="onImportBenchmark"><i class="fa fa-upload"/> Nhập Excel</button>
+                    <button type="button" class="o_store_sch_btn is-import" t-if="isScheduleNav and canImportSchedule and state.canCreate and (!state.rights or (state.rights[permKey] and state.rights[permKey].create))" t-on-click="onImportBenchmark"><i class="fa fa-upload"/> Nhập Excel</button>
                     <button type="button" class="o_store_sch_btn is-export" t-if="isScheduleNav and canExportSchedule" t-on-click="onExportBenchmark"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
                     <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
@@ -2073,6 +2073,54 @@
                                 <text t-att-x="p.x" t-att-y="p.y + 14" text-anchor="middle" class="tick"><t t-esc="p.v"/>%</text>
                             </g>
                         </svg>
+                    </div>
+                </div>
+            </div>
+            <!-- Xem trước nhập Excel Lịch xếp ca: bấm Lưu mới ghi vào hệ thống -->
+            <div class="o_store_simp_overlay" t-if="state.schedImport" t-on-click.self="onSchedImportCancel">
+                <t t-set="si" t-value="state.schedImport"/>
+                <div class="o_store_simp_modal">
+                    <div class="o_store_simp_head">
+                        <span><i class="fa fa-upload"/> Xem trước nhập lịch ca: <t t-esc="si.file"/></span>
+                        <a href="#" t-on-click.prevent="onSchedImportCancel">✕</a>
+                    </div>
+                    <div class="o_store_simp_body">
+                        <div class="o_store_simp_note"><i class="fa fa-info-circle"/> Dữ liệu <b>chưa được ghi</b>. Kiểm tra các ô sẽ thay đổi bên dưới rồi bấm <b>Lưu</b> để cập nhật lịch ca.</div>
+                        <div class="o_store_simp_chips">
+                            <button type="button" t-att-class="'chip' + (si.filter === 'all' ? ' on' : '')" t-on-click="() => this.onSchedImportFilter('all')">Tất cả <b t-esc="si.res.detail_count || 0"/></button>
+                            <button type="button" t-att-class="'chip is-changed' + (si.filter === 'changed' ? ' on' : '')" t-on-click="() => this.onSchedImportFilter('changed')">Đổi ca <b t-esc="schedImportCount('changed')"/></button>
+                            <button type="button" t-att-class="'chip is-new' + (si.filter === 'new' ? ' on' : '')" t-on-click="() => this.onSchedImportFilter('new')">Ca mới <b t-esc="schedImportCount('new')"/></button>
+                            <button type="button" t-att-class="'chip is-removed' + (si.filter === 'removed' ? ' on' : '')" t-on-click="() => this.onSchedImportFilter('removed')">Xóa (không còn trong file) <b t-esc="schedImportCount('removed')"/></button>
+                            <span class="chip muted">Không đổi <b t-esc="si.res.unchanged || 0"/></span>
+                            <span class="chip muted" t-if="si.res.skipped_past or si.res.skipped_locked">Giữ nguyên <b t-esc="(si.res.skipped_past || 0) + (si.res.skipped_locked || 0)"/>
+                                (<t t-esc="si.res.skipped_past || 0"/> ô trước ngày <t t-esc="si.res.ref_date"/>, <t t-esc="si.res.skipped_locked || 0"/> ô đã check list / lưu)</span>
+                        </div>
+                        <div class="o_store_simp_err" t-if="si.res.error_count">
+                            <b><i class="fa fa-exclamation-triangle"/> <t t-esc="si.res.error_count"/> dòng lỗi sẽ bị bỏ qua:</b>
+                            <div t-foreach="si.res.errors" t-as="e" t-key="e_index" t-esc="e"/>
+                        </div>
+                        <div class="o_store_simp_table">
+                            <table>
+                                <thead><tr><th>Cửa hàng</th><th>Họ và tên</th><th>Ngày</th><th>Ca cũ</th><th>Ca mới</th><th>Thay đổi</th></tr></thead>
+                                <tbody>
+                                    <tr t-foreach="schedImportRows" t-as="r" t-key="r_index" t-att-class="'is-' + r.kind">
+                                        <td t-esc="r.store"/><td t-esc="r.name"/><td t-esc="r.date"/>
+                                        <td class="c" t-esc="r.old or '—'"/><td class="c b" t-esc="r.new or '—'"/>
+                                        <td><span class="tag" t-esc="r.kind === 'changed' ? 'Đổi ca' : r.kind === 'new' ? 'Ca mới' : 'Xóa'"/></td>
+                                    </tr>
+                                    <tr t-if="!schedImportRows.length"><td colspan="6" class="text-muted text-center py-3">Không có ô nào thay đổi.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <small class="text-muted" t-if="(si.res.detail_count || 0) &gt; (si.res.details || []).length">Chỉ hiện <t t-esc="si.res.details.length"/> / <t t-esc="si.res.detail_count"/> ô đầu tiên.</small>
+                    </div>
+                    <div class="o_store_simp_foot">
+                        <span class="text-muted">Nhân sự: thêm <t t-esc="si.res.staff_created || 0"/>, cập nhật <t t-esc="si.res.staff_updated || 0"/></span>
+                        <span class="flex-grow-1"/>
+                        <button type="button" class="btn btn-light" t-on-click="onSchedImportCancel">Hủy</button>
+                        <button type="button" class="btn btn-primary" t-att-disabled="si.busy" t-on-click="onSchedImportSave">
+                            <i t-att-class="si.busy ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
+                        </button>
                     </div>
                 </div>
             </div>

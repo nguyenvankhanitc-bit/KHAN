@@ -61,4 +61,47 @@
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_store_nvbh_schedule_line_list"/>
     </record>
+
+    <!-- Checklist NVBH > Lịch ca hôm nay: ca của ngày hôm nay lấy từ Lịch xếp ca (Công việc check list), nhóm theo Miền / Cửa hàng -->
+    <record id="view_store_nvbh_today_list" model="ir.ui.view">
+        <field name="name">store.nvbh.schedule.line.today.list</field>
+        <field name="model">store.nvbh.schedule.line</field>
+        <field name="arch" type="xml">
+            <list string="Lịch ca hôm nay" create="false" edit="false" delete="false" default_order="store_id, sequence, id" class="o_store_today_list">
+                <field name="mien" string="Miền"/>
+                <field name="store_id" string="Mã bộ phận"/>
+                <field name="employee_code" string="ID HRM" optional="hide"/>
+                <field name="staff_name" string="Họ và tên"/>
+                <field name="position" string="Mã chức vụ"/>
+                <field name="shift_id" string="N (ca hôm nay)"/>
+                <field name="work_date" options="{'numeric': true}" optional="hide"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_store_nvbh_today_search" model="ir.ui.view">
+        <field name="name">store.nvbh.schedule.line.today.search</field>
+        <field name="model">store.nvbh.schedule.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="staff_name"/>
+                <field name="store_id"/>
+                <field name="shift_id"/>
+                <group>
+                    <filter name="g_mien" string="Miền" context="{'group_by': 'mien'}"/>
+                    <filter name="g_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    <record id="action_store_nvbh_today" model="ir.actions.act_window">
+        <field name="name">Lịch ca hôm nay</field>
+        <field name="res_model">store.nvbh.schedule.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_nvbh_today_list"/>
+        <field name="search_view_id" ref="view_store_nvbh_today_search"/>
+        <!-- Chỉ ngày hôm nay: domain tính lại mỗi lần mở mục (20/11 -> dữ liệu 20/11, sang 21/11 -> dữ liệu 21/11) -->
+        <field name="domain">[('work_date', '=', context_today().strftime('%Y-%m-%d'))]</field>
+        <!-- store_today_shift: server lọc thêm ngày hôm nay + phạm vi cửa hàng (xem _search) -->
+        <field name="context">{'store_today_shift': True, 'search_default_g_mien': 1, 'search_default_g_store': 1}</field>
+    </record>
 </odoo>

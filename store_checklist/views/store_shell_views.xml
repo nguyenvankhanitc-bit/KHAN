@@ -24,12 +24,30 @@
             </list>
         </field>
     </record>
+    <record id="view_store_audit_staff_search" model="ir.ui.view">
+        <field name="name">store.audit.staff.search</field>
+        <field name="model">store.audit.staff</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="employee_code"/>
+                <field name="store_id"/>
+                <group>
+                    <filter name="group_mien" string="Miền" context="{'group_by': 'mien'}"/>
+                    <filter name="group_store" string="Cửa hàng" context="{'group_by': 'store_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
     <record id="action_store_nvbh_staff" model="ir.actions.act_window">
         <field name="name">Nhân sự</field>
         <field name="res_model">store.audit.staff</field>
         <field name="view_mode">list</field>
         <field name="view_id" ref="view_store_audit_staff_list"/>
+        <field name="search_view_id" ref="view_store_audit_staff_search"/>
         <field name="domain">[('audit_id.audit_type', '=', 'nvbh')]</field>
+        <!-- Nhóm mặc định: Miền > Cửa hàng -->
+        <field name="context">{'search_default_group_mien': 1, 'search_default_group_store': 1}</field>
     </record>
 
     <!-- Danh sách Checklist NVBH: tiêu đề khớp form "Thêm thông tin nhân viên" -->

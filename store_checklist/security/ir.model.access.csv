@@ -17,6 +17,8 @@ access_store_audit_level_user,store.audit.level user,model_store_audit_level,gro
 access_store_audit_level_manager,store.audit.level manager,model_store_audit_level,group_store_manager,1,1,1,1
 access_store_perm_rule_manager,store.perm.rule manager,model_store_perm_rule,group_store_manager,1,1,1,1
 access_store_perm_rule_user,store.perm.rule user,model_store_perm_rule,group_store_user,1,0,0,0
+access_store_staff_view_rule_manager,store.staff.view.rule manager,model_store_staff_view_rule,group_store_manager,1,1,1,1
+access_store_staff_view_rule_user,store.staff.view.rule user,model_store_staff_view_rule,group_store_user,1,0,0,0
 access_store_shift_user,store.shift user,model_store_shift,group_store_user,1,1,1,1
 access_store_shift_manager,store.shift manager,model_store_shift,group_store_manager,1,1,1,1
 access_store_nvbh_task_user,store.nvbh.task user,model_store_nvbh_task,group_store_user,1,1,1,1

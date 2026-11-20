@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Mỗi sáng 06:00 (giờ Việt Nam = 23:00 UTC hôm trước): gửi Lịch ca hôm nay cho ASM / RSM qua OdooBot.
+         noupdate: đổi giờ chạy / tắt trong Thiết lập > Kỹ thuật > Hành động theo lịch, nâng cấp module không ghi đè. -->
+    <data noupdate="1">
+        <record id="cron_store_nvbh_today_shift" model="ir.cron">
+            <field name="name">Checklist NVBH: Gửi lịch ca hôm nay cho ASM / RSM</field>
+            <field name="model_id" ref="model_store_nvbh_schedule_line"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_send_today_shift()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=23, minute=0, second=0, microsecond=0) + timedelta(days=0 if DateTime.now().hour &lt; 23 else 1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

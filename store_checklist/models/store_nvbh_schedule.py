@@ -5,8 +5,13 @@ import io
 import re
 from datetime import date
 
+from markupsafe import Markup
+
 from odoo import Command, _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
+
+from .store_audit_staff import CHECK_MENUS
+from .store_notify import SHELL_URL, bot_send
 
 
 _logger = logging.getLogger(__name__)
@@ -57,18 +62,149 @@ class StoreNvbhScheduleLine(models.Model):
     @api.model
     def _search(self, domain, *args, **kwargs):
         # lịch xếp ca: cùng phạm vi cửa hàng và phạm vi theo người như phiếu checklist
+        today_view = self.env.context.get('store_today_shift')
+        if today_view:
+            # Checklist NVBH > Lịch ca hôm nay: chỉ các dòng ca của ngày hôm nay, xem cả cửa hàng (không giới hạn theo người)
+            domain = [('work_date', '=', fields.Date.context_today(self))] + list(domain or [])
+        rule = self.env['store.staff.view.rule']._staff_domain(CHECK_MENUS)
+        if rule is not None:  # Phân quyền xem nhân sự (Công việc / Danh sách checklist NV / Quản lý & đánh giá)
+            return super(StoreNvbhScheduleLine, self.sudo())._search(rule + list(domain or []), *args, **kwargs)
         scope = self.env['store.audit']._user_store_scope()
-        extra = list(self.env['store.nvbh.check']._user_person_domain(False))
+        if today_view and scope is None and self._today_store_bound():
+            scope = []  # NVBH / CHT / ASM / RSM chưa được gán cửa hàng nào: không thấy lịch ca
+        extra = [] if today_view else list(self.env['store.nvbh.check']._user_person_domain(False))
         if scope is not None:
             extra = [('store_id', 'in', scope)] + extra
         if extra:
             domain = extra + list(domain or [])
         return super()._search(domain, *args, **kwargs)
+
+    TODAY_HEADERS = ['STT', 'Miền', 'Mã bộ phận', 'ID HRM', 'Họ và tên', 'Mã chức vụ', 'N (ca hôm nay)']
+
+    @api.model
+    def get_today_rows(self, mien=None, store_id=None):
+        """Lịch ca hôm nay cho bộ lọc / In / Xuất Excel: các dòng ca ngày hôm nay trong phạm vi user được xem,
+        lọc thêm theo Miền và / hoặc Cửa hàng (rỗng = tất cả). Trả kèm danh sách miền / cửa hàng có ca hôm nay."""
+        today = fields.Date.context_today(self)
+        lines = self.with_context(store_today_shift=True).search([], order='mien, store_id, sequence, id')
+        mien_labels = dict(self._fields['mien']._description_selection(self.env))
+        stores = lines.store_id.sorted('name')
+        options = {
+            'miens': [{'id': m, 'name': mien_labels.get(m, m)} for m in sorted({l.mien for l in lines if l.mien})],
+            'stores': [{'id': s.id, 'name': s.display_name, 'mien': s.mien or ''} for s in stores],
+        }
+        if mien:
+            lines = lines.filtered(lambda l: l.mien == mien)
+        if store_id:
+            lines = lines.filtered(lambda l: l.store_id.id == int(store_id))
+        rows = [[i, mien_labels.get(l.mien, l.mien or ''), l.store_id.display_name or '', l.employee_code or '',
+                 l.staff_name or '', l.position or '', l.shift_id.code or '']
+                for i, l in enumerate(lines, 1)]
+        scope = (mien_labels.get(mien, mien) if mien else 'Tất cả miền') + ' | ' + (
+            self.env['hr.store'].sudo().browse(int(store_id)).display_name if store_id else 'Tất cả cửa hàng')
+        return {
+            'date': today.strftime('%d/%m/%Y'), 'headers': self.TODAY_HEADERS, 'rows': rows,
+            'subtitle': 'Ngày %s | %s | %s nhân viên' % (today.strftime('%d/%m/%Y'), scope, len(rows)),
+            **options,
+        }
+
+    @api.model
+    def export_today_xlsx(self, mien=None, store_id=None):
+        """Xuất Excel Lịch ca hôm nay theo Miền / Cửa hàng / Tất cả."""
+        self.env['store.perm.rule'].check_export()
+        data = self.get_today_rows(mien, store_id)
+        if not data['rows']:
+            raise UserError(_('Không có ca làm việc hôm nay trong phạm vi đã chọn.'))
+        sheet = {'name': 'Lich ca hom nay', 'title': 'LỊCH CA HÔM NAY - %s' % data['date'], 'subtitle': data['subtitle'],
+                 'headers': data['headers'], 'rows': data['rows'], 'foot': None}
+        return self.env['store.nvbh.check']._xlsx_book([sheet], 'Lich_ca_%s' % data['date'].replace('/', '-'))
+
+    # ------------------------------------------------------------------
+    # Thông báo Lịch ca hôm nay cho ASM / RSM (OdooBot, chạy tự động mỗi sáng)
+    # ------------------------------------------------------------------
+    @api.model
+    def _store_area_managers(self, store):
+        """ASM (cấp 3) và RSM (cấp 4) phụ trách cửa hàng: Quản lý cửa hàng, nhân sự gắn với cửa hàng,
+        rồi đi ngược Sơ đồ tổ chức (Quản lý trực tiếp) từ những người đó. Trả về hr.employee."""
+        Employee = self.env['hr.employee'].sudo()
+        store = store.sudo()
+        base = [('checklist_store_ids', 'in', store.id), ('store_id', '=', store.id),
+                ('id', 'in', store.member_ids.ids), ('id', '=', store.manager_id.id or 0)]
+        if 'ma_bo_phan' in Employee._fields:
+            base.append(('ma_bo_phan', '=ilike', store.code or '-'))
+        found = Employee
+        for emp in Employee.search(['|'] * (len(base) - 1) + base) | store.manager_id:
+            node, hops = emp, 0
+            while node and hops < 8:
+                if node.active and node._checklist_effective_level() in (3, 4):
+                    found |= node
+                node, hops = node.parent_id, hops + 1
+        return found
+
+    @api.model
+    def _today_shift_body(self, day, store_lines):
+        """Nội dung tin: mỗi cửa hàng một bảng Họ và tên / Mã chức vụ / Ca hôm nay + nút mở ứng dụng."""
+        total = sum(len(lines) for _st, lines in store_lines)
+        body = Markup('<b>LỊCH CA HÔM NAY - %s</b><br/>%s cửa hàng · %s nhân viên<br/>') % (
+            day.strftime('%d/%m/%Y'), len(store_lines), total)
+        cell = 'border:1px solid #cbd5e1;padding:3px 8px;'
+        for store, lines in store_lines:
+            body += Markup('<br/><b>%s</b> (%s nhân viên)<br/><table style="border-collapse:collapse;font-size:13px;">'
+                           '<tr style="background:#e0e7ff;"><th style="%s">Họ và tên</th><th style="%s">Mã chức vụ</th>'
+                           '<th style="%s">Ca</th></tr>') % (store.display_name, len(lines), cell, cell, cell)
+            for ln in lines:
+                body += Markup('<tr><td style="%s">%s</td><td style="%s;text-align:center;">%s</td>'
+                               '<td style="%s;text-align:center;font-weight:700;color:#1d4ed8;">%s</td></tr>') % (
+                    cell, ln.staff_name or '', cell, ln.position or '', cell, ln.shift_id.code or '')
+            body += Markup('</table>')
+        return body + Markup(
+            '<a href="%s" target="_self" style="display:inline-block;margin-top:10px;padding:8px 18px;'
+            'background-color:#714B67;color:#ffffff;border-radius:6px;text-decoration:none;font-weight:600;">'
+            'Xem lịch ca hôm nay</a>') % SHELL_URL
+
+    @api.model
+    def send_today_shift_notify(self, force=False):
+        """Gửi Lịch ca hôm nay cho ASM / RSM của từng cửa hàng có ca trong ngày (mỗi người một tin gộp các cửa hàng mình phụ trách).
+        Cron chạy mỗi sáng; force=True (nút Gửi ngay) gửi lại kể cả khi hôm nay đã gửi. Trả về số người nhận."""
+        if force and not (self.env.user.has_group('store_checklist.group_store_manager') or self.env.is_admin()):
+            raise AccessError(_('Chỉ Quản lý mới được gửi thông báo lịch ca.'))
+        params = self.env['ir.config_parameter'].sudo()
+        day = fields.Date.context_today(self)
+        if not force and params.get_param('store_checklist.today_shift_sent') == str(day):
+            return 0
+        lines = self.sudo().search([('work_date', '=', day)], order='store_id, sequence, id')
+        per_user = {}
+        for store in lines.store_id:
+            store_lines = lines.filtered(lambda l, s=store: l.store_id == s)
+            for emp in self._store_area_managers(store):
+                if emp.user_id:
+                    per_user.setdefault(emp.user_id, []).append((store, store_lines))
+        for user, store_lines in per_user.items():
+            bot_send(self.env, user, self._today_shift_body(day, store_lines))
+        params.set_param('store_checklist.today_shift_sent', str(day))
+        _logger.info('store_checklist: đã gửi Lịch ca %s cho %s ASM/RSM', day, len(per_user))
+        return len(per_user)
+
+    @api.model
+    def _cron_send_today_shift(self):
+        # cron chạy lúc 23:00 UTC: tính "hôm nay" theo giờ Việt Nam
+        self.with_context(tz='Asia/Ho_Chi_Minh').send_today_shift_notify()
+
+    @api.model
+    def _today_store_bound(self):
+        """True: user là NVBH / CHT / ASM / RSM (cấp 1-4) -> Lịch ca hôm nay chỉ được xem cửa hàng mình quản lý."""
+        user = self.env.user
+        if self.env.su or user._is_admin() or user.has_group('store_checklist.group_store_manager'):
+            return False
+        if getattr(user.sudo(), 'lug_data_scope', False) == 'company':
+            return False
+        emp = user.sudo().employee_id
+        return bool(emp) and 1 <= emp._checklist_effective_level() <= 4
     work_status = fields.Char(string='Trạng thái nhân viên')
     shift_id = fields.Many2one('store.shift', string='Mã ca', required=True)
     # thông tin phiếu mẹ để lọc / hiển thị trong danh sách
     store_id = fields.Many2one('hr.store', related='schedule_id.store_id', string='Cửa hàng', store=True, index=True)
-    mien = fields.Selection(related='schedule_id.store_id.mien', string='Miền')
+    mien = fields.Selection(related='schedule_id.store_id.mien', string='Miền', store=True, index=True)  # lưu để group theo Miền
     work_date = fields.Date(related='schedule_id.work_date', string='Ngày', store=True, index=True)
 
     def init(self):
@@ -213,11 +349,40 @@ class StoreNvbhScheduleLine(models.Model):
         book.close()
         return {'name': 'Xep_ca_%s.xlsx' % month, 'data': base64.b64encode(buf.getvalue()).decode()}
 
+    # ------------------------------------------------------------------
+    # Nhập Excel có bảo vệ ngày đã check list / đã lưu / đã duyệt
+    # ------------------------------------------------------------------
+    @api.model
+    def _import_ref_date(self):
+        """Ngày mốc của luồng nhập Excel: hôm nay theo giờ Việt Nam (+07), không phụ thuộc múi giờ user / pytz."""
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+        return datetime.now(ZoneInfo('Asia/Ho_Chi_Minh')).date()
+
+    @api.model
+    def _import_check_state(self, lines):
+        """Phân loại phiếu checklist của các dòng lịch: {line_id: 'locked' | 'empty'}.
+        locked = đã check list (đã tick / ghi chú), đã bấm Lưu (submitted) hoặc đã gửi / đã duyệt (state khác draft);
+        empty  = phiếu mới mở, chưa làm gì -> đổi ca được (phiếu được tạo lại theo ca mới)."""
+        res = {}
+        if not lines:
+            return res
+        for chk in self.env['store.nvbh.check'].sudo().search([('schedule_line_id', 'in', lines.ids)]):
+            busy = chk.submitted or chk.state != 'draft' or any(l.is_done or l.note for l in chk.line_ids)
+            lid = chk.schedule_line_id.id
+            res[lid] = 'locked' if busy or res.get(lid) == 'locked' else 'empty'
+        return res
+
     @api.model
     def import_xlsx(self, data, month):
         """Nhập Lịch làm việc theo mẫu "Xếp ca" cho tháng đang chọn: mỗi dòng một nhân viên (Mã bộ phận, ID HRM, Họ và tên,
         Mã chức vụ), cột N1..N31 là Mã ca từng ngày (ô trống = không xếp ca, giữ nguyên). Các cột khác (Miền, Trạng thái,
-        Ngày vào làm...) và dòng tên cửa hàng được bỏ qua. Dòng lỗi được bỏ qua và báo lại."""
+        Ngày vào làm...) và dòng tên cửa hàng được bỏ qua. Dòng lỗi được bỏ qua và báo lại.
+        Bảo vệ dữ liệu theo ngày mốc (hôm nay giờ Việt Nam):
+        - ngày trước ngày mốc: giữ nguyên 100%, file có sửa cũng không ghi đè / không xóa;
+        - từ ngày mốc trở đi: cập nhật theo file, trừ dòng đã check list (đã tick / ghi chú), đã Lưu, đã gửi hoặc đã duyệt;
+        - phiếu đã mở nhưng chưa làm gì: đổi ca thì phiếu được tạo lại theo ca mới.
+        Luồng này tách riêng với hạn chỉnh sửa phiếu checklist (EDIT_WINDOW_DAYS), không dùng điều kiện đó."""
         self = self.with_context(no_staff_sync=True)
         if not self.env['store.nvbh.schedule'].has_access('create'):
             raise UserError(_('Bạn không có quyền nhập Lịch xếp ca.'))
@@ -266,7 +431,9 @@ class StoreNvbhScheduleLine(models.Model):
         shifts = {sh.code.strip().casefold(): sh for sh in self.env['store.shift'].search([]) if sh.code}
         Schedule = self.env['store.nvbh.schedule']
         schedules = {}
-        created = updated = 0
+        created = updated = unchanged = 0
+        skipped_past = skipped_locked = 0
+        ref = self._import_ref_date()  # vd. 20/11/2026: 01-19/11 giữ nguyên, 20/11 chỉ cập nhật nếu chưa check list, 21/11+ cập nhật
         errors = []
         store = None
         kept = self.browse()
@@ -300,6 +467,9 @@ class StoreNvbhScheduleLine(models.Model):
                     errors.append('Dòng %s, N%s: Mã ca "%s" không tồn tại' % (n, d, sc))
                     continue
                 day = first.replace(day=d)
+                if day < ref:
+                    skipped_past += 1  # ngày đã qua: giữ nguyên dữ liệu trên hệ thống, file sửa cũng không ghi đè
+                    continue
                 vals = {'staff_name': name, 'employee_code': emp_id, 'shift_id': shift.id}
                 if pos:
                     vals['position'] = pos
@@ -315,8 +485,21 @@ class StoreNvbhScheduleLine(models.Model):
                         line = sch.line_ids.filtered(
                             lambda l: (emp_id and l.employee_code == emp_id) or (not emp_id and (l.staff_name or '').casefold() == name.casefold()))[:1]
                         if line:
-                            line.write(vals)
-                            updated += 1
+                            chk_state = self._import_check_state(line).get(line.id)
+                            if chk_state == 'locked':
+                                skipped_locked += 1  # đã check list / đã lưu / đã duyệt: không cập nhật
+                                kept |= line
+                                file_stores |= store
+                                continue
+                            if line.shift_id == shift and all(
+                                    (line[f] or '') == (v or '') for f, v in vals.items() if f != 'shift_id'):
+                                unchanged += 1
+                            else:
+                                if chk_state == 'empty' and line.shift_id != shift:
+                                    # phiếu mở sẵn nhưng chưa làm: xóa để tạo lại theo công việc của ca mới
+                                    self.env['store.nvbh.check'].sudo().search([('schedule_line_id', '=', line.id)]).unlink()
+                                line.write(vals)
+                                updated += 1
                         else:
                             vals['sequence'] = max(sch.line_ids.mapped('sequence') or [0]) + 10
                             vals['schedule_id'] = sch.id
@@ -326,17 +509,25 @@ class StoreNvbhScheduleLine(models.Model):
                         file_stores |= store
                 except Exception as e:  # lỗi quyền / dữ liệu: bỏ qua ô và báo lại
                     errors.append('Dòng %s, N%s: %s' % (n, d, getattr(e, 'args', [e])[0]))
-        # File là lịch mới nhất: với các cửa hàng có trong file, xóa các dòng lịch của tháng không còn trong file
+        # File là lịch mới nhất: với các cửa hàng có trong file, xóa các dòng lịch không còn trong file —
+        # chỉ từ ngày mốc trở đi và chỉ dòng chưa check list / lưu / duyệt (ngày đã qua, ngày đã khóa giữ nguyên)
         removed = 0
-        if file_stores:
-            last = first.replace(day=ndays)
-            old = self.search([('store_id', 'in', file_stores.ids), ('work_date', '>=', first), ('work_date', '<=', last)]) - kept
+        last = first.replace(day=ndays)
+        if file_stores and last >= ref:
+            old = self.search([('store_id', 'in', file_stores.ids), ('work_date', '>=', max(first, ref)), ('work_date', '<=', last)]) - kept
+            states = self._import_check_state(old)
+            locked_old = old.filtered(lambda l: states.get(l.id) == 'locked')
+            skipped_locked += len(locked_old)
+            old -= locked_old
+            self.env['store.nvbh.check'].sudo().search([('schedule_line_id', 'in', old.ids)]).unlink()  # phiếu rỗng của dòng bị xóa
             schedules_touched = old.schedule_id
             removed = len(old)
             old.unlink()
             schedules_touched.filtered(lambda sc: not sc.line_ids).unlink()
         staff_new, staff_upd = self._sync_staff(people, errors)
-        return {'created': created, 'updated': updated, 'removed': removed, 'staff_created': staff_new, 'staff_updated': staff_upd,
+        return {'created': created, 'updated': updated, 'unchanged': unchanged, 'removed': removed,
+                'skipped_past': skipped_past, 'skipped_locked': skipped_locked, 'ref_date': ref.strftime('%d/%m/%Y'),
+                'staff_created': staff_new, 'staff_updated': staff_upd,
                 'errors': errors[:20], 'error_count': len(errors)}
 
     @api.model

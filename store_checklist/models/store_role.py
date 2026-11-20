@@ -4,6 +4,7 @@ from datetime import timedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
+from .store_audit_staff import CHECK_MENUS
 from .store_notify import bot_send, card
 from .store_nvbh_check import EVAL_RESULTS, STEP_PREFIX, count_errors, eval_score
 
@@ -152,6 +153,10 @@ class StoreNvbhCheckRole(models.Model):
     @api.model
     def _search(self, domain, *args, **kwargs):
         # phiếu checklist: giới hạn theo cửa hàng (gồm Mã bộ phận được xem) và theo người (NVBH chỉ của mình, CHT: mình + NVBH/PT)
+        rule = self.env['store.staff.view.rule']._staff_domain(CHECK_MENUS)
+        if rule is not None:
+            # Phân quyền xem nhân sự: đúng Miền / Cửa hàng được cấp, thay cho phạm vi mặc định (cửa hàng + theo người)
+            return super(StoreNvbhCheckRole, self.sudo())._search(rule + list(domain or []), *args, **kwargs)
         scope = self.env['store.audit']._user_store_scope()
         extra = list(self._user_person_domain(True))
         if scope is not None:
@@ -182,7 +187,12 @@ class StoreNvbhCheckRole(models.Model):
     @api.model
     def get_my_stores(self):
         """Danh sách cửa hàng cho các ô lọc: người dùng chỉ thấy cửa hàng của mình (admin / không giới hạn thì thấy hết)."""
-        stores = self.env['store.audit']._filter_stores_for_user(self.env['hr.store'].search([], order='name'))
+        ids = self.env['store.staff.view.rule']._scope_store_ids(CHECK_MENUS)
+        if ids is None:
+            stores = self.env['store.audit']._filter_stores_for_user(self.env['hr.store'].search([], order='name'))
+        else:  # Phân quyền xem nhân sự: ô lọc liệt kê đúng các cửa hàng được cấp
+            Store = self.env['hr.store'].sudo()
+            stores = Store.search([], order='name') if ids is True else Store.search([('id', 'in', list(ids))], order='name')
         return [{'id': st.id, 'display_name': st.display_name, 'mien': st.mien or ''} for st in stores]
 
     # ------------------------------------------------------------------

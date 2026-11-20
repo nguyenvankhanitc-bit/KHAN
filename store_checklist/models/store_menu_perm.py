@@ -16,6 +16,7 @@ MENUS = [
     ('nvbh', 'Checklist NVBH', 'audit'),
     ('nvbh_staff', 'Checklist NVBH › Nhân sự', 'audit'),
     ('nvbh_jobs', 'Checklist NVBH › Công việc check list', 'audit'),
+    ('nvbh_today', 'Checklist NVBH › Lịch ca hôm nay', 'audit'),
     ('nvbh_done', 'Checklist NVBH › Danh sách checklist NV', 'audit'),
     ('nvbh_mg', 'Checklist NVBH › Quản lý & đánh giá', 'audit'),
     ('asm', 'Checklist ASM', 'audit'),
@@ -46,9 +47,10 @@ OPS = ('read', 'create', 'write', 'unlink', 'export')
 # Mục mới chưa có trong ma trận đã lưu thì kế thừa quyền của mục cũ tương ứng (để user hiện có không bị mất quyền sau khi cập nhật)
 PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
+    'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
 }
-NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
+NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 
 
 def perm_of(perms, key):

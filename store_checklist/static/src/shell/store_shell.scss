@@ -2485,6 +2485,7 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 /* Tô màu icon sidebar: nhóm Checklist NVBH & Báo cáo */
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_staff > i:first-child{color: #0891b2 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_jobs > i:first-child{color: #d97706 !important;}
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_today > i:first-child{color: #db2777 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_done > i:first-child{color: #16a34a !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_mg_staff > i:first-child{color: #7c3aed !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-report_nvbh > i:first-child{color: #7c3aed !important;}
@@ -2785,4 +2786,84 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 /* Mobile: ẩn biểu tượng con rệp (menu debug) trên thanh trên cùng */
 @media (max-width: 767.98px){
   .o_navbar .o_debug_manager, .o_main_navbar .o_debug_manager{display: none !important;}
+}
+
+/* Phân quyền: tab "Quản trị phân quyền" / "Phân quyền xem nhân sự" */
+.o_store_perm:has(.o_store_perm_grid){max-width: 1100px;}
+.o_store_perm .o_store_perm_tabs{display: flex; gap: 4px; border-bottom: 2px solid #e2e8f0; margin: -4px 0 14px;}
+.o_store_perm .o_store_perm_tabs button{background: #f1f5f9; border: 1px solid #e2e8f0; border-bottom: 0; padding: 8px 16px; border-radius: 8px 8px 0 0; color: #475569; font-weight: 600; margin-bottom: -2px;}
+.o_store_perm .o_store_perm_tabs button.is-active{background: #fff; color: #2563eb; border-top: 3px solid #2563eb; border-bottom: 2px solid #fff;}
+.o_store_perm .o_store_perm_grid{width: 100%; border-collapse: collapse; margin-top: 8px;}
+.o_store_perm .o_store_perm_grid th, .o_store_perm .o_store_perm_grid td{border: 1px solid #e5e7eb; padding: 8px 10px; font-size: 13px; vertical-align: middle;}
+.o_store_perm .o_store_perm_grid thead th{background: #f1f5f9; text-align: center; font-weight: 700;}
+.o_store_perm .o_store_perm_grid tbody tr:hover{background: #f8fafc;}
+.o_store_perm .o_store_perm_chip{display: inline-block; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; border-radius: 12px; padding: 1px 8px; margin: 2px; font-size: 12px;}
+.o_store_perm .o_store_perm_chip.is-mien{background: #fef3c7; border-color: #fcd34d; color: #92400e;}
+.o_store_perm .o_store_perm_chip.is-store{background: #dcfce7; border-color: #86efac; color: #166534;}
+.o_store_perm .o_store_perm_scope{display: inline-block; border-radius: 10px; padding: 2px 10px; font-size: 12px; font-weight: 600; color: #fff; background: #16a34a;}
+.o_store_perm .o_store_perm_scope.is-mien{background: #d97706;}
+.o_store_perm .o_store_perm_scope.is-all{background: #2563eb;}
+.o_store_perm .o_store_perm_modal.o_store_perm_modal_sm{width: 1200px;}
+.o_store_perm .o_store_perm_lbl{display: block; font-weight: 600; font-size: 13px; margin: 10px 0 4px;}
+.o_store_perm .o_store_perm_input{width: 100%; border: 1px solid #d1d5db; border-radius: 6px; padding: 5px 8px; background: #fff;}
+.o_store_perm .o_store_perm_radios{display: flex; gap: 18px; margin-bottom: 8px;}
+.o_store_perm .o_store_perm_radios label{display: flex; align-items: center; gap: 6px; cursor: pointer;}
+.o_store_perm .o_store_perm_chip.is-menu{background: #ede9fe; border-color: #c4b5fd; color: #5b21b6;}
+.o_store_perm .o_store_perm_menus{display: flex; flex-wrap: wrap; gap: 6px 18px;}
+.o_store_perm .o_store_perm_menus label{display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;}
+/* popup Phân quyền xem nhân sự: checkbox không bị kéo giãn như ô nhập */
+.o_store_perm .o_store_perm_modal .o_store_perm_box input[type="checkbox"], .o_store_perm .o_store_perm_modal .o_store_perm_box input[type="radio"]{width: auto; margin: 0; flex: none;}
+.o_store_perm .o_store_perm_stores_bar{display: flex; align-items: center; gap: 16px;}
+.o_store_perm .o_store_perm_stores_bar .o_store_perm_input{flex: 1; margin: 0;}
+.o_store_perm .o_store_perm_stores_bar label{display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0;}
+.o_store_perm .o_store_perm_stores_list{max-height: 46vh; overflow: auto; margin-top: 10px; background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px;}
+.o_store_perm .o_store_perm_mgroup + .o_store_perm_mgroup{margin-top: 10px; border-top: 1px dashed #e5e7eb; padding-top: 8px;}
+.o_store_perm .o_store_perm_mhead2{display: flex; align-items: center; gap: 8px; font-weight: 700; color: #1e3a8a; cursor: pointer; margin: 0 0 6px;}
+.o_store_perm .o_store_perm_mgrid{display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 4px 12px; padding-left: 22px;}
+.o_store_perm .o_store_perm_mgrid label{display: flex; align-items: center; gap: 6px; cursor: pointer; margin: 0; font-size: 13px; min-width: 0;}
+.o_store_perm .o_store_perm_mgrid label span{overflow: hidden; text-overflow: ellipsis; white-space: nowrap;}
+/* Checklist NVBH > Lịch ca hôm nay */
+.o_store_today_list thead th, .o_store_today_list thead th .o_list_number_th{text-align: center !important;}
+.o_store_today_list thead th .d-flex{justify-content: center;}
+.o_store_today_list tbody td.o_data_cell[name="position"], .o_store_today_list tbody td.o_data_cell[name="shift_id"], .o_store_today_list tbody td.o_data_cell[name="mien"]{text-align: center;}
+.o_store_today_list tbody td.o_data_cell[name="shift_id"]{font-weight: 700; color: #1d4ed8;}
+@media (max-width: 767.98px){
+    /* điện thoại: Miền / Mã bộ phận đã có ở dòng nhóm -> ẩn, 3 cột còn lại vừa màn hình, tên xuống dòng thay vì cắt "..." */
+    .o_store_today_list th[data-name="mien"], .o_store_today_list td[name="mien"],
+    .o_store_today_list th[data-name="store_id"], .o_store_today_list td[name="store_id"],
+    .o_store_today_list th.o_list_record_selector, .o_store_today_list td.o_list_record_selector{display: none !important;}
+    .o_store_today_list table.o_list_table{table-layout: auto !important; width: 100% !important; min-width: 0 !important;}
+    .o_store_today_list th, .o_store_today_list td{width: auto !important; min-width: 0 !important; max-width: none !important; padding: 8px 6px !important;}
+    .o_store_today_list td.o_data_cell[name="staff_name"]{white-space: normal !important; overflow: visible; text-overflow: clip; word-break: break-word;}
+    .o_store_today_list td.o_data_cell[name="position"], .o_store_today_list td.o_data_cell[name="shift_id"]{width: 1% !important; white-space: nowrap;}
+    .o_store_today_list th .o_resize{display: none;}
+}
+.o_store_today_bar{display: flex; flex-wrap: wrap; align-items: center; gap: 8px;}
+@media (max-width: 767.98px){
+    .o_store_today_bar select{flex: 1 1 45%; min-width: 0;}
+    .o_store_today_bar .flex-grow-1{display: none;}
+    .o_store_today_bar button{flex: 1 1 45%;}
+}
+/* Cài đặt > Lưu trữ hình ảnh & file PDF */
+.o_store_photo_ret{max-width: 1100px;}
+.o_store_photo_ret .o_store_photo_blocks{display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 8px 0 14px;}
+.o_store_photo_ret .o_store_photo_block{border: 1px solid #cbd5e1; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; background: #fff;}
+.o_store_photo_ret .o_store_photo_block.is-off{background: #f8fafc;}
+.o_store_photo_ret .o_store_photo_block.is-off .o_store_photo_stats > div{opacity: .6;}
+.o_store_photo_ret .o_store_photo_block h3{font-size: 15px; font-weight: 700; margin: 0; color: #0f172a;}
+.o_store_photo_ret .o_store_photo_switch{display: flex; align-items: center; gap: 8px; margin: 0; cursor: pointer;}
+.o_store_photo_ret .o_store_photo_field{display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 13px; margin: 0;}
+.o_store_photo_ret .o_store_photo_keep{display: flex; gap: 8px;}
+.o_store_photo_ret .o_store_photo_keep input{flex: 1; min-width: 0;}
+.o_store_photo_ret .o_store_photo_keep select{width: 120px; flex: none;}
+.o_store_photo_ret .o_store_photo_stats{display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px;}
+.o_store_photo_ret .o_store_photo_stats > div{background: #dbeafe; border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column;}
+.o_store_photo_ret .o_store_photo_stats span{font-size: 12px; color: #475569;}
+.o_store_photo_ret .o_store_photo_stats b{font-size: 15px; color: #0f172a;}
+.o_store_photo_ret .o_store_photo_common{display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; margin-bottom: 14px;}
+.o_store_photo_ret .o_store_photo_common .o_store_photo_stats{grid-template-columns: minmax(0, 260px);}
+.o_store_photo_ret .o_store_photo_last{background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px 12px; font-size: 13px;}
+.o_store_photo_ret .o_store_photo_last h4{font-size: 14px; margin: 0 0 6px;}
+@media (max-width: 767.98px){
+    .o_store_photo_ret .o_store_photo_blocks, .o_store_photo_ret .o_store_photo_common{grid-template-columns: 1fr;}
 }

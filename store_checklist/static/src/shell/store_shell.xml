@@ -16,7 +16,7 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
@@ -27,7 +27,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc và báo cáo công việc theo ca làm việc hằng ngày' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc và báo cáo công việc theo ca làm việc hằng ngày' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
@@ -1026,8 +1026,8 @@
                                 t-att-selected="m.value === state.listFilters.month" t-esc="m.label"/>
                     </select>
                     <select t-if="!reportNavs.includes(state.activeNav) or isSupLayout" t-on-change="(ev) => this.onListFilter('store', ev)">
-                        <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
-                        <option t-foreach="isSupLayout ? state.supStores : (state.dash ? state.dash.store_options : [])" t-as="st" t-key="st.id" t-att-value="st.id"
+                        <option value="" t-esc="state.needStore and !staffScopedNav ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
+                        <option t-foreach="listStoreOptions" t-as="st" t-key="st.id" t-att-value="st.id"
                                 t-att-selected="('' + st.id) === state.listFilters.store" t-esc="st.name"/>
                     </select>
                     <select t-if="!isPersonal or isSupLayout" t-on-change="(ev) => this.onListFilter('mien', ev)">
@@ -1051,6 +1051,20 @@
                     <button type="button" class="o_store_sch_btn is-export" t-if="isScheduleNav and canExportSchedule" t-on-click="onExportBenchmark"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                     <button type="button" class="o_store_print_btn" t-if="canExport" t-on-click="onPrint"><i class="fa fa-print"/> In</button>
                     <button type="button" class="o_store_export_btn" t-if="canExport" t-on-click="onExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                </div>
+                <div class="o_store_dash_filters o_store_list_filters o_store_today_bar" t-if="state.activeNav === 'nvbh_today'">
+                    <select t-on-change="(ev) => this.onTodayFilter('mien', ev)">
+                        <option value="" t-att-selected="!state.today.mien">Tất cả miền</option>
+                        <option t-foreach="state.today.miens" t-as="m" t-key="m.id" t-att-value="m.id" t-att-selected="m.id === state.today.mien" t-esc="'Miền ' + m.name"/>
+                    </select>
+                    <select t-on-change="(ev) => this.onTodayFilter('store', ev)">
+                        <option value="" t-att-selected="!state.today.store">Tất cả cửa hàng</option>
+                        <option t-foreach="todayStoreOptions" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === state.today.store" t-esc="st.name"/>
+                    </select>
+                    <span class="flex-grow-1"/>
+                    <button type="button" class="o_store_print_btn" t-if="state.isManager" t-on-click="onTodayNotify" title="Gửi lịch ca hôm nay cho ASM / RSM qua OdooBot"><i class="fa fa-paper-plane"/> Gửi ASM/RSM</button>
+                    <button type="button" class="o_store_print_btn" t-on-click="onTodayPrint"><i class="fa fa-print"/> In</button>
+                    <button type="button" class="o_store_export_btn" t-on-click="onTodayExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                 </div>
                 <View t-if="state.embeddedViewProps" t-props="state.embeddedViewProps" t-key="state.viewKey"/>
                 <div class="o_store_sched" t-elif="isScheduleNav">
@@ -1096,7 +1110,83 @@
                         </table>
                     </div>
                 </div>
+                <div class="o_store_perm o_store_photo_ret" t-elif="state.activeNav === 'photo_retention' and state.photoCfg">
+                    <t t-set="pc" t-value="state.photoCfg"/>
+                    <div class="o_store_perm_head">
+                        <div>
+                            <h2><i class="fa fa-picture-o"/> Lưu trữ hình ảnh &amp; file PDF</h2>
+                            <p class="text-muted">Tự động xóa cuốn chiếu ảnh cột "Hình ảnh" và PDF biên bản đã lưu của phiếu đánh giá / giám sát cửa hàng có ngày audit cũ hơn thời gian lưu trữ (theo ngày / tháng / năm).
+                                Phiếu, tiêu chí, điểm, xếp loại, nhận xét, File biên bản tải lên và File khắc phục luôn được giữ nguyên.</p>
+                        </div>
+                    </div>
+                    <div class="o_store_photo_blocks">
+                        <t t-foreach="[['img', 'hình ảnh', 'Xóa dạng cuốn chiếu hình ảnh theo ngày / tháng / năm'], ['pdf', 'file PDF', 'Xóa dạng cuốn chiếu file PDF theo ngày / tháng / năm']]" t-as="blk" t-key="blk[0]">
+                            <t t-set="p" t-value="pc[blk[0]]"/>
+                            <section class="o_store_photo_block" t-att-class="p.enabled ? '' : 'is-off'">
+                                <h3 t-esc="blk[2]"/>
+                                <label class="o_store_photo_switch">
+                                    <input type="checkbox" t-att-checked="p.enabled" t-on-change="(ev) => this.onPhotoChange(blk[0], 'enabled', ev.target.checked)"/>
+                                    <b>Bật tự động xóa <t t-esc="blk[1]"/></b> <small class="text-muted">(chạy mỗi ngày 02:30 sáng giờ Việt Nam)</small>
+                                </label>
+                                <label class="o_store_photo_field">Thời gian lưu trữ <t t-esc="blk[1]"/>
+                                    <span class="o_store_photo_keep">
+                                        <input type="number" min="1" t-att-max="photoUnitMax(p.unit)" class="o_store_perm_input" t-att-value="p.value"
+                                               t-on-input="(ev) => this.onPhotoChange(blk[0], 'value', ev.target.value)"/>
+                                        <select class="o_store_perm_input" t-on-change="(ev) => this.onPhotoChange(blk[0], 'unit', ev.target.value)">
+                                            <option t-foreach="pc.units" t-as="u" t-key="u.id" t-att-value="u.id" t-att-selected="u.id === p.unit" t-esc="u.name"/>
+                                        </select>
+                                    </span>
+                                </label>
+                                <div class="o_store_photo_stats">
+                                    <div><span>Mốc cuốn chiếu <t t-esc="blk[0] === 'img' ? 'ảnh' : 'PDF'"/></span><b>Trước <t t-esc="p.cutoff"/></b></div>
+                                    <t t-if="blk[0] === 'img'">
+                                        <div><span>Dòng có ảnh quá hạn</span><b t-esc="p.pending_lines"/></div>
+                                        <div><span>Ảnh sẽ xóa</span><b><t t-esc="p.pending_files"/> (<t t-esc="fmtBytes(p.pending_size)"/>)</b></div>
+                                    </t>
+                                    <div t-else=""><span>PDF sẽ xóa</span><b><t t-esc="p.pending_pdfs"/> (<t t-esc="fmtBytes(p.pending_size)"/>)</b></div>
+                                </div>
+                                <small class="text-muted" t-if="blk[0] === 'pdf'">Gồm PDF của phiếu trước mốc và các bản PDF cũ đã lỗi thời (mỗi lần sửa phiếu sinh một bản mới). In lại biên bản sẽ tự sinh PDF mới.</small>
+                            </section>
+                        </t>
+                    </div>
+                    <div class="o_store_photo_common">
+                        <label class="o_store_photo_field">Kích thước lô (batch_size)
+                            <input type="number" min="10" max="5000" class="o_store_perm_input" t-att-value="pc.batch" t-on-change="(ev) => this.onPhotoChange('batch', null, ev.target.value)"/>
+                        </label>
+                        <div class="o_store_photo_stats"><div><span>Lần chạy tự động kế tiếp</span><b t-esc="pc.next_run or '—'"/></div></div>
+                    </div>
+                    <div class="o_store_photo_last">
+                        <h4>Lần chạy gần nhất</h4>
+                        <p t-if="!pc.last or !pc.last.time" class="text-muted mb-0">Chưa chạy lần nào.</p>
+                        <t t-else="">
+                            <p class="mb-1"><b t-esc="pc.last.time"/> · <t t-esc="pc.last.dry_run ? 'Chạy thử (chỉ đếm)' : (pc.last.manual ? 'Chạy ngay' : 'Tự động')"/></p>
+                            <p class="mb-0" t-if="pc.last.skipped">Cả hình ảnh và PDF đang tắt, không xử lý.</p>
+                            <p class="mb-0" t-elif="pc.last.error" style="color: #dc2626;">Lỗi: <t t-esc="pc.last.error"/></p>
+                            <t t-else="">
+                                <p class="mb-0">Hình ảnh: <t t-if="pc.last.img_on or (pc.last.img_on === undefined)"><t t-esc="pc.last.dry_run ? 'sẽ xóa' : 'đã xóa'"/> <b t-esc="pc.last.files"/> ảnh (<t t-esc="fmtBytes(pc.last.size)"/>) của <b t-esc="pc.last.lines"/> dòng<t t-if="pc.last.img_cutoff"> · giữ <t t-esc="pc.last.img_keep"/>, mốc trước <t t-esc="pc.last.img_cutoff"/></t></t><t t-else="">tắt</t></p>
+                                <p class="mb-0">File PDF: <t t-if="pc.last.pdf_on or (pc.last.pdf_on === undefined and pc.last.purge_pdf)"><t t-esc="pc.last.dry_run ? 'sẽ xóa' : 'đã xóa'"/> <b t-esc="pc.last.pdfs or 0"/> PDF (<t t-esc="fmtBytes(pc.last.pdf_size)"/>)<t t-if="pc.last.pdf_cutoff"> · giữ <t t-esc="pc.last.pdf_keep"/>, mốc trước <t t-esc="pc.last.pdf_cutoff"/></t></t><t t-else="">tắt</t></p>
+                                <p class="mb-0 text-muted" t-if="!pc.last.dry_run"><t t-esc="pc.last.batches"/> lô · <t t-esc="pc.last.duration"/> giây</p>
+                            </t>
+                        </t>
+                    </div>
+                    <div class="o_store_perm_mfoot px-0">
+                        <button type="button" class="btn btn-light" t-att-disabled="state.photoBusy" t-on-click="() => this.onPhotoRun(true)"><i class="fa fa-flask"/> Chạy thử (chỉ đếm)</button>
+                        <button type="button" class="btn btn-light text-danger" t-att-disabled="state.photoBusy or !(pc.img.enabled or pc.pdf.enabled)" t-on-click="() => this.onPhotoRun(false)"><i class="fa fa-trash"/> Chạy ngay</button>
+                        <span class="flex-grow-1"/>
+                        <small class="text-warning me-2" t-if="state.photoDirty"><i class="fa fa-exclamation-circle"/> Chưa lưu</small>
+                        <button type="button" class="btn btn-primary" t-on-click="() => this.onPhotoSave()"><i class="fa fa-floppy-o"/> Lưu cấu hình</button>
+                    </div>
+                </div>
                 <div class="o_store_perm" t-elif="state.activeNav === 'access' and state.perm">
+                    <div class="o_store_perm_tabs">
+                        <button type="button" t-att-class="state.permTab === 'rules' ? 'is-active' : ''" t-on-click="() => this.state.permTab = 'rules'">
+                            <i class="fa fa-shield"/> Quản trị phân quyền
+                        </button>
+                        <button type="button" t-att-class="state.permTab === 'staff' ? 'is-active' : ''" t-on-click="() => this.state.permTab = 'staff'">
+                            <i class="fa fa-id-badge"/> Phân quyền xem nhân sự
+                        </button>
+                    </div>
+                    <t t-if="state.permTab === 'rules'">
                     <div class="o_store_perm_head">
                         <div>
                             <h2><i class="fa fa-shield"/> Quản trị phân quyền</h2>
@@ -1159,6 +1249,113 @@
                             </div>
                         </div>
                     </div>
+                    </t>
+                    <t t-elif="state.permTab === 'staff' and state.staffPerm">
+                        <div class="o_store_perm_head">
+                            <div>
+                                <h2><i class="fa fa-id-badge"/> Phân quyền xem nhân sự</h2>
+                                <p class="text-muted">Cấp cho user được xem nhân sự của Miền / Cửa hàng nào ở Checklist NVBH › Nhân sự. User chưa được cấp xem theo cửa hàng của mình; Quản lý và Admin luôn xem tất cả.</p>
+                            </div>
+                            <button type="button" class="btn btn-primary" t-on-click="() => this.onStaffOpen(null)">+ Thêm phân quyền</button>
+                        </div>
+                        <input class="o_store_perm_search" placeholder="Tìm theo user, miền, cửa hàng..." t-model="state.staffPermQ"/>
+                        <table class="o_store_perm_grid">
+                            <thead><tr>
+                                <th style="width: 50px">STT</th>
+                                <th style="width: 180px">Tên phân quyền</th>
+                                <th>User</th>
+                                <th>Mục áp dụng</th>
+                                <th style="width: 130px">Phạm vi</th>
+                                <th>Miền / Cửa hàng được xem</th>
+                                <th style="width: 90px"/>
+                            </tr></thead>
+                            <tbody>
+                                <tr t-foreach="staffPermList" t-as="r" t-key="r.id">
+                                    <td class="text-center" t-esc="r_index + 1"/>
+                                    <td>
+                                        <b t-if="r.name" t-esc="r.name"/>
+                                        <span t-else="" class="text-muted">—</span>
+                                    </td>
+                                    <td>
+                                        <span class="o_store_perm_chip" t-foreach="r.users" t-as="u" t-key="u.id" t-esc="u.name"/>
+                                    </td>
+                                    <td><span class="o_store_perm_chip is-menu" t-foreach="r.menus" t-as="mk" t-key="mk" t-esc="staffMenuLabel(mk)"/></td>
+                                    <td class="text-center"><span t-attf-class="o_store_perm_scope is-{{r.scope}}" t-esc="staffScopeLabel(r.scope)"/></td>
+                                    <td>
+                                        <t t-if="r.scope === 'all'"><span class="text-muted">Toàn bộ nhân sự</span></t>
+                                        <t t-elif="r.scope === 'mien'"><span class="o_store_perm_chip is-mien" t-foreach="r.miens" t-as="m" t-key="m.id" t-esc="m.name"/></t>
+                                        <t t-else=""><span class="o_store_perm_chip is-store" t-foreach="r.stores" t-as="st" t-key="st.id" t-esc="st.name"/></t>
+                                    </td>
+                                    <td class="text-center text-nowrap">
+                                        <a href="#" title="Chỉnh sửa" class="me-3" t-on-click.prevent="() => this.onStaffOpen(r)"><i class="fa fa-pencil"/></a>
+                                        <a href="#" title="Xóa" class="text-danger" t-on-click.prevent="() => this.onStaffDelete(r)"><i class="fa fa-trash"/></a>
+                                    </td>
+                                </tr>
+                                <tr t-if="!staffPermList.length"><td colspan="7" class="text-center text-muted">Chưa có phân quyền xem nhân sự nào.</td></tr>
+                            </tbody>
+                        </table>
+                        <datalist id="store_staff_users"><option t-foreach="state.perm.users" t-as="u" t-key="u.id" t-att-value="u.name"/></datalist>
+                        <div class="o_store_perm_overlay" t-if="state.staffEdit" t-on-click.self="onStaffClose">
+                            <div class="o_store_perm_modal o_store_perm_modal_sm">
+                                <div class="o_store_perm_mhead"><span><i class="fa fa-id-badge"/> Phân quyền xem nhân sự</span>
+                                    <a href="#" t-on-click.prevent="onStaffClose">✕</a></div>
+                                <div class="o_store_perm_mbody">
+                                    <label class="o_store_perm_lbl">Tên phân quyền (không bắt buộc)</label>
+                                    <input class="o_store_perm_input" placeholder="VD: ASM miền Nam" t-model="state.staffEdit.name"/>
+                                    <label class="o_store_perm_lbl">User được cấp quyền</label>
+                                    <div class="o_store_perm_box">
+                                        <span class="o_store_perm_tag" t-foreach="state.staffEdit.users" t-as="u" t-key="u.id"><t t-esc="u.name"/> <a href="#" t-on-click.prevent="() => this.onStaffUserRemove(u)">×</a></span>
+                                        <input list="store_staff_users" placeholder="Chọn user (gõ tên để tìm)..." t-on-change="onStaffUserAdd"/>
+                                    </div>
+                                    <label class="o_store_perm_lbl">Mục áp dụng (Checklist NVBH)</label>
+                                    <div class="o_store_perm_box o_store_perm_menus">
+                                        <label class="fw-bold"><input type="checkbox" t-att-checked="state.staffEdit.menus.length === state.staffPerm.menus.length" t-on-change="onStaffMenuAll"/> Tất cả</label>
+                                        <label t-foreach="state.staffPerm.menus" t-as="mn" t-key="mn.id">
+                                            <input type="checkbox" t-att-checked="state.staffEdit.menus.includes(mn.id)" t-on-change="(ev) => this.onStaffMenu(mn.id, ev)"/> <t t-esc="mn.name"/>
+                                        </label>
+                                    </div>
+                                    <label class="o_store_perm_lbl">Phạm vi xem</label>
+                                    <div class="o_store_perm_radios">
+                                        <label><input type="radio" name="staff_scope" t-att-checked="state.staffEdit.scope === 'store'" t-on-change="() => this.state.staffEdit.scope = 'store'"/> Theo cửa hàng</label>
+                                        <label><input type="radio" name="staff_scope" t-att-checked="state.staffEdit.scope === 'mien'" t-on-change="() => this.state.staffEdit.scope = 'mien'"/> Theo miền</label>
+                                        <label><input type="radio" name="staff_scope" t-att-checked="state.staffEdit.scope === 'all'" t-on-change="() => this.state.staffEdit.scope = 'all'"/> Tất cả nhân sự</label>
+                                    </div>
+                                    <div class="o_store_perm_box" t-if="state.staffEdit.scope === 'mien'">
+                                        <label class="me-3" t-foreach="state.staffPerm.miens" t-as="m" t-key="m.id">
+                                            <input type="checkbox" t-att-checked="state.staffEdit.miens.includes(m.id)" t-on-change="(ev) => this.onStaffMien(m.id, ev)"/> <t t-esc="m.name"/>
+                                        </label>
+                                    </div>
+                                    <div class="o_store_perm_box o_store_perm_stores" t-if="state.staffEdit.scope === 'store'">
+                                        <div class="o_store_perm_stores_bar">
+                                            <input class="o_store_perm_input" placeholder="Tìm cửa hàng..." t-model="state.staffEdit.storeQ"/>
+                                            <label class="text-nowrap"><input type="checkbox" t-att-checked="staffStoresAllChecked()" t-on-change="onStaffStoreAll"/> Chọn tất cả</label>
+                                            <span class="text-muted text-nowrap">Đã chọn <b t-esc="state.staffEdit.stores.length"/> / <t t-esc="state.staffPerm.stores.length"/></span>
+                                        </div>
+                                        <div class="o_store_perm_stores_list">
+                                            <div class="o_store_perm_mgroup" t-foreach="staffStoreGroups" t-as="g" t-key="g.id">
+                                                <label class="o_store_perm_mhead2">
+                                                    <input type="checkbox" t-att-checked="g.stores.every((x) => staffStoreChecked(x.id))" t-on-change="(ev) => this.onStaffStoreGroup(g, ev)"/>
+                                                    <t t-esc="g.name"/> <small class="text-muted">(<t t-esc="g.stores.filter((x) => staffStoreChecked(x.id)).length"/>/<t t-esc="g.stores.length"/>)</small>
+                                                </label>
+                                                <div class="o_store_perm_mgrid">
+                                                    <label t-foreach="g.stores" t-as="st" t-key="st.id" t-att-title="st.name">
+                                                        <input type="checkbox" t-att-checked="staffStoreChecked(st.id)" t-on-change="(ev) => this.onStaffStore(st, ev)"/> <span t-esc="st.name"/>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <p class="text-muted mb-0" t-if="!staffStoreGroups.length">Không tìm thấy cửa hàng.</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-muted mb-0" t-if="state.staffEdit.scope === 'all'">User được xem toàn bộ nhân sự của tất cả cửa hàng.</p>
+                                </div>
+                                <div class="o_store_perm_mfoot">
+                                    <span class="flex-grow-1"/>
+                                    <button type="button" class="btn btn-light" t-on-click="onStaffClose">Hủy</button>
+                                    <button type="button" class="btn btn-primary" t-on-click="onStaffSave"><i class="fa fa-floppy-o"/> Lưu thay đổi</button>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
                 </div>
                 <div class="o_store_personal o_store_rk" t-elif="state.activeNav === 'report_rank' and state.rankReport and state.rankStore">
                     <t t-set="rs" t-value="state.rankStore"/>

@@ -725,9 +725,8 @@ class StoreNvbhCheckKpi(models.Model):
         avg = lambda items, k: round(sum(x[k] for x in items) / len(items), 2)
         rows = []
         for staff in sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store'])):
-            tot = avg(staff, 'kpi_total')
-            rows.append(['', '%s (TB · %d NV)' % (staff[0]['store'], len(staff)), '', staff[0]['store'], staff[0]['asm'],
-                         *[avg(staff, k) for k in keys], 'ĐẠT' if tot >= 72.0 else 'CHƯA ĐẠT'])
+            rows.append(['', '%s (%d NV)' % (staff[0]['store'], len(staff)), '', staff[0]['store'], staff[0]['asm'],
+                         *['' for _k in keys], ''])
             rows += [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank']] for r in staff]
         sm = data['summary']
         foot = ['', 'TRUNG BÌNH (%d NV)' % sm['staff_count'], '', '', '', *[sm['avgs'][k] for k in keys], '']

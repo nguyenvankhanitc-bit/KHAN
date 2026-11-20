@@ -817,18 +817,8 @@
                                         <t t-foreach="perfGroups" t-as="g" t-key="g.store_id">
                                         <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
                                             <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
-                                            <td class="l"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/> · trung bình</span></td>
-                                            <td class="c b" t-esc="fmtKpi(g.g1)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.g2)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.g3)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.g4)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.g5)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.complete)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.discipline)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.sales)"/>
-                                            <td class="c b" t-esc="fmtKpi(g.attitude)"/>
-                                            <td t-attf-class="c b kpi-val #{g.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(g.kpi_total)"/>
-                                            <td class="c"><span t-att-class="'asm_st_pill ' + (g.passed ? 'is-ok' : 'is-bad')" t-esc="g.passed ? 'ĐẠT' : 'CHƯA ĐẠT'"/></td>
+                                            <td class="l"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
+                                            <td colspan="11"/>
                                         </tr>
                                         <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
                                             <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>

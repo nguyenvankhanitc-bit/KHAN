@@ -101,6 +101,13 @@
                                    decoration-success="tone_c == 'green'" decoration-info="tone_c == 'blue'"
                                    decoration-warning="tone_c == 'orange'" decoration-danger="tone_c in ('red', 'darkred')"/>
                         </div>
+                        <div class="o_store_ov_tile is-x" invisible="not max_x">
+                            <div class="o_store_ov_name"><i class="fa fa-list-ul"/> <span><field name="extra_category_label"/></span></div>
+                            <div class="o_store_ov_score"><field name="score_x" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_x" options="{'hide_trailing_zeros': true}"/></small></div>
+                            <field name="lvl_x" widget="badge"
+                                   decoration-success="tone_x == 'green'" decoration-info="tone_x == 'blue'"
+                                   decoration-warning="tone_x == 'orange'" decoration-danger="tone_x in ('red', 'darkred')"/>
+                        </div>
                         <div class="o_store_ov_tile is-t">
                             <div class="o_store_ov_name"><i class="fa fa-cube"/> <span>Tổng điểm</span></div>
                             <div class="o_store_ov_score"><field name="total_score" options="{'hide_trailing_zeros': true}"/><small>/<field name="max_score" options="{'hide_trailing_zeros': true}"/></small></div>
@@ -121,6 +128,7 @@
                     <field name="tone_b" invisible="1"/>
                     <field name="tone_c" invisible="1"/>
                     <field name="tone_t" invisible="1"/>
+                    <field name="tone_x" invisible="1"/>
                     <notebook invisible="staff_mode">
                         <page string="A. Điểm cơ sở vật chất" name="lines_a">
                             <div class="o_store_audit_bar">
@@ -209,6 +217,35 @@
                                 </list>
                             </field>
                         </page>
+                        <page string="Nhóm bổ sung" name="lines_x" invisible="not max_x and not line_x_ids">
+                            <div class="o_store_audit_bar">
+                                <span><field name="extra_category_label"/></span>
+                                <span class="o_store_bar_max"><field name="max_x" options="{'hide_trailing_zeros': true}"/></span>
+                                <span class="o_store_bar_act"><field name="score_x" options="{'hide_trailing_zeros': true}"/></span>
+                                <span>Tổng điểm nhóm bổ sung: <strong><field name="score_x" options="{'hide_trailing_zeros': true}"/> / <field name="max_x" options="{'hide_trailing_zeros': true}"/></strong></span>
+                            </div>
+                            <field name="line_x_ids" widget="store_lines" readonly="is_locked or (state == 'done' and not can_edit_done)" nolabel="1">
+                                <list editable="bottom" create="false" delete="false" class="o_store_audit_lines"
+                                      decoration-muted="result == 'todo'">
+                                    <field name="sequence" string="STT" width="55px" readonly="1" force_save="1"/>
+                                    <field name="category" string="Nhóm tiêu chí" readonly="1" force_save="1" width="160px"/>
+                                    <field name="sub_category" column_invisible="1" force_save="1"/>
+                                    <field name="name" readonly="1" force_save="1" width="220px"/>
+                                    <field name="requirement" readonly="1" force_save="1"/>
+                                    <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="is_scored" column_invisible="1"/>
+                                    <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
+                                           decoration-success="result == 'pass'"
+                                           decoration-warning="result == 'partial'"
+                                           decoration-danger="result == 'fail'"/>
+                                    <field name="note" string="Chi tiết lỗi" width="200px"/>
+                                    <field name="error_count" string="Tổng số lỗi" width="100px" readonly="1" sum="Tổng số lỗi"/>
+                                    <field name="remark" string="Ghi chú" width="200px"/>
+                                    <field name="attachment_ids" widget="store_photo" string="Hình ảnh" width="130px"/>
+                                </list>
+                            </field>
+                        </page>
                         <page string="Tổng hợp" name="summary_total">
                             <div class="o_store_audit_grand">
                                 <i class="fa fa-trophy"/>
@@ -228,6 +265,8 @@
                                     <div class="o_row"><field name="score_b" options="{'hide_trailing_zeros': true}"/> / <field name="max_b" options="{'hide_trailing_zeros': true}"/></div>
                                     <label for="score_c" string="C. Chuyên môn tư vấn"/>
                                     <div class="o_row"><field name="score_c" options="{'hide_trailing_zeros': true}"/> / <field name="max_c" options="{'hide_trailing_zeros': true}"/></div>
+                                    <label for="score_x" string="Nhóm bổ sung" invisible="not max_x"/>
+                                    <div class="o_row" invisible="not max_x"><field name="score_x" options="{'hide_trailing_zeros': true}"/> / <field name="max_x" options="{'hide_trailing_zeros': true}"/></div>
                                 </group>
                                 <group>
                                     <field name="pass_threshold" readonly="is_locked or (state != 'draft' and not can_edit_done)"/>

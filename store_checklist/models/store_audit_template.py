@@ -1,5 +1,5 @@
 from odoo import Command, _, api, fields, models
-from odoo.exceptions import UserError
+from odoo.exceptions import AccessError, UserError
 
 AUDIT_TYPES = [
     ('nvbh', 'Checklist NVBH'),
@@ -12,6 +12,133 @@ CATEGORIES = [
     ('b', 'B. Tác phong & kỹ năng phục vụ'),
     ('c', 'C. Chuyên môn nghiệp vụ tư vấn'),
 ]
+BASE_CATEGORY_CODES = ('a', 'b', 'c')  # 3 nhóm gốc có tab / cột điểm riêng trên phiếu; nhóm thêm sau (d, e...) gộp vào "Nhóm bổ sung"
+
+
+def category_selection(model):
+    """Danh sách Nhóm tiêu chí: 3 nhóm gốc A/B/C (tên lấy theo danh mục nếu đã đổi) + các nhóm người dùng tự thêm."""
+    env = model.env
+    res = dict(CATEGORIES)
+    order = [k for k, _l in CATEGORIES]
+    if 'store.audit.category' in env:
+        try:
+            with env.cr.savepoint(flush=False):
+                env.cr.execute("SELECT code, name FROM store_audit_category ORDER BY sequence, id")
+                for code, name in env.cr.fetchall():
+                    if code:
+                        if code not in res:
+                            order.append(code)
+                        res[code] = name
+        except Exception:
+            pass  # bảng chưa tạo (đang cài module)
+    return [(k, res[k]) for k in order]
+
+
+def category_list(env):
+    """[(code, name)] theo thứ tự hiển thị."""
+    return category_selection(env['store.audit.category'])
+
+
+class StoreAuditCategory(models.Model):
+    """Danh mục Nhóm tiêu chí (A. Cơ sở vật chất, B. ..., C. ..., và nhóm tự thêm D, E...).
+    Giá trị lưu trên tiêu chí / phiếu là mã (a, b, c, d...) nên dữ liệu cũ giữ nguyên."""
+    _name = 'store.audit.category'
+    _description = 'Nhóm tiêu chí'
+    _order = 'sequence, id'
+
+    name = fields.Char(string='Nhóm tiêu chí', required=True)
+    code = fields.Char(string='Mã', readonly=True, copy=False, index=True)
+    sequence = fields.Integer(string='STT', default=10)
+
+    _code_uniq = models.Constraint('unique(code)', 'Mã nhóm tiêu chí đã tồn tại.')
+
+    def _check_access(self, operation):
+        res = super()._check_access(operation)
+        if operation == 'read' or res or self.env.su:
+            return res
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
+            return res
+        rights = self.env['store.perm.rule']._rights()
+        if rights is not None and any((rights.get(k) or {}).get(operation) for k in ('subgroup', 'gs_subgroup', 'benchmark', 'gs_benchmark')):
+            return res
+        return self, lambda: AccessError('Bạn không có quyền thêm / sửa Nhóm tiêu chí.')
+
+    @api.model
+    def _next_code(self, used):
+        for i in range(ord('d'), ord('z') + 1):
+            if chr(i) not in used:
+                return chr(i)
+        n = 1
+        while 'z%d' % n in used:
+            n += 1
+        return 'z%d' % n
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        used = set(self.sudo().search([]).mapped('code')) | set(BASE_CATEGORY_CODES)
+        for vals in vals_list:
+            if not vals.get('code'):
+                vals['code'] = self._next_code(used)
+            used.add(vals['code'])
+            if 'sequence' not in vals:
+                vals['sequence'] = 10 * (len(used) + 1)
+        return super().create(vals_list)
+
+    def unlink(self):
+        if self.filtered(lambda c: c.code in BASE_CATEGORY_CODES):
+            raise UserError(_('Không xóa được 3 nhóm gốc A / B / C (chỉ đổi tên được).'))
+        for cat in self:
+            if self.env['store.audit.template.line'].sudo().search_count([('category', '=', cat.code)]):
+                raise UserError(_('Nhóm "%s" đang có tiêu chí, hãy chuyển tiêu chí sang nhóm khác trước khi xóa.') % cat.name)
+        return super().unlink()
+
+    @api.model
+    def _ensure_base_categories(self):
+        """Tạo 3 nhóm gốc A/B/C trong danh mục (chạy mỗi lần nâng cấp, không ghi đè tên đã đổi)."""
+        have = set(self.sudo().search([]).mapped('code'))
+        for i, (code, name) in enumerate(CATEGORIES):
+            if code not in have:
+                self.sudo().create({'code': code, 'name': name, 'sequence': 10 * (i + 1)})
+
+
+class CategoryPickMixin(models.AbstractModel):
+    """Ô chọn Nhóm tiêu chí dạng danh mục (thêm nhóm mới ngay trong ô chọn); giá trị thật vẫn lưu ở trường category."""
+    _name = 'store.audit.category.pick.mixin'
+    _description = 'Chọn nhóm tiêu chí'
+
+    category = fields.Selection(category_selection, string='Nhóm tiêu chí')
+    category_id = fields.Many2one('store.audit.category', string='Nhóm tiêu chí', compute='_compute_category_id',
+                                  inverse='_inverse_category_id')
+
+    @api.depends('category')
+    def _compute_category_id(self):
+        cats = {c.code: c for c in self.env['store.audit.category'].sudo().search([])}
+        for rec in self:
+            rec.category_id = cats.get(rec.category, False)
+
+    def _inverse_category_id(self):
+        for rec in self:
+            if rec.category_id and rec.category != rec.category_id.code:
+                rec.category = rec.category_id.code
+
+    @api.model
+    def _map_category_vals(self, vals):
+        if vals.get('category_id'):
+            vals['category'] = self.env['store.audit.category'].sudo().browse(vals['category_id']).code
+        return vals
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        return super().create([self._map_category_vals(dict(v)) for v in vals_list])
+
+    def write(self, vals):
+        return super().write(self._map_category_vals(dict(vals)))
+
+    @api.onchange('category_id')
+    def _onchange_category_id(self):
+        if self.category_id and self.category != self.category_id.code:
+            self.category = self.category_id.code
 
 
 class StoreAuditTemplate(models.Model):
@@ -37,7 +164,7 @@ class StoreAuditTemplate(models.Model):
 
 class StoreAuditSubGroup(models.Model):
     _name = 'store.audit.sub.group'
-    _inherit = 'store.perm.mixin'
+    _inherit = ['store.perm.mixin', 'store.audit.category.pick.mixin']
     _perm_enforce_read = False
     _perm_manager_ops = ('create', 'write', 'unlink')
 
@@ -52,7 +179,7 @@ class StoreAuditSubGroup(models.Model):
     _order = 'sequence, id'
 
     name = fields.Char(string='Phân nhóm', required=True)
-    category = fields.Selection(CATEGORIES, string='Nhóm tiêu chí', required=True, default='a')
+    category = fields.Selection(category_selection, string='Mã nhóm tiêu chí', required=True, default='a')
     audit_type = fields.Selection(AUDIT_TYPES, string='Loại checklist', required=True, default='nvbh')
     sequence = fields.Integer(string='STT', default=10)
 
@@ -71,7 +198,7 @@ class StoreAuditSubGroup(models.Model):
 
 class StoreAuditTemplateLine(models.Model):
     _name = 'store.audit.template.line'
-    _inherit = 'store.perm.mixin'
+    _inherit = ['store.perm.mixin', 'store.audit.category.pick.mixin']
     _perm_enforce_read = False
     _perm_manager_ops = ('create', 'write', 'unlink')
 
@@ -87,7 +214,7 @@ class StoreAuditTemplateLine(models.Model):
 
     template_id = fields.Many2one('store.audit.template', required=True, ondelete='cascade')
     sequence = fields.Integer(string='STT', default=10)
-    category = fields.Selection(CATEGORIES, string='Nhóm tiêu chí', required=True)
+    category = fields.Selection(category_selection, string='Nhóm tiêu chí', required=True)
     sub_group_id = fields.Many2one('store.audit.sub.group', string='Phân nhóm', ondelete='restrict')
     audit_type = fields.Selection(related='template_id.audit_type', string='Loại checklist')
     name = fields.Char(string='Tiêu chí đánh giá', required=True)
@@ -138,7 +265,7 @@ class StoreAuditTemplateLine(models.Model):
         for i, (h, w) in enumerate(zip(self._XLS_HEAD, [18, 6, 26, 24, 34, 60, 10, 28, 28, 26])):
             sheet.write(0, i, h, head)
             sheet.set_column(i, i, w)
-        cats = dict(CATEGORIES)
+        cats = dict(category_list(self.env))
         for r, ln in enumerate(lines, 1):
             vals = [ln.template_id.name, ln.sequence, cats.get(ln.category, ''), ln.sub_group_id.name or '', ln.name, ln.requirement or '',
                     ln.max_score, ', '.join(ln.sudo().responsible_ids.mapped('name')), ', '.join(ln.controller_ids.mapped('name')),
@@ -186,7 +313,9 @@ class StoreAuditTemplateLine(models.Model):
         Emp, User = self.env['hr.employee'].sudo(), self.env['res.users'].sudo()
         Group = self.env['lug.group'].sudo() if 'lug.group' in self.env else None
         SubGroup = self.env['store.audit.sub.group'].sudo()
-        cat_keys = {k for k, _l in CATEGORIES}
+        cat_list = category_list(self.env)
+        cat_keys = {k for k, _l in cat_list}
+        cat_by_name = {l.strip().casefold(): k for k, l in cat_list}
         created = updated = 0
         errors = []
 
@@ -208,11 +337,12 @@ class StoreAuditTemplateLine(models.Model):
                 continue
             line = self.search([('template_id', '=', tmpl.id), ('name', '=', name)], limit=1)
             vals = {'name': name}
-            cat = get(r, 'Nhóm tiêu chí')[:1].lower()
+            cat_txt = get(r, 'Nhóm tiêu chí')
+            cat = cat_by_name.get(cat_txt.casefold()) or (cat_txt.split('.')[0].strip().lower() if cat_txt else '')
             if cat in cat_keys:
                 vals['category'] = cat
             elif not line:
-                errors.append('Dòng %s: thiếu Nhóm tiêu chí (A / B / C)' % n)
+                errors.append('Dòng %s: Nhóm tiêu chí "%s" chưa có trong danh mục' % (n, cat_txt))
                 continue
             try:
                 if get(r, 'STT'):

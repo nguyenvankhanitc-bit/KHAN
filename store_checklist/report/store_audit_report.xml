@@ -85,7 +85,7 @@
                                     <span t-att-style="'display:inline-block; padding:5px 18px 5px 10px; border-radius:16px; font-weight:bold; font-size:15px; ' + {'green': 'background:#d8f5e1; color:#15803d;', 'blue': 'background:#dbeafe; color:#1d4ed8;', 'orange': 'background:#ffe9cf; color:#c2410c;', 'red': 'background:#fddada; color:#dc2626;', 'darkred': 'background:#f3c9c9; color:#7f1d1d;'}[r['tone']]">
                                         <t t-if="r['tone'] == 'green'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#16a34a"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'blue'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#2563eb"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'orange'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#f59e0b"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-elif="r['tone'] == 'red'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#dc2626"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-else=""><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#7f1d1d"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t>
                                         &#160;<t t-esc="r['level']"/></span></td>
-                                <td t-if="r_index == 0" rowspan="4" style="text-align:center; vertical-align:middle; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8; border-right:1px solid #93b4e8;">
+                                <td t-if="r_index == 0" t-att-rowspan="r_size" style="text-align:center; vertical-align:middle; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8; border-right:1px solid #93b4e8;">
                                     <span t-att-style="'display:inline-block; padding:8px 26px; border-radius:20px; font-weight:bold; font-size:18px; white-space:nowrap; ' + ('background:#d8f5e1; color:#15803d;' if o.conclusion == 'pass' else 'background:#fddada; color:#dc2626;')" t-esc="'ĐẠT' if o.conclusion == 'pass' else 'KHÔNG ĐẠT'"/></td>
                             </tr>
                         </t>
@@ -120,7 +120,7 @@
                                     </tr>
                                 </t>
                             </t>
-                            <tr class="c b"><td colspan="3"><t t-set="nm" t-value="sec['title'].split(': ')[1]"/>TỔNG <t t-if="not nm.startswith('ĐIỂM')">ĐIỂM </t><t t-esc="nm"/></td>
+                            <tr class="c b"><td colspan="3"><t t-set="nm" t-value="sec['title'].split(': ', 1)[-1]"/>TỔNG <t t-if="not nm.startswith('ĐIỂM')">ĐIỂM </t><t t-esc="nm"/></td>
                                 <td><t t-esc="'%g' % sec['max']"/></td><td><t t-esc="'%g' % sec['score']"/></td><td/><td/></tr>
                         </table>
                     </t>

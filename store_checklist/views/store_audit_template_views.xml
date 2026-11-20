@@ -14,7 +14,8 @@
                     <field name="line_ids">
                         <list editable="bottom">
                             <field name="sequence" widget="handle"/>
-                            <field name="category"/>
+                            <field name="category" column_invisible="1"/>
+                            <field name="category_id" required="1"/>
                             <field name="sub_group_id" domain="category and [('category', '=', category)] or []"/>
                             <field name="name"/>
                             <field name="requirement"/>

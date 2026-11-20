@@ -196,7 +196,8 @@
                     <group>
                         <group>
                             <field name="template_id" string="Loại checklist"/>
-                            <field name="category"/>
+                            <field name="category_id" required="1" options="{'no_open': false}" placeholder="Chọn hoặc gõ tên để thêm nhóm mới..."/>
+                            <field name="category" invisible="1"/>
                             <field name="sub_group_id" options="{'no_create': true}" domain="category and [('category', '=', category), ('audit_type', '=', audit_type)] or [('audit_type', '=', audit_type)]"/>
                             <field name="audit_type" invisible="1"/>
                         </group>
@@ -257,7 +258,8 @@
         <field name="arch" type="xml">
             <list group_edit="0" group_delete="0" string="Phân nhóm" editable="bottom" default_order="sequence, id">
                 <field name="sequence" string="STT"/>
-                <field name="category"/>
+                <field name="category" column_invisible="1"/>
+                <field name="category_id" required="1"/>
                 <field name="name"/>
             </list>
         </field>
@@ -271,7 +273,8 @@
                 <sheet>
                     <group>
                         <field name="name"/>
-                        <field name="category"/>
+                        <field name="category_id" required="1"/>
+                        <field name="category" invisible="1"/>
                         <field name="sequence" string="STT"/>
                         <field name="audit_type" invisible="1"/>
                     </group>
@@ -280,6 +283,34 @@
                     <button string="Lưu" special="save" class="btn-primary"/>
                     <button string="Hủy" special="cancel" class="btn-secondary"/>
                 </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_category_list" model="ir.ui.view">
+        <field name="name">store.audit.category.list</field>
+        <field name="model">store.audit.category</field>
+        <field name="arch" type="xml">
+            <list string="Nhóm tiêu chí" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="code" string="Mã"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_category_form" model="ir.ui.view">
+        <field name="name">store.audit.category.form</field>
+        <field name="model">store.audit.category</field>
+        <field name="arch" type="xml">
+            <form string="Nhóm tiêu chí">
+                <sheet>
+                    <group>
+                        <field name="name" placeholder="vd. D. An toàn lao động"/>
+                        <field name="sequence" string="STT"/>
+                        <field name="code" invisible="not code"/>
+                    </group>
+                </sheet>
             </form>
         </field>
     </record>

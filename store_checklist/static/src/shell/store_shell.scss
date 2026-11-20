@@ -2935,3 +2935,7 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 .o_store_benchmark table.o_list_table td.o_store_fill_src{outline: 2px solid #217346; outline-offset: -2px;}
 .o_store_benchmark table.o_list_table td.o_store_fill_target{background: #e2efda !important; outline: 1px dashed #217346; outline-offset: -2px;}
 body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-select: none !important;}
+
+/* Thẻ tổng quan của nhóm tiêu chí bổ sung (D, E...) */
+.o_store_audit_form .o_store_ov_tile.is-x{background: #fff4e5;}
+.o_store_audit_form .o_store_ov_tile.is-x i{color: #d97706;}

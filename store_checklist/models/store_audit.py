@@ -12,7 +12,7 @@ from .store_notify import bot_send, card
 
 _logger = logging.getLogger(__name__)
 
-from .store_audit_template import AUDIT_TYPES, CATEGORIES
+from .store_audit_template import AUDIT_TYPES, BASE_CATEGORY_CODES, CATEGORIES, category_list, category_selection
 
 
 class StoreAudit(models.Model):
@@ -50,6 +50,8 @@ class StoreAudit(models.Model):
     line_a_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', '=', 'a')], default=lambda self: self._default_lines('a'), string='A. Cơ sở vật chất')
     line_b_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', '=', 'b')], default=lambda self: self._default_lines('b'), string='B. Tác phong & kỹ năng')
     line_c_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', '=', 'c')], default=lambda self: self._default_lines('c'), string='C. Chuyên môn')
+    # Nhóm tiêu chí tự thêm (D, E...): gộp chung một tab "Nhóm bổ sung"
+    line_x_ids = fields.One2many('store.audit.line', 'audit_id', domain=[('category', 'not in', list(BASE_CATEGORY_CODES))], default=lambda self: self._default_lines('x'), string='Nhóm bổ sung')
     action_ids = fields.One2many('store.audit.action', 'audit_id', string='Khắc phục')
     staff_ids = fields.One2many('store.audit.staff', 'audit_id', string='Nhân sự', copy=True)
     action_count = fields.Integer(compute='_compute_action_count')
@@ -60,6 +62,8 @@ class StoreAudit(models.Model):
     max_b = fields.Float(string='Chuẩn B', compute='_compute_scores', store=True)
     score_c = fields.Float(string='Điểm C', compute='_compute_scores', store=True)
     max_c = fields.Float(string='Chuẩn C', compute='_compute_scores', store=True)
+    score_x = fields.Float(string='Điểm nhóm bổ sung', compute='_compute_scores', store=True)
+    max_x = fields.Float(string='Chuẩn nhóm bổ sung', compute='_compute_scores', store=True)
     total_score = fields.Float(string='Tổng điểm đạt', compute='_compute_scores', store=True)
     max_score = fields.Float(string='Tổng điểm chuẩn', compute='_compute_scores', store=True)
     # Tỷ lệ 0..1 để widget percentage hiển thị đúng
@@ -76,6 +80,9 @@ class StoreAudit(models.Model):
     lvl_b = fields.Char(compute='_compute_levels')
     lvl_c = fields.Char(compute='_compute_levels')
     lvl_t = fields.Char(compute='_compute_levels')
+    lvl_x = fields.Char(compute='_compute_levels')
+    tone_x = fields.Char(compute='_compute_levels')
+    extra_category_label = fields.Char(compute='_compute_levels')
     tone_a = fields.Char(compute='_compute_levels')
     tone_b = fields.Char(compute='_compute_levels')
     tone_c = fields.Char(compute='_compute_levels')
@@ -139,6 +146,7 @@ class StoreAudit(models.Model):
             self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a')
             self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b')
             self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c')
+            self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x')
 
     @api.model
     def get_dashboard_data(self, month=None, mien=None, store_id=None):
@@ -296,24 +304,24 @@ class StoreAudit(models.Model):
         }
 
     @api.depends('line_ids.actual_score', 'line_ids.max_score', 'line_ids.category', 'pass_threshold',
-                 'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score')
+                 'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score', 'line_x_ids.actual_score')
     def _compute_scores(self):
         for rec in self:
-            # dòng sửa ở form nằm trong line_a/b/c_ids nên đọc từ đó để tổng cập nhật ngay khi nhập
-            for cat, _label in CATEGORIES:
+            # dòng sửa ở form nằm trong line_a/b/c/x_ids nên đọc từ đó để tổng cập nhật ngay khi nhập
+            for cat in BASE_CATEGORY_CODES + ('x',):
                 lines = rec[f'line_{cat}_ids']
                 rec[f'score_{cat}'] = sum(lines.mapped('actual_score'))
                 rec[f'max_{cat}'] = sum(lines.mapped('max_score'))
-            rec.total_score = rec.score_a + rec.score_b + rec.score_c
-            rec.max_score = rec.max_a + rec.max_b + rec.max_c
+            rec.total_score = rec.score_a + rec.score_b + rec.score_c + rec.score_x
+            rec.max_score = rec.max_a + rec.max_b + rec.max_c + rec.max_x
             rec.pass_rate = rec.total_score / rec.max_score if rec.max_score else 0.0
             rec.conclusion = 'pass' if rec.max_score and rec.pass_rate * 100 >= rec.pass_threshold else 'fail'
 
-    @api.depends('line_a_ids.result', 'line_b_ids.result', 'line_c_ids.result',
-                 'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score')
+    @api.depends('line_a_ids.result', 'line_b_ids.result', 'line_c_ids.result', 'line_x_ids.result',
+                 'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score', 'line_x_ids.actual_score')
     def _compute_kpi(self):
         for rec in self:
-            lines = rec.line_a_ids | rec.line_b_ids | rec.line_c_ids
+            lines = rec.line_a_ids | rec.line_b_ids | rec.line_c_ids | rec.line_x_ids
             scored = lines.filtered('is_scored')
             passed = len(scored.filtered(lambda l: l.result == 'pass'))
             improve = len(scored.filtered(lambda l: l.result == 'partial'))  # Trung bình
@@ -329,10 +337,11 @@ class StoreAudit(models.Model):
             rec.kpi_max = sum(lines.mapped('max_score'))
             rec.kpi_score_pct = 100 * rec.kpi_avg / rec.kpi_max if rec.kpi_max else 0.0
 
-    @api.depends('line_ids.error_count', 'line_a_ids.error_count', 'line_b_ids.error_count', 'line_c_ids.error_count')
+    @api.depends('line_ids.error_count', 'line_a_ids.error_count', 'line_b_ids.error_count', 'line_c_ids.error_count',
+                 'line_x_ids.error_count')
     def _compute_error_total(self):
         for rec in self:
-            rec.error_count = sum((rec.line_a_ids | rec.line_b_ids | rec.line_c_ids).mapped('error_count'))
+            rec.error_count = sum((rec.line_a_ids | rec.line_b_ids | rec.line_c_ids | rec.line_x_ids).mapped('error_count'))
 
     @api.depends('minutes_attachment_ids')
     def _compute_has_minutes(self):
@@ -390,12 +399,17 @@ class StoreAudit(models.Model):
             # phiếu mới (form Thêm mới chỉ nhập nhân sự) -> tiêu đề riêng; phiếu đã lưu giữ nguyên tiêu đề cũ
             rec.form_title = 'THÊM THÔNG TIN NHÂN VIÊN' if rec.staff_mode else 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
 
-    @api.depends('score_a', 'max_a', 'score_b', 'max_b', 'score_c', 'max_c', 'total_score', 'max_score', 'audit_date')
+    @api.depends('score_a', 'max_a', 'score_b', 'max_b', 'score_c', 'max_c', 'score_x', 'max_x', 'total_score', 'max_score',
+                 'audit_date', 'line_x_ids.category')
     def _compute_levels(self):
         Level = self.env['store.audit.level']
+        names = dict(category_list(self.env))
         for rec in self:
+            extra = [c for c in dict.fromkeys(rec.line_x_ids.sorted(lambda l: (l.sequence, l.id)).mapped('category')) if c]
+            rec.extra_category_label = ', '.join(names.get(c, c.upper()) for c in extra) or 'Nhóm bổ sung'
             for key, score, top in (('a', rec.score_a, rec.max_a), ('b', rec.score_b, rec.max_b),
-                                    ('c', rec.score_c, rec.max_c), ('t', rec.total_score, rec.max_score)):
+                                    ('c', rec.score_c, rec.max_c), ('x', rec.score_x, rec.max_x),
+                                    ('t', rec.total_score, rec.max_score)):
                 lv = Level.level_for(100 * score / top if top else 0, rec.audit_type)
                 rec[f'lvl_{key}'] = lv.name or ''
                 rec[f'tone_{key}'] = lv.tone or 'orange'
@@ -447,8 +461,14 @@ class StoreAudit(models.Model):
             ('store', 'Cơ sở vật chất', 'Không gian bên ngoài, bên trong và sắp xếp sản phẩm', self.score_a, self.max_a),
             ('people', 'Tác phong và kỹ năng', 'Tác phong, diện mạo và kỹ năng giao tiếp của nhân viên', self.score_b, self.max_b),
             ('trend', 'Chuyên môn nghiệp vụ', 'Tìm hiểu nhu cầu, tư vấn sản phẩm và khuyến mãi', self.score_c, self.max_c),
-            ('box', 'Tổng điểm', 'Tổng điểm đánh giá của cả ba mục', self.total_score, self.max_score),
         ]
+        names = dict(category_list(self.env))
+        for code in dict.fromkeys(self.line_ids.filtered(lambda l: l.category not in BASE_CATEGORY_CODES).sorted(
+                lambda l: (l.sequence, l.id)).mapped('category')):
+            ls = self.line_ids.filtered(lambda l, c=code: l.category == c)
+            rows.append(('list', names.get(code, code.upper()), 'Nhóm tiêu chí bổ sung',
+                         sum(ls.mapped('actual_score')), sum(ls.mapped('max_score'))))
+        rows.append(('box', 'Tổng điểm', 'Tổng điểm đánh giá của tất cả các mục', self.total_score, self.max_score))
         out = []
         for icon, name, note, score, top in rows:
             pct = 100 * score / top if top else 0
@@ -466,16 +486,18 @@ class StoreAudit(models.Model):
         titles = {'a': 'A: ĐIỂM CƠ SỞ VẬT CHẤT', 'b': 'B: TÁC PHONG VÀ KỸ NĂNG CỦA NHÂN VIÊN',
                   'c': 'C: CHUYÊN MÔN NGHIỆP VỤ TƯ VẤN'}
         sections = []
-        for cat, _label in CATEGORIES:
+        for cat, label in category_list(self.env):
             lines = self.line_ids.filtered(lambda l: l.category == cat).sorted(lambda l: (l.sequence, l.id))
+            if cat not in BASE_CATEGORY_CODES and not lines:
+                continue
             groups = {}
             for line in lines:
                 groups.setdefault(line.sub_category or '', []).append(line)
             sections.append({
-                'title': titles.get(cat, cat),
+                'title': titles.get(cat) if cat in BASE_CATEGORY_CODES else (label or cat).upper(),
                 'groups': [{'name': name, 'lines': ls, 'max': sum(l.max_score for l in ls),
                             'score': sum(l.actual_score for l in ls)} for name, ls in groups.items()],
-                'max': self[f'max_{cat}'], 'score': self[f'score_{cat}'],
+                'max': sum(lines.mapped('max_score')), 'score': sum(lines.mapped('actual_score')),
             })
         return sections
 
@@ -492,7 +514,8 @@ class StoreAudit(models.Model):
             'name': t.name,
             'requirement': t.requirement,
             'max_score': t.max_score,
-        }) for t in template.line_ids if not category or t.category == category]
+        }) for t in template.line_ids if not category or t.category == category
+            or (category == 'x' and t.category not in BASE_CATEGORY_CODES)]
 
     # --- Ma trận quyền theo mục con (store.perm.mixin) ---
     def _perm_key(self):
@@ -1030,7 +1053,7 @@ class StoreAuditLine(models.Model):
     store_id = fields.Many2one(related='audit_id.store_id', store=True)
     audit_date = fields.Datetime(related='audit_id.audit_date', store=True)
     sequence = fields.Integer(string='STT', default=10)
-    category = fields.Selection(CATEGORIES, string='Nhóm tiêu chí', required=True)
+    category = fields.Selection(category_selection, string='Nhóm tiêu chí', required=True)
     sub_category = fields.Char(string='Phân nhóm')
     name = fields.Char(string='Tiêu chí đánh giá', required=True)
     requirement = fields.Text(string='Yêu cầu / Tiêu chuẩn')

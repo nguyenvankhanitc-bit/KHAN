@@ -114,7 +114,7 @@ class StorePermMixin(models.AbstractModel):
 
 class StorePermRule(models.Model):
     """Một dòng phân quyền: nhiều user dùng chung một ma trận Xem/Thêm/Sửa/Xóa theo từng mục con.
-    User không nằm trong dòng nào = quyền theo nhóm như cũ; Quản lý / Admin luôn đủ quyền.
+    User Checklist Audit không nằm trong dòng nào = không có quyền mục nào; Quản lý / Admin luôn đủ quyền.
     User nằm trong nhiều dòng thì quyền được cộng dồn."""
     _name = 'store.perm.rule'
     _description = 'Phân quyền mục con Checklist Audit'
@@ -132,6 +132,9 @@ class StorePermRule(models.Model):
             return None
         rules = self.sudo().search([('user_ids', 'in', user.id)])
         if not rules:
+            # user Checklist Audit chưa được gán nhóm phân quyền nào: ẩn toàn bộ (không còn dùng quyền theo nhóm hệ thống)
+            if user.has_group('store_checklist.group_store_user'):
+                return {key: {op: False for op in OPS} for key, _l, _f in MENUS}
             return None
         rights = {key: {op: any(perm_of(r.perms, key).get(op) for r in rules) for op in OPS} for key, _l, _f in MENUS}
         for op in OPS:  # 'nvbh' (phiếu / dữ liệu NVBH) mở khi có ít nhất một mục con NVBH

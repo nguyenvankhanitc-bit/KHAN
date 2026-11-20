@@ -2867,3 +2867,28 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 @media (max-width: 767.98px){
     .o_store_photo_ret .o_store_photo_blocks, .o_store_photo_ret .o_store_photo_common{grid-template-columns: 1fr;}
 }
+
+.o_store_no_access {
+    max-width: 520px;
+    margin: 80px auto;
+    padding: 32px 24px;
+    text-align: center;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    color: #475569;
+    > .fa { font-size: 42px; color: #94a3b8; margin-bottom: 12px; }
+    h3 { font-size: 18px; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+    p { margin: 0; }
+}
+
+/* Lịch xếp ca: ô thay đổi ở lần nhập Excel gần nhất (vàng = đổi ca, xanh lá = ca mới) */
+.o_store_sched_table td.c-day.is-changed{background: #fde68a; color: #92400e; font-weight: 700;}
+.o_store_sched_table td.c-day.is-new{background: #bbf7d0; color: #166534; font-weight: 700;}
+.o_store_sched_table td.c-day.is-changed:hover{background: #fcd34d;}
+.o_store_sched_table td.c-day.is-new:hover{background: #86efac;}
+
+/* Lịch xếp ca: ngày đã qua làm mờ (chỉ xem), ô nhân viên đã check list có ổ khóa nhỏ */
+.o_store_sched_table th.c-day.is-past, .o_store_sched_table td.c-day.is-past{background: #f1f5f9; color: #94a3b8; opacity: .6;}
+.o_store_sched_table td.c-day.is-past.has-shift:hover{background: #e2e8f0;}
+.o_store_sched_table td.c-day.is-locked:not(.is-past){position: relative; box-shadow: inset 0 -2px 0 #94a3b8;}

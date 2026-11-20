@@ -133,6 +133,11 @@ export class StoreChecklistShell extends Component {
             this._sideTimer = setInterval(syncSidebarWidth, 300);
             window.addEventListener("resize", syncSidebarWidth);
             syncSidebarWidth();
+            if (this._startChild && !this._deepCheckId) {
+                const first = this._startChild;
+                this._startChild = null;
+                this.onNavChild(first);
+            }
             if (this._deepCheckId) {
                 const id = this._deepCheckId;
                 this._deepCheckId = 0;
@@ -173,6 +178,12 @@ export class StoreChecklistShell extends Component {
                 ? await this.orm.call("store.staff.view.rule", "get_my_staff_stores", []).catch(() => [])
                 : [];
             await this.loadOverview();
+            // không có quyền Xem "Tổng quan": không hiện dashboard, mở thẳng mục đầu tiên được phép xem
+            if (!this.showOverviewNav) {
+                this.state.activeNav = "";
+                this.state.contentMode = "list";
+                this._startChild = this.firstAllowedChild();
+            }
             this.loadBadges();
         });
     }
@@ -290,7 +301,14 @@ export class StoreChecklistShell extends Component {
                 ],
             });
         }
-        return sections;
+        // chưa được phân quyền mục nào: không hiện mục nào trên sidebar
+        return this.noAccess ? [] : sections;
+    }
+
+    // user có ma trận phân quyền nhưng không được Xem mục nào (vd. chưa được gán nhóm phân quyền)
+    get noAccess() {
+        const rights = this.state.rights;
+        return Boolean(rights) && !this.state.isManager && !Object.values(rights).some((r) => r.read);
     }
 
     isGroupOpen(groupId) {
@@ -2951,7 +2969,28 @@ export class StoreChecklistShell extends Component {
         this.state.job.storeId = "";
     }
 
+    // mục đầu tiên trên sidebar user được phép xem (bỏ qua thư mục)
+    firstAllowedChild() {
+        for (const sec of this.navSections) {
+            const child = (sec.children || []).find((c) => !c.folder);
+            if (child) {
+                return child;
+            }
+        }
+        return null;
+    }
+
     onOverview() {
+        if (!this.showOverviewNav) {
+            const first = this.firstAllowedChild();
+            if (first) {
+                return this.onNavChild(first);
+            }
+            this.state.activeNav = "";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            return;
+        }
         this.resetStorePick();
         this.track({ home: true });
         this.state.activeNav = "overview";
@@ -3021,6 +3060,7 @@ export class StoreChecklistShell extends Component {
         try {
             const res = await this.orm.call("store.nvbh.schedule.line", "get_matrix", [this.listDomain(this.listBase || []), month]);
             sc.ndays = res.ndays;
+            sc.pastDays = res.past_days || 0;
             sc.rows = res.rows;
         } catch (error) {
             this.notifyError(error);
@@ -3037,6 +3077,42 @@ export class StoreChecklistShell extends Component {
         }
         const [y, m] = month.split("-").map(Number);
         return ["CN", "T2", "T3", "T4", "T5", "T6", "T7"][new Date(y, m - 1, d).getDay()];
+    }
+
+    // class ô ngày trên lưới Lịch xếp ca: ngày đã qua làm mờ (khóa), ô đã check list có ổ khóa, ô vừa đổi do nhập Excel tô màu
+    schedCellClass(row, d) {
+        const cell = row.days?.[d];
+        const cls = [];
+        if (d <= (this.state.sched.pastDays || 0)) {
+            cls.push("is-past");
+        }
+        if (cell) {
+            cls.push("has-shift");
+            if (cell.locked) {
+                cls.push("is-locked");
+            }
+            if (cell.changed) {
+                cls.push(cell.prev ? "is-changed" : "is-new");
+            }
+        }
+        return cls.join(" ");
+    }
+
+    schedCellTitle(row, d) {
+        const cell = row.days?.[d];
+        if (d <= (this.state.sched.pastDays || 0)) {
+            return "Lịch quá khứ: chỉ xem, không được chỉnh sửa";
+        }
+        if (!cell) {
+            return "";
+        }
+        if (cell.locked) {
+            return "Nhân viên đã check list / bấm Lưu: không được đổi ca";
+        }
+        if (cell.changed) {
+            return cell.prev ? `Đổi từ ${cell.prev} → ${cell.code} (lần nhập Excel gần nhất)` : "Ca mới thêm (lần nhập Excel gần nhất)";
+        }
+        return "";
     }
 
     get schedDays() {

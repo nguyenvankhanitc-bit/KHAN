@@ -16,6 +16,11 @@
                 onNavChild.bind="onNavChild"
                 isGroupOpen.bind="isGroupOpen"
                 navChildClass.bind="navChildClass">
+            <div class="o_store_no_access" t-if="noAccess">
+                <i class="fa fa-lock"/>
+                <h3>Bạn chưa được phân quyền</h3>
+                <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
+            </div>
             <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
                 <div class="o_store_back" t-if="state.canBack">
@@ -1080,7 +1085,7 @@
                                     <th class="c-name">HỌ VÀ TÊN (dấu)</th>
                                     <th class="c-pos">Mã chức vụ</th>
                                     <th class="c-status">TRẠNG THÁI NHÂN VIÊN</th>
-                                    <th class="c-day" t-foreach="schedDays" t-as="d" t-key="d">N<t t-esc="d"/></th>
+                                    <th class="c-day" t-foreach="schedDays" t-as="d" t-key="d" t-att-class="d &lt;= (state.sched.pastDays || 0) ? 'is-past' : ''">N<t t-esc="d"/></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -1092,7 +1097,7 @@
                                         <td class="c-name" t-esc="row.store_name"/>
                                         <td/>
                                         <td/>
-                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day c-wd" t-att-class="schedWeekday(d) === 'CN' ? 'is-sun' : ''" t-esc="schedWeekday(d)"/>
+                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day c-wd" t-att-class="(schedWeekday(d) === 'CN' ? 'is-sun' : '') + (d &lt;= (state.sched.pastDays || 0) ? ' is-past' : '')" t-esc="schedWeekday(d)"/>
                                     </tr>
                                     <tr t-else="">
                                         <td t-esc="row.mien"/>
@@ -1101,7 +1106,7 @@
                                         <td class="c-name" t-esc="row.staff_name"/>
                                         <td t-esc="row.position"/>
                                         <td t-esc="row.work_status"/>
-                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day" t-att-class="row.days[d] ? 'has-shift' : ''" t-on-click="() => this.onSchedCell(row, d)">
+                                        <td t-foreach="schedDays" t-as="d" t-key="d" class="c-day" t-att-class="schedCellClass(row, d)" t-att-title="schedCellTitle(row, d)" t-on-click="() => this.onSchedCell(row, d)">
                                             <t t-esc="row.days[d] ? row.days[d].code : ''"/>
                                         </td>
                                     </tr>
@@ -1190,7 +1195,7 @@
                     <div class="o_store_perm_head">
                         <div>
                             <h2><i class="fa fa-shield"/> Quản trị phân quyền</h2>
-                            <p class="text-muted">Chọn nhóm quyền rồi thiết lập ma trận Xem / Thêm / Sửa / Xóa cho từng chức năng. Quản lý và Admin luôn đủ quyền; user chưa thuộc nhóm nào dùng quyền theo nhóm hệ thống.</p>
+                            <p class="text-muted">Chọn nhóm quyền rồi thiết lập ma trận Xem / Thêm / Sửa / Xóa cho từng chức năng. Quản lý và Admin luôn đủ quyền; user chưa thuộc nhóm nào sẽ không thấy mục nào.</p>
                         </div>
                         <button type="button" class="btn btn-primary" t-on-click="() => this.onPermOpen(null)">+ Thêm nhóm quyền</button>
                     </div>
@@ -1900,7 +1905,7 @@
                     </div>
                 </div>
             </div>
-            <div class="o_store_shell_home o_store_dash" t-elif="state.dash">
+            <div class="o_store_shell_home o_store_dash" t-elif="state.dash and showOverviewNav">
                 <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
                 <div class="o_store_dash_top">
                     <div class="o_store_dash_title">

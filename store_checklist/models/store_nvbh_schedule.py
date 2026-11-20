@@ -27,13 +27,46 @@ class StoreNvbhSchedule(models.Model):
     store_id = fields.Many2one('hr.store', string='Cửa hàng', required=True, index=True)
     work_date = fields.Date(string='Ngày', required=True, default=fields.Date.context_today)
     line_ids = fields.One2many('store.nvbh.schedule.line', 'schedule_id', string='Lịch xếp ca', copy=True)
+    is_past = fields.Boolean('Lịch quá khứ', compute='_compute_is_past')  # khóa form: không sửa lịch của ngày đã qua
+
+    @api.depends('work_date')
+    def _compute_is_past(self):
+        today = self.env['store.nvbh.schedule.line']._import_ref_date()
+        for rec in self:
+            rec.is_past = bool(rec.work_date) and rec.work_date < today
+
+    def _guard_past(self, action):
+        """Không thêm / sửa / xóa lịch ca của ngày đã qua (theo giờ Việt Nam); luồng nội bộ chạy sudo được bỏ qua."""
+        if self.env.su:
+            return
+        today = self.env['store.nvbh.schedule.line']._import_ref_date()
+        past = self.filtered(lambda r: r.work_date and r.work_date < today)
+        if past:
+            raise UserError('Không được %s lịch ca quá khứ (ngày %s). Chỉ được chỉnh lịch từ hôm nay trở đi.' % (
+                action, ', '.join(sorted({d.strftime('%d/%m/%Y') for d in past.mapped('work_date')}))))
 
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             if vals.get('name', 'New') == 'New':
                 vals['name'] = self._next_name(vals.get('store_id'), vals.get('work_date'))
-        return super().create(vals_list)
+        recs = super().create(vals_list)
+        recs._guard_past('thêm')
+        return recs
+
+    def write(self, vals):
+        if {'store_id', 'work_date'} & set(vals):
+            self._guard_past('sửa')
+        res = super().write(vals)
+        if 'work_date' in vals:
+            self._guard_past('chuyển sang')
+        return res
+
+    def unlink(self):
+        self._guard_past('xóa')
+        if not self.env.su:
+            self.line_ids._guard_locked('xóa')
+        return super().unlink()
 
     def _next_name(self, store_id, work_date):
         store = self.env['hr.store'].browse(store_id)
@@ -202,6 +235,10 @@ class StoreNvbhScheduleLine(models.Model):
         return bool(emp) and 1 <= emp._checklist_effective_level() <= 4
     work_status = fields.Char(string='Trạng thái nhân viên')
     shift_id = fields.Many2one('store.shift', string='Mã ca', required=True)
+    # ô thay đổi ở lần nhập Excel gần nhất (tô màu trên lưới Lịch xếp ca); mã ca cũ để hiện khi rê chuột
+    import_changed = fields.Boolean('Thay đổi ở lần nhập gần nhất', copy=False)
+    import_prev_code = fields.Char('Mã ca trước khi nhập', copy=False)
+    is_locked = fields.Boolean('Khóa chỉnh sửa', compute='_compute_is_locked')  # ngày đã qua / đã check list -> chỉ xem
     # thông tin phiếu mẹ để lọc / hiển thị trong danh sách
     store_id = fields.Many2one('hr.store', related='schedule_id.store_id', string='Cửa hàng', store=True, index=True)
     mien = fields.Selection(related='schedule_id.store_id.mien', string='Miền', store=True, index=True)  # lưu để group theo Miền
@@ -224,12 +261,46 @@ class StoreNvbhScheduleLine(models.Model):
     @api.model_create_multi
     def create(self, vals_list):
         lines = super().create(vals_list)
+        lines._guard_locked('thêm')
         if not self.env.context.get('no_staff_sync'):
             lines._sync_staff_from_lines()
         return lines
 
+    # chỉ là dấu tô màu của lần nhập Excel: ghi được cả trên dòng đã khóa
+    _GUARD_FREE = {'import_changed', 'import_prev_code', 'sequence'}
+
+    @api.depends('work_date')
+    def _compute_is_locked(self):
+        today = self._import_ref_date()
+        states = self._import_check_state(self.filtered('id'))
+        for ln in self:
+            ln.is_locked = bool(ln.work_date and ln.work_date < today) or states.get(ln.id) == 'locked'
+
+    def _guard_locked(self, action):
+        """Dòng lịch ngày đã qua, hoặc nhân viên đã check list / bấm Lưu / đã duyệt: không được thêm / sửa / xóa."""
+        if self.env.su or not self:
+            return
+        today = self._import_ref_date()
+        past = self.filtered(lambda l: l.work_date and l.work_date < today)
+        if past:
+            raise UserError('Không được %s lịch ca quá khứ (ngày %s). Chỉ được chỉnh lịch từ hôm nay trở đi.' % (
+                action, ', '.join(sorted({d.strftime('%d/%m/%Y') for d in past.mapped('work_date')}))))
+        states = self._import_check_state(self)
+        done = self.filtered(lambda l: states.get(l.id) == 'locked')
+        if done:
+            raise UserError('Không được %s ca của %s: nhân viên đã check list / bấm Lưu (hoặc đã duyệt) cho ca này.' % (
+                action, ', '.join('%s ngày %s' % (l.staff_name or '', l.work_date.strftime('%d/%m/%Y')) for l in done[:5])))
+
+    def unlink(self):
+        self._guard_locked('xóa')
+        return super().unlink()
+
     def write(self, vals):
+        if set(vals) - self._GUARD_FREE:
+            self._guard_locked('sửa')
         res = super().write(vals)
+        if 'schedule_id' in vals:
+            self._guard_locked('chuyển')
         if not self.env.context.get('no_staff_sync') and {'staff_name', 'employee_code', 'position', 'work_status'} & set(vals):
             self._sync_staff_from_lines()
         return res
@@ -276,6 +347,7 @@ class StoreNvbhScheduleLine(models.Model):
         """Dữ liệu lưới "Xếp ca" cho màn hình: mỗi cửa hàng một dòng tiêu đề, dưới là mỗi nhân viên một dòng với Mã ca từng ngày."""
         first, ndays = self._month_range(month)
         lines = self.search(domain or [], order='store_id, sequence, id')
+        states = self._import_check_state(lines)
         rows = []
         for store in lines.store_id.sorted('name'):
             rows.append({'kind': 'store', 'key': 's%s' % store.id, 'mien': store.mien or '', 'store_code': store.code or '',
@@ -287,9 +359,14 @@ class StoreNvbhScheduleLine(models.Model):
                     'kind': 'emp', 'key': 'e%s_%s' % (store.id, len(people)), 'mien': store.mien or '',
                     'store_code': store.code or '', 'employee_code': ln.employee_code or '',
                     'staff_name': ln.staff_name or '', 'position': ln.position or '', 'work_status': ln.work_status or '', 'days': {}})
-                person['days'][ln.work_date.day] = {'code': ln.shift_id.code or '', 'schedule_id': ln.schedule_id.id}
+                person['days'][ln.work_date.day] = {'code': ln.shift_id.code or '', 'schedule_id': ln.schedule_id.id,
+                                                    'changed': ln.import_changed, 'prev': ln.import_prev_code or '',
+                                                    'locked': states.get(ln.id) == 'locked'}
             rows.extend(people.values())
-        return {'ndays': ndays, 'rows': rows, 'month': month}
+        today = self._import_ref_date()
+        # số ngày đầu tháng đã qua (làm mờ trên lưới): cả tháng đã qua = ndays, tháng tương lai = 0
+        past_days = ndays if first.replace(day=ndays) < today else (today.day - 1 if first <= today else 0)
+        return {'ndays': ndays, 'rows': rows, 'month': month, 'past_days': past_days}
 
     @api.model
     def export_xlsx(self, domain, month):
@@ -432,6 +509,7 @@ class StoreNvbhScheduleLine(models.Model):
         Schedule = self.env['store.nvbh.schedule']
         schedules = {}
         created = updated = unchanged = 0
+        changed = {}  # line id -> mã ca trước khi nhập ('' = ô mới)
         skipped_past = skipped_locked = 0
         ref = self._import_ref_date()  # vd. 20/11/2026: 01-19/11 giữ nguyên, 20/11 chỉ cập nhật nếu chưa check list, 21/11+ cập nhật
         errors = []
@@ -498,13 +576,17 @@ class StoreNvbhScheduleLine(models.Model):
                                 if chk_state == 'empty' and line.shift_id != shift:
                                     # phiếu mở sẵn nhưng chưa làm: xóa để tạo lại theo công việc của ca mới
                                     self.env['store.nvbh.check'].sudo().search([('schedule_line_id', '=', line.id)]).unlink()
+                                prev_code = line.shift_id.code or ''
                                 line.write(vals)
                                 updated += 1
+                                if prev_code != (shift.code or ''):
+                                    changed[line.id] = prev_code
                         else:
                             vals['sequence'] = max(sch.line_ids.mapped('sequence') or [0]) + 10
                             vals['schedule_id'] = sch.id
                             line = self.create(vals)
                             created += 1
+                            changed[line.id] = ''
                         kept |= line
                         file_stores |= store
                 except Exception as e:  # lỗi quyền / dữ liệu: bỏ qua ô và báo lại
@@ -524,6 +606,13 @@ class StoreNvbhScheduleLine(models.Model):
             removed = len(old)
             old.unlink()
             schedules_touched.filtered(lambda sc: not sc.line_ids).unlink()
+        # tô màu ô: chỉ giữ dấu của lần nhập này (bỏ dấu của lần nhập trước) trong tháng / cửa hàng của file
+        if file_stores:
+            self.sudo().search([('store_id', 'in', file_stores.ids), ('work_date', '>=', first), ('work_date', '<=', last),
+                                ('import_changed', '=', True), ('id', 'not in', list(changed))]).write(
+                {'import_changed': False, 'import_prev_code': False})
+        for line in self.sudo().browse(list(changed)).exists():
+            line.write({'import_changed': True, 'import_prev_code': changed[line.id] or False})
         staff_new, staff_upd = self._sync_staff(people, errors)
         return {'created': created, 'updated': updated, 'unchanged': unchanged, 'removed': removed,
                 'skipped_past': skipped_past, 'skipped_locked': skipped_locked, 'ref_date': ref.strftime('%d/%m/%Y'),

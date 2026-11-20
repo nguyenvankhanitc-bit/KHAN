@@ -795,7 +795,6 @@
                     </div>
                     <t t-if="pd and pd.rows.length">
                         <div class="asm_card">
-                            <div class="asm_card_hd">Hiệu suất nhân viên bán hàng · Tháng <t t-esc="pd.month_label"/> · nhóm theo cửa hàng, xếp hạng theo Tổng KPI</div>
                             <div class="kp_scroll">
                                 <table class="kp_table asm_table perf_table">
                                     <thead><tr>
@@ -807,7 +806,6 @@
                                         <th class="kp_grp"><span t-esc="perfGroupName(3)"/><small t-esc="fmtKpiWeight(pd.weights.g4)"/></th>
                                         <th class="kp_grp"><span t-esc="perfGroupName(4)"/><small t-esc="fmtKpiWeight(pd.weights.g5)"/></th>
                                         <th>Hoàn thành việc<small t-esc="fmtKpiWeight(pd.weights.complete)"/></th>
-                                        <th>Kỷ luật<small t-esc="fmtKpiWeight(pd.weights.discipline)"/></th>
                                         <th>Doanh số<small t-esc="fmtKpiWeight(pd.weights.sales)"/></th>
                                         <th>Thái độ<small t-esc="fmtKpiWeight(pd.weights.attitude)"/></th>
                                         <th>Tổng KPI<small>100đ</small></th>
@@ -818,7 +816,7 @@
                                         <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
                                             <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
                                             <td class="l"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
-                                            <td colspan="11"/>
+                                            <td colspan="10"/>
                                         </tr>
                                         <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
                                             <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
@@ -830,27 +828,13 @@
                                             <td class="c" t-esc="fmtKpi(r.g4)"/>
                                             <td class="c" t-esc="fmtKpi(r.g5)"/>
                                             <td class="c" t-esc="fmtKpi(r.complete)"/>
-                                            <td class="c" t-esc="fmtKpi(r.discipline)"/>
                                             <td class="c" t-esc="fmtKpi(r.sales)"/>
                                             <td class="c" t-esc="fmtKpi(r.attitude)"/>
                                             <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(r.kpi_total)"/>
-                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank"/></td>
+                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank_short"/></td>
                                         </tr>
                                         </t>
                                     </tbody>
-                                    <tfoot><tr>
-                                        <td/><td class="l b">TRUNG BÌNH (<t t-esc="pd.summary.staff_count"/> NV)</td>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g1)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g2)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g3)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g4)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g5)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.complete)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.discipline)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.sales)"/>
-                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.attitude)"/>
-                                        <td class="c b" t-esc="fmtKpi(pd.summary.avgs.kpi_total)"/><td/>
-                                    </tr></tfoot>
                                 </table>
                             </div>
                             <div class="asm_tbl_foot">

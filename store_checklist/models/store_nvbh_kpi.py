@@ -682,7 +682,7 @@ class StoreNvbhCheckKpi(models.Model):
                 for sf in s['staff']:
                     rank = sf.get('rank') or ''
                     code = rank[5:6] if rank.upper().startswith('HẠNG ') else ''
-                    rows.append(dict(sf, store_id=s['store_id'], store=s['store'], asm=a['name'],
+                    rows.append(dict(sf, store_id=s['store_id'], store=s['store'], asm=a['name'], rank_short=rank.split(' - ')[0],
                                      rank_code=code or 'D', passed=sf['kpi_total'] >= 72.0))
         rows.sort(key=lambda r: (-r['kpi_total'], r['name']))
         for i, r in enumerate(rows, 1):
@@ -714,11 +714,11 @@ class StoreNvbhCheckKpi(models.Model):
         headers = [
             'Hạng', 'Nhân viên', 'Mã NV', 'Cửa hàng', 'ASM',
             *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
-            'Hoàn thành việc (%gđ)' % w['complete'], 'Kỷ luật (%gđ)' % w['discipline'],
+            'Hoàn thành việc (%gđ)' % w['complete'],
             'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
             'Tổng KPI (100)', 'Xếp loại',
         ]
-        keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'discipline', 'sales', 'attitude', 'kpi_total')
+        keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'sales', 'attitude', 'kpi_total')
         groups = {}
         for r in data['rows']:
             groups.setdefault(r['store_id'], []).append(r)
@@ -727,13 +727,12 @@ class StoreNvbhCheckKpi(models.Model):
         for staff in sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store'])):
             rows.append(['', '%s (%d NV)' % (staff[0]['store'], len(staff)), '', staff[0]['store'], staff[0]['asm'],
                          *['' for _k in keys], ''])
-            rows += [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank']] for r in staff]
+            rows += [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank_short']] for r in staff]
         sm = data['summary']
-        foot = ['', 'TRUNG BÌNH (%d NV)' % sm['staff_count'], '', '', '', *[sm['avgs'][k] for k in keys], '']
         return self._xlsx_book([{
             'name': 'Hieu suat NVBH',
             'title': 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG - THÁNG %s' % data['month_label'],
             'subtitle': '%d nhân viên · %d cửa hàng · TB KPI %s · Đạt (≥ 72): %d' % (
                 sm['staff_count'], sm['store_count'], _vn(sm['avg_kpi'], 2), sm['passed']),
-            'headers': headers, 'rows': rows, 'foot': foot,
+            'headers': headers, 'rows': rows, 'foot': None,
         }], 'Bao_cao_hieu_suat_NVBH')

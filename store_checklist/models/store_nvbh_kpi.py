@@ -717,7 +717,7 @@ class StoreNvbhCheckKpi(models.Model):
             raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
         keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'sales', 'attitude', 'kpi_total')
         headers = ['#', 'ID', 'Nhân viên / Cửa hàng', *data['group_names'], 'Hoàn thành việc', 'Doanh số', 'Thái độ', 'Tổng KPI', 'Xếp loại']
-        widths = [6, 12, 34, 16, 16, 14, 16, 12, 16, 12, 12, 12, 14]
+        widths = [7, 13, 36, 18, 18, 15, 18, 13, 17, 13, 13, 13, 16]
         ncol = len(headers)
 
         groups = {}
@@ -729,10 +729,10 @@ class StoreNvbhCheckKpi(models.Model):
         buf = _io.BytesIO()
         book = xlsxwriter.Workbook(buf, {'in_memory': True})
         ws = book.add_worksheet('Hieu suat NVBH')
-        base = {'font_name': 'Arial', 'font_size': 10, 'valign': 'vcenter', 'border': 1, 'border_color': '#CBD5E1'}
+        base = {'font_name': 'Times New Roman', 'font_size': 12, 'valign': 'vcenter', 'border': 1, 'border_color': '#CBD5E1'}
         F = lambda **kw: book.add_format(dict(base, **kw))
-        f_title = book.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 15, 'font_color': '#163363', 'align': 'left', 'valign': 'vcenter'})
-        f_sub = book.add_format({'font_name': 'Arial', 'font_size': 10, 'font_color': '#64748B', 'align': 'left'})
+        f_title = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 14, 'font_color': '#163363', 'align': 'center', 'valign': 'vcenter'})
+        f_sub = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B', 'align': 'left', 'valign': 'vcenter'})
         f_head = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='center', text_wrap=True, border_color='#2B4A80')
         f_head_l = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='left', text_wrap=True, border_color='#2B4A80')
         f_store = F(bold=True, font_color='#0F172A', bg_color='#F8FAFC')
@@ -754,26 +754,29 @@ class StoreNvbhCheckKpi(models.Model):
             'C': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#F59E0B'),
             'D': f_no,
         }
-        f_foot = book.add_format({'font_name': 'Arial', 'font_size': 9, 'font_color': '#64748B'})
+        f_foot = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B'})
+        f_sign = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'bold': True, 'align': 'center'})
+        f_sign_note = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'italic': True, 'align': 'center', 'font_color': '#64748B'})
 
         sm = data['summary']
         ws.merge_range(0, 0, 0, ncol - 1, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG · THÁNG %s' % data['month_label'], f_title)
         ws.merge_range(1, 0, 1, ncol - 1, 'Nhân viên: %d · Đạt (≥ 72): %d · TB KPI: %s' % (
             sm['staff_count'], sm['passed'], _vn(sm['avg_kpi'], 2)), f_sub)
-        ws.set_row(0, 26)
+        ws.set_row(0, 30)
+        ws.set_row(1, 22)
         hr = 3
         for c, h in enumerate(headers):
             ws.write(hr, c, h, f_head_l if c == 2 else f_head)
-        ws.set_row(hr, 36)
+        ws.set_row(hr, 48)
         r = hr + 1
         for staff in ordered:
             st = staff[0]
             ws.write_blank(r, 0, None, f_store)
             ws.merge_range(r, 1, r, ncol - 1, '', f_store)
-            ws.write_rich_string(r, 1, book.add_format({'bold': True, 'font_name': 'Arial', 'font_size': 10}), st['store'],
-                                 book.add_format({'font_name': 'Arial', 'font_size': 10, 'font_color': '#64748B'}),
+            ws.write_rich_string(r, 1, book.add_format({'bold': True, 'font_name': 'Times New Roman', 'font_size': 12}), st['store'],
+                                 book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B'}),
                                  ' · %d NV · ASM %s' % (len(staff), st['asm']), f_store)
-            ws.set_row(r, 22)
+            ws.set_row(r, 26)
             r += 1
             for i, x in enumerate(staff, 1):
                 code = x.get('rank_code') or 'D'
@@ -783,17 +786,25 @@ class StoreNvbhCheckKpi(models.Model):
                 for c, k in enumerate(keys, 3):
                     ws.write_number(r, c, x[k] or 0.0, f_tot if k == 'kpi_total' else f_num)
                 ws.write_string(r, ncol - 1, x.get('rank_short') or (x.get('rank') or '').split(' - ')[0], rank_fmt.get(code, rank_fmt['D']))
-                ws.set_row(r, 22)
+                ws.set_row(r, 26)
                 r += 1
         r += 1
         ws.write_string(r, 0, 'Ngưỡng ĐẠT: Tổng KPI ≥ 72    Hạng A ≥ 95 · Hạng B ≥ 85 · Hạng C ≥ 75 · Hạng D < 75', f_foot)
         ws.write_string(r, ncol - 2, 'Cập nhật: %s' % data['updated_at'], f_foot)
+        # chữ ký
+        r += 3
+        ws.merge_range(r, 1, r, 2, 'NGƯỜI LẬP', f_sign)
+        ws.merge_range(r, ncol - 4, r, ncol - 2, 'NGƯỜI DUYỆT', f_sign)
+        ws.merge_range(r + 1, 1, r + 1, 2, '(Ký, ghi rõ họ tên)', f_sign_note)
+        ws.merge_range(r + 1, ncol - 4, r + 1, ncol - 2, '(Ký, ghi rõ họ tên)', f_sign_note)
         for c, w in enumerate(widths[:ncol]):
             ws.set_column(c, c, w)
         ws.freeze_panes(hr + 1, 3)
         ws.set_landscape()
         ws.set_paper(9)
         ws.fit_to_pages(1, 0)
+        ws.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
+        ws.hide_gridlines(0)
         ws.repeat_rows(hr)
         book.close()
         return {'name': 'Bao_cao_hieu_suat_NVBH_%s.xlsx' % fields.Date.context_today(self).strftime('%Y%m%d'),

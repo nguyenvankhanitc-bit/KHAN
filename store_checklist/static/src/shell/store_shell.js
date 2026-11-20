@@ -51,7 +51,7 @@ export class StoreChecklistShell extends Component {
             auditStoreIds: [],
             myRole: "",
             kpi: { month: "", mien: "", closedStores: {}, storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
-            perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false },
+            perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false, closed: {} },
             kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
             mg: { month: "", date: "", storeStatus: {}, storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
             openGroups: { audit: true, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
@@ -1495,6 +1495,34 @@ export class StoreChecklistShell extends Component {
                 (!pf.rank || r.rank_code === pf.rank) &&
                 (!q || `${r.name} ${r.code || ""} ${r.store} ${r.asm}`.toLowerCase().includes(q))
         );
+    }
+
+    // nhóm nhân viên theo cửa hàng: dòng cửa hàng = trung bình các NV đang hiện, xếp theo TB Tổng KPI
+    get perfGroups() {
+        const keys = ["g1", "g2", "g3", "g4", "g5", "complete", "discipline", "sales", "attitude", "kpi_total"];
+        const map = new Map();
+        for (const r of this.perfRows) {
+            if (!map.has(r.store_id)) {
+                map.set(r.store_id, { store_id: r.store_id, store: r.store, asm: r.asm, staff: [] });
+            }
+            map.get(r.store_id).staff.push(r);
+        }
+        const groups = [...map.values()].map((g) => {
+            for (const k of keys) {
+                g[k] = Math.round((100 * g.staff.reduce((s, x) => s + (x[k] || 0), 0)) / g.staff.length) / 100;
+            }
+            g.passed = g.kpi_total >= 72;
+            return g;
+        });
+        return groups.sort((a, b) => b.kpi_total - a.kpi_total || a.store.localeCompare(b.store));
+    }
+
+    isPerfStoreOpen(id) {
+        return !this.state.perf.closed[id];
+    }
+
+    togglePerfStore(id) {
+        this.state.perf.closed[id] = !this.state.perf.closed[id];
     }
 
     async onPerfExport() {

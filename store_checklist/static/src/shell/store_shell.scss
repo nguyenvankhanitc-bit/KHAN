@@ -2977,3 +2977,9 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .o_store_perf_page .asm_filters label, .o_store_perf_page .asm_filters select, .o_store_perf_page .asm_filters input{width: 100%; min-width: 0;}
     .o_store_perf_page .asm_filters{width: 100%;}
 }
+
+/* BC Hiệu suất NVBH: dòng nhóm cửa hàng */
+.o_store_perf_page .perf_store_row{cursor: pointer; background: #fff1f2;}
+.o_store_perf_page .perf_store_row td{background: #fff1f2;}
+.o_store_perf_page .perf_store_row .fa-building-o{color: #163363; margin-right: 2px;}
+.o_store_perf_page .asm_staff_row td.l{padding-left: 30px;}

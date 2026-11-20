@@ -719,7 +719,16 @@ class StoreNvbhCheckKpi(models.Model):
             'Tổng KPI (100)', 'Xếp loại',
         ]
         keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'discipline', 'sales', 'attitude', 'kpi_total')
-        rows = [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank']] for r in data['rows']]
+        groups = {}
+        for r in data['rows']:
+            groups.setdefault(r['store_id'], []).append(r)
+        avg = lambda items, k: round(sum(x[k] for x in items) / len(items), 2)
+        rows = []
+        for staff in sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store'])):
+            tot = avg(staff, 'kpi_total')
+            rows.append(['', '%s (TB · %d NV)' % (staff[0]['store'], len(staff)), '', staff[0]['store'], staff[0]['asm'],
+                         *[avg(staff, k) for k in keys], 'ĐẠT' if tot >= 72.0 else 'CHƯA ĐẠT'])
+            rows += [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank']] for r in staff]
         sm = data['summary']
         foot = ['', 'TRUNG BÌNH (%d NV)' % sm['staff_count'], '', '', '', *[sm['avgs'][k] for k in keys], '']
         return self._xlsx_book([{

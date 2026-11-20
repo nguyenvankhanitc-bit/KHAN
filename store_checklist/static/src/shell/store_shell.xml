@@ -795,7 +795,7 @@
                     </div>
                     <t t-if="pd and pd.rows.length">
                         <div class="asm_card">
-                            <div class="asm_card_hd">Hiệu suất nhân viên bán hàng · Tháng <t t-esc="pd.month_label"/> · xếp hạng theo Tổng KPI</div>
+                            <div class="asm_card_hd">Hiệu suất nhân viên bán hàng · Tháng <t t-esc="pd.month_label"/> · nhóm theo cửa hàng, xếp hạng theo Tổng KPI</div>
                             <div class="kp_scroll">
                                 <table class="kp_table asm_table perf_table">
                                     <thead><tr>
@@ -814,10 +814,26 @@
                                         <th>Xếp loại</th>
                                     </tr></thead>
                                     <tbody>
-                                        <tr t-foreach="perfRows" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
-                                            <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r.no"/></td>
+                                        <t t-foreach="perfGroups" t-as="g" t-key="g.store_id">
+                                        <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
+                                            <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
+                                            <td class="l"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/> · trung bình</span></td>
+                                            <td class="c b" t-esc="fmtKpi(g.g1)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.g2)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.g3)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.g4)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.g5)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.complete)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.discipline)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.sales)"/>
+                                            <td class="c b" t-esc="fmtKpi(g.attitude)"/>
+                                            <td t-attf-class="c b kpi-val #{g.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(g.kpi_total)"/>
+                                            <td class="c"><span t-att-class="'asm_st_pill ' + (g.passed ? 'is-ok' : 'is-bad')" t-esc="g.passed ? 'ĐẠT' : 'CHƯA ĐẠT'"/></td>
+                                        </tr>
+                                        <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
+                                            <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
                                             <td class="l"><b class="sf_nm" t-esc="r.name"/><small t-if="r.code" class="cnt"> (<t t-esc="r.code"/>)</small>
-                                                <div class="perf_sub"><i class="fa fa-building-o"/> <t t-esc="r.store"/> · ASM <t t-esc="r.asm"/></div></td>
+                                                <div class="perf_sub">Hạng chung: <b t-esc="r.no"/>/<t t-esc="pd.summary.staff_count"/></div></td>
                                             <td class="c" t-esc="fmtKpi(r.g1)"/>
                                             <td class="c" t-esc="fmtKpi(r.g2)"/>
                                             <td class="c" t-esc="fmtKpi(r.g3)"/>
@@ -830,6 +846,7 @@
                                             <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(r.kpi_total)"/>
                                             <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank"/></td>
                                         </tr>
+                                        </t>
                                     </tbody>
                                     <tfoot><tr>
                                         <td/><td class="l b">TRUNG BÌNH (<t t-esc="pd.summary.staff_count"/> NV)</td>

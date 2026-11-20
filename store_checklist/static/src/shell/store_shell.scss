@@ -2923,3 +2923,10 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
     tr.is-removed .tag{background: #fee2e2; color: #b91c1c; text-decoration: none; display: inline-block;}}
 .o_store_simp_foot{display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid #e2e8f0;}
 @media (max-width: 640px){ .o_store_simp_foot{flex-wrap: wrap;} }
+
+/* Kéo copy kiểu Excel trong bảng Điểm chuẩn */
+.o_store_fill_handle{display: none; position: fixed; width: 9px; height: 9px; background: #217346; border: 1px solid #fff; cursor: crosshair; z-index: 1060;}
+.o_store_benchmark table.o_list_table td.o_store_fill_hover{outline: 2px solid #217346; outline-offset: -2px;}
+.o_store_benchmark table.o_list_table td.o_store_fill_src{outline: 2px solid #217346; outline-offset: -2px;}
+.o_store_benchmark table.o_list_table td.o_store_fill_target{background: #e2efda !important; outline: 1px dashed #217346; outline-offset: -2px;}
+body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-select: none !important;}

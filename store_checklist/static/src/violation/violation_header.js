@@ -4,6 +4,7 @@ import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odo
 import { Dialog } from "@web/core/dialog/dialog";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
+import { _t } from "@web/core/l10n/translation";
 import { listView } from "@web/views/list/list_view";
 import { ListController } from "@web/views/list/list_controller";
 import { ListRenderer } from "@web/views/list/list_renderer";
@@ -139,9 +140,26 @@ export class StoreViolationHeader extends Component {
 }
 
 // Điểm chuẩn đánh giá: sửa trong popup xong thì giữ nguyên các nhóm đang mở và vị trí cuộn của bảng
+// Cột của bảng Điểm chuẩn được kéo copy như Excel (nắm ô vuông nhỏ góc dưới phải ô rồi kéo lên / xuống)
+const FILL_FIELDS = ["sub_group_id", "responsible_ids", "controller_ids", "lug_group_ids", "max_score"];
+
+function allListRecords(list) {
+    if (!list) {
+        return [];
+    }
+    if (list.groups) {
+        return list.groups.flatMap((g) => allListRecords(g.list));
+    }
+    return list.records || [];
+}
+
 export class StoreBenchmarkController extends ListController {
     setup() {
         super.setup();
+        this.fillNotify = useService("notification");
+        this.fillOrm = useService("orm");
+        onMounted(() => this.setupFillHandle());
+        onWillUnmount(() => this.teardownFillHandle());
         let wasOpen = false;
         let keep = null;
         let timer;
@@ -161,6 +179,158 @@ export class StoreBenchmarkController extends ListController {
             observer.disconnect();
             clearTimeout(timer);
         });
+    }
+
+    // ---------- Kéo copy kiểu Excel ----------
+    setupFillHandle() {
+        const root = this.rootRef?.el;
+        if (!root) {
+            return;
+        }
+        const handle = document.createElement("div");
+        handle.className = "o_store_fill_handle";
+        handle.title = _t("Kéo để copy sang các dòng khác");
+        document.body.appendChild(handle);
+        this._fill = { root, handle, drag: null, td: null };
+        const hide = () => {
+            handle.style.display = "none";
+            this._fill.td?.classList.remove("o_store_fill_hover");
+            this._fill.td = null;
+        };
+        this._fillHide = hide;
+        this._fillOver = (ev) => {
+            if (this._fill.drag || ev.target === handle) {
+                return;
+            }
+            const td = ev.target.closest?.("td.o_data_cell");
+            if (!(td && root.contains(td) && FILL_FIELDS.includes(td.getAttribute("name")))) {
+                hide();
+                return;
+            }
+            if (td !== this._fill.td) {
+                hide();
+                this._fill.td = td;
+                td.classList.add("o_store_fill_hover");
+            }
+            const rect = td.getBoundingClientRect();
+            handle.style.left = `${rect.right - 6}px`;
+            handle.style.top = `${rect.bottom - 6}px`;
+            handle.style.display = "block";
+        };
+        this._fillLeave = (ev) => {
+            if (!this._fill.drag && ev.relatedTarget !== handle) {
+                hide();
+            }
+        };
+        this._fillDown = (ev) => {
+            if (ev.button !== 0 || ev.target !== handle) {
+                return;
+            }
+            ev.preventDefault();
+            ev.stopPropagation();
+            const td = this._fill.td;
+            const tr = td?.isConnected && td.closest("tr.o_data_row");
+            if (!tr) {
+                return;
+            }
+            this._fill.drag = { field: td.getAttribute("name"), srcRow: tr, rows: [tr] };
+            document.body.classList.add("o_store_filling");
+            td.classList.add("o_store_fill_src");
+        };
+        this._fillMove = (ev) => {
+            const drag = this._fill.drag;
+            if (!drag) {
+                return;
+            }
+            ev.preventDefault();
+            const el = document.elementFromPoint(ev.clientX, ev.clientY);
+            const tr = el?.closest?.("tr.o_data_row");
+            if (!tr || !root.contains(tr)) {
+                return;
+            }
+            const all = [...root.querySelectorAll("tr.o_data_row")];
+            const a = all.indexOf(drag.srcRow);
+            const b = all.indexOf(tr);
+            if (a < 0 || b < 0) {
+                return;
+            }
+            drag.rows = all.slice(Math.min(a, b), Math.max(a, b) + 1);
+            root.querySelectorAll("td.o_store_fill_target").forEach((c) => c.classList.remove("o_store_fill_target"));
+            for (const row of drag.rows) {
+                row.querySelector(`td[name="${drag.field}"]`)?.classList.add("o_store_fill_target");
+            }
+        };
+        this._fillUp = async () => {
+            const drag = this._fill.drag;
+            if (!drag) {
+                return;
+            }
+            this._fill.drag = null;
+            this._fillSuppressClick = true;
+            setTimeout(() => (this._fillSuppressClick = false), 300);
+            document.body.classList.remove("o_store_filling");
+            root.querySelectorAll(".o_store_fill_target, .o_store_fill_src").forEach((c) =>
+                c.classList.remove("o_store_fill_target", "o_store_fill_src"));
+            hide();
+            await this.applyFill(drag);
+        };
+        this._fillClick = (ev) => {
+            if (this._fillSuppressClick || ev.target === handle) {
+                ev.preventDefault();
+                ev.stopPropagation();
+            }
+        };
+        root.addEventListener("mouseover", this._fillOver);
+        root.addEventListener("mouseleave", this._fillLeave);
+        root.addEventListener("click", this._fillClick, true);
+        handle.addEventListener("mousedown", this._fillDown);
+        document.addEventListener("mousemove", this._fillMove);
+        document.addEventListener("mouseup", this._fillUp);
+        document.addEventListener("scroll", this._fillLeave, true);
+    }
+
+    teardownFillHandle() {
+        if (!this._fill) {
+            return;
+        }
+        const { root, handle } = this._fill;
+        root.removeEventListener("mouseover", this._fillOver);
+        root.removeEventListener("mouseleave", this._fillLeave);
+        root.removeEventListener("click", this._fillClick, true);
+        document.removeEventListener("mousemove", this._fillMove);
+        document.removeEventListener("mouseup", this._fillUp);
+        document.removeEventListener("scroll", this._fillLeave, true);
+        handle.remove();
+        document.body.classList.remove("o_store_filling");
+    }
+
+    // copy giá trị ô nguồn sang cùng cột của các dòng đã kéo qua (ghi thẳng xuống server, quyền Sửa vẫn được kiểm tra)
+    async applyFill({ field, srcRow, rows }) {
+        const records = allListRecords(this.model.root);
+        const byId = (tr) => records.find((r) => r.id === tr.dataset.id);
+        const src = byId(srcRow);
+        const targets = rows.filter((tr) => tr !== srcRow).map(byId).filter((r) => r && r.resId);
+        if (!src || !targets.length) {
+            return;
+        }
+        const value = src.data[field];
+        let vals;
+        if (value && typeof value === "object" && "currentIds" in value) {
+            vals = { [field]: [[6, 0, [...value.currentIds]]] };
+        } else if (value && typeof value === "object") {
+            vals = { [field]: value.id || false };
+        } else {
+            vals = { [field]: value === undefined ? false : value };
+        }
+        try {
+            await this.fillOrm.write(this.props.resModel, targets.map((r) => r.resId), vals);
+            const saved = this.snapshot();
+            await this.model.load();
+            this.restore(saved);
+            this.fillNotify.add(_t("Đã copy sang %s dòng.", targets.length), { type: "success" });
+        } catch (error) {
+            this.fillNotify.add(error?.data?.message || error?.message || _t("Không copy được."), { type: "danger" });
+        }
     }
 
     snapshot() {

@@ -800,15 +800,15 @@
                                     <thead><tr>
                                         <th>#</th>
                                         <th class="l">Nhân viên / Cửa hàng</th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(0)"/><small t-esc="fmtKpiWeight(pd.weights.g1)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(1)"/><small t-esc="fmtKpiWeight(pd.weights.g2)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(2)"/><small t-esc="fmtKpiWeight(pd.weights.g3)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(3)"/><small t-esc="fmtKpiWeight(pd.weights.g4)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(4)"/><small t-esc="fmtKpiWeight(pd.weights.g5)"/></th>
-                                        <th>Hoàn thành việc<small t-esc="fmtKpiWeight(pd.weights.complete)"/></th>
-                                        <th>Doanh số<small t-esc="fmtKpiWeight(pd.weights.sales)"/></th>
-                                        <th>Thái độ<small t-esc="fmtKpiWeight(pd.weights.attitude)"/></th>
-                                        <th>Tổng KPI<small>100đ</small></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(0)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(1)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(2)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(3)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(4)"/></th>
+                                        <th>Hoàn thành việc</th>
+                                        <th>Doanh số</th>
+                                        <th>Thái độ</th>
+                                        <th>Tổng KPI</th>
                                         <th>Xếp loại</th>
                                     </tr></thead>
                                     <tbody>
@@ -820,8 +820,7 @@
                                         </tr>
                                         <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
                                             <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
-                                            <td class="l"><b class="sf_nm" t-esc="r.name"/><small t-if="r.code" class="cnt"> (<t t-esc="r.code"/>)</small>
-                                                <div class="perf_sub">Hạng chung: <b t-esc="r.no"/>/<t t-esc="pd.summary.staff_count"/></div></td>
+                                            <td class="l"><b class="sf_nm" t-esc="r.name"/><small t-if="r.code" class="cnt"> (<t t-esc="r.code"/>)</small></td>
                                             <td class="c" t-esc="fmtKpi(r.g1)"/>
                                             <td class="c" t-esc="fmtKpi(r.g2)"/>
                                             <td class="c" t-esc="fmtKpi(r.g3)"/>

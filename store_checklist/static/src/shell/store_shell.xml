@@ -442,7 +442,7 @@
                                             <td t-esc="r.total"/>
                                             <td t-esc="r.done"/>
                                             <td t-att-class="r.errors ? 'warn' : ''" t-esc="r.errors"/>
-                                            <td t-esc="r.hours ? fmtNum(r.hours) : (r.kind === 'off' ? '-' : '0')"/>
+                                            <td t-esc="r.id ? fmtNum(r.hours || 0) : '-'"/>
                                             <td t-esc="(r.kind === 'off' or r.evaluated) ? fmtNum(r.points) : '-'"/>
                                             <td t-esc="fmtNum(r.max_points)"/>
                                             <td t-att-class="r.pts_cht == null ? '' : 'pts_red'" t-esc="r.pts_cht == null ? '-' : fmtNum(r.pts_cht)"/>
@@ -459,7 +459,7 @@
                                             <td title="Công thức: SUM(Tổng việc ca) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.total)"/>
                                             <td title="Công thức: SUM(Đã làm) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.done)"/>
                                             <td title="Công thức: SUM(Số lỗi) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.errors)"/>
-                                            <td title="Công thức: SUM(Số giờ của mã ca) — cộng tất cả các ngày có lịch" t-esc="fmtNum(state.done.monthly.total.hours || 0)"/>
+                                            <td title="Công thức: SUM(Số giờ của mã ca) — chỉ cộng các ngày nhân viên đã check list" t-esc="fmtNum(state.done.monthly.total.hours || 0)"/>
                                             <td title="Công thức: AVERAGE(Điểm đạt) — trung bình các ngày đã đánh giá xong (ngày chưa đánh giá / không có phiếu bỏ qua)" t-esc="state.done.monthly.total.avg_points == null ? '-' : fmtNum(state.done.monthly.total.avg_points)"/>
                                             <td title="Công thức: SUM(Điểm chuẩn ca) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.max_points)"/>
                                             <td title="Công thức: AVERAGE(Điểm CHT đánh giá) — trung bình các ngày CHT đã chấm đủ" t-att-class="state.done.monthly.total.avg_cht == null ? '' : 'pts_red'" t-esc="state.done.monthly.total.avg_cht == null ? '-' : fmtNum(state.done.monthly.total.avg_cht)"/>
@@ -515,7 +515,7 @@
                             </div>
                             <div class="o_store_total_formula">
                                 <b><i class="fa fa-info-circle"/> Công thức dòng "TỔNG CỘNG KỲ":</b>
-                                <span><b>Tổng việc ca, Đã làm, Số lỗi, Tổng giờ, Điểm chuẩn ca</b> = SUM() cộng các ngày (Tổng giờ = Số giờ của mã ca trong Danh mục ca).</span>
+                                <span><b>Tổng việc ca, Đã làm, Số lỗi, Tổng giờ, Điểm chuẩn ca</b> = SUM() cộng các ngày (Tổng giờ = Số giờ của mã ca trong Danh mục ca, chỉ tính ngày nhân viên đã check list).</span>
                                 <span><b>Điểm đạt</b> = AVERAGE() điểm đạt các ngày đã đánh giá xong.</span>
                                 <span><b>Điểm CHT / ASM đánh giá</b> = AVERAGE() điểm do CHT / ASM chấm (chỉ ngày đã chấm đủ).</span>
                                 <span><b>Tỷ lệ đạt (%)</b> = AVERAGE() tỷ lệ đạt từng ngày, tỷ lệ ngày = Điểm đạt ÷ Điểm chuẩn ca × 100.</span>

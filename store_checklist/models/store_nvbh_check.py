@@ -571,8 +571,7 @@ class StoreNvbhCheck(models.Model):
             if not items:
                 line = sched_by_date.get(day)
                 if line:
-                    hrs = line.shift_id.hours or 0.0  # Tổng giờ = Số giờ của mã ca (Danh mục ca làm việc)
-                    tot['hours'] += hrs
+                    hrs = 0.0  # chưa check list: chưa tính giờ (Tổng giờ chỉ tính ngày nhân viên đã check list)
                     rows.append(dict(base_row, kind='pending', code='-', store=line.store_id.display_name or '',
                                      shift=line.shift_id.code or '-', hours=hrs,
                                      status='Chưa check list', total=0, done=0, todo=0, errors=0, points=0, max_points=0, pct=0,

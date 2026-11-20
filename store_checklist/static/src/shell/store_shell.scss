@@ -2947,3 +2947,33 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* BC Checklist NVBH ASM: tiêu đề cột là tên nhóm công việc (dài) -> xuống dòng, chữ nhỏ */
 .kp_table.asm_table th.kp_grp{min-width: 96px; max-width: 120px; white-space: normal; line-height: 1.25; font-size: 11px;}
 .kp_table.asm_table th.kp_grp > span{display: block;}
+
+/* BC Hiệu suất NVBH */
+.o_store_perf_page .perf_ranks{display: flex; flex-wrap: wrap; gap: 6px;}
+.o_store_perf_page .perf_ranks button{border: 1px solid #cbd5e1; background: #fff; color: #334155; font-weight: 700; font-size: .82rem; padding: 6px 12px; border-radius: 8px; cursor: pointer;}
+.o_store_perf_page .perf_ranks button b{margin-left: 4px;}
+.o_store_perf_page .perf_ranks button.active{background: #163363; border-color: #163363; color: #fff;}
+.o_store_perf_page .perf_ranks .rk-A{border-color: #86efac; background: #f0fdf4; color: #15803d;}
+.o_store_perf_page .perf_ranks .rk-B{border-color: #93c5fd; background: #eff6ff; color: #1d4ed8;}
+.o_store_perf_page .perf_ranks .rk-C{border-color: #fcd34d; background: #fffbeb; color: #b45309;}
+.o_store_perf_page .perf_ranks .rk-D{border-color: #fca5a5; background: #fef2f2; color: #b91c1c;}
+.o_store_perf_page .perf_ranks .rk.active{outline: 2px solid #163363; outline-offset: 1px;}
+.o_store_perf_page .perf_table td.l{min-width: 220px;}
+.o_store_perf_page .perf_sub{font-size: .74rem; color: #64748b; margin-top: 2px;}
+.o_store_perf_page .perf_no{display: inline-flex; align-items: center; justify-content: center; min-width: 26px; height: 26px; border-radius: 50%; background: #e2e8f0; color: #0f172a; font-weight: 700; font-size: .78rem;}
+.o_store_perf_page .perf_no.rk-A{background: #16a34a; color: #fff;}
+.o_store_perf_page .perf_no.rk-B{background: #2563eb; color: #fff;}
+.o_store_perf_page .perf_no.rk-C{background: #f59e0b; color: #fff;}
+.o_store_perf_page .perf_no.rk-D{background: #dc2626; color: #fff;}
+.o_store_perf_page .perf_ok{color: #15803d;}
+.o_store_perf_page .perf_bad{color: #dc2626;}
+.o_store_perf_page .perf_rank{display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: .74rem; font-weight: 700; white-space: nowrap;}
+.o_store_perf_page .perf_rank.rk-A{background: #dcfce7; color: #15803d;}
+.o_store_perf_page .perf_rank.rk-B{background: #dbeafe; color: #1d4ed8;}
+.o_store_perf_page .perf_rank.rk-C{background: #fef3c7; color: #b45309;}
+.o_store_perf_page .perf_rank.rk-D{background: #fee2e2; color: #b91c1c;}
+.o_store_perf_page .perf_table tfoot td{background: #f1f5f9; border-top: 2px solid #163363; padding: 10px 8px;}
+@media (max-width: 767.98px){
+    .o_store_perf_page .asm_filters label, .o_store_perf_page .asm_filters select, .o_store_perf_page .asm_filters input{width: 100%; min-width: 0;}
+    .o_store_perf_page .asm_filters{width: 100%;}
+}

@@ -21,7 +21,7 @@
                 <h3>Bạn chưa được phân quyền</h3>
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick and !(isAuditListNav and state.auditStoreIds === false)"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav and state.auditStoreIds and state.auditStoreIds.length">Đang hiện phiếu của tất cả cửa hàng bạn được phân quyền. Chọn một cửa hàng ở bộ lọc để xem riêng.</t><t t-elif="isAuditListNav">Bạn chưa được phân quyền cửa hàng nào — đang hiện các phiếu do bạn đánh giá.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
@@ -32,7 +32,12 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc và báo cáo công việc theo ca làm việc hằng ngày' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc và báo cáo công việc theo ca làm việc hằng ngày' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                    </div>
+                    <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_perf' and state.perf.data">
+                        <div class="stat"><span>Nhân viên</span><b t-esc="state.perf.data.summary.staff_count"/></div>
+                        <div class="stat"><span>Đạt (≥ 72)</span><b t-esc="state.perf.data.summary.passed"/></div>
+                        <div class="stat"><span>TB KPI</span><b t-esc="fmtKpi(state.perf.data.summary.avg_kpi)"/></div>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
@@ -751,6 +756,104 @@
                         </t>
                     </t>
                     <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có nhân viên nào có lịch hoặc checklist trong tháng đã chọn.</div>
+                </div>
+                <div class="o_store_kpi_page o_store_asm_kpi_page o_store_perf_page" t-if="state.activeNav === 'report_nvbh_perf'">
+                    <t t-set="pf" t-value="state.perf"/>
+                    <t t-set="pd" t-value="pf.data"/>
+                    <div class="asm_toolbar">
+                        <div class="perf_ranks" t-if="pd">
+                            <button type="button" t-att-class="'rk_all ' + (!pf.rank ? 'active' : '')" t-on-click="() => this.onPerfRank('')">Tất cả <b t-esc="pd.summary.staff_count"/></button>
+                            <button type="button" t-foreach="['A', 'B', 'C', 'D']" t-as="rk" t-key="rk" t-attf-class="rk rk-#{rk} #{pf.rank === rk ? 'active' : ''}" t-on-click="() => this.onPerfRank(rk)">Hạng <t t-esc="rk"/> <b t-esc="pd.summary.counts[rk]"/></button>
+                        </div>
+                        <div class="asm_filters">
+                            <label><span>Tháng</span>
+                                <select t-on-change="(ev) => this.onPerfFilter('month', ev)">
+                                    <option t-foreach="kpiAsmMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === pf.month" t-esc="m.label"/>
+                                </select></label>
+                            <label><span>Miền</span>
+                                <select t-on-change="(ev) => this.onPerfFilter('mien', ev)">
+                                    <option value="" t-att-selected="!pf.mien">Tất cả miền</option>
+                                    <option value="Nam" t-att-selected="pf.mien === 'Nam'">Miền Nam</option>
+                                    <option value="ĐTT" t-att-selected="pf.mien === 'ĐTT'">Miền ĐTT</option>
+                                    <option value="Bắc" t-att-selected="pf.mien === 'Bắc'">Miền Bắc</option>
+                                    <option value="VP" t-att-selected="pf.mien === 'VP'">Văn phòng</option>
+                                </select></label>
+                            <label><span>ASM</span>
+                                <select t-on-change="(ev) => this.onPerfFilter('asmId', ev)">
+                                    <option value="" t-att-selected="pf.asmId === ''">Tất cả ASM</option>
+                                    <option t-foreach="pd ? pd.asm_opts : []" t-as="o" t-key="o.id" t-att-value="o.id" t-att-selected="jobSel(o.id, pf.asmId)" t-esc="o.name"/>
+                                </select></label>
+                            <label><span>Cửa hàng</span>
+                                <select t-on-change="(ev) => this.onPerfFilter('storeId', ev)">
+                                    <option value="" t-att-selected="!pf.storeId">Tất cả cửa hàng</option>
+                                    <option t-foreach="pd ? pd.store_opts : []" t-as="o" t-key="o.id" t-att-value="o.id" t-att-selected="jobSel(o.id, pf.storeId)" t-esc="o.name"/>
+                                </select></label>
+                            <label><span>Tìm nhân viên</span>
+                                <input type="search" placeholder="Tên, mã NV..." t-att-value="pf.q" t-on-input="onPerfSearch"/></label>
+                            <button type="button" class="btn btn-success text-white asm_export_btn" t-on-click="onPerfExport"><i class="fa fa-download"/> Xuất Excel</button>
+                        </div>
+                    </div>
+                    <t t-if="pd and pd.rows.length">
+                        <div class="asm_card">
+                            <div class="asm_card_hd">Hiệu suất nhân viên bán hàng · Tháng <t t-esc="pd.month_label"/> · xếp hạng theo Tổng KPI</div>
+                            <div class="kp_scroll">
+                                <table class="kp_table asm_table perf_table">
+                                    <thead><tr>
+                                        <th>#</th>
+                                        <th class="l">Nhân viên / Cửa hàng</th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(0)"/><small t-esc="fmtKpiWeight(pd.weights.g1)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(1)"/><small t-esc="fmtKpiWeight(pd.weights.g2)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(2)"/><small t-esc="fmtKpiWeight(pd.weights.g3)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(3)"/><small t-esc="fmtKpiWeight(pd.weights.g4)"/></th>
+                                        <th class="kp_grp"><span t-esc="perfGroupName(4)"/><small t-esc="fmtKpiWeight(pd.weights.g5)"/></th>
+                                        <th>Hoàn thành việc<small t-esc="fmtKpiWeight(pd.weights.complete)"/></th>
+                                        <th>Kỷ luật<small t-esc="fmtKpiWeight(pd.weights.discipline)"/></th>
+                                        <th>Doanh số<small t-esc="fmtKpiWeight(pd.weights.sales)"/></th>
+                                        <th>Thái độ<small t-esc="fmtKpiWeight(pd.weights.attitude)"/></th>
+                                        <th>Tổng KPI<small>100đ</small></th>
+                                        <th>Xếp loại</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <tr t-foreach="perfRows" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
+                                            <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r.no"/></td>
+                                            <td class="l"><b class="sf_nm" t-esc="r.name"/><small t-if="r.code" class="cnt"> (<t t-esc="r.code"/>)</small>
+                                                <div class="perf_sub"><i class="fa fa-building-o"/> <t t-esc="r.store"/> · ASM <t t-esc="r.asm"/></div></td>
+                                            <td class="c" t-esc="fmtKpi(r.g1)"/>
+                                            <td class="c" t-esc="fmtKpi(r.g2)"/>
+                                            <td class="c" t-esc="fmtKpi(r.g3)"/>
+                                            <td class="c" t-esc="fmtKpi(r.g4)"/>
+                                            <td class="c" t-esc="fmtKpi(r.g5)"/>
+                                            <td class="c" t-esc="fmtKpi(r.complete)"/>
+                                            <td class="c" t-esc="fmtKpi(r.discipline)"/>
+                                            <td class="c" t-esc="fmtKpi(r.sales)"/>
+                                            <td class="c" t-esc="fmtKpi(r.attitude)"/>
+                                            <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(r.kpi_total)"/>
+                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank"/></td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot><tr>
+                                        <td/><td class="l b">TRUNG BÌNH (<t t-esc="pd.summary.staff_count"/> NV)</td>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g1)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g2)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g3)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g4)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.g5)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.complete)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.discipline)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.sales)"/>
+                                            <td class="c b" t-esc="fmtKpi(pd.summary.avgs.attitude)"/>
+                                        <td class="c b" t-esc="fmtKpi(pd.summary.avgs.kpi_total)"/><td/>
+                                    </tr></tfoot>
+                                </table>
+                            </div>
+                            <div class="asm_tbl_foot">
+                                <span>Ngưỡng ĐẠT: Tổng KPI ≥ 72</span>
+                                <span>Hạng A ≥ 95 · Hạng B ≥ 85 · Hạng C ≥ 75 · Hạng D &lt; 75</span>
+                                <span class="upd">Cập nhật: <t t-esc="pd.updated_at"/></span>
+                            </div>
+                        </div>
+                    </t>
+                    <div class="o_store_job_empty" t-elif="!pf.busy"><i class="fa fa-info-circle"/> Chưa có dữ liệu hiệu suất nhân viên bán hàng trong tháng đã chọn.</div>
                 </div>
                 <div class="o_store_kpi_page o_store_asm_kpi_page" t-if="state.activeNav === 'report_nvbh_asm'">
                     <t t-set="ka" t-value="state.kpiAsm"/>

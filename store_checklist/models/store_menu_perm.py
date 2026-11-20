@@ -27,6 +27,7 @@ MENUS = [
     ('report_nvbh', 'BC Checklist NVBH KPI', 'report'),
     ('report_nsuat', 'BC Năng suất NVBH', 'report'),
     ('report_nvbh_asm', 'BC Checklist NVBH ASM', 'report'),
+    ('report_nvbh_perf', 'BC Hiệu suất NVBH', 'report'),
     ('report_store', 'Báo cáo Audit CH', 'report'),
     ('report_rank', 'Báo cáo xếp loại Audit CH', 'report'),
     ('report_manager', 'Báo cáo theo quản lý', 'report'),
@@ -49,6 +50,7 @@ PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
     'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
+    'report_nvbh_perf': 'report_nvbh_asm',  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
 NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 
@@ -56,9 +58,11 @@ NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg'
 def perm_of(perms, key):
     """Quyền {op: bool} của một mục trong ma trận đã lưu; mục chưa có thì lấy theo mục kế thừa."""
     perms = perms or {}
-    if key in perms:
-        return perms[key] or {}
-    return perms.get(PERM_INHERIT.get(key), {}) or {}
+    seen = set()
+    while key and key not in perms and key not in seen:  # kế thừa nhiều cấp (vd. report_nvbh_perf -> report_nvbh_asm -> report_gs)
+        seen.add(key)
+        key = PERM_INHERIT.get(key)
+    return (perms.get(key) or {}) if key else {}
 
 
 class StorePermMixin(models.AbstractModel):

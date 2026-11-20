@@ -51,6 +51,7 @@ export class StoreChecklistShell extends Component {
             auditStoreIds: [],
             myRole: "",
             kpi: { month: "", mien: "", closedStores: {}, storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
+            perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false },
             kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
             mg: { month: "", date: "", storeStatus: {}, storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
             openGroups: { audit: true, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
@@ -243,6 +244,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_nvbh", label: "BC Checklist NVBH KPI", icon: "fa-clipboard", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_nsuat", label: "BC Năng suất NVBH", icon: "fa-line-chart", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_nvbh_asm", label: "BC Checklist NVBH ASM", icon: "fa-users", action: "store_checklist.action_store_nvbh_done" },
+                    { id: "report_nvbh_perf", label: "BC Hiệu suất NVBH", icon: "fa-tachometer", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_store", label: "Báo cáo Audit CH", icon: "fa-building" },
                     { id: "report_rank", label: "Báo cáo xếp loại Audit CH", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
@@ -1423,6 +1425,92 @@ export class StoreChecklistShell extends Component {
         return n === null || n === undefined ? "-" : new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(n) + "%";
     }
 
+    // ---- BC Hiệu suất NVBH: mỗi dòng một nhân viên, xếp hạng theo Tổng KPI ----
+    async openPerfPage() {
+        try {
+            const pf = this.state.perf;
+            this.state.activeNav = "report_nvbh_perf";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            if (!pf.month) {
+                const d = new Date();
+                pf.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            }
+            await this.loadPerf();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    perfArgs() {
+        const pf = this.state.perf;
+        return {
+            month: pf.month || false,
+            mien: pf.mien || false,
+            asm_id: pf.asmId !== "" ? Number(pf.asmId) : false,
+            store_id: pf.storeId ? Number(pf.storeId) : false,
+        };
+    }
+
+    async loadPerf() {
+        const pf = this.state.perf;
+        pf.busy = true;
+        try {
+            pf.data = await this.orm.call("store.nvbh.check", "get_nvbh_perf_report", [], this.perfArgs());
+        } finally {
+            pf.busy = false;
+        }
+    }
+
+    onPerfFilter(key, ev) {
+        const pf = this.state.perf;
+        pf[key] = ev.target.value;
+        if (key === "mien") {
+            pf.asmId = "";
+            pf.storeId = "";
+        } else if (key === "asmId") {
+            pf.storeId = "";
+        }
+        return this.loadPerf().catch((e) => this.notifyError(e));
+    }
+
+    onPerfRank(rk) {
+        this.state.perf.rank = this.state.perf.rank === rk ? "" : rk;
+    }
+
+    onPerfSearch(ev) {
+        this.state.perf.q = ev.target.value;
+    }
+
+    perfGroupName(i) {
+        const names = this.state.perf.data?.group_names || [];
+        return names[i] || `Nhóm ${["I", "II", "III", "IV", "V"][i]}`;
+    }
+
+    get perfRows() {
+        const pf = this.state.perf;
+        const q = (pf.q || "").trim().toLowerCase();
+        return (pf.data?.rows || []).filter(
+            (r) =>
+                (!pf.rank || r.rank_code === pf.rank) &&
+                (!q || `${r.name} ${r.code || ""} ${r.store} ${r.asm}`.toLowerCase().includes(q))
+        );
+    }
+
+    async onPerfExport() {
+        try {
+            const file = await this.orm.call("store.nvbh.check", "export_nvbh_perf_xlsx", [], this.perfArgs());
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
     // ---- BC Checklist NVBH ASM: Báo cáo quản trị khu vực theo ASM ----
     async openKpiAsmPage() {
         try {
@@ -2255,6 +2343,7 @@ export class StoreChecklistShell extends Component {
             nvbh_today: `LỊCH CA HÔM NAY · ${new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}`,
             report_nvbh: "BÁO CÁO CHECKLIST NVBH - PHIẾU KPI CÁ NHÂN",
             report_nsuat: "BÁO CÁO NĂNG SUẤT NVBH THEO TIÊU CHÍ CÔNG VIỆC",
+            report_nvbh_perf: `BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG${this.state.perf.data?.month_label ? " · THÁNG " + this.state.perf.data.month_label : ""}`,
             report_nvbh_asm: `BÁO CÁO QUẢN TRỊ KHU VỰC THEO ASM${this.state.kpiAsm.data?.month_label ? " · THÁNG " + this.state.kpiAsm.data.month_label : ""}`,
             nvbh_done: this.state.done.tab === "total" ? "BẢNG CHECKLIST TỔNG" : "DANH SÁCH CHECKLIST NHÂN VIÊN",
             nvbh_mg_staff: "QUẢN LÝ & ĐÁNH GIÁ CHECKLIST NVBH",
@@ -3718,6 +3807,9 @@ export class StoreChecklistShell extends Component {
         }
         if (navId === "report_nvbh_asm") {
             return this.openKpiAsmPage();
+        }
+        if (navId === "report_nvbh_perf") {
+            return this.openPerfPage();
         }
         if (navId === "nvbh_done") {
             return this.openDonePage();

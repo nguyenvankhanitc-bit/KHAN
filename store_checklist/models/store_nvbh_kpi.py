@@ -667,3 +667,65 @@ class StoreNvbhCheckKpi(models.Model):
                 'headers': headers, 'rows': srows, 'foot': foot,
             })
         return self._xlsx_book(sheets, 'Bao_cao_Checklist_NVBH_ASM')
+
+    # ---- Báo cáo hiệu suất NVBH: mỗi dòng một nhân viên, xếp hạng theo Tổng KPI (cùng bộ số liệu với BC Checklist NVBH ASM) ----
+    @api.model
+    def get_nvbh_perf_report(self, month=None, mien=None, asm_id=None, store_id=None):
+        data = self.get_kpi_asm_report(month, mien, asm_id)
+        rows = []
+        stores = {}
+        for a in data['asms']:
+            for s in a['stores']:
+                stores[s['store_id']] = s['store']
+                if store_id and s['store_id'] != int(store_id):
+                    continue
+                for sf in s['staff']:
+                    rank = sf.get('rank') or ''
+                    code = rank[5:6] if rank.upper().startswith('HẠNG ') else ''
+                    rows.append(dict(sf, store_id=s['store_id'], store=s['store'], asm=a['name'],
+                                     rank_code=code or 'D', passed=sf['kpi_total'] >= 72.0))
+        rows.sort(key=lambda r: (-r['kpi_total'], r['name']))
+        for i, r in enumerate(rows, 1):
+            r['no'] = i
+        n = len(rows)
+        counts = {k: sum(1 for r in rows if r['rank_code'] == k) for k in ('A', 'B', 'C', 'D')}
+        return {
+            'month': data['month'], 'month_label': data['month_label'], 'updated_at': data['updated_at'],
+            'weights': data['weights'], 'group_names': data['group_names'], 'asm_opts': data['asm_opts'],
+            'store_opts': [{'id': k, 'name': v} for k, v in sorted(stores.items(), key=lambda x: x[1])],
+            'rows': rows,
+            'summary': {
+                'staff_count': n, 'store_count': len({r['store_id'] for r in rows}),
+                'avg_kpi': round(sum(r['kpi_total'] for r in rows) / n, 2) if n else 0.0,
+                'passed': sum(1 for r in rows if r['passed']), 'counts': counts,
+                'avgs': {k: round(sum(r[k] for r in rows) / n, 2) if n else 0.0
+                         for k in ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'discipline', 'sales', 'attitude', 'kpi_total')},
+            },
+        }
+
+    @api.model
+    def export_nvbh_perf_xlsx(self, month=None, mien=None, asm_id=None, store_id=None):
+        """Xuất Báo cáo hiệu suất NVBH ra Excel."""
+        self.env['store.perm.rule'].check_export()
+        data = self.get_nvbh_perf_report(month, mien, asm_id, store_id)
+        if not data['rows']:
+            raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
+        w = data['weights']
+        headers = [
+            'Hạng', 'Nhân viên', 'Mã NV', 'Cửa hàng', 'ASM',
+            *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
+            'Hoàn thành việc (%gđ)' % w['complete'], 'Kỷ luật (%gđ)' % w['discipline'],
+            'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
+            'Tổng KPI (100)', 'Xếp loại',
+        ]
+        keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'discipline', 'sales', 'attitude', 'kpi_total')
+        rows = [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank']] for r in data['rows']]
+        sm = data['summary']
+        foot = ['', 'TRUNG BÌNH (%d NV)' % sm['staff_count'], '', '', '', *[sm['avgs'][k] for k in keys], '']
+        return self._xlsx_book([{
+            'name': 'Hieu suat NVBH',
+            'title': 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG - THÁNG %s' % data['month_label'],
+            'subtitle': '%d nhân viên · %d cửa hàng · TB KPI %s · Đạt (≥ 72): %d' % (
+                sm['staff_count'], sm['store_count'], _vn(sm['avg_kpi'], 2), sm['passed']),
+            'headers': headers, 'rows': rows, 'foot': foot,
+        }], 'Bao_cao_hieu_suat_NVBH')

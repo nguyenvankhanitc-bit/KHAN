@@ -22,7 +22,7 @@
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
             <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
-                <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</div>
+                <div class="o_store_pick_notice" t-if="needStorePick"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav">Đang hiện các phiếu do bạn đánh giá. Chọn cửa hàng ở bộ lọc để xem toàn bộ phiếu của cửa hàng.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>

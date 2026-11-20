@@ -259,8 +259,8 @@ class StoreAudit(models.Model):
     def _search(self, domain, *args, **kwargs):
         # phiếu checklist chỉ hiển thị đúng cửa hàng của người dùng (list, nhóm, đếm, xuất Excel đều đi qua đây)
         scope = self._user_store_scope()
-        if scope is not None:
-            domain = [('store_id', 'in', scope)] + list(domain or [])
+        if scope is not None:  # luôn thấy phiếu do chính mình đánh giá, kể cả cửa hàng ngoài phạm vi
+            domain = ['|', ('store_id', 'in', scope), ('auditor_id', '=', self.env.uid)] + list(domain or [])
         return super()._search(domain, *args, **kwargs)
 
     @api.model

@@ -1969,6 +1969,11 @@ export class StoreChecklistShell extends Component {
     }
 
     // Các danh sách phiếu (Checklist NVBH / ASM / GS và Danh Sách Đánh Giá) có thanh lọc tháng / cửa hàng / miền
+    // các màn danh sách phiếu đánh giá (store.audit) có cột Người đánh giá
+    get isAuditListNav() {
+        return ["review", "review_list", "asm", "gs"].includes(this.state.activeNav);
+    }
+
     get filterNavs() {
         return ["review", "review_list", "nvbh", "nvbh_staff", "nvbh_schedule", "asm", "gs", "violation_stores", "violation_all", ...this.reportNavs];
     }
@@ -2212,7 +2217,11 @@ export class StoreChecklistShell extends Component {
         if (store) {
             domain.push(["store_id", "=", Number(store)]);
         } else if (this.state.needStore && !this.staffScopedNav) {
-            domain.push(["id", "=", 0]); // user chưa có cửa hàng phụ trách: chưa chọn cửa hàng thì chưa hiện dữ liệu
+            if (this.isAuditListNav) {
+                domain.push(["auditor_id", "=", user.userId]); // chưa chọn cửa hàng: vẫn thấy phiếu do chính mình đánh giá
+            } else {
+                domain.push(["id", "=", 0]); // user chưa có cửa hàng phụ trách: chưa chọn cửa hàng thì chưa hiện dữ liệu
+            }
         }
         if (mien === "other") {
             domain.push("|", ["mien", "=", false], ["mien", "not in", ["Nam", "ĐTT", "Bắc"]]);

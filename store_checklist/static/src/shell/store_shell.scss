@@ -2983,3 +2983,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_perf_page .perf_store_row td{background: #fff1f2;}
 .o_store_perf_page .perf_store_row .fa-building-o{color: #163363; margin-right: 2px;}
 .o_store_perf_page .asm_staff_row td.l{padding-left: 30px;}
+
+/* BC Hiệu suất NVBH: cột ID */
+.o_store_perf_page .perf_table th.perf_id, .o_store_perf_page .perf_table td.perf_id{width: 90px; white-space: nowrap; font-weight: 600;}
+.o_store_perf_page .perf_table .asm_staff_row td.perf_id{padding-left: 8px;}

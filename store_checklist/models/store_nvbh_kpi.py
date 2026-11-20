@@ -712,7 +712,7 @@ class StoreNvbhCheckKpi(models.Model):
             raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
         w = data['weights']
         headers = [
-            'Hạng', 'Nhân viên', 'Mã NV', 'Cửa hàng', 'ASM',
+            'Hạng', 'ID', 'Nhân viên', 'Cửa hàng', 'ASM',
             *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
             'Hoàn thành việc (%gđ)' % w['complete'],
             'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
@@ -725,9 +725,9 @@ class StoreNvbhCheckKpi(models.Model):
         avg = lambda items, k: round(sum(x[k] for x in items) / len(items), 2)
         rows = []
         for staff in sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store'])):
-            rows.append(['', '%s (%d NV)' % (staff[0]['store'], len(staff)), '', staff[0]['store'], staff[0]['asm'],
+            rows.append(['', '', '%s (%d NV)' % (staff[0]['store'], len(staff)), staff[0]['store'], staff[0]['asm'],
                          *['' for _k in keys], ''])
-            rows += [[r['no'], r['name'], r['code'] or '', r['store'], r['asm'], *[r[k] for k in keys], r['rank_short']] for r in staff]
+            rows += [[r['no'], r['code'] or '', r['name'], r['store'], r['asm'], *[r[k] for k in keys], r['rank_short']] for r in staff]
         sm = data['summary']
         return self._xlsx_book([{
             'name': 'Hieu suat NVBH',

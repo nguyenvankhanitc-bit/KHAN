@@ -799,6 +799,7 @@
                                 <table class="kp_table asm_table perf_table">
                                     <thead><tr>
                                         <th>#</th>
+                                        <th class="perf_id">ID</th>
                                         <th class="l">Nhân viên / Cửa hàng</th>
                                         <th class="kp_grp"><span t-esc="perfGroupName(0)"/></th>
                                         <th class="kp_grp"><span t-esc="perfGroupName(1)"/></th>
@@ -815,12 +816,13 @@
                                         <t t-foreach="perfGroups" t-as="g" t-key="g.store_id">
                                         <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
                                             <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
-                                            <td class="l"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
+                                            <td class="l" colspan="2"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
                                             <td colspan="10"/>
                                         </tr>
                                         <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
                                             <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
-                                            <td class="l"><b class="sf_nm" t-esc="r.name"/><small t-if="r.code" class="cnt"> (<t t-esc="r.code"/>)</small></td>
+                                            <td class="c perf_id" t-esc="r.code or '-'"/>
+                                            <td class="l"><b class="sf_nm" t-esc="r.name"/></td>
                                             <td class="c" t-esc="fmtKpi(r.g1)"/>
                                             <td class="c" t-esc="fmtKpi(r.g2)"/>
                                             <td class="c" t-esc="fmtKpi(r.g3)"/>

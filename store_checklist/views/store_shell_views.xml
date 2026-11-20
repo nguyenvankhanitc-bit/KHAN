@@ -169,7 +169,7 @@
         <field name="arch" type="xml">
             <list js_class="store_benchmark_list" group_edit="0" group_delete="0" string="Điểm chuẩn" class="o_store_benchmark" default_order="template_id, sequence, id">
                 <field name="sequence" string="STT" width="60px"/>
-                <field name="category" width="150px"/>
+                <field name="category" width="150px" column_invisible="context.get('hide_category_col')"/>
                 <field name="sub_group_id" width="170px"/>
                 <field name="name" width="220px"/>
                 <field name="requirement" width="700px"/>
@@ -249,7 +249,7 @@
         <field name="view_mode">list</field>
         <field name="domain">[('template_id.audit_type', '=', 'gs')]</field>
         <field name="search_view_id" ref="view_store_benchmark_search"/>
-        <field name="context" eval="{'search_default_group_sub_group': 1, 'default_template_id': ref('tmpl_gs')}"/>
+        <field name="context" eval="{'search_default_group_sub_group': 1, 'default_template_id': ref('tmpl_gs'), 'hide_category_col': True}"/>
     </record>
 
     <record id="view_store_sub_group_list" model="ir.ui.view">

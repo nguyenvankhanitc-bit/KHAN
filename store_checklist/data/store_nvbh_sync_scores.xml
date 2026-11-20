@@ -4,4 +4,6 @@
     <function model="store.nvbh.task" name="_sync_all_check_line_scores"/>
     <!-- Quy đổi phiếu cũ sang luồng đánh giá nhiều cấp (chạy một lần) -->
     <function model="store.nvbh.check" name="_migrate_workflow_steps"/>
+    <!-- Tính lại Chức vụ Checklist theo Chức danh (Nhân viên CH, Nhóm trưởng, Cửa hàng trưởng...) -->
+    <function model="hr.employee" name="_recompute_checklist_roles"/>
 </odoo>

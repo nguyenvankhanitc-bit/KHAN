@@ -35,9 +35,30 @@ TITLE_KEYWORDS = [
     ('quản lý vùng', 'RSM'),
     ('quản lý khu vực', 'ASM'),
     ('cửa hàng trưởng', 'CHT'),
+    ('nhóm trưởng', 'NT'),
+    ('trưởng nhóm', 'NT'),
     ('nhân viên bán hàng', 'NVBH'),
     ('nhân viên ch', 'NVBH'),
 ]
+
+
+# Tên hiển thị của mã chức vụ trên giao diện (mã dùng để tính cấp bậc giữ nguyên)
+# (khớp danh sách Chức danh trong hồ sơ nhân viên: Nhân viên CH, Nhóm trưởng, Cửa hàng trưởng, ASM, RSM, Giám sát...)
+ROLE_LABELS = {
+    'NVBH': 'Nhân viên CH', 'NV': 'Nhân viên CH', 'NT': 'Nhóm trưởng', 'NTTT': 'Nhóm trưởng TTTM', 'PT': 'Nhân viên thời vụ',
+    'CHT': 'Cửa hàng trưởng', 'CHTTT': 'Cửa hàng trưởng TTTM', 'ASMTT': 'ASM TTTM',
+    'ASM': 'ASM', 'RSM': 'RSM', 'GS': 'Giám sát', 'GSTT': 'Giám sát TTTM', 'QLBH': 'Quản lý bán hàng',
+}
+
+
+def role_label(code):
+    code = (code or '').strip().upper()
+    return ROLE_LABELS.get(code, code)
+
+
+def is_shared_store_user(user):
+    """Tài khoản chung của cửa hàng: tên hoặc login bắt đầu bằng CH_ (vd. CH_LUG_KDV)."""
+    return (user.name or '').upper().startswith('CH_') or (user.login or '').upper().startswith('CH_')
 
 
 def role_code_from_title(title):
@@ -64,6 +85,7 @@ class HrEmployee(models.Model):
 
     checklist_role_code = fields.Char(string='Mã chức vụ Checklist', compute='_compute_checklist_role', store=True,
                                       help='Suy ra từ Chức danh (NVBH, CHT, ASM, RSM, GS, QLBH...)')
+    checklist_role_label = fields.Char(string='Chức vụ Checklist', compute='_compute_checklist_role_label')
     checklist_level = fields.Integer(string='Cấp bậc Checklist (1-6)', compute='_compute_checklist_role', store=True,
                                      help='0 = chức danh không thuộc hệ thống 6 cấp, không được chỉ định làm người kiểm tra')
     checklist_store_ids = fields.Many2many('hr.store', 'store_checklist_employee_store_rel', 'employee_id', 'store_id',
@@ -76,6 +98,18 @@ class HrEmployee(models.Model):
             code = role_code_from_title(emp.job_title)
             emp.checklist_role_code = code
             emp.checklist_level = role_level(code)
+
+    @api.model
+    def _recompute_checklist_roles(self):
+        """Tính lại Mã chức vụ Checklist theo Chức danh hiện tại (chạy mỗi lần nâng cấp module, khi bảng quy đổi thay đổi)."""
+        emps = self.sudo().with_context(active_test=False).search([])
+        emps._compute_checklist_role()
+        emps.flush_recordset(['checklist_role_code', 'checklist_level'])
+
+    @api.depends('checklist_role_code')
+    def _compute_checklist_role_label(self):
+        for emp in self:
+            emp.checklist_role_label = role_label(emp.checklist_role_code)
 
     def _checklist_effective_level(self):
         """Cấp bậc thực tế: ưu tiên Mã chức vụ ở dòng Lịch xếp ca mới nhất của chính người này (vd. ASMTT), không có thì theo Chức danh."""
@@ -132,6 +166,8 @@ class StoreNvbhCheckRole(models.Model):
             return []
         if getattr(user.sudo(), 'lug_data_scope', False) == 'company':
             return []
+        if is_shared_store_user(user):
+            return []  # tài khoản chung CH_: xem mọi nhân viên của cửa hàng mình (phạm vi cửa hàng vẫn áp dụng)
         emp = user.sudo().employee_id
         if not emp:
             return []
@@ -286,7 +322,7 @@ class StoreNvbhCheckRole(models.Model):
         code, level = self._subject_level()
         subject = self._subject_employee()
         is_admin = user.has_group('base.group_system')
-        shared = (user.name or '').upper().startswith('CH_') or (user.login or '').upper().startswith('CH_')
+        shared = is_shared_store_user(user)
         subject_user = subject.user_id if subject else False
         own = bool(subject_user and subject_user.id == user.id)
         if is_admin:
@@ -364,6 +400,7 @@ class StoreNvbhCheckRole(models.Model):
         payload.update({
             'state': self.state,
             'role_code': info['role_code'],
+            'role_label': role_label(info['role_code']),
             'level': info['level'],
             'step_done': self.step_done,
             'steps': [{

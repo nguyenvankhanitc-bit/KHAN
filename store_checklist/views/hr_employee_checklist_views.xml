@@ -10,7 +10,8 @@
                 <page string="Checklist Audit" name="store_checklist_role">
                     <group>
                         <group string="Cấp bậc 6 tầng">
-                            <field name="checklist_role_code" readonly="1"/>
+                            <field name="checklist_role_code" invisible="1"/>
+                            <field name="checklist_role_label" readonly="1"/>
                             <field name="checklist_level" readonly="1"/>
                         </group>
                         <group string="Phụ trách cửa hàng">

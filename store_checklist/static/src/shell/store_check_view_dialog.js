@@ -98,7 +98,7 @@ export class StoreCheckViewDialog extends Component {
 
     get stateText() {
         const m = this.state.meta;
-        const who = `${m.staff_name} (${m.role_code})`;
+        const who = `${m.staff_name} (${m.role_label || m.role_code})`;
         const flow = this.steps.length
             ? this.steps.map((s) => `${s.code}${s.name ? " (" + s.name + ")" : ""}`).join(" → ")
             : "Chưa có";

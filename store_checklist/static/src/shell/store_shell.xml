@@ -964,7 +964,7 @@
                         </div>
                         <div class="o_store_job_role" t-att-class="jobLocked ? 'is-locked' : ''">
                             <i t-attf-class="fa #{jobLocked ? 'fa-lock' : 'fa-sitemap'}"/>
-                            <span>Cấp <b t-esc="state.job.check.level"/> (<b t-esc="state.job.check.role_code"/>)</span>
+                            <span>Cấp <b t-esc="state.job.check.level"/> (<b t-esc="state.job.check.role_label or state.job.check.role_code"/>)</span>
                             <span> · Luồng đánh giá:
                                 <t t-if="!(state.job.check.steps || []).length"><b>Chưa có (chưa gắn cấp trên phụ trách cửa hàng)</b></t>
                                 <t t-foreach="state.job.check.steps || []" t-as="st" t-key="st.no">

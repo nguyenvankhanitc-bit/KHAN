@@ -598,6 +598,8 @@ class StoreNvbhCheckKpi(models.Model):
         return {
             'month': mkey, 'month_label': start.strftime('%m/%Y'),
             'updated_at': fields.Date.context_today(self).strftime('%d/%m/%Y'),
+            # tên 5 nhóm theo danh mục Nhóm công việc (I. TRANG THIẾT BỊ, VẬT TƯ ...) dùng làm tiêu đề cột
+            'group_names': [dict(TASK_GROUPS).get(c, 'Nhóm %s' % c) for c in ('I', 'II', 'III', 'IV', 'V')],
             'weights': {'g1': w1, 'g2': w2, 'g3': w3, 'g4': w4, 'g5': w5,
                         'complete': W_COMPLETE, 'discipline': W_DISCIPLINE, 'sales': W_SALES, 'attitude': W_ATTITUDE},
             'region': region,
@@ -615,8 +617,7 @@ class StoreNvbhCheckKpi(models.Model):
         w = data['weights']
         headers = [
             'Hạng', 'ASM', 'Cửa hàng',
-            'Nhóm I (%gđ)' % w['g1'], 'Nhóm II (%gđ)' % w['g2'], 'Nhóm III (%gđ)' % w['g3'],
-            'Nhóm IV (%gđ)' % w['g4'], 'Nhóm V (%gđ)' % w['g5'],
+            *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
             'Hoàn thành việc (%gđ)' % w['complete'], 'Kỷ luật (%gđ)' % w['discipline'],
             'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
             'Tổng KPI (100)', 'Xếp loại',

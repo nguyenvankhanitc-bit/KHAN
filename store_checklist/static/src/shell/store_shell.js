@@ -1560,13 +1560,15 @@ export class StoreChecklistShell extends Component {
         return palette[idx % palette.length];
     }
 
+    // tên 5 nhóm theo danh mục Nhóm công việc (I. TRANG THIẾT BỊ, VẬT TƯ ...)
+    kpiAsmGroupName(i) {
+        const names = this.state.kpiAsm.data?.group_names || [];
+        return names[i] || `Nhóm ${["I", "II", "III", "IV", "V"][i]}`;
+    }
+
     get kpiAsmPillarTabs() {
         return [
-            { label: "Nhóm I", desc: "Nhóm I: Trang thiết bị, vệ sinh, mở/đóng cửa" },
-            { label: "Nhóm II", desc: "Nhóm II: Hàng hóa, trưng bày, tem giá, kho" },
-            { label: "Nhóm III", desc: "Nhóm III: Tác phong, đồng phục, tư vấn bán hàng" },
-            { label: "Nhóm IV", desc: "Nhóm IV: Email, bàn giao ca, chứng từ, nộp tiền" },
-            { label: "Nhóm V", desc: "Nhóm V: Media, TV/LED, báo cáo Lark, FB/GGB" },
+            ...[0, 1, 2, 3, 4].map((i) => ({ label: this.kpiAsmGroupName(i), desc: this.kpiAsmGroupName(i) })),
             { label: "Tổng 5 nhóm", desc: "Tổng hợp chất lượng thực hiện Checklist (5 nhóm)" },
         ];
     }

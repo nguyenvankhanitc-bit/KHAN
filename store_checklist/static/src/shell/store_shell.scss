@@ -2943,3 +2943,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* Cột STT của bảng Điểm chuẩn canh giữa */
 .o_store_benchmark table.o_list_table th[data-name="sequence"], .o_store_benchmark table.o_list_table td[name="sequence"]{text-align: center !important;}
 .o_store_benchmark table.o_list_table th[data-name="sequence"] > div{justify-content: center;}
+
+/* BC Checklist NVBH ASM: tiêu đề cột là tên nhóm công việc (dài) -> xuống dòng, chữ nhỏ */
+.kp_table.asm_table th.kp_grp{min-width: 96px; max-width: 120px; white-space: normal; line-height: 1.25; font-size: 11px;}
+.kp_table.asm_table th.kp_grp > span{display: block;}

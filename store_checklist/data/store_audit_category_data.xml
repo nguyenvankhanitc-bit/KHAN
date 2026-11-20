@@ -2,4 +2,6 @@
 <odoo>
     <!-- 3 nhóm gốc A / B / C trong danh mục Nhóm tiêu chí (không ghi đè tên đã đổi) -->
     <function model="store.audit.category" name="_ensure_base_categories"/>
+    <!-- tiêu chí nhóm D, E... chưa có Phân nhóm: gán phân nhóm cùng tên nhóm -->
+    <function model="store.audit.template.line" name="_fix_missing_sub_groups"/>
 </odoo>

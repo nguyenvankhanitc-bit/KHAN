@@ -385,6 +385,36 @@ class StoreAuditTemplateLine(models.Model):
         if self.sub_group_id and self.sub_group_id.category != self.category:
             self.sub_group_id = False
 
+    @api.model_create_multi
+    def create(self, vals_list):
+        lines = super().create(vals_list)
+        lines._auto_sub_group()
+        return lines
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'category' in vals or 'category_id' in vals or 'sub_group_id' in vals:
+            self._auto_sub_group()
+        return res
+
+    def _auto_sub_group(self):
+        """Tiêu chí thuộc nhóm tự thêm (D, E...) mà chưa chọn Phân nhóm: tự gán phân nhóm cùng tên nhóm (vd. "E. HÀNG HÓA"),
+        chưa có thì tạo, để bảng Điểm chuẩn / phiếu hiện đúng nhóm thay vì "Không"."""
+        SubGroup = self.env['store.audit.sub.group'].sudo()
+        names = dict(category_list(self.env))
+        for line in self.sudo().filtered(lambda l: not l.sub_group_id and l.category and l.category not in BASE_CATEGORY_CODES):
+            atype = line.template_id.audit_type or 'nvbh'
+            grp = SubGroup.search([('category', '=', line.category), ('audit_type', '=', atype)], order='sequence, id', limit=1)
+            if not grp:
+                last = SubGroup.search([('audit_type', '=', atype)], order='sequence desc', limit=1)
+                grp = SubGroup.create({'name': (names.get(line.category) or line.category).upper(), 'category': line.category,
+                                       'audit_type': atype, 'sequence': (last.sequence or 0) + 10})
+            line.sub_group_id = grp
+
+    @api.model
+    def _fix_missing_sub_groups(self):
+        self.sudo().search([('sub_group_id', '=', False), ('category', 'not in', list(BASE_CATEGORY_CODES))])._auto_sub_group()
+
     @api.onchange('sub_group_id')
     def _onchange_sub_group_id(self):
         if self.sub_group_id:

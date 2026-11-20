@@ -48,6 +48,7 @@ export class StoreChecklistShell extends Component {
             job: { date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
+            auditStoreIds: [],
             myRole: "",
             kpi: { month: "", mien: "", closedStores: {}, storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
             kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
@@ -169,6 +170,9 @@ export class StoreChecklistShell extends Component {
         onWillStart(async () => {
             // user chưa được gán cửa hàng: các màn NVBH thu lại, chọn cửa hàng ở ô lọc mới hiện dữ liệu
             this.state.needStore = await this.orm.call("store.audit", "needs_store_pick", []).catch(() => false);
+            this.state.auditStoreIds = this.state.needStore
+                ? await this.orm.call("store.audit", "my_audit_store_ids", []).catch(() => [])
+                : [];
             this.state.myRole = await this.orm.call("store.nvbh.check", "my_checklist_role", []).catch(() => "");
             this.state.isManager = await user.hasGroup("store_checklist.group_store_manager");
             this.state.canCreate = await user.hasGroup("store_checklist.group_store_user");
@@ -2218,7 +2222,16 @@ export class StoreChecklistShell extends Component {
             domain.push(["store_id", "=", Number(store)]);
         } else if (this.state.needStore && !this.staffScopedNav) {
             if (this.isAuditListNav) {
-                domain.push(["auditor_id", "=", user.userId]); // chưa chọn cửa hàng: vẫn thấy phiếu do chính mình đánh giá
+                // chưa chọn cửa hàng: thấy phiếu của mọi cửa hàng được phân quyền + phiếu do chính mình đánh giá
+                // (auditStoreIds = false: không giới hạn cửa hàng -> server tự lọc)
+                const ids = this.state.auditStoreIds;
+                if (ids === false) {
+                    // không thêm điều kiện
+                } else if (ids && ids.length) {
+                    domain.push("|", ["store_id", "in", ids], ["auditor_id", "=", user.userId]);
+                } else {
+                    domain.push(["auditor_id", "=", user.userId]);
+                }
             } else {
                 domain.push(["id", "=", 0]); // user chưa có cửa hàng phụ trách: chưa chọn cửa hàng thì chưa hiện dữ liệu
             }

@@ -212,7 +212,7 @@ class StoreAudit(models.Model):
         }
 
     @api.model
-    def _lug_extra_store_ids(self, user):
+    def _lug_extra_store_ids(self, user, store_codes=True):
         """Cửa hàng bổ sung theo cấu hình LUG Permission trên user (tab "Phạm vi dữ liệu"):
         COMPANY -> None (toàn bộ); REGION -> mọi cửa hàng cùng Miền với nhân viên; STORE -> các "Mã bộ phận được xem"."""
         user = user.sudo()
@@ -225,12 +225,12 @@ class StoreAudit(models.Model):
             mien = getattr(user, 'employee_mien', False) or (user.employee_id.mien if 'mien' in user.employee_id._fields else False)
             if mien:
                 ids.update(Store.search([('mien', '=', mien)]).ids)
-        elif scope == 'store' and 'assigned_ma_bo_phan_ids' in user._fields:
+        elif scope == 'store' and store_codes and 'assigned_ma_bo_phan_ids' in user._fields:
             ids.update(c.store_id.id for c in user.assigned_ma_bo_phan_ids if c.store_id)
         return ids
 
     @api.model
-    def _user_store_scope(self):
+    def _user_store_scope(self, store_codes=True):
         """Danh sách id cửa hàng người dùng được xem; None nghĩa là không giới hạn (admin / sudo / phạm vi COMPANY / chưa gán cửa hàng).
         Gồm: ma trận phân quyền cửa hàng + cửa hàng trên hồ sơ nhân viên + "Mã bộ phận được xem (STORE)" / Miền của LUG Permission."""
         user = self.env.user
@@ -240,7 +240,7 @@ class StoreAudit(models.Model):
             allowed = set(user._linkq_allowed_hr_store_ids())
         except Exception:
             return None
-        extra = self._lug_extra_store_ids(user)
+        extra = self._lug_extra_store_ids(user, store_codes=store_codes)
         if extra is None:
             return None
         allowed |= extra
@@ -264,9 +264,17 @@ class StoreAudit(models.Model):
         return extra is not None and len(allowed | extra) != 1
 
     @api.model
+    def my_audit_store_ids(self):
+        """Id các cửa hàng user được xem phiếu đánh giá; False = không giới hạn.
+        "Mã bộ phận được xem (STORE)" chỉ áp dụng cho Checklist NVBH, không tính ở đây."""
+        scope = self._user_store_scope(store_codes=False)
+        return False if scope is None else scope
+
+    @api.model
     def _search(self, domain, *args, **kwargs):
-        # phiếu checklist chỉ hiển thị đúng cửa hàng của người dùng (list, nhóm, đếm, xuất Excel đều đi qua đây)
-        scope = self._user_store_scope()
+        # phiếu đánh giá chỉ hiển thị đúng cửa hàng của người dùng (list, nhóm, đếm, xuất Excel đều đi qua đây);
+        # "Mã bộ phận được xem (STORE)" chỉ dùng cho Checklist NVBH nên không tính
+        scope = self._user_store_scope(store_codes=False)
         if scope is not None:  # luôn thấy phiếu do chính mình đánh giá, kể cả cửa hàng ngoài phạm vi
             domain = ['|', ('store_id', 'in', scope), ('auditor_id', '=', self.env.uid)] + list(domain or [])
         return super()._search(domain, *args, **kwargs)

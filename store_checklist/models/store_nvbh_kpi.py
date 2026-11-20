@@ -705,34 +705,96 @@ class StoreNvbhCheckKpi(models.Model):
 
     @api.model
     def export_nvbh_perf_xlsx(self, month=None, mien=None, asm_id=None, store_id=None):
-        """Xuất Báo cáo hiệu suất NVBH ra Excel."""
+        """Xuất Báo cáo hiệu suất NVBH ra Excel đúng như bảng trên màn hình:
+        #, ID, Nhân viên / Cửa hàng, 5 nhóm công việc, Hoàn thành việc, Doanh số, Thái độ, Tổng KPI, Xếp loại;
+        nhóm theo cửa hàng (cửa hàng TB Tổng KPI cao xếp trước), # là thứ tự trong cửa hàng."""
+        import base64
+        import io as _io
+        import xlsxwriter
         self.env['store.perm.rule'].check_export()
         data = self.get_nvbh_perf_report(month, mien, asm_id, store_id)
         if not data['rows']:
             raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
-        w = data['weights']
-        headers = [
-            'Hạng', 'ID', 'Nhân viên', 'Cửa hàng', 'ASM',
-            *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
-            'Hoàn thành việc (%gđ)' % w['complete'],
-            'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
-            'Tổng KPI (100)', 'Xếp loại',
-        ]
         keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'sales', 'attitude', 'kpi_total')
+        headers = ['#', 'ID', 'Nhân viên / Cửa hàng', *data['group_names'], 'Hoàn thành việc', 'Doanh số', 'Thái độ', 'Tổng KPI', 'Xếp loại']
+        widths = [6, 12, 34, 16, 16, 14, 16, 12, 16, 12, 12, 12, 14]
+        ncol = len(headers)
+
         groups = {}
         for r in data['rows']:
             groups.setdefault(r['store_id'], []).append(r)
-        avg = lambda items, k: round(sum(x[k] for x in items) / len(items), 2)
-        rows = []
-        for staff in sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store'])):
-            rows.append(['', '', '%s (%d NV)' % (staff[0]['store'], len(staff)), staff[0]['store'], staff[0]['asm'],
-                         *['' for _k in keys], ''])
-            rows += [[r['no'], r['code'] or '', r['name'], r['store'], r['asm'], *[r[k] for k in keys], r['rank_short']] for r in staff]
+        avg = lambda items, k: sum(x[k] for x in items) / len(items)
+        ordered = sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store']))
+
+        buf = _io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        ws = book.add_worksheet('Hieu suat NVBH')
+        base = {'font_name': 'Arial', 'font_size': 10, 'valign': 'vcenter', 'border': 1, 'border_color': '#CBD5E1'}
+        F = lambda **kw: book.add_format(dict(base, **kw))
+        f_title = book.add_format({'font_name': 'Arial', 'bold': True, 'font_size': 15, 'font_color': '#163363', 'align': 'left', 'valign': 'vcenter'})
+        f_sub = book.add_format({'font_name': 'Arial', 'font_size': 10, 'font_color': '#64748B', 'align': 'left'})
+        f_head = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='center', text_wrap=True, border_color='#2B4A80')
+        f_head_l = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='left', text_wrap=True, border_color='#2B4A80')
+        f_store = F(bold=True, font_color='#0F172A', bg_color='#F8FAFC')
+        f_store_cnt = F(font_color='#64748B', bg_color='#F8FAFC')
+        f_no = F(bold=True, align='center', font_color='#FFFFFF', bg_color='#DC2626')
+        f_id = F(align='center', bold=True)
+        f_name = F(bold=True)
+        f_num = F(align='center', num_format='0.00')
+        f_tot = F(align='center', bold=True, num_format='0.00')
+        rank_fmt = {
+            'A': F(align='center', bold=True, font_color='#15803D', bg_color='#DCFCE7'),
+            'B': F(align='center', bold=True, font_color='#1D4ED8', bg_color='#DBEAFE'),
+            'C': F(align='center', bold=True, font_color='#B45309', bg_color='#FEF3C7'),
+            'D': F(align='center', bold=True, font_color='#B91C1C', bg_color='#FEE2E2'),
+        }
+        no_fmt = {
+            'A': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#16A34A'),
+            'B': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#2563EB'),
+            'C': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#F59E0B'),
+            'D': f_no,
+        }
+        f_foot = book.add_format({'font_name': 'Arial', 'font_size': 9, 'font_color': '#64748B'})
+
         sm = data['summary']
-        return self._xlsx_book([{
-            'name': 'Hieu suat NVBH',
-            'title': 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG - THÁNG %s' % data['month_label'],
-            'subtitle': '%d nhân viên · %d cửa hàng · TB KPI %s · Đạt (≥ 72): %d' % (
-                sm['staff_count'], sm['store_count'], _vn(sm['avg_kpi'], 2), sm['passed']),
-            'headers': headers, 'rows': rows, 'foot': None,
-        }], 'Bao_cao_hieu_suat_NVBH')
+        ws.merge_range(0, 0, 0, ncol - 1, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG · THÁNG %s' % data['month_label'], f_title)
+        ws.merge_range(1, 0, 1, ncol - 1, 'Nhân viên: %d · Đạt (≥ 72): %d · TB KPI: %s' % (
+            sm['staff_count'], sm['passed'], _vn(sm['avg_kpi'], 2)), f_sub)
+        ws.set_row(0, 26)
+        hr = 3
+        for c, h in enumerate(headers):
+            ws.write(hr, c, h, f_head_l if c == 2 else f_head)
+        ws.set_row(hr, 36)
+        r = hr + 1
+        for staff in ordered:
+            st = staff[0]
+            ws.write_blank(r, 0, None, f_store)
+            ws.merge_range(r, 1, r, ncol - 1, '', f_store)
+            ws.write_rich_string(r, 1, book.add_format({'bold': True, 'font_name': 'Arial', 'font_size': 10}), st['store'],
+                                 book.add_format({'font_name': 'Arial', 'font_size': 10, 'font_color': '#64748B'}),
+                                 ' · %d NV · ASM %s' % (len(staff), st['asm']), f_store)
+            ws.set_row(r, 22)
+            r += 1
+            for i, x in enumerate(staff, 1):
+                code = x.get('rank_code') or 'D'
+                ws.write_number(r, 0, i, no_fmt.get(code, f_no))
+                ws.write_string(r, 1, x.get('code') or '-', f_id)
+                ws.write_string(r, 2, x['name'], f_name)
+                for c, k in enumerate(keys, 3):
+                    ws.write_number(r, c, x[k] or 0.0, f_tot if k == 'kpi_total' else f_num)
+                ws.write_string(r, ncol - 1, x.get('rank_short') or (x.get('rank') or '').split(' - ')[0], rank_fmt.get(code, rank_fmt['D']))
+                ws.set_row(r, 22)
+                r += 1
+        r += 1
+        ws.write_string(r, 0, 'Ngưỡng ĐẠT: Tổng KPI ≥ 72    Hạng A ≥ 95 · Hạng B ≥ 85 · Hạng C ≥ 75 · Hạng D < 75', f_foot)
+        ws.write_string(r, ncol - 2, 'Cập nhật: %s' % data['updated_at'], f_foot)
+        for c, w in enumerate(widths[:ncol]):
+            ws.set_column(c, c, w)
+        ws.freeze_panes(hr + 1, 3)
+        ws.set_landscape()
+        ws.set_paper(9)
+        ws.fit_to_pages(1, 0)
+        ws.repeat_rows(hr)
+        book.close()
+        return {'name': 'Bao_cao_hieu_suat_NVBH_%s.xlsx' % fields.Date.context_today(self).strftime('%Y%m%d'),
+                'data': base64.b64encode(buf.getvalue()).decode()}

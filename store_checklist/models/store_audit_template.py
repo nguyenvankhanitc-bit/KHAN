@@ -213,7 +213,7 @@ class StoreAuditTemplateLine(models.Model):
     _order = 'sequence, id'
 
     template_id = fields.Many2one('store.audit.template', required=True, ondelete='cascade')
-    sequence = fields.Integer(string='STT', default=10)
+    sequence = fields.Integer(string='STT', default=0, help='Để trống: tự lấy số tiếp theo trong phân nhóm')
     category = fields.Selection(category_selection, string='Nhóm tiêu chí', required=True)
     sub_group_id = fields.Many2one('store.audit.sub.group', string='Phân nhóm', ondelete='restrict')
     audit_type = fields.Selection(related='template_id.audit_type', string='Loại checklist')
@@ -387,6 +387,28 @@ class StoreAuditTemplateLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        # STT để trống: lấy số tiếp theo (lớn nhất + 1) trong cùng mẫu + phân nhóm (chưa có phân nhóm thì theo nhóm tiêu chí)
+        nxt = {}
+        for vals in vals_list:
+            if vals.get('sequence'):
+                continue
+            vals = self._map_category_vals(vals)
+            if vals.get('sub_group_id'):
+                key = ('sub_group_id', vals['sub_group_id'])
+            elif vals.get('category'):
+                key = ('category', vals['category'])
+            else:
+                continue
+            tid = vals.get('template_id') or self.env.context.get('default_template_id')
+            k = (tid, key)
+            if k not in nxt:
+                dom = [(key[0], '=', key[1])]
+                if tid:
+                    dom.append(('template_id', '=', tid))
+                last = self.sudo().search(dom, order='sequence desc', limit=1)
+                nxt[k] = last.sequence or 0
+            nxt[k] += 1
+            vals['sequence'] = nxt[k]
         lines = super().create(vals_list)
         lines._auto_sub_group()
         return lines

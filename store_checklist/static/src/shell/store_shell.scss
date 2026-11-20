@@ -2939,3 +2939,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* Thẻ tổng quan của nhóm tiêu chí bổ sung (D, E...) */
 .o_store_audit_form .o_store_ov_tile.is-x{background: #fff4e5;}
 .o_store_audit_form .o_store_ov_tile.is-x i{color: #d97706;}
+
+/* Cột STT của bảng Điểm chuẩn canh giữa */
+.o_store_benchmark table.o_list_table th[data-name="sequence"], .o_store_benchmark table.o_list_table td[name="sequence"]{text-align: center !important;}
+.o_store_benchmark table.o_list_table th[data-name="sequence"] > div{justify-content: center;}

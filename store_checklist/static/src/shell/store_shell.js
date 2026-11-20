@@ -522,13 +522,13 @@ export class StoreChecklistShell extends Component {
                 pages.push({
                     title: "BẢNG CHECKLIST TỔNG",
                     sub: `Nhân viên: ${name} | Tháng: ${this.doneMonthLabel}`,
-                    headers: ["Ngày", "Cửa hàng", "Mã ca", "Trạng thái ngày", "Tổng việc ca", "Đã làm", "Số lỗi", "Điểm đạt", "Điểm chuẩn ca", "Điểm CHT đánh giá", "Điểm ASM đánh giá", "Tỷ lệ đạt (%)", "Kết quả", "Ghi chú / Tóm tắt công việc"],
+                    headers: ["Ngày", "Cửa hàng", "Mã ca", "Trạng thái ngày", "Tổng việc ca", "Đã làm", "Số lỗi", "Tổng giờ", "Điểm đạt", "Điểm chuẩn ca", "Điểm CHT đánh giá", "Điểm ASM đánh giá", "Tỷ lệ đạt (%)", "Kết quả", "Ghi chú / Tóm tắt công việc"],
                     rows: data.rows.filter((r) => !d.onlyWork || r.kind !== "off").map((r) => [
-                        r.date, r.store || "-", r.kind === "off" ? "OFF" : r.shift, r.status, r.total, r.done, r.errors,
+                        r.date, r.store || "-", r.kind === "off" ? "OFF" : r.shift, r.status, r.total, r.done, r.errors, r.hours || 0,
                         r.kind === "off" || r.evaluated ? r.points : "-", r.max_points, r.pts_cht == null ? "-" : r.pts_cht, r.pts_asm == null ? "-" : r.pts_asm,
                         r.kind === "off" || r.evaluated ? pct(r.pct) : "-", r.control, r.note || "-",
                     ]),
-                    foot: [`TỔNG CỘNG KỲ ${this.doneMonthLabel} (${t.days || 0} ngày công thực tế)`, "", "", "", t.total || 0, t.done || 0, t.errors || 0,
+                    foot: [`TỔNG CỘNG KỲ ${this.doneMonthLabel} (${t.days || 0} ngày công thực tế)`, "", "", "", t.total || 0, t.done || 0, t.errors || 0, t.hours || 0,
                         t.avg_points == null ? "-" : t.avg_points, t.max_points || 0, t.avg_cht == null ? "-" : t.avg_cht, t.avg_asm == null ? "-" : t.avg_asm,
                         t.avg_pct == null ? "-" : pct(t.avg_pct), `${t.valid || 0}/${t.days || 0} công hợp lệ`, "Tự động liên kết sang dữ liệu Odoo"],
                 });

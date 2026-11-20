@@ -135,7 +135,7 @@
                                 <td style="width:20%">Người lập</td><td style="width:20%">Trưởng bộ phận</td>
                                 <td style="width:20%">Kế toán</td><td style="width:20%">Phòng HCNS</td><td>Ban Giám đốc</td></tr>
                             <tr><td style="height:60px"/><td/><td/><td/><td/></tr>
-                            <tr><td><t t-esc="env.user.name"/></td><td/><td/><td/><td/></tr>
+                            <tr><td><t t-esc="o.auditor_id.name or o.create_uid.name"/></td><td/><td/><td/><td/></tr>
                         </table>
                     </div>
                 </div>

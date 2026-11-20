@@ -831,7 +831,7 @@
                                             <td class="c" t-esc="fmtKpi(r.sales)"/>
                                             <td class="c" t-esc="fmtKpi(r.attitude)"/>
                                             <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(r.kpi_total)"/>
-                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank_short"/></td>
+                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank_short or (r.rank or '').split(' - ')[0]"/></td>
                                         </tr>
                                         </t>
                                     </tbody>

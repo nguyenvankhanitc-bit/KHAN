@@ -2924,6 +2924,11 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 .o_store_simp_foot{display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-top: 1px solid #e2e8f0;}
 @media (max-width: 640px){ .o_store_simp_foot{flex-wrap: wrap;} }
 
+/* Nút sửa tên phân nhóm trên dòng nhóm của bảng Điểm chuẩn */
+.o_store_benchmark .o_group_header .o_group_buttons{display: inline-flex; margin-left: 8px;}
+.o_store_benchmark .o_group_header .o_group_buttons .btn{padding: 0 6px; line-height: 1.4; color: #1f497d;}
+.o_store_benchmark .o_group_header .o_group_buttons .btn:hover{color: #0d6efd;}
+
 /* Kéo copy kiểu Excel trong bảng Điểm chuẩn */
 .o_store_fill_handle{display: none; position: fixed; width: 9px; height: 9px; background: #217346; border: 1px solid #fff; cursor: crosshair; z-index: 1060;}
 .o_store_benchmark table.o_list_table td.o_store_fill_hover{outline: 2px solid #217346; outline-offset: -2px;}

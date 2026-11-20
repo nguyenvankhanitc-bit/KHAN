@@ -56,6 +56,18 @@ class StoreAuditSubGroup(models.Model):
     audit_type = fields.Selection(AUDIT_TYPES, string='Loại checklist', required=True, default='nvbh')
     sequence = fields.Integer(string='STT', default=10)
 
+    def action_edit_popup(self):
+        """Nút bút chì trên dòng nhóm của bảng Điểm chuẩn: sửa tên / nhóm tiêu chí / STT của Phân nhóm trong popup."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Sửa phân nhóm',
+            'res_model': self._name,
+            'res_id': self.id,
+            'views': [(self.env.ref('store_checklist.view_store_sub_group_form').id, 'form')],
+            'target': 'new',
+        }
+
 
 class StoreAuditTemplateLine(models.Model):
     _name = 'store.audit.template.line'

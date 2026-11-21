@@ -536,7 +536,7 @@ class StoreNvbhCheckRole(models.Model):
         return None
 
     def _step_error_text(self, code):
-        """Nội dung Chi tiết lỗi do cấp `code` (CHT / ASM / RSM) ghi nhận, dạng "Tên công việc: lỗi" (mỗi lỗi một dòng);
+        """Nội dung Chi tiết lỗi do cấp `code` (CHT / ASM / RSM) ghi nhận (mỗi lỗi một dòng);
         None nếu phiếu không có cấp đó hoặc cấp đó chưa đánh giá dòng nào."""
         self.ensure_one()
         for i, st in enumerate(self._approval_chain(), 1):
@@ -553,7 +553,7 @@ class StoreNvbhCheckRole(models.Model):
             for stt, l in enumerate(lines, 1):
                 for ln in (l[pre + 'error_detail'] or '').splitlines():
                     if ln.strip():
-                        out.append('STT %d · %s: %s' % (stt, l.name, ln.strip()))
+                        out.append(ln.strip())  # chỉ lấy nội dung Chi tiết lỗi đúng như ô trong popup
             return chr(10).join(out)
         return None
 

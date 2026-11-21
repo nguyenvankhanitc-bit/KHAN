@@ -3233,6 +3233,14 @@ export class StoreChecklistShell extends Component {
             this.state.embeddedViewProps = null;
             return this.loadPerm();
         }
+        if (child?.id === "report_flow_nvbh") {
+            // trang tĩnh: sơ đồ quy trình checklist NVBH (không có action / dữ liệu cần tải)
+            this.track({ child });
+            this.state.activeNav = "report_flow_nvbh";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            return;
+        }
         if (!child?.action) {
             return;
         }

@@ -337,10 +337,13 @@ class StoreNvbhCheckRole(models.Model):
         # quá hạn chỉnh sửa (> 4 ngày so với hôm nay): khóa mọi người, trừ Quản trị / Quản lý Checklist
         locked_expired = self._is_expired() and not (is_admin or user.has_group('store_checklist.group_store_manager'))
         chain = self._approval_chain()
-        # bước đang đến lượt: phiếu đã gửi -> cấp kế tiếp; phiếu còn "Đang thực hiện" -> cấp đầu tiên được đánh giá luôn (tự chuyển sang giai đoạn đánh giá)
+        # bước đang đến lượt: phiếu đã gửi -> cấp kế tiếp; phiếu còn "Đang thực hiện" -> cấp đầu tiên chỉ được đánh giá khi
+        # người thực hiện đã làm xong mọi công việc (chưa làm xong thì cấp trên chưa được tích đánh giá; Quản trị viên vẫn được)
+        staff_done = bool(self.line_ids) and all(self.line_ids.mapped('is_done'))
+        wait_staff = self.state == 'draft' and bool(chain) and not staff_done
         if self.state == 'pending_review' and self.step_done < len(chain):
             cur = self.step_done + 1
-        elif self.state == 'draft' and chain:
+        elif self.state == 'draft' and chain and (staff_done or is_admin):
             cur = 1
         else:
             cur = 0
@@ -357,7 +360,7 @@ class StoreNvbhCheckRole(models.Model):
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit))
         first = steps[0] if steps else {}
         return {
-            'chain': steps, 'cur': cur, 'role_code': code, 'level': level, 'subject': subject,
+            'chain': steps, 'cur': cur, 'wait_staff': wait_staff, 'role_code': code, 'level': level, 'subject': subject,
             'reviewer': first.get('employee') or self.env['hr.employee'], 'reviewer_user': first.get('user') or self.env['res.users'],
             # tick / ghi chú: chỉ khi đang thực hiện (sau khi gửi cấp trên thì khóa)
             'can_execute': may_execute and self.state == 'draft' and not locked_expired,
@@ -411,6 +414,8 @@ class StoreNvbhCheckRole(models.Model):
             'can_execute': info['can_execute'],
             'can_submit': info['can_submit'],
             'locked_expired': info['locked_expired'],
+            'wait_staff': info['wait_staff'],
+            'staff_done': len(self.line_ids.filtered('is_done')), 'staff_total': len(self.line_ids),
             'edit_deadline': self._edit_cutoff().strftime('%d/%m/%Y'),
             'reviewer_name': steps[0]['employee'].name if steps and steps[0]['employee'] else '',
             'reviewer_role': steps[0]['code'] if steps else '',
@@ -473,7 +478,8 @@ class StoreNvbhCheckRole(models.Model):
             if info['locked_expired']:
                 raise AccessError(check._expired_message())
             if check.state == 'draft':
-                raise AccessError(_('Phiếu chưa được gửi cấp trên đánh giá.'))
+                raise AccessError(_('Nhân viên chưa hoàn thành checklist (%s/%s công việc) nên cấp trên chưa được đánh giá.')
+                                  % (len(check.line_ids.filtered('is_done')), len(check.line_ids)))
             if check.state == 'approved':
                 raise AccessError(_('Phiếu đã hoàn tất đánh giá và bị khóa.'))
             raise AccessError(_('Chưa đến lượt hoặc bạn không phải người được phân công đánh giá ở cấp này '

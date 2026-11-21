@@ -109,6 +109,9 @@ export class StoreCheckViewDialog extends Component {
             const cur = this.steps.find((s) => s.current);
             return `Người thực hiện: ${who} · Đang chờ: ${cur ? cur.code + (cur.name ? " (" + cur.name + ")" : "") : "—"} · Luồng: ${flow}`;
         }
+        if (m.wait_staff) {
+            return `Người thực hiện: ${who} · Chưa hoàn thành checklist (${m.staff_done || 0}/${m.staff_total || 0} công việc) — cấp trên chưa được đánh giá · Luồng đánh giá: ${flow}`;
+        }
         return `Người thực hiện: ${who} · Luồng đánh giá: ${flow}`;
     }
 

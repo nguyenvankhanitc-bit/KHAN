@@ -1803,6 +1803,18 @@
                         </div>
                         <div class="fl_side is-up"><span class="arrow"/><span class="txt">CẤP DƯỚI<br/>BÁO CÁO KHẮC PHỤC &amp; ĐỀ XUẤT</span></div>
                     </div>
+                    <div class="o_store_nvbh_flow o_store_gs_flow_img">
+                        <div class="nf_card">
+                            <div class="nf_head"><i class="fa fa-sitemap"/> Sơ đồ quy trình check list giám sát (GS) cửa hàng
+                                <a class="btn btn-sm btn-outline-secondary" href="/store_checklist/static/src/img/gs_flow.png" target="_blank" title="Mở ảnh kích thước đầy đủ"><i class="fa fa-expand"/> Phóng to</a></div>
+                            <img src="/store_checklist/static/src/img/gs_flow.png" alt="Sơ đồ quy trình check list giám sát cửa hàng"/>
+                        </div>
+                        <div class="nf_card">
+                            <div class="nf_head"><i class="fa fa-refresh"/> Vòng đời xử lý một lỗi
+                                <a class="btn btn-sm btn-outline-secondary" href="/store_checklist/static/src/img/gs_error_cycle.png" target="_blank" title="Mở ảnh kích thước đầy đủ"><i class="fa fa-expand"/> Phóng to</a></div>
+                            <img src="/store_checklist/static/src/img/gs_error_cycle.png" alt="Vòng đời xử lý một lỗi sau khi giám sát ghi nhận"/>
+                        </div>
+                    </div>
                 </div>
                 <div class="o_store_personal o_store_storerep" t-elif="state.activeNav === 'report_store' and state.storeReport">
                     <t t-set="sr" t-value="state.storeReport"/>

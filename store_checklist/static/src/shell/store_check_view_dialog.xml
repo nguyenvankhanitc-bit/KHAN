@@ -21,6 +21,14 @@
                     <span class="k errors"><i class="fa fa-exclamation-triangle"/> Tổng số lỗi: <b t-esc="errorTotal"/></span>
                     <span class="k points"><i class="fa fa-star"/> Tổng điểm đạt: <b t-esc="points"/> / <t t-esc="props.payload.max_points"/></span>
                 </div>
+                <!-- Điện thoại: tiêu đề bảng bị ẩn (bảng chuyển thành thẻ) nên nút Tất cả của từng cấp đánh giá đặt ở đây -->
+                <div class="o_store_sx_mall" t-if="steps.length">
+                    <label t-foreach="steps" t-as="st" t-key="st.no" t-att-class="'sx-all sx-head ' + stepClass(st_index) + (st.can_edit ? '' : ' is-off')"
+                           t-att-title="st.can_edit ? 'Tích: tất cả hạng mục, tất cả công việc = Đạt · Bỏ tích: xóa kết quả của cấp này' : 'Chưa đến lượt đánh giá'">
+                        <input type="checkbox" t-att-checked="allGood(st_index)" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllGood(st_index)"/>
+                        <span><t t-esc="st.label"/> · Tất cả Đạt</span>
+                    </label>
+                </div>
                 <table class="o_store_job_table">
                     <thead>
                         <tr>

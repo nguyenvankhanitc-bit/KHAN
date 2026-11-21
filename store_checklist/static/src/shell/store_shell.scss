@@ -3011,3 +3011,16 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_perm_overlap .ov_row{display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #fde68a;}
 .o_store_perm_overlap .fa-exclamation-triangle{color: #d97706;}
 .o_store_perm_table .o_store_perm_other{margin-left: 4px; color: #d97706; cursor: help;}
+
+/* Nút Tất cả của cấp đánh giá trên điện thoại (máy tính đã có ở tiêu đề cột KQ đánh giá) */
+.o_store_job_page .o_store_sx_mall{display: none;}
+@media (max-width: 767px){
+  .o_store_job_page .o_store_sx_mall{display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 10px;}
+  .o_store_job_page .o_store_sx_mall label.sx-all{display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 8px 14px; border-radius: 10px; border: 1px solid rgba(0, 0, 0, .12); font-weight: 700; font-size: .9rem; color: #14532d; cursor: pointer; flex: 1 1 auto;}
+  .o_store_job_page .o_store_sx_mall label.sx-all.sx-1{background: #fde047;}
+  .o_store_job_page .o_store_sx_mall label.sx-all.sx-2{background: #a9d18e;}
+  .o_store_job_page .o_store_sx_mall label.sx-all.sx-3{background: #9dc3e6;}
+  .o_store_job_page .o_store_sx_mall label.sx-all.sx-4{background: #f4b183;}
+  .o_store_job_page .o_store_sx_mall label.sx-all input{width: 18px; height: 18px; margin: 0;}
+  .o_store_job_page .o_store_sx_mall label.sx-all.is-off{opacity: .55; cursor: not-allowed;}
+}

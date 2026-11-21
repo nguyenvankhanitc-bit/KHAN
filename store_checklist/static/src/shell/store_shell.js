@@ -3727,6 +3727,29 @@ export class StoreChecklistShell extends Component {
         return Object.values(r.perms[key]).every(Boolean);
     }
 
+    // Các nhóm quyền KHÁC có chung user với nhóm đang sửa (quyền được cộng dồn: chỉ cần một nhóm cho phép là user thấy)
+    get permOverlaps() {
+        const e = this.state.permEdit;
+        if (!e) {
+            return [];
+        }
+        const ids = new Set(e.users.map((u) => u.id));
+        return (this.state.perm?.rules || [])
+            .filter((r) => r.id !== e.id)
+            .map((r) => ({ rule: r, users: r.users.filter((u) => ids.has(u.id)) }))
+            .filter((o) => o.users.length)
+            .map((o) => ({ ...o, label: o.rule.group || o.rule.users.map((u) => u.name).join(", ") }));
+    }
+
+    // tên các nhóm khác đang cho phép quyền này (cho user của nhóm đang sửa)
+    permOtherGrant(key, op) {
+        return this.permOverlaps.filter((o) => o.rule.perms?.[key]?.[op]).map((o) => o.label);
+    }
+
+    onPermOpenOther(rule) {
+        this.onPermOpen(rule);
+    }
+
     // Mở popup thiết lập: sửa bản sao, chỉ ghi khi bấm "Lưu thay đổi"
     onPermOpen(rule) {
         const perms = {};

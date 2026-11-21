@@ -3005,3 +3005,9 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* Popup checklist: tiêu đề khối đánh giá (CHT / ASM...) canh giữa, chữ tự co vừa ô, không xuống dòng */
 .o_store_job_page .o_store_job_table thead th.sx-head{text-align: center !important; vertical-align: middle; white-space: nowrap; font-size: clamp(.74rem, .9vw, .92rem); padding-left: 6px; padding-right: 6px;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all{margin-left: 6px;}
+
+/* Thiết lập quyền nhóm: cảnh báo user thuộc nhiều nhóm quyền */
+.o_store_perm_overlap{margin-top: 8px; padding: 8px 10px; border: 1px solid #fcd34d; background: #fffbeb; border-radius: 8px; color: #92400e; font-size: .82rem;}
+.o_store_perm_overlap .ov_row{display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #fde68a;}
+.o_store_perm_overlap .fa-exclamation-triangle{color: #d97706;}
+.o_store_perm_table .o_store_perm_other{margin-left: 4px; color: #d97706; cursor: help;}

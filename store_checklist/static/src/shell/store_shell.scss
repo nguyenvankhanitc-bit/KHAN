@@ -2987,3 +2987,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* BC Hiệu suất NVBH: cột ID */
 .o_store_perf_page .perf_table th.perf_id, .o_store_perf_page .perf_table td.perf_id{width: 90px; white-space: nowrap; font-weight: 600;}
 .o_store_perf_page .perf_table .asm_staff_row td.perf_id{padding-left: 8px;}
+
+/* Nút All ở tiêu đề KQ đánh giá (popup checklist): tích chọn Đạt cho tất cả hạng mục */
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all{display: inline-flex; align-items: center; gap: 4px; margin: 0 0 0 10px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .75); border: 1px solid rgba(0, 0, 0, .15); font-size: .8rem; font-weight: 700; color: #166534; cursor: pointer; vertical-align: middle;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all input{margin: 0; cursor: pointer;}

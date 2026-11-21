@@ -199,6 +199,25 @@ export class StoreCheckViewDialog extends Component {
         }
     }
 
+    // nút All ở tiêu đề KQ đánh giá: tích = mọi hạng mục / mọi công việc đều Đạt; bỏ tích = xóa kết quả của cấp này
+    allGood(k) {
+        const lines = this.state.lines;
+        return lines.length > 0 && lines.every((l) => l.ev[k].result === "good");
+    }
+
+    setAllGood(k) {
+        if (!this.canEditStep(k)) {
+            return;
+        }
+        const clear = this.allGood(k);
+        for (const line of this.state.lines) {
+            line.ev[k].result = clear ? "" : "good";
+            if (!clear) {
+                line.ev[k].reviewer_id = this.steps[k].user_id || line.ev[k].reviewer_id;
+            }
+        }
+    }
+
     // nhập chi tiết lỗi thì KQ đánh giá tự chuyển về Không đạt
     setDetail(line, k, ev) {
         if (!this.canEditStep(k)) {

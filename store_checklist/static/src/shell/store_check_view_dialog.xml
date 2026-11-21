@@ -31,7 +31,11 @@
                         <tr>
                             <t t-foreach="steps" t-as="st" t-key="st.no">
                                 <th t-att-class="'c sx-head ' + stepClass(st_index)">Người đánh giá</th>
-                                <th t-att-class="'c sx-head ' + stepClass(st_index)">KQ đánh giá</th>
+                                <th t-att-class="'c sx-head ' + stepClass(st_index)">KQ đánh giá
+                                    <label class="sx-all" t-if="st.can_edit" title="Tích: tất cả hạng mục, tất cả công việc = Đạt · Bỏ tích: xóa kết quả của cấp này">
+                                        <input type="checkbox" t-att-checked="allGood(st_index)" t-on-change="() => this.setAllGood(st_index)"/> All
+                                    </label>
+                                </th>
                                 <th t-att-class="'sx-head ' + stepClass(st_index)">Chi tiết lỗi</th>
                             </t>
                         </tr>

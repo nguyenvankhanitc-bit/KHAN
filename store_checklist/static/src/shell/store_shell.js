@@ -219,10 +219,10 @@ export class StoreChecklistShell extends Component {
                     { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh" },
                     // Mục con của Checklist NVBH: bấm là mở popup nhập thông tin nhân sự (không đổi màn hình), dùng quyền của mục NVBH
                     { id: "nvbh_staff", label: "Nhân sự", icon: "fa-id-badge", sub: true, permId: "nvbh_staff", action: "store_checklist.action_store_nvbh_staff" },
-                    // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
-                    { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh_jobs", action: "store_checklist.action_store_nvbh_jobs" },
                     // Ca làm việc của ngày hôm nay (lấy từ Lịch xếp ca), nhóm theo Miền / Cửa hàng
                     { id: "nvbh_today", label: "Lịch ca hôm nay", icon: "fa-calendar-check-o", sub: true, permId: "nvbh_today", action: "store_checklist.action_store_nvbh_today" },
+                    // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
+                    { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh_jobs", action: "store_checklist.action_store_nvbh_jobs" },
                     // Danh sách nhân viên đã check list (đã bấm Lưu); bấm vào tên để xem nội dung
                     { id: "nvbh_done", label: "Danh sách checklist NV", icon: "fa-check-square-o", sub: true, permId: "nvbh_done", action: "store_checklist.action_store_nvbh_done" },
                     // Quản lý & đánh giá checklist NVBH: 2 tab Bảng Nhân viên (theo tháng) / Bảng Đánh giá (theo ngày)

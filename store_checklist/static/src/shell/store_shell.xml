@@ -434,7 +434,7 @@
                                     <thead>
                                         <tr>
                                             <th>Ngày</th><th>Cửa hàng</th><th>Mã ca</th><th>Trạng thái ngày</th>
-                                            <th>Tổng việc ca</th><th>Đã làm</th><th>Số lỗi</th><th title="Số giờ của mã ca (Danh mục ca làm việc)">Tổng giờ</th><th>Điểm đạt</th><th>Điểm chuẩn ca</th><th>Điểm CHT đánh giá</th><th>Điểm ASM đánh giá</th><th>Tỷ lệ đạt (%)</th>
+                                            <th>Tổng việc ca</th><th>Đã làm</th><th>Số lỗi</th><th title="Số giờ của mã ca (Danh mục ca làm việc)">Tổng giờ</th><th>Điểm đạt</th><th>Điểm chuẩn ca</th><th>Điểm CHT đánh giá</th><th>Điểm ASM đánh giá</th><th title="Số lỗi CHT ghi ở cột Chi tiết lỗi (mỗi dòng một lỗi)">Lỗi CHT đánh giá</th><th title="Số lỗi ASM ghi ở cột Chi tiết lỗi (mỗi dòng một lỗi)">Lỗi ASM đánh giá</th><th>Tỷ lệ đạt (%)</th>
                                             <th>Kết quả</th><th class="note">Ghi chú / Tóm tắt công việc</th><th>Thao tác</th>
                                         </tr>
                                     </thead>
@@ -452,6 +452,8 @@
                                             <td t-esc="fmtNum(r.max_points)"/>
                                             <td t-att-class="r.pts_cht == null ? '' : 'pts_red'" t-esc="r.pts_cht == null ? '-' : fmtNum(r.pts_cht)"/>
                                             <td t-att-class="r.pts_asm == null ? '' : 'pts_red'" t-esc="r.pts_asm == null ? '-' : fmtNum(r.pts_asm)"/>
+                                            <td t-att-class="r.err_cht ? 'warn' : ''" t-esc="r.err_cht == null ? '-' : r.err_cht"/>
+                                            <td t-att-class="r.err_asm ? 'warn' : ''" t-esc="r.err_asm == null ? '-' : r.err_asm"/>
                                             <td><t t-if="r.kind === 'off' or r.evaluated"><t t-esc="fmtNum(r.pct)"/>%</t><t t-else="">-</t></td>
                                             <td t-att-class="(r.id and !r.evaluated) ? 'warn' : ''" t-esc="r.control"/>
                                             <td class="note"><span class="clamp" t-att-title="r.note" t-esc="r.note || '-'"/></td>
@@ -469,6 +471,8 @@
                                             <td title="Công thức: SUM(Điểm chuẩn ca) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.max_points)"/>
                                             <td title="Công thức: AVERAGE(Điểm CHT đánh giá) — trung bình các ngày CHT đã chấm đủ" t-att-class="state.done.monthly.total.avg_cht == null ? '' : 'pts_red'" t-esc="state.done.monthly.total.avg_cht == null ? '-' : fmtNum(state.done.monthly.total.avg_cht)"/>
                                             <td title="Công thức: AVERAGE(Điểm ASM đánh giá) — trung bình các ngày ASM đã chấm đủ" t-att-class="state.done.monthly.total.avg_asm == null ? '' : 'pts_red'" t-esc="state.done.monthly.total.avg_asm == null ? '-' : fmtNum(state.done.monthly.total.avg_asm)"/>
+                                            <td title="Công thức: SUM(Lỗi CHT đánh giá) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.err_cht || 0)"/>
+                                            <td title="Công thức: SUM(Lỗi ASM đánh giá) — cộng tất cả các ngày" t-esc="fmtNum(state.done.monthly.total.err_asm || 0)"/>
                                             <td title="Công thức: AVERAGE(Tỷ lệ đạt %) — trung bình tỷ lệ đạt (Điểm đạt ÷ Điểm chuẩn ca) của các ngày đã đánh giá xong"><t t-if="state.done.monthly.total.avg_pct == null">-</t><t t-else=""><t t-esc="fmtNum(state.done.monthly.total.avg_pct)"/>%</t></td>
                                             <td title="Số ngày đã đánh giá xong / số ngày công thực tế"><t t-esc="state.done.monthly.total.valid"/>/<t t-esc="state.done.monthly.total.days"/> công hợp lệ</td>
                                             <td class="note">Tự động liên kết sang dữ liệu Odoo</td>

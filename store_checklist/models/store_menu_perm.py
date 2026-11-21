@@ -184,13 +184,44 @@ class StorePermRule(models.Model):
     def save_rules(self, rules):
         """rules: danh sách đầy đủ [{id|0, group, user_ids, perms}]; dòng không còn trong danh sách bị xóa."""
         self._manager_only()
-        keep = self.sudo().browse([r['id'] for r in rules if r.get('id')])
+        # mỗi user chỉ thuộc MỘT nhóm quyền: user có ở nhiều nhóm thì giữ ở nhóm đứng sau cùng trong danh sách
+        # (nhóm vừa sửa luôn được gửi cuối), các nhóm còn lại tự gỡ user đó; nhóm bị gỡ hết user thì xóa
+        owner = {}
+        for idx in range(len(rules) - 1, -1, -1):
+            for uid in rules[idx].get('user_ids') or []:
+                owner.setdefault(uid, idx)
+        cleaned = []
+        for idx, r in enumerate(rules):
+            had = r.get('user_ids') or []
+            uids = [u for u in had if owner.get(u) == idx]
+            if had and not uids:
+                continue  # mọi user đã chuyển sang nhóm khác
+            cleaned.append(dict(r, user_ids=uids))
+        keep = self.sudo().browse([r['id'] for r in cleaned if r.get('id')])
         (self.sudo().search([]) - keep).unlink()
-        for r in rules:
+        for r in cleaned:
             vals = {'group_label': r.get('group') or False, 'perms': r.get('perms') or {},
                     'user_ids': [(6, 0, r.get('user_ids') or [])]}
             if r.get('id'):
                 self.sudo().browse(r['id']).write(vals)
             else:
                 self.sudo().create(vals)
+        return True
+
+    @api.model
+    def _dedupe_rule_users(self):
+        """Dữ liệu cũ: user thuộc nhiều nhóm quyền thì chỉ giữ ở nhóm có nhiều user nhất (bằng nhau: nhóm mới nhất);
+        nhóm không còn user nào thì xóa. Chạy mỗi lần nâng cấp, không đổi gì nếu dữ liệu đã đúng."""
+        rules = self.sudo().search([])
+        best = {}
+        for r in rules.sorted(lambda x: (len(x.user_ids), x.id), reverse=True):
+            for u in r.user_ids:
+                best.setdefault(u.id, r.id)
+        for r in rules:
+            drop = r.user_ids.filtered(lambda u: best.get(u.id) != r.id)
+            if drop:
+                if drop == r.user_ids:
+                    r.unlink()
+                else:
+                    r.write({'user_ids': [(3, u.id) for u in drop]})
         return True

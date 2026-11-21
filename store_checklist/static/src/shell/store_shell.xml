@@ -1324,8 +1324,9 @@
                                     </div>
                                     <small class="text-muted">Áp dụng cho: <t t-esc="state.permEdit.users.length"/> User</small>
                                     <div class="o_store_perm_overlap" t-if="permOverlaps.length">
-                                        <div><i class="fa fa-exclamation-triangle"/> <b>Lưu ý:</b> user dưới đây còn thuộc nhóm quyền khác. Quyền được <b>cộng dồn</b> — chỉ cần một nhóm cho phép là user vẫn thấy chức năng đó
-                                            (ô có dấu <i class="fa fa-info-circle"/> là quyền đang được mở từ nhóm khác).</div>
+                                        <div><i class="fa fa-exclamation-triangle"/> <b>Lưu ý:</b> mỗi user chỉ thuộc <b>một</b> nhóm quyền. User dưới đây đang ở nhóm khác —
+                                            bấm <b>Lưu thay đổi</b> thì sẽ được <b>chuyển sang nhóm này</b> và chỉ còn đúng quyền đang tích ở đây
+                                            (ô có dấu <i class="fa fa-info-circle"/> là quyền nhóm cũ đang mở, sẽ mất sau khi lưu nếu không tích).</div>
                                         <div class="ov_row" t-foreach="permOverlaps" t-as="o" t-key="o.rule.id">
                                             <span><t t-esc="o.users.map((u) => u.name).join(', ')"/> → nhóm "<b t-esc="o.label"/>"</span>
                                             <button type="button" class="btn btn-sm btn-outline-warning" t-on-click="() => this.onPermOpenOther(o.rule)"
@@ -1351,7 +1352,7 @@
                                             <td t-foreach="permOps" t-as="op" t-key="op[0]">
                                                 <input type="checkbox" t-att-checked="state.permEdit.perms[m.key][op[0]]" t-on-change="(ev) => this.onPermToggle(m.key, op[0], ev)"/>
                                                 <t t-set="og" t-value="state.permEdit.perms[m.key][op[0]] ? [] : permOtherGrant(m.key, op[0])"/>
-                                                <i t-if="og.length" class="fa fa-info-circle o_store_perm_other" t-att-title="'Đang có quyền này từ nhóm: ' + og.join('; ')"/>
+                                                <i t-if="og.length" class="fa fa-info-circle o_store_perm_other" t-att-title="'Nhóm cũ đang mở quyền này: ' + og.join('; ') + ' — lưu nhóm này mà không tích thì user sẽ mất quyền'"/>
                                             </td>
                                             <td><input type="checkbox" t-att-checked="permAll(state.permEdit, m.key)" t-on-change="(ev) => this.onPermToggle(m.key, 'all', ev)"/></td>
                                         </tr></t>

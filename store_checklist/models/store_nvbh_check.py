@@ -573,7 +573,7 @@ class StoreNvbhCheck(models.Model):
         for i in range(days_in_month):
             day = start + timedelta(days=i)
             base_row = {'date': day.strftime('%d/%m/%Y'), 'weekday': weekdays[day.weekday()], 'pts_cht': None, 'pts_asm': None,
-                        'err_cht': None, 'err_asm': None}
+                        'err_cht': None, 'err_asm': None, 'txt_cht': None, 'txt_asm': None}
             items = by_date.get(day)
             if not items:
                 line = sched_by_date.get(day)
@@ -627,8 +627,9 @@ class StoreNvbhCheck(models.Model):
                 store_name = store_name or (c.store_id.display_name or '')
                 pts_cht, pts_asm = c._step_points('CHT'), c._step_points('ASM')
                 err_cht, err_asm = c._step_errors('CHT'), c._step_errors('ASM')
+                txt_cht, txt_asm = c._step_error_text('CHT'), c._step_error_text('ASM')
                 rows.append(dict(
-                    base_row, pts_cht=pts_cht, pts_asm=pts_asm, err_cht=err_cht, err_asm=err_asm, kind='error' if (c.error_total or not done_all or (evaluated and c.points < mp)) else 'ok',
+                    base_row, pts_cht=pts_cht, pts_asm=pts_asm, err_cht=err_cht, err_asm=err_asm, txt_cht=txt_cht, txt_asm=txt_asm, kind='error' if (c.error_total or not done_all or (evaluated and c.points < mp)) else 'ok',
                     evaluated=evaluated, id=c.id, code=c.name or '-',
                     store=c.store_id.display_name or '',
                     shift=c.shift_id.code or '-', hours=c.shift_id.hours or 0.0,
@@ -765,13 +766,13 @@ class StoreNvbhCheck(models.Model):
             rows = [[r['date'], r['store'] or '-', 'OFF' if r['kind'] == 'off' else r['shift'], r['status'], r['total'], r['done'], r['errors'],
                      r.get('hours') or 0, r['points'] if (r['kind'] == 'off' or r.get('evaluated')) else '-', r['max_points'],
                      '-' if r.get('pts_cht') is None else r['pts_cht'], '-' if r.get('pts_asm') is None else r['pts_asm'],
-                     '-' if r.get('err_cht') is None else r['err_cht'], '-' if r.get('err_asm') is None else r['err_asm'],
+                     r.get('txt_cht') or '-', r.get('txt_asm') or '-',
                      ('%s%%' % ('%g' % r['pct']).replace('.', ',')) if (r['kind'] == 'off' or r.get('evaluated')) else '-', r['control'], r['note'] or '-']
                     for r in data['rows'] if not (only_work and r['kind'] == 'off')]
             foot = ['TỔNG CỘNG KỲ %s (%s ngày công thực tế)' % (label, tot.get('days', 0)), '', '', '', tot.get('total', 0), tot.get('done', 0),
                     tot.get('errors', 0), tot.get('hours', 0), tot.get('avg_points') if tot.get('avg_points') is not None else '-', tot.get('max_points', 0),
                     tot.get('avg_cht') if tot.get('avg_cht') is not None else '-', tot.get('avg_asm') if tot.get('avg_asm') is not None else '-',
-                    tot.get('err_cht', 0), tot.get('err_asm', 0),
+                    '%s lỗi' % tot.get('err_cht', 0), '%s lỗi' % tot.get('err_asm', 0),
                     ('%s%%' % ('%g' % tot['avg_pct']).replace('.', ',')) if tot.get('avg_pct') is not None else '-',
                     '%s/%s công hợp lệ' % (tot.get('valid', 0), tot.get('days', 0)), 'Tự động liên kết sang dữ liệu Odoo']
             sheets.append({'name': name, 'title': 'BẢNG CHECKLIST TỔNG', 'subtitle': 'Nhân viên: %s | Tháng: %s' % (name, label),

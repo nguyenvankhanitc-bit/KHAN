@@ -535,6 +535,25 @@ class StoreNvbhCheckRole(models.Model):
             return sum(count_errors(l[pre + 'error_detail']) for l in lines)
         return None
 
+    def _step_error_text(self, code):
+        """Nội dung Chi tiết lỗi do cấp `code` (CHT / ASM / RSM) ghi nhận, dạng "Tên công việc: lỗi" (mỗi lỗi một dòng);
+        None nếu phiếu không có cấp đó hoặc cấp đó chưa đánh giá dòng nào."""
+        self.ensure_one()
+        for i, st in enumerate(self._approval_chain(), 1):
+            if st['code'] != code:
+                continue
+            pre = STEP_PREFIX[i - 1]
+            lines = self.line_ids.sorted(lambda l: (l.sequence, l.id))
+            if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
+                return None
+            out = []
+            for l in lines:
+                for ln in (l[pre + 'error_detail'] or '').splitlines():
+                    if ln.strip():
+                        out.append('%s: %s' % (l.name, ln.strip()))
+            return chr(10).join(out)
+        return None
+
     def _finish_step(self, step_no, step, chain):
         """Hoàn tất một cấp: ghi lịch sử, khóa cấp đó, chuyển cho cấp tiếp theo hoặc hoàn tất phiếu."""
         self.ensure_one()

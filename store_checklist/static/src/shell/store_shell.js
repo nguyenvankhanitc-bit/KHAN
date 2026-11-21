@@ -249,6 +249,7 @@ export class StoreChecklistShell extends Component {
                     { id: "report_rank", label: "Báo cáo xếp loại Audit CH", icon: "fa-trophy" },
                     { id: "report_manager", label: "Báo cáo theo quản lý", icon: "fa-user" },
                     { id: "report_flow", label: "Sơ đồ quy trình vận hành giám sát", icon: "fa-sitemap" },
+                    { id: "report_flow_nvbh", label: "Sơ đồ quy trình checklist NVBH", icon: "fa-random" },
                 ],
             },
             {
@@ -2314,7 +2315,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get canExport() {
-        return !["report_flow", "nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) && (!this.state.rights || Boolean(this.state.rights[this.permKey]?.export));
+        return !["report_flow", "report_flow_nvbh", "nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) && (!this.state.rights || Boolean(this.state.rights[this.permKey]?.export));
     }
 
     get showListFilters() {
@@ -2389,6 +2390,7 @@ export class StoreChecklistShell extends Component {
             report_manager: "BÁO CÁO THEO QUẢN LÝ",
             report_sup: "BÁO CÁO GIÁM SÁT",
             report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH GIÁM SÁT",
+            report_flow_nvbh: "SƠ ĐỒ QUY TRÌNH CHECK LIST NHÂN VIÊN BÁN HÀNG",
         }[this.state.activeNav] || "";
     }
 
@@ -3866,6 +3868,12 @@ export class StoreChecklistShell extends Component {
         }
         if (navId === "report_nvbh_perf") {
             return this.openPerfPage();
+        }
+        if (navId === "report_flow_nvbh") {
+            this.state.activeNav = "report_flow_nvbh";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            return;
         }
         if (navId === "nvbh_done") {
             return this.openDonePage();

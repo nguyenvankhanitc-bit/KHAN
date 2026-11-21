@@ -32,6 +32,7 @@ MENUS = [
     ('report_rank', 'Báo cáo xếp loại Audit CH', 'report'),
     ('report_manager', 'Báo cáo theo quản lý', 'report'),
     ('report_flow', 'Sơ đồ quy trình vận hành giám sát', 'report'),
+    ('report_flow_nvbh', 'Sơ đồ quy trình checklist NVBH', 'report'),
     ('violation_stores', 'Cửa hàng sai phạm', 'violation'),
     ('violation_all', 'Danh sách xử lý sai phạm', 'violation'),
     ('subgroup', 'Phân nhóm đánh giá', 'evaluation'),
@@ -50,7 +51,8 @@ PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
     'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
-    'report_nvbh_perf': 'report_nvbh_asm',  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
+    'report_nvbh_perf': 'report_nvbh_asm',
+    'report_flow_nvbh': 'report_flow',  # Sơ đồ quy trình checklist NVBH: mặc định theo quyền Sơ đồ quy trình vận hành giám sát  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
 NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 

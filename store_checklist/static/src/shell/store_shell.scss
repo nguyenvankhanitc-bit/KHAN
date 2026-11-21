@@ -3024,3 +3024,15 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
   .o_store_job_page .o_store_sx_mall label.sx-all input{width: 18px; height: 18px; margin: 0;}
   .o_store_job_page .o_store_sx_mall label.sx-all.is-off{opacity: .55; cursor: not-allowed;}
 }
+
+/* Sơ đồ quy trình checklist NVBH (mục Báo cáo) */
+.o_store_nvbh_flow{display: flex; flex-direction: column; gap: 16px; padding: 4px 0 16px;}
+.o_store_nvbh_flow .nf_card{background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04);}
+.o_store_nvbh_flow .nf_head{display: flex; align-items: center; gap: 8px; font-weight: 700; color: #163363; margin-bottom: 10px;}
+.o_store_nvbh_flow .nf_head .btn{margin-left: auto;}
+.o_store_nvbh_flow img{display: block; width: 100%; max-width: 1100px; height: auto; margin: 0 auto;}
+.o_store_nvbh_flow .nf_rules{width: 100%; max-width: 1100px; margin: 14px auto 0; border-collapse: collapse; font-size: .9rem;}
+.o_store_nvbh_flow .nf_rules th{background: #1e3a6e; color: #fff; padding: 8px 10px; text-align: left;}
+.o_store_nvbh_flow .nf_rules td{border: 1px solid #e2e8f0; padding: 8px 10px; vertical-align: top;}
+.o_store_nvbh_flow .nf_rules td.bad{background: #fee2e2; color: #b91c1c; font-weight: 600;}
+.o_store_nvbh_flow .nf_rules td.warn{background: #fef3c7; color: #b45309; font-weight: 600;}

@@ -183,6 +183,14 @@ class StoreAuditSubGroup(models.Model):
     audit_type = fields.Selection(AUDIT_TYPES, string='Loại checklist', required=True, default='nvbh')
     sequence = fields.Integer(string='STT', default=10)
 
+    def write(self, vals):
+        res = super().write(vals)
+        if 'sequence' in vals or 'category' in vals or 'category_id' in vals:
+            # đổi thứ tự / nhóm của phân nhóm: đánh lại STT tiêu chí của các mẫu có dùng phân nhóm này
+            Line = self.env['store.audit.template.line'].sudo()
+            Line._renumber(templates=Line.search([('sub_group_id', 'in', self.ids)]).mapped('template_id'))
+        return res
+
     def action_edit_popup(self):
         """Nút bút chì trên dòng nhóm của bảng Điểm chuẩn: sửa tên / nhóm tiêu chí / STT của Phân nhóm trong popup."""
         self.ensure_one()
@@ -213,7 +221,9 @@ class StoreAuditTemplateLine(models.Model):
     _order = 'sequence, id'
 
     template_id = fields.Many2one('store.audit.template', required=True, ondelete='cascade')
-    sequence = fields.Integer(string='STT', default=0, help='Để trống: tự lấy số tiếp theo trong phân nhóm')
+    sequence = fields.Integer(string='STT', default=0,
+                              help='Hệ thống tự đánh số liên tục 1, 2, 3... theo nhóm A, B, C. Để trống: thêm vào cuối nhóm; '
+                                   'nhập số: chèn vào vị trí đó trong nhóm.')
     category = fields.Selection(category_selection, string='Nhóm tiêu chí', required=True)
     sub_group_id = fields.Many2one('store.audit.sub.group', string='Phân nhóm', ondelete='restrict')
     audit_type = fields.Selection(related='template_id.audit_type', string='Loại checklist')
@@ -387,37 +397,51 @@ class StoreAuditTemplateLine(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        # STT để trống: lấy số tiếp theo (lớn nhất + 1) trong cùng mẫu + phân nhóm (chưa có phân nhóm thì theo nhóm tiêu chí)
-        nxt = {}
+        # STT để trống: đưa xuống cuối phân nhóm; sau đó đánh lại STT liên tục cho cả mẫu
         for vals in vals_list:
-            if vals.get('sequence'):
-                continue
-            vals = self._map_category_vals(vals)
-            if vals.get('sub_group_id'):
-                key = ('sub_group_id', vals['sub_group_id'])
-            elif vals.get('category'):
-                key = ('category', vals['category'])
-            else:
-                continue
-            tid = vals.get('template_id') or self.env.context.get('default_template_id')
-            k = (tid, key)
-            if k not in nxt:
-                dom = [(key[0], '=', key[1])]
-                if tid:
-                    dom.append(('template_id', '=', tid))
-                last = self.sudo().search(dom, order='sequence desc', limit=1)
-                nxt[k] = last.sequence or 0
-            nxt[k] += 1
-            vals['sequence'] = nxt[k]
+            if not vals.get('sequence'):
+                vals['sequence'] = 10 ** 6
         lines = super().create(vals_list)
         lines._auto_sub_group()
+        lines._renumber(moved=lines.filtered(lambda l: l.sequence < 10 ** 6))
         return lines
 
     def write(self, vals):
         res = super().write(vals)
+        if self.env.context.get('skip_renumber'):
+            return res
         if 'category' in vals or 'category_id' in vals or 'sub_group_id' in vals:
             self._auto_sub_group()
+        if {'sequence', 'category', 'category_id', 'sub_group_id', 'template_id'} & set(vals):
+            self._renumber(moved=self if 'sequence' in vals else self.browse())
         return res
+
+    def unlink(self):
+        templates = self.mapped('template_id')
+        res = super().unlink()
+        self._renumber(templates=templates)
+        return res
+
+    def _renumber(self, templates=None, moved=None):
+        """Đánh lại STT liên tục 1..N trong mỗi mẫu checklist: theo thứ tự nhóm tiêu chí (A, B, C...), rồi phân nhóm,
+        rồi STT hiện tại. Dòng vừa nhập STT (moved) được chèn trước dòng đang giữ số đó."""
+        templates = (templates if templates is not None else self.mapped('template_id')).exists()
+        if not templates:
+            return
+        cat_idx = {k: i for i, (k, _l) in enumerate(category_list(self.env))}
+        moved_ids = set((moved or self.browse()).ids)
+        for tmpl in templates.sudo():
+            lines = self.sudo().search([('template_id', '=', tmpl.id)])
+            ordered = lines.sorted(lambda l: (
+                cat_idx.get(l.category, len(cat_idx)), l.sub_group_id.sequence or 0, l.sub_group_id.id or 0,
+                l.sequence, 0 if l.id in moved_ids else 1, l.id))
+            for i, line in enumerate(ordered, 1):
+                if line.sequence != i:
+                    line.with_context(skip_renumber=True).write({'sequence': i})
+
+    @api.model
+    def _renumber_all(self):
+        self._renumber(templates=self.env['store.audit.template'].sudo().with_context(active_test=False).search([]))
 
     def _auto_sub_group(self):
         """Tiêu chí thuộc nhóm tự thêm (D, E...) mà chưa chọn Phân nhóm: tự gán phân nhóm cùng tên nhóm (vd. "E. HÀNG HÓA"),

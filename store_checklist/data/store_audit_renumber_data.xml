@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Điểm chuẩn đánh giá: đánh lại STT tiêu chí liên tục 1..N theo nhóm A, B, C trong mỗi mẫu -->
+    <function model="store.audit.template.line" name="_renumber_all"/>
+</odoo>

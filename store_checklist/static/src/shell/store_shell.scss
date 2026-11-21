@@ -3001,3 +3001,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* Popup checklist: dòng có lỗi (Chi tiết lỗi) tô đỏ nhạt để dễ tìm */
 .o_store_job_page .o_store_job_table tr.has-err > td{background: #fef2f2 !important;}
 .o_store_job_page .o_store_job_table tr.has-err textarea.ev-detail{color: #b91c1c; font-weight: 600;}
+
+/* Popup checklist: tiêu đề khối đánh giá (CHT / ASM...) canh giữa, chữ tự co vừa ô, không xuống dòng */
+.o_store_job_page .o_store_job_table thead th.sx-head{text-align: center !important; vertical-align: middle; white-space: nowrap; font-size: clamp(.74rem, .9vw, .92rem); padding-left: 6px; padding-right: 6px;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all{margin-left: 6px;}

@@ -36,7 +36,7 @@
                                         <input type="checkbox" t-att-checked="allGood(st_index)" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllGood(st_index)"/> All
                                     </label>
                                 </th>
-                                <th t-att-class="'sx-head ' + stepClass(st_index)">Chi tiết lỗi</th>
+                                <th t-att-class="'c sx-head ' + stepClass(st_index)">Chi tiết lỗi</th>
                             </t>
                         </tr>
                     </thead>

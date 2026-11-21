@@ -2991,3 +2991,6 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* Nút All ở tiêu đề KQ đánh giá (popup checklist): tích chọn Đạt cho tất cả hạng mục */
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all{display: inline-flex; align-items: center; gap: 4px; margin: 0 0 0 10px; padding: 2px 8px; border-radius: 999px; background: rgba(255, 255, 255, .75); border: 1px solid rgba(0, 0, 0, .15); font-size: .8rem; font-weight: 700; color: #166534; cursor: pointer; vertical-align: middle;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all input{margin: 0; cursor: pointer;}
+
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all.is-off{opacity: .55; cursor: not-allowed;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all.is-off input{cursor: not-allowed;}

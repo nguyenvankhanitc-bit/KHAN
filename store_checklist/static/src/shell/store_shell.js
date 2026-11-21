@@ -1142,6 +1142,9 @@ export class StoreChecklistShell extends Component {
         if (day.empty) {
             return "fa-minus-circle";
         }
+        if (day.state === "draft" && !day.done) {
+            return "fa-circle-o";
+        }
         return day.errors > 0 ? "fa-exclamation-circle" : day.evaluated ? "fa-check-circle" : "fa-clock-o";
     }
 
@@ -1153,7 +1156,8 @@ export class StoreChecklistShell extends Component {
             return "Chưa có";
         }
         if (day.state === "draft") {
-            return "Đang làm";
+            // phiếu chưa gửi: chưa tích việc nào = Chưa check list; đã tích một phần = Đang làm
+            return day.done > 0 ? "Đang làm" : "Chưa check list";
         }
         return day.errors > 0 ? "Lỗi" : day.evaluated ? "Đạt" : "Chờ";
     }

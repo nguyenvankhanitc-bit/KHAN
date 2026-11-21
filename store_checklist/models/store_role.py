@@ -543,14 +543,17 @@ class StoreNvbhCheckRole(models.Model):
             if st['code'] != code:
                 continue
             pre = STEP_PREFIX[i - 1]
-            lines = self.line_ids.sorted(lambda l: (l.sequence, l.id))
+            # cùng thứ tự / STT như popup Checklist công việc (theo nhóm I, II, III... rồi thứ tự công việc)
+            from .store_nvbh_task import TASK_GROUPS
+            order = {label: n for n, (_k, label) in enumerate(TASK_GROUPS)}
+            lines = self.line_ids.sorted(lambda l: (order.get(l.sub_category, len(order)), l.sequence, l.id))
             if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
                 return None
             out = []
-            for l in lines:
+            for stt, l in enumerate(lines, 1):
                 for ln in (l[pre + 'error_detail'] or '').splitlines():
                     if ln.strip():
-                        out.append('%s: %s' % (l.name, ln.strip()))
+                        out.append('STT %d · %s: %s' % (stt, l.name, ln.strip()))
             return chr(10).join(out)
         return None
 

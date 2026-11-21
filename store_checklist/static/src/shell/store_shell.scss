@@ -2997,3 +2997,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 
 /* Bảng checklist Tổng: cột Lỗi CHT / Lỗi ASM đánh giá (nội dung chi tiết lỗi) */
 .o_store_total_table td.err_txt{min-width: 200px; max-width: 280px; text-align: left; color: #b91c1c; white-space: pre-line;}
+
+/* Popup checklist: dòng có lỗi (Chi tiết lỗi) tô đỏ nhạt để dễ tìm */
+.o_store_job_page .o_store_job_table tr.has-err > td{background: #fef2f2 !important;}
+.o_store_job_page .o_store_job_table tr.has-err textarea.ev-detail{color: #b91c1c; font-weight: 600;}

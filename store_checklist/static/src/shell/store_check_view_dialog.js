@@ -115,6 +115,22 @@ export class StoreCheckViewDialog extends Component {
         return `Người thực hiện: ${who} · Luồng đánh giá: ${flow}`;
     }
 
+    // Hạn / khóa theo thời hạn: NVBH đến hết D+4; mỗi cấp đánh giá 4 ngày kể từ khi đến lượt
+    get deadlineText() {
+        const m = this.state.meta;
+        if (m.lock_msg) {
+            return m.lock_msg;
+        }
+        if (m.state === "approved") {
+            return "";
+        }
+        if (m.state === "draft" && m.wait_staff) {
+            return m.staff_deadline ? `Hạn NV check list: hết ngày ${m.staff_deadline}` : "";
+        }
+        const cur = this.steps.find((s) => s.current);
+        return cur && cur.deadline ? `Hạn ${cur.code} đánh giá: hết ngày ${cur.deadline} (quá hạn hệ thống khóa, điểm ${cur.code} tính 0đ)` : "";
+    }
+
     applyPayload(payload) {
         this.state.lines = JSON.parse(JSON.stringify(payload.lines));
         this.state.meta = this.metaOf(payload);

@@ -24,7 +24,9 @@ ROLE_LEVEL_MAP = {
     'QLBH': 6,
 }
 MAX_LEVEL = 6
-EDIT_WINDOW_DAYS = 4  # chỉ được check list / đánh giá trong ngày hôm nay và 3 ngày trước đó (ví dụ hôm nay 19/11 thì lùi được tới 16/11)
+# Thời hạn (tham số hệ thống ghi đè được: store_checklist.staff_window_days / store_checklist.review_window_days)
+EDIT_WINDOW_DAYS = 4    # NVBH: check list từ ngày làm việc (D) đến hết ngày D+4; quá hạn thì khóa, không ghi nhận (0đ)
+REVIEW_WINDOW_DAYS = 4  # mỗi cấp đánh giá (CHT, ASM...): 4 ngày kể từ khi đến lượt; quá hạn thì khóa, điểm cấp đó tính 0đ
 LEVEL1_CODES = [c for c, lv in ROLE_LEVEL_MAP.items() if lv == 1]  # NVBH, NV, NT, NTTT, PT
 # mã dài khớp trước (ASMTT trước ASM, CHTTT trước CHT, NTTT trước NT, GSTT trước GS)
 _CODES_LONG_FIRST = sorted(ROLE_LEVEL_MAP, key=len, reverse=True)
@@ -153,6 +155,8 @@ class StoreNvbhCheckRole(models.Model):
     approved_date = fields.Datetime(string='Hoàn tất đánh giá lúc')
     step_done = fields.Integer(string='Số cấp đã đánh giá xong', default=0)
     step_log_ids = fields.One2many('store.nvbh.check.step', 'check_id', string='Lịch sử đánh giá')
+    staff_done_date = fields.Datetime(string='NV hoàn thành lúc', copy=False,
+                                      help='Lúc nhân viên tích xong mọi công việc: mốc bắt đầu tính hạn đánh giá của cấp đầu tiên (CHT)')
 
     @api.model
     def _user_person_domain(self, on_check=True):
@@ -334,8 +338,11 @@ class StoreNvbhCheckRole(models.Model):
         else:
             # từ Cấp 2: bắt buộc User Odoo cá nhân của chính người đó, tài khoản CH_ bị khóa
             may_execute = own and not shared
-        # quá hạn chỉnh sửa (> 4 ngày so với hôm nay): khóa mọi người, trừ Quản trị / Quản lý Checklist
-        locked_expired = self._is_expired() and not (is_admin or user.has_group('store_checklist.group_store_manager'))
+        # thời hạn: NVBH đến hết ngày D+4; mỗi cấp đánh giá 4 ngày kể từ khi đến lượt. Quá hạn -> hệ thống khóa
+        # (Quản trị / Quản lý Checklist vẫn chỉnh được)
+        privileged = is_admin or user.has_group('store_checklist.group_store_manager')
+        locked_expired = bool(self._late_stage()) and not privileged
+        staff_locked = not privileged and self._staff_late()
         chain = self._approval_chain()
         # bước đang đến lượt: phiếu đã gửi -> cấp kế tiếp; phiếu còn "Đang thực hiện" -> cấp đầu tiên chỉ được đánh giá khi
         # người thực hiện đã làm xong mọi công việc (chưa làm xong thì cấp trên chưa được tích đánh giá; Quản trị viên vẫn được)
@@ -363,26 +370,135 @@ class StoreNvbhCheckRole(models.Model):
             'chain': steps, 'cur': cur, 'wait_staff': wait_staff, 'role_code': code, 'level': level, 'subject': subject,
             'reviewer': first.get('employee') or self.env['hr.employee'], 'reviewer_user': first.get('user') or self.env['res.users'],
             # tick / ghi chú: chỉ khi đang thực hiện (sau khi gửi cấp trên thì khóa)
-            'can_execute': may_execute and self.state == 'draft' and not locked_expired,
-            'can_submit': may_execute and self.state == 'draft' and not locked_expired,
+            'can_execute': may_execute and self.state == 'draft' and not staff_locked and not locked_expired,
+            'can_submit': may_execute and self.state == 'draft' and not staff_locked and not locked_expired,
             'shared': shared,
             'locked_expired': locked_expired,
+            'staff_locked': staff_locked,
         }
+
+    # ------------------------------------------------------------------
+    # Thời hạn: NVBH (ngày D -> hết D+4) · CHT (4 ngày sau khi NV hoàn thành) · ASM (4 ngày sau khi CHT đánh giá xong)
+    # ------------------------------------------------------------------
+    @api.model
+    def _window_days(self, key, default):
+        try:
+            return max(int(self.env['ir.config_parameter'].sudo().get_param(key, default)), 0)
+        except (TypeError, ValueError):
+            return default
+
+    @api.model
+    def _staff_days(self):
+        return self._window_days('store_checklist.staff_window_days', EDIT_WINDOW_DAYS)
+
+    @api.model
+    def _review_days(self):
+        return self._window_days('store_checklist.review_window_days', REVIEW_WINDOW_DAYS)
 
     @api.model
     def _edit_cutoff(self):
-        """Ngày cũ nhất còn được chỉnh sửa (hôm nay lùi EDIT_WINDOW_DAYS - 1 ngày)."""
-        return fields.Date.context_today(self) - timedelta(days=EDIT_WINDOW_DAYS - 1)
+        """Ngày làm việc cũ nhất NVBH còn được check list (hôm nay lùi số ngày hạn của NVBH)."""
+        return fields.Date.context_today(self) - timedelta(days=self._staff_days())
+
+    def _local_date(self, dt):
+        return fields.Datetime.context_timestamp(self, dt).date() if dt else False
+
+    def _staff_finished(self):
+        self.ensure_one()
+        return bool(self.line_ids) and all(self.line_ids.mapped('is_done'))
+
+    def _staff_deadline(self):
+        """Hạn check list của nhân viên: hết ngày D + 4."""
+        self.ensure_one()
+        return self.work_date + timedelta(days=self._staff_days()) if self.work_date else False
+
+    def _staff_late(self):
+        self.ensure_one()
+        dl = self._staff_deadline()
+        return bool(dl) and fields.Date.context_today(self) > dl
+
+    def _step_start(self, no):
+        """Ngày cấp đánh giá thứ `no` đến lượt: cấp 1 = ngày nhân viên hoàn thành checklist; cấp sau = ngày cấp trước đánh giá xong.
+        False nếu chưa đến lượt."""
+        self.ensure_one()
+        if no <= 1:
+            if self.state == 'draft' and not self._staff_finished():
+                return False
+            start = self._local_date(self.staff_done_date or self.review_sent_date or self.submit_date) or self.work_date
+            return max(start, self.work_date) if self.work_date else start
+        if self.step_done < no - 1:
+            return False
+        logs = self.step_log_ids.filtered(lambda s: s.step_no == no - 1 and s.done_date)
+        dt = max(logs.mapped('done_date')) if logs else (self.approved_date or self.review_sent_date)
+        return self._local_date(dt) or self.work_date
+
+    def _step_deadline(self, no):
+        """Hạn đánh giá của cấp thứ `no`: hết ngày (ngày đến lượt + 4)."""
+        start = self._step_start(no)
+        return start + timedelta(days=self._review_days()) if start else False
+
+    def _late_stage(self):
+        """Phiếu đã bị hệ thống khóa vì quá hạn: 'staff' = nhân viên chưa hoàn thành khi hết hạn (không ghi nhận);
+        số bước (1, 2...) = cấp đánh giá đó trễ hạn (điểm cấp đó 0đ); False = chưa quá hạn / đã hoàn tất."""
+        self.ensure_one()
+        if self.state == 'approved' or not self.work_date:
+            return False
+        if self.state == 'draft' and not self._staff_finished():
+            return 'staff' if self._staff_late() else False
+        no = self.step_done + 1 if self.state == 'pending_review' else 1
+        dl = self._step_deadline(no)
+        return no if dl and fields.Date.context_today(self) > dl else False
+
+    def _late_code(self):
+        """'NVBH' / 'CHT' / 'ASM'... : cấp đã trễ hạn khiến phiếu bị khóa; '' nếu không."""
+        self.ensure_one()
+        st = self._late_stage()
+        if not st:
+            return ''
+        if st == 'staff':
+            return 'NVBH'
+        chain = self._approval_chain()
+        return chain[st - 1]['code'] if st <= len(chain) else 'CHT'
 
     def _is_expired(self):
-        """Quá hạn chỉnh sửa: ngày check list cách hôm nay quá 4 ngày -> hệ thống tự khóa, điểm mặc định 0đ nếu chưa được đánh giá."""
+        """Quá hạn (hệ thống đã khóa): phiếu được chốt với điểm hiện có, phần chưa đánh giá tính 0đ."""
         self.ensure_one()
-        return bool(self.work_date) and self.work_date < self._edit_cutoff()
+        return bool(self._late_stage())
+
+    def _fmt_date(self, d):
+        return d.strftime('%d/%m/%Y') if d else ''
+
+    def _staff_lock_message(self):
+        return _('Đã hết hạn check list của ngày %s (hạn đến hết ngày %s) nên hệ thống tự khóa, nhân viên không chỉnh sửa được nữa.') % (
+            self._fmt_date(self.work_date), self._fmt_date(self._staff_deadline()))
 
     def _expired_message(self):
-        return _('Đã quá %d ngày so với ngày check list (%s) nên hệ thống tự khóa, không chỉnh sửa hay đánh giá được nữa; '
-                 'phiếu chưa được đánh giá tính điểm mặc định 0đ. Hạn chỉnh sửa hiện tại: từ ngày %s.') % (
-                     EDIT_WINDOW_DAYS, self.work_date.strftime('%d/%m/%Y') if self.work_date else '', self._edit_cutoff().strftime('%d/%m/%Y'))
+        self.ensure_one()
+        st = self._late_stage()
+        if st == 'staff':
+            return _('Nhân viên chưa hoàn thành checklist ngày %s trước hạn (hết ngày %s) nên hệ thống đã khóa: '
+                     'checklist không được ghi nhận, điểm tính 0đ.') % (self._fmt_date(self.work_date), self._fmt_date(self._staff_deadline()))
+        if st:
+            code = self._late_code()
+            return _('%s không đánh giá trong %d ngày (hạn đến hết ngày %s) nên hệ thống đã khóa: ghi nhận %s trễ hạn, '
+                     'điểm %s đánh giá tính 0đ.') % (code, self._review_days(), self._fmt_date(self._step_deadline(st)), code, code)
+        return _('Phiếu đã bị khóa.')
+
+    def _stamp_staff_done(self):
+        """Ghi lại lúc nhân viên tích xong mọi công việc (mốc tính hạn đánh giá của CHT); bỏ tích lại thì xóa mốc."""
+        for c in self.sudo():
+            fin = c._staff_finished()
+            if fin and not c.staff_done_date:
+                c.write({'staff_done_date': fields.Datetime.now()})
+            elif not fin and c.staff_done_date and c.state == 'draft':
+                c.write({'staff_done_date': False})
+
+    @api.model
+    def save_checklist(self, check_id, changes):
+        super().save_checklist(check_id, changes)
+        check = self.browse(int(check_id)).exists()
+        check._stamp_staff_done()
+        return check._checklist_payload()
 
     def _assert_can_execute(self):
         for check in self:
@@ -391,6 +507,8 @@ class StoreNvbhCheckRole(models.Model):
                 continue
             if info['locked_expired']:
                 raise AccessError(check._expired_message())
+            if info['staff_locked']:
+                raise AccessError(check._staff_lock_message())
             if check.state != 'draft':
                 raise AccessError(_('Checklist này đã gửi cấp trên đánh giá nên không thể sửa nữa.'))
             raise AccessError(_('Bạn không có quyền thực hiện checklist này: tài khoản chung CH_ chỉ tick cho Cấp 1 '
@@ -410,7 +528,12 @@ class StoreNvbhCheckRole(models.Model):
                 'no': s['no'], 'code': s['code'], 'label': '%s Đánh giá' % s['code'],
                 'name': s['employee'].name if s['employee'] else ('Admin' if s['admin_only'] else ''),
                 'user_id': s['user'].id if s['user'] else 0, 'done': s['done'], 'current': s['current'], 'can_edit': s['can_edit'],
+                'deadline': self._fmt_date(self._step_deadline(s['no'])) if not s['done'] else '',
             } for s in steps],
+            'staff_deadline': self._fmt_date(self._staff_deadline()),
+            'staff_locked': info['staff_locked'],
+            'late_code': self._late_code(),
+            'lock_msg': self._expired_message() if self._late_stage() else (self._staff_lock_message() if self._staff_late() and self.state == 'draft' else ''),
             'can_execute': info['can_execute'],
             'can_submit': info['can_submit'],
             'locked_expired': info['locked_expired'],
@@ -457,6 +580,7 @@ class StoreNvbhCheckRole(models.Model):
             raise UserError(_('Mới hoàn thành %s/%s công việc. Hãy hoàn tất trước khi gửi cấp trên đánh giá.') % (done, total))
         first = chain[0]
         check = check.sudo()  # quyền đã kiểm tra ở trên
+        check._stamp_staff_done()
         check.line_ids.write({'reviewer_id': first['user'].id if first['user'] else False})  # tự gán, không cho chọn tay
         check.write({'state': 'pending_review', 'step_done': 0, 'review_sent_date': fields.Datetime.now(), 'submitted': True,
                      'submit_date': check.submit_date or fields.Datetime.now(),
@@ -517,7 +641,8 @@ class StoreNvbhCheckRole(models.Model):
             pre = STEP_PREFIX[i - 1]
             lines = self.line_ids
             if not lines or not all(l[pre + 'eval_result'] for l in lines):
-                return None
+                # cấp này trễ hạn đánh giá (hệ thống đã khóa): điểm cấp đó tính 0đ
+                return 0.0 if self._late_stage() == i else None
             return round(sum(eval_score(l.max_score, l[pre + 'eval_result'], count_errors(l[pre + 'error_detail'])) for l in lines), 2)
         return None
 

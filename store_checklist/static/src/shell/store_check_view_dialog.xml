@@ -100,6 +100,7 @@
                 <button class="btn btn-secondary" t-on-click="() => props.close()">Đóng</button>
                 <span class="o_store_job_role" t-att-class="state.meta.state === 'approved' ? '' : (canEval || canSubmit ? '' : 'is-locked')">
                     <i class="fa fa-sitemap"/> <t t-esc="stateText"/>
+                    <t t-if="deadlineText"> · <b t-att-class="state.meta.lock_msg ? 'text-danger' : ''"><i class="fa fa-clock-o"/> <t t-esc="deadlineText"/></b></t>
                     <t t-if="state.meta.state === 'draft' and !canSubmit and !canEval"> · Bạn không có quyền gửi phiếu này.</t>
                     <t t-if="state.meta.state === 'pending_review' and !canEval"> · Chưa đến lượt bạn đánh giá (chỉ xem).</t>
                 </span>

@@ -618,7 +618,12 @@ class StoreNvbhCheck(models.Model):
                             ', '.join('%s (%s)' % (x.name, tag(x)) if tag(x) else x.name for x in short),
                             (' (-%gđ)' % round(lost, 2)) if evaluated and lost else '')
                 untouched = c.state == 'draft' and not c.cnt_done  # có phiếu nhưng nhân viên chưa tích việc nào
-                if evaluated:
+                late = c._late_code()  # quá hạn: NVBH -> không ghi nhận; CHT / ASM -> ghi nhận trễ hạn
+                if late == 'NVBH':
+                    control = 'Quá hạn - không ghi nhận'
+                elif late:
+                    control = '%s trễ hạn' % late
+                elif evaluated:
                     control = 'Đã đánh giá'
                 elif untouched:
                     control = 'Chưa đánh giá'
@@ -800,6 +805,7 @@ class StoreNvbhCheck(models.Model):
         line = self.env['store.nvbh.check.line'].browse(int(line_id)).exists()
         line.check_id._assert_can_execute()
         line.is_done = bool(done)
+        line.check_id._stamp_staff_done()  # mốc tính hạn đánh giá của CHT
         return line.check_id._checklist_payload()
 
     @api.model
@@ -814,6 +820,7 @@ class StoreNvbhCheck(models.Model):
         check = self.browse(int(check_id)).exists()
         check._assert_can_execute()
         check.line_ids.write({'is_done': bool(done)})
+        check._stamp_staff_done()  # mốc tính hạn đánh giá của CHT
         return check._checklist_payload()
 
 

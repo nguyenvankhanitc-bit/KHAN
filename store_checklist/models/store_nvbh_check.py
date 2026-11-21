@@ -290,8 +290,14 @@ class StoreNvbhCheck(models.Model):
         out = {}
         Line = self.env['store.nvbh.schedule.line']
         domain = []
+        # chỉ nhân viên thuộc các cửa hàng user được xem (vd. ASM chỉ thấy nhân viên cửa hàng mình phụ trách)
+        scope = self.env['store.audit']._user_store_scope()
         if store_id:
+            if scope is not None and int(store_id) not in scope:
+                return []
             domain.append(('store_id', '=', int(store_id)))
+        elif scope is not None:
+            domain.append(('store_id', 'in', scope))
         if month:
             y, m = [int(x) for x in month.split('-')]
             start = fields.Date.to_date('%04d-%02d-01' % (y, m))
@@ -301,7 +307,7 @@ class StoreNvbhCheck(models.Model):
             name = (line.staff_name or '').strip()
             if name and (name.casefold() not in out or (not out[name.casefold()]['code'] and line.employee_code)):
                 out[name.casefold()] = {'name': name, 'code': line.employee_code or ''}
-        sdomain = [('store_id', '=', int(store_id))] if store_id else []
+        sdomain = [('store_id', '=', int(store_id))] if store_id else ([('store_id', 'in', scope)] if scope is not None else [])
         for st in self.env['store.audit.staff'].search(sdomain):
             name = (st.name or '').strip()
             if name and name.casefold() not in out:

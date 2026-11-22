@@ -8,14 +8,14 @@ import { useService } from "@web/core/utils/hooks";
 import { patch } from "@web/core/utils/patch";
 import { ListRenderer } from "@web/views/list/list_renderer";
 
-const FILL_MODEL = "store.cht.task";
+const FILL_MODELS = ["store.cht.task", "store.asm.task"];
 const FILL_FIELDS = ["admin_user_ids", "related_user_ids"];
 const HANDLE = 12; // vùng bấm (px) ở góc dưới phải ô
 
 patch(ListRenderer.prototype, {
     setup() {
         super.setup(...arguments);
-        if (this.props.list?.resModel !== FILL_MODEL) {
+        if (!FILL_MODELS.includes(this.props.list?.resModel)) {
             return;
         }
         this.chtFillOrm = useService("orm");
@@ -124,7 +124,7 @@ patch(ListRenderer.prototype, {
                 return;
             }
             try {
-                const n = await this.chtFillOrm.call(FILL_MODEL, "fill_from", [srcId, targetIds, field]);
+                const n = await this.chtFillOrm.call(this.props.list.resModel, "fill_from", [srcId, targetIds, field]);
                 await this.props.list.model.load();
                 this.chtFillNotify.add(`Đã chép xuống ${n} dòng.`, { type: "success" });
             } catch (error) {

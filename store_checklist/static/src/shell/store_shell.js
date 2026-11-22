@@ -230,6 +230,8 @@ export class StoreChecklistShell extends Component {
                     { id: "nvbh_mg_staff", label: "Quản lý & đánh giá", icon: "fa-th-list", sub: true, permId: "nvbh_mg", action: "store_checklist.action_store_nvbh_done" },
                     // Checklist công việc Cửa hàng trưởng: CHT tick việc đến hạn trong ngày, ASM đánh giá, tự tính lần vi phạm / mức phạt
                     { id: "nvbh_cht", label: "Checklist CV CHT", icon: "fa-user-circle", sub: true, permId: "nvbh_cht" },
+                    // Checklist công việc ASM: giống Checklist CV CHT (ASM tick, RSM đánh giá)
+                    { id: "nvbh_asmcv", label: "Checklist CV ASM", icon: "fa-user-secret", sub: true, permId: "nvbh_asmcv" },
                     // Các mục phiếu khác (có trong ma trận phân quyền): ẩn / hiện theo quyền Xem của từng user
                     { id: "asm", label: "Checklist ASM", icon: "fa-users", action: "store_checklist.action_store_audit_asm" },
                     { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
@@ -291,6 +293,7 @@ export class StoreChecklistShell extends Component {
                 { id: "shift", label: "Danh mục ca", icon: "fa-clock-o", action: "store_checklist.action_store_shift", sub: true },
                 { id: "nvbh_task", label: "Danh sách công việc NVBH", icon: "fa-list-ul", action: "store_checklist.action_store_nvbh_task", sub: true },
                 { id: "cht_task", label: "Danh sách công việc CHT", icon: "fa-list-alt", action: "store_checklist.action_store_cht_task", sub: true },
+                { id: "asm_task", label: "Danh sách công việc ASM", icon: "fa-list-alt", action: "store_checklist.action_store_asm_task", sub: true },
                 { id: "nvbh_rating", label: "Xếp loại", icon: "fa-trophy", action: "store_checklist.action_store_nvbh_rating", sub: true },
             ];
             const vis = (list) => (rights ? list.filter((c) => rights[c.id]?.read) : list);
@@ -2131,7 +2134,7 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             (this.state.isManager || this.state.rights?.[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
-            && ["benchmark", "level", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "nvbh_rating"].includes(this.state.activeNav)
+            && ["benchmark", "level", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "nvbh_rating"].includes(this.state.activeNav)
         );
     }
 
@@ -2144,7 +2147,7 @@ export class StoreChecklistShell extends Component {
 
     // Điểm chuẩn đánh giá: xuất / nhập Excel (giám sát = gs_benchmark, NVBH + ASM = benchmark)
     get isBenchmarkNav() {
-        return ["benchmark", "gs_benchmark", "nvbh_task", "cht_task"].includes(this.state.activeNav);
+        return ["benchmark", "gs_benchmark", "nvbh_task", "cht_task", "asm_task"].includes(this.state.activeNav);
     }
 
     // model + tham số của hàm export_xlsx / import_xlsx (Công việc NVBH không có scope)
@@ -2155,6 +2158,9 @@ export class StoreChecklistShell extends Component {
         if (this.state.activeNav === "cht_task") {
             return "store.cht.task";
         }
+        if (this.state.activeNav === "asm_task") {
+            return "store.asm.task";
+        }
         return this.state.activeNav === "nvbh_task" ? "store.nvbh.task" : "store.audit.template.line";
     }
 
@@ -2164,7 +2170,7 @@ export class StoreChecklistShell extends Component {
             const month = this.state.listFilters.month;
             return extra.length ? [...extra, month] : [this.listDomain(this.listBase || []), month];
         }
-        return ["nvbh_task", "cht_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
+        return ["nvbh_task", "cht_task", "asm_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
     }
 
     get isScheduleNav() {
@@ -2348,7 +2354,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get canExport() {
-        return !["report_flow", "report_flow_nvbh", "nvbh_cht", "nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) && (!this.state.rights || Boolean(this.state.rights[this.permKey]?.export));
+        return !["report_flow", "report_flow_nvbh", "nvbh_cht", "nvbh_asmcv", "nvbh_staff", "nvbh_jobs", "nvbh_schedule", "nvbh_done", "nvbh_mg_staff", "nvbh_mg_eval"].includes(this.state.activeNav) && (!this.state.rights || Boolean(this.state.rights[this.permKey]?.export));
     }
 
     get showListFilters() {
@@ -2425,6 +2431,7 @@ export class StoreChecklistShell extends Component {
             report_flow: "SƠ ĐỒ QUY TRÌNH VẬN HÀNH GIÁM SÁT",
             report_flow_nvbh: "SƠ ĐỒ QUY TRÌNH CHECK LIST NHÂN VIÊN BÁN HÀNG",
             nvbh_cht: "CHECK LIST CÔNG VIỆC CỬA HÀNG TRƯỞNG",
+            nvbh_asmcv: "CHECK LIST CÔNG VIỆC ASM",
         }[this.state.activeNav] || "";
     }
 
@@ -3267,10 +3274,10 @@ export class StoreChecklistShell extends Component {
             this.state.embeddedViewProps = null;
             return this.loadPerm();
         }
-        if (child?.id === "nvbh_cht") {
+        if (child?.id === "nvbh_cht" || child?.id === "nvbh_asmcv") {
             // trang riêng (component StoreChtPage tự tải dữ liệu)
             this.track({ child });
-            this.state.activeNav = "nvbh_cht";
+            this.state.activeNav = child.id;
             this.state.contentMode = "list";
             this.state.embeddedViewProps = null;
             return;
@@ -3919,8 +3926,8 @@ export class StoreChecklistShell extends Component {
         if (navId === "report_nvbh_perf") {
             return this.openPerfPage();
         }
-        if (navId === "nvbh_cht") {
-            this.state.activeNav = "nvbh_cht";
+        if (navId === "nvbh_cht" || navId === "nvbh_asmcv") {
+            this.state.activeNav = navId;
             this.state.contentMode = "list";
             this.state.embeddedViewProps = null;
             return;
@@ -4087,7 +4094,7 @@ export class StoreChecklistShell extends Component {
             // bấm dòng lỗi thì mở popup xử lý sai phạm của biên bản chứa dòng đó
             return this.orm.read("store.audit.action", [resId], ["audit_id"]).then(([row]) => row && this.openViolation(row.audit_id[0]));
         }
-        if (!["benchmark", "review", "review_list", "level", "nvbh_jobs", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "nvbh_rating", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
+        if (!["benchmark", "review", "review_list", "level", "nvbh_jobs", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "nvbh_rating", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
             return this.showWindow(act, navId, "form", resId);
         }
         // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách (giữ nguyên nhóm đang mở và vị trí cuộn)

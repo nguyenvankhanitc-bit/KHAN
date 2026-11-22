@@ -52,3 +52,11 @@ access_store_cht_check_line_user,store.cht.check.line user,model_store_cht_check
 access_store_cht_check_line_manager,store.cht.check.line manager,model_store_cht_check_line,group_store_manager,1,1,1,1
 access_store_cht_task_group_user,store.cht.task.group user,model_store_cht_task_group,group_store_user,1,1,1,1
 access_store_cht_task_group_manager,store.cht.task.group manager,model_store_cht_task_group,group_store_manager,1,1,1,1
+access_store_asm_task_group_user,store.asm.task.group user,model_store_asm_task_group,group_store_user,1,1,1,1
+access_store_asm_task_group_manager,store.asm.task.group manager,model_store_asm_task_group,group_store_manager,1,1,1,1
+access_store_asm_task_user,store.asm.task user,model_store_asm_task,group_store_user,1,1,1,1
+access_store_asm_task_manager,store.asm.task manager,model_store_asm_task,group_store_manager,1,1,1,1
+access_store_asm_check_user,store.asm.check user,model_store_asm_check,group_store_user,1,0,0,0
+access_store_asm_check_manager,store.asm.check manager,model_store_asm_check,group_store_manager,1,1,1,1
+access_store_asm_check_line_user,store.asm.check.line user,model_store_asm_check_line,group_store_user,1,0,0,0
+access_store_asm_check_line_manager,store.asm.check.line manager,model_store_asm_check_line,group_store_manager,1,1,1,1

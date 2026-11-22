@@ -48,7 +48,7 @@
                             </t>
                         </div>
                         <div class="cal_legend">
-                            <span><i class="tone_doing"/> Đang làm</span><span><i class="tone_wait"/> Chờ ASM</span>
+                            <span><i class="tone_doing"/> Đang làm</span><span><i class="tone_wait"/> Chờ <t t-esc="reviewer"/></span>
                             <span><i class="tone_ok"/> Đã đánh giá</span><span><i class="tone_bad"/> Có vi phạm</span>
                         </div>
                     </div>
@@ -56,8 +56,8 @@
                     <div class="cht_main">
                         <div class="cht_note" t-att-class="state.check.overdue and state.check.state === 'draft' ? 'is-late' : ''">
                             <i class="fa fa-clock-o"/>
-                            <t t-if="state.check.state === 'draft'">Hạn CHT check list: hết ngày <b t-esc="state.check.deadline"/><t t-if="state.check.overdue"> — đã quá hạn, phiếu bị khóa; việc chưa hoàn thành được tính vi phạm.</t></t>
-                            <t t-elif="state.check.state === 'submitted'">CHT <t t-esc="state.check.user"/> đã gửi lúc <t t-esc="state.check.submit_date"/> — chờ ASM đánh giá.</t>
+                            <t t-if="state.check.state === 'draft'">Hạn <t t-esc="doer"/> check list: hết ngày <b t-esc="state.check.deadline"/><t t-if="state.check.overdue"> — đã quá hạn, phiếu bị khóa; việc chưa hoàn thành được tính vi phạm.</t></t>
+                            <t t-elif="state.check.state === 'submitted'"><t t-esc="doer"/> <t t-esc="state.check.user"/> đã gửi lúc <t t-esc="state.check.submit_date"/> — chờ <t t-esc="reviewer"/> đánh giá.</t>
                             <t t-else="">Đã được <b t-esc="state.check.eval_user"/> đánh giá.</t>
                         </div>
 
@@ -66,15 +66,15 @@
                                 <button type="button" class="btn btn-sm btn-outline-success" t-on-click="() => this.toggleAll(true)"><i class="fa fa-check-square-o"/> Chọn tất cả</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="() => this.toggleAll(false)"><i class="fa fa-square-o"/> Bỏ chọn</button>
                             </t>
-                            <button type="button" class="btn btn-sm btn-primary" t-if="state.check.can_submit" t-on-click="submit"><i class="fa fa-paper-plane"/> Hoàn thành &amp; gửi ASM</button>
+                            <button type="button" class="btn btn-sm btn-primary" t-if="state.check.can_submit" t-on-click="submit"><i class="fa fa-paper-plane"/> Hoàn thành &amp; gửi <t t-esc="reviewer"/></button>
                             <t t-if="state.check.can_eval">
-                                <button type="button" class="btn btn-sm btn-outline-primary" t-on-click="evalAll"><i class="fa fa-magic"/> Đánh giá theo kết quả CHT</button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" t-on-click="evalAll"><i class="fa fa-magic"/> Đánh giá theo kết quả <t t-esc="doer"/></button>
                                 <button type="button" class="btn btn-sm btn-success" t-on-click="finishEval"><i class="fa fa-check"/> Xác nhận đánh giá</button>
                             </t>
                             <button type="button" class="btn btn-sm btn-outline-warning" t-if="state.check.can_reopen" t-on-click="reopen"><i class="fa fa-undo"/> Mở lại phiếu</button>
                         </div>
 
-                        <div class="cht_empty" t-if="!state.check.lines.length">Không có công việc CHT nào đến hạn trong ngày <t t-esc="fmtDate(state.check.work_date)"/>.</div>
+                        <div class="cht_empty" t-if="!state.check.lines.length">Không có công việc <t t-esc="doer"/> nào đến hạn trong ngày <t t-esc="fmtDate(state.check.work_date)"/>.</div>
                         <table class="cht_table" t-else="">
                             <thead>
                                 <tr>
@@ -86,7 +86,7 @@
                                     <th class="c_fine">Mức phạt L1 / L2 / L3</th>
                                     <th class="c_done">Hoàn thành</th>
                                     <th class="c_note">Ghi chú</th>
-                                    <th class="c_eval">ASM đánh giá</th>
+                                    <th class="c_eval"><t t-esc="reviewer"/> đánh giá</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -145,7 +145,7 @@
                         <button type="button" class="btn btn-sm btn-success" t-on-click="exportReport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                     </div>
                 </div>
-                <div class="cht_rule"><i class="fa fa-info-circle"/> Vi phạm = việc đến hạn không hoàn thành (khi đã gửi ASM hoặc quá hạn check list) hoặc ASM đánh giá Không đạt. Đếm theo cửa hàng + công việc trong tháng: lần 1, lần 2, lần 3 trở đi áp mức phạt Lần 3. Mức phạt theo % thu nhập (TN) không cộng vào tổng tiền.</div>
+                <div class="cht_rule"><i class="fa fa-info-circle"/> Vi phạm = việc đến hạn không hoàn thành (khi đã gửi <t t-esc="reviewer"/> hoặc quá hạn check list) hoặc <t t-esc="reviewer"/> đánh giá Không đạt. Đếm theo cửa hàng + công việc trong tháng: lần 1, lần 2, lần 3 trở đi áp mức phạt Lần 3. Mức phạt theo % thu nhập (TN) không cộng vào tổng tiền.</div>
                 <div class="cht_empty" t-if="state.report and !state.report.stores.length">Không có vi phạm nào trong tháng <t t-esc="state.report.month"/>.</div>
                 <t t-if="state.report">
                     <t t-foreach="state.report.stores" t-as="s" t-key="s.store_id">

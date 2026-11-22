@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cài đặt › Công việc checklist NVBH › Danh sách công việc ASM -->
+    <record id="view_store_asm_task_list" model="ir.ui.view">
+        <field name="name">store.asm.task.list</field>
+        <field name="model">store.asm.task</field>
+        <field name="arch" type="xml">
+            <list group_edit="0" group_delete="0" expand="0" multi_edit="1" string="Danh sách công việc ASM" class="o_store_shift o_store_task o_store_cht_task">
+                <field name="name" width="360px"/>
+                <groupby name="group_id">
+                    <button name="action_edit_popup" type="object" icon="fa-pencil" title="Sửa tên / thứ tự nhóm"/>
+                </groupby>
+                <field name="group_id" width="170px" options="{'no_create': True}"/>
+                <field name="wd_mon" width="38px"/>
+                <field name="wd_tue" width="38px"/>
+                <field name="wd_wed" width="38px"/>
+                <field name="wd_thu" width="38px"/>
+                <field name="wd_fri" width="38px"/>
+                <field name="wd_sat" width="38px"/>
+                <field name="wd_sun" width="38px"/>
+                <field name="month_days" width="62px"/>
+                <field name="frequency" width="66px"/>
+                <field name="time_slot" width="92px"/>
+                <field name="executor" width="62px"/>
+                <field name="controller" width="62px"/>
+                <field name="admin_user_ids" widget="many2many_tags" options="{'no_create': True}" width="140px"/>
+                <field name="related_user_ids" widget="many2many_tags" options="{'no_create': True}" width="140px"/>
+                <field name="fine_1" width="70px"/>
+                <field name="fine_2" width="70px"/>
+                <field name="fine_3" width="70px"/>
+                <field name="score" sum="Tổng điểm chuẩn" width="58px"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa công việc này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_asm_task_form" model="ir.ui.view">
+        <field name="name">store.asm.task.form</field>
+        <field name="model">store.asm.task</field>
+        <field name="arch" type="xml">
+            <form string="Công việc ASM">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="group_id" options="{'no_create_edit': False}"/>
+                            <field name="time_slot"/>
+                            <field name="frequency"/>
+                            <field name="month_days" placeholder="vd. 15/30, 25, 02-05 — để trống nếu theo thứ"/>
+                            <field name="sequence"/>
+                        </group>
+                        <group>
+                            <field name="executor"/>
+                            <field name="controller"/>
+                            <field name="admin_user_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="related_user_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="final_check" invisible="not final_check"/>
+                            <field name="score"/>
+                            <field name="fine_1" placeholder="vd. 50.000 hoặc 50% TN"/>
+                            <field name="fine_2"/>
+                            <field name="fine_3"/>
+                        </group>
+                    </group>
+                    <separator string="Thứ áp dụng (tích chọn các thứ công việc này được làm; bỏ qua khi đã nhập Ngày trong tháng)"/>
+                    <!-- đặt ngoài <group> để 7 ô thứ nằm trên một hàng ngang -->
+                    <div class="d-flex flex-nowrap align-items-center gap-4 ms-2 o_store_asm_wd">
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_mon" nolabel="1"/> T2</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_tue" nolabel="1"/> T3</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_wed" nolabel="1"/> T4</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_thu" nolabel="1"/> T5</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_fri" nolabel="1"/> T6</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_sat" nolabel="1"/> T7</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_sun" nolabel="1"/> CN</span>
+                    </div>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_asm_task_search" model="ir.ui.view">
+        <field name="name">store.asm.task.search</field>
+        <field name="model">store.asm.task</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="final_check"/>
+                <filter name="f_day" string="Hằng ngày" domain="[('frequency', '=', 'day')]"/>
+                <filter name="f_week" string="Hằng tuần" domain="[('frequency', 'in', ('week', 'week_month'))]"/>
+                <filter name="f_month" string="Hằng tháng" domain="[('frequency', 'in', ('month', 'week_month'))]"/>
+                <group>
+                    <filter name="g_group" string="Nhóm công việc" context="{'group_by': 'group_id'}"/>
+                    <filter name="g_freq" string="Tần suất" context="{'group_by': 'frequency'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Popup sửa Nhóm công việc ASM (bút chì trên dòng nhóm) -->
+    <record id="view_store_asm_task_group_form" model="ir.ui.view">
+        <field name="name">store.asm.task.group.form</field>
+        <field name="model">store.asm.task.group</field>
+        <field name="arch" type="xml">
+            <form string="Nhóm công việc ASM">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sequence"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu" special="save" class="btn-primary"/>
+                    <button string="Hủy" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Menu Thao tác (khi tick chọn nhiều dòng): chép Admin / BP liên quan của dòng đầu xuống các dòng còn lại, giống kéo xuống trong Excel -->
+    <record id="action_server_asm_task_fill_down" model="ir.actions.server">
+        <field name="name">Chép Admin / BP liên quan của dòng đầu xuống các dòng đã chọn</field>
+        <field name="model_id" ref="model_store_asm_task"/>
+        <field name="binding_model_id" ref="model_store_asm_task"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_fill_down()</field>
+    </record>
+
+    <record id="action_store_asm_task" model="ir.actions.act_window">
+        <field name="name">Danh sách công việc ASM</field>
+        <field name="res_model">store.asm.task</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_asm_task_list"/>
+        <field name="search_view_id" ref="view_store_asm_task_search"/>
+        <!-- group_by trong context: luôn nhóm theo Nhóm công việc (không có ô lọc để bấm bỏ) -->
+        <field name="context">{'group_by': ['group_id']}</field>
+    </record>
+</odoo>

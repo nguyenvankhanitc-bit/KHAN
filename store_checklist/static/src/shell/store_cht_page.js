@@ -9,9 +9,14 @@ const ymd = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 
 export class StoreChtPage extends Component {
     static template = "store_checklist.StoreChtPage";
-    static props = {};
+    static props = { kind: { type: String, optional: true } };
 
     setup() {
+        // kind = "asm": Checklist CV ASM (ASM tick, RSM đánh giá); mặc định CHT (CHT tick, ASM đánh giá)
+        this.isAsm = this.props.kind === "asm";
+        this.model = this.isAsm ? "store.asm.check" : "store.cht.check";
+        this.doer = this.isAsm ? "ASM" : "CHT";
+        this.reviewer = this.isAsm ? "RSM" : "ASM";
         this.orm = useService("orm");
         this.notification = useService("notification");
         const today = new Date();
@@ -51,8 +56,8 @@ export class StoreChtPage extends Component {
         }
         this.state.loading = true;
         try {
-            this.state.check = await this.orm.call("store.cht.check", "cht_get_day", [this.state.storeId, this.state.date]);
-            this.state.days = await this.orm.call("store.cht.check", "cht_month_days", [this.state.storeId, this.state.date.slice(0, 7)]);
+            this.state.check = await this.orm.call(this.model, "cht_get_day", [this.state.storeId, this.state.date]);
+            this.state.days = await this.orm.call(this.model, "cht_month_days", [this.state.storeId, this.state.date.slice(0, 7)]);
         } catch (error) {
             this.state.check = null;
             this.notifyError(error);
@@ -62,7 +67,7 @@ export class StoreChtPage extends Component {
     }
 
     async refreshDays() {
-        this.state.days = await this.orm.call("store.cht.check", "cht_month_days", [this.state.storeId, this.state.date.slice(0, 7)]).catch(() => ({}));
+        this.state.days = await this.orm.call(this.model, "cht_month_days", [this.state.storeId, this.state.date.slice(0, 7)]).catch(() => ({}));
     }
 
     onStore(ev) {
@@ -118,7 +123,7 @@ export class StoreChtPage extends Component {
 
     async call(method, args) {
         try {
-            this.state.check = Object.assign({}, this.state.check, await this.orm.call("store.cht.check", method, args));
+            this.state.check = Object.assign({}, this.state.check, await this.orm.call(this.model, method, args));
             await this.refreshDays();
         } catch (error) {
             this.notifyError(error);
@@ -139,7 +144,7 @@ export class StoreChtPage extends Component {
             return;
         }
         try {
-            await this.orm.call("store.cht.check", "cht_note", [line.id, note]);
+            await this.orm.call(this.model, "cht_note", [line.id, note]);
             line.note = note;
         } catch (error) {
             this.notifyError(error);
@@ -148,7 +153,7 @@ export class StoreChtPage extends Component {
 
     async submit() {
         await this.call("cht_submit", [this.state.check.id]);
-        this.notification.add("Đã gửi check list CHT cho ASM đánh giá.", { type: "success" });
+        this.notification.add(`Đã gửi check list ${this.doer} cho ${this.reviewer} đánh giá.`, { type: "success" });
     }
 
     evaluate(line, result) {
@@ -161,7 +166,7 @@ export class StoreChtPage extends Component {
 
     async finishEval() {
         await this.call("cht_finish_eval", [this.state.check.id]);
-        this.notification.add("Đã xác nhận đánh giá check list CHT.", { type: "success" });
+        this.notification.add(`Đã xác nhận đánh giá check list ${this.doer}.`, { type: "success" });
     }
 
     reopen() {
@@ -189,7 +194,7 @@ export class StoreChtPage extends Component {
     async loadReport() {
         this.state.loading = true;
         try {
-            this.state.report = await this.orm.call("store.cht.check", "cht_month_violations", [this.state.month, Number(this.state.reportStore) || false]);
+            this.state.report = await this.orm.call(this.model, "cht_month_violations", [this.state.month, Number(this.state.reportStore) || false]);
             const open = {};
             for (const s of this.state.report.stores) {
                 open[s.store_id] = true;
@@ -236,9 +241,9 @@ export class StoreChtPage extends Component {
         }
         try {
             const file = await this.orm.call("store.nvbh.check", "export_table_xlsx", [
-                "VI PHẠM CHECK LIST CÔNG VIỆC CHT", `Tháng ${r.month}`,
+                `VI PHẠM CHECK LIST CÔNG VIỆC ${this.doer}`, `Tháng ${r.month}`,
                 ["Cửa hàng", "Miền", "Công việc", "Số lần VP", "Ngày vi phạm (lần: mức phạt)", "Tiền phạt (đ)", "Phạt theo % TN"],
-                rows, ["Tổng", "", "", r.total_count, "", r.total_money, ""], "Vi_pham_CHT",
+                rows, ["Tổng", "", "", r.total_count, "", r.total_money, ""], `Vi_pham_${this.doer}`,
             ]);
             const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
             const link = document.createElement("a");

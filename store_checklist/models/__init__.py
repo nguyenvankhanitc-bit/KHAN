@@ -10,6 +10,7 @@ from . import hr_store
 from . import store_shift
 from . import store_nvbh_task
 from . import store_cht
+from . import store_asm
 from . import store_audit_staff
 from . import store_nvbh_check
 from . import store_nvbh_kpi

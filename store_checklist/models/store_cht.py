@@ -120,13 +120,17 @@ class StoreChtTaskGroup(models.Model):
     _order = 'sequence, id'
     _perm_enforce_read = False
     _perm_manager_ops = ('create', 'write', 'unlink')
+    # tham số (lớp ASM kế thừa và đổi lại)
+    _perm_menu = 'cht_task'
+    _form_view_xmlid = 'store_checklist.view_store_cht_task_group_form'
+    _default_group_labels = [label for _k, label in CHT_GROUPS]
 
     def _perm_key(self):
-        return 'cht_task'
+        return self._perm_menu
 
     @api.model
     def _perm_key_vals(self, vals):
-        return 'cht_task'
+        return self._perm_menu
 
     name = fields.Char(string='Nhóm công việc', required=True)
     sequence = fields.Integer(string='Thứ tự', default=10)
@@ -136,7 +140,7 @@ class StoreChtTaskGroup(models.Model):
         """Nút bút chì trên dòng nhóm của Danh sách công việc CHT: sửa tên / thứ tự nhóm trong popup."""
         self.ensure_one()
         return {'type': 'ir.actions.act_window', 'name': 'Sửa nhóm công việc', 'res_model': self._name, 'res_id': self.id,
-                'views': [(self.env.ref('store_checklist.view_store_cht_task_group_form').id, 'form')], 'target': 'new'}
+                'views': [(self.env.ref(self._form_view_xmlid).id, 'form')], 'target': 'new'}
 
     @api.model
     def _ensure_default_groups(self):
@@ -144,7 +148,7 @@ class StoreChtTaskGroup(models.Model):
         G = self.sudo().with_context(active_test=False)
         if G.search_count([]):
             return
-        G.create([{'name': label, 'sequence': (i + 1) * 10} for i, (_k, label) in enumerate(CHT_GROUPS)])
+        G.create([{'name': label, 'sequence': (i + 1) * 10} for i, label in enumerate(self._default_group_labels)])
 
     @api.model
     def _find_or_create(self, text):
@@ -169,13 +173,19 @@ class StoreChtTask(models.Model):
     _order = 'sequence, id'
     _perm_enforce_read = False
     _perm_manager_ops = ('create', 'write', 'unlink')
+    # tham số (lớp ASM kế thừa và đổi lại)
+    _perm_menu = 'cht_task'
+    _group_model = 'store.cht.task.group'
+    _popup_title = 'Công việc CHT'
+    _list_label = 'Danh sách công việc CHT'
+    _xls_file = 'Cong_viec_CHT'
 
     def _perm_key(self):
-        return 'cht_task'
+        return self._perm_menu
 
     @api.model
     def _perm_key_vals(self, vals):
-        return 'cht_task'
+        return self._perm_menu
 
     sequence = fields.Integer(string='STT', default=10)
     name = fields.Char(string='Tên công việc', required=True)
@@ -228,7 +238,7 @@ class StoreChtTask(models.Model):
 
     def action_open_popup(self):
         self.ensure_one()
-        return {'type': 'ir.actions.act_window', 'name': 'Công việc CHT', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
+        return {'type': 'ir.actions.act_window', 'name': self._popup_title, 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
                 'target': 'new', 'context': {'dialog_size': 'large'}}
 
     def action_fill_down(self):
@@ -364,7 +374,7 @@ class StoreChtTask(models.Model):
         sheet.write(len(tasks) + 1, 14, sum(tasks.mapped('score')), num)
         sheet.freeze_panes(1, 0)
         book.close()
-        return {'name': 'Cong_viec_CHT.xlsx', 'data': base64.b64encode(buf.getvalue()).decode()}
+        return {'name': '%s.xlsx' % self._xls_file, 'data': base64.b64encode(buf.getvalue()).decode()}
 
     @api.model
     def import_xlsx(self, data):
@@ -433,7 +443,7 @@ class StoreChtTask(models.Model):
             if 'nhóm công việc' in col:
                 g = get(r, 'Nhóm công việc')
                 # tên nhóm đã có / mã đầu (01) / tên nhóm mới (tự tạo nhóm)
-                vals['group_id'] = self.env['store.cht.task.group']._find_or_create(g).id or False
+                vals['group_id'] = self.env[self._group_model]._find_or_create(g).id or False
             if 'tần suất' in col and get(r, 'Tần suất'):
                 f = get(r, 'Tần suất').casefold()
                 if f not in freq_map and f.replace(' ', '') not in freq_map:
@@ -476,7 +486,7 @@ class StoreChtTask(models.Model):
                     created += 1
             except Exception as e:
                 errors.append('Dòng %s: %s' % (n, getattr(e, 'args', [e])[0]))
-        return {'created': created, 'updated': updated, 'removed': 0, 'label': 'Danh sách công việc CHT',
+        return {'created': created, 'updated': updated, 'removed': 0, 'label': self._list_label,
                 'errors': errors[:20], 'error_count': len(errors)}
 
 
@@ -496,12 +506,21 @@ class StoreChtCheck(models.Model):
     eval_date = fields.Datetime(string='Đánh giá lúc')
     line_ids = fields.One2many('store.cht.check.line', 'check_id', string='Công việc')
 
+    # tham số (lớp ASM kế thừa và đổi lại)
+    _task_model = 'store.cht.task'
+    _line_model = 'store.cht.check.line'
+    _rights_key = 'nvbh_cht'
+    _tick_level = 2        # CHT tick check list
+    _eval_min_level = 3    # ASM trở lên đánh giá
+    _prefix = 'CHT'
+    _menu_label = 'Checklist CV CHT'
+
     _uniq_store_day = models.Constraint('unique(store_id, work_date)', 'Mỗi cửa hàng chỉ có một phiếu checklist CHT mỗi ngày.')
 
     @api.depends('store_id', 'work_date')
     def _compute_name(self):
         for rec in self:
-            rec.name = 'CHT/%s/%s' % (rec.store_id.code or rec.store_id.name or '', rec.work_date.strftime('%d%m%Y') if rec.work_date else '')
+            rec.name = '%s/%s/%s' % (rec._prefix, rec.store_id.code or rec.store_id.name or '', rec.work_date.strftime('%d%m%Y') if rec.work_date else '')
 
     # ---------------- quyền / thời hạn ----------------
     def _window_days(self):
@@ -526,13 +545,13 @@ class StoreChtCheck(models.Model):
         privileged = user._is_admin() or user.has_group('store_checklist.group_store_manager')
         level = role_level(user.sudo().employee_id.checklist_role_code) if user.employee_id else 0
         rights = self.env['store.perm.rule']._rights()
-        r = (rights or {}).get('nvbh_cht', {})
+        r = (rights or {}).get(self._rights_key, {})
         can_write = rights is None or bool(r.get('write'))
         return {
             'privileged': privileged,
-            'can_tick': can_write and (privileged or level == 2),
+            'can_tick': can_write and (privileged or level == self._tick_level),
             # ASM trở lên, hoặc chức danh văn phòng (không thuộc 6 cấp, vd. trưởng phòng) được đánh giá nếu có quyền Sửa
-            'can_eval': can_write and (privileged or level >= 3 or level == 0),
+            'can_eval': can_write and (privileged or level >= self._eval_min_level or level == 0),
             'can_read': rights is None or bool(r.get('read')),
         }
 
@@ -543,7 +562,7 @@ class StoreChtCheck(models.Model):
     def _check_store(self, store_id):
         me = self._me()
         if not me['can_read']:
-            raise AccessError(_('Bạn không có quyền xem Checklist CV CHT.'))
+            raise AccessError(_('Bạn không có quyền xem %s.') % self._menu_label)
         if not me['privileged'] and int(store_id) not in self._my_store_ids():
             raise AccessError(_('Bạn không được phân quyền cửa hàng này.'))
         return me
@@ -551,7 +570,7 @@ class StoreChtCheck(models.Model):
     # ---------------- tạo / đồng bộ dòng việc ----------------
     def _sync_lines(self):
         """Phiếu còn đang thực hiện: thêm việc mới đến hạn trong ngày, bỏ việc không còn áp dụng (chưa tick)."""
-        Task = self.env['store.cht.task'].sudo()
+        Task = self.env[self._task_model].sudo()
         tasks = Task.search([])
         for check in self.sudo().filtered(lambda c: c.state == 'draft'):
             due = tasks.filtered(lambda t: t.runs_on(check.work_date))
@@ -567,7 +586,7 @@ class StoreChtCheck(models.Model):
                 'fine_1': t.fine_1, 'fine_2': t.fine_2, 'fine_3': t.fine_3,
             } for t in due - have]
             if new:
-                self.env['store.cht.check.line'].sudo().create(new)
+                self.env[self._line_model].sudo().create(new)
             for line in check.line_ids.filtered(lambda l: l.task_id):
                 t = line.task_id
                 vals = {k: t[k] for k in ('sequence', 'task_group', 'executor', 'controller', 'score') if line[k] != t[k]}
@@ -631,7 +650,7 @@ class StoreChtCheck(models.Model):
         return dict(check._payload(me), me=me)
 
     def _line_for_write(self, line_id, need):
-        line = self.env['store.cht.check.line'].sudo().browse(int(line_id)).exists()
+        line = self.env[self._line_model].sudo().browse(int(line_id)).exists()
         if not line:
             raise UserError(_('Không tìm thấy dòng công việc.'))
         check = line.check_id
@@ -662,12 +681,12 @@ class StoreChtCheck(models.Model):
 
     @api.model
     def cht_note(self, line_id, note):
-        check = self.env['store.cht.check.line'].sudo().browse(int(line_id)).check_id
+        check = self.env[self._line_model].sudo().browse(int(line_id)).check_id
         me = check._check_store(check.store_id.id)
         data = check._payload(me)
         if not (data['can_tick'] or data['can_eval']):
             raise UserError(_('Phiếu đã khóa hoặc bạn không có quyền ghi chú.'))
-        self.env['store.cht.check.line'].sudo().browse(int(line_id)).note = note or False
+        self.env[self._line_model].sudo().browse(int(line_id)).note = note or False
         return True
 
     @api.model
@@ -729,7 +748,7 @@ class StoreChtCheck(models.Model):
         dom = [('check_id.work_date', '>=', start.replace(day=1)), ('check_id.work_date', '<', end)]
         if store_ids is not None:
             dom.append(('check_id.store_id', 'in', list(store_ids)))
-        lines = self.env['store.cht.check.line'].sudo().search(dom)
+        lines = self.env[self._line_model].sudo().search(dom)
         closed = {c.id: c._closed() for c in lines.mapped('check_id')}
         out, counter = [], {}
         for l in lines.sorted(lambda x: (x.check_id.work_date, x.check_id.id, x.sequence, x.id)):
@@ -744,7 +763,7 @@ class StoreChtCheck(models.Model):
             out.append({'line_id': l.id, 'check_id': c.id, 'store_id': c.store_id.id, 'store': c.store_id.display_name,
                         'mien': c.store_id.mien or '', 'task_key': str(l.task_id.id or l.name), 'task': l.name,
                         'sequence': l.sequence, 'date': c.work_date, 'nth': nth, 'fine': l._fine_text(nth),
-                        'reason': 'ASM đánh giá Không đạt' if l.eval_result == 'fail' else 'Không hoàn thành'})
+                        'reason': 'Đánh giá Không đạt' if l.eval_result == 'fail' else 'Không hoàn thành'})
         return out
 
     @api.model
@@ -752,7 +771,7 @@ class StoreChtCheck(models.Model):
         """Báo cáo vi phạm & mức phạt tháng: nhóm theo cửa hàng -> công việc."""
         me = self._me()
         if not me['can_read']:
-            raise AccessError(_('Bạn không có quyền xem Checklist CV CHT.'))
+            raise AccessError(_('Bạn không có quyền xem %s.') % self._menu_label)
         start, end, _days = self.env['store.nvbh.check']._month_range(month)
         if store_id:
             self._check_store(store_id)

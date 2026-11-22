@@ -2,4 +2,6 @@
 <odoo>
     <!-- Danh mục 29 công việc CHT mặc định (chỉ tạo khi danh mục đang trống) -->
     <function model="store.cht.task" name="_seed_default_tasks"/>
+    <!-- việc đã có: điền Nhóm công việc / Người thực hiện / Người kiểm soát còn trống -->
+    <function model="store.cht.task" name="_fill_default_groups"/>
 </odoo>

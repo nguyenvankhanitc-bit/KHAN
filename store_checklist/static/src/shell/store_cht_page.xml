@@ -82,7 +82,7 @@
                                     <th>Nội dung công việc</th>
                                     <th class="c_slot">Khung giờ</th>
                                     <th class="c_freq">Tần suất</th>
-                                    <th class="c_ks">KS / đánh giá cuối</th>
+                                    <th class="c_ks">Phúc tra cuối</th>
                                     <th class="c_fine">Mức phạt L1 / L2 / L3</th>
                                     <th class="c_done">Hoàn thành</th>
                                     <th class="c_note">Ghi chú</th>
@@ -91,6 +91,9 @@
                             </thead>
                             <tbody>
                                 <t t-foreach="state.check.lines" t-as="l" t-key="l.id">
+                                    <tr class="grp_row" t-if="l_index === 0 or state.check.lines[l_index - 1].group !== l.group">
+                                        <td colspan="9" t-esc="l.group"/>
+                                    </tr>
                                     <tr t-att-class="l.violation ? 'is-viol' : (l.done ? 'is-done' : '')">
                                         <td class="c_no" t-esc="l_index + 1"/>
                                         <td>

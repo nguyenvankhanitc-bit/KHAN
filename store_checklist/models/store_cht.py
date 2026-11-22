@@ -8,13 +8,16 @@
 - Vi phạm: việc đến hạn mà không hoàn thành (khi phiếu đã gửi hoặc đã quá hạn) hoặc ASM đánh giá Không đạt.
   Đếm theo cửa hàng + công việc trong tháng: lần 1, 2, 3 (từ lần 3 trở đi tính mức Lần 3).
 """
+import base64
 import calendar
+import io
 import re
 from datetime import timedelta
 
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
+from .store_nvbh_task import TASK_GROUPS
 from .store_role import role_level
 
 CHT_FREQ = [('day', 'Ngày'), ('week', 'Tuần'), ('month', 'Tháng'), ('week_month', 'Tuần/Tháng')]
@@ -68,6 +71,11 @@ CHT_DEFAULT_TASKS = [
 ]
 
 
+# Nhóm công việc mặc định của 29 việc (theo thứ tự trong CHT_DEFAULT_TASKS)
+CHT_DEFAULT_GROUPS = ['III', 'III', 'III', 'III', 'IV', 'I', 'I', 'II', 'I', 'II', 'I', 'V', 'I', 'II', 'II', 'IV', 'I', 'II',
+                      'IV', 'IV', 'IV', 'V', 'V', 'IV', 'II', 'II', 'II', 'I', 'I']
+
+
 def _parse_money(text):
     """'50.000' -> 50000; '50% TN' / rỗng -> None (không cộng vào tổng tiền phạt)."""
     t = (text or '').strip()
@@ -112,9 +120,13 @@ class StoreChtTask(models.Model):
         return 'cht_task'
 
     sequence = fields.Integer(string='STT', default=10)
-    name = fields.Char(string='Nội dung công việc', required=True)
-    final_check = fields.Char(string='Người KS / đánh giá cuối')
-    time_slot = fields.Char(string='Khung giờ')
+    name = fields.Char(string='Tên công việc', required=True)
+    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
+    executor = fields.Char(string='Người thực hiện', default='CHT')
+    controller = fields.Char(string='Người kiểm soát', default='ASM')
+    final_check = fields.Char(string='Bộ phận phúc tra cuối')
+    score = fields.Integer(string='Điểm chuẩn', default=2)
+    time_slot = fields.Char(string='Khung giờ / Thời hạn')
     fine_1 = fields.Char(string='Phạt lần 1', help='Số tiền (vd. 50.000) hoặc % thu nhập (vd. 50% TN)')
     fine_2 = fields.Char(string='Phạt lần 2')
     fine_3 = fields.Char(string='Phạt lần 3', help='Áp dụng cho lần 3 và các lần sau trong tháng')
@@ -168,12 +180,158 @@ class StoreChtTask(models.Model):
         vals_list = []
         for i, (name, final, slot, f1, f2, f3, freq, wds, mdays) in enumerate(CHT_DEFAULT_TASKS, 1):
             vals = {'sequence': i, 'name': name, 'final_check': final, 'time_slot': slot, 'fine_1': f1, 'fine_2': f2,
-                    'fine_3': f3, 'frequency': freq, 'month_days': mdays}
+                    'fine_3': f3, 'frequency': freq, 'month_days': mdays, 'task_group': CHT_DEFAULT_GROUPS[i - 1]}
             on = {lbl for lbl in (wds.split(',') if wds and wds != ALL else [])}
             for fname, label, _i in CHT_WEEKDAYS:
                 vals[fname] = wds == ALL or label in on
             vals_list.append(vals)
         self.sudo().create(vals_list)
+
+    @api.model
+    def _fill_default_groups(self):
+        """Việc mặc định chưa có Nhóm công việc / Người thực hiện / Người kiểm soát: điền theo danh mục mặc định."""
+        by_name = {t[0]: CHT_DEFAULT_GROUPS[i] for i, t in enumerate(CHT_DEFAULT_TASKS)}
+        for rec in self.sudo().with_context(active_test=False).search([]):
+            vals = {}
+            if not rec.task_group and rec.name in by_name:
+                vals['task_group'] = by_name[rec.name]
+            if not rec.executor:
+                vals['executor'] = 'CHT'
+            if not rec.controller:
+                vals['controller'] = 'ASM'
+            if vals:
+                rec.write(vals)
+
+    # ---------------- Excel ----------------
+    _XLS_HEAD = ['STT', 'Nhóm công việc', 'Tên công việc', 'Thứ áp dụng', 'Ngày trong tháng', 'Tần suất', 'Khung giờ / Thời hạn',
+                 'Người thực hiện', 'Người kiểm soát', 'Bộ phận phúc tra cuối', 'Phạt lần 1', 'Phạt lần 2', 'Phạt lần 3', 'Điểm chuẩn']
+
+    @api.model
+    def export_xlsx(self):
+        """Xuất Danh sách công việc CHT ra Excel. File xuất ra nhập lại được."""
+        self.env['store.perm.rule'].check_export()
+        import xlsxwriter
+        tasks = self.search([], order='sequence, id')
+        groups, freqs = dict(TASK_GROUPS), dict(CHT_FREQ)
+        buf = io.BytesIO()
+        book = xlsxwriter.Workbook(buf, {'in_memory': True})
+        sheet = book.add_worksheet('Cong viec CHT')
+        head = book.add_format({'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#1E3A6E', 'align': 'center',
+                                'valign': 'vcenter', 'border': 1, 'text_wrap': True})
+        cell = book.add_format({'border': 1, 'valign': 'top', 'text_wrap': True})
+        num = book.add_format({'border': 1, 'valign': 'top', 'num_format': '0.##'})
+        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [6, 28, 52, 16, 14, 12, 22, 14, 14, 18, 12, 12, 12, 10])):
+            sheet.write(0, i, h, head)
+            sheet.set_column(i, i, w)
+        for r, t in enumerate(tasks, 1):
+            wd = '' if (t.month_days or '').strip() else t.schedule_label
+            vals = [t.sequence, groups.get(t.task_group, ''), t.name, wd, t.month_days or '', freqs.get(t.frequency, ''),
+                    t.time_slot or '', t.executor or '', t.controller or '', t.final_check or '',
+                    t.fine_1 or '', t.fine_2 or '', t.fine_3 or '', t.score]
+            for c, v in enumerate(vals):
+                sheet.write(r, c, v, num if c in (0, 13) else cell)
+        sheet.write(len(tasks) + 1, 12, 'Tổng', head)
+        sheet.write(len(tasks) + 1, 13, sum(tasks.mapped('score')), num)
+        sheet.freeze_panes(1, 0)
+        book.close()
+        return {'name': 'Cong_viec_CHT.xlsx', 'data': base64.b64encode(buf.getvalue()).decode()}
+
+    @api.model
+    def import_xlsx(self, data):
+        """Nhập Danh sách công việc CHT từ Excel (cùng cột với file xuất): trùng Tên công việc thì cập nhật, chưa có thì thêm."""
+        try:
+            from openpyxl import load_workbook
+        except ImportError:
+            raise UserError(_('Máy chủ chưa cài thư viện openpyxl để đọc file Excel.'))
+        try:
+            wb = load_workbook(io.BytesIO(base64.b64decode(data)), data_only=True, read_only=True)
+            rows = list(wb.worksheets[0].iter_rows(values_only=True))
+        except Exception:
+            raise UserError(_('Không đọc được file. Hãy dùng file .xlsx (xuất từ nút Xuất Excel).'))
+
+        def txt(v):
+            if isinstance(v, float) and v.is_integer():
+                v = int(v)
+            return ('%s' % v).strip() if v is not None else ''
+
+        hi = next((i for i, r in enumerate(rows) if 'tên công việc' in [txt(c).casefold() for c in r]), None)
+        if hi is None:
+            raise UserError(_('Không tìm thấy dòng tiêu đề có cột "Tên công việc".'))
+        col = {txt(c).casefold(): i for i, c in enumerate(rows[hi]) if txt(c)}
+
+        def get(r, name):
+            i = col.get(name.casefold())
+            return txt(r[i]) if i is not None and i < len(r) else ''
+
+        group_map = {}
+        for k, label in TASK_GROUPS:
+            group_map[k.casefold()] = k
+            group_map[label.casefold()] = k
+            group_map[label.split('.', 1)[-1].strip().casefold()] = k
+        freq_map = {}
+        for k, label in CHT_FREQ:
+            freq_map[k] = k
+            freq_map[label.casefold()] = k
+            freq_map[label.casefold().replace(' ', '')] = k
+        labels = {label: f for f, label, _i in CHT_WEEKDAYS}
+        created = updated = 0
+        errors = []
+        next_seq = (self.search([], order='sequence desc', limit=1).sequence or 0) + 1
+        for n, r in enumerate(rows[hi + 1:], hi + 2):
+            name = get(r, 'Tên công việc')
+            if not name or name.casefold() == 'tổng':
+                continue
+            vals = {'name': name}
+            if 'nhóm công việc' in col:
+                g = get(r, 'Nhóm công việc')
+                if g and g.casefold() not in group_map:
+                    errors.append('Dòng %s: Nhóm công việc "%s" không hợp lệ' % (n, g))
+                    continue
+                vals['task_group'] = group_map.get(g.casefold(), False)
+            if 'tần suất' in col and get(r, 'Tần suất'):
+                f = get(r, 'Tần suất').casefold()
+                if f not in freq_map and f.replace(' ', '') not in freq_map:
+                    errors.append('Dòng %s: Tần suất "%s" không hợp lệ (Ngày / Tuần / Tháng / Tuần/Tháng)' % (n, get(r, 'Tần suất')))
+                    continue
+                vals['frequency'] = freq_map.get(f) or freq_map[f.replace(' ', '')]
+            try:
+                if get(r, 'STT'):
+                    vals['sequence'] = int(float(get(r, 'STT').replace(',', '.')))
+                if get(r, 'Điểm chuẩn'):
+                    vals['score'] = int(float(get(r, 'Điểm chuẩn').replace(',', '.')))
+            except ValueError:
+                errors.append('Dòng %s: STT hoặc Điểm chuẩn không phải số' % n)
+                continue
+            for xls, fname in (('Khung giờ / Thời hạn', 'time_slot'), ('Người thực hiện', 'executor'), ('Người kiểm soát', 'controller'),
+                               ('Bộ phận phúc tra cuối', 'final_check'), ('Phạt lần 1', 'fine_1'), ('Phạt lần 2', 'fine_2'),
+                               ('Phạt lần 3', 'fine_3'), ('Ngày trong tháng', 'month_days')):
+                if xls.casefold() in col:
+                    vals[fname] = get(r, xls)
+            wtxt = get(r, 'Thứ áp dụng').upper().replace(' ', '').replace('–', '-')
+            if wtxt:
+                if wtxt in ('T2-CN', 'CẢTUẦN', 'ALL'):
+                    picked = {f for f, _l, _i in CHT_WEEKDAYS}
+                else:
+                    tokens = [x for x in re.split(r'[,;|]', wtxt) if x]
+                    if any(t not in labels for t in tokens):
+                        errors.append('Dòng %s: Thứ áp dụng "%s" không hợp lệ (T2, T3... CN hoặc T2 - CN)' % (n, get(r, 'Thứ áp dụng')))
+                        continue
+                    picked = {labels[t] for t in tokens}
+                vals.update({f: f in picked for f, _l, _i in CHT_WEEKDAYS})
+            rec = self.search([('name', '=', name)], limit=1)
+            try:
+                if rec:
+                    rec.write(vals)
+                    updated += 1
+                else:
+                    vals.setdefault('sequence', next_seq)
+                    next_seq = max(next_seq, vals['sequence']) + 1
+                    self.create(vals)
+                    created += 1
+            except Exception as e:
+                errors.append('Dòng %s: %s' % (n, getattr(e, 'args', [e])[0]))
+        return {'created': created, 'updated': updated, 'removed': 0, 'label': 'Danh sách công việc CHT',
+                'errors': errors[:20], 'error_count': len(errors)}
 
 
 class StoreChtCheck(models.Model):
@@ -256,14 +414,17 @@ class StoreChtCheck(models.Model):
             stale.unlink()
             new = [{
                 'check_id': check.id, 'task_id': t.id, 'sequence': t.sequence, 'name': t.name, 'time_slot': t.time_slot,
+                'task_group': t.task_group, 'executor': t.executor, 'controller': t.controller, 'score': t.score,
                 'final_check': t.final_check, 'frequency': t.frequency, 'schedule_label': t.schedule_label,
                 'fine_1': t.fine_1, 'fine_2': t.fine_2, 'fine_3': t.fine_3,
             } for t in due - have]
             if new:
                 self.env['store.cht.check.line'].sudo().create(new)
             for line in check.line_ids.filtered(lambda l: l.task_id):
-                if line.sequence != line.task_id.sequence:
-                    line.sequence = line.task_id.sequence
+                t = line.task_id
+                vals = {k: t[k] for k in ('sequence', 'task_group', 'executor', 'controller', 'score') if line[k] != t[k]}
+                if vals:
+                    line.write(vals)
 
     @api.model
     def _get_or_create(self, store_id, work_date):
@@ -283,10 +444,14 @@ class StoreChtCheck(models.Model):
         closed = self._closed()
         nth = self._violation_numbers()
         lines = []
-        for l in self.line_ids.sorted(lambda x: (x.sequence, x.id)):
+        gorder = {k: i for i, (k, _l) in enumerate(TASK_GROUPS)}
+        glabel = dict(TASK_GROUPS)
+        for l in self.line_ids.sorted(lambda x: (gorder.get(x.task_group, 99), x.sequence, x.id)):
             viol = l._is_violation(closed)
             lines.append({
                 'id': l.id, 'sequence': l.sequence, 'name': l.name, 'time_slot': l.time_slot or '',
+                'group': glabel.get(l.task_group, 'KHÁC'), 'executor': l.executor or '', 'controller': l.controller or '',
+                'score': l.score,
                 'final_check': l.final_check or '', 'frequency': dict(CHT_FREQ).get(l.frequency, ''),
                 'schedule_label': l.schedule_label or '', 'fines': [l.fine_1 or '', l.fine_2 or '', l.fine_3 or ''],
                 'done': l.done, 'note': l.note or '', 'eval_result': l.eval_result or '',
@@ -485,8 +650,12 @@ class StoreChtCheckLine(models.Model):
     task_id = fields.Many2one('store.cht.task', string='Công việc', ondelete='set null', index=True)
     sequence = fields.Integer(string='STT', default=10)
     name = fields.Char(string='Nội dung công việc', required=True)
-    time_slot = fields.Char(string='Khung giờ')
-    final_check = fields.Char(string='Người KS / đánh giá cuối')
+    time_slot = fields.Char(string='Khung giờ / Thời hạn')
+    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
+    executor = fields.Char(string='Người thực hiện')
+    controller = fields.Char(string='Người kiểm soát')
+    score = fields.Integer(string='Điểm chuẩn')
+    final_check = fields.Char(string='Bộ phận phúc tra cuối')
     frequency = fields.Selection(CHT_FREQ, string='Tần suất')
     schedule_label = fields.Char(string='Ngày cụ thể')
     fine_1 = fields.Char(string='Phạt lần 1')

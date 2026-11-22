@@ -2144,13 +2144,16 @@ export class StoreChecklistShell extends Component {
 
     // Điểm chuẩn đánh giá: xuất / nhập Excel (giám sát = gs_benchmark, NVBH + ASM = benchmark)
     get isBenchmarkNav() {
-        return ["benchmark", "gs_benchmark", "nvbh_task"].includes(this.state.activeNav);
+        return ["benchmark", "gs_benchmark", "nvbh_task", "cht_task"].includes(this.state.activeNav);
     }
 
     // model + tham số của hàm export_xlsx / import_xlsx (Công việc NVBH không có scope)
     get excelModel() {
         if (this.state.activeNav === "nvbh_schedule") {
             return "store.nvbh.schedule.line";
+        }
+        if (this.state.activeNav === "cht_task") {
+            return "store.cht.task";
         }
         return this.state.activeNav === "nvbh_task" ? "store.nvbh.task" : "store.audit.template.line";
     }
@@ -2161,7 +2164,7 @@ export class StoreChecklistShell extends Component {
             const month = this.state.listFilters.month;
             return extra.length ? [...extra, month] : [this.listDomain(this.listBase || []), month];
         }
-        return this.state.activeNav === "nvbh_task" ? extra : [this.benchmarkScope, ...extra];
+        return ["nvbh_task", "cht_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
     }
 
     get isScheduleNav() {
@@ -2244,9 +2247,10 @@ export class StoreChecklistShell extends Component {
     }
 
     importDone(res) {
-        if (res.benchmark) {
+        if (res.benchmark || res.label) {
             const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";
-            this.notification.add(`Đã nhập Điểm chuẩn: thêm ${res.created}, cập nhật ${res.updated}, xóa ${res.removed} tiêu chí không còn trong file${warn}`,
+            const removed = res.removed ? `, xóa ${res.removed} tiêu chí không còn trong file` : "";
+            this.notification.add(`Đã nhập ${res.label || "Điểm chuẩn"}: thêm ${res.created}, cập nhật ${res.updated}${removed}${warn}`,
                 { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count) });
             this.state.viewKey += 1;
             return;

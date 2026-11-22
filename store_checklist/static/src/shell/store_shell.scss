@@ -3098,22 +3098,25 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
   .o_store_cht .cht_main{overflow-x:auto;width:100%;}
 }
 
-/* Danh sách công việc CHT: tiêu đề cố định khi cuộn, bảng vừa khung (không cuộn ngang), cột Nội dung chiếm phần còn lại và tự xuống dòng */
+/* Danh sách công việc CHT (giống Danh sách công việc NVBH): tiêu đề cố định khi cuộn, tự xuống dòng, vừa khung không cuộn ngang */
 .o_store_task.o_store_cht_task .o_list_renderer{max-height: calc(100vh - 210px); overflow-y: auto !important; overflow-x: hidden !important;}
 .o_store_task.o_store_cht_task table.o_list_table{table-layout: fixed !important; width: 100% !important; min-width: 0 !important;}
 .o_store_task.o_store_cht_task table.o_list_table thead th{position: sticky !important; top: 0; z-index: 3; background: #dbeafe !important; box-shadow: inset 0 -1px 0 #c7d2e5; vertical-align: middle;}
-.o_store_task.o_store_cht_task table.o_list_table thead th.o_list_record_selector,
+.o_store_task.o_store_cht_task table.o_list_table th.o_list_record_selector,
 .o_store_task.o_store_cht_task table.o_list_table td.o_list_record_selector{width: 34px !important;}
 .o_store_task.o_store_cht_task table.o_list_table th.o_list_button,
 .o_store_task.o_store_cht_task table.o_list_table td.o_list_button{width: 38px !important; padding: 4px !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="sequence"]{width: 48px !important; white-space: nowrap !important;}
 .o_store_task.o_store_cht_task table.o_list_table thead th[data-name="name"]{width: auto !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="final_check"]{width: 9% !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="time_slot"]{width: 10% !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="fine_1"],
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="fine_2"],
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="fine_3"]{width: 6.5% !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="frequency"]{width: 6.5% !important;}
-.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="schedule_label"]{width: 8% !important;}
-.o_store_task.o_store_cht_task table.o_list_table td{vertical-align: middle; line-height: 1.35;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="task_group"]{width: 8.5% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name^="wd_"]{width: 2.6% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="month_days"]{width: 4.8% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="frequency"]{width: 4.8% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="time_slot"]{width: 7% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="executor"],
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="controller"]{width: 5% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="final_check"]{width: 6% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name^="fine_"]{width: 5% !important;}
+.o_store_task.o_store_cht_task table.o_list_table thead th[data-name="score"]{width: 4.5% !important;}
+.o_store_task.o_store_cht_task table.o_list_table td{line-height: 1.35;}
 .o_store_task.o_store_cht_task table.o_list_table td[name="name"]{min-width: 0;}
+.o_store_cht .cht_table tr.grp_row td{background: #e0e7ff; color: #1e3a8a; font-weight: 700; padding: 6px 10px;}

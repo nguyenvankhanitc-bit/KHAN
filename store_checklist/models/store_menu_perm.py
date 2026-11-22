@@ -19,6 +19,7 @@ MENUS = [
     ('nvbh_jobs', 'Checklist NVBH › Công việc check list', 'audit'),
     ('nvbh_done', 'Checklist NVBH › Danh sách checklist NV', 'audit'),
     ('nvbh_mg', 'Checklist NVBH › Quản lý & đánh giá', 'audit'),
+    ('nvbh_cht', 'Checklist NVBH › Checklist CV CHT', 'audit'),
     ('asm', 'Checklist ASM', 'audit'),
     ('gs', 'Checklist GS', 'audit'),
     ('review', 'Phiếu Đánh Giá', 'audit'),
@@ -43,6 +44,7 @@ MENUS = [
     ('gs_level', 'Mức độ đánh giá', 'supervision'),
     ('shift', 'Danh mục ca', 'nvbh_work'),
     ('nvbh_task', 'Danh sách công việc NVBH', 'nvbh_work'),
+    ('cht_task', 'Danh sách công việc CHT', 'nvbh_work'),
     ('nvbh_rating', 'Xếp loại', 'nvbh_work'),
 ]
 OPS = ('read', 'create', 'write', 'unlink', 'export')
@@ -52,6 +54,8 @@ PERM_INHERIT = {
     'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
     'report_nvbh_perf': 'report_nvbh_asm',
+    'nvbh_cht': 'nvbh_mg',  # Checklist CV CHT: mặc định theo quyền Quản lý & đánh giá NVBH
+    'cht_task': 'nvbh_task',  # Danh sách công việc CHT: mặc định theo quyền Danh sách công việc NVBH
     'report_flow_nvbh': 'report_flow',  # Sơ đồ quy trình checklist NVBH: mặc định theo quyền Sơ đồ quy trình vận hành giám sát  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
 NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con

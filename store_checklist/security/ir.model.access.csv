@@ -44,3 +44,9 @@ access_store_nvbh_check_step_manager,store.nvbh.check.step manager,model_store_n
 access_store_nvbh_kpi_input_user,store.nvbh.kpi.input user,model_store_nvbh_kpi_input,group_store_user,1,0,0,0
 access_store_nvbh_kpi_input_manager,store.nvbh.kpi.input manager,model_store_nvbh_kpi_input,group_store_manager,1,1,1,1
 access_store_audit_category_user,store.audit.category user,model_store_audit_category,group_store_user,1,1,1,1
+access_store_cht_task_user,store.cht.task user,model_store_cht_task,group_store_user,1,1,1,1
+access_store_cht_task_manager,store.cht.task manager,model_store_cht_task,group_store_manager,1,1,1,1
+access_store_cht_check_user,store.cht.check user,model_store_cht_check,group_store_user,1,0,0,0
+access_store_cht_check_manager,store.cht.check manager,model_store_cht_check,group_store_manager,1,1,1,1
+access_store_cht_check_line_user,store.cht.check.line user,model_store_cht_check_line,group_store_user,1,0,0,0
+access_store_cht_check_line_manager,store.cht.check.line manager,model_store_cht_check_line,group_store_manager,1,1,1,1

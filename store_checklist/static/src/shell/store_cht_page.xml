@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="store_checklist.StoreChtPage">
+        <div class="o_store_cht">
+            <div class="cht_tabs">
+                <button type="button" t-att-class="state.tab === 'day' ? 'active' : ''" t-on-click="() => this.setTab('day')"><i class="fa fa-check-square-o"/> Check list ngày</button>
+                <button type="button" t-att-class="state.tab === 'report' ? 'active' : ''" t-on-click="() => this.setTab('report')"><i class="fa fa-exclamation-triangle"/> Vi phạm &amp; mức phạt tháng</button>
+            </div>
+
+            <!-- ============ TAB CHECK LIST NGÀY ============ -->
+            <t t-if="state.tab === 'day'">
+                <div class="cht_toolbar">
+                    <label>Cửa hàng
+                        <select class="form-select form-select-sm" t-on-change="onStore">
+                            <t t-foreach="state.stores" t-as="s" t-key="s.id">
+                                <option t-att-value="s.id" t-att-selected="s.id === state.storeId" t-esc="s.display_name"/>
+                            </t>
+                        </select>
+                    </label>
+                    <label>Ngày
+                        <span class="cht_date">
+                            <button type="button" class="btn btn-sm btn-light" title="Ngày trước" t-on-click="() => this.shiftDay(-1)"><i class="fa fa-chevron-left"/></button>
+                            <input type="date" class="form-control form-control-sm" t-att-value="state.date" t-att-max="today" t-on-change="onDate"/>
+                            <button type="button" class="btn btn-sm btn-light" title="Ngày sau" t-att-disabled="state.date >= today" t-on-click="() => this.shiftDay(1)"><i class="fa fa-chevron-right"/></button>
+                        </span>
+                    </label>
+                    <div class="cht_stat" t-if="state.check">
+                        <span class="badge" t-att-class="'st_' + state.check.state" t-esc="state.check.state_label"/>
+                        <span>Hoàn thành <b><t t-esc="state.check.done_count"/>/<t t-esc="state.check.total"/></b> (<t t-esc="pct"/>%)</span>
+                        <span t-if="state.check.violation_count" class="text-danger">Vi phạm <b t-esc="state.check.violation_count"/></span>
+                    </div>
+                </div>
+
+                <div class="cht_empty" t-if="!state.stores.length">Bạn chưa được phân quyền cửa hàng nào.</div>
+
+                <div class="cht_body" t-if="state.check">
+                    <div class="cht_cal">
+                        <div class="cal_head"><span>T2</span><span>T3</span><span>T4</span><span>T5</span><span>T6</span><span>T7</span><span>CN</span></div>
+                        <div class="cal_grid">
+                            <t t-foreach="calendar" t-as="c" t-key="c.key">
+                                <div t-if="c.empty" class="cal_cell empty"/>
+                                <div t-else="" class="cal_cell" t-att-class="(c.tone ? 'tone_' + c.tone : '') + (c.active ? ' active' : '') + (c.future ? ' future' : '')"
+                                     t-att-title="c.info ? (c.info.done + '/' + c.info.total + ' việc' + (c.info.violations ? ', ' + c.info.violations + ' vi phạm' : '')) : ''"
+                                     t-on-click="() => this.pickDay(c)">
+                                    <b t-esc="c.day"/>
+                                    <small t-if="c.info"><t t-esc="c.info.done"/>/<t t-esc="c.info.total"/></small>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="cal_legend">
+                            <span><i class="tone_doing"/> Đang làm</span><span><i class="tone_wait"/> Chờ ASM</span>
+                            <span><i class="tone_ok"/> Đã đánh giá</span><span><i class="tone_bad"/> Có vi phạm</span>
+                        </div>
+                    </div>
+
+                    <div class="cht_main">
+                        <div class="cht_note" t-att-class="state.check.overdue and state.check.state === 'draft' ? 'is-late' : ''">
+                            <i class="fa fa-clock-o"/>
+                            <t t-if="state.check.state === 'draft'">Hạn CHT check list: hết ngày <b t-esc="state.check.deadline"/><t t-if="state.check.overdue"> — đã quá hạn, phiếu bị khóa; việc chưa hoàn thành được tính vi phạm.</t></t>
+                            <t t-elif="state.check.state === 'submitted'">CHT <t t-esc="state.check.user"/> đã gửi lúc <t t-esc="state.check.submit_date"/> — chờ ASM đánh giá.</t>
+                            <t t-else="">Đã được <b t-esc="state.check.eval_user"/> đánh giá.</t>
+                        </div>
+
+                        <div class="cht_actions">
+                            <t t-if="state.check.can_tick">
+                                <button type="button" class="btn btn-sm btn-outline-success" t-on-click="() => this.toggleAll(true)"><i class="fa fa-check-square-o"/> Chọn tất cả</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" t-on-click="() => this.toggleAll(false)"><i class="fa fa-square-o"/> Bỏ chọn</button>
+                            </t>
+                            <button type="button" class="btn btn-sm btn-primary" t-if="state.check.can_submit" t-on-click="submit"><i class="fa fa-paper-plane"/> Hoàn thành &amp; gửi ASM</button>
+                            <t t-if="state.check.can_eval">
+                                <button type="button" class="btn btn-sm btn-outline-primary" t-on-click="evalAll"><i class="fa fa-magic"/> Đánh giá theo kết quả CHT</button>
+                                <button type="button" class="btn btn-sm btn-success" t-on-click="finishEval"><i class="fa fa-check"/> Xác nhận đánh giá</button>
+                            </t>
+                            <button type="button" class="btn btn-sm btn-outline-warning" t-if="state.check.can_reopen" t-on-click="reopen"><i class="fa fa-undo"/> Mở lại phiếu</button>
+                        </div>
+
+                        <div class="cht_empty" t-if="!state.check.lines.length">Không có công việc CHT nào đến hạn trong ngày <t t-esc="fmtDate(state.check.work_date)"/>.</div>
+                        <table class="cht_table" t-else="">
+                            <thead>
+                                <tr>
+                                    <th class="c_no">STT</th>
+                                    <th>Nội dung công việc</th>
+                                    <th class="c_slot">Khung giờ</th>
+                                    <th class="c_freq">Tần suất</th>
+                                    <th class="c_ks">KS / đánh giá cuối</th>
+                                    <th class="c_fine">Mức phạt L1 / L2 / L3</th>
+                                    <th class="c_done">Hoàn thành</th>
+                                    <th class="c_note">Ghi chú</th>
+                                    <th class="c_eval">ASM đánh giá</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="state.check.lines" t-as="l" t-key="l.id">
+                                    <tr t-att-class="l.violation ? 'is-viol' : (l.done ? 'is-done' : '')">
+                                        <td class="c_no" t-esc="l_index + 1"/>
+                                        <td>
+                                            <div t-esc="l.name"/>
+                                            <div class="viol_tag" t-if="l.violation"><i class="fa fa-exclamation-circle"/> Vi phạm lần <t t-esc="l.nth"/><t t-if="l.fine_now"> — phạt <t t-esc="l.fine_now"/></t></div>
+                                        </td>
+                                        <td class="c_slot" t-esc="l.time_slot"/>
+                                        <td class="c_freq"><t t-esc="l.frequency"/><small class="d-block text-muted" t-esc="l.schedule_label"/></td>
+                                        <td class="c_ks" t-esc="l.final_check"/>
+                                        <td class="c_fine"><t t-if="l.fines[0] or l.fines[1] or l.fines[2]"><t t-esc="l.fines[0] or '—'"/> / <t t-esc="l.fines[1] or '—'"/> / <t t-esc="l.fines[2] or '—'"/></t><t t-else="">—</t></td>
+                                        <td class="c_done">
+                                            <input type="checkbox" class="form-check-input" t-att-checked="l.done" t-att-disabled="!state.check.can_tick" t-on-change="() => this.toggle(l)"/>
+                                        </td>
+                                        <td class="c_note">
+                                            <input type="text" class="form-control form-control-sm" t-att-value="l.note" placeholder="Ghi chú..."
+                                                   t-att-disabled="!(state.check.can_tick or state.check.can_eval)" t-on-change="(ev) => this.saveNote(l, ev)"/>
+                                        </td>
+                                        <td class="c_eval">
+                                            <t t-if="state.check.can_eval">
+                                                <button type="button" class="btn btn-xs" t-att-class="l.eval_result === 'pass' ? 'btn-success' : 'btn-outline-success'" t-on-click="() => this.evaluate(l, 'pass')">Đạt</button>
+                                                <button type="button" class="btn btn-xs" t-att-class="l.eval_result === 'fail' ? 'btn-danger' : 'btn-outline-danger'" t-on-click="() => this.evaluate(l, 'fail')">K.Đạt</button>
+                                            </t>
+                                            <span t-elif="l.eval_result" t-att-class="l.eval_result === 'pass' ? 'text-success fw-bold' : 'text-danger fw-bold'" t-esc="l.eval_result === 'pass' ? 'Đạt' : 'Không đạt'"/>
+                                            <span t-else="" class="text-muted">—</span>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+
+            <!-- ============ TAB VI PHẠM THÁNG ============ -->
+            <t t-if="state.tab === 'report'">
+                <div class="cht_toolbar">
+                    <label>Tháng <input type="month" class="form-control form-control-sm" t-att-value="state.month" t-on-change="onMonth"/></label>
+                    <label>Cửa hàng
+                        <select class="form-select form-select-sm" t-on-change="onReportStore">
+                            <option value="">Tất cả cửa hàng được phân quyền</option>
+                            <t t-foreach="state.stores" t-as="s" t-key="s.id">
+                                <option t-att-value="s.id" t-att-selected="s.id == state.reportStore" t-esc="s.display_name"/>
+                            </t>
+                        </select>
+                    </label>
+                    <div class="cht_stat" t-if="state.report">
+                        <span>Lượt vi phạm <b t-esc="state.report.total_count"/></span>
+                        <span>Tổng tiền phạt <b class="text-danger" t-esc="money(state.report.total_money)"/></span>
+                        <button type="button" class="btn btn-sm btn-success" t-on-click="exportReport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                    </div>
+                </div>
+                <div class="cht_rule"><i class="fa fa-info-circle"/> Vi phạm = việc đến hạn không hoàn thành (khi đã gửi ASM hoặc quá hạn check list) hoặc ASM đánh giá Không đạt. Đếm theo cửa hàng + công việc trong tháng: lần 1, lần 2, lần 3 trở đi áp mức phạt Lần 3. Mức phạt theo % thu nhập (TN) không cộng vào tổng tiền.</div>
+                <div class="cht_empty" t-if="state.report and !state.report.stores.length">Không có vi phạm nào trong tháng <t t-esc="state.report.month"/>.</div>
+                <t t-if="state.report">
+                    <t t-foreach="state.report.stores" t-as="s" t-key="s.store_id">
+                        <div class="cht_store">
+                            <div class="cs_head" t-on-click="() => this.toggleStore(s.store_id)">
+                                <i t-att-class="'fa ' + (state.open[s.store_id] ? 'fa-caret-down' : 'fa-caret-right')"/>
+                                <b t-esc="s.store"/><span class="text-muted" t-if="s.mien"> · <t t-esc="s.mien"/></span>
+                                <span class="ms-auto">Vi phạm <b t-esc="s.count"/> · Tiền phạt <b class="text-danger" t-esc="money(s.money)"/></span>
+                            </div>
+                            <table class="cht_table" t-if="state.open[s.store_id]">
+                                <thead><tr><th>Công việc</th><th class="c_freq">Số lần</th><th>Ngày vi phạm (lần: mức phạt)</th><th class="c_fine">Tiền phạt</th><th class="c_fine">Phạt % TN</th></tr></thead>
+                                <tbody>
+                                    <t t-foreach="s.tasks" t-as="t" t-key="t_index">
+                                        <tr>
+                                            <td t-esc="t.task"/>
+                                            <td class="c_freq"><b t-esc="t.count"/></td>
+                                            <td>
+                                                <t t-foreach="t.items" t-as="i" t-key="i_index">
+                                                    <span class="viol_chip" t-att-title="i.reason"><t t-esc="i.date"/> · L<t t-esc="i.nth"/>: <t t-esc="i.fine"/></span>
+                                                </t>
+                                            </td>
+                                            <td class="c_fine" t-esc="money(t.money)"/>
+                                            <td class="c_fine" t-esc="t.percent.join(', ') or '—'"/>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </div>
+    </t>
+</templates>

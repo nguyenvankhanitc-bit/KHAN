@@ -3039,3 +3039,61 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 
 /* Sơ đồ quy trình vận hành giám sát: ảnh sơ đồ GS bên dưới sơ đồ 4 bước */
 .o_store_flow .o_store_gs_flow_img{margin-top: 18px;}
+
+/* Checklist CV CHT */
+.o_store_cht{display:flex;flex-direction:column;gap:12px;padding:4px 0 16px;}
+.o_store_cht .cht_tabs{display:flex;gap:6px;border-bottom:2px solid #e2e8f0;}
+.o_store_cht .cht_tabs button{border:0;background:none;padding:8px 14px;font-weight:600;color:#64748b;border-bottom:3px solid transparent;margin-bottom:-2px;}
+.o_store_cht .cht_tabs button.active{color:#163363;border-bottom-color:#7c3aed;}
+.o_store_cht .cht_toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;}
+.o_store_cht .cht_toolbar label{display:flex;flex-direction:column;gap:3px;font-size:.8rem;font-weight:600;color:#475569;}
+.o_store_cht .cht_toolbar select{min-width:220px;}
+.o_store_cht .cht_date{display:flex;gap:4px;align-items:center;}
+.o_store_cht .cht_stat{display:flex;flex-wrap:wrap;gap:14px;align-items:center;margin-left:auto;font-size:.9rem;}
+.o_store_cht .badge.st_draft{background:#dbeafe;color:#1d4ed8;}
+.o_store_cht .badge.st_submitted{background:#fef3c7;color:#b45309;}
+.o_store_cht .badge.st_evaluated{background:#dcfce7;color:#15803d;}
+.o_store_cht .cht_body{display:flex;gap:16px;align-items:flex-start;}
+.o_store_cht .cht_main{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
+.o_store_cht .cht_cal{width:260px;flex:none;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:10px;}
+.o_store_cht .cal_head,.o_store_cht .cal_grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+.o_store_cht .cal_head span{font-size:.7rem;font-weight:700;color:#64748b;text-align:center;}
+.o_store_cht .cal_cell{min-height:38px;border-radius:6px;background:#f8fafc;border:1px solid #eef2f7;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;font-size:.78rem;line-height:1.1;}
+.o_store_cht .cal_cell small{font-size:.62rem;color:#475569;}
+.o_store_cht .cal_cell.empty{background:none;border:0;cursor:default;}
+.o_store_cht .cal_cell.future{opacity:.35;cursor:not-allowed;}
+.o_store_cht .cal_cell.active{outline:2px solid #7c3aed;}
+.o_store_cht .tone_doing{background:#dbeafe;}
+.o_store_cht .tone_wait{background:#fef3c7;}
+.o_store_cht .tone_ok{background:#dcfce7;}
+.o_store_cht .tone_bad{background:#fee2e2;}
+.o_store_cht .cal_legend{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:8px;font-size:.7rem;color:#475569;}
+.o_store_cht .cal_legend i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:middle;margin-right:3px;}
+.o_store_cht .cht_note,.o_store_cht .cht_rule{background:#f1f5f9;border-radius:8px;padding:8px 12px;font-size:.88rem;color:#334155;}
+.o_store_cht .cht_note.is-late{background:#fee2e2;color:#b91c1c;}
+.o_store_cht .cht_actions{display:flex;flex-wrap:wrap;gap:6px;}
+.o_store_cht .cht_empty{padding:24px;text-align:center;color:#64748b;background:#fff;border:1px dashed #cbd5e1;border-radius:10px;}
+.o_store_cht .cht_table{width:100%;border-collapse:collapse;background:#fff;font-size:.86rem;}
+.o_store_cht .cht_table th{background:#1e3a6e;color:#fff;padding:8px;text-align:left;font-weight:600;}
+.o_store_cht .cht_table td{border-bottom:1px solid #e2e8f0;padding:7px 8px;vertical-align:top;}
+.o_store_cht .cht_table tr.is-done td{background:#f0fdf4;}
+.o_store_cht .cht_table tr.is-viol td{background:#fef2f2;}
+.o_store_cht .c_no{width:44px;text-align:center;}
+.o_store_cht .c_slot{width:120px;}
+.o_store_cht .c_freq{width:92px;text-align:center;}
+.o_store_cht .c_ks{width:110px;}
+.o_store_cht .c_fine{width:150px;white-space:nowrap;}
+.o_store_cht .c_done{width:84px;text-align:center;}
+.o_store_cht .c_done input{width:20px;height:20px;cursor:pointer;}
+.o_store_cht .c_note{width:180px;}
+.o_store_cht .c_eval{width:128px;white-space:nowrap;}
+.o_store_cht .c_eval .btn{padding:1px 7px;font-size:.75rem;margin-right:3px;}
+.o_store_cht .viol_tag{margin-top:3px;font-size:.76rem;font-weight:600;color:#b91c1c;}
+.o_store_cht .viol_chip{display:inline-block;margin:0 4px 4px 0;padding:1px 8px;border-radius:10px;background:#fee2e2;color:#991b1b;font-size:.76rem;}
+.o_store_cht .cht_store{background:#fff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;}
+.o_store_cht .cs_head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:#f8fafc;cursor:pointer;}
+@media (max-width: 900px){
+  .o_store_cht .cht_body{flex-direction:column;}
+  .o_store_cht .cht_cal{width:100%;}
+  .o_store_cht .cht_main{overflow-x:auto;width:100%;}
+}

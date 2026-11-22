@@ -165,7 +165,7 @@ class StoreChtTask(models.Model):
 
     def action_open_popup(self):
         self.ensure_one()
-        return {'type': 'ir.actions.act_window', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
+        return {'type': 'ir.actions.act_window', 'name': 'Công việc CHT', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
                 'target': 'new', 'context': {'dialog_size': 'large'}}
 
     def fine_for(self, nth):

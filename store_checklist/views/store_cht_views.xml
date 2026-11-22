@@ -57,13 +57,17 @@
                             <field name="fine_3"/>
                         </group>
                     </group>
-                    <group string="Thứ áp dụng (tích chọn các thứ công việc này được làm; bỏ qua khi đã nhập Ngày trong tháng)">
-                        <div class="d-flex flex-wrap gap-4 ms-2">
-                            <span><field name="wd_mon"/> T2</span><span><field name="wd_tue"/> T3</span><span><field name="wd_wed"/> T4</span>
-                            <span><field name="wd_thu"/> T5</span><span><field name="wd_fri"/> T6</span><span><field name="wd_sat"/> T7</span>
-                            <span><field name="wd_sun"/> CN</span>
-                        </div>
-                    </group>
+                    <separator string="Thứ áp dụng (tích chọn các thứ công việc này được làm; bỏ qua khi đã nhập Ngày trong tháng)"/>
+                    <!-- đặt ngoài <group> để 7 ô thứ nằm trên một hàng ngang -->
+                    <div class="d-flex flex-nowrap align-items-center gap-4 ms-2 o_store_cht_wd">
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_mon" nolabel="1"/> T2</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_tue" nolabel="1"/> T3</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_wed" nolabel="1"/> T4</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_thu" nolabel="1"/> T5</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_fri" nolabel="1"/> T6</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_sat" nolabel="1"/> T7</span>
+                        <span class="d-inline-flex align-items-center gap-1"><field name="wd_sun" nolabel="1"/> CN</span>
+                    </div>
                 </sheet>
             </form>
         </field>

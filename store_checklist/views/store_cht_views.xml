@@ -5,7 +5,7 @@
         <field name="name">store.cht.task.list</field>
         <field name="model">store.cht.task</field>
         <field name="arch" type="xml">
-            <list string="Danh sách công việc CHT" class="o_store_shift o_store_task">
+            <list string="Danh sách công việc CHT" class="o_store_shift o_store_task o_store_cht_task">
                 <field name="sequence" width="56px"/>
                 <field name="name"/>
                 <field name="final_check"/>

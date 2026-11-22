@@ -289,8 +289,10 @@ class StoreAuditTemplateLine(models.Model):
 
     @api.model
     def import_xlsx(self, scope, data):
-        """Nhập Điểm chuẩn từ Excel (cùng cột với file xuất): trùng Mẫu + Tiêu chí thì cập nhật, chưa có thì thêm mới.
-        Dòng lỗi được bỏ qua và báo lại; các dòng hợp lệ vẫn được lưu."""
+        """Nhập Điểm chuẩn từ Excel (cùng cột với file xuất) theo kiểu THAY THẾ: file là dữ liệu chuẩn của mẫu.
+        Trùng Mẫu + Tiêu chí thì cập nhật, chưa có thì thêm mới; tiêu chí của mẫu không còn trong file thì xóa;
+        STT đánh lại theo thứ tự dòng trong file; phân nhóm không còn tiêu chí nào thì xóa.
+        Dòng lỗi được bỏ qua và báo lại. Phiếu đánh giá đã tạo không bị ảnh hưởng (phiếu lưu bản sao tiêu chí)."""
         import base64
         import io as _io
         try:
@@ -328,6 +330,7 @@ class StoreAuditTemplateLine(models.Model):
         cat_by_name = {l.strip().casefold(): k for k, l in cat_list}
         created = updated = 0
         errors = []
+        touched = {}  # template id -> ids tiêu chí có trong file
 
         def many(model, names, domain_fn):
             ids, miss = [], []
@@ -345,8 +348,10 @@ class StoreAuditTemplateLine(models.Model):
             if not tmpl:
                 errors.append('Dòng %s: không tìm thấy mẫu checklist "%s"' % (n, get(r, 'Mẫu checklist')))
                 continue
-            line = self.search([('template_id', '=', tmpl.id), ('name', '=', name)], limit=1)
-            vals = {'name': name}
+            seen = touched.setdefault(tmpl.id, [])
+            # trùng tên trong cùng file: dòng sau là tiêu chí mới, không ghi đè dòng trước
+            line = self.search([('template_id', '=', tmpl.id), ('name', '=', name), ('id', 'not in', seen)], limit=1)
+            vals = {'name': name, 'sequence': n}  # giữ đúng thứ tự dòng trong file; đánh lại 1..N ở cuối
             cat_txt = get(r, 'Nhóm tiêu chí')
             cat = cat_by_name.get(cat_txt.casefold()) or (cat_txt.split('.')[0].strip().lower() if cat_txt else '')
             if cat in cat_keys:
@@ -355,8 +360,6 @@ class StoreAuditTemplateLine(models.Model):
                 errors.append('Dòng %s: Nhóm tiêu chí "%s" chưa có trong danh mục' % (n, cat_txt))
                 continue
             try:
-                if get(r, 'STT'):
-                    vals['sequence'] = int(float(get(r, 'STT').replace(',', '.')))
                 if get(r, 'Điểm chuẩn'):
                     vals['max_score'] = float(get(r, 'Điểm chuẩn').replace(',', '.'))
             except ValueError:
@@ -383,12 +386,28 @@ class StoreAuditTemplateLine(models.Model):
             if miss or miss2 or miss3:
                 errors.append('Dòng %s: không tìm thấy %s (đã bỏ qua phần này)' % (n, ', '.join(miss + miss2 + miss3)))
             if line:
-                line.write(vals)
+                line.with_context(skip_renumber=True).write(vals)
+                if 'category' in vals or 'sub_group_id' in vals:
+                    line._auto_sub_group()
                 updated += 1
             else:
-                self.create(dict(vals, template_id=tmpl.id))
+                line = self.with_context(skip_renumber=True).create(dict(vals, template_id=tmpl.id))
                 created += 1
-        return {'created': created, 'updated': updated, 'errors': errors[:20], 'error_count': len(errors)}
+            seen.append(line.id)
+        removed = 0
+        tmpls = Template.browse(list(touched))
+        if tmpls:
+            # thay thế: tiêu chí của mẫu không còn trong file thì xóa
+            old = self.search([('template_id', 'in', tmpls.ids), ('id', 'not in', [i for ids in touched.values() for i in ids])])
+            removed = len(old)
+            old.with_context(skip_renumber=True).unlink()
+            self._renumber(templates=tmpls)
+            # phân nhóm của loại checklist này không còn tiêu chí nào thì xóa
+            for atype in set(tmpls.mapped('audit_type')):
+                used = self.search([('template_id.audit_type', '=', atype)]).mapped('sub_group_id')
+                SubGroup.search([('audit_type', '=', atype), ('id', 'not in', used.ids)]).unlink()
+        return {'created': created, 'updated': updated, 'removed': removed, 'benchmark': True,
+                'errors': errors[:20], 'error_count': len(errors)}
 
     @api.onchange('category')
     def _onchange_category(self):
@@ -419,7 +438,8 @@ class StoreAuditTemplateLine(models.Model):
     def unlink(self):
         templates = self.mapped('template_id')
         res = super().unlink()
-        self._renumber(templates=templates)
+        if not self.env.context.get('skip_renumber'):
+            self._renumber(templates=templates)
         return res
 
     def _renumber(self, templates=None, moved=None):

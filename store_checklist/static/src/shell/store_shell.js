@@ -2212,8 +2212,26 @@ export class StoreChecklistShell extends Component {
                     this.state.schedImport = { data, file: file.name, res: preview, busy: false, filter: "all" };
                     return;
                 }
-                const res = await this.orm.call(this.excelModel, "import_xlsx", this.excelArgs([btoa(bin)]));
-                this.importDone(res);
+                const run = async () => {
+                    try {
+                        const res = await this.orm.call(this.excelModel, "import_xlsx", this.excelArgs([btoa(bin)]));
+                        this.importDone(res);
+                    } catch (error) {
+                        this.notifyError(error);
+                    }
+                };
+                if (this.excelModel === "store.audit.template.line") {
+                    // Điểm chuẩn: nhập kiểu thay thế -> hỏi trước
+                    this.dialog.add(ConfirmationDialog, {
+                        title: "Nhập Điểm chuẩn từ Excel",
+                        body: `File "${file.name}" sẽ THAY THẾ toàn bộ tiêu chí của mẫu checklist có trong file: tiêu chí không còn trong file sẽ bị xóa, STT đánh lại theo thứ tự dòng trong file. Phiếu đánh giá đã tạo không bị ảnh hưởng. Tiếp tục?`,
+                        confirmLabel: "Nhập và thay thế",
+                        confirm: run,
+                        cancel: () => {},
+                    });
+                    return;
+                }
+                await run();
             } catch (error) {
                 this.notifyError(error);
             }
@@ -2222,6 +2240,13 @@ export class StoreChecklistShell extends Component {
     }
 
     importDone(res) {
+        if (res.benchmark) {
+            const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";
+            this.notification.add(`Đã nhập Điểm chuẩn: thêm ${res.created}, cập nhật ${res.updated}, xóa ${res.removed} tiêu chí không còn trong file${warn}`,
+                { type: res.error_count ? "warning" : "success", sticky: Boolean(res.error_count) });
+            this.state.viewKey += 1;
+            return;
+        }
         {
             {
                 const warn = res.error_count ? ` · ${res.error_count} dòng lỗi: ${res.errors.slice(0, 3).join("; ")}${res.error_count > 3 ? "…" : ""}` : "";

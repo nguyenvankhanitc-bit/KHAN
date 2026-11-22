@@ -20,7 +20,8 @@
                 <field name="time_slot" width="92px"/>
                 <field name="executor" width="62px"/>
                 <field name="controller" width="62px"/>
-                <field name="final_check" width="82px"/>
+                <field name="admin_user_ids" widget="many2many_tags" options="{'no_create': True}" width="140px"/>
+                <field name="related_user_ids" widget="many2many_tags" options="{'no_create': True}" width="140px"/>
                 <field name="fine_1" width="70px"/>
                 <field name="fine_2" width="70px"/>
                 <field name="fine_3" width="70px"/>
@@ -50,7 +51,9 @@
                         <group>
                             <field name="executor"/>
                             <field name="controller"/>
-                            <field name="final_check"/>
+                            <field name="admin_user_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="related_user_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                            <field name="final_check" invisible="not final_check"/>
                             <field name="score"/>
                             <field name="fine_1" placeholder="vd. 50.000 hoặc 50% TN"/>
                             <field name="fine_2"/>

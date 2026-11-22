@@ -124,7 +124,11 @@ class StoreChtTask(models.Model):
     task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
     executor = fields.Char(string='Người thực hiện', default='CHT')
     controller = fields.Char(string='Người kiểm soát', default='ASM')
-    final_check = fields.Char(string='Bộ phận phúc tra cuối')
+    final_check = fields.Char(string='Bộ phận phúc tra cuối (cũ)', help='Dữ liệu cũ dạng chữ (CAMERA, ADMIN, MKT...), thay bằng cột Admin')
+    admin_user_ids = fields.Many2many('res.users', 'store_cht_task_admin_user_rel', 'task_id', 'user_id', string='Admin',
+                                      help='Các user Admin phúc tra cuối công việc này')
+    related_user_ids = fields.Many2many('res.users', 'store_cht_task_related_user_rel', 'task_id', 'user_id', string='BP liên quan',
+                                        help='Các user thuộc bộ phận liên quan đến công việc này')
     score = fields.Integer(string='Điểm chuẩn', default=2)
     time_slot = fields.Char(string='Khung giờ / Thời hạn')
     fine_1 = fields.Char(string='Phạt lần 1', help='Số tiền (vd. 50.000) hoặc % thu nhập (vd. 50% TN)')
@@ -168,6 +172,12 @@ class StoreChtTask(models.Model):
         return {'type': 'ir.actions.act_window', 'name': 'Công việc CHT', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
                 'target': 'new', 'context': {'dialog_size': 'large'}}
 
+    def _admin_names(self):
+        return ', '.join(self.sudo().admin_user_ids.mapped('name'))
+
+    def _related_names(self):
+        return ', '.join(self.sudo().related_user_ids.mapped('name'))
+
     def fine_for(self, nth):
         self.ensure_one()
         return (self.fine_1 if nth == 1 else self.fine_2 if nth == 2 else self.fine_3) or ''
@@ -204,7 +214,7 @@ class StoreChtTask(models.Model):
 
     # ---------------- Excel ----------------
     _XLS_HEAD = ['STT', 'Nhóm công việc', 'Tên công việc', 'Thứ áp dụng', 'Ngày trong tháng', 'Tần suất', 'Khung giờ / Thời hạn',
-                 'Người thực hiện', 'Người kiểm soát', 'Bộ phận phúc tra cuối', 'Phạt lần 1', 'Phạt lần 2', 'Phạt lần 3', 'Điểm chuẩn']
+                 'Người thực hiện', 'Người kiểm soát', 'Admin', 'BP liên quan', 'Phạt lần 1', 'Phạt lần 2', 'Phạt lần 3', 'Điểm chuẩn']
 
     @api.model
     def export_xlsx(self):
@@ -220,18 +230,18 @@ class StoreChtTask(models.Model):
                                 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
         cell = book.add_format({'border': 1, 'valign': 'top', 'text_wrap': True})
         num = book.add_format({'border': 1, 'valign': 'top', 'num_format': '0.##'})
-        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [6, 28, 52, 16, 14, 12, 22, 14, 14, 18, 12, 12, 12, 10])):
+        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [6, 28, 52, 16, 14, 12, 22, 14, 14, 26, 26, 12, 12, 12, 10])):
             sheet.write(0, i, h, head)
             sheet.set_column(i, i, w)
         for r, t in enumerate(tasks, 1):
             wd = '' if (t.month_days or '').strip() else t.schedule_label
             vals = [t.sequence, groups.get(t.task_group, ''), t.name, wd, t.month_days or '', freqs.get(t.frequency, ''),
-                    t.time_slot or '', t.executor or '', t.controller or '', t.final_check or '',
-                    t.fine_1 or '', t.fine_2 or '', t.fine_3 or '', t.score]
+                    t.time_slot or '', t.executor or '', t.controller or '', ', '.join(t.admin_user_ids.mapped('name')),
+                    ', '.join(t.related_user_ids.mapped('name')), t.fine_1 or '', t.fine_2 or '', t.fine_3 or '', t.score]
             for c, v in enumerate(vals):
-                sheet.write(r, c, v, num if c in (0, 13) else cell)
-        sheet.write(len(tasks) + 1, 12, 'Tổng', head)
-        sheet.write(len(tasks) + 1, 13, sum(tasks.mapped('score')), num)
+                sheet.write(r, c, v, num if c in (0, 14) else cell)
+        sheet.write(len(tasks) + 1, 13, 'Tổng', head)
+        sheet.write(len(tasks) + 1, 14, sum(tasks.mapped('score')), num)
         sheet.freeze_panes(1, 0)
         book.close()
         return {'name': 'Cong_viec_CHT.xlsx', 'data': base64.b64encode(buf.getvalue()).decode()}
@@ -274,6 +284,16 @@ class StoreChtTask(models.Model):
             freq_map[label.casefold()] = k
             freq_map[label.casefold().replace(' ', '')] = k
         labels = {label: f for f, label, _i in CHT_WEEKDAYS}
+        Users = self.env['res.users'].sudo()
+
+        def users_of(text):
+            """Tên / login user cách nhau dấu phẩy -> (ids, tên không tìm thấy)."""
+            ids, miss = [], []
+            for part in [x.strip() for x in re.split(r'[,;\n]', text or '') if x.strip()]:
+                u = Users.search(['|', ('name', '=ilike', part), ('login', '=ilike', part)], limit=1)
+                (ids.append(u.id) if u else miss.append(part))
+            return ids, miss
+
         created = updated = 0
         errors = []
         next_seq = (self.search([], order='sequence desc', limit=1).sequence or 0) + 1
@@ -282,6 +302,14 @@ class StoreChtTask(models.Model):
             if not name or name.casefold() == 'tổng':
                 continue
             vals = {'name': name}
+            miss = []
+            for xls, fname in (('Admin', 'admin_user_ids'), ('BP liên quan', 'related_user_ids')):
+                if xls.casefold() in col:
+                    ids, bad = users_of(get(r, xls))
+                    vals[fname] = [(6, 0, ids)]
+                    miss += bad
+            if miss:
+                errors.append('Dòng %s: không tìm thấy user %s (đã bỏ qua phần này)' % (n, ', '.join(miss)))
             if 'nhóm công việc' in col:
                 g = get(r, 'Nhóm công việc')
                 if g and g.casefold() not in group_map:
@@ -303,7 +331,7 @@ class StoreChtTask(models.Model):
                 errors.append('Dòng %s: STT hoặc Điểm chuẩn không phải số' % n)
                 continue
             for xls, fname in (('Khung giờ / Thời hạn', 'time_slot'), ('Người thực hiện', 'executor'), ('Người kiểm soát', 'controller'),
-                               ('Bộ phận phúc tra cuối', 'final_check'), ('Phạt lần 1', 'fine_1'), ('Phạt lần 2', 'fine_2'),
+                               ('Phạt lần 1', 'fine_1'), ('Phạt lần 2', 'fine_2'),
                                ('Phạt lần 3', 'fine_3'), ('Ngày trong tháng', 'month_days')):
                 if xls.casefold() in col:
                     vals[fname] = get(r, xls)
@@ -415,7 +443,8 @@ class StoreChtCheck(models.Model):
             new = [{
                 'check_id': check.id, 'task_id': t.id, 'sequence': t.sequence, 'name': t.name, 'time_slot': t.time_slot,
                 'task_group': t.task_group, 'executor': t.executor, 'controller': t.controller, 'score': t.score,
-                'final_check': t.final_check, 'frequency': t.frequency, 'schedule_label': t.schedule_label,
+                'admin_names': t._admin_names(), 'related_names': t._related_names(),
+                'frequency': t.frequency, 'schedule_label': t.schedule_label,
                 'fine_1': t.fine_1, 'fine_2': t.fine_2, 'fine_3': t.fine_3,
             } for t in due - have]
             if new:
@@ -423,6 +452,9 @@ class StoreChtCheck(models.Model):
             for line in check.line_ids.filtered(lambda l: l.task_id):
                 t = line.task_id
                 vals = {k: t[k] for k in ('sequence', 'task_group', 'executor', 'controller', 'score') if line[k] != t[k]}
+                for k, v in (('admin_names', t._admin_names()), ('related_names', t._related_names())):
+                    if (line[k] or '') != v:
+                        vals[k] = v
                 if vals:
                     line.write(vals)
 
@@ -452,7 +484,8 @@ class StoreChtCheck(models.Model):
                 'id': l.id, 'sequence': l.sequence, 'name': l.name, 'time_slot': l.time_slot or '',
                 'group': glabel.get(l.task_group, 'KHÁC'), 'executor': l.executor or '', 'controller': l.controller or '',
                 'score': l.score,
-                'final_check': l.final_check or '', 'frequency': dict(CHT_FREQ).get(l.frequency, ''),
+                'final_check': l.admin_names or l.final_check or '', 'related': l.related_names or '',
+                'frequency': dict(CHT_FREQ).get(l.frequency, ''),
                 'schedule_label': l.schedule_label or '', 'fines': [l.fine_1 or '', l.fine_2 or '', l.fine_3 or ''],
                 'done': l.done, 'note': l.note or '', 'eval_result': l.eval_result or '',
                 'violation': viol, 'nth': nth.get(l.id, 0) if viol else 0,
@@ -655,7 +688,9 @@ class StoreChtCheckLine(models.Model):
     executor = fields.Char(string='Người thực hiện')
     controller = fields.Char(string='Người kiểm soát')
     score = fields.Integer(string='Điểm chuẩn')
-    final_check = fields.Char(string='Bộ phận phúc tra cuối')
+    final_check = fields.Char(string='Bộ phận phúc tra cuối (cũ)')
+    admin_names = fields.Char(string='Admin')
+    related_names = fields.Char(string='BP liên quan')
     frequency = fields.Selection(CHT_FREQ, string='Tần suất')
     schedule_label = fields.Char(string='Ngày cụ thể')
     fine_1 = fields.Char(string='Phạt lần 1')

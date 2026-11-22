@@ -82,7 +82,7 @@
                                     <th>Nội dung công việc</th>
                                     <th class="c_slot">Khung giờ</th>
                                     <th class="c_freq">Tần suất</th>
-                                    <th class="c_ks">Phúc tra cuối</th>
+                                    <th class="c_ks">Admin / BP liên quan</th>
                                     <th class="c_fine">Mức phạt L1 / L2 / L3</th>
                                     <th class="c_done">Hoàn thành</th>
                                     <th class="c_note">Ghi chú</th>
@@ -102,7 +102,7 @@
                                         </td>
                                         <td class="c_slot" t-esc="l.time_slot"/>
                                         <td class="c_freq"><t t-esc="l.frequency"/><small class="d-block text-muted" t-esc="l.schedule_label"/></td>
-                                        <td class="c_ks" t-esc="l.final_check"/>
+                                        <td class="c_ks"><t t-esc="l.final_check"/><small class="d-block text-muted" t-if="l.related" t-esc="l.related"/></td>
                                         <td class="c_fine"><t t-if="l.fines[0] or l.fines[1] or l.fines[2]"><t t-esc="l.fines[0] or '—'"/> / <t t-esc="l.fines[1] or '—'"/> / <t t-esc="l.fines[2] or '—'"/></t><t t-else="">—</t></td>
                                         <td class="c_done">
                                             <input type="checkbox" class="form-check-input" t-att-checked="l.done" t-att-disabled="!state.check.can_tick" t-on-change="() => this.toggle(l)"/>

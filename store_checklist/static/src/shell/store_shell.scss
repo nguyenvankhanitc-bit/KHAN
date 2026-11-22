@@ -161,14 +161,14 @@
 .o_store_level table.o_list_table thead th *, .o_store_shift table.o_list_table thead th *{text-align: center !important; justify-content: center;}
 .o_store_level table.o_list_table thead th:not(.o_list_record_selector):not(.o_list_button):not(.o_optional_columns_dropdown_th), .o_store_shift:not(.o_store_cht_task) table.o_list_table thead th:not(.o_list_record_selector):not(.o_list_button):not(.o_optional_columns_dropdown_th){width: auto !important;}
 .o_store_level table.o_list_table td *, .o_store_shift table.o_list_table td *{text-align: center; justify-content: center;}
-.o_store_task table.o_list_table{table-layout: auto !important; width: 100% !important; min-width: 0 !important;}
+.o_store_task:not(.o_store_cht_task) table.o_list_table{table-layout: auto !important; width: 100% !important; min-width: 0 !important;}
 .o_store_task table.o_list_table th, .o_store_task table.o_list_table td{white-space: normal !important; overflow: visible !important; text-overflow: clip !important; word-break: break-word; overflow-wrap: anywhere; padding: 6px 8px !important; font-size: 13px;}
 .o_store_task table.o_list_table th *, .o_store_task table.o_list_table td *{white-space: normal !important; overflow: visible !important; text-overflow: clip !important;}
 .o_store_task:not(.o_store_cht_task) table.o_list_table thead th:not(.o_list_record_selector):not(.o_list_button):not(.o_optional_columns_dropdown_th){width: auto !important;}
 .o_store_task table.o_list_table th.o_list_record_selector, .o_store_task table.o_list_table th.o_list_button, .o_store_task table.o_list_table td.o_list_record_selector, .o_store_task table.o_list_table td.o_list_button{width: 40px !important;}
 .o_store_task table.o_list_table td[name="name"], .o_store_task table.o_list_table td[name="name"] *{text-align: left !important; justify-content: flex-start; text-transform: none !important; font-weight: 500 !important; color: inherit !important;}
 .o_store_task table.o_list_table td[name="name"]{min-width: 200px;}
-.o_store_task table.o_list_table thead th[data-name="name"]{width: 24% !important;}
+.o_store_task:not(.o_store_cht_task) table.o_list_table thead th[data-name="name"]{width: 24% !important;}
 .o_store_task table.o_list_table td[name="score"], .o_store_task table.o_list_table th[data-name="score"]{width: 70px !important;}
 .o_store_mobile{display: none;}
 @media (max-width: 767.98px){.modal-dialog:has(.o_store_audit_form){max-width: 100vw !important; width: 100vw !important; margin: 0 !important; height: 100%;}
@@ -3098,27 +3098,17 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
   .o_store_cht .cht_main{overflow-x:auto;width:100%;}
 }
 
-/* Danh sách công việc CHT (giống Danh sách công việc NVBH): tiêu đề cố định khi cuộn, tự xuống dòng, vừa khung không cuộn ngang.
-   Tiền tố dài để thắng quy tắc "width: auto !important" chung của .o_store_task */
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer{max-height: calc(100vh - 210px); overflow: auto !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table{table-layout: fixed !important; width: 100% !important; min-width: 0 !important;}
+/* Danh sách công việc CHT: bảng bung hết chiều ngang, độ rộng cột do Odoo tự chia (kéo giãn được, dài quá thì có thanh cuộn ngang),
+   tiêu đề cố định khi cuộn dọc, cột chọn + Tên công việc cố định bên trái khi cuộn ngang */
+.o_store_shift.o_store_task.o_store_cht_task{width: 100%;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer{width: 100% !important; max-height: calc(100vh - 210px); overflow: auto !important;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th{position: sticky !important; top: 0; z-index: 3; background: #dbeafe !important; box-shadow: inset 0 -1px 0 #c7d2e5; vertical-align: middle; padding: 6px 4px !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th.o_list_record_selector, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td.o_list_record_selector{width: 32px !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th.o_list_button, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td.o_list_button{width: 36px !important; padding: 4px !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th.o_optional_columns_dropdown_th{width: 1px !important; padding: 0 !important;}
-/* Tên công việc / Nhóm công việc: không khóa độ rộng để kéo giãn được (Odoo lưu độ rộng kéo vào style của cột) */
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="name"]{min-width: 160px;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="task_group"]{min-width: 90px;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name^="wd_"]{width: 2.5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="month_days"]{width: 5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="frequency"]{width: 4.5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="time_slot"]{width: 6.5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="executor"]{width: 4.5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="controller"]{width: 4.5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="final_check"]{width: 6% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name^="fine_"]{width: 5% !important;}
-.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="score"]{width: 4.2% !important;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td{line-height: 1.35; padding: 6px 5px !important; word-break: normal !important; overflow-wrap: break-word !important;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table th.o_list_record_selector, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td.o_list_record_selector{position: sticky !important; left: 0; z-index: 2; width: 36px !important; min-width: 36px !important; max-width: 36px !important; box-sizing: border-box; background: #fff;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="name"], .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td[name="name"]{position: sticky !important; left: 36px; z-index: 2; background: #fff; box-shadow: inset -2px 0 0 #c7d2e5;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th.o_list_record_selector, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="name"]{z-index: 5 !important; background: #dbeafe !important;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table thead th[data-name="name"]{box-shadow: inset -2px -1px 0 #c7d2e5;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table tr.o_group_header > th:first-child, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table tr.o_group_header > td:first-child{position: sticky !important; left: 0; z-index: 2; background: #f1f5f9;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table tr.o_data_row:hover td[name="name"], .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table tr.o_data_row:hover td.o_list_record_selector{background: #f8fafc;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td[name="name"], .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td[name="name"] *{text-align: left !important; justify-content: flex-start;}
-
 .o_store_cht .cht_table tr.grp_row td{background: #e0e7ff; color: #1e3a8a; font-weight: 700; padding: 6px 10px;}

@@ -7,7 +7,7 @@
         <field name="arch" type="xml">
             <list group_edit="0" group_delete="0" string="Danh sách công việc CHT" class="o_store_shift o_store_task o_store_cht_task">
                 <field name="name"/>
-                <field name="task_group"/>
+                <field name="task_group" width="150px"/>
                 <field name="wd_mon" width="38px"/>
                 <field name="wd_tue" width="38px"/>
                 <field name="wd_wed" width="38px"/>
@@ -15,16 +15,16 @@
                 <field name="wd_fri" width="38px"/>
                 <field name="wd_sat" width="38px"/>
                 <field name="wd_sun" width="38px"/>
-                <field name="month_days"/>
-                <field name="frequency"/>
-                <field name="time_slot"/>
-                <field name="executor"/>
-                <field name="controller"/>
-                <field name="final_check"/>
-                <field name="fine_1"/>
-                <field name="fine_2"/>
-                <field name="fine_3"/>
-                <field name="score" sum="Tổng điểm chuẩn"/>
+                <field name="month_days" width="62px"/>
+                <field name="frequency" width="66px"/>
+                <field name="time_slot" width="92px"/>
+                <field name="executor" width="62px"/>
+                <field name="controller" width="62px"/>
+                <field name="final_check" width="82px"/>
+                <field name="fine_1" width="70px"/>
+                <field name="fine_2" width="70px"/>
+                <field name="fine_3" width="70px"/>
+                <field name="score" sum="Tổng điểm chuẩn" width="58px"/>
                 <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
                 <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
                         confirm="Xóa công việc này?"/>

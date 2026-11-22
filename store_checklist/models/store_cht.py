@@ -17,7 +17,6 @@ from datetime import timedelta
 from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
-from .store_nvbh_task import TASK_GROUPS
 from .store_role import role_level
 
 CHT_FREQ = [('day', 'Ngày'), ('week', 'Tuần'), ('month', 'Tháng'), ('week_month', 'Tuần/Tháng')]
@@ -40,40 +39,50 @@ CHT_DEFAULT_TASKS = [
     ('Kiểm tra vệ sinh CCDC, quầy kệ', 'ADMIN', '15h-16h', '', '', '', 'week', 'T2', ''),
     ('Kiểm tra vệ sinh, sắp xếp kho', 'ADMIN', '15h-16h', '', '', '', 'week', 'T2', ''),
     ('Tắt máy lạnh trước khi về 30 phút', 'CAMERA', '21h30', '50.000', '100.000', '50% TN', 'day', ALL, ''),
-    ('Mở trình chiếu clip / tivi / loa; gửi hình ảnh / video báo cáo qua Lark (TTTM trước 10h30)', 'MKT', '8h (9h)',
+    ('Mở trình chiếu clip/TV/loa, gửi hình ảnh/video báo cáo qua Lark', 'MKT', '8h (9h)',
      '100.000', '200.000', '50% TN', 'day', ALL, ''),
-    ('Tắt các thiết bị khi ra về (máy tính, tivi / led); khóa cửa hàng / niêm phong cửa hàng', 'CAMERA', '22h',
+    ('Tắt thiết bị khi ra về, khóa cửa hàng/niêm phong cửa hàng', 'CAMERA', '22h',
      '30% TN', '50% TN', '100% TN', 'day', ALL, ''),
-    ('Kiểm tra số lượng thực tế và drive để đối chiếu số liệu', 'ADMIN', '8h-10h', '30% TN', '50% TN', '100% TN', 'day', ALL, ''),
-    ('Làm thẻ kho và sổ theo dõi nhập xuất tồn kho (drive)', '', '15h-17h', '', '', '', 'day', ALL, ''),
+    ('Kiểm tra số lượng thực tế và Drive để đối chiếu số liệu', 'ADMIN', '8h-10h', '30% TN', '50% TN', '100% TN', 'day', ALL, ''),
+    ('Làm thẻ kho và sổ theo dõi nhập xuất tồn kho', '', '15h-17h', '', '', '', 'day', ALL, ''),
     ('Kiểm tra bàn giao ca trên sổ theo khu vực', 'ADMIN', '8h (9h) hoặc 14h (15h)', '', '', '', 'day', ALL, ''),
-    ('Kiểm tra, báo cáo các trang thiết bị / tài sản bị hư hỏng, mất (nếu có)', 'IT', '16h-17h', '20% TN', '30% TN', '50% TN',
+    ('Kiểm tra báo cáo các trang thiết bị/tài sản bị hư hỏng, mất', 'IT', '16h-17h', '20% TN', '30% TN', '50% TN',
      'week', 'T5', ''),
-    ('Kiểm tra trưng bày, sắp xếp, bảng sale, hàng hóa, tem giá đúng guideline / chương trình, quy định tại cửa hàng và kho',
+    ('Kiểm tra trưng bày, sắp xếp, bảng sale, hàng hóa, tem giá theo guideline',
      'ADMIN', '10h-11h', '30% TN', '50% TN', '100% TN', 'day', ALL, ''),
-    ('Báo cáo doanh thu hằng ngày đúng giờ, sổ sách đầy đủ; chụp hình và gửi bill BLK kèm tem tag + chứng từ kèm theo (nếu có)',
+    ('Báo cáo doanh thu hằng ngày, sổ sách, bill BLK và chứng từ',
      'ADMIN', '21h30-22h', '100.000', '200.000', '50% TN', 'day', ALL, ''),
     ('Nộp tiền đúng thời gian quy định, ghi rõ tên cửa hàng', 'KTCN', 'Trước 11h hằng ngày', '100.000', '200.000', '50% TN',
      'day', ALL, ''),
-    ('Check mail, phản hồi thông tin đúng thời gian quy định cho các bộ phận', 'ADMIN', '10h / 15h / 20h', '100.000', '200.000',
+    ('Kiểm tra mail, phản hồi thông tin đúng thời gian quy định', 'ADMIN', '10h / 15h / 20h', '100.000', '200.000',
      '50% TN', 'day', ALL, ''),
-    ('Đăng bài Facebook / GGB và báo cáo đầy đủ, đúng quy định', 'MKT', '19h', '50.000', '100.000', '200.000', 'week', 'T2', ''),
+    ('Đăng bài Facebook/GGB và báo cáo đầy đủ', 'MKT', '19h', '50.000', '100.000', '200.000', 'week', 'T2', ''),
     ('Gửi báo cáo hình ảnh trưng bày CTKM, bảng sale hằng tuần', 'MKT', '12h-17h', '100.000', '200.000', '50% TN', 'week', 'T2', ''),
-    ('Đối chiếu và chụp hình biên bản đối chiếu công nợ từ trung tâm và các chứng từ liên quan gửi về mail ketoan@sangtam.com, '
-     'sau đó gửi bưu điện về Công ty', 'KẾ TOÁN THUẾ', '15h-17h', '50.000', '100.000', '200.000', 'week_month', 'T2', ''),
-    ('Báo cáo số lượng, hình ảnh, tình trạng hàng hóa hư hỏng về Công ty', 'KTAD', '15h-16h', '100.000', '200.000', '50% TN',
+    ('Đối chiếu công nợ, chứng từ liên quan và gửi về công ty', 'KẾ TOÁN THUẾ', '15h-17h', '50.000', '100.000', '200.000', 'week_month', 'T2', ''),
+    ('Báo cáo số lượng, hình ảnh, tình trạng hàng hóa hư hỏng', 'KTAD', '15h-16h', '100.000', '200.000', '50% TN',
      'week_month', '', '15/30'),
     ('Đối chiếu và giải trình số lượng tồn kho định kỳ', 'KTDT', '10h-12h (ngày 15 hoặc 30/31)', '100.000', '200.000', '50% TN',
      'month', '', '15/30'),
-    ('Đặt hàng / châm hàng / CCDC', 'ON / SÀN', '12h-13h', '50.000', '100.000', '50% TN', 'week', 'T6', ''),
-    ('Đặt văn phòng phẩm / đồng phục', 'ON / SÀN', '14h-15h', '50.000', '100.000', '50% TN', 'week_month', '', '02-05'),
+    ('Đặt hàng/châm hàng/CCDC', 'ON / SÀN', '12h-13h', '50.000', '100.000', '50% TN', 'week', 'T6', ''),
+    ('Đặt văn phòng phẩm/đồng phục', 'ON / SÀN', '14h-15h', '50.000', '100.000', '50% TN', 'week_month', '', '02-05'),
     ('Làm biên bản tự kiểm tra công tác PCCC hằng tháng', '', '10h-10h30', '', '', '', 'month', '', '25'),
 ]
 
 
+# Nhóm công việc riêng của CHT (khác nhóm của công việc NVBH)
+CHT_GROUPS = [
+    ('01', '01. Quản lý nhân sự và đào tạo'),
+    ('02', '02. Quản lý vận hành cửa hàng'),
+    ('03', '03. Quản lý tài sản, thiết bị và CCDC'),
+    ('04', '04. Quản lý truyền thông và Marketing'),
+    ('05', '05. Quản lý hàng hóa và tồn kho'),
+    ('06', '06. POSM – Quản lý trưng bày và hình ảnh'),
+    ('07', '07. Quản lý tài chính và doanh thu'),
+    ('08', '08. Quản lý hành chính và an toàn'),
+]
+TASK_GROUPS = CHT_GROUPS  # các hàm bên dưới dùng tên TASK_GROUPS
 # Nhóm công việc mặc định của 29 việc (theo thứ tự trong CHT_DEFAULT_TASKS)
-CHT_DEFAULT_GROUPS = ['III', 'III', 'III', 'III', 'IV', 'I', 'I', 'II', 'I', 'II', 'I', 'V', 'I', 'II', 'II', 'IV', 'I', 'II',
-                      'IV', 'IV', 'IV', 'V', 'V', 'IV', 'II', 'II', 'II', 'I', 'I']
+CHT_DEFAULT_GROUPS = ['01', '01', '01', '01', '02', '03', '02', '05', '03', '05', '03', '04', '02', '05', '05', '02', '03', '06', '07', '07', '08', '04', '06', '07', '05', '05', '05', '08', '08']
 
 
 def _parse_money(text):
@@ -196,6 +205,25 @@ class StoreChtTask(models.Model):
                 vals[fname] = wds == ALL or label in on
             vals_list.append(vals)
         self.sudo().create(vals_list)
+
+    @api.model
+    def _apply_cht_groups(self):
+        """Chuyển danh mục sang 8 nhóm công việc CHT (01-08) theo STT 1..29, một lần: việc còn mang nhóm cũ (I-VI / trống)
+        thì lấy tên + nhóm theo danh mục mặc định cùng STT; dòng phiếu đã tạo lấy lại nhóm theo công việc."""
+        codes = {k for k, _l in CHT_GROUPS}
+        cr = self.env.cr
+        cr.execute("SELECT id, sequence FROM store_cht_task WHERE task_group IS NULL OR task_group NOT IN %s", (tuple(codes),))
+        rows = cr.fetchall()
+        for tid, seq in rows:
+            if seq and 1 <= seq <= len(CHT_DEFAULT_TASKS):
+                cr.execute("UPDATE store_cht_task SET name = %s, task_group = %s WHERE id = %s",
+                           (CHT_DEFAULT_TASKS[seq - 1][0], CHT_DEFAULT_GROUPS[seq - 1], tid))
+            else:
+                cr.execute("UPDATE store_cht_task SET task_group = NULL WHERE id = %s", (tid,))
+        cr.execute("""UPDATE store_cht_check_line l SET task_group = t.task_group FROM store_cht_task t
+                      WHERE l.task_id = t.id AND l.task_group IS DISTINCT FROM t.task_group""")
+        cr.execute("UPDATE store_cht_check_line SET task_group = NULL WHERE task_group IS NOT NULL AND task_group NOT IN %s", (tuple(codes),))
+        self.env.invalidate_all()
 
     @api.model
     def _fill_default_groups(self):

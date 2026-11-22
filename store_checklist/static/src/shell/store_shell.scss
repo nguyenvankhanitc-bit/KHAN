@@ -3119,3 +3119,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_cht .cht_table tr.grp_row td{background: #e0e7ff; color: #1e3a8a; font-weight: 700; padding: 6px 10px;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td .o_field_many2many_tags .o_tag{max-width: 100%; white-space: normal !important;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td .o_field_many2many_tags .o_field_tags{flex-wrap: wrap; justify-content: center; gap: 2px;}
+/* thead của Odoo là lớp sticky riêng (z-index thấp): nâng lên trên các ô cố định cột trái để khi cuộn dọc không bị đè */
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table > thead{position: sticky !important; top: 0; z-index: 10 !important;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table > tbody td.o_list_record_selector, .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table > tbody td[name="name"]{z-index: 1 !important;}
+.o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table > tbody tr.o_group_header{position: relative; z-index: 0;}

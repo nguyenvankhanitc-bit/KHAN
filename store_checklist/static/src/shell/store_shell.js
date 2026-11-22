@@ -3973,6 +3973,11 @@ export class StoreChecklistShell extends Component {
         if (type === "form") {
             viewProps.resId = resId || false;
         }
+        // group_by trong context của action (vd. Danh sách công việc CHT): View nhúng chỉ nhận qua prop groupBy
+        const ctxGroupBy = viewProps.context.group_by;
+        if (type === "list" && ctxGroupBy && ctxGroupBy.length) {
+            viewProps.groupBy = Array.isArray(ctxGroupBy) ? ctxGroupBy : [ctxGroupBy];
+        }
         // đặt màn hiện tại trước khi tính domain lọc: listDomain chọn trường ngày (audit_date / work_date) theo activeNav
         this.state.activeNav = navId;
         if (navId === "shift") {

@@ -113,6 +113,55 @@ def _month_days(spec, day):
     return False
 
 
+class StoreChtTaskGroup(models.Model):
+    _name = 'store.cht.task.group'
+    _inherit = 'store.perm.mixin'
+    _description = 'Nhóm công việc CHT'
+    _order = 'sequence, id'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return 'cht_task'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return 'cht_task'
+
+    name = fields.Char(string='Nhóm công việc', required=True)
+    sequence = fields.Integer(string='Thứ tự', default=10)
+    active = fields.Boolean(default=True)
+
+    def action_edit_popup(self):
+        """Nút bút chì trên dòng nhóm của Danh sách công việc CHT: sửa tên / thứ tự nhóm trong popup."""
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'name': 'Sửa nhóm công việc', 'res_model': self._name, 'res_id': self.id,
+                'views': [(self.env.ref('store_checklist.view_store_cht_task_group_form').id, 'form')], 'target': 'new'}
+
+    @api.model
+    def _ensure_default_groups(self):
+        """Tạo 8 nhóm mặc định 01-08 nếu chưa có (so theo tên; nhóm đã đổi tên thì không tạo lại khi danh mục đã có nhóm)."""
+        G = self.sudo().with_context(active_test=False)
+        if G.search_count([]):
+            return
+        G.create([{'name': label, 'sequence': (i + 1) * 10} for i, (_k, label) in enumerate(CHT_GROUPS)])
+
+    @api.model
+    def _find_or_create(self, text):
+        """Tìm nhóm theo tên (không phân biệt hoa thường) hoặc theo mã đầu (vd. "01"); chưa có thì tạo nhóm mới."""
+        t = (text or '').strip()
+        if not t:
+            return self.browse()
+        G = self.sudo()
+        grp = G.search([('name', '=ilike', t)], limit=1)
+        if not grp and len(t) <= 3:
+            grp = G.search([('name', '=like', t + '.%')], limit=1)
+        if not grp:
+            last = G.search([], order='sequence desc', limit=1)
+            grp = G.create({'name': t, 'sequence': (last.sequence or 0) + 10})
+        return grp
+
+
 class StoreChtTask(models.Model):
     _name = 'store.cht.task'
     _inherit = 'store.perm.mixin'
@@ -130,7 +179,8 @@ class StoreChtTask(models.Model):
 
     sequence = fields.Integer(string='STT', default=10)
     name = fields.Char(string='Tên công việc', required=True)
-    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
+    task_group = fields.Selection(TASK_GROUPS, string='Nhóm (mã cũ)')  # chỉ còn để chuyển dữ liệu sang group_id
+    group_id = fields.Many2one('store.cht.task.group', string='Nhóm công việc', ondelete='restrict', index=True)
     executor = fields.Char(string='Người thực hiện', default='CHT')
     controller = fields.Char(string='Người kiểm soát', default='ASM')
     final_check = fields.Char(string='Bộ phận phúc tra cuối (cũ)', help='Dữ liệu cũ dạng chữ (CAMERA, ADMIN, MKT...), thay bằng cột Admin')
@@ -183,8 +233,7 @@ class StoreChtTask(models.Model):
 
     def action_fill_down(self):
         """Chép Admin + BP liên quan của dòng đầu (theo thứ tự hiển thị: nhóm, STT) xuống các dòng đã chọn còn lại."""
-        gorder = {k: i for i, (k, _l) in enumerate(CHT_GROUPS)}
-        recs = self.sorted(lambda r: (gorder.get(r.task_group, 99), r.sequence, r.id))
+        recs = self.sorted(lambda r: (r.group_id.sequence if r.group_id else 9999, r.group_id.id or 0, r.sequence, r.id))
         if len(recs) < 2:
             raise UserError(_('Hãy tick chọn ít nhất 2 dòng: dòng đầu là dòng mẫu, các dòng sau nhận Admin / BP liên quan của dòng đầu.'))
         src, rest = recs[0], recs[1:]
@@ -195,6 +244,20 @@ class StoreChtTask(models.Model):
                        'message': _('Đã chép Admin / BP liên quan của "%s" cho %s dòng.') % (src.name, len(rest)),
                        'next': {'type': 'ir.actions.act_window_close'}},
         }
+
+    _FILL_FIELDS = ('admin_user_ids', 'related_user_ids')
+
+    @api.model
+    def fill_from(self, src_id, target_ids, field):
+        """Kéo xuống trên bảng (giống Excel): chép giá trị cột `field` của dòng nguồn cho các dòng đích."""
+        if field not in self._FILL_FIELDS:
+            raise UserError(_('Cột này không hỗ trợ kéo xuống để chép.'))
+        src = self.browse(int(src_id)).exists()
+        targets = self.browse([int(i) for i in target_ids or []]).exists() - src
+        if not src or not targets:
+            return 0
+        targets.write({field: [(6, 0, src[field].ids)]})
+        return len(targets)
 
     def _admin_names(self):
         return ', '.join(self.sudo().admin_user_ids.mapped('name'))
@@ -227,7 +290,8 @@ class StoreChtTask(models.Model):
         thì lấy tên + nhóm theo danh mục mặc định cùng STT; dòng phiếu đã tạo lấy lại nhóm theo công việc."""
         codes = {k for k, _l in CHT_GROUPS}
         cr = self.env.cr
-        cr.execute("SELECT id, sequence FROM store_cht_task WHERE task_group IS NULL OR task_group NOT IN %s", (tuple(codes),))
+        # chỉ việc còn mang mã nhóm cũ (I-VI); việc mới tạo (không có mã) không bị đổi tên
+        cr.execute("SELECT id, sequence FROM store_cht_task WHERE task_group IS NOT NULL AND task_group NOT IN %s", (tuple(codes),))
         rows = cr.fetchall()
         for tid, seq in rows:
             if seq and 1 <= seq <= len(CHT_DEFAULT_TASKS):
@@ -238,6 +302,19 @@ class StoreChtTask(models.Model):
         cr.execute("""UPDATE store_cht_check_line l SET task_group = t.task_group FROM store_cht_task t
                       WHERE l.task_id = t.id AND l.task_group IS DISTINCT FROM t.task_group""")
         cr.execute("UPDATE store_cht_check_line SET task_group = NULL WHERE task_group IS NOT NULL AND task_group NOT IN %s", (tuple(codes),))
+        self.env.invalidate_all()
+
+    @api.model
+    def _sync_group_ids(self):
+        """Chuyển Nhóm công việc từ mã cũ (01-08) sang danh mục nhóm (group_id); dòng phiếu lấy nhóm theo công việc."""
+        Group = self.env['store.cht.task.group']
+        Group._ensure_default_groups()
+        labels = dict(CHT_GROUPS)
+        for rec in self.sudo().with_context(active_test=False).search([('group_id', '=', False), ('task_group', '!=', False)]):
+            grp = Group._find_or_create(labels.get(rec.task_group, rec.task_group))
+            rec.group_id = grp
+        self.env.cr.execute("""UPDATE store_cht_check_line l SET group_id = t.group_id FROM store_cht_task t
+                               WHERE l.task_id = t.id AND l.group_id IS DISTINCT FROM t.group_id""")
         self.env.invalidate_all()
 
     @api.model
@@ -278,7 +355,7 @@ class StoreChtTask(models.Model):
             sheet.set_column(i, i, w)
         for r, t in enumerate(tasks, 1):
             wd = '' if (t.month_days or '').strip() else t.schedule_label
-            vals = [t.sequence, groups.get(t.task_group, ''), t.name, wd, t.month_days or '', freqs.get(t.frequency, ''),
+            vals = [t.sequence, t.group_id.name or '', t.name, wd, t.month_days or '', freqs.get(t.frequency, ''),
                     t.time_slot or '', t.executor or '', t.controller or '', ', '.join(t.admin_user_ids.mapped('name')),
                     ', '.join(t.related_user_ids.mapped('name')), t.fine_1 or '', t.fine_2 or '', t.fine_3 or '', t.score]
             for c, v in enumerate(vals):
@@ -355,10 +432,8 @@ class StoreChtTask(models.Model):
                 errors.append('Dòng %s: không tìm thấy user %s (đã bỏ qua phần này)' % (n, ', '.join(miss)))
             if 'nhóm công việc' in col:
                 g = get(r, 'Nhóm công việc')
-                if g and g.casefold() not in group_map:
-                    errors.append('Dòng %s: Nhóm công việc "%s" không hợp lệ' % (n, g))
-                    continue
-                vals['task_group'] = group_map.get(g.casefold(), False)
+                # tên nhóm đã có / mã đầu (01) / tên nhóm mới (tự tạo nhóm)
+                vals['group_id'] = self.env['store.cht.task.group']._find_or_create(g).id or False
             if 'tần suất' in col and get(r, 'Tần suất'):
                 f = get(r, 'Tần suất').casefold()
                 if f not in freq_map and f.replace(' ', '') not in freq_map:
@@ -485,7 +560,8 @@ class StoreChtCheck(models.Model):
             stale.unlink()
             new = [{
                 'check_id': check.id, 'task_id': t.id, 'sequence': t.sequence, 'name': t.name, 'time_slot': t.time_slot,
-                'task_group': t.task_group, 'executor': t.executor, 'controller': t.controller, 'score': t.score,
+                'task_group': t.task_group, 'group_id': t.group_id.id, 'executor': t.executor, 'controller': t.controller,
+                'score': t.score,
                 'admin_names': t._admin_names(), 'related_names': t._related_names(),
                 'frequency': t.frequency, 'schedule_label': t.schedule_label,
                 'fine_1': t.fine_1, 'fine_2': t.fine_2, 'fine_3': t.fine_3,
@@ -495,6 +571,8 @@ class StoreChtCheck(models.Model):
             for line in check.line_ids.filtered(lambda l: l.task_id):
                 t = line.task_id
                 vals = {k: t[k] for k in ('sequence', 'task_group', 'executor', 'controller', 'score') if line[k] != t[k]}
+                if line.group_id != t.group_id:
+                    vals['group_id'] = t.group_id.id
                 for k, v in (('admin_names', t._admin_names()), ('related_names', t._related_names())):
                     if (line[k] or '') != v:
                         vals[k] = v
@@ -519,13 +597,11 @@ class StoreChtCheck(models.Model):
         closed = self._closed()
         nth = self._violation_numbers()
         lines = []
-        gorder = {k: i for i, (k, _l) in enumerate(TASK_GROUPS)}
-        glabel = dict(TASK_GROUPS)
-        for l in self.line_ids.sorted(lambda x: (gorder.get(x.task_group, 99), x.sequence, x.id)):
+        for l in self.line_ids.sorted(lambda x: (x.group_id.sequence if x.group_id else 9999, x.group_id.id or 0, x.sequence, x.id)):
             viol = l._is_violation(closed)
             lines.append({
                 'id': l.id, 'sequence': l.sequence, 'name': l.name, 'time_slot': l.time_slot or '',
-                'group': glabel.get(l.task_group, 'KHÁC'), 'executor': l.executor or '', 'controller': l.controller or '',
+                'group': l.group_id.name or 'KHÁC', 'executor': l.executor or '', 'controller': l.controller or '',
                 'score': l.score,
                 'final_check': l.admin_names or l.final_check or '', 'related': l.related_names or '',
                 'frequency': dict(CHT_FREQ).get(l.frequency, ''),
@@ -727,7 +803,8 @@ class StoreChtCheckLine(models.Model):
     sequence = fields.Integer(string='STT', default=10)
     name = fields.Char(string='Nội dung công việc', required=True)
     time_slot = fields.Char(string='Khung giờ / Thời hạn')
-    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
+    task_group = fields.Selection(TASK_GROUPS, string='Nhóm (mã cũ)')
+    group_id = fields.Many2one('store.cht.task.group', string='Nhóm công việc', ondelete='set null')
     executor = fields.Char(string='Người thực hiện')
     controller = fields.Char(string='Người kiểm soát')
     score = fields.Integer(string='Điểm chuẩn')

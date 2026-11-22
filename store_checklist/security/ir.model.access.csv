@@ -50,3 +50,5 @@ access_store_cht_check_user,store.cht.check user,model_store_cht_check,group_sto
 access_store_cht_check_manager,store.cht.check manager,model_store_cht_check,group_store_manager,1,1,1,1
 access_store_cht_check_line_user,store.cht.check.line user,model_store_cht_check_line,group_store_user,1,0,0,0
 access_store_cht_check_line_manager,store.cht.check.line manager,model_store_cht_check_line,group_store_manager,1,1,1,1
+access_store_cht_task_group_user,store.cht.task.group user,model_store_cht_task_group,group_store_user,1,1,1,1
+access_store_cht_task_group_manager,store.cht.task.group manager,model_store_cht_task_group,group_store_manager,1,1,1,1

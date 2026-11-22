@@ -1,6 +1,6 @@
 {
     'name': 'Checklist Đánh Giá Cửa Hàng',
-    'version': '19.0.2.79.0',
+    'version': '19.0.2.80.0',
     'category': 'Operations/Audit',
     'summary': 'Checklist audit / Mystery Shopper, chấm điểm và theo dõi khắc phục cửa hàng',
     'author': 'Nguyễn Văn Khán',
@@ -44,6 +44,7 @@
             'store_checklist/static/src/shell/store_cht_page.js',
             'store_checklist/static/src/shell/store_cht_page.xml',
             'store_checklist/static/src/shell/store_shell.js',
+            'store_checklist/static/src/shell/store_cht_fill.js',
             'store_checklist/static/src/shell/store_score_field.js',
             'store_checklist/static/src/shell/store_upload_guard.js',
             'store_checklist/static/src/shell/store_photo_field.js',

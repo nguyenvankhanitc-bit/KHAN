@@ -6,4 +6,6 @@
     <function model="store.cht.task" name="_apply_cht_groups"/>
     <!-- việc đã có: điền Nhóm công việc / Người thực hiện / Người kiểm soát còn trống -->
     <function model="store.cht.task" name="_fill_default_groups"/>
+    <!-- Nhóm công việc thành danh mục sửa được (store.cht.task.group) -->
+    <function model="store.cht.task" name="_sync_group_ids"/>
 </odoo>

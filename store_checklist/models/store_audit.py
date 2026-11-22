@@ -9,6 +9,7 @@ from odoo.tools.image import image_process
 from odoo.exceptions import AccessError, UserError, ValidationError
 
 from .store_notify import bot_send, card
+from .store_lark import lark_card, lark_config, lark_send_card, lark_send_webhook
 
 _logger = logging.getLogger(__name__)
 
@@ -74,6 +75,8 @@ class StoreAudit(models.Model):
     summary = fields.Text(string='Đánh giá tổng thể')
     error_count = fields.Integer(string='Tổng số lỗi', compute='_compute_error_total', store=True)
     violation_done = fields.Boolean(string='Đã xử lý xong sai phạm', compute='_compute_violation_done')
+    # Checklist GS chấm đủ tiêu chí -> báo 1 lần vào nhóm Lark (store_lark.py); gửi lỗi thì tự bỏ cờ để lần lưu sau gửi lại
+    lark_sent = fields.Boolean(string='Đã báo nhóm Lark', copy=False)
 
     # Mức đánh giá từng mục A/B/C và tổng (theo bảng Cài đặt > Mức Đánh giá), tính realtime, không lưu
     lvl_a = fields.Char(compute='_compute_levels')
@@ -544,6 +547,7 @@ class StoreAudit(models.Model):
         for audit in audits.filtered(lambda a: a.template_id and not a.line_ids):
             audit.line_ids = self._template_line_commands(audit.template_id)
         audits._auto_state()
+        audits._lark_queue_gs_done()
         return audits
 
     def write(self, vals):
@@ -552,7 +556,88 @@ class StoreAudit(models.Model):
         res = super().write(vals)
         if 'state' not in vals:  # "Về nháp" chủ động thì giữ nguyên
             self._auto_state()
+        if 'lark_sent' not in vals:
+            self._lark_queue_gs_done()
         return res
+
+    # --- Báo nhóm Lark khi Checklist GS hoàn tất ---
+    def _lark_queue_gs_done(self):
+        """Phiếu GS đã chấm đủ mọi tiêu chí (không còn Nháp) và chưa báo -> đánh dấu đã báo, gửi Lark sau khi lưu xong
+        (postcommit: Lark chậm/lỗi không làm hỏng thao tác lưu; lưu thất bại thì không gửi)."""
+        ready = self.sudo().filtered(lambda a: a.audit_type == 'gs' and a.state != 'draft' and not a.lark_sent
+                                     and a.line_ids and all(a.line_ids.mapped('is_scored')))
+        if not ready:
+            return
+        cfg = lark_config(self.env)
+        if not (cfg['gs_webhook'] or (cfg['app_id'] and cfg['app_secret'] and cfg['gs_chat_id'])):
+            return
+        super(StoreAudit, ready).write({'lark_sent': True})
+        dbname, ids = self.env.cr.dbname, ready.ids
+        self.env.cr.postcommit.add(lambda: StoreAudit._lark_send_gs_done(dbname, ids))
+
+    @staticmethod
+    def _lark_send_gs_done(dbname, ids):
+        from odoo.modules.registry import Registry
+        from odoo.api import SUPERUSER_ID
+        with Registry(dbname).cursor() as cr:
+            env = api.Environment(cr, SUPERUSER_ID, {})
+            cfg = lark_config(env)
+            for audit in env['store.audit'].browse(ids).exists():
+                try:
+                    card = audit._lark_gs_card(cfg)
+                    if cfg['gs_webhook']:  # Custom Bot của nhóm (dùng được cho nhóm "Bên ngoài")
+                        lark_send_webhook(cfg['gs_webhook'], card, cfg['gs_webhook_secret'])
+                    elif cfg['gs_chat_id'] and cfg['app_id'] and cfg['app_secret']:
+                        lark_send_card(cfg, cfg['gs_chat_id'], card)
+                    _logger.info('store_checklist: đã báo nhóm Lark phiếu %s', audit.name)
+                except Exception:
+                    _logger.exception('store_checklist: báo nhóm Lark thất bại, phiếu %s', audit.name)
+                    super(StoreAudit, audit).write({'lark_sent': False})
+
+    def _lark_gs_rows(self):
+        """Các dòng tổng kết phiếu GS dùng chung cho thẻ Lark và dòng Lark Base."""
+        self.ensure_one()
+        tz = self.auditor_id.tz or 'Asia/Ho_Chi_Minh'
+        when = fields.Datetime.context_timestamp(self.with_context(tz=tz), self.audit_date)
+        return [
+            ('Mã phiếu', self.name),
+            ('Cửa hàng', self.store_id.display_name or ''),
+            ('Người đánh giá', self.auditor_id.name or ''),
+            ('Ngày giờ audit', when.strftime('%d/%m/%Y %H:%M')),
+            ('Điểm đánh giá', '%g / %g' % (self.total_score, self.max_score)),
+            ('Tỷ lệ đạt', '%.2f%%' % (100 * self.pass_rate)),
+            ('Kết luận', self.lvl_t or dict(self._fields['conclusion'].selection).get(self.conclusion) or ''),
+            ('Tổng số lỗi', str(self.error_count)),
+        ]
+
+    def _lark_gs_errors(self, bold=False):
+        """Mỗi tiêu chí lỗi 1 dòng: tiêu chí, chi tiết lỗi, người phụ trách khắc phục (như tin OdooBot hiện có)."""
+        fmt = '• **%s:** %s' if bold else '• %s: %s'
+        items = []
+        for line in self.line_ids.filtered(lambda l: l.error_count):
+            text = fmt % (line.name, '; '.join(x.strip() for x in line.note.splitlines() if x.strip()))
+            owners = line._lark_owner_names()
+            items.append(text + (' (Phụ trách: %s)' % owners if owners else ''))
+        return items
+
+    def _lark_gs_url(self, cfg):
+        return '%s/odoo/store.audit/%d' % (cfg['link_base'], self.id) if cfg['link_base'] else ''
+
+    def _lark_gs_card(self, cfg):
+        self.ensure_one()
+        errors = self._lark_gs_errors(bold=True)
+        extra = None
+        if errors:
+            extra = '**Chi tiết lỗi:**\n' + '\n'.join(errors[:10])
+            if len(errors) > 10:
+                extra += '\n… và %d tiêu chí lỗi khác' % (len(errors) - 10)
+        return lark_card(
+            'CHECKLIST GIÁM SÁT CỬA HÀNG – %s' % (self.store_id.code or self.store_id.display_name or ''),
+            self._lark_gs_rows(),
+            url=self._lark_gs_url(cfg) or None,
+            template='red' if self.conclusion == 'fail' else ('orange' if self.error_count else 'green'),
+            extra_md=extra,
+        )
 
     def unlink(self):
         self._check_edit_window()
@@ -1129,6 +1214,7 @@ class StoreAuditLine(models.Model):
                 vals.update(actual_score=0.0, is_scored=True)
         res = super().create(vals_list)
         res._notify_new_errors()
+        res.audit_id._lark_queue_gs_done()
         return res
 
     def write(self, vals):
@@ -1141,6 +1227,8 @@ class StoreAuditLine(models.Model):
                 super(StoreAuditLine, bad).write({'actual_score': 0.0, 'is_scored': True})
         if 'note' in vals:
             self._notify_new_errors()
+        if 'is_scored' in vals or 'actual_score' in vals or 'note' in vals:
+            self.audit_id._lark_queue_gs_done()
         return res
 
     def unlink(self):
@@ -1157,10 +1245,20 @@ class StoreAuditLine(models.Model):
             except Exception:
                 _logger.exception('store_checklist: báo người phụ trách thất bại, dòng %s', line.id)
 
-    def _notify_owners(self):
+    def _template_line(self):
+        """Tiêu chí tương ứng trong mẫu checklist (khớp theo tên) - nơi khai báo người phụ trách / kiểm soát."""
         self.ensure_one()
         key = (self.name or '').strip().casefold()
-        tmpl = self.audit_id.sudo().template_id.line_ids.filtered(lambda t: (t.name or '').strip().casefold() == key)[:1]
+        return self.audit_id.sudo().template_id.line_ids.filtered(lambda t: (t.name or '').strip().casefold() == key)[:1]
+
+    def _lark_owner_names(self):
+        tmpl = self._template_line()
+        users = (tmpl.responsible_ids | tmpl.lug_group_ids.user_ids.employee_ids).mapped('user_id')
+        return ', '.join(users.mapped('name'))
+
+    def _notify_owners(self):
+        self.ensure_one()
+        tmpl = self._template_line()
         if not tmpl:
             return
         owners = (tmpl.responsible_ids | tmpl.lug_group_ids.user_ids.employee_ids).mapped('user_id')

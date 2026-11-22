@@ -181,6 +181,21 @@ class StoreChtTask(models.Model):
         return {'type': 'ir.actions.act_window', 'name': 'Công việc CHT', 'res_model': self._name, 'res_id': self.id, 'views': [(False, 'form')],
                 'target': 'new', 'context': {'dialog_size': 'large'}}
 
+    def action_fill_down(self):
+        """Chép Admin + BP liên quan của dòng đầu (theo thứ tự hiển thị: nhóm, STT) xuống các dòng đã chọn còn lại."""
+        gorder = {k: i for i, (k, _l) in enumerate(CHT_GROUPS)}
+        recs = self.sorted(lambda r: (gorder.get(r.task_group, 99), r.sequence, r.id))
+        if len(recs) < 2:
+            raise UserError(_('Hãy tick chọn ít nhất 2 dòng: dòng đầu là dòng mẫu, các dòng sau nhận Admin / BP liên quan của dòng đầu.'))
+        src, rest = recs[0], recs[1:]
+        rest.write({'admin_user_ids': [(6, 0, src.admin_user_ids.ids)], 'related_user_ids': [(6, 0, src.related_user_ids.ids)]})
+        return {
+            'type': 'ir.actions.client', 'tag': 'display_notification',
+            'params': {'type': 'success', 'title': _('Đã chép xuống'),
+                       'message': _('Đã chép Admin / BP liên quan của "%s" cho %s dòng.') % (src.name, len(rest)),
+                       'next': {'type': 'ir.actions.act_window_close'}},
+        }
+
     def _admin_names(self):
         return ', '.join(self.sudo().admin_user_ids.mapped('name'))
 

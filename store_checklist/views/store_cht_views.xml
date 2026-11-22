@@ -5,7 +5,7 @@
         <field name="name">store.cht.task.list</field>
         <field name="model">store.cht.task</field>
         <field name="arch" type="xml">
-            <list group_edit="0" group_delete="0" expand="0" string="Danh sách công việc CHT" class="o_store_shift o_store_task o_store_cht_task">
+            <list group_edit="0" group_delete="0" expand="0" multi_edit="1" string="Danh sách công việc CHT" class="o_store_shift o_store_task o_store_cht_task">
                 <field name="name" width="360px"/>
                 <field name="task_group" width="170px"/>
                 <field name="wd_mon" width="38px"/>
@@ -92,6 +92,16 @@
                 </group>
             </search>
         </field>
+    </record>
+
+    <!-- Menu Thao tác (khi tick chọn nhiều dòng): chép Admin / BP liên quan của dòng đầu xuống các dòng còn lại, giống kéo xuống trong Excel -->
+    <record id="action_server_cht_task_fill_down" model="ir.actions.server">
+        <field name="name">Chép Admin / BP liên quan của dòng đầu xuống các dòng đã chọn</field>
+        <field name="model_id" ref="model_store_cht_task"/>
+        <field name="binding_model_id" ref="model_store_cht_task"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_fill_down()</field>
     </record>
 
     <record id="action_store_cht_task" model="ir.actions.act_window">

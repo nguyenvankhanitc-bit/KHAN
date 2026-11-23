@@ -373,6 +373,7 @@ class StoreNvbhScheduleLine(models.Model):
             g[1] |= ln
         return [(h[0], h[1], h[2], ls) for h, ls in sorted(groups.values(), key=lambda g: (g[0][1] or '').casefold())]
 
+    @api.model
     def get_matrix(self, domain, month):
         """Dữ liệu lưới "Xếp ca" cho màn hình: mỗi cửa hàng một dòng tiêu đề, dưới là mỗi nhân viên một dòng với Mã ca từng ngày."""
         first, ndays = self._month_range(month)

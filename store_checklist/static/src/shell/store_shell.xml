@@ -1334,7 +1334,7 @@
                                         <tr>
                                             <th rowspan="2" class="l">Nhóm công việc</th>
                                             <th rowspan="2">Số công<br/>việc</th>
-                                            <th rowspan="2">Thời gian<br/><small>(giờ)</small></th>
+                                            <th rowspan="2" title="Giờ của ca làm việc (như cột Tổng giờ của Bảng checklist Tổng), chia theo số việc của từng nhóm">Thời gian<br/><small>(giờ ca)</small></th>
                                             <th rowspan="2">Đã làm</th>
                                             <th rowspan="2">Tỷ lệ</th>
                                             <th colspan="3" class="ev">

@@ -1029,6 +1029,8 @@ class StoreNvbhCheck(models.Model):
                               'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c.id in evaluable,
                               'line_id': c.schedule_line_id.id, 'store_id': c.store_id.id, 'ymd': str(c.work_date)})
             pre = STEP_PREFIX[min(max(info['cur'], c.step_done, 1), len(STEP_PREFIX)) - 1]
+            # giờ làm = giờ của ca (như cột Tổng giờ của Bảng checklist Tổng), chia đều cho các việc của phiếu để ra giờ từng nhóm
+            per_line = (c.shift_id.hours or 0.0) / len(c.line_ids) if c.line_ids else 0.0
             for l in c.line_ids:
                 g = groups.setdefault(l.sub_category or 'Khác', {'name': l.sub_category or 'Khác', 'tasks': {}, 'lines': 0, 'done': 0,
                                                                   'hours': 0.0, 'max_total': 0.0, 'max_done': 0.0, 'results': set(),
@@ -1040,7 +1042,7 @@ class StoreNvbhCheck(models.Model):
                 t['all_done'] = t['all_done'] and l.is_done and not l.error_count
                 g['lines'] += 1
                 g['done'] += 1 if l.is_done else 0
-                g['hours'] += self._slot_hours(l.time_slot)
+                g['hours'] += per_line
                 g['max_total'] += l.max_score or 0.0
                 g['max_done'] += (l.max_score or 0.0) if l.is_done else 0.0
                 g['errors'] += l.error_count or 0
@@ -1053,7 +1055,7 @@ class StoreNvbhCheck(models.Model):
             out.append({
                 'name': g['name'], 'desc': ', '.join(t['name'] for t in tasks[:3]), 'n_tasks': len(tasks),
                 'tasks_done': sum(1 for t in tasks if t['all_done']), 'lines': g['lines'], 'done': g['done'],
-                'rate': round(100.0 * g['done'] / g['lines'], 1) if g['lines'] else 0.0, 'hours': round(g['hours'], 2),
+                'rate': round(100.0 * g['done'] / g['lines'], 1) if g['lines'] else 0.0, 'hours': round(g['hours'], 1),
                 'max_total': g['max_total'], 'max_done': g['max_done'], 'errors': g['errors'],
                 'result': res_set.pop() if len(res_set) == 1 and '' not in g['results'] else '',
                 'task_rows': tasks,
@@ -1061,7 +1063,7 @@ class StoreNvbhCheck(models.Model):
         res['groups'] = out
         all_tasks = [t for g in out for t in g['task_rows']]
         res['kpi'] = {
-            'tasks': len(all_tasks), 'hours': round(sum(g['hours'] for g in out), 2),
+            'tasks': len(all_tasks), 'hours': round(sum(c.shift_id.hours or 0.0 for c in checks), 2),
             'done': sum(1 for t in all_tasks if t['all_done']), 'errors': sum(1 for t in all_tasks if not t['all_done']),
             'points': round(sum(checks.mapped('points')), 2), 'max_points': sum(g['max_total'] for g in out),
             'n_checks': len(checks), 'n_eval': len(evaluable), 'n_lines': len(lines),

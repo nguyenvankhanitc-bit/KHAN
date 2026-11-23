@@ -1351,6 +1351,9 @@
                                 <a href="#" t-on-click.prevent="onPermClose">✕</a></div>
                             <div class="o_store_perm_mbody">
                                 <div class="o_store_perm_box">
+                                    <label class="o_store_perm_name"><span>Tên phân quyền</span>
+                                        <input type="text" placeholder="vd. Nhóm CHT, Nhóm ASM, Tài khoản cửa hàng..." t-att-value="state.permEdit.group"
+                                               t-on-input="(ev) => this.state.permEdit.group = ev.target.value"/></label>
                                     <div class="o_store_perm_users">
                                         <span class="o_store_perm_tag" t-foreach="state.permEdit.users" t-as="u" t-key="u.id"><t t-esc="u.name"/> <a href="#" t-on-click.prevent="() => this.onPermUserRemove(u)">×</a></span>
                                         <input list="store_perm_users" placeholder="Chọn user (gõ tên để tìm)..." t-on-change="onPermUserAdd"/>

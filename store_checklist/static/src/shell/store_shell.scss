@@ -3140,3 +3140,9 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_done_summary tr.grp_store td{background: #f1f5f9; color: #334155; padding: 7px 12px 7px 32px !important; cursor: pointer;}
 .o_store_done_summary tr.grp_store:hover td{background: #e2e8f0;}
 .o_store_done_summary tr.grp_mien .cnt, .o_store_done_summary tr.grp_store .cnt{margin-left: 10px; font-weight: 400; color: #64748b; font-size: .85rem;}
+
+/* Popup Thiết lập quyền nhóm: ô Tên phân quyền */
+.o_store_perm_name{display: flex; align-items: center; gap: 10px; margin: 0 0 8px; font-weight: 600; color: #1e3a8a;}
+.o_store_perm_name span{white-space: nowrap;}
+.o_store_perm_name input{flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; font-weight: 400;}
+.o_store_perm_name input:focus{outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, .2);}

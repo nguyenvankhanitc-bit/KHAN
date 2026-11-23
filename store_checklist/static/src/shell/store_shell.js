@@ -46,7 +46,7 @@ export class StoreChecklistShell extends Component {
             schedImport: null,
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
-            job: { kind: "nvbh", date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
+            job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
             auditStoreIds: [],
@@ -1904,6 +1904,7 @@ export class StoreChecklistShell extends Component {
 
     async loadJobChecklist() {
         const job = this.state.job;
+        job.editMode = false;
         job.check = job.lineId ? await this.orm.call("store.nvbh.check", "get_checklist", [Number(job.lineId)]) : null;
         job.snap = this.jobSnapshot();
     }
@@ -1999,6 +2000,20 @@ export class StoreChecklistShell extends Component {
         return this.loadJobChecklist().catch((e) => this.notifyError(e));
     }
 
+    // phiếu đã gửi cấp trên nhưng còn trong hạn sửa (đến 23h55): mặc định chỉ xem, bấm "Chỉnh sửa" mới mở ô tick / ghi chú
+    get jobReedit() {
+        const c = this.state.job.check;
+        return Boolean(c) && c.state !== "draft" && c.can_execute === true;
+    }
+
+    get jobInputsLocked() {
+        return this.jobLocked || (this.jobReedit && !this.state.job.editMode);
+    }
+
+    onJobEdit() {
+        this.state.job.editMode = true;
+    }
+
     get jobLocked() {
         return Boolean(this.state.job.check) && this.state.job.check.can_execute === false;
     }
@@ -2031,8 +2046,13 @@ export class StoreChecklistShell extends Component {
         }
         try {
             const changes = check.lines.map((l) => ({ id: l.id, is_done: l.is_done, note: (l.note || "").trim() }));
+            const wasReedit = this.jobReedit;
             this.state.job.check = await this.orm.call("store.nvbh.check", "save_checklist", [check.id, changes]);
             this.state.job.snap = this.jobSnapshot();
+            this.state.job.editMode = false;
+            if (wasReedit) {
+                this.notification.add("Đã lưu chỉnh sửa · phiếu chuyển lại cấp trên đánh giá", { type: "info" });
+            }
             await this.refreshJobStaff(); // cập nhật thẻ nhân viên: nhân viên đã xong sẽ mờ đi
             this.notification.add("Đã lưu checklist công việc", { type: "success" });
         } catch (error) {

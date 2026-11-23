@@ -1126,7 +1126,7 @@
                                             <b t-esc="line.group"/> <span class="cnt">(<t t-esc="gi.count"/>)</span>
                                         </td>
                                         <td class="c" t-on-click.stop="() => {}">
-                                            <input type="checkbox" t-if="line_index === 0" t-att-checked="jobAllDone" t-att-disabled="jobLocked" t-on-change="onJobAll" title="Chọn tất cả"/>
+                                            <input type="checkbox" t-if="line_index === 0" t-att-checked="jobAllDone" t-att-disabled="jobInputsLocked" t-on-change="onJobAll" title="Chọn tất cả"/>
                                         </td>
                                         <td colspan="2"><span class="prog"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span></td>
                                     </tr>
@@ -1135,16 +1135,18 @@
                                         <td t-esc="line.name"/>
                                         <td class="c" t-esc="line.time_slot"/>
                                         <td class="c" t-esc="line.score"/>
-                                        <td class="c"><input type="checkbox" t-att-checked="line.is_done" t-att-disabled="jobLocked" t-on-change="() => this.onJobToggle(line)"/></td>
+                                        <td class="c"><input type="checkbox" t-att-checked="line.is_done" t-att-disabled="jobInputsLocked" t-on-change="() => this.onJobToggle(line)"/></td>
                                         <td class="c"><span t-att-class="'st st-' + jobLineStatus(line)" t-esc="jobStatusLabel(jobLineStatus(line))"/></td>
-                                        <td><input type="text" class="note" t-att-value="line.note" placeholder="Nhập ghi chú..." t-att-disabled="jobLocked" t-on-input="(ev) => this.onJobNote(line, ev)"/></td>
+                                        <td><input type="text" class="note" t-att-value="line.note" placeholder="Nhập ghi chú..." t-att-disabled="jobInputsLocked" t-on-input="(ev) => this.onJobNote(line, ev)"/></td>
                                     </tr>
                                 </t>
                             </tbody>
                         </table>
                         <div class="o_store_job_actions">
-                            <button type="button" class="btn btn-primary" t-att-disabled="!jobDirty or jobLocked" t-on-click="onJobSave"><i class="fa fa-save"/> Lưu</button>
-                            <button type="button" class="btn btn-secondary" t-att-disabled="!jobDirty" t-on-click="onJobCancel">Hủy</button>
+                            <button type="button" class="btn btn-warning" t-if="jobReedit and !state.job.editMode" t-on-click="onJobEdit"
+                                    title="Mở để sửa check list đã gửi (sửa xong bấm Lưu, phiếu chuyển lại cấp trên đánh giá)"><i class="fa fa-pencil"/> Chỉnh sửa</button>
+                            <button type="button" class="btn btn-primary" t-att-disabled="!jobDirty or jobInputsLocked" t-on-click="onJobSave"><i class="fa fa-save"/> Lưu</button>
+                            <button type="button" class="btn btn-secondary" t-att-disabled="!jobDirty and !state.job.editMode" t-on-click="onJobCancel">Hủy</button>
                             <button type="button" class="btn btn-info text-white" t-if="jobCanSubmit" t-att-disabled="jobDirty or !jobAllDone" t-on-click="onJobSubmit"
                                     t-att-title="jobAllDone ? 'Lưu xong rồi gửi cấp trên' : 'Hoàn tất tất cả công việc trước khi gửi'"><i class="fa fa-paper-plane"/> Gửi cấp trên đánh giá</button>
                             <span class="dirty" t-if="jobDirty"><i class="fa fa-exclamation-circle"/> Có thay đổi chưa lưu</span>

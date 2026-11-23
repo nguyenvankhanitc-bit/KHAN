@@ -306,22 +306,38 @@ class StoreNvbhCheck(models.Model):
         return (me or emps).sorted(lambda e: (e.name or '').casefold())
 
     @api.model
+    def _asm_schedule_line(self, emp, day):
+        """Dòng lịch xếp ca (chức vụ ASM, không phải ca OFF) của ASM trong ngày; khớp theo ID HRM rồi theo họ tên."""
+        lines = self.env['store.nvbh.schedule.line'].sudo().search(
+            [('work_date', '=', day), ('position', '=ilike', 'ASM')], order='id')
+        lines = lines.filtered(lambda l: (l.shift_id.code or '').strip().upper() != 'OFF')
+        codes = {str(emp[f]).strip() for f in ('barcode', 'ma_cham_cong', 'ma_nv_ke_toan') if f in emp._fields and emp[f]}
+        name = (emp.name or '').strip().casefold()
+        return (lines.filtered(lambda l: (l.employee_code or '').strip() in codes) if codes else lines.browse()) \
+            or lines.filtered(lambda l: (l.staff_name or '').strip().casefold() == name)
+
+    @api.model
     def _asm_overview(self, work_date):
+        """Thẻ ASM có lịch làm trong ngày (Lịch xếp ca, chức vụ ASM); ASM không có lịch / ca OFF -> danh sách Nghỉ OFF."""
         day = fields.Date.to_date(work_date)
         emps = self._asm_employees()
         checks = {c.asm_employee_id.id: c for c in self.sudo().search(
             [('kind', '=', 'asm'), ('work_date', '=', day), ('asm_employee_id', 'in', emps.ids)])}
         n_tasks = len(self._cht_line_commands(day, 'asm'))
-        staff = []
-        for i, e in enumerate(emps, 1):
+        staff, off = [], []
+        for e in emps:
+            line = self._asm_schedule_line(e, day)[:1]
+            if not line:
+                off.append(e.name or '')
+                continue
             c = checks.get(e.id)
             total = c.cnt_total if c else n_tasks
             staff.append({
-                'id': -e.id, 'stt': i, 'name': e.name or '', 'shift': '',
+                'id': -e.id, 'stt': len(staff) + 1, 'name': e.name or '', 'shift': line.shift_id.code or '',
                 'done': c.cnt_done if c else 0, 'total': total, 'points': c.points if c else 0.0,
                 'finished': bool(c and c.submitted and total and c.cnt_todo == 0),
             })
-        return {'staff': staff, 'off': [], 'store_staff': len(staff)}
+        return {'staff': staff, 'off': off, 'store_staff': len(emps)}
 
     @api.model
     def _asm_store(self, emp):
@@ -349,14 +365,19 @@ class StoreNvbhCheck(models.Model):
         if emp not in self._asm_employees():
             raise AccessError(_('Bạn không có quyền xem check list ASM của %s.') % emp.name)
         check = self.sudo().search([('kind', '=', 'asm'), ('asm_employee_id', '=', emp.id), ('work_date', '=', day)], limit=1)
+        line = self._asm_schedule_line(emp, day)[:1]
         if not check:
-            store = self._asm_store(emp)
-            if not store:
-                raise UserError(_('Chưa xác định được cửa hàng phụ trách của ASM %s.') % emp.name)
+            # như NVBH: chỉ ASM có lịch làm trong ngày (Lịch xếp ca, chức vụ ASM) mới có check list
+            if not line:
+                raise UserError(_('%s không có lịch làm ngày %s (Lịch xếp ca chức vụ ASM) nên chưa có check list.')
+                                % (emp.name, day.strftime('%d/%m/%Y')))
             check = self.sudo().create({
-                'store_id': store.id, 'work_date': day, 'staff_name': emp.name, 'asm_employee_id': emp.id, 'kind': 'asm',
+                'store_id': line.store_id.id, 'work_date': day, 'staff_name': emp.name, 'asm_employee_id': emp.id, 'kind': 'asm',
+                'shift_id': line.shift_id.id, 'schedule_line_id': line.id,
                 'line_ids': self._cht_line_commands(day, 'asm'),
             })
+        elif line and not check.schedule_line_id:
+            check.sudo().write({'schedule_line_id': line.id, 'shift_id': line.shift_id.id})
         return self.browse(check.id)._checklist_payload()
 
     @api.model

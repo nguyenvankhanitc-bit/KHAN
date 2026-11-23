@@ -347,7 +347,9 @@ export class StoreChecklistShell extends Component {
 
     get isJobTabs() {
         // Checklist CV CHT: không có tab (lịch ca đã xem / nhập ở Công việc check list NVBH)
-        return ["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) && !(this.state.activeNav === "nvbh_schedule" && ["cht", "asm"].includes(this.state.job.kind));
+        // Checklist CV ASM: 2 tab Check list công việc ASM / Lịch xếp ca (lịch ASM, nhập Excel riêng)
+        return (["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) || this.state.activeNav === "nvbh_asmcv")
+            && !(this.state.activeNav === "nvbh_schedule" && this.state.job.kind === "cht");
     }
 
     // ---- In (chọn máy in trong hộp thoại in của trình duyệt) và Xuất Excel cho các bảng: Bảng checklist Tổng / Bảng Nhân viên / Bảng Đánh giá ----
@@ -2137,9 +2139,22 @@ export class StoreChecklistShell extends Component {
     }
 
     async onJobTab(tab) {
-        if (this.state.activeNav !== tab.id) {
-            await this.openAction(tab.action, tab.id);
+        if (this.state.activeNav === tab.id) {
+            return;
         }
+        if (tab.id === "nvbh_asmcv") {
+            return this.openJobsPage("asm");
+        }
+        await this.openAction(tab.action, tab.id);
+    }
+
+    // Lịch xếp ca: tab của Checklist CV ASM chỉ hiện lịch chức vụ ASM; tab của NVBH không hiện lịch ASM
+    schedDomain() {
+        const base = this.listDomain(this.listBase || []);
+        const asmPos = ["ASM", "asm", "Asm"];
+        return this.state.job.kind === "asm"
+            ? [...base, ["position", "in", asmPos]]
+            : [...base, "|", ["position", "=", false], ["position", "not in", asmPos]];
     }
 
     navChildClass(child) {
@@ -2263,7 +2278,7 @@ export class StoreChecklistShell extends Component {
         if (this.state.activeNav === "nvbh_schedule") {
             // xuất theo bộ lọc đang chọn (tháng / cửa hàng / miền); nhập chỉ gửi file
             const month = this.state.listFilters.month;
-            return extra.length ? [...extra, month] : [this.listDomain(this.listBase || []), month];
+            return extra.length ? [...extra, month, this.state.job.kind === "asm" ? "asm" : false] : [this.schedDomain(), month];
         }
         return ["nvbh_task", "cht_task", "asm_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
     }
@@ -3411,7 +3426,7 @@ export class StoreChecklistShell extends Component {
         sc.empty = "";
         sc.loading = true;
         try {
-            const res = await this.orm.call("store.nvbh.schedule.line", "get_matrix", [this.listDomain(this.listBase || []), month]);
+            const res = await this.orm.call("store.nvbh.schedule.line", "get_matrix", [this.schedDomain(), month]);
             sc.ndays = res.ndays;
             sc.pastDays = res.past_days || 0;
             sc.rows = res.rows;

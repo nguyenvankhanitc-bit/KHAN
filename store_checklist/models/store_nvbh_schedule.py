@@ -463,7 +463,7 @@ class StoreNvbhScheduleLine(models.Model):
         return res
 
     @api.model
-    def import_xlsx(self, data, month):
+    def import_xlsx(self, data, month, kind=None):
         """Nhập Lịch làm việc theo mẫu "Xếp ca" cho tháng đang chọn: mỗi dòng một nhân viên (Mã bộ phận, ID HRM, Họ và tên,
         Mã chức vụ), cột N1..N31 là Mã ca từng ngày (ô trống = không xếp ca, giữ nguyên). Các cột khác (Miền, Trạng thái,
         Ngày vào làm...) và dòng tên cửa hàng được bỏ qua. Dòng lỗi được bỏ qua và báo lại.
@@ -471,8 +471,11 @@ class StoreNvbhScheduleLine(models.Model):
         - ngày trước ngày mốc: giữ nguyên 100%, file có sửa cũng không ghi đè / không xóa;
         - từ ngày mốc trở đi: cập nhật theo file, trừ dòng đã check list (đã tick / ghi chú), đã Lưu, đã gửi hoặc đã duyệt;
         - phiếu đã mở nhưng chưa làm gì: đổi ca thì phiếu được tạo lại theo ca mới.
-        Luồng này tách riêng với hạn chỉnh sửa phiếu checklist (EDIT_WINDOW_DAYS), không dùng điều kiện đó."""
+        Luồng này tách riêng với hạn chỉnh sửa phiếu checklist (EDIT_WINDOW_DAYS), không dùng điều kiện đó.
+        kind = 'asm' (tab Lịch xếp ca của Checklist CV ASM): chỉ nhận dòng chức vụ ASM (trống = ASM), chỉ xóa / thay lịch ASM;
+        nhập ở trang NVBH thì không đụng tới lịch ASM."""
         self = self.with_context(no_staff_sync=True)
+        asm_mode = kind == 'asm'
         if not self.env['store.nvbh.schedule'].has_access('create'):
             raise UserError(_('Bạn không có quyền nhập Lịch xếp ca.'))
         first, ndays = self._month_range(month)
@@ -548,6 +551,11 @@ class StoreNvbhScheduleLine(models.Model):
                 errors.append('Dòng %s: thiếu Họ và tên' % n)
                 continue
             pos = cell(r, pos_col).upper()
+            if asm_mode:
+                pos = pos or 'ASM'
+                if pos != 'ASM':
+                    errors.append('Dòng %s: %s có chức vụ "%s" — tab Lịch xếp ca ASM chỉ nhập chức vụ ASM' % (n, name, pos))
+                    continue
             status = cell(r, status_col)
             people[(store.id, emp_id or name.casefold())] = {
                 'store': store, 'name': name, 'emp_id': emp_id, 'position': pos or 'NVBH', 'work_status': status}
@@ -610,6 +618,8 @@ class StoreNvbhScheduleLine(models.Model):
         last = first.replace(day=ndays)
         if file_stores and last >= ref:
             old = self.search([('store_id', 'in', file_stores.ids), ('work_date', '>=', max(first, ref)), ('work_date', '<=', last)]) - kept
+            # lịch ASM và lịch nhân viên cửa hàng nhập riêng: file nào chỉ thay phần lịch của loại đó
+            old = old.filtered(lambda l: ((l.position or '').strip().upper() == 'ASM') == asm_mode)
             states = self._import_check_state(old)
             locked_old = old.filtered(lambda l: states.get(l.id) == 'locked')
             skipped_locked += len(locked_old)
@@ -643,7 +653,7 @@ class StoreNvbhScheduleLine(models.Model):
                 'errors': errors[:20], 'error_count': len(errors)}
 
     @api.model
-    def preview_import_xlsx(self, data, month):
+    def preview_import_xlsx(self, data, month, kind=None):
         """Xem trước file nhập: chạy đúng luồng import_xlsx trong savepoint rồi hoàn tác toàn bộ, trả về số liệu + danh sách ô
         sẽ thay đổi. Chỉ khi user bấm Lưu (gọi import_xlsx) dữ liệu mới được ghi."""
         class _Rollback(Exception):
@@ -651,7 +661,7 @@ class StoreNvbhScheduleLine(models.Model):
         res = {}
         try:
             with self.env.cr.savepoint():
-                res = self.import_xlsx(data, month)
+                res = self.import_xlsx(data, month, kind)
                 raise _Rollback()
         except _Rollback:
             pass

@@ -47,7 +47,7 @@ export class StoreChecklistShell extends Component {
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
-            chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", formula: false, busy: false },
+            chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1960,10 +1960,75 @@ export class StoreChecklistShell extends Component {
             await this.refreshJobStaff();
             job.lineId = String(r.line_id);
             await this.loadJobChecklist();
+            this.state.chtm.sheet = "";
             this.state.chtm.mode = "day";
         } catch (error) {
             this.notifyError(error);
         }
+    }
+
+    get chtInitial() {
+        const name = (this.state.chtm.staff?.name || "").trim().split(/\s+/).pop() || "";
+        return name.charAt(0).toUpperCase();
+    }
+
+    async onChtPickStaff(key) {
+        const cm = this.state.chtm;
+        cm.pick = false;
+        if (key === cm.key) {
+            return;
+        }
+        cm.key = key;
+        try {
+            await this.loadChtMonth();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // bấm thẻ ngày -> bottom sheet chi tiết đánh giá (từng đầu việc, điểm, nhận xét) như mẫu
+    async onChtDetail(r) {
+        try {
+            const payload = await this.orm.call("store.nvbh.check", "read_checklist", [r.id]);
+            if (!payload) {
+                return;
+            }
+            const notes = [r.txt_asm, r.txt_cht].filter((t) => t && String(t).trim());
+            (payload.lines || []).forEach((l) => {
+                if ((l.note || "").trim()) {
+                    notes.push(`${l.name}: ${l.note.trim()}`);
+                }
+            });
+            this.state.chtm.detail = {
+                row: r, lines: payload.lines || [],
+                comment: notes.length ? notes.join("\n") : (r.note || "Chưa có nhận xét."),
+            };
+            this.state.chtm.sheet = "detail";
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    chtTaskSub(ln, row) {
+        const ev = { good: "Đạt", avg: "T.Bình", bad: "Không đạt" }[ln.eval_result] || "";
+        const parts = [ln.is_done ? "Đã làm" : "Chưa làm"];
+        if (ln.time_slot) {
+            parts.push(ln.time_slot);
+        }
+        parts.push(row.evaluated ? (ev ? `ASM: ${ev}` : "") : "Chờ đánh giá");
+        return parts.filter(Boolean).join(" • ");
+    }
+
+    chtTaskPts(ln, row) {
+        const n = (v) => this.jobStaffNum(v);
+        return row.evaluated ? `${n(ln.actual_score)}/${n(ln.score)}` : `${n(ln.score)}đ`;
+    }
+
+    chtTaskTone(ln, row) {
+        if (!row.evaluated) {
+            return ln.is_done ? "wait" : "bad";
+        }
+        return (ln.actual_score || 0) >= (ln.score || 0) ? "ok" : (ln.actual_score || 0) > 0 ? "warn" : "bad";
     }
 
     async onChtBack() {

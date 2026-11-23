@@ -26,7 +26,7 @@
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
-                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen">
+                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen and !(state.activeNav === 'nvbh_cht' and state.chtm.mode !== 'day')">
                     <button type="button" class="o_store_page_close" title="Đóng trang (về Tổng quan)" aria-label="Đóng" t-on-click="onOverview"><i class="fa fa-times"/></button>
                     <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
@@ -1064,131 +1064,209 @@
                     <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có dữ liệu KPI nhân viên bán hàng theo ASM trong tháng đã chọn.</div>
                 </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv'">
-                    <!-- Checklist CV CHT: Bảng Checklist Tổng theo tháng (thẻ từng ngày); bấm thẻ -> bảng check list của ngày đó -->
+                    <!-- Checklist CV CHT: Bảng Checklist Tổng theo tháng, giao diện ứng dụng di động (một cột như mẫu LUG.vn Mobile) -->
                     <div class="o_cht_m" t-if="state.activeNav === 'nvbh_cht' and state.chtm.mode !== 'day'">
-                        <section class="cm_card cm_head">
-                            <div class="cm_who">
-                                <div class="cm_ava"><i class="fa fa-user"/></div>
-                                <div class="cm_who_txt">
-                                    <div class="cm_name" t-esc="state.chtm.staff ? state.chtm.staff.name : 'Chưa có CHT có lịch trong tháng'"/>
-                                    <div class="cm_sub" t-if="state.chtm.staff">
-                                        <span>ID: <b t-esc="state.chtm.staff.code or '-'"/></span><span>•</span>
-                                        <span class="cm_okc" t-esc="state.chtm.staff.status or 'Đang làm việc'"/><span>•</span>
-                                        <span t-esc="state.chtm.staff.position"/>
-                                    </div>
+                        <div class="cm_phone">
+                            <header class="cm_app">
+                                <div class="cm_app_l">
+                                    <button type="button" class="cm_app_btn" title="Về Tổng quan" t-on-click="onOverview"><i class="fa fa-th-large"/></button>
+                                    <span class="cm_brand">LUG.vn</span>
+                                    <h1>Bảng Checklist Tổng</h1>
                                 </div>
-                                <label class="cm_pill cm_staff" t-if="state.chtm.options.length > 1"><i class="fa fa-users"/>
-                                    <select t-on-change="(ev) => this.onChtFilter('key', ev)">
-                                        <option t-foreach="state.chtm.options" t-as="o" t-key="o.key" t-att-value="o.key"
-                                                t-att-selected="o.key === state.chtm.key" t-esc="o.name + (o.store ? ' · ' + o.store : '')"/>
-                                    </select></label>
-                            </div>
-                            <div class="cm_pills">
-                                <label class="cm_pill"><i class="fa fa-shopping-bag cm_red"/>
-                                    <select t-on-change="(ev) => this.onChtFilter('storeId', ev)">
-                                        <option value="">Tất cả cửa hàng</option>
-                                        <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
-                                                t-att-selected="('' + st.id) === state.chtm.storeId" t-esc="st.display_name"/>
-                                    </select></label>
-                                <label class="cm_pill"><i class="fa fa-calendar cm_navy"/>
-                                    <select t-on-change="(ev) => this.onChtFilter('month', ev)">
-                                        <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
-                                                t-att-selected="m.value === state.chtm.month" t-esc="m.label"/>
-                                    </select></label>
-                            </div>
-                        </section>
-                        <t t-if="state.chtm.data">
-                            <t t-set="ck" t-value="chtKpi"/>
-                            <section class="cm_kpis">
-                                <div class="cm_kpi is-navy">
-                                    <div class="cm_kh"><span>Ngày công</span><i class="fa fa-calendar-check-o"/></div>
-                                    <div class="cm_kv"><b t-esc="ck.days"/><small> / <t t-esc="ck.dim"/> ngày</small></div>
-                                    <div class="cm_bar"><i t-attf-style="width: #{ck.daysPct}%"/></div>
+                                <div class="cm_app_r">
+                                    <a class="cm_app_btn" href="/odoo/discuss" title="Thông báo / Thảo luận"><i class="fa fa-bell-o"/></a>
+                                    <span class="cm_avatar" t-att-title="state.chtm.staff ? state.chtm.staff.name : ''"><t t-esc="chtInitial"/><i/></span>
                                 </div>
-                                <div class="cm_kpi is-blue">
-                                    <div class="cm_kh"><span>Đã làm</span><i class="fa fa-check-circle"/></div>
-                                    <div class="cm_kv"><b t-esc="ck.done"/><small> / <t t-esc="ck.total"/></small><em t-esc="jobStaffNum(ck.donePct) + '%'"/></div>
-                                    <div class="cm_bar"><i t-attf-style="width: #{ck.donePct}%"/></div>
-                                </div>
-                                <div t-attf-class="cm_kpi #{ck.errors ? 'is-bad' : 'is-safe'}">
-                                    <div class="cm_kh"><span>Số lỗi</span><i t-attf-class="fa #{ck.errors ? 'fa-exclamation-triangle' : 'fa-shield'}"/></div>
-                                    <div class="cm_kv"><b t-esc="ck.errors"/><em t-esc="ck.errors ? 'Cần xử lý' : 'An toàn'"/></div>
-                                    <div class="cm_bar"><i style="width: 100%"/></div>
-                                </div>
-                                <div class="cm_kpi is-green">
-                                    <div class="cm_kh"><span>Điểm lũy kế</span><i class="fa fa-trophy"/></div>
-                                    <div class="cm_kv"><b t-esc="jobStaffNum(ck.points)"/><small>/<t t-esc="jobStaffNum(ck.maxPoints)"/></small><em t-esc="jobStaffNum(ck.pointsPct) + '%'"/></div>
-                                    <div class="cm_bar"><i t-attf-style="width: #{ck.pointsPct}%"/></div>
-                                </div>
-                            </section>
-                            <section class="cm_tools">
-                                <div class="cm_seg">
-                                    <button type="button" t-att-class="state.chtm.tab !== 'all' ? 'on' : ''" t-on-click="() => this.state.chtm.tab = 'worked'">
-                                        <span class="dot"/> Ngày đi làm (<t t-esc="chtWorkedCount"/>)</button>
-                                    <button type="button" t-att-class="state.chtm.tab === 'all' ? 'on' : ''" t-on-click="() => this.state.chtm.tab = 'all'">
-                                        Tất cả ngày (<t t-esc="state.chtm.data.days_in_month"/>)</button>
-                                </div>
-                                <button type="button" class="cm_icon is-info" title="Công thức tính" t-on-click="() => this.state.chtm.formula = !this.state.chtm.formula"><i class="fa fa-info"/></button>
-                                <button type="button" class="cm_icon is-xls" title="Xuất file Excel" t-on-click="onChtExport"><i class="fa fa-download"/></button>
-                            </section>
-                            <section class="cm_card cm_formula" t-if="state.chtm.formula">
-                                <div class="cm_ft"><i class="fa fa-calculator"/> Công thức dòng "TỔNG CỘNG KỲ"</div>
-                                <p><b>1. Tổng việc, Đã làm, Số lỗi:</b> cộng dồn (SUM) tất cả các ngày trong kỳ.</p>
-                                <p><b>2. Điểm TB, ASM TB:</b> trung bình cộng (AVERAGE) các ngày đã hoàn thành đánh giá.</p>
-                                <p><b>3. Tỷ lệ đạt (%):</b> trung bình tỷ lệ đạt từng ngày (Điểm đạt ÷ Điểm chuẩn ca × 100); ngày "Chưa check list" không tính.</p>
-                            </section>
-                            <section class="cm_list">
-                                <t t-foreach="chtRows" t-as="r" t-key="r.date + '|' + (r.id or r.kind)">
-                                    <article t-if="r.id" class="cm_card cm_day" t-on-click="() => this.onChtDay(r)">
-                                        <div class="cm_dh">
-                                            <div class="cm_dl">
-                                                <b t-esc="r.date"/>
-                                                <span t-attf-class="cm_shift t-#{chtShiftTone(r.shift)}">Ca <t t-esc="r.shift"/></span>
-                                                <span class="cm_mute" t-esc="r.store_code"/>
+                            </header>
+                            <main class="cm_body">
+                                <section class="cm_card cm_head">
+                                    <div class="cm_who">
+                                        <div class="cm_ava"><i class="fa fa-user-circle-o"/></div>
+                                        <div class="cm_who_txt">
+                                            <div class="cm_name" t-esc="state.chtm.staff ? state.chtm.staff.name : 'Chưa có CHT có lịch trong tháng'"/>
+                                            <div class="cm_sub" t-if="state.chtm.staff">
+                                                <span>ID: <b t-esc="state.chtm.staff.code or '-'"/></span><span>•</span>
+                                                <span class="cm_okc" t-esc="state.chtm.staff.status or 'Đang làm việc'"/>
                                             </div>
-                                            <span t-attf-class="cm_badge b-#{chtStatusTone(r)}"><span class="dot"/><t t-esc="r.status"/></span>
                                         </div>
-                                        <div class="cm_dm">
-                                            <div><small>Việc</small><b t-esc="r.done + '/' + r.total"/></div>
-                                            <div><small>Điểm</small><b class="cm_navy" t-esc="jobStaffNum(r.points) + '/' + jobStaffNum(r.max_points)"/></div>
-                                            <div><small>ASM</small>
-                                                <b class="cm_red" t-if="r.pts_asm !== null and r.pts_asm !== undefined"><t t-esc="jobStaffNum(r.pts_asm)"/> <span class="cm_okc">(<t t-esc="jobStaffNum(r.pct)"/>%)</span></b>
-                                                <b class="cm_mute" t-else="" t-esc="r.control"/></div>
-                                        </div>
-                                        <div class="cm_df">
-                                            <p t-esc="r.note"/>
-                                            <span class="cm_more">Chi tiết <i class="fa fa-angle-right"/></span>
-                                        </div>
-                                    </article>
-                                    <div t-elif="r.kind === 'pending'" t-attf-class="cm_card cm_row #{r.line_id ? 'is-click' : ''}" t-on-click="() => this.onChtDay(r)">
-                                        <div class="cm_dl"><b t-esc="r.date"/><span class="cm_mute" t-esc="r.store_code"/>
-                                            <span t-attf-class="cm_shift sm t-#{chtShiftTone(r.shift)}" t-esc="r.shift"/></div>
-                                        <span class="cm_badge b-wait">Chưa check list<t t-if="r.line_id"> <i class="fa fa-angle-right"/></t></span>
+                                        <button type="button" class="cm_dsnv" t-if="state.chtm.options.length > 1" t-on-click="() => this.state.chtm.pick = !this.state.chtm.pick">
+                                            <i class="fa fa-chevron-left"/> DS NV</button>
                                     </div>
-                                    <div t-else="" class="cm_card cm_row is-off">
-                                        <div class="cm_dl"><b t-esc="r.date"/><span class="cm_mute" t-esc="r.weekday"/></div>
-                                        <span class="cm_badge b-off">Nghỉ theo lịch</span>
+                                    <div class="cm_pick" t-if="state.chtm.pick">
+                                        <button type="button" t-foreach="state.chtm.options" t-as="o" t-key="o.key" t-att-class="o.key === state.chtm.key ? 'on' : ''"
+                                                t-on-click="() => this.onChtPickStaff(o.key)">
+                                            <b t-esc="o.name"/><small t-esc="(o.code ? 'ID ' + o.code + ' · ' : '') + o.store"/></button>
                                     </div>
+                                    <div class="cm_pills">
+                                        <label class="cm_pill"><i class="fa fa-shopping-bag cm_red"/>
+                                            <select t-on-change="(ev) => this.onChtFilter('storeId', ev)">
+                                                <option value="">Tất cả CH</option>
+                                                <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                                        t-att-selected="('' + st.id) === state.chtm.storeId" t-esc="st.display_name"/>
+                                            </select><i class="fa fa-angle-down cm_caret"/></label>
+                                        <label class="cm_pill"><i class="fa fa-calendar cm_navy"/>
+                                            <select t-on-change="(ev) => this.onChtFilter('month', ev)">
+                                                <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
+                                                        t-att-selected="m.value === state.chtm.month" t-esc="m.label"/>
+                                            </select><i class="fa fa-angle-down cm_caret"/></label>
+                                    </div>
+                                </section>
+                                <t t-if="state.chtm.data">
+                                    <t t-set="ck" t-value="chtKpi"/>
+                                    <section class="cm_kpis">
+                                        <div class="cm_kpi is-navy">
+                                            <div class="cm_kh"><span>Ngày công</span><i class="fa fa-calendar-check-o"/></div>
+                                            <div class="cm_kv"><b t-esc="ck.days"/><small> / <t t-esc="ck.dim"/> ngày</small></div>
+                                            <div class="cm_bar"><i t-attf-style="width: #{ck.daysPct}%"/></div>
+                                        </div>
+                                        <div class="cm_kpi is-blue">
+                                            <div class="cm_kh"><span>Đã làm</span><i class="fa fa-check-circle-o"/></div>
+                                            <div class="cm_kv"><b t-esc="ck.done"/><small> / <t t-esc="ck.total"/></small><em t-esc="jobStaffNum(ck.donePct) + '%'"/></div>
+                                            <div class="cm_bar"><i t-attf-style="width: #{ck.donePct}%"/></div>
+                                        </div>
+                                        <div t-attf-class="cm_kpi #{ck.errors ? 'is-bad' : 'is-safe'}">
+                                            <div class="cm_kh"><span>Số lỗi</span><i t-attf-class="fa #{ck.errors ? 'fa-exclamation-triangle' : 'fa-shield'}"/></div>
+                                            <div class="cm_kv"><b t-esc="ck.errors"/><em t-esc="ck.errors ? 'Cần xử lý' : 'An toàn'"/></div>
+                                            <div class="cm_bar"><i style="width: 100%"/></div>
+                                        </div>
+                                        <div class="cm_kpi is-green">
+                                            <div class="cm_kh"><span>Điểm lũy kế</span><i class="fa fa-trophy"/></div>
+                                            <div class="cm_kv"><b t-esc="jobStaffNum(ck.points)"/><small>/<t t-esc="jobStaffNum(ck.maxPoints)"/></small><em t-esc="jobStaffNum(ck.pointsPct) + '%'"/></div>
+                                            <div class="cm_bar"><i t-attf-style="width: #{ck.pointsPct}%"/></div>
+                                        </div>
+                                    </section>
+                                    <section class="cm_tools">
+                                        <div class="cm_seg">
+                                            <button type="button" t-att-class="state.chtm.tab !== 'all' ? 'on' : ''" t-on-click="() => this.state.chtm.tab = 'worked'">
+                                                <span class="dot"/> Ngày đi làm (<t t-esc="chtWorkedCount"/>)</button>
+                                            <button type="button" t-att-class="state.chtm.tab === 'all' ? 'on' : ''" t-on-click="() => this.state.chtm.tab = 'all'">
+                                                Tất cả ngày (<t t-esc="state.chtm.data.days_in_month"/>)</button>
+                                        </div>
+                                        <button type="button" class="cm_icon is-info" title="Công thức tính" t-on-click="() => this.state.chtm.sheet = 'formula'"><i class="fa fa-info"/></button>
+                                        <button type="button" class="cm_icon is-xls" title="Xuất file Excel" t-on-click="onChtExport"><i class="fa fa-download"/></button>
+                                    </section>
+                                    <section class="cm_list">
+                                        <t t-foreach="chtRows" t-as="r" t-key="r.date + '|' + (r.id or r.kind)">
+                                            <article t-if="r.id" class="cm_card cm_day" t-on-click="() => this.onChtDetail(r)">
+                                                <div class="cm_dh">
+                                                    <div class="cm_dl">
+                                                        <b t-esc="r.date"/>
+                                                        <span t-attf-class="cm_shift t-#{chtShiftTone(r.shift)}">Ca <t t-esc="r.shift"/></span>
+                                                        <span class="cm_mute" t-esc="r.store_code"/>
+                                                    </div>
+                                                    <span t-attf-class="cm_badge b-#{chtStatusTone(r)}"><span class="dot"/><t t-esc="r.status"/></span>
+                                                </div>
+                                                <div class="cm_dm">
+                                                    <div><small>Việc</small><b t-esc="r.done + '/' + r.total"/></div>
+                                                    <div><small>Điểm</small><b class="cm_navy" t-esc="jobStaffNum(r.points) + '/' + jobStaffNum(r.max_points)"/></div>
+                                                    <div><small>ASM</small>
+                                                        <b class="cm_red" t-if="r.pts_asm !== null and r.pts_asm !== undefined"><t t-esc="jobStaffNum(r.pts_asm)"/> <span class="cm_okc">(<t t-esc="jobStaffNum(r.pct)"/>%)</span></b>
+                                                        <b class="cm_mute" t-else="" t-esc="r.control"/></div>
+                                                </div>
+                                                <div class="cm_df">
+                                                    <p t-esc="r.note"/>
+                                                    <span class="cm_more">Chi tiết <i class="fa fa-angle-right"/></span>
+                                                </div>
+                                            </article>
+                                            <div t-elif="r.kind === 'pending'" t-attf-class="cm_row #{r.line_id ? 'is-click' : ''}" t-on-click="() => this.onChtDay(r)">
+                                                <div class="cm_dl"><b t-esc="r.date"/><span class="cm_mute" t-esc="r.store_code"/>
+                                                    <span t-attf-class="cm_shift sm t-#{chtShiftTone(r.shift)}" t-esc="r.shift"/></div>
+                                                <span class="cm_badge b-wait">Chưa check list</span>
+                                            </div>
+                                            <div t-else="" class="cm_row is-off">
+                                                <div class="cm_dl"><b t-esc="r.date"/><span class="cm_mute" t-esc="r.weekday"/></div>
+                                                <span class="cm_badge b-off">Nghỉ theo lịch</span>
+                                            </div>
+                                        </t>
+                                        <div class="cm_empty" t-if="!chtRows.length"><i class="fa fa-info-circle"/> Chưa có ngày check list nào trong tháng. Chọn "Tất cả ngày" để xem lịch làm.</div>
+                                    </section>
+                                    <section class="cm_card cm_total">
+                                        <div class="cm_th">
+                                            <div><div class="cm_tt">TỔNG CỘNG KỲ <t t-esc="chtMonthLabel()"/></div>
+                                                <small><t t-esc="ck.days"/> ngày công thực tế • Liên kết Odoo</small></div>
+                                            <span class="cm_badge b-ok"><i class="fa fa-check-circle"/> <t t-esc="ck.valid"/>/<t t-esc="ck.days"/> công hợp lệ</span>
+                                        </div>
+                                        <div class="cm_tg">
+                                            <div><small>Việc</small><b t-esc="ck.done + '/' + ck.total"/></div>
+                                            <div><small>Lỗi</small><b t-esc="ck.errors"/></div>
+                                            <div><small>Điểm TB</small><b class="cm_navy" t-esc="ck.avgPoints === null or ck.avgPoints === undefined ? '-' : jobStaffNum(ck.avgPoints)"/></div>
+                                            <div class="is-asm"><small>ASM TB</small><b class="cm_red" t-esc="ck.avgAsm === null or ck.avgAsm === undefined ? '-' : jobStaffNum(ck.avgAsm)"/></div>
+                                        </div>
+                                        <div class="cm_tf"><span>Tỷ lệ đạt trung bình kỳ:</span>
+                                            <button type="button" class="cm_link" t-on-click="() => this.state.chtm.sheet = 'formula'">
+                                                <t t-esc="ck.avgPct === null or ck.avgPct === undefined ? '-' : 'Đạt: ' + jobStaffNum(ck.avgPct) + '%'"/> <i class="fa fa-question-circle-o"/></button></div>
+                                    </section>
                                 </t>
-                                <div class="o_store_job_empty" t-if="!chtRows.length"><i class="fa fa-info-circle"/> Chưa có ngày check list nào trong tháng. Chọn "Tất cả ngày" để xem lịch làm.</div>
-                            </section>
-                            <section class="cm_card cm_total">
-                                <div class="cm_th">
-                                    <div><div class="cm_tt">TỔNG CỘNG KỲ <t t-esc="chtMonthLabel()"/></div>
-                                        <small><t t-esc="ck.days"/> ngày công thực tế</small></div>
-                                    <span class="cm_badge b-ok"><i class="fa fa-check-circle"/> <t t-esc="ck.valid"/>/<t t-esc="ck.days"/> công đã đánh giá</span>
+                                <div class="cm_empty" t-elif="!state.chtm.busy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
+                            </main>
+                            <nav class="cm_nav">
+                                <a href="/odoo/discuss"><i class="fa fa-comment-o is-amber"/><span>Thảo luận</span></a>
+                                <a class="on"><i class="fa fa-check-square-o"/><span>Checklist</span></a>
+                                <a href="/odoo/action-hr_holidays.hr_leave_action_new_request"><i class="fa fa-umbrella is-sky"/><span>Ngày nghỉ</span></a>
+                                <a href="/odoo"><i class="fa fa-th is-indigo"/><span>Xem thêm</span></a>
+                            </nav>
+                        </div>
+                        <!-- Bottom sheet: chi tiết checklist công việc trong ca -->
+                        <div class="cm_sheet_wrap" t-if="state.chtm.sheet === 'detail' and state.chtm.detail">
+                            <t t-set="dt" t-value="state.chtm.detail"/>
+                            <div class="cm_backdrop" t-on-click="() => this.state.chtm.sheet = ''"/>
+                            <div class="cm_sheet">
+                                <div class="cm_grip"><i/></div>
+                                <div class="cm_sh">
+                                    <div>
+                                        <div class="cm_sh_t"><b t-esc="dt.row.date"/><span t-attf-class="cm_shift t-#{chtShiftTone(dt.row.shift)}">Ca <t t-esc="dt.row.shift"/></span>
+                                            <span class="cm_mute">• <t t-esc="dt.row.store_code"/></span></div>
+                                        <small>Chi tiết đánh giá checklist công việc</small>
+                                    </div>
+                                    <button type="button" class="cm_x" t-on-click="() => this.state.chtm.sheet = ''"><i class="fa fa-times"/></button>
                                 </div>
-                                <div class="cm_tg">
-                                    <div><small>Việc</small><b t-esc="ck.done + '/' + ck.total"/></div>
-                                    <div><small>Lỗi</small><b t-esc="ck.errors"/></div>
-                                    <div><small>Điểm TB</small><b class="cm_navy" t-esc="ck.avgPoints === null or ck.avgPoints === undefined ? '-' : jobStaffNum(ck.avgPoints)"/></div>
-                                    <div class="is-asm"><small>ASM TB</small><b class="cm_red" t-esc="ck.avgAsm === null or ck.avgAsm === undefined ? '-' : jobStaffNum(ck.avgAsm)"/></div>
+                                <div class="cm_sb">
+                                    <div class="cm_sg">
+                                        <div class="is-blue"><small>Điểm đạt</small><b class="cm_navy" t-esc="jobStaffNum(dt.row.points) + '/' + jobStaffNum(dt.row.max_points)"/></div>
+                                        <div><small>CHT đánh giá</small><b t-att-class="dt.row.pts_cht === null or dt.row.pts_cht === undefined ? 'cm_mute sm' : ''"
+                                                                         t-esc="dt.row.pts_cht === null or dt.row.pts_cht === undefined ? 'Chưa chấm' : jobStaffNum(dt.row.pts_cht)"/></div>
+                                        <div class="is-rose"><small>ASM đánh giá</small><b t-att-class="dt.row.pts_asm === null or dt.row.pts_asm === undefined ? 'cm_mute sm' : 'cm_red'"
+                                                                                          t-esc="dt.row.pts_asm === null or dt.row.pts_asm === undefined ? 'Chưa chấm' : jobStaffNum(dt.row.pts_asm) + ' (' + jobStaffNum(dt.row.pct) + '%)'"/></div>
+                                    </div>
+                                    <div class="cm_cmt">
+                                        <div><i class="fa fa-quote-left"/> Nhận xét của CHT / ASM:</div>
+                                        <p t-esc="dt.comment"/>
+                                    </div>
+                                    <div class="cm_st">Danh sách <t t-esc="dt.lines.length"/> đầu việc trong ca</div>
+                                    <div class="cm_task" t-foreach="dt.lines" t-as="ln" t-key="ln.id">
+                                        <div class="cm_task_l">
+                                            <span t-attf-class="cm_no #{ln.is_done ? '' : 'is-todo'}" t-esc="ln_index + 1"/>
+                                            <div>
+                                                <div class="cm_task_n" t-esc="ln.name"/>
+                                                <small t-esc="chtTaskSub(ln, dt.row)"/>
+                                            </div>
+                                        </div>
+                                        <span t-attf-class="cm_pts p-#{chtTaskTone(ln, dt.row)}" t-esc="chtTaskPts(ln, dt.row)"/>
+                                    </div>
                                 </div>
-                                <div class="cm_tf"><span>Tỷ lệ đạt trung bình kỳ:</span>
-                                    <b class="cm_okc" t-esc="ck.avgPct === null or ck.avgPct === undefined ? '-' : 'Đạt: ' + jobStaffNum(ck.avgPct) + '%'"/></div>
-                            </section>
-                        </t>
-                        <div class="o_store_job_empty" t-elif="!state.chtm.busy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
+                                <div class="cm_sf">
+                                    <button type="button" class="cm_btn is-light" t-on-click="() => this.onChtDay(dt.row)">Mở check list ngày</button>
+                                    <button type="button" class="cm_btn" t-on-click="() => this.state.chtm.sheet = ''">Đóng chi tiết</button>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Bottom sheet: công thức dòng TỔNG CỘNG KỲ -->
+                        <div class="cm_sheet_wrap" t-if="state.chtm.sheet === 'formula'">
+                            <div class="cm_backdrop" t-on-click="() => this.state.chtm.sheet = ''"/>
+                            <div class="cm_sheet">
+                                <div class="cm_grip"><i/></div>
+                                <div class="cm_sh">
+                                    <div class="cm_sh_t"><span class="cm_calc"><i class="fa fa-calculator"/></span><b>Công thức dòng "TỔNG CỘNG KỲ"</b></div>
+                                    <button type="button" class="cm_x" t-on-click="() => this.state.chtm.sheet = ''"><i class="fa fa-times"/></button>
+                                </div>
+                                <div class="cm_sb cm_fm">
+                                    <div><b>1. Tổng việc ca, Đã làm, Số lỗi, Điểm chuẩn ca</b><p>Tính bằng hàm <code>= SUM()</code> cộng dồn tất cả các ngày trong kỳ.</p></div>
+                                    <div><b>2. Điểm đạt &amp; Điểm CHT / ASM đánh giá</b><p>Tính bằng hàm <code>= AVERAGE()</code> trung bình cộng các ngày đã hoàn thành đánh giá.</p></div>
+                                    <div><b>3. Tỷ lệ đạt (%)</b><p><code class="g">= AVERAGE()</code> tỷ lệ đạt từng ngày (Điểm đạt ÷ Điểm chuẩn ca × 100). Các ngày <em>"Chưa check list"</em> không tính vào trung bình.</p></div>
+                                </div>
+                                <div class="cm_sf"><button type="button" class="cm_btn is-dark" t-on-click="() => this.state.chtm.sheet = ''">Đã hiểu</button></div>
+                            </div>
+                        </div>
                     </div>
                     <t t-else="">
                     <div class="o_cht_back" t-if="state.activeNav === 'nvbh_cht'">

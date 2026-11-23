@@ -91,6 +91,17 @@ class StoreNvbhCheck(models.Model):
             rec.cnt_todo = len(lines.filtered(lambda l: l.status == 'todo'))
 
     @api.model
+    def _hide_cht(self):
+        """True: người dùng không có quyền Xem mục "Checklist CV CHT" -> không thấy phiếu / người làm check list CHT ở mọi trang
+        (vd. tài khoản cửa hàng CH_..., nhân viên). Quản trị / Quản lý / user không áp ma trận quyền thì thấy."""
+        rights = self.env['store.perm.rule']._rights()
+        return rights is not None and not rights.get('nvbh_cht', {}).get('read')
+
+    def _assert_cht_visible(self):
+        if any(c.kind == 'cht' for c in self) and self._hide_cht():
+            raise AccessError(_('Bạn không có quyền xem check list CHT.'))
+
+    @api.model
     def _schedule_kind(self, schedule_line):
         """Loại check list của một dòng lịch xếp ca: chức vụ cấp 2 (CHT, CHTTT, ASMTT) -> 'cht', còn lại 'nvbh'."""
         from .store_role import role_level
@@ -210,7 +221,7 @@ class StoreNvbhCheck(models.Model):
     def get_job_overview(self, store_id, work_date, kind='nvbh'):
         """Trang Check list công việc: tất cả nhân viên có lịch làm việc trong ngày kèm tiến độ (đã làm / tổng việc, điểm, đã check list chưa),
         và danh sách nhân viên của cửa hàng không có lịch (nghỉ OFF)."""
-        if not store_id or not work_date:
+        if not store_id or not work_date or (kind == 'cht' and self._hide_cht()):
             return {'staff': [], 'off': [], 'store_staff': 0}
         lines = self.env['store.nvbh.schedule.line'].search(
             [('store_id', '=', int(store_id)), ('work_date', '=', work_date)], order='schedule_id, sequence, id')
@@ -257,6 +268,8 @@ class StoreNvbhCheck(models.Model):
         if not line:
             return False
         kind = self._schedule_kind(line)
+        if kind == 'cht' and self._hide_cht():
+            raise AccessError(_('Bạn không có quyền xem check list CHT.'))
         check = self.search([('schedule_line_id', '=', line.id)], limit=1)
         if not check:
             check = self.create({
@@ -378,6 +391,8 @@ class StoreNvbhCheck(models.Model):
             domain.append(('work_date', '=', fields.Date.context_today(self)))
         if search:
             domain.append(('staff_name', 'ilike', search))
+        if self._hide_cht():
+            domain.append(('kind', '!=', 'cht'))
         checks = self.search(domain, order='work_date desc, id desc')
         if errors:
             checks = checks.filtered(lambda c: c.error_total > 0)
@@ -475,6 +490,8 @@ class StoreNvbhCheck(models.Model):
         if search:
             sdomain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(sdomain, order='work_date desc, id desc')
+        if self._hide_cht():
+            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         inactive = set()
         if active_only:
@@ -531,6 +548,8 @@ class StoreNvbhCheck(models.Model):
         if search:
             domain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(domain, order='store_id, schedule_id, sequence, id')
+        if self._hide_cht():
+            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         Attachment = self.env['ir.attachment']
         rows = []
@@ -566,6 +585,8 @@ class StoreNvbhCheck(models.Model):
         if search:
             domain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(domain, order='store_id, schedule_id, sequence, id')
+        if self._hide_cht():
+            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         people = {}
         for l in sched:
@@ -602,8 +623,10 @@ class StoreNvbhCheck(models.Model):
         base = [('work_date', '>=', start), ('work_date', '<', end), ('staff_name', '=ilike', name)]
         if store_id:
             base.append(('store_id', '=', int(store_id)))
-        checks = self.search(base, order='work_date, id')
+        checks = self.search(base + ([('kind', '!=', 'cht')] if self._hide_cht() else []), order='work_date, id')
         sched = self.env['store.nvbh.schedule.line'].search(base)
+        if self._hide_cht():
+            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
         by_date = {}
         for c in checks:
             by_date.setdefault(c.work_date, []).append(c)
@@ -836,6 +859,7 @@ class StoreNvbhCheck(models.Model):
     def read_checklist(self, check_id):
         """Nội dung một checklist đã lưu (popup ở Danh sách checklist NV)."""
         check = self.browse(int(check_id)).exists()
+        check._assert_cht_visible()
         return check._checklist_payload() if check else False
 
     @api.model

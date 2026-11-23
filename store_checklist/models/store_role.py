@@ -315,6 +315,8 @@ class StoreNvbhCheckRole(models.Model):
                     last = lvl
             node = node.parent_id
             hops += 1
+        if self.kind == 'cht':
+            chain = chain[:1]  # check list CHT: chỉ ASM (cấp trên trực tiếp) đánh giá, rồi Admin phê duyệt sau cùng nếu bật
         if len(chain) < MAX_STEPS and self.env['ir.config_parameter'].sudo().get_param('store_checklist.admin_approval') == '1':
             chain.append({'code': 'ADM', 'level': 5, 'employee': Employee, 'user': self.env['res.users'], 'admin_only': True})
         return chain

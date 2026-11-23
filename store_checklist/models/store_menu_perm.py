@@ -62,7 +62,7 @@ PERM_INHERIT = {
     'cht_task': 'nvbh_task',  # Danh sách công việc CHT: mặc định theo quyền Danh sách công việc NVBH
     'report_flow_nvbh': 'report_flow',  # Sơ đồ quy trình checklist NVBH: mặc định theo quyền Sơ đồ quy trình vận hành giám sát  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
-NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
+NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg', 'nvbh_cht')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 
 
 def perm_of(perms, key):

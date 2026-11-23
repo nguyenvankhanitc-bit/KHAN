@@ -255,6 +255,18 @@ class StoreChtTask(models.Model):
                        'next': {'type': 'ir.actions.act_window_close'}},
         }
 
+    def write(self, vals):
+        res = super().write(vals)
+        if self._name == 'store.cht.task':
+            Check = self.env['store.nvbh.check'].sudo()
+            if 'score' in vals:
+                for t in self:
+                    self.env['store.nvbh.check.line'].sudo().search([('cht_task_id', '=', t.id), ('max_score', '!=', t.score)]).write(
+                        {'max_score': t.score})
+            if {'wd_mon', 'wd_tue', 'wd_wed', 'wd_thu', 'wd_fri', 'wd_sat', 'wd_sun', 'month_days', 'active'} & set(vals):
+                Check._sync_open_checks_by_weekday([('kind', '=', 'cht')])
+        return res
+
     _FILL_FIELDS = ('admin_user_ids', 'related_user_ids')
 
     @api.model

@@ -58,6 +58,9 @@ class StoreNvbhCheck(models.Model):
     staff_name = fields.Char(string='Nhân viên')
     schedule_line_id = fields.Many2one('store.nvbh.schedule.line', string='Dòng lịch làm việc', ondelete='set null', index=True)
     staff_id = fields.Many2one('store.audit.staff', string='NVBH (cũ)')
+    # NVBH: công việc lấy từ Danh sách công việc NVBH; CHT: người trên lịch xếp ca có chức vụ cấp 2 (CHT...),
+    # công việc lấy từ Danh sách công việc CHT, luồng CHT check list -> ASM đánh giá -> Admin phê duyệt (nếu bật)
+    kind = fields.Selection([('nvbh', 'NVBH'), ('cht', 'CHT')], string='Loại check list', default='nvbh', required=True, index=True)
     line_ids = fields.One2many('store.nvbh.check.line', 'check_id', string='Công việc')
     # Đã lưu checklist (bấm Lưu ở trang Check list công việc) -> hiện trong Danh sách checklist NV
     submitted = fields.Boolean(string='Đã check list', default=False, index=True)
@@ -88,8 +91,35 @@ class StoreNvbhCheck(models.Model):
             rec.cnt_todo = len(lines.filtered(lambda l: l.status == 'todo'))
 
     @api.model
-    def _task_line_commands(self, shift, work_date=None):
-        """Một dòng cho mỗi công việc áp dụng cho Loại ca của Mã ca và cho Thứ của ngày làm việc (theo thứ tự trong bảng công việc NVBH)."""
+    def _schedule_kind(self, schedule_line):
+        """Loại check list của một dòng lịch xếp ca: chức vụ cấp 2 (CHT, CHTTT, ASMTT) -> 'cht', còn lại 'nvbh'."""
+        from .store_role import role_level
+        return 'cht' if role_level((schedule_line.position or '').strip().upper()) == 2 else 'nvbh'
+
+    @api.model
+    def _cht_line_commands(self, work_date=None):
+        """Dòng công việc CHT: mọi việc trong Danh sách công việc CHT đến hạn ngày work_date (theo tần suất / thứ / ngày trong tháng)."""
+        tasks = self.env['store.cht.task'].sudo().search([])
+        if work_date:
+            tasks = tasks.filtered(lambda t: t.runs_on(work_date))
+        tasks = tasks.sorted(lambda t: (t.group_id.sequence if t.group_id else 9999, t.group_id.id or 0, t.sequence, t.id))
+        return [Command.create({
+            'cht_task_id': t.id,
+            'sequence': t.sequence,
+            'name': t.name,
+            'sub_category': t.group_id.name or 'Khác',
+            'time_slot': t.time_slot,
+            'controller': t.controller,
+            'max_score': t.score,
+            'is_done': False,
+        }) for t in tasks]
+
+    @api.model
+    def _task_line_commands(self, shift, work_date=None, kind='nvbh'):
+        """Một dòng cho mỗi công việc áp dụng cho Loại ca của Mã ca và cho Thứ của ngày làm việc (theo thứ tự trong bảng công việc NVBH).
+        kind = 'cht': lấy theo Danh sách công việc CHT (không phụ thuộc ca)."""
+        if kind == 'cht':
+            return self._cht_line_commands(work_date)
         groups = dict(TASK_GROUPS)
         if not shift or not shift.shift_type_id:
             return []
@@ -125,15 +155,16 @@ class StoreNvbhCheck(models.Model):
         removed = added = 0
         checks = self.sudo().search([('state', '=', 'draft'), ('submitted', '=', False)] + list(domain or []))
         for chk in checks:
-            if not chk.shift_id or not chk.shift_id.shift_type_id:
+            if chk.kind != 'cht' and (not chk.shift_id or not chk.shift_id.shift_type_id):
                 continue
-            wanted = self._task_line_commands(chk.shift_id, chk.work_date)
-            wanted_ids = {cmd[2]['task_id'] for cmd in wanted}
-            have = {ln.task_id.id: ln for ln in chk.line_ids if ln.task_id}
+            fk = 'cht_task_id' if chk.kind == 'cht' else 'task_id'
+            wanted = self._task_line_commands(chk.shift_id, chk.work_date, chk.kind)
+            wanted_ids = {cmd[2][fk] for cmd in wanted}
+            have = {ln[fk].id: ln for ln in chk.line_ids if ln[fk]}
             drop = chk.line_ids.filtered(
-                lambda ln: ln.task_id and ln.task_id.id not in wanted_ids
+                lambda ln: ln[fk] and ln[fk].id not in wanted_ids
                 and not (ln.is_done or ln.note or ln.eval_result or ln.asm_eval_result or ln.rsm_eval_result or ln.adm_eval_result or ln.error_detail))
-            missing = [cmd for cmd in wanted if cmd[2]['task_id'] not in have]
+            missing = [cmd for cmd in wanted if cmd[2][fk] not in have]
             if drop or missing:
                 chk.write({'line_ids': [Command.delete(ln.id) for ln in drop] + missing})
                 removed += len(drop)
@@ -176,26 +207,30 @@ class StoreNvbhCheck(models.Model):
         return stores.id if len(stores) == 1 else False
 
     @api.model
-    def get_job_overview(self, store_id, work_date):
+    def get_job_overview(self, store_id, work_date, kind='nvbh'):
         """Trang Check list công việc: tất cả nhân viên có lịch làm việc trong ngày kèm tiến độ (đã làm / tổng việc, điểm, đã check list chưa),
         và danh sách nhân viên của cửa hàng không có lịch (nghỉ OFF)."""
         if not store_id or not work_date:
             return {'staff': [], 'off': [], 'store_staff': 0}
         lines = self.env['store.nvbh.schedule.line'].search(
             [('store_id', '=', int(store_id)), ('work_date', '=', work_date)], order='schedule_id, sequence, id')
+        # trang NVBH: mọi người trên lịch trừ CHT (cấp 2); trang CHT: chỉ người có chức vụ cấp 2
+        lines = lines.filtered(lambda l: (self._schedule_kind(l) == 'cht') == (kind == 'cht'))
         checks = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', lines.ids)])}
         staff = []
         for i, l in enumerate(lines, 1):
             c = checks.get(l.id)
-            total = c.cnt_total if c else len(self._task_line_commands(l.shift_id, work_date))
+            total = c.cnt_total if c and c.kind == kind else len(self._task_line_commands(l.shift_id, work_date, kind))
             staff.append({
                 'id': l.id, 'stt': i, 'name': l.staff_name or '', 'shift': l.shift_id.code or '',
                 'done': c.cnt_done if c else 0, 'total': total, 'points': c.points if c else 0.0,
                 'finished': bool(c and c.submitted and total and c.cnt_todo == 0),
             })
         scheduled = {(s['name'] or '').strip().casefold() for s in staff}
+        from .store_role import role_level
         roster = self.env['store.audit.staff'].search([('store_id', '=', int(store_id)), ('staff_state', '=', 'active'),
                                                         ('position', 'not in', ['ASM', 'RSM'])])
+        roster = roster.filtered(lambda r: (role_level((r.position or '').strip().upper()) == 2) == (kind == 'cht'))
         names = {}
         for r in roster:
             names.setdefault((r.name or '').strip().casefold(), (r.name or '').strip())
@@ -221,6 +256,7 @@ class StoreNvbhCheck(models.Model):
         line = self.env['store.nvbh.schedule.line'].browse(int(schedule_line_id)).exists()
         if not line:
             return False
+        kind = self._schedule_kind(line)
         check = self.search([('schedule_line_id', '=', line.id)], limit=1)
         if not check:
             check = self.create({
@@ -229,18 +265,27 @@ class StoreNvbhCheck(models.Model):
                 'shift_id': line.shift_id.id,
                 'staff_name': line.staff_name,
                 'schedule_line_id': line.id,
-                'line_ids': self._task_line_commands(line.shift_id, line.work_date),
+                'kind': kind,
+                'line_ids': self._task_line_commands(line.shift_id, line.work_date, kind),
             })
+        elif check.kind != kind and check.state == 'draft' and not check.submitted and not any(
+                l.is_done or l.note or l.eval_result for l in check.line_ids):
+            # phiếu cũ của CHT tạo theo công việc NVBH, chưa làm gì: đổi sang công việc CHT
+            check.sudo().write({'kind': kind, 'line_ids': [Command.clear()] + self._task_line_commands(line.shift_id, line.work_date, kind)})
         return check._checklist_payload()
 
     def _checklist_payload(self):
         self.ensure_one()
-        order = {label: i for i, (_k, label) in enumerate(TASK_GROUPS)}
+        if self.kind == 'cht':  # nhóm công việc CHT theo thứ tự trong danh mục nhóm
+            order = {g.name: i for i, g in enumerate(self.env['store.cht.task.group'].sudo().search([]))}
+        else:
+            order = {label: i for i, (_k, label) in enumerate(TASK_GROUPS)}
         # theo nhóm công việc (I, II, III...) rồi theo thứ tự trong bảng công việc NVBH
         lines = self.line_ids.sorted(lambda l: (order.get(l.sub_category, len(order)), l.sequence, l.id))
         return {
             'id': self.id,
             'name': self.name,
+            'kind': self.kind,
             'staff_name': self.staff_name or '',
             'store': self.store_id.display_name or '',
             'date': self.work_date.strftime('%d/%m/%Y') if self.work_date else '',
@@ -849,6 +894,7 @@ class StoreNvbhCheckLine(models.Model):
     check_id = fields.Many2one('store.nvbh.check', required=True, ondelete='cascade', index=True)
     sequence = fields.Integer(default=10)
     task_id = fields.Many2one('store.nvbh.task', string='Công việc', ondelete='set null')
+    cht_task_id = fields.Many2one('store.cht.task', string='Công việc CHT', ondelete='set null', index=True)
     name = fields.Char(string='Công việc', required=True)
     sub_category = fields.Char(string='Nhóm công việc')
     time_slot = fields.Char(string='Thời gian')

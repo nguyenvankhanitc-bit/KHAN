@@ -580,6 +580,15 @@ class StoreNvbhCheckRole(models.Model):
         return check._checklist_payload()
 
     @api.model
+    def _fix_cht_kind(self):
+        """Dữ liệu cũ: phiếu tạo trước khi có check list CHT nhưng người làm là CHT (lịch ca chức vụ cấp 2) vẫn mang loại
+        'nvbh' -> nhân viên vẫn thấy. Gán lại loại 'cht' (giữ nguyên dòng việc và kết quả đánh giá)."""
+        checks = self.sudo().search([('kind', '!=', 'cht'), ('schedule_line_id', '!=', False)])
+        todo = checks.filtered(lambda c: self._schedule_kind(c.schedule_line_id) == 'cht')
+        if todo:
+            todo.write({'kind': 'cht'})
+
+    @api.model
     def _clear_edited_evals(self):
         """Dữ liệu cũ: dòng đã chỉnh sửa (chờ chấm lại) mà còn kết quả đánh giá cũ thì xóa (chạy mỗi lần nâng cấp, không đổi gì nếu đã đúng)."""
         lines = self.env['store.nvbh.check.line'].sudo().search([('staff_edited', '=', True)])

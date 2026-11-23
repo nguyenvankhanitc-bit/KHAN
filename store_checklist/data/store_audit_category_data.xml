@@ -8,4 +8,6 @@
     <function model="store.perm.rule" name="_dedupe_rule_users"/>
     <!-- dòng NV đã chỉnh sửa sau khi gửi: bỏ kết quả đánh giá cũ (cấp trên chấm lại) -->
     <function model="store.nvbh.check" name="_clear_edited_evals"/>
+    <!-- phiếu cũ của CHT còn mang loại nvbh: gán lại loại cht (ẩn với nhân viên) -->
+    <function model="store.nvbh.check" name="_fix_cht_kind"/>
 </odoo>

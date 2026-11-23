@@ -3146,3 +3146,9 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_perm_name span{white-space: nowrap;}
 .o_store_perm_name input{flex: 1; border: 1px solid #cbd5e1; border-radius: 8px; padding: 6px 10px; font-weight: 400;}
 .o_store_perm_name input:focus{outline: none; border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, .2);}
+
+/* KQ đánh giá: 3 ô tích chung Đạt / T.Bình / Không đạt ở tiêu đề */
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all3{display: flex; justify-content: center; flex-wrap: wrap; gap: 4px; margin-top: 4px;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all{margin: 0 !important; padding: 2px 7px;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all.ev-avg, .o_store_job_page .o_store_sx_mall label.sx-all.ev-avg{color: #b45309;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all.ev-bad, .o_store_job_page .o_store_sx_mall label.sx-all.ev-bad{color: #b91c1c;}

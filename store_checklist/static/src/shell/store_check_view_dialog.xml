@@ -23,11 +23,13 @@
                 </div>
                 <!-- Điện thoại: tiêu đề bảng bị ẩn (bảng chuyển thành thẻ) nên nút Tất cả của từng cấp đánh giá đặt ở đây -->
                 <div class="o_store_sx_mall" t-if="steps.length">
-                    <label t-foreach="steps" t-as="st" t-key="st.no" t-att-class="'sx-all sx-head ' + stepClass(st_index) + (st.can_edit ? '' : ' is-off')"
-                           t-att-title="st.can_edit ? 'Tích: tất cả hạng mục, tất cả công việc = Đạt · Bỏ tích: xóa kết quả của cấp này' : 'Chưa đến lượt đánh giá'">
-                        <input type="checkbox" t-att-checked="allGood(st_index)" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllGood(st_index)"/>
-                        <span><t t-esc="st.label"/> · Tất cả Đạt</span>
-                    </label>
+                    <t t-foreach="steps" t-as="st" t-key="st.no">
+                        <label t-foreach="results" t-as="r" t-key="r[0]" t-att-class="'sx-all sx-head ev-' + r[0] + ' ' + stepClass(st_index) + (st.can_edit ? '' : ' is-off')"
+                               t-att-title="st.can_edit ? ('Tích: tất cả công việc = ' + r[1] + ' · Bỏ tích: xóa kết quả của cấp này') : 'Chưa đến lượt đánh giá'">
+                            <input type="checkbox" t-att-checked="allResult(st_index, r[0])" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllResult(st_index, r[0])"/>
+                            <span><t t-esc="st.label"/> · Tất cả <t t-esc="r[1]"/></span>
+                        </label>
+                    </t>
                 </div>
                 <table class="o_store_job_table">
                     <thead>
@@ -40,9 +42,12 @@
                             <t t-foreach="steps" t-as="st" t-key="st.no">
                                 <th t-att-class="'c sx-head ' + stepClass(st_index)">Người đánh giá</th>
                                 <th t-att-class="'c sx-head ' + stepClass(st_index)">KQ đánh giá
-                                    <label t-att-class="'sx-all' + (st.can_edit ? '' : ' is-off')" t-att-title="st.can_edit ? 'Tích: tất cả hạng mục, tất cả công việc = Đạt · Bỏ tích: xóa kết quả của cấp này' : 'Chưa đến lượt đánh giá (nhân viên chưa hoàn thành checklist hoặc không phải cấp của bạn)'">
-                                        <input type="checkbox" t-att-checked="allGood(st_index)" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllGood(st_index)"/> All
-                                    </label>
+                                    <div class="sx-all3">
+                                        <label t-foreach="results" t-as="r" t-key="r[0]" t-att-class="'sx-all ev-' + r[0] + (st.can_edit ? '' : ' is-off')"
+                                               t-att-title="st.can_edit ? ('Tích: tất cả hạng mục, tất cả công việc = ' + r[1] + ' · Bỏ tích: xóa kết quả của cấp này') : 'Chưa đến lượt đánh giá (nhân viên chưa hoàn thành checklist hoặc không phải cấp của bạn)'">
+                                            <input type="checkbox" t-att-checked="allResult(st_index, r[0])" t-att-disabled="!st.can_edit" t-on-change="() => this.setAllResult(st_index, r[0])"/> <t t-esc="r[1]"/>
+                                        </label>
+                                    </div>
                                 </th>
                                 <th t-att-class="'c sx-head ' + stepClass(st_index)">Chi tiết lỗi</th>
                             </t>

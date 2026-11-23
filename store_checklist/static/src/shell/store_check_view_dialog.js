@@ -218,23 +218,32 @@ export class StoreCheckViewDialog extends Component {
         }
     }
 
-    // nút All ở tiêu đề KQ đánh giá: tích = mọi hạng mục / mọi công việc đều Đạt; bỏ tích = xóa kết quả của cấp này
-    allGood(k) {
+    // 3 ô All ở tiêu đề KQ đánh giá (Đạt / T.Bình / Không đạt): tích = mọi hạng mục / mọi công việc nhận kết quả đó;
+    // bỏ tích (đang là kết quả đó hết) = xóa kết quả của cấp này
+    allResult(k, value) {
         const lines = this.state.lines;
-        return lines.length > 0 && lines.every((l) => l.ev[k].result === "good");
+        return lines.length > 0 && lines.every((l) => l.ev[k].result === value);
     }
 
-    setAllGood(k) {
+    setAllResult(k, value) {
         if (!this.canEditStep(k)) {
             return;
         }
-        const clear = this.allGood(k);
+        const clear = this.allResult(k, value);
         for (const line of this.state.lines) {
-            line.ev[k].result = clear ? "" : "good";
+            line.ev[k].result = clear ? "" : value;
             if (!clear) {
                 line.ev[k].reviewer_id = this.steps[k].user_id || line.ev[k].reviewer_id;
             }
         }
+    }
+
+    allGood(k) {
+        return this.allResult(k, "good");
+    }
+
+    setAllGood(k) {
+        return this.setAllResult(k, "good");
     }
 
     // nhập chi tiết lỗi thì KQ đánh giá tự chuyển về Không đạt

@@ -1221,7 +1221,7 @@ export class StoreChecklistShell extends Component {
         if (day.empty) {
             return "Chưa có";
         }
-        if (day.state === "draft" && (!day.wait || day.wait === "NV")) {
+        if ((day.state === "draft" && !day.wait) || day.wait === "NV") {
             // phiếu chưa gửi: chưa tích việc nào = Chưa check list; đã tích một phần = Đang làm
             return day.done > 0 ? "Đang làm" : "Chưa check list";
         }

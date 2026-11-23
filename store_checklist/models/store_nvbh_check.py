@@ -97,10 +97,14 @@ class StoreNvbhCheck(models.Model):
         if self.state == 'approved':
             return ''
         chain = self._approval_chain()
+        staff_done = bool(self.line_ids) and all(self.line_ids.mapped('is_done'))
         if self.state == 'draft':
-            if not (self.line_ids and all(self.line_ids.mapped('is_done'))):
+            if not staff_done:
                 return 'NV'
             idx = 0
+        elif not staff_done and self._self_edit_open():
+            # người thực hiện sửa lại sau khi gửi, còn dòng chưa tích "Có làm" và vẫn trong hạn sửa (đến 23h55): đang chờ người thực hiện
+            return 'NV'
         else:
             idx = self.step_done
         if idx >= len(chain):

@@ -404,6 +404,14 @@ class StoreNvbhCheckRole(models.Model):
             return True
         return any(rights.get(k, {}).get('write') for k in ('nvbh_done', 'nvbh_mg'))
 
+    def _self_edit_open(self):
+        """Phiếu đã gửi còn trong hạn người thực hiện sửa lại (đến 23h55 ngày gửi)."""
+        self.ensure_one()
+        if self.state not in ('pending_review', 'approved'):
+            return False
+        sent = max([d for d in (self.review_sent_date, self.staff_done_date, self.submit_date) if d] or [False]) or False
+        return bool(sent) and fields.Datetime.now() <= self._cutoff_2355(sent)
+
     def _cutoff_2355(self, dt):
         """23h55 (giờ Việt Nam / múi giờ của user) của ngày chứa mốc dt (UTC), trả về UTC."""
         import pytz

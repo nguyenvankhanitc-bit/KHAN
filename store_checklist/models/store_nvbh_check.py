@@ -60,6 +60,8 @@ class StoreNvbhCheck(models.Model):
     work_date = fields.Date(string='Ngày', required=True, default=fields.Date.context_today)
     staff_name = fields.Char(string='Nhân viên')
     schedule_line_id = fields.Many2one('store.nvbh.schedule.line', string='Dòng lịch làm việc', ondelete='set null', index=True)
+    # check list ASM: không theo lịch xếp ca, mỗi ASM (hồ sơ nhân viên chức vụ ASM) một phiếu mỗi ngày
+    asm_employee_id = fields.Many2one('hr.employee', string='ASM', ondelete='set null', index=True)
     staff_id = fields.Many2one('store.audit.staff', string='NVBH (cũ)')
     # NVBH: công việc lấy từ Danh sách công việc NVBH; CHT: người trên lịch xếp ca có chức vụ cấp 2 (CHT...),
     # công việc lấy từ Danh sách công việc CHT, luồng CHT check list -> ASM đánh giá -> Admin phê duyệt (nếu bật)
@@ -128,7 +130,10 @@ class StoreNvbhCheck(models.Model):
     def _hide_asm(self):
         """True: người dùng không có quyền Xem mục "Checklist CV ASM" -> không thấy phiếu / người làm check list ASM."""
         rights = self.env['store.perm.rule']._rights()
-        return rights is not None and not rights.get('nvbh_asmcv', {}).get('read')
+        if rights is None or rights.get('nvbh_asmcv', {}).get('read'):
+            return False
+        # Admin / Admin tổng duyệt kết quả cuối cùng nên luôn xem được
+        return self.env.user not in self._admin_title_employees().mapped('user_id')
 
     @api.model
     def _hidden_kinds(self):
@@ -261,6 +266,8 @@ class StoreNvbhCheck(models.Model):
     def get_job_overview(self, store_id, work_date, kind='nvbh'):
         """Trang Check list công việc: tất cả nhân viên có lịch làm việc trong ngày kèm tiến độ (đã làm / tổng việc, điểm, đã check list chưa),
         và danh sách nhân viên của cửa hàng không có lịch (nghỉ OFF)."""
+        if kind == 'asm' and work_date and kind not in self._hidden_kinds():
+            return self._asm_overview(work_date)
         if not store_id or not work_date or kind in self._hidden_kinds():
             return {'staff': [], 'off': [], 'store_staff': 0}
         lines = self.env['store.nvbh.schedule.line'].search(
@@ -289,6 +296,68 @@ class StoreNvbhCheck(models.Model):
             names.setdefault((r.name or '').strip().casefold(), (r.name or '').strip())
         off = sorted(n for k, n in names.items() if k not in scheduled)
         return {'staff': staff, 'off': off, 'store_staff': len(set(names) | scheduled)}
+
+    @api.model
+    def _asm_employees(self):
+        """ASM hiển thị ở trang Checklist CV ASM: người đăng nhập là ASM -> chỉ chính mình; còn lại (RSM, Admin, Quản lý...) -> mọi ASM có User Odoo."""
+        emps = self.env['hr.employee'].sudo().search([('checklist_level', '=', 3), ('user_id', '!=', False)])
+        emps = emps.filtered(lambda e: e._checklist_effective_level() == 3)
+        me = emps.filtered(lambda e: e.user_id == self.env.user)
+        return (me or emps).sorted(lambda e: (e.name or '').casefold())
+
+    @api.model
+    def _asm_overview(self, work_date):
+        day = fields.Date.to_date(work_date)
+        emps = self._asm_employees()
+        checks = {c.asm_employee_id.id: c for c in self.sudo().search(
+            [('kind', '=', 'asm'), ('work_date', '=', day), ('asm_employee_id', 'in', emps.ids)])}
+        n_tasks = len(self._cht_line_commands(day, 'asm'))
+        staff = []
+        for i, e in enumerate(emps, 1):
+            c = checks.get(e.id)
+            total = c.cnt_total if c else n_tasks
+            staff.append({
+                'id': -e.id, 'stt': i, 'name': e.name or '', 'shift': '',
+                'done': c.cnt_done if c else 0, 'total': total, 'points': c.points if c else 0.0,
+                'finished': bool(c and c.submitted and total and c.cnt_todo == 0),
+            })
+        return {'staff': staff, 'off': [], 'store_staff': len(staff)}
+
+    @api.model
+    def _asm_store(self, emp):
+        """Cửa hàng gắn với phiếu ASM (chỉ để lưu / lọc theo miền): cửa hàng đầu tiên ASM phụ trách."""
+        Store = self.env['hr.store'].sudo()
+        ids = []
+        try:
+            ids = sorted(emp.user_id._linkq_allowed_hr_store_ids()) if emp.user_id else []
+        except Exception:
+            ids = []
+        store = Store.browse(ids[:1]).exists() or emp.checklist_store_ids[:1]
+        if not store and 'store_id' in emp._fields and emp.store_id and emp.store_id._name == 'hr.store':
+            store = emp.store_id
+        return store or Store.search([], limit=1)
+
+    @api.model
+    def get_asm_checklist(self, employee_id, work_date):
+        """Phiếu check list ASM của một ASM trong ngày; chưa có thì tự tạo theo Danh sách công việc ASM."""
+        if 'asm' in self._hidden_kinds():
+            raise AccessError(_('Bạn không có quyền xem check list ASM.'))
+        emp = self.env['hr.employee'].sudo().browse(abs(int(employee_id))).exists()
+        day = fields.Date.to_date(work_date)
+        if not emp or not day:
+            return False
+        if emp not in self._asm_employees():
+            raise AccessError(_('Bạn không có quyền xem check list ASM của %s.') % emp.name)
+        check = self.sudo().search([('kind', '=', 'asm'), ('asm_employee_id', '=', emp.id), ('work_date', '=', day)], limit=1)
+        if not check:
+            store = self._asm_store(emp)
+            if not store:
+                raise UserError(_('Chưa xác định được cửa hàng phụ trách của ASM %s.') % emp.name)
+            check = self.sudo().create({
+                'store_id': store.id, 'work_date': day, 'staff_name': emp.name, 'asm_employee_id': emp.id, 'kind': 'asm',
+                'line_ids': self._cht_line_commands(day, 'asm'),
+            })
+        return self.browse(check.id)._checklist_payload()
 
     @api.model
     def get_staff_options(self, store_id, work_date):
@@ -493,7 +562,7 @@ class StoreNvbhCheck(models.Model):
         # 3 ngày gần nhất: ngày không có lịch làm việc (hoặc ca OFF) -> hiển thị OFF thay vì "Chưa có"
         today_d = fields.Date.context_today(self)
         recent = [today_d - timedelta(days=i) for i in (2, 1, 0)]
-        sched_ok = set()
+        sched_ok = {((c.staff_name or '').strip().casefold(), c.store_id.id, c.work_date) for c in checks}
         for ln in self.env['store.nvbh.schedule.line'].search([('work_date', 'in', recent)]):
             if (ln.shift_id.code or '').strip().upper() != 'OFF':
                 sched_ok.add(((ln.staff_name or '').strip().casefold(), ln.store_id.id, ln.work_date))

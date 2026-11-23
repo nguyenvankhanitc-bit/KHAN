@@ -164,7 +164,11 @@ class StorePermRule(models.Model):
 
     @api.model
     def get_my_rights(self):
-        return self._rights()
+        rights = self._rights()
+        if rights is not None and not rights.get('nvbh_asmcv', {}).get('read')                 and not self.env['store.nvbh.check']._hide_asm():
+            # Admin / Admin tổng: luôn thấy mục Checklist CV ASM để duyệt kết quả cuối cùng
+            rights = dict(rights, nvbh_asmcv=dict(rights.get('nvbh_asmcv') or {}, read=True))
+        return rights
 
     def _manager_only(self):
         if not self.env.user.has_group('store_checklist.group_store_manager') and not self.env.is_admin():

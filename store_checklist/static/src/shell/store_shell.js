@@ -1131,6 +1131,8 @@ export class StoreChecklistShell extends Component {
                 // nhân viên đang mở trên màn hình: dùng dữ liệu hiện có (kể cả phần chưa lưu); còn lại đọc từ máy chủ
                 const check = this.jobSel(key, job.lineId) && job.check
                     ? job.check
+                    : job.kind === "asm"
+                    ? await this.orm.call("store.nvbh.check", "get_asm_checklist", [-Number(key), job.date])
                     : await this.orm.call("store.nvbh.check", "get_checklist", [Number(key)]);
                 sheets.push(this.jobSheet(check, staff, store?.display_name || "", dmy));
             }
@@ -1882,7 +1884,7 @@ export class StoreChecklistShell extends Component {
     // danh sách nhân viên có lịch trong ngày (thẻ nhân viên), kèm tiến độ; nhân viên đã check list xong sẽ mờ đi
     async refreshJobStaff() {
         const job = this.state.job;
-        const ov = job.storeId && job.date
+        const ov = (job.storeId || job.kind === "asm") && job.date
             ? await this.orm.call("store.nvbh.check", "get_job_overview", [Number(job.storeId), job.date, job.kind || "nvbh"])
             : { staff: [], off: [], store_staff: 0 };
         job.staff = ov.staff;
@@ -1908,7 +1910,10 @@ export class StoreChecklistShell extends Component {
     async loadJobChecklist() {
         const job = this.state.job;
         job.editMode = false;
-        job.check = job.lineId ? await this.orm.call("store.nvbh.check", "get_checklist", [Number(job.lineId)]) : null;
+        // Checklist CV ASM: thẻ là ASM (id âm = hồ sơ nhân viên), phiếu theo ASM + ngày, không theo lịch xếp ca
+        job.check = !job.lineId ? null : job.kind === "asm"
+            ? await this.orm.call("store.nvbh.check", "get_asm_checklist", [-Number(job.lineId), job.date])
+            : await this.orm.call("store.nvbh.check", "get_checklist", [Number(job.lineId)]);
         job.snap = this.jobSnapshot();
     }
 

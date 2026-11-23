@@ -244,6 +244,8 @@ class StoreNvbhCheckRole(models.Model):
         """Hồ sơ nhân viên của người thực hiện checklist (khớp theo ID, rồi theo họ tên trong cửa hàng, rồi toàn công ty)."""
         self.ensure_one()
         Employee = self.env['hr.employee'].sudo()
+        if self.asm_employee_id:  # check list ASM: gắn thẳng hồ sơ ASM
+            return self.asm_employee_id.sudo()
         line = self.schedule_line_id
         code = (line.employee_code or '').strip() if line else ''
         for fname in ('barcode', 'ma_cham_cong', 'ma_nv_ke_toan'):
@@ -281,6 +283,8 @@ class StoreNvbhCheckRole(models.Model):
 
     def _subject_level(self):
         self.ensure_one()
+        if self.kind == 'asm' and not self.schedule_line_id:
+            return 'ASM', 3
         line = self.schedule_line_id
         code = ((line.position if line else '') or 'NVBH').strip().upper()
         return code, ROLE_LEVEL_MAP.get(code, 1)
@@ -743,7 +747,7 @@ class StoreNvbhCheckRole(models.Model):
             ('Người thực hiện', self.staff_name or ''),
             ('Cửa hàng', self.store_id.display_name),
             ('Ngày', self.work_date.strftime('%d/%m/%Y') if self.work_date else ''),
-            ('Ca', self.shift_id.code),
+            ('Ca', self.shift_id.code or ''),
         ], label='Mở để đánh giá', check_id=self.id))
 
     @api.model

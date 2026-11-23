@@ -1065,7 +1065,7 @@
                 </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv'">
                     <!-- Checklist CV CHT: Bảng Checklist Tổng theo tháng, giao diện ứng dụng di động (một cột như mẫu LUG.vn Mobile) -->
-                    <div class="o_cht_m" t-if="state.activeNav === 'nvbh_cht' and state.chtm.mode !== 'day'">
+                    <div class="o_cht_m" t-if="state.activeNav === 'nvbh_cht' and state.chtm.mode === 'month'">
                         <div class="cm_phone">
                             <header class="cm_app">
                                 <div class="cm_app_l">
@@ -1074,6 +1074,7 @@
                                     <h1>Bảng Checklist Tổng</h1>
                                 </div>
                                 <div class="cm_app_r">
+                                    <button type="button" class="cm_app_week" t-on-click="openChtWeek" title="ASM chấm check list CHT theo tuần, theo nhóm công việc"><i class="fa fa-check-square-o"/> Đánh giá tuần</button>
                                     <a class="cm_app_btn" href="/odoo/discuss" title="Thông báo / Thảo luận"><i class="fa fa-bell-o"/></a>
                                     <span class="cm_avatar" t-att-title="state.chtm.staff ? state.chtm.staff.name : ''"><t t-esc="chtInitial"/><i/></span>
                                 </div>
@@ -1274,6 +1275,134 @@
                                 <div class="cm_sf"><button type="button" class="cm_btn is-dark" t-on-click="() => this.state.chtm.sheet = ''">Đã hiểu</button></div>
                             </div>
                         </div>
+                    </div>
+                    <!-- Đánh giá Checklist Cửa hàng trưởng theo tuần -->
+                    <div class="o_cht_w" t-elif="state.activeNav === 'nvbh_cht' and state.chtm.mode === 'week'">
+                        <t t-set="wd" t-value="state.chtm.wdata"/>
+                        <div class="cw_top">
+                            <div class="cw_title">
+                                <span class="cw_ico"><i class="fa fa-clipboard"/></span>
+                                <div>
+                                    <h2>Đánh giá Checklist Cửa hàng trưởng</h2>
+                                    <p>Kiểm tra, chấm điểm và phê duyệt kết quả thực hiện công việc định kỳ theo tuần</p>
+                                </div>
+                            </div>
+                            <div class="cw_filters">
+                                <label class="cw_sel cw_staff" t-if="state.chtm.options.length">
+                                    <span class="cw_av" t-esc="chtwInitial"/>
+                                    <select t-on-change="(ev) => this.onChtwFilter('key', ev)">
+                                        <option t-foreach="state.chtm.options" t-as="o" t-key="o.key" t-att-value="o.key"
+                                                t-att-selected="o.key === state.chtm.key" t-esc="o.name + (o.store ? ' · ' + o.store : '')"/>
+                                    </select><i class="fa fa-angle-down"/></label>
+                                <label class="cw_sel"><i class="fa fa-shopping-bag"/>
+                                    <select t-on-change="(ev) => this.onChtwFilter('storeId', ev)">
+                                        <option value="">Tất cả cửa hàng</option>
+                                        <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                                t-att-selected="('' + st.id) === state.chtm.storeId" t-esc="st.display_name"/>
+                                    </select><i class="fa fa-angle-down"/></label>
+                                <label class="cw_sel"><i class="fa fa-calendar-o"/>
+                                    <select t-on-change="(ev) => this.onChtwFilter('month', ev)">
+                                        <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
+                                                t-att-selected="m.value === state.chtm.month" t-esc="m.label"/>
+                                    </select><i class="fa fa-angle-down"/></label>
+                            </div>
+                        </div>
+                        <t t-if="wd">
+                            <div class="cw_weeks">
+                                <button type="button" t-foreach="wd.weeks" t-as="w" t-key="w.idx" t-att-class="w.idx === wd.week ? 'on' : ''"
+                                        t-on-click="() => this.onChtwWeek(w.idx)">
+                                    <b t-esc="w.label"/><small>(<t t-esc="w.range"/>)</small></button>
+                            </div>
+                            <div class="cw_kpis">
+                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="wd.kpi.tasks or 0"/><small>Tổng công việc</small></div></div>
+                                <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(wd.kpi.hours or 0)"/>h</b><small>Tổng thời gian</small></div></div>
+                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã thực hiện</small></div></div>
+                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Có lỗi</small></div></div>
+                            </div>
+                            <div class="cw_note" t-if="wd.checks.length">
+                                <span><i class="fa fa-info-circle"/> Phiếu trong tuần:</span>
+                                <span t-foreach="wd.checks" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : 'is-wait'}">
+                                    <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state === 'Đã đánh giá'"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
+                                <span class="cw_hint" t-if="wd.can_eval">Chọn KQ đánh giá theo nhóm rồi bấm <b>Đồng ý đánh giá tuần</b> để duyệt các phiếu đang chờ bạn.</span>
+                                <span class="cw_hint" t-else="">Không có phiếu nào trong tuần đang chờ bạn đánh giá (chỉ xem).</span>
+                            </div>
+                            <div class="cw_table" t-if="wd.groups.length">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th rowspan="2" class="l">Nhóm công việc</th>
+                                            <th rowspan="2">Số công<br/>việc</th>
+                                            <th rowspan="2">Thời gian<br/><small>(giờ)</small></th>
+                                            <th rowspan="2">Đã làm</th>
+                                            <th rowspan="2">Tỷ lệ</th>
+                                            <th colspan="3" class="ev">
+                                                <span class="cw_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
+                                            <th rowspan="2">Chi tiết</th>
+                                        </tr>
+                                        <tr class="ev2">
+                                            <th t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
+                                                <label t-on-click.prevent="() => this.chtwAll(h[0])" t-att-class="wd.can_eval ? '' : 'dis'">
+                                                    <span t-attf-class="cw_box b-#{h[0]} #{chtwHead(h[0])}"><i t-if="chtwHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="chtwHead(h[0]) === 'some'" class="fa fa-minus"/></span>
+                                                    <t t-esc="h[1]"/></label></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="wd.groups" t-as="g" t-key="g.name">
+                                            <tr>
+                                                <td class="l">
+                                                    <div class="cw_g">
+                                                        <span t-attf-class="cw_no n#{g_index % 4}" t-esc="g_index + 1"/>
+                                                        <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
+                                                    </div>
+                                                </td>
+                                                <td><b t-esc="g.n_tasks"/></td>
+                                                <td><b><t t-esc="jobStaffNum(g.hours)"/>h</b></td>
+                                                <td><b t-esc="g.tasks_done + '/' + g.n_tasks"/></td>
+                                                <td><b t-attf-class="#{g.rate >= 100 ? '' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></td>
+                                                <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
+                                                    <label t-on-click.prevent="() => this.chtwSet(g.name, h[0])" t-att-class="wd.can_eval ? '' : 'dis'">
+                                                        <span t-attf-class="cw_box b-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'all' : 'none'}"><i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/></span>
+                                                        <t t-esc="h[1]"/></label></td>
+                                                <td><button type="button" class="cw_more" t-on-click="() => this.state.chtm.wopen[g.name] = !this.state.chtm.wopen[g.name]">
+                                                    <t t-esc="state.chtm.wopen[g.name] ? 'Thu gọn' : 'Xem chi tiết'"/> <i t-attf-class="fa #{state.chtm.wopen[g.name] ? 'fa-angle-up' : 'fa-angle-right'}"/></button></td>
+                                            </tr>
+                                            <tr class="cw_det" t-if="state.chtm.wopen[g.name]">
+                                                <td colspan="9">
+                                                    <div class="cw_task" t-foreach="g.task_rows" t-as="t" t-key="t_index">
+                                                        <div class="nm"><b t-esc="t.name"/><small><t t-esc="t.time_slot or 'Không có khung giờ'"/> · <t t-esc="t.score"/>đ</small></div>
+                                                        <div class="days">
+                                                            <span t-foreach="t.days" t-as="dy" t-key="dy_index" t-attf-class="cw_day #{!dy.done ? 'd-todo' : dy.error ? 'd-err' : 'd-ok'}"
+                                                                  t-att-title="dy.done ? 'Đã làm' : 'Chưa làm'"><i t-attf-class="fa #{dy.done ? 'fa-check' : 'fa-times'}"/> <t t-esc="dy.date"/></span>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này chưa có phiếu check list CHT nào.</div>
+                            <div class="cw_foot">
+                                <div class="cw_info">
+                                    <span class="ic"><i class="fa fa-info"/></span>
+                                    <div><b>Thông tin đánh giá</b>
+                                        <small><t t-esc="chtwWeekInfo.label"/>: <t t-esc="chtwWeekInfo.full"/> <i>|</i> Nhân viên: <b t-esc="wd.staff ? wd.staff.name : '-'"/> <i>|</i> Cửa hàng: <b t-esc="wd.staff ? wd.staff.store : '-'"/></small></div>
+                                </div>
+                                <t t-set="sc" t-value="chtwScore"/>
+                                <div class="cw_score">
+                                    <span class="ic"><i class="fa fa-trophy"/></span>
+                                    <div><small>Tổng điểm tuần<t t-if="wd.can_eval"> (tạm tính)</t></small>
+                                        <div class="row1"><b><t t-esc="jobStaffNum(sc.points)"/> / <t t-esc="jobStaffNum(sc.max)"/></b>
+                                            <span class="bar"><i t-attf-style="width: #{sc.bar}%"/></span>
+                                            <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div></div>
+                                </div>
+                                <div class="cw_btns">
+                                    <button type="button" class="cw_btn is-light" t-on-click="onChtwReport"><i class="fa fa-eye"/> Xem báo cáo</button>
+                                    <button type="button" class="cw_btn" t-att-disabled="!wd.can_eval" t-on-click="onChtwSave"><i class="fa fa-check"/> Đồng ý đánh giá tuần</button>
+                                </div>
+                            </div>
+                        </t>
+                        <div class="cw_empty" t-elif="!state.chtm.wbusy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
                     </div>
                     <t t-else="">
                     <div class="o_cht_back" t-if="state.activeNav === 'nvbh_cht'">

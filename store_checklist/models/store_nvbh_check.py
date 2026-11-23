@@ -897,8 +897,35 @@ class StoreNvbhCheck(models.Model):
         người đang chọn và bảng từng ngày của người đó (get_done_monthly), mỗi ngày kèm dòng lịch để mở check list ngày."""
         start, end, _n = self._month_range(month)
         empty = {'options': [], 'key': '', 'staff': False, 'month': start.strftime('%Y-%m'), 'data': False}
-        if 'cht' in self._hidden_kinds():
+        options, key, mine = self._cht_staff_pick(start, end, store_id, staff_key)
+        if not options:
             return empty
+        last = mine[-1:]
+        data = self.get_done_monthly(start.strftime('%Y-%m'), last.staff_name, store_id or False)
+        by_day = {l.work_date.strftime('%d/%m/%Y'): l for l in mine}
+        for r in data.get('rows') or []:
+            l = by_day.get(r['date'])
+            r['line_id'] = l.id if l else False
+            r['store_id'] = l.store_id.id if l else False
+            r['store_code'] = (l.store_id.code if l else '') or r.get('store') or ''
+            r['ymd'] = '%s-%s-%s' % tuple(reversed(r['date'].split('/')))
+        return {
+            'options': options, 'key': key, 'month': start.strftime('%Y-%m'), 'data': data,
+            'staff': self._cht_staff_info(last),
+        }
+
+    @api.model
+    def _cht_staff_info(self, line):
+        return {'name': line.staff_name or '', 'code': line.employee_code or '', 'status': line.work_status or '',
+                'position': line.position or 'CHT', 'store': line.store_id.code or line.store_id.display_name or ''}
+
+    @api.model
+    def _cht_staff_pick(self, start, end, store_id=None, staff_key=None):
+        """CHT có lịch xếp ca trong [start, end) theo quyền xem lịch: (danh sách lựa chọn, khóa đang chọn, dòng lịch của người đó).
+        Người đăng nhập là CHT trên lịch thì chỉ thấy chính mình."""
+        Line = self.env['store.nvbh.schedule.line']
+        if 'cht' in self._hidden_kinds():
+            return [], '', Line
         dom = [('work_date', '>=', start), ('work_date', '<', end)]
         if store_id:
             dom.append(('store_id', '=', int(store_id)))
@@ -925,23 +952,149 @@ class StoreNvbhCheck(models.Model):
                            'store': ls[-1:].store_id.code or ls[-1:].store_id.display_name or ''}
                           for k, ls in groups.items()), key=lambda o: o['name'].casefold())
         if not options:
-            return empty
+            return [], '', Line
         key = staff_key if staff_key in groups else options[0]['key']
-        mine = groups[key]
-        last = mine[-1:]
-        data = self.get_done_monthly(start.strftime('%Y-%m'), last.staff_name, store_id or False)
-        by_day = {l.work_date.strftime('%d/%m/%Y'): l for l in mine}
-        for r in data.get('rows') or []:
-            l = by_day.get(r['date'])
-            r['line_id'] = l.id if l else False
-            r['store_id'] = l.store_id.id if l else False
-            r['store_code'] = (l.store_id.code if l else '') or r.get('store') or ''
-            r['ymd'] = '%s-%s-%s' % tuple(reversed(r['date'].split('/')))
-        return {
-            'options': options, 'key': key, 'month': start.strftime('%Y-%m'), 'data': data,
-            'staff': {'name': last.staff_name or '', 'code': last.employee_code or '', 'status': last.work_status or '',
-                      'position': last.position or 'CHT', 'store': last.store_id.code or last.store_id.display_name or ''},
+        return options, key, groups[key]
+
+    # ------------------------------------------------------------------
+    # Đánh giá Checklist Cửa hàng trưởng theo tuần (ASM chấm theo nhóm công việc)
+    # ------------------------------------------------------------------
+    @api.model
+    def _month_weeks(self, start, end):
+        """Các tuần (thứ Hai - Chủ nhật) trong tháng; tuần lẻ đầu / cuối tháng dưới 4 ngày gộp vào tuần liền kề."""
+        weeks, day = [], start
+        while day < end:
+            stop = min(day + timedelta(days=6 - day.weekday()), end - timedelta(days=1))
+            weeks.append([day, stop])
+            day = stop + timedelta(days=1)
+        if len(weeks) > 1 and (weeks[0][1] - weeks[0][0]).days < 3:
+            weeks[1][0] = weeks[0][0]
+            weeks.pop(0)
+        if len(weeks) > 1 and (weeks[-1][1] - weeks[-1][0]).days < 3:
+            weeks[-2][1] = weeks[-1][1]
+            weeks.pop()
+        return weeks
+
+    @staticmethod
+    def _slot_hours(text):
+        """Số giờ của khung giờ dạng "15h-16h", "8h-10h", "12h-12h30"; không đọc được (Phát sinh...) = 0."""
+        import re
+        m = re.search(r'(\d{1,2})\s*h\s*(\d{1,2})?\s*[-–]\s*(\d{1,2})\s*h?\s*(\d{1,2})?', text or '')
+        if not m:
+            return 0.0
+        a = int(m.group(1)) + int(m.group(2) or 0) / 60.0
+        b = int(m.group(3)) + int(m.group(4) or 0) / 60.0
+        return round(b - a, 2) if b > a else 0.0
+
+    @api.model
+    def _cht_week_checks(self, month, week, store_id, staff_key):
+        start, end, _n = self._month_range(month)
+        weeks = self._month_weeks(start, end)
+        today = fields.Date.context_today(self)
+        if week is None or week == '' or week is False:
+            week = next((i for i, (a, b) in enumerate(weeks) if a <= today <= b), 0)
+        week = max(0, min(int(week), len(weeks) - 1))
+        options, key, mine = self._cht_staff_pick(start, end, store_id, staff_key)
+        a, b = weeks[week]
+        lines = mine.filtered(lambda l: a <= l.work_date <= b)
+        checks = self.search([('schedule_line_id', 'in', lines.ids), ('kind', '=', 'cht')], order='work_date, id')
+        return start, weeks, week, options, key, mine, lines, checks
+
+    @api.model
+    def get_cht_week(self, month=None, week=None, store_id=None, staff_key=None):
+        """Trang Đánh giá Checklist CHT theo tuần: KPI tuần, bảng theo nhóm công việc (số việc, giờ, đã làm, tỷ lệ, KQ đánh giá hiện tại),
+        chi tiết từng việc theo ngày và quyền đánh giá của người đăng nhập (cấp ASM đang đến lượt trên các phiếu trong tuần)."""
+        start, weeks, week, options, key, mine, lines, checks = self._cht_week_checks(month, week, store_id, staff_key)
+        res = {
+            'month': start.strftime('%Y-%m'), 'week': week, 'options': options, 'key': key,
+            'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m')),
+                       'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(weeks)],
+            'staff': self._cht_staff_info(mine[-1:]) if mine else False,
+            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False,
         }
+        if not mine:
+            return res
+        grp_seq = {g.name: (g.sequence, g.id) for g in self.env['store.cht.task.group'].sudo().with_context(active_test=False).search([])}
+        groups = {}
+        evaluable = []
+        info_rows = []
+        for c in checks:
+            info = c._role_info()
+            step = next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+            if step and c.state == 'pending_review':
+                evaluable.append(c.id)
+            state = ('Đã đánh giá' if c.state == 'approved' else 'Chờ đánh giá' if c.state == 'pending_review'
+                     else 'Chưa gửi (%s/%s việc)' % (c.cnt_done, c.cnt_total))
+            info_rows.append({'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'state': state, 'points': c.points,
+                              'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c.id in evaluable})
+            pre = STEP_PREFIX[min(max(info['cur'], c.step_done, 1), len(STEP_PREFIX)) - 1]
+            for l in c.line_ids:
+                g = groups.setdefault(l.sub_category or 'Khác', {'name': l.sub_category or 'Khác', 'tasks': {}, 'lines': 0, 'done': 0,
+                                                                  'hours': 0.0, 'max_total': 0.0, 'max_done': 0.0, 'results': set(),
+                                                                  'errors': 0})
+                tk = l.cht_task_id.id or ('n', l.name)
+                t = g['tasks'].setdefault(tk, {'name': l.name, 'time_slot': l.time_slot or '', 'score': l.max_score, 'days': [], 'all_done': True})
+                t['days'].append({'date': c.work_date.strftime('%d/%m'), 'done': l.is_done,
+                                  'result': l[pre + 'eval_result'] or '', 'error': bool(l.error_count)})
+                t['all_done'] = t['all_done'] and l.is_done and not l.error_count
+                g['lines'] += 1
+                g['done'] += 1 if l.is_done else 0
+                g['hours'] += self._slot_hours(l.time_slot)
+                g['max_total'] += l.max_score or 0.0
+                g['max_done'] += (l.max_score or 0.0) if l.is_done else 0.0
+                g['errors'] += l.error_count or 0
+                if c.id in evaluable or c.state == 'approved':
+                    g['results'].add(l[pre + 'eval_result'] or '')
+        out = []
+        for g in sorted(groups.values(), key=lambda g: grp_seq.get(g['name'], (9999, 0)) + (g['name'],)):
+            tasks = list(g['tasks'].values())
+            res_set = g['results'] - {''}
+            out.append({
+                'name': g['name'], 'desc': ', '.join(t['name'] for t in tasks[:3]), 'n_tasks': len(tasks),
+                'tasks_done': sum(1 for t in tasks if t['all_done']), 'lines': g['lines'], 'done': g['done'],
+                'rate': round(100.0 * g['done'] / g['lines'], 1) if g['lines'] else 0.0, 'hours': round(g['hours'], 2),
+                'max_total': g['max_total'], 'max_done': g['max_done'], 'errors': g['errors'],
+                'result': res_set.pop() if len(res_set) == 1 and '' not in g['results'] else '',
+                'task_rows': tasks,
+            })
+        res['groups'] = out
+        all_tasks = [t for g in out for t in g['task_rows']]
+        res['kpi'] = {
+            'tasks': len(all_tasks), 'hours': round(sum(g['hours'] for g in out), 2),
+            'done': sum(1 for t in all_tasks if t['all_done']), 'errors': sum(1 for t in all_tasks if not t['all_done']),
+            'points': round(sum(checks.mapped('points')), 2), 'max_points': sum(g['max_total'] for g in out),
+            'n_checks': len(checks), 'n_eval': len(evaluable), 'n_lines': len(lines),
+        }
+        res['checks'] = info_rows
+        res['can_eval'] = bool(evaluable)
+        return res
+
+    @api.model
+    def save_cht_week(self, month, week, store_id, staff_key, results):
+        """Đồng ý đánh giá tuần: áp KQ đánh giá theo nhóm công việc (results = {tên nhóm: good / avg / bad}) cho mọi dòng của
+        các phiếu CHT trong tuần đang đến lượt người đăng nhập đánh giá. Việc chưa làm tự tính Không đạt; dòng có ghi lỗi giữ lỗi."""
+        valid = {k for k, _l in EVAL_RESULTS}
+        results = {k: v for k, v in (results or {}).items() if v in valid}
+        _s, _w, _i, _o, _k, _m, _l, checks = self._cht_week_checks(month, week, store_id, staff_key)
+        done = 0
+        for c in checks:
+            if c.state != 'pending_review':
+                continue
+            info = c._role_info()
+            step = next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+            if not step:
+                continue
+            missing = {l.sub_category or 'Khác' for l in c.line_ids} - set(results)
+            if missing:
+                raise UserError(_('Chưa chọn KQ đánh giá cho nhóm: %s') % ', '.join(sorted(missing)))
+            pre = STEP_PREFIX[step['no'] - 1]
+            changes = [{'id': l.id, 'result': results[l.sub_category or 'Khác'], 'detail': l[pre + 'error_detail'] or ''}
+                       for l in c.line_ids]
+            self.save_step_evaluation(c.id, step['no'], changes)
+            done += 1
+        if not done:
+            raise UserError(_('Không có phiếu nào trong tuần đang chờ bạn đánh giá.'))
+        return {'done': done}
 
     @api.model
     def _xlsx_book(self, sheets, filename):

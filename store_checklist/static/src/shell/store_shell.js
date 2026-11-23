@@ -47,7 +47,8 @@ export class StoreChecklistShell extends Component {
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
-            chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false },
+            chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -2029,6 +2030,145 @@ export class StoreChecklistShell extends Component {
             return ln.is_done ? "wait" : "bad";
         }
         return (ln.actual_score || 0) >= (ln.score || 0) ? "ok" : (ln.actual_score || 0) > 0 ? "warn" : "bad";
+    }
+
+    // ---- Đánh giá Checklist Cửa hàng trưởng theo tuần: ASM chấm KQ theo nhóm công việc, đồng ý một lần cho cả tuần ----
+    async openChtWeek() {
+        const cm = this.state.chtm;
+        cm.sheet = "";
+        cm.mode = "week";
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadChtWeek() {
+        const cm = this.state.chtm;
+        cm.wbusy = true;
+        try {
+            const res = await this.orm.call("store.nvbh.check", "get_cht_week", [], {
+                month: cm.month || false, week: cm.week === null ? false : cm.week,
+                store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false,
+            });
+            cm.month = res.month;
+            cm.week = res.week;
+            cm.options = res.options;
+            cm.key = res.key;
+            cm.wdata = res;
+            const results = {};
+            (res.groups || []).forEach((g) => { results[g.name] = g.result || ""; });
+            cm.results = results;
+            cm.wopen = {};
+        } finally {
+            cm.wbusy = false;
+        }
+    }
+
+    async onChtwWeek(idx) {
+        this.state.chtm.week = idx;
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtwFilter(field, ev) {
+        const cm = this.state.chtm;
+        cm[field] = ev.target.value;
+        if (field === "month") {
+            cm.week = null;
+        }
+        if (field === "storeId") {
+            cm.key = "";
+        }
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    chtwSet(name, val) {
+        if (!this.state.chtm.wdata?.can_eval) {
+            return;
+        }
+        this.state.chtm.results[name] = this.state.chtm.results[name] === val ? "" : val;
+    }
+
+    chtwHead(val) {
+        const groups = this.state.chtm.wdata?.groups || [];
+        const n = groups.filter((g) => this.state.chtm.results[g.name] === val).length;
+        return !n ? "none" : n === groups.length ? "all" : "some";
+    }
+
+    chtwAll(val) {
+        if (!this.state.chtm.wdata?.can_eval) {
+            return;
+        }
+        const all = this.chtwHead(val) === "all";
+        (this.state.chtm.wdata.groups || []).forEach((g) => { this.state.chtm.results[g.name] = all ? "" : val; });
+    }
+
+    get chtwScore() {
+        const d = this.state.chtm.wdata;
+        if (!d || !d.groups.length) {
+            return { points: 0, max: 0, pct: 0, bar: 0 };
+        }
+        let points = d.kpi.points || 0;
+        const max = d.kpi.max_points || 0;
+        if (d.can_eval) {
+            const f = { good: 1, avg: 0.5, bad: 0 };
+            points = d.groups.reduce((s, g) => s + (g.max_done || 0) * (f[this.state.chtm.results[g.name]] || 0), 0);
+        }
+        const pct = max ? Math.round((1000 * points) / max) / 10 : 0;
+        return { points: Math.round(points * 100) / 100, max, pct, bar: Math.min(pct, 100) };
+    }
+
+    chtwGroupName(name) {
+        return (name || "").replace(/^[0-9IVX]+[.)]\s*/, "");
+    }
+
+    get chtwInitial() {
+        const o = this.state.chtm.options.find((x) => x.key === this.state.chtm.key);
+        return ((o?.name || "?").trim().split(/\s+/).pop() || "?").charAt(0);
+    }
+
+    get chtwWeekInfo() {
+        const d = this.state.chtm.wdata;
+        return d ? (d.weeks || [])[d.week] || {} : {};
+    }
+
+    async onChtwSave() {
+        const cm = this.state.chtm;
+        const d = cm.wdata;
+        if (!d?.can_eval) {
+            return;
+        }
+        const missing = d.groups.filter((g) => !cm.results[g.name]).map((g) => g.name);
+        if (missing.length) {
+            this.notification.add(`Chưa chọn KQ đánh giá cho: ${missing.join(", ")}`, { type: "warning" });
+            return;
+        }
+        try {
+            const res = await this.orm.call("store.nvbh.check", "save_cht_week",
+                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }]);
+            this.notification.add(`Đã đánh giá ${res.done} phiếu check list trong ${this.chtwWeekInfo.label || "tuần"}`, { type: "success" });
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtwReport() {
+        this.state.chtm.mode = "month";
+        try {
+            await this.loadChtMonth();
+        } catch (error) {
+            this.notifyError(error);
+        }
     }
 
     async onChtBack() {

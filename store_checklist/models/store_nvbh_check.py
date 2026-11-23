@@ -90,6 +90,24 @@ class StoreNvbhCheck(models.Model):
             rec.cnt_done = len(lines.filtered(lambda l: l.status == 'done'))
             rec.cnt_todo = len(lines.filtered(lambda l: l.status == 'todo'))
 
+    def _waiting_code(self):
+        """Phiếu đang chờ ai: 'NV' (người thực hiện chưa làm xong), mã cấp đang đến lượt đánh giá (CHT / ASM / RSM) hoặc 'Admin';
+        rỗng nếu đã hoàn tất."""
+        self.ensure_one()
+        if self.state == 'approved':
+            return ''
+        chain = self._approval_chain()
+        if self.state == 'draft':
+            if not (self.line_ids and all(self.line_ids.mapped('is_done'))):
+                return 'NV'
+            idx = 0
+        else:
+            idx = self.step_done
+        if idx >= len(chain):
+            return ''
+        st = chain[idx]
+        return 'Admin' if st['admin_only'] else (st['code'] or '')
+
     @api.model
     def _hide_cht(self):
         """True: người dùng không có quyền Xem mục "Checklist CV CHT" -> không thấy phiếu / người làm check list CHT ở mọi trang
@@ -429,6 +447,7 @@ class StoreNvbhCheck(models.Model):
                 'asm_done': c.state == 'approved',
                 'state': c.state,
                 'pct': round(pct) if evaluated else None,
+                'wait': '' if evaluated else c._waiting_code(),  # đang chờ ai: NV / CHT / ASM / RSM / Admin
                 'rating': rating(c.points, max_points, evaluated)[0] if evaluated else '',  # cùng bảng Cài đặt > Xếp loại với xếp loại theo tháng
             })
             g['done'] += c.cnt_done

@@ -1215,11 +1215,15 @@ export class StoreChecklistShell extends Component {
         if (day.empty) {
             return "Chưa có";
         }
-        if (day.state === "draft") {
+        if (day.state === "draft" && (!day.wait || day.wait === "NV")) {
             // phiếu chưa gửi: chưa tích việc nào = Chưa check list; đã tích một phần = Đang làm
             return day.done > 0 ? "Đang làm" : "Chưa check list";
         }
-        return day.errors > 0 ? "Lỗi" : day.evaluated ? "Đạt" : "Chờ";
+        if (day.evaluated) {
+            return day.errors > 0 ? "Lỗi" : "Đạt";
+        }
+        // chưa đánh giá xong: ghi rõ đang chờ cấp nào (Chờ CHT / Chờ ASM / Chờ Admin)
+        return day.wait ? `Chờ ${day.wait}` : "Chờ";
     }
 
     showAllDoneDays(emp) {

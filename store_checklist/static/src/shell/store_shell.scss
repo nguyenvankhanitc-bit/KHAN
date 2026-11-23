@@ -3156,3 +3156,6 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all3{flex-wrap: nowrap; gap: 10px; white-space: nowrap;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all{background: transparent; border: 0; border-radius: 0; padding: 0; gap: 5px; font-size: 1rem; font-weight: 500; white-space: nowrap;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all input{width: 18px; height: 18px;}
+/* chip 3 ngày gần nhất: nhãn "Chờ CHT / Chờ ASM / Chờ Admin" không xuống dòng */
+.o_store_done_page .rc_chip .rc_st{white-space: nowrap;}
+.o_store_done_page .rc_chip{min-width: 64px;}

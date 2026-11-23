@@ -1107,7 +1107,8 @@
                                 </t></span>
                             <span t-if="!jobLocked and state.job.check.staff_deadline and state.job.check.state === 'draft'"> · <i class="fa fa-clock-o"/> Hạn check list: <b>hết ngày <t t-esc="state.job.check.staff_deadline"/></b> (quá hạn hệ thống khóa, không ghi nhận)</span>
                             <span t-if="!jobLocked and state.job.check.self_reedit_until"> · <i class="fa fa-pencil"/> Đã gửi cấp trên, được sửa lại đến <b t-esc="state.job.check.self_reedit_until"/> (sau giờ này hệ thống tự khóa)</span>
-                            <span class="lock" t-if="jobLocked"> · <t t-if="state.job.check.lock_msg"><t t-esc="state.job.check.lock_msg"/></t><t t-elif="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
+                            <span t-if="jobCanReview and state.job.check.state !== 'draft'"> · <i class="fa fa-star"/> <b>Đến lượt bạn đánh giá</b>: bấm nút <b>Đánh giá</b> bên dưới</span>
+                            <span class="lock" t-if="jobLocked"> ·<t t-if="state.job.check.lock_msg"><t t-esc="state.job.check.lock_msg"/></t><t t-elif="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
                         </div>
                         <table class="o_store_job_table o_store_job_cardtbl">
                             <thead>
@@ -1148,6 +1149,10 @@
                             <button type="button" class="btn btn-secondary" t-att-disabled="!jobDirty and !state.job.editMode" t-on-click="onJobCancel">Hủy</button>
                             <button type="button" class="btn btn-info text-white" t-if="jobCanSubmit" t-att-disabled="jobDirty or !jobAllDone" t-on-click="onJobSubmit"
                                     t-att-title="jobAllDone ? 'Lưu xong rồi gửi cấp trên' : 'Hoàn tất tất cả công việc trước khi gửi'"><i class="fa fa-paper-plane"/> Gửi cấp trên đánh giá</button>
+                            <button type="button" class="btn btn-success" t-if="jobCanReview and state.job.check.state !== 'draft'" t-on-click="onJobReview"
+                                    title="Mở phiếu để đánh giá Đạt / Không đạt từng công việc theo luồng đánh giá"><i class="fa fa-star"/> Đánh giá</button>
+                            <button type="button" class="btn btn-outline-secondary" t-elif="state.job.check.state !== 'draft'" t-on-click="onJobReview"
+                                    title="Xem phiếu và kết quả đánh giá của các cấp"><i class="fa fa-eye"/> Xem đánh giá</button>
                             <span class="dirty" t-if="jobDirty"><i class="fa fa-exclamation-circle"/> Có thay đổi chưa lưu</span>
                         </div>
                     </t>

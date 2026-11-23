@@ -2097,6 +2097,33 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+    // Cấp trên (vd. Admin / Admin tổng với check list ASM) đánh giá ngay trên trang công việc: mở popup phiếu như Danh sách checklist NV
+    get jobCanReview() {
+        const c = this.state.job.check;
+        return Boolean(c) && (c.steps || []).some((st) => st.can_edit);
+    }
+
+    async onJobReview() {
+        const check = this.state.job.check;
+        if (!check) {
+            return;
+        }
+        try {
+            const payload = await this.orm.call("store.nvbh.check", "read_checklist", [check.id]);
+            if (payload) {
+                this.dialog.add(StoreCheckViewDialog, {
+                    payload,
+                    onSaved: async () => {
+                        await this.loadJobChecklist();
+                        await this.refreshJobStaff();
+                    },
+                });
+            }
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
     get jobCanSubmit() {
         const c = this.state.job.check;
         return Boolean(c) && c.can_submit === true && c.state === "draft";

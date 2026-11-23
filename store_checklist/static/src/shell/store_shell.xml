@@ -260,7 +260,7 @@
                         <thead>
                             <tr>
                                 <th>Nhân viên / Ngày công</th><th class="c">3 ngày gần nhất</th><th class="c">Tổng công việc</th>
-                                <th class="c">Số lỗi</th><th class="c">Trạng thái</th><th class="c">Điểm TB / 26 ngày</th><th class="c">Xếp loại</th><th class="c">Thao tác</th>
+                                <th class="c">Số lỗi</th><th class="c">Trạng thái</th><th class="c" title="Như Bảng checklist Tổng: trung bình Điểm ASM đánh giá (các ngày ASM đã chấm đủ) và trung bình Tỷ lệ đạt % (các ngày đã đánh giá xong)">Điểm ASM TB / Tỷ lệ đạt</th><th class="c">Xếp loại</th><th class="c">Thao tác</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -298,9 +298,9 @@
                                         <div class="ok_line"><i class="fa fa-check-circle"/> Đã đánh giá: <b t-esc="evaluatedCount(emp)"/></div>
                                     </td>
                                     <td class="c emp_pts">
-                                        <div class="pts_top"><t t-esc="emp.avg.toFixed(2).replace('.', ',')"/> điểm</div>
-                                        <div class="pts_bar"><span t-attf-style="width: #{Math.min(emp.avg_pct || 0, 100)}%"/></div>
-                                        <div class="pts_sub">≈ <t t-esc="emp.avg_pct || 0"/>%</div>
+                                        <div class="pts_top"><t t-esc="emp.asm_avg == null ? '—' : fmtNum(emp.asm_avg)"/> điểm</div>
+                                        <div class="pts_bar"><span t-attf-style="width: #{Math.min(emp.rate_avg || 0, 100)}%"/></div>
+                                        <div class="pts_sub">Tỷ lệ đạt: <t t-esc="emp.rate_avg == null ? '—' : fmtNum(emp.rate_avg) + '%'"/></div>
                                     </td>
                                     <td class="c emp_status">
                                         <div t-att-class="'st_ok ' + (emp.status === 'Đã đánh giá' ? 'is-done' : 'is-wait')"><i t-attf-class="fa #{emp.status === 'Đã đánh giá' ? 'fa-check-circle' : 'fa-clock-o'}"/> <t t-esc="emp.status"/></div>

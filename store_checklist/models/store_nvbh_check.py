@@ -430,7 +430,7 @@ class StoreNvbhCheck(models.Model):
             g = groups.setdefault(key, {'key': key, 'name': (c.staff_name or '').strip(), 'code': c.schedule_line_id.employee_code or '', 'store': c.store_id.display_name or '',
                                         'store_id': c.store_id.id, 'mien': c.store_id.mien or '',
                                         'days': [], 'done': 0, 'total': 0, 'errors': 0, 'points': 0.0, 'max_points': 0.0,
-                                        'evaluated': 0})
+                                        'evaluated': 0, 'asm_vals': [], 'rate_vals': []})
             max_points = sum(c.line_ids.mapped('max_score'))
             evaluated = c._fully_evaluated()  # đã đánh giá xong ở mọi cấp trong luồng
             pct = 100.0 * c.points / max_points if max_points else 0.0
@@ -451,6 +451,12 @@ class StoreNvbhCheck(models.Model):
                 'edited': any(c.line_ids.mapped('staff_edited')),  # người thực hiện đã chỉnh sửa sau khi gửi, chờ chấm lại
                 'rating': rating(c.points, max_points, evaluated)[0] if evaluated else '',  # cùng bảng Cài đặt > Xếp loại với xếp loại theo tháng
             })
+            # như Bảng checklist Tổng: AVERAGE(Điểm ASM đánh giá) các ngày ASM chấm đủ, AVERAGE(Tỷ lệ đạt %) các ngày đã đánh giá xong
+            pts_asm = c._step_points('ASM')
+            if pts_asm is not None:
+                g['asm_vals'].append(pts_asm)
+            if evaluated:
+                g['rate_vals'].append(round(pct, 1))
             g['done'] += c.cnt_done
             g['total'] += c.cnt_total
             g['errors'] += c.error_total
@@ -478,6 +484,9 @@ class StoreNvbhCheck(models.Model):
             g['avg'] = round(g['points'] / WORKDAY_QUOTA, 2)
             g['avg_pct'] = round(100.0 * g['avg'] / WORKDAY_QUOTA)  # thanh tiến độ theo mẫu: điểm TB / 26
             g['status'] = 'Đã đánh giá' if g['evaluated'] and g['evaluated'] == len(g['days']) else 'Chờ đánh giá'
+            asm_vals, rate_vals = g.pop('asm_vals'), g.pop('rate_vals')
+            g['asm_avg'] = round(sum(asm_vals) / len(asm_vals), 2) if asm_vals else None
+            g['rate_avg'] = round(sum(rate_vals) / len(rate_vals), 2) if rate_vals else None
             del g['evaluated']
             rows.append(g)
         rows.sort(key=lambda r: (r['name'].casefold(), r['store']))

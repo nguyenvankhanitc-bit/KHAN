@@ -1870,8 +1870,10 @@ export class StoreChecklistShell extends Component {
             }
             await this.loadJobStaff();
             if (kind === "cht") {
-                this.state.chtm.mode = "month";
-                await this.loadChtMonth();
+                // Checklist CV CHT mở thẳng trang Đánh giá Checklist Cửa hàng trưởng theo tuần; "Xem báo cáo" -> Bảng checklist tháng
+                this.state.chtm.mode = "week";
+                this.state.chtm.week = null;
+                await this.loadChtWeek();
             }
         } catch (error) {
             this.notifyError(error);
@@ -1962,6 +1964,7 @@ export class StoreChecklistShell extends Component {
             job.lineId = String(r.line_id);
             await this.loadJobChecklist();
             this.state.chtm.sheet = "";
+            this.state.chtm.from = this.state.chtm.mode === "day" ? (this.state.chtm.from || "week") : this.state.chtm.mode;
             this.state.chtm.mode = "day";
         } catch (error) {
             this.notifyError(error);
@@ -2175,9 +2178,10 @@ export class StoreChecklistShell extends Component {
         if (!this.jobConfirmLeave()) {
             return;
         }
-        this.state.chtm.mode = "month";
+        const back = this.state.chtm.from || "week";
+        this.state.chtm.mode = back;
         try {
-            await this.loadChtMonth();
+            await (back === "week" ? this.loadChtWeek() : this.loadChtMonth());
         } catch (error) {
             this.notifyError(error);
         }

@@ -1319,9 +1319,11 @@
                                 <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã thực hiện</small></div></div>
                                 <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Có lỗi</small></div></div>
                             </div>
-                            <div class="cw_note" t-if="wd.checks.length">
+                            <div class="cw_note" t-if="wd.checks.length or wd.today">
+                                <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
                                 <span><i class="fa fa-info-circle"/> Phiếu trong tuần:</span>
-                                <span t-foreach="wd.checks" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : 'is-wait'}">
+                                <span t-foreach="wd.checks" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : 'is-wait'}"
+                                      title="Bấm để mở check list ngày này" t-on-click="() => this.onChtDay(c)">
                                     <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state === 'Đã đánh giá'"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
                                 <span class="cw_hint" t-if="wd.can_eval">Chọn KQ đánh giá theo nhóm rồi bấm <b>Đồng ý đánh giá tuần</b> để duyệt các phiếu đang chờ bạn.</span>
                                 <span class="cw_hint" t-else="">Không có phiếu nào trong tuần đang chờ bạn đánh giá (chỉ xem).</span>
@@ -1406,7 +1408,7 @@
                     </div>
                     <t t-else="">
                     <div class="o_cht_back" t-if="state.activeNav === 'nvbh_cht'">
-                        <button type="button" class="btn btn-light" t-on-click="onChtBack"><i class="fa fa-chevron-left"/> Bảng checklist tháng</button>
+                        <button type="button" class="btn btn-light" t-on-click="onChtBack"><i class="fa fa-chevron-left"/> <t t-esc="state.chtm.from === 'month' ? 'Bảng checklist tháng' : 'Đánh giá tuần'"/></button>
                     </div>
                     <div class="o_store_job_bar">
                         <label><span>Ngày check list:</span>

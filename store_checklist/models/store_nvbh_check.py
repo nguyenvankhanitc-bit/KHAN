@@ -1010,7 +1010,7 @@ class StoreNvbhCheck(models.Model):
             'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m')),
                        'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(weeks)],
             'staff': self._cht_staff_info(mine[-1:]) if mine else False,
-            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False,
+            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False,
         }
         if not mine:
             return res
@@ -1026,7 +1026,8 @@ class StoreNvbhCheck(models.Model):
             state = ('Đã đánh giá' if c.state == 'approved' else 'Chờ đánh giá' if c.state == 'pending_review'
                      else 'Chưa gửi (%s/%s việc)' % (c.cnt_done, c.cnt_total))
             info_rows.append({'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'state': state, 'points': c.points,
-                              'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c.id in evaluable})
+                              'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c.id in evaluable,
+                              'line_id': c.schedule_line_id.id, 'store_id': c.store_id.id, 'ymd': str(c.work_date)})
             pre = STEP_PREFIX[min(max(info['cur'], c.step_done, 1), len(STEP_PREFIX)) - 1]
             for l in c.line_ids:
                 g = groups.setdefault(l.sub_category or 'Khác', {'name': l.sub_category or 'Khác', 'tasks': {}, 'lines': 0, 'done': 0,
@@ -1067,6 +1068,10 @@ class StoreNvbhCheck(models.Model):
         }
         res['checks'] = info_rows
         res['can_eval'] = bool(evaluable)
+        # lịch hôm nay của CHT đang chọn (mở check list ngày từ trang tuần)
+        today = fields.Date.context_today(self)
+        tl = mine.filtered(lambda l: l.work_date == today)[:1]
+        res['today'] = {'line_id': tl.id, 'store_id': tl.store_id.id, 'ymd': str(today)} if tl else False
         return res
 
     @api.model

@@ -3413,6 +3413,9 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         &.is-ok { background: #ecfdf5; border-color: #a7f3d0; color: #047857; }
         &.is-wait { background: #f8fafc; border-color: #e2e8f0; color: #64748b; } }
     .cw_hint { color: var(--cw-mute); font-style: italic; }
+    .cw_chip { cursor: pointer; &:hover { filter: brightness(.96); text-decoration: underline; } }
+    .cw_today { border: 0; background: #16a34a; color: #fff; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 5px 12px; margin-right: 6px;
+        &:hover { background: #15803d; } }
     .cw_table { background: #fff; border: 1px solid var(--cw-line); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background: #f8fafc; color: #1e293b; font-weight: 700; padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--cw-line);

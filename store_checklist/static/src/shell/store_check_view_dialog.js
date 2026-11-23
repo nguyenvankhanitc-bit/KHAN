@@ -316,6 +316,7 @@ export class StoreCheckViewDialog extends Component {
                 this.notification.add(`${step.code} đã đánh giá xong · đã gửi thông báo cho ${next ? next.code + (next.name ? " (" + next.name + ")" : "") : "cấp tiếp theo"}`, { type: "success" });
             }
             this.props.onSaved?.();
+            this.props.close(); // lưu xong thì đóng popup
         } finally {
             this.state.saving = false;
         }

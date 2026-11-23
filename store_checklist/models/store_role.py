@@ -357,16 +357,23 @@ class StoreNvbhCheckRole(models.Model):
         else:
             cur = 0
         steps = []
+        may_reedit = self._can_reedit_right()
         for i, st in enumerate(chain, 1):
             u = st['user']
             if st['admin_only']:
+                mine = is_admin
                 can_edit = cur == i and is_admin and not locked_expired
             else:
                 # chỉ người được phân công đúng cấp (hoặc Quản trị viên) mới đánh giá; cấp dưới không đánh giá cấp trên;
                 # cấp chưa có User Odoo thì nhóm Quản lý Checklist thay thế
                 mine = bool(u and u.id == user.id) or (not u and user.has_group('store_checklist.group_store_manager') and not shared)
                 can_edit = cur == i and (is_admin or mine) and not locked_expired
-            steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit))
+            # sửa lại đánh giá: cấp vừa hoàn tất gần nhất (cấp sau chưa đánh giá), người của cấp đó có quyền Sửa,
+            # được sửa đến 23h55 ngày đánh giá xong; sau giờ đó hệ thống khóa
+            reedit_until = self._reedit_until(i) if (i == self.step_done and (is_admin or mine) and may_reedit) else False
+            reedit = bool(reedit_until) and fields.Datetime.now() <= reedit_until
+            steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit or reedit,
+                              reedit=reedit, reedit_until=reedit_until if reedit else False))
         first = steps[0] if steps else {}
         return {
             'chain': steps, 'cur': cur, 'wait_staff': wait_staff, 'role_code': code, 'level': level, 'subject': subject,
@@ -378,6 +385,28 @@ class StoreNvbhCheckRole(models.Model):
             'locked_expired': locked_expired,
             'staff_locked': staff_locked,
         }
+
+    @api.model
+    def _can_reedit_right(self):
+        """Quyền Sửa ở "Danh sách checklist NV" hoặc "Quản lý & đánh giá" (Quản trị / Quản lý / user không áp ma trận: có)."""
+        rights = self.env['store.perm.rule']._rights()
+        if rights is None:
+            return True
+        return any(rights.get(k, {}).get('write') for k in ('nvbh_done', 'nvbh_mg'))
+
+    def _reedit_until(self, step_no):
+        """Hạn sửa lại đánh giá của cấp step_no: 23h55 (giờ Việt Nam) của ngày cấp đó đánh giá xong, đổi ra UTC; False nếu chưa có."""
+        self.ensure_one()
+        import pytz
+        from datetime import datetime, time
+        logs = self.step_log_ids.filtered(lambda s: s.step_no == step_no and s.done_date)
+        if not logs:
+            return False
+        done = max(logs.mapped('done_date'))
+        tz = pytz.timezone(self.env.user.tz or 'Asia/Ho_Chi_Minh')
+        local_day = pytz.utc.localize(done).astimezone(tz).date()
+        cutoff = tz.localize(datetime.combine(local_day, time(23, 55)))
+        return cutoff.astimezone(pytz.utc).replace(tzinfo=None)
 
     # ------------------------------------------------------------------
     # Thời hạn: NVBH (ngày D -> hết D+4) · CHT (4 ngày sau khi NV hoàn thành) · ASM (4 ngày sau khi CHT đánh giá xong)
@@ -531,6 +560,10 @@ class StoreNvbhCheckRole(models.Model):
                 'name': s['employee'].name if s['employee'] else ('Admin' if s['admin_only'] else ''),
                 'user_id': s['user'].id if s['user'] else 0, 'done': s['done'], 'current': s['current'], 'can_edit': s['can_edit'],
                 'deadline': self._fmt_date(self._step_deadline(s['no'])) if not s['done'] else '',
+                'reedit': s.get('reedit', False),
+                'reedit_until': fields.Datetime.context_timestamp(
+                    self.with_context(tz=self.env.user.tz or 'Asia/Ho_Chi_Minh'), s['reedit_until']).strftime('%H:%M %d/%m/%Y')
+                if s.get('reedit_until') else '',
             } for s in steps],
             'staff_deadline': self._fmt_date(self._staff_deadline()),
             'staff_locked': info['staff_locked'],
@@ -630,6 +663,14 @@ class StoreNvbhCheckRole(models.Model):
                 pre + 'eval_result': result if result in valid else False,
                 pre + 'error_detail': detail or False,
             })
+        if step.get('reedit') and step_no <= check.step_done:
+            # sửa lại đánh giá đã hoàn tất: phải chấm đủ mọi đầu việc; cập nhật điểm / kết quả trong lịch sử của cấp đó
+            if not all(check.line_ids.mapped(pre + 'eval_result')):
+                raise UserError(_('Sửa lại đánh giá phải chấm đủ KQ đánh giá cho mọi công việc.'))
+            log = check.step_log_ids.filtered(lambda s: s.step_no == step_no).sorted('id')[-1:]
+            log.write({'points': check.points, 'user_id': self.env.user.id,
+                       'result_summary': _('%s lỗi') % check.error_total if check.error_total else _('Không lỗi')})
+            return check._checklist_payload()
         if check.line_ids and all(check.line_ids.mapped(pre + 'eval_result')):
             check._finish_step(step_no, step, info['chain'])
         return check._checklist_payload()

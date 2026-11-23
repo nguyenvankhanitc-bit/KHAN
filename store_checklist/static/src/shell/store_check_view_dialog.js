@@ -121,6 +121,10 @@ export class StoreCheckViewDialog extends Component {
         if (m.lock_msg) {
             return m.lock_msg;
         }
+        const re = this.steps.find((s) => s.reedit);
+        if (re) {
+            return `${re.code} được sửa lại đánh giá đến ${re.reedit_until} (sau giờ này hệ thống tự khóa)`;
+        }
         if (m.state === "approved") {
             return "";
         }
@@ -280,7 +284,9 @@ export class StoreCheckViewDialog extends Component {
             const payload = await this.orm.call("store.nvbh.check", "save_step_evaluation", [this.props.payload.id, step.no, changes]);
             const finished = payload.step_done >= step.no;
             this.applyPayload(payload);
-            if (!finished) {
+            if (step.reedit) {
+                this.notification.add(`Đã lưu sửa lại đánh giá ${step.code}`, { type: "success" });
+            } else if (!finished) {
                 this.notification.add(`Đã lưu đánh giá ${step.code} (chưa chấm đủ nên chưa hoàn tất)`, { type: "success" });
             } else if (payload.state === "approved") {
                 this.notification.add(`${step.code} đã đánh giá xong · phiếu hoàn tất và khóa`, { type: "success" });

@@ -21,7 +21,22 @@ export class StoreCheckViewDialog extends Component {
             meta: this.metaOf(this.props.payload),
             saving: false,
         });
+        this.lockUndone();
         this.snap = this.snapshot();
+    }
+
+    // cấp đang chấm: dòng chưa có làm hiện sẵn Không đạt (0đ), không sửa được
+    lockUndone() {
+        const k = this.editIdx;
+        if (k < 0) {
+            return;
+        }
+        for (const line of this.state.lines) {
+            if (!line.is_done) {
+                line.ev[k].result = "bad";
+                line.ev[k].detail = "";
+            }
+        }
     }
 
     get steps() {
@@ -138,6 +153,7 @@ export class StoreCheckViewDialog extends Component {
     applyPayload(payload) {
         this.state.lines = JSON.parse(JSON.stringify(payload.lines));
         this.state.meta = this.metaOf(payload);
+        this.lockUndone();
         this.snap = this.snapshot();
     }
 
@@ -191,8 +207,13 @@ export class StoreCheckViewDialog extends Component {
         return Boolean(this.steps[k] && this.steps[k].can_edit);
     }
 
+    // dòng chưa tích "Có làm": cấp trên không đánh giá được, tự tính Không đạt (0đ)
+    lineLocked(line) {
+        return !line.is_done;
+    }
+
     setResult(line, k, value) {
-        if (!this.canEditStep(k)) {
+        if (!this.canEditStep(k) || this.lineLocked(line)) {
             return;
         }
         const ev = line.ev[k];
@@ -204,7 +225,7 @@ export class StoreCheckViewDialog extends Component {
 
     // tích chung cho cả hạng mục: mọi việc trong nhóm đều đang là kết quả này thì bỏ chọn, ngược lại đặt tất cả về kết quả này
     groupAll(group, k, value) {
-        const rows = this.state.lines.filter((l) => l.group === group);
+        const rows = this.state.lines.filter((l) => l.group === group && !this.lineLocked(l));
         return rows.length > 0 && rows.every((l) => l.ev[k].result === value);
     }
 
@@ -212,7 +233,7 @@ export class StoreCheckViewDialog extends Component {
         if (!this.canEditStep(k)) {
             return;
         }
-        const rows = this.state.lines.filter((l) => l.group === group);
+        const rows = this.state.lines.filter((l) => l.group === group && !this.lineLocked(l));
         const clear = rows.every((l) => l.ev[k].result === value);
         for (const line of rows) {
             line.ev[k].result = clear ? "" : value;
@@ -225,7 +246,7 @@ export class StoreCheckViewDialog extends Component {
     // 3 ô All ở tiêu đề KQ đánh giá (Đạt / T.Bình / Không đạt): tích = mọi hạng mục / mọi công việc nhận kết quả đó;
     // bỏ tích (đang là kết quả đó hết) = xóa kết quả của cấp này
     allResult(k, value) {
-        const lines = this.state.lines;
+        const lines = this.state.lines.filter((l) => !this.lineLocked(l));
         return lines.length > 0 && lines.every((l) => l.ev[k].result === value);
     }
 
@@ -234,7 +255,7 @@ export class StoreCheckViewDialog extends Component {
             return;
         }
         const clear = this.allResult(k, value);
-        for (const line of this.state.lines) {
+        for (const line of this.state.lines.filter((l) => !this.lineLocked(l))) {
             line.ev[k].result = clear ? "" : value;
             if (!clear) {
                 line.ev[k].reviewer_id = this.steps[k].user_id || line.ev[k].reviewer_id;
@@ -252,7 +273,7 @@ export class StoreCheckViewDialog extends Component {
 
     // nhập chi tiết lỗi thì KQ đánh giá tự chuyển về Không đạt
     setDetail(line, k, ev) {
-        if (!this.canEditStep(k)) {
+        if (!this.canEditStep(k) || this.lineLocked(line)) {
             return;
         }
         const e = line.ev[k];

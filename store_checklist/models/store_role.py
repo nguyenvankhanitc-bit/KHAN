@@ -766,6 +766,10 @@ class StoreNvbhCheckRole(models.Model):
                 pre + 'eval_result': result if result in valid else False,
                 pre + 'error_detail': detail or False,
             })
+        # dòng người thực hiện chưa tích "Có làm": cấp trên không đánh giá được, tự tính Không đạt (0đ)
+        undone = check.line_ids.filtered(lambda l: not l.is_done)
+        if undone:
+            undone.write({pre + 'reviewer_id': assigned, pre + 'eval_result': 'bad', pre + 'error_detail': False})
         if step_no == 1 and check.line_ids and all(check.line_ids.mapped('eval_result')):
             check.line_ids.filtered('staff_edited').write({'staff_edited': False})
         if step.get('reedit') and step_no <= check.step_done:

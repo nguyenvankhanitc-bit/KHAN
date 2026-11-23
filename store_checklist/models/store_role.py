@@ -549,6 +549,13 @@ class StoreNvbhCheckRole(models.Model):
         payload = super()._checklist_payload()
         info = self._role_info()
         steps = info['chain']
+        # người đánh giá chỉ thấy các cấp từ cấp của mình trở xuống (vd. CHT không thấy cột ASM Đánh giá);
+        # Quản trị / Quản lý Checklist thấy đủ mọi cấp
+        user = self.env.user
+        if not (user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager')):
+            mine = [i for i, st in enumerate(steps) if not st['admin_only'] and st['user'] and st['user'].id == user.id]
+            if mine:
+                steps = steps[:mine[-1] + 1]
         payload.update({
             'state': self.state,
             'role_code': info['role_code'],

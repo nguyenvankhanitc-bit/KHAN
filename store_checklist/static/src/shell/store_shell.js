@@ -46,6 +46,8 @@ export class StoreChecklistShell extends Component {
             schedImport: null,
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
+            // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
+            chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", formula: false, busy: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1866,6 +1868,131 @@ export class StoreChecklistShell extends Component {
                 }
             }
             await this.loadJobStaff();
+            if (kind === "cht") {
+                this.state.chtm.mode = "month";
+                await this.loadChtMonth();
+            }
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- Checklist CV CHT: Bảng Checklist Tổng theo tháng (thẻ ngày), bấm thẻ -> bảng check list ngày đó ----
+    async loadChtMonth() {
+        const cm = this.state.chtm;
+        cm.busy = true;
+        try {
+            const res = await this.orm.call("store.nvbh.check", "get_cht_month", [], {
+                month: cm.month || false, store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false,
+            });
+            cm.month = res.month;
+            cm.options = res.options;
+            cm.key = res.key;
+            cm.staff = res.staff;
+            cm.data = res.data;
+        } finally {
+            cm.busy = false;
+        }
+    }
+
+    get chtRows() {
+        const rows = this.state.chtm.data?.rows || [];
+        if (this.state.chtm.tab === "all") {
+            return rows;
+        }
+        const today = this.jobToday();
+        return rows.filter((r) => r.id || (r.ymd === today && r.line_id));
+    }
+
+    get chtWorkedCount() {
+        const today = this.jobToday();
+        return (this.state.chtm.data?.rows || []).filter((r) => r.id || (r.ymd === today && r.line_id)).length;
+    }
+
+    get chtKpi() {
+        const d = this.state.chtm.data || {};
+        const t = d.total || {};
+        const pct = (a, b) => (b ? Math.round((1000 * a) / b) / 10 : 0);
+        return {
+            days: t.days || 0, dim: d.days_in_month || 0, daysPct: pct(t.days || 0, d.days_in_month || 0),
+            done: t.done || 0, total: t.total || 0, donePct: pct(t.done || 0, t.total || 0),
+            errors: t.errors || 0, valid: t.valid || 0,
+            points: t.points || 0, maxPoints: t.max_points || 0, pointsPct: pct(t.points || 0, t.max_points || 0),
+            avgPoints: t.avg_points, avgAsm: t.avg_asm, avgPct: t.avg_pct,
+        };
+    }
+
+    chtMonthLabel() {
+        const m = this.state.chtm.month || "";
+        return m ? `${m.slice(5, 7)}/${m.slice(0, 4)}` : "";
+    }
+
+    chtShiftTone(code) {
+        const c = (code || "").toUpperCase();
+        return c.startsWith("G") ? "amber" : c.startsWith("F") ? "indigo" : c.startsWith("C") ? "sky" : c.startsWith("S") ? "purple" : "slate";
+    }
+
+    chtStatusTone(r) {
+        return r.status === "Hoàn thành" ? "ok" : r.status === "Chưa hoàn thành" ? "warn" : "wait";
+    }
+
+    async onChtFilter(field, ev) {
+        const cm = this.state.chtm;
+        cm[field] = ev.target.value;
+        if (field !== "key") {
+            cm.key = field === "storeId" ? "" : cm.key;
+        }
+        try {
+            await this.loadChtMonth();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtDay(r) {
+        if (!r.line_id) {
+            return;
+        }
+        try {
+            const job = this.state.job;
+            job.date = r.ymd;
+            job.storeId = String(r.store_id);
+            await this.refreshJobStaff();
+            job.lineId = String(r.line_id);
+            await this.loadJobChecklist();
+            this.state.chtm.mode = "day";
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtBack() {
+        if (!this.jobConfirmLeave()) {
+            return;
+        }
+        this.state.chtm.mode = "month";
+        try {
+            await this.loadChtMonth();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtExport() {
+        const cm = this.state.chtm;
+        if (!cm.staff) {
+            return;
+        }
+        try {
+            const file = await this.orm.call("store.nvbh.check", "export_done_monthly_xlsx", [], {
+                month: cm.month || false, staff_names: [cm.staff.name], store_id: cm.storeId ? Number(cm.storeId) : false, only_work: false,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             this.notifyError(error);
         }

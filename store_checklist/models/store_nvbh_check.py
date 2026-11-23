@@ -892,6 +892,58 @@ class StoreNvbhCheck(models.Model):
         return {'staff': name, 'days_in_month': days_in_month, 'rows': rows, 'total': tot}
 
     @api.model
+    def get_cht_month(self, month=None, store_id=None, staff_key=None):
+        """Trang Checklist CV CHT (dạng Bảng Checklist Tổng): danh sách CHT có lịch trong tháng (theo quyền xem lịch xếp ca),
+        người đang chọn và bảng từng ngày của người đó (get_done_monthly), mỗi ngày kèm dòng lịch để mở check list ngày."""
+        start, end, _n = self._month_range(month)
+        empty = {'options': [], 'key': '', 'staff': False, 'month': start.strftime('%Y-%m'), 'data': False}
+        if 'cht' in self._hidden_kinds():
+            return empty
+        dom = [('work_date', '>=', start), ('work_date', '<', end)]
+        if store_id:
+            dom.append(('store_id', '=', int(store_id)))
+        lines = self.env['store.nvbh.schedule.line'].search(dom, order='work_date, id')
+        lines = lines.filtered(lambda l: self._schedule_kind(l) == 'cht')
+
+        def key_of(l):
+            return (l.employee_code or '').strip() or (l.staff_name or '').strip().casefold()
+
+        # người đăng nhập là CHT trên lịch: chỉ thấy chính mình
+        emp = self.env.user.employee_id
+        if emp:
+            codes = {str(emp[f]).strip() for f in ('barcode', 'ma_cham_cong', 'ma_nv_ke_toan') if f in emp._fields and emp[f]}
+            name = (emp.name or '').strip().casefold()
+            mine = lines.filtered(lambda l: (l.employee_code or '').strip() in codes
+                                  or (l.staff_name or '').strip().casefold() == name)
+            if mine:
+                lines = mine
+        groups = {}
+        for l in lines:
+            groups.setdefault(key_of(l), self.env['store.nvbh.schedule.line'])
+            groups[key_of(l)] |= l
+        options = sorted(({'key': k, 'name': ls[-1:].staff_name or '', 'code': ls[-1:].employee_code or '',
+                           'store': ls[-1:].store_id.code or ls[-1:].store_id.display_name or ''}
+                          for k, ls in groups.items()), key=lambda o: o['name'].casefold())
+        if not options:
+            return empty
+        key = staff_key if staff_key in groups else options[0]['key']
+        mine = groups[key]
+        last = mine[-1:]
+        data = self.get_done_monthly(start.strftime('%Y-%m'), last.staff_name, store_id or False)
+        by_day = {l.work_date.strftime('%d/%m/%Y'): l for l in mine}
+        for r in data.get('rows') or []:
+            l = by_day.get(r['date'])
+            r['line_id'] = l.id if l else False
+            r['store_id'] = l.store_id.id if l else False
+            r['store_code'] = (l.store_id.code if l else '') or r.get('store') or ''
+            r['ymd'] = '%s-%s-%s' % tuple(reversed(r['date'].split('/')))
+        return {
+            'options': options, 'key': key, 'month': start.strftime('%Y-%m'), 'data': data,
+            'staff': {'name': last.staff_name or '', 'code': last.employee_code or '', 'status': last.work_status or '',
+                      'position': last.position or 'CHT', 'store': last.store_id.code or last.store_id.display_name or ''},
+        }
+
+    @api.model
     def _xlsx_book(self, sheets, filename):
         """Dựng file Excel: mỗi phần tử của sheets (name, title, subtitle, headers, rows, foot) là một sheet."""
         import re

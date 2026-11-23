@@ -350,6 +350,7 @@ class StoreNvbhCheck(models.Model):
         for c in checks:
             key = '%s|%s' % ((c.staff_name or '').strip().casefold(), c.store_id.id)
             g = groups.setdefault(key, {'key': key, 'name': (c.staff_name or '').strip(), 'code': c.schedule_line_id.employee_code or '', 'store': c.store_id.display_name or '',
+                                        'store_id': c.store_id.id, 'mien': c.store_id.mien or '',
                                         'days': [], 'done': 0, 'total': 0, 'errors': 0, 'points': 0.0, 'max_points': 0.0,
                                         'evaluated': 0})
             max_points = sum(c.line_ids.mapped('max_score'))

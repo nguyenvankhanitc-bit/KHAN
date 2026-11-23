@@ -264,7 +264,18 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <t t-foreach="state.done.rows" t-as="emp" t-key="emp.key">
+                            <t t-foreach="doneDisplayRows" t-as="it" t-key="it.key">
+                                <!-- dòng Miền / Cửa hàng (dropdown) khi chưa chọn cửa hàng -->
+                                <tr class="grp_mien" t-if="it.type === 'mien'" t-on-click="() => this.toggleDoneRowMien(it.gkey)">
+                                    <td colspan="8"><i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <b t-esc="it.label"/>
+                                        <span class="cnt"><t t-esc="it.stores"/> cửa hàng · <t t-esc="it.count"/> nhân viên</span></td>
+                                </tr>
+                                <tr class="grp_store" t-if="it.type === 'store'" t-on-click="() => this.toggleDoneRowStore(it.id)">
+                                    <td colspan="8"><i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-building"/> <b t-esc="it.label"/>
+                                        <span class="cnt"><t t-esc="it.count"/> nhân viên</span></td>
+                                </tr>
+                                <t t-if="it.type === 'emp'">
+                                <t t-set="emp" t-value="it.emp"/>
                                 <tr class="emp" t-on-click="() => this.toggleDoneEmp(emp.key)">
                                     <td class="emp_name">
                                         <span class="emp_ava"><i class="fa fa-user"/></span>
@@ -300,6 +311,7 @@
                                             <button type="button" class="o_store_btn_icon is-del" title="Xóa toàn bộ checklist của nhân viên trong khoảng đã chọn" t-on-click.stop="() => this.onDoneDelete(emp.days, emp.name)"><i class="fa fa-trash"/></button>
                                         </t></td>
                                 </tr>
+                                </t>
                             </t>
                         </tbody>
                     </table>

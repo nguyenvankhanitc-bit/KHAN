@@ -3133,3 +3133,10 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td.o_cht_fill_src{outline: 2px solid #16a34a; outline-offset: -2px;}
 .o_store_shift.o_store_task.o_store_cht_task .o_list_renderer table.o_list_table td.o_cht_fill_range{background: #dcfce7 !important; outline: 1px dashed #16a34a; outline-offset: -1px;}
 .o_cht_filling, .o_cht_filling *{cursor: crosshair !important; user-select: none !important;}
+
+/* DS nhân viên check list: dòng Miền / Cửa hàng dạng dropdown */
+.o_store_done_summary tr.grp_mien td{background: #dbeafe; color: #1e3a8a; font-size: .95rem; padding: 9px 12px !important; cursor: pointer; border-top: 2px solid #bfdbfe;}
+.o_store_done_summary tr.grp_mien:hover td{background: #bfdbfe;}
+.o_store_done_summary tr.grp_store td{background: #f1f5f9; color: #334155; padding: 7px 12px 7px 32px !important; cursor: pointer;}
+.o_store_done_summary tr.grp_store:hover td{background: #e2e8f0;}
+.o_store_done_summary tr.grp_mien .cnt, .o_store_done_summary tr.grp_store .cnt{margin-left: 10px; font-weight: 400; color: #64748b; font-size: .85rem;}

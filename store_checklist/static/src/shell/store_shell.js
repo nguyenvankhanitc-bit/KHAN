@@ -47,7 +47,7 @@ export class StoreChecklistShell extends Component {
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             job: { date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
-            done: { month: "", storeId: "", mien: "", mienOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
+            done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
             auditStoreIds: [],
             myRole: "",
@@ -881,6 +881,54 @@ export class StoreChecklistShell extends Component {
 
     onDoneMonthlyRow(row) {
         return row.id ? this.onDoneDay({ id: row.id }) : null;
+    }
+
+    // Bảng DS nhân viên check list: chưa chọn cửa hàng (vd. Administrator xem tất cả) thì gom dòng theo Miền -> Cửa hàng,
+    // mỗi cấp là một dropdown (mặc định thu gọn; đã lọc một Miền thì Miền đó mở sẵn). Đã chọn cửa hàng / đang tìm tên: danh sách phẳng.
+    get doneDisplayRows() {
+        const rows = this.state.done.rows || [];
+        if (this.state.done.storeId || (this.state.done.q || "").trim()) {
+            return rows.map((emp) => ({ type: "emp", key: emp.key, emp }));
+        }
+        const stores = new Map();
+        for (const emp of rows) {
+            const k = emp.store_id || emp.store;
+            if (!stores.has(k)) {
+                stores.set(k, { id: k, display_name: emp.store, mien: emp.mien, rows: [] });
+            }
+            stores.get(k).rows.push(emp);
+        }
+        const out = [];
+        for (const g of this.mienGroups([...stores.values()])) {
+            const open = this.isDoneRowMienOpen(g.key);
+            const count = g.stores.reduce((n, st) => n + st.rows.length, 0);
+            out.push({ type: "mien", key: `m:${g.key}`, gkey: g.key, label: g.label, stores: g.stores.length, count, open });
+            if (!open) {
+                continue;
+            }
+            const sorted = [...g.stores].sort((a, b) => String(a.display_name).localeCompare(String(b.display_name)));
+            for (const st of sorted) {
+                const sopen = Boolean(this.state.done.rowStoreOpen[st.id]);
+                out.push({ type: "store", key: `s:${st.id}`, id: st.id, label: st.display_name, count: st.rows.length, open: sopen });
+                if (sopen) {
+                    st.rows.forEach((emp) => out.push({ type: "emp", key: emp.key, emp }));
+                }
+            }
+        }
+        return out;
+    }
+
+    isDoneRowMienOpen(key) {
+        const v = this.state.done.rowMienOpen[key];
+        return v === undefined ? Boolean(this.state.done.mien) : v;
+    }
+
+    toggleDoneRowMien(key) {
+        this.state.done.rowMienOpen[key] = !this.isDoneRowMienOpen(key);
+    }
+
+    toggleDoneRowStore(id) {
+        this.state.done.rowStoreOpen[id] = !this.state.done.rowStoreOpen[id];
     }
 
     // danh sách cửa hàng hiện dưới ô tìm kiếm: theo Miền đang chọn (miền trống = tất cả cửa hàng user được chọn)

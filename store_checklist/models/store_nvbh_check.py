@@ -327,7 +327,7 @@ class StoreNvbhCheck(models.Model):
             'kpi': {'total': self.cnt_total, 'doing': self.cnt_doing, 'done': self.cnt_done, 'todo': self.cnt_todo},
             'lines': [{
                 'id': l.id, 'stt': i, 'name': l.name, 'group': l.sub_category or 'Khác', 'time_slot': l.time_slot or '', 'score': l.max_score,
-                'is_done': l.is_done, 'status': l.status, 'note': l.note or '',
+                'is_done': l.is_done, 'status': l.status, 'note': l.note or '', 'staff_edited': l.staff_edited,
                 'reviewer_id': l.reviewer_id.id or 0, 'eval_result': l.eval_result or '', 'error_detail': l.error_detail or '',
                 'actual_score': l.actual_score, 'error_count': l.error_count,
                 'ev': [{'result': l[p + 'eval_result'] or '', 'detail': l[p + 'error_detail'] or '',
@@ -448,6 +448,7 @@ class StoreNvbhCheck(models.Model):
                 'state': c.state,
                 'pct': round(pct) if evaluated else None,
                 'wait': '' if evaluated else c._waiting_code(),  # đang chờ ai: NV / CHT / ASM / RSM / Admin
+                'edited': any(c.line_ids.mapped('staff_edited')),  # người thực hiện đã chỉnh sửa sau khi gửi, chờ chấm lại
                 'rating': rating(c.points, max_points, evaluated)[0] if evaluated else '',  # cùng bảng Cài đặt > Xếp loại với xếp loại theo tháng
             })
             g['done'] += c.cnt_done
@@ -938,6 +939,8 @@ class StoreNvbhCheckLine(models.Model):
     sequence = fields.Integer(default=10)
     task_id = fields.Many2one('store.nvbh.task', string='Công việc', ondelete='set null')
     cht_task_id = fields.Many2one('store.cht.task', string='Công việc CHT', ondelete='set null', index=True)
+    # người thực hiện sửa dòng này sau khi đã gửi cấp trên -> tô cam, chờ cấp đánh giá đầu tiên chấm lại
+    staff_edited = fields.Boolean(string='Đã chỉnh sửa sau khi gửi', copy=False)
     name = fields.Char(string='Công việc', required=True)
     sub_category = fields.Char(string='Nhóm công việc')
     time_slot = fields.Char(string='Thời gian')

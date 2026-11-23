@@ -286,6 +286,7 @@
                                             <span t-foreach="recentDays(emp)" t-as="d" t-key="d.date" t-att-class="'rc_chip ' + dayTone(d)" t-on-click.stop="() => this.onRecentDay(d)">
                                                 <span class="rc_date" t-esc="d.date.slice(0, 5)"/>
                                                 <span class="rc_st"><i t-attf-class="fa #{dayIcon(d)}"/> <t t-esc="dayLabel(d)"/></span>
+                                                <small class="rc_edit" t-if="d.edited and !d.evaluated">(Chỉnh sửa)</small>
                                                 <b class="rc_pct" t-esc="d.pct === null ? '—' : d.pct + '%'"/>
                                             </span>
                                         </div>
@@ -1129,7 +1130,7 @@
                                         </td>
                                         <td colspan="2"><span class="prog"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span></td>
                                     </tr>
-                                    <tr t-if="!state.job.closed[line.group]" t-att-class="'is-' + jobLineStatus(line)">
+                                    <tr t-if="!state.job.closed[line.group]" t-att-class="'is-' + jobLineStatus(line) + (line.staff_edited ? ' is-edited' : '')">
                                         <td class="c" t-esc="line.stt"/>
                                         <td t-esc="line.name"/>
                                         <td class="c" t-esc="line.time_slot"/>

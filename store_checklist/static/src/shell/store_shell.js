@@ -1192,6 +1192,9 @@ export class StoreChecklistShell extends Component {
         if (day.empty) {
             return "is-empty";
         }
+        if (!day.evaluated && day.edited) {
+            return "is-wait is-edited"; // người thực hiện đã chỉnh sửa sau khi gửi, chờ cấp trên chấm lại
+        }
         if (!day.evaluated && day.wait && !["NV", "CHT"].includes(day.wait)) {
             return "is-wait is-wait-up"; // đã qua CHT, đang chờ ASM (hoặc cấp cao hơn): màu xanh nhạt
         }

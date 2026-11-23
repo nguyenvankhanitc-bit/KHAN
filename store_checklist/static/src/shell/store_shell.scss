@@ -3163,3 +3163,10 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 /* chip "Chờ ASM" (đã qua CHT, chờ cấp trên): xanh nhạt */
 .o_store_done_page .rc_chip.is-wait.is-wait-up{background: #dbeafe; border-color: #93c5fd;}
 .o_store_done_page .rc_chip.is-wait.is-wait-up .rc_st, .o_store_done_page .rc_chip.is-wait.is-wait-up .rc_pct{color: #1d4ed8; font-weight: 700;}
+
+/* dòng người thực hiện đã chỉnh sửa sau khi gửi: tô cam (popup đánh giá + trang check list) */
+.o_store_job_table tr.is-edited > td{background: #ffedd5 !important;}
+.o_store_job_table tr.is-edited > td:first-child{box-shadow: inset 4px 0 0 #f97316;}
+/* chip "Chờ CHT (Chỉnh sửa)" */
+.o_store_done_page .rc_chip.is-wait.is-edited{background: #fed7aa; border-color: #f97316;}
+.o_store_done_page .rc_chip .rc_edit{font-size: .68rem; font-weight: 700; color: #c2410c; white-space: nowrap; line-height: 1;}

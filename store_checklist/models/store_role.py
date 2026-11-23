@@ -5,6 +5,8 @@ from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, UserError
 
 from .store_audit_staff import CHECK_MENUS
+from markupsafe import Markup
+
 from .store_notify import bot_send, card
 from .store_nvbh_check import EVAL_RESULTS, STEP_PREFIX, count_errors, eval_score
 
@@ -538,10 +540,74 @@ class StoreNvbhCheckRole(models.Model):
 
     @api.model
     def save_checklist(self, check_id, changes):
-        super().save_checklist(check_id, changes)
         check = self.browse(int(check_id)).exists()
+        before = check._line_state()
+        super().save_checklist(check_id, changes)
         check._stamp_staff_done()
+        check._after_staff_edit(before)
         return check._checklist_payload()
+
+    @api.model
+    def toggle_line(self, line_id, done):
+        check = self.env['store.nvbh.check.line'].browse(int(line_id)).exists().check_id
+        before = check._line_state()
+        super().toggle_line(line_id, done)
+        check._after_staff_edit(before)
+        return check._checklist_payload()
+
+    @api.model
+    def save_note(self, line_id, note):
+        check = self.env['store.nvbh.check.line'].browse(int(line_id)).exists().check_id
+        before = check._line_state()
+        super().save_note(line_id, note)
+        check._after_staff_edit(before)
+        return check._checklist_payload()
+
+    @api.model
+    def toggle_all(self, check_id, done):
+        check = self.browse(int(check_id)).exists()
+        before = check._line_state()
+        super().toggle_all(check_id, done)
+        check._after_staff_edit(before)
+        return check._checklist_payload()
+
+    def _line_state(self):
+        """Ảnh chụp (đã làm, ghi chú) của từng dòng khi phiếu đã gửi cấp trên; phiếu còn đang thực hiện thì rỗng."""
+        if not self or self.state == 'draft':
+            return {}
+        return {l.id: (bool(l.is_done), (l.note or '').strip()) for l in self.line_ids}
+
+    def _after_staff_edit(self, before):
+        """Người thực hiện sửa check list sau khi đã gửi: dòng thay đổi tô cam, phiếu quay về chờ cấp đánh giá đầu tiên
+        chấm lại (kết quả chấm cũ giữ nguyên để sửa nhanh), gửi Odoo Bot cho cấp trên kèm các dòng đã sửa."""
+        self.ensure_one()
+        if not before:
+            return
+        changed = self.line_ids.filtered(lambda l: l.id in before and before[l.id] != (bool(l.is_done), (l.note or '').strip()))
+        if not changed:
+            return
+        chain = self._approval_chain()
+        was_done = self.step_done
+        changed.sudo().write({'staff_edited': True})
+        self.sudo().write({'state': 'pending_review', 'step_done': 0, 'approved_date': False,
+                           'review_sent_date': fields.Datetime.now()})
+        if not chain:
+            return
+        users = self.env['res.users']
+        for i, st in enumerate(chain, 1):
+            if st['user'] and (i == 1 or i <= was_done):
+                users |= st['user']
+        order = {l.id: n for n, l in enumerate(self.line_ids.sorted(lambda x: (x.sequence, x.id)), 1)}
+        detail = Markup('<br/>').join(
+            Markup('• %s — %s%s') % (l.name, 'Đã làm' if l.is_done else 'Chưa làm', (' · Ghi chú: %s' % l.note) if l.note else '')
+            for l in changed.sorted(lambda x: order.get(x.id, 0)))
+        bot_send(self.env, users, card('CHECKLIST ĐÃ CHỈNH SỬA — CHỜ %s ĐÁNH GIÁ LẠI' % chain[0]['code'], [
+            ('Người thực hiện', self.staff_name or ''),
+            ('Cửa hàng', self.store_id.display_name),
+            ('Ngày', self.work_date.strftime('%d/%m/%Y') if self.work_date else ''),
+            ('Số dòng đã sửa', str(len(changed))),
+            ('Dòng đã sửa', Markup('<br/>') + detail),
+        ], label='Mở để đánh giá lại', check_id=self.id))
 
     def _assert_can_execute(self):
         for check in self:
@@ -685,6 +751,8 @@ class StoreNvbhCheckRole(models.Model):
                 pre + 'eval_result': result if result in valid else False,
                 pre + 'error_detail': detail or False,
             })
+        if step_no == 1 and check.line_ids and all(check.line_ids.mapped('eval_result')):
+            check.line_ids.filtered('staff_edited').write({'staff_edited': False})
         if step.get('reedit') and step_no <= check.step_done:
             # sửa lại đánh giá đã hoàn tất: phải chấm đủ mọi đầu việc; cập nhật điểm / kết quả trong lịch sử của cấp đó
             if not all(check.line_ids.mapped(pre + 'eval_result')):

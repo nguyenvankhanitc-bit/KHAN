@@ -72,7 +72,8 @@
                                     <td class="sx-col sx-grp"><span class="prog" t-if="st_index === 0"><t t-esc="gi.done"/>/<t t-esc="gi.count"/> đã làm</span></td>
                                 </t>
                             </tr>
-                            <tr t-att-class="'is-' + line.status + (lineErrors(line) ? ' has-err' : '')">
+                            <tr t-att-class="'is-' + line.status + (lineErrors(line) ? ' has-err' : '') + (line.staff_edited ? ' is-edited' : '')"
+                                t-att-title="line.staff_edited ? 'Người thực hiện đã chỉnh sửa dòng này sau khi gửi — cần đánh giá lại' : ''">
                                 <td class="c" t-esc="line.stt"/>
                                 <td t-esc="line.name"/>
                                 <td class="c" t-esc="line.time_slot"/>

@@ -345,7 +345,8 @@ export class StoreChecklistShell extends Component {
     }
 
     get isJobTabs() {
-        return ["nvbh_jobs", "nvbh_cht", "nvbh_schedule"].includes(this.state.activeNav);
+        // Checklist CV CHT: không có tab (lịch ca đã xem / nhập ở Công việc check list NVBH)
+        return ["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) && !(this.state.activeNav === "nvbh_schedule" && this.state.job.kind === "cht");
     }
 
     // ---- In (chọn máy in trong hộp thoại in của trình duyệt) và Xuất Excel cho các bảng: Bảng checklist Tổng / Bảng Nhân viên / Bảng Đánh giá ----

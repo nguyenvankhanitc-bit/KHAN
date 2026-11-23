@@ -91,6 +91,10 @@ class StoreNvbhScheduleLine(models.Model):
     staff_id = fields.Many2one('store.audit.staff', string='Nhân sự (cũ)')
     employee_code = fields.Char(string='ID')
     position = fields.Char(string='Chức vụ', default='NVBH', help='Mã chức vụ theo file xếp ca: NVBH, NT, CHT, ASMTT, PT...')
+    # lịch ASM: Mã bộ phận trong file là phòng quản lý (vd. QL_NAM - QUẢN LÝ MIỀN NAM), không phải cửa hàng;
+    # dòng lịch vẫn gắn cửa hàng phụ trách của ASM, lưới / file xuất nhóm theo bộ phận này
+    dept_code = fields.Char(string='Mã bộ phận (ASM)')
+    dept_name = fields.Char(string='Tên bộ phận (ASM)')
 
     @api.model
     def _search(self, domain, *args, **kwargs):
@@ -355,21 +359,35 @@ class StoreNvbhScheduleLine(models.Model):
             raise UserError(_('Hãy chọn một tháng cụ thể ở bộ lọc "Tháng" trước khi nhập / xuất Excel.'))
 
     @api.model
+    def _matrix_groups(self, lines):
+        """[(mã, tên, miền, dòng)]: dòng có Mã bộ phận ASM (vd. QL_NAM) nhóm theo bộ phận, còn lại theo cửa hàng."""
+        groups = {}
+        for ln in lines:
+            if ln.dept_code:
+                key = ('d', ln.dept_code.strip().upper())
+                head = (ln.dept_code.strip(), ln.dept_name or ln.dept_code.strip(), ln.store_id.mien or '')
+            else:
+                key = ('s', ln.store_id.id)
+                head = (ln.store_id.code or ln.store_id.name or '', ln.store_id.name or '', ln.store_id.mien or '')
+            g = groups.setdefault(key, [head, self.browse()])
+            g[1] |= ln
+        return [(h[0], h[1], h[2], ls) for h, ls in sorted(groups.values(), key=lambda g: (g[0][1] or '').casefold())]
+
     def get_matrix(self, domain, month):
         """Dữ liệu lưới "Xếp ca" cho màn hình: mỗi cửa hàng một dòng tiêu đề, dưới là mỗi nhân viên một dòng với Mã ca từng ngày."""
         first, ndays = self._month_range(month)
         lines = self.search(domain or [], order='store_id, sequence, id')
         states = self._import_check_state(lines)
         rows = []
-        for store in lines.store_id.sorted('name'):
-            rows.append({'kind': 'store', 'key': 's%s' % store.id, 'mien': store.mien or '', 'store_code': store.code or '',
-                         'store_name': store.name or ''})
+        for gi, (g_code, g_name, g_mien, g_lines) in enumerate(self._matrix_groups(lines)):
+            rows.append({'kind': 'store', 'key': 's%s' % gi, 'mien': g_mien, 'store_code': g_code,
+                         'store_name': g_name})
             people = {}
-            for ln in lines.filtered(lambda l: l.store_id == store):
+            for ln in g_lines:
                 key = (ln.employee_code or '').strip() or (ln.staff_name or '').strip().casefold()
                 person = people.setdefault(key, {
-                    'kind': 'emp', 'key': 'e%s_%s' % (store.id, len(people)), 'mien': store.mien or '',
-                    'store_code': store.code or '', 'employee_code': ln.employee_code or '',
+                    'kind': 'emp', 'key': 'e%s_%s' % (gi, len(people)), 'mien': g_mien,
+                    'store_code': g_code, 'employee_code': ln.employee_code or '',
                     'staff_name': ln.staff_name or '', 'position': ln.position or '', 'work_status': ln.work_status or '', 'days': {}})
                 person['days'][ln.work_date.day] = {'code': ln.shift_id.code or '', 'schedule_id': ln.schedule_id.id,
                                                     'changed': ln.import_changed, 'prev': ln.import_prev_code or '',
@@ -410,23 +428,23 @@ class StoreNvbhScheduleLine(models.Model):
         sheet.set_column(5, 5, 22)
         sheet.set_column(6, ncol - 1, 6)
         row = 4
-        for store in lines.store_id:
-            sheet.write(row, 0, store.mien or '', store_fmt)
-            sheet.write(row, 1, store.code or store.name or '', store_fmt)
+        for g_code, g_name, g_mien, g_lines in self._matrix_groups(lines):
+            sheet.write(row, 0, g_mien, store_fmt)
+            sheet.write(row, 1, g_code, store_fmt)
             sheet.write(row, 2, '', store_fmt)
-            sheet.write(row, 3, store.name or '', store_fmt)
+            sheet.write(row, 3, g_name, store_fmt)
             for c in range(4, ncol):
                 sheet.write(row, c, '', cell)
             row += 1
             people = {}
-            for ln in lines.filtered(lambda l: l.store_id == store):
+            for ln in g_lines:
                 key = (ln.employee_code or '').strip() or (ln.staff_name or '').strip().casefold()
                 person = people.setdefault(key, {'line': ln, 'days': {}})
                 person['days'][ln.work_date.day] = ln.shift_id.code or ''
             for person in people.values():
                 ln = person['line']
-                sheet.write(row, 0, store.mien or '', cell)
-                sheet.write(row, 1, store.code or store.name or '', cell)
+                sheet.write(row, 0, g_mien, cell)
+                sheet.write(row, 1, g_code, cell)
                 sheet.write(row, 2, ln.employee_code or '', cell)
                 sheet.write(row, 3, ln.staff_name or '', cell)
                 sheet.write(row, 4, ln.position or '', cell)
@@ -529,6 +547,8 @@ class StoreNvbhScheduleLine(models.Model):
         ref = self._import_ref_date()  # vd. 20/11/2026: 01-19/11 giữ nguyên, 20/11 chỉ cập nhật nếu chưa check list, 21/11+ cập nhật
         errors = []
         store = None
+        dept = ''  # lịch ASM: Mã bộ phận không phải cửa hàng (vd. QL_NAM)
+        dept_names = {}
         kept = self.browse()
         people = {}
         file_stores = self.env['hr.store']
@@ -539,7 +559,12 @@ class StoreNvbhScheduleLine(models.Model):
             cells = {d: cell(r, i) for d, i in day_cols.items() if d <= ndays and cell(r, i)}
             if code:
                 store = stores.get(code.casefold())
-                if not store:
+                dept = '' if store else code
+                if not store and asm_mode:
+                    store = False  # lịch ASM: Mã bộ phận là phòng quản lý, cửa hàng lấy theo hồ sơ ASM
+                    if name and not emp_id and not cells:
+                        dept_names[code.casefold()] = name  # dòng nhóm: QL_NAM - QUẢN LÝ MIỀN NAM
+                elif not store:
                     errors.append('Dòng %s: không tìm thấy cửa hàng "%s"' % (n, code))
                     continue
             if not emp_id and not cells:
@@ -556,9 +581,16 @@ class StoreNvbhScheduleLine(models.Model):
                 if pos != 'ASM':
                     errors.append('Dòng %s: %s có chức vụ "%s" — tab Lịch xếp ca ASM chỉ nhập chức vụ ASM' % (n, name, pos))
                     continue
+            row_store = store
+            if asm_mode and not row_store:
+                emp = self._find_employee(emp_id, name)
+                row_store = self.env['store.nvbh.check']._asm_store(emp) if emp else False
+                if not row_store:
+                    errors.append('Dòng %s: không tìm thấy hồ sơ nhân viên / cửa hàng phụ trách của %s' % (n, name))
+                    continue
             status = cell(r, status_col)
-            people[(store.id, emp_id or name.casefold())] = {
-                'store': store, 'name': name, 'emp_id': emp_id, 'position': pos or 'NVBH', 'work_status': status}
+            people[(row_store.id, emp_id or name.casefold())] = {
+                'store': row_store, 'name': name, 'emp_id': emp_id, 'position': pos or 'NVBH', 'work_status': status}
             for d, sc in sorted(cells.items()):
                 shift = shifts.get(sc.casefold())
                 if not shift:
@@ -573,12 +605,15 @@ class StoreNvbhScheduleLine(models.Model):
                     vals['position'] = pos
                 if status:
                     vals['work_status'] = status
+                if asm_mode:
+                    vals['dept_code'] = dept or False
+                    vals['dept_name'] = dept_names.get(dept.casefold()) or False if dept else False
                 try:
                     with self.env.cr.savepoint():
-                        key = (store.id, day)
+                        key = (row_store.id, day)
                         if key not in schedules:
-                            schedules[key] = Schedule.search([('store_id', '=', store.id), ('work_date', '=', day)], limit=1) \
-                                or Schedule.create({'store_id': store.id, 'work_date': day})
+                            schedules[key] = Schedule.search([('store_id', '=', row_store.id), ('work_date', '=', day)], limit=1) \
+                                or Schedule.create({'store_id': row_store.id, 'work_date': day})
                         sch = schedules[key]
                         line = sch.line_ids.filtered(
                             lambda l: (emp_id and l.employee_code == emp_id) or (not emp_id and (l.staff_name or '').casefold() == name.casefold()))[:1]
@@ -587,7 +622,7 @@ class StoreNvbhScheduleLine(models.Model):
                             if chk_state == 'locked':
                                 skipped_locked += 1  # đã check list / đã lưu / đã duyệt: không cập nhật
                                 kept |= line
-                                file_stores |= store
+                                file_stores |= row_store
                                 continue
                             if line.shift_id == shift and all(
                                     (line[f] or '') == (v or '') for f, v in vals.items() if f != 'shift_id'):
@@ -608,7 +643,7 @@ class StoreNvbhScheduleLine(models.Model):
                             created += 1
                             changed[line.id] = ''
                         kept |= line
-                        file_stores |= store
+                        file_stores |= row_store
                 except Exception as e:  # lỗi quyền / dữ liệu: bỏ qua ô và báo lại
                     errors.append('Dòng %s, N%s: %s' % (n, d, getattr(e, 'args', [e])[0]))
         # File là lịch mới nhất: với các cửa hàng có trong file, xóa các dòng lịch không còn trong file —
@@ -640,17 +675,33 @@ class StoreNvbhScheduleLine(models.Model):
         details = list(removed_rows)
         for line in self.sudo().browse(list(changed)).exists():
             line.write({'import_changed': True, 'import_prev_code': changed[line.id] or False})
-            details.append({'kind': 'changed' if changed[line.id] else 'new', 'store': line.store_id.code or line.store_id.name or '',
+            details.append({'kind': 'changed' if changed[line.id] else 'new', 'store': line.dept_code or line.store_id.code or line.store_id.name or '',
                             'name': line.staff_name or '', 'date': line.work_date.strftime('%d/%m/%Y'),
                             'sort': (line.store_id.code or '', line.staff_name or '', line.work_date),
                             'old': changed[line.id], 'new': line.shift_id.code or ''})
         details.sort(key=lambda r: r.pop('sort'))
-        staff_new, staff_upd = self._sync_staff(people, errors)
+        # lịch ASM không đồng bộ vào Nhân sự cửa hàng
+        staff_new, staff_upd = self._sync_staff(people, errors) if not asm_mode else (0, 0)
         return {'created': created, 'updated': updated, 'unchanged': unchanged, 'removed': removed,
                 'skipped_past': skipped_past, 'skipped_locked': skipped_locked, 'ref_date': ref.strftime('%d/%m/%Y'),
                 'staff_created': staff_new, 'staff_updated': staff_upd,
                 'details': details[:1000], 'detail_count': len(details),
                 'errors': errors[:20], 'error_count': len(errors)}
+
+    @api.model
+    def _find_employee(self, emp_id, name):
+        """Hồ sơ nhân viên theo ID HRM (mã chấm công / mã nhân viên), không có thì theo họ tên."""
+        Employee = self.env['hr.employee'].sudo()
+        if emp_id:
+            for f in ('barcode', 'ma_cham_cong', 'ma_nv_ke_toan', 'identification_id'):
+                if f in Employee._fields:
+                    emp = Employee.search([(f, '=', emp_id)], limit=1)
+                    if emp:
+                        return emp
+        key = ' '.join((name or '').split()).casefold()  # file thường viết HOA có dấu: so khớp không phân biệt hoa / thường
+        if not key:
+            return Employee
+        return Employee.search([]).filtered(lambda e: ' '.join((e.name or '').split()).casefold() == key)[:1]
 
     @api.model
     def preview_import_xlsx(self, data, month, kind=None):

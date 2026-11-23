@@ -339,6 +339,8 @@ export class StoreChecklistShell extends Component {
         return [
             this.state.job.kind === "cht"
                 ? { id: "nvbh_cht", label: "Check list công việc CHT", action: "" }
+                : this.state.job.kind === "asm"
+                ? { id: "nvbh_asmcv", label: "Check list công việc ASM", action: "" }
                 : { id: "nvbh_jobs", label: "Check list công việc", action: "store_checklist.action_store_nvbh_jobs" },
             { id: "nvbh_schedule", label: "Lịch xếp ca", action: "store_checklist.action_store_nvbh_schedule" },
         ];
@@ -346,7 +348,7 @@ export class StoreChecklistShell extends Component {
 
     get isJobTabs() {
         // Checklist CV CHT: không có tab (lịch ca đã xem / nhập ở Công việc check list NVBH)
-        return ["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) && !(this.state.activeNav === "nvbh_schedule" && this.state.job.kind === "cht");
+        return ["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) && !(this.state.activeNav === "nvbh_schedule" && ["cht", "asm"].includes(this.state.job.kind));
     }
 
     // ---- In (chọn máy in trong hộp thoại in của trình duyệt) và Xuất Excel cho các bảng: Bảng checklist Tổng / Bảng Nhân viên / Bảng Đánh giá ----
@@ -1833,7 +1835,8 @@ export class StoreChecklistShell extends Component {
     async openJobsPage(kind = "nvbh") {
         try {
             // kind = "cht": Checklist CV CHT (người có chức vụ CHT trên lịch xếp ca, công việc theo Danh sách công việc CHT)
-            this.state.activeNav = kind === "cht" ? "nvbh_cht" : "nvbh_jobs";
+            // kind = "asm": Checklist CV ASM (người có chức vụ ASM trên lịch xếp ca, công việc theo Danh sách công việc ASM)
+            this.state.activeNav = kind === "cht" ? "nvbh_cht" : kind === "asm" ? "nvbh_asmcv" : "nvbh_jobs";
             this.state.contentMode = "list";
             this.state.embeddedViewProps = null;
             const job = this.state.job;
@@ -2138,7 +2141,7 @@ export class StoreChecklistShell extends Component {
     navChildClass(child) {
         const cls = ["store-tn-" + child.id];
         // mục "Công việc" vẫn sáng khi đang ở tab Lịch làm việc
-        if (this.state.activeNav === child.id || (child.id === (this.state.job.kind === "cht" ? "nvbh_cht" : "nvbh_jobs") && this.state.activeNav === "nvbh_schedule") || (child.id === "nvbh_mg_staff" && this.state.activeNav === "nvbh_mg_eval")) {
+        if (this.state.activeNav === child.id || (child.id === ({ cht: "nvbh_cht", asm: "nvbh_asmcv" }[this.state.job.kind] || "nvbh_jobs") && this.state.activeNav === "nvbh_schedule") || (child.id === "nvbh_mg_staff" && this.state.activeNav === "nvbh_mg_eval")) {
             cls.push("is-active");
         }
         if (child.sub) {
@@ -2437,7 +2440,7 @@ export class StoreChecklistShell extends Component {
     }
 
     get permKey() {
-        const keys = { nvbh_staff: "nvbh_staff", nvbh_jobs: "nvbh_jobs", nvbh_cht: "nvbh_cht", nvbh_schedule: this.state.job.kind === "cht" ? "nvbh_cht" : "nvbh_jobs", nvbh_done: "nvbh_done", nvbh_mg_staff: "nvbh_mg", nvbh_mg_eval: "nvbh_mg" };
+        const keys = { nvbh_staff: "nvbh_staff", nvbh_jobs: "nvbh_jobs", nvbh_cht: "nvbh_cht", nvbh_asmcv: "nvbh_asmcv", nvbh_schedule: ({ cht: "nvbh_cht", asm: "nvbh_asmcv" }[this.state.job.kind] || "nvbh_jobs"), nvbh_done: "nvbh_done", nvbh_mg_staff: "nvbh_mg", nvbh_mg_eval: "nvbh_mg" };
         return keys[this.state.activeNav] || this.state.activeNav;
     }
 
@@ -2460,7 +2463,7 @@ export class StoreChecklistShell extends Component {
         if (auditor) {
             domain.push(["auditor_id", "=", Number(auditor)]);
         }
-        if (month && ["nvbh_jobs", "nvbh_cht", "nvbh_schedule", "nvbh_done"].includes(this.state.activeNav)) {
+        if (month && ["nvbh_jobs", "nvbh_cht", "nvbh_asmcv", "nvbh_schedule", "nvbh_done"].includes(this.state.activeNav)) {
             const [y, m] = month.split("-").map(Number);
             const ymd = (yy, mm) => `${yy}-${String(mm).padStart(2, "0")}-01`;
             domain.push(["work_date", ">=", ymd(y, m)], ["work_date", "<", m === 12 ? ymd(y + 1, 1) : ymd(y, m + 1)]);
@@ -3368,12 +3371,9 @@ export class StoreChecklistShell extends Component {
             return this.openJobsPage("cht");
         }
         if (child?.id === "nvbh_asmcv") {
-            // trang riêng (component StoreChtPage tự tải dữ liệu)
+            // Checklist CV ASM: trang Công việc check list ở chế độ ASM (cùng giao diện / tính năng với NVBH, CHT)
             this.track({ child });
-            this.state.activeNav = child.id;
-            this.state.contentMode = "list";
-            this.state.embeddedViewProps = null;
-            return;
+            return this.openJobsPage("asm");
         }
         if (child?.id === "report_flow_nvbh") {
             // trang tĩnh: sơ đồ quy trình checklist NVBH (không có action / dữ liệu cần tải)
@@ -4023,10 +4023,7 @@ export class StoreChecklistShell extends Component {
             return this.openJobsPage("cht");
         }
         if (navId === "nvbh_asmcv") {
-            this.state.activeNav = navId;
-            this.state.contentMode = "list";
-            this.state.embeddedViewProps = null;
-            return;
+            return this.openJobsPage("asm");
         }
         if (navId === "report_flow_nvbh") {
             this.state.activeNav = "report_flow_nvbh";

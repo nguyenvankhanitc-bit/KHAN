@@ -42,6 +42,9 @@ LINE_STATES = [
 ]
 
 
+# loại check list -> (model Danh sách công việc, trường liên kết trên dòng check list)
+TASK_SOURCES = {'cht': ('store.cht.task', 'cht_task_id'), 'asm': ('store.asm.task', 'asm_task_id')}
+
 class StoreNvbhCheck(models.Model):
     """Checklist công việc NVBH của một nhân viên trong một ngày: lấy theo Lịch làm việc (cửa hàng / ngày / nhân viên / Mã ca).
     Hệ thống tự tạo khi mở trang; các dòng công việc lấy từ Cài đặt > Danh sách công việc NVBH theo Loại ca của Mã ca."""
@@ -60,7 +63,9 @@ class StoreNvbhCheck(models.Model):
     staff_id = fields.Many2one('store.audit.staff', string='NVBH (cũ)')
     # NVBH: công việc lấy từ Danh sách công việc NVBH; CHT: người trên lịch xếp ca có chức vụ cấp 2 (CHT...),
     # công việc lấy từ Danh sách công việc CHT, luồng CHT check list -> ASM đánh giá -> Admin phê duyệt (nếu bật)
-    kind = fields.Selection([('nvbh', 'NVBH'), ('cht', 'CHT')], string='Loại check list', default='nvbh', required=True, index=True)
+    # ASM: người trên lịch xếp ca có chức vụ cấp 3 (ASM), công việc theo Danh sách công việc ASM,
+    # luồng ASM check list -> RSM đánh giá (nếu có) -> Admin / Admin tổng duyệt kết quả cuối cùng
+    kind = fields.Selection([('nvbh', 'NVBH'), ('cht', 'CHT'), ('asm', 'ASM')], string='Loại check list', default='nvbh', required=True, index=True)
     line_ids = fields.One2many('store.nvbh.check.line', 'check_id', string='Công việc')
     # Đã lưu checklist (bấm Lưu ở trang Check list công việc) -> hiện trong Danh sách checklist NV
     submitted = fields.Boolean(string='Đã check list', default=False, index=True)
@@ -119,25 +124,38 @@ class StoreNvbhCheck(models.Model):
         rights = self.env['store.perm.rule']._rights()
         return rights is not None and not rights.get('nvbh_cht', {}).get('read')
 
+    @api.model
+    def _hide_asm(self):
+        """True: người dùng không có quyền Xem mục "Checklist CV ASM" -> không thấy phiếu / người làm check list ASM."""
+        rights = self.env['store.perm.rule']._rights()
+        return rights is not None and not rights.get('nvbh_asmcv', {}).get('read')
+
+    @api.model
+    def _hidden_kinds(self):
+        """Các loại check list người dùng hiện tại không được xem (cht / asm)."""
+        return [k for k, hide in (('cht', self._hide_cht), ('asm', self._hide_asm)) if hide()]
+
     def _assert_cht_visible(self):
-        if any(c.kind == 'cht' for c in self) and self._hide_cht():
-            raise AccessError(_('Bạn không có quyền xem check list CHT.'))
+        hidden = self._hidden_kinds()
+        if any(c.kind in hidden for c in self):
+            raise AccessError(_('Bạn không có quyền xem check list %s.') % ', '.join(sorted({c.kind.upper() for c in self if c.kind in hidden})))
 
     @api.model
     def _schedule_kind(self, schedule_line):
-        """Loại check list của một dòng lịch xếp ca: chức vụ cấp 2 (CHT, CHTTT, ASMTT) -> 'cht', còn lại 'nvbh'."""
+        """Loại check list của một dòng lịch xếp ca: chức vụ cấp 2 (CHT, CHTTT, ASMTT) -> 'cht', cấp 3 (ASM) -> 'asm', còn lại 'nvbh'."""
         from .store_role import role_level
-        return 'cht' if role_level((schedule_line.position or '').strip().upper()) == 2 else 'nvbh'
+        return {2: 'cht', 3: 'asm'}.get(role_level((schedule_line.position or '').strip().upper()), 'nvbh')
 
     @api.model
-    def _cht_line_commands(self, work_date=None):
-        """Dòng công việc CHT: mọi việc trong Danh sách công việc CHT đến hạn ngày work_date (theo tần suất / thứ / ngày trong tháng)."""
-        tasks = self.env['store.cht.task'].sudo().search([])
+    def _cht_line_commands(self, work_date=None, kind='cht'):
+        """Dòng công việc CHT / ASM: mọi việc trong Danh sách công việc CHT (ASM) đến hạn ngày work_date (theo tần suất / thứ / ngày trong tháng)."""
+        model, fk = TASK_SOURCES[kind]
+        tasks = self.env[model].sudo().search([])
         if work_date:
             tasks = tasks.filtered(lambda t: t.runs_on(work_date))
         tasks = tasks.sorted(lambda t: (t.group_id.sequence if t.group_id else 9999, t.group_id.id or 0, t.sequence, t.id))
         return [Command.create({
-            'cht_task_id': t.id,
+            fk: t.id,
             'sequence': t.sequence,
             'name': t.name,
             'sub_category': t.group_id.name or 'Khác',
@@ -151,8 +169,8 @@ class StoreNvbhCheck(models.Model):
     def _task_line_commands(self, shift, work_date=None, kind='nvbh'):
         """Một dòng cho mỗi công việc áp dụng cho Loại ca của Mã ca và cho Thứ của ngày làm việc (theo thứ tự trong bảng công việc NVBH).
         kind = 'cht': lấy theo Danh sách công việc CHT (không phụ thuộc ca)."""
-        if kind == 'cht':
-            return self._cht_line_commands(work_date)
+        if kind in TASK_SOURCES:
+            return self._cht_line_commands(work_date, kind)
         groups = dict(TASK_GROUPS)
         if not shift or not shift.shift_type_id:
             return []
@@ -188,9 +206,9 @@ class StoreNvbhCheck(models.Model):
         removed = added = 0
         checks = self.sudo().search([('state', '=', 'draft'), ('submitted', '=', False)] + list(domain or []))
         for chk in checks:
-            if chk.kind != 'cht' and (not chk.shift_id or not chk.shift_id.shift_type_id):
+            if chk.kind not in TASK_SOURCES and (not chk.shift_id or not chk.shift_id.shift_type_id):
                 continue
-            fk = 'cht_task_id' if chk.kind == 'cht' else 'task_id'
+            fk = TASK_SOURCES[chk.kind][1] if chk.kind in TASK_SOURCES else 'task_id'
             wanted = self._task_line_commands(chk.shift_id, chk.work_date, chk.kind)
             wanted_ids = {cmd[2][fk] for cmd in wanted}
             have = {ln[fk].id: ln for ln in chk.line_ids if ln[fk]}
@@ -243,12 +261,12 @@ class StoreNvbhCheck(models.Model):
     def get_job_overview(self, store_id, work_date, kind='nvbh'):
         """Trang Check list công việc: tất cả nhân viên có lịch làm việc trong ngày kèm tiến độ (đã làm / tổng việc, điểm, đã check list chưa),
         và danh sách nhân viên của cửa hàng không có lịch (nghỉ OFF)."""
-        if not store_id or not work_date or (kind == 'cht' and self._hide_cht()):
+        if not store_id or not work_date or kind in self._hidden_kinds():
             return {'staff': [], 'off': [], 'store_staff': 0}
         lines = self.env['store.nvbh.schedule.line'].search(
             [('store_id', '=', int(store_id)), ('work_date', '=', work_date)], order='schedule_id, sequence, id')
         # trang NVBH: mọi người trên lịch trừ CHT (cấp 2); trang CHT: chỉ người có chức vụ cấp 2
-        lines = lines.filtered(lambda l: (self._schedule_kind(l) == 'cht') == (kind == 'cht'))
+        lines = lines.filtered(lambda l: self._schedule_kind(l) == kind)
         checks = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', lines.ids)])}
         staff = []
         for i, l in enumerate(lines, 1):
@@ -262,8 +280,10 @@ class StoreNvbhCheck(models.Model):
         scheduled = {(s['name'] or '').strip().casefold() for s in staff}
         from .store_role import role_level
         roster = self.env['store.audit.staff'].search([('store_id', '=', int(store_id)), ('staff_state', '=', 'active'),
-                                                        ('position', 'not in', ['ASM', 'RSM'])])
-        roster = roster.filtered(lambda r: (role_level((r.position or '').strip().upper()) == 2) == (kind == 'cht'))
+                                                        ('position', '!=', 'RSM')])
+        want = {'cht': 2, 'asm': 3}.get(kind)
+        roster = roster.filtered(lambda r: role_level((r.position or '').strip().upper()) == want if want
+                                 else role_level((r.position or '').strip().upper()) not in (2, 3))
         names = {}
         for r in roster:
             names.setdefault((r.name or '').strip().casefold(), (r.name or '').strip())
@@ -290,8 +310,8 @@ class StoreNvbhCheck(models.Model):
         if not line:
             return False
         kind = self._schedule_kind(line)
-        if kind == 'cht' and self._hide_cht():
-            raise AccessError(_('Bạn không có quyền xem check list CHT.'))
+        if kind in self._hidden_kinds():
+            raise AccessError(_('Bạn không có quyền xem check list %s.') % kind.upper())
         check = self.search([('schedule_line_id', '=', line.id)], limit=1)
         if not check:
             check = self.create({
@@ -305,14 +325,14 @@ class StoreNvbhCheck(models.Model):
             })
         elif check.kind != kind and check.state == 'draft' and not check.submitted and not any(
                 l.is_done or l.note or l.eval_result for l in check.line_ids):
-            # phiếu cũ của CHT tạo theo công việc NVBH, chưa làm gì: đổi sang công việc CHT
+            # phiếu cũ của CHT / ASM tạo theo công việc NVBH, chưa làm gì: đổi sang công việc CHT / ASM
             check.sudo().write({'kind': kind, 'line_ids': [Command.clear()] + self._task_line_commands(line.shift_id, line.work_date, kind)})
         return check._checklist_payload()
 
     def _checklist_payload(self):
         self.ensure_one()
-        if self.kind == 'cht':  # nhóm công việc CHT theo thứ tự trong danh mục nhóm
-            order = {g.name: i for i, g in enumerate(self.env['store.cht.task.group'].sudo().search([]))}
+        if self.kind in TASK_SOURCES:  # nhóm công việc CHT / ASM theo thứ tự trong danh mục nhóm
+            order = {g.name: i for i, g in enumerate(self.env[TASK_SOURCES[self.kind][0] + '.group'].sudo().search([]))}
         else:
             order = {label: i for i, (_k, label) in enumerate(TASK_GROUPS)}
         # theo nhóm công việc (I, II, III...) rồi theo thứ tự trong bảng công việc NVBH
@@ -413,8 +433,9 @@ class StoreNvbhCheck(models.Model):
             domain.append(('work_date', '=', fields.Date.context_today(self)))
         if search:
             domain.append(('staff_name', 'ilike', search))
-        if self._hide_cht():
-            domain.append(('kind', '!=', 'cht'))
+        hidden = self._hidden_kinds()
+        if hidden:
+            domain.append(('kind', 'not in', hidden))
         checks = self.search(domain, order='work_date desc, id desc')
         if errors:
             checks = checks.filtered(lambda c: c.error_total > 0)
@@ -456,7 +477,8 @@ class StoreNvbhCheck(models.Model):
                 'rating': rating(c.points, max_points, evaluated)[0] if evaluated else '',  # cùng bảng Cài đặt > Xếp loại với xếp loại theo tháng
             })
             # như Bảng checklist Tổng: AVERAGE(Điểm ASM đánh giá) các ngày ASM chấm đủ, AVERAGE(Tỷ lệ đạt %) các ngày đã đánh giá xong
-            pts_asm = c._step_points('ASM')
+            # check list ASM: không có cấp ASM đánh giá -> lấy điểm kết quả cuối cùng (Admin duyệt)
+            pts_asm = c._step_points('ASM') if c.kind != 'asm' else (c.points if evaluated else None)
             if pts_asm is not None:
                 g['asm_vals'].append(pts_asm)
             if evaluated:
@@ -523,8 +545,9 @@ class StoreNvbhCheck(models.Model):
         if search:
             sdomain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(sdomain, order='work_date desc, id desc')
-        if self._hide_cht():
-            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
+        hidden = self._hidden_kinds()
+        if hidden:
+            sched = sched.filtered(lambda l: self._schedule_kind(l) not in hidden)
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         inactive = set()
         if active_only:
@@ -581,8 +604,9 @@ class StoreNvbhCheck(models.Model):
         if search:
             domain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(domain, order='store_id, schedule_id, sequence, id')
-        if self._hide_cht():
-            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
+        hidden = self._hidden_kinds()
+        if hidden:
+            sched = sched.filtered(lambda l: self._schedule_kind(l) not in hidden)
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         Attachment = self.env['ir.attachment']
         rows = []
@@ -618,8 +642,9 @@ class StoreNvbhCheck(models.Model):
         if search:
             domain.append(('staff_name', 'ilike', search))
         sched = self.env['store.nvbh.schedule.line'].search(domain, order='store_id, schedule_id, sequence, id')
-        if self._hide_cht():
-            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
+        hidden = self._hidden_kinds()
+        if hidden:
+            sched = sched.filtered(lambda l: self._schedule_kind(l) not in hidden)
         by_line = {c.schedule_line_id.id: c for c in self.search([('schedule_line_id', 'in', sched.ids)])}
         people = {}
         for l in sched:
@@ -656,10 +681,11 @@ class StoreNvbhCheck(models.Model):
         base = [('work_date', '>=', start), ('work_date', '<', end), ('staff_name', '=ilike', name)]
         if store_id:
             base.append(('store_id', '=', int(store_id)))
-        checks = self.search(base + ([('kind', '!=', 'cht')] if self._hide_cht() else []), order='work_date, id')
+        checks = self.search(base + ([('kind', 'not in', self._hidden_kinds())] if self._hidden_kinds() else []), order='work_date, id')
         sched = self.env['store.nvbh.schedule.line'].search(base)
-        if self._hide_cht():
-            sched = sched.filtered(lambda l: self._schedule_kind(l) != 'cht')
+        hidden = self._hidden_kinds()
+        if hidden:
+            sched = sched.filtered(lambda l: self._schedule_kind(l) not in hidden)
         by_date = {}
         for c in checks:
             by_date.setdefault(c.work_date, []).append(c)
@@ -952,6 +978,7 @@ class StoreNvbhCheckLine(models.Model):
     sequence = fields.Integer(default=10)
     task_id = fields.Many2one('store.nvbh.task', string='Công việc', ondelete='set null')
     cht_task_id = fields.Many2one('store.cht.task', string='Công việc CHT', ondelete='set null', index=True)
+    asm_task_id = fields.Many2one('store.asm.task', string='Công việc ASM', ondelete='set null', index=True)
     # người thực hiện sửa dòng này sau khi đã gửi cấp trên -> tô cam, chờ cấp đánh giá đầu tiên chấm lại
     staff_edited = fields.Boolean(string='Đã chỉnh sửa sau khi gửi', copy=False)
     name = fields.Char(string='Công việc', required=True)

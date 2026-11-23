@@ -319,9 +319,35 @@ class StoreNvbhCheckRole(models.Model):
             hops += 1
         if self.kind == 'cht':
             chain = chain[:1]  # check list CHT: chỉ ASM (cấp trên trực tiếp) đánh giá, rồi Admin phê duyệt sau cùng nếu bật
+        if self.kind == 'asm':
+            # check list ASM: RSM đánh giá (nếu có) -> Admin / Admin tổng duyệt kết quả cuối cùng (luôn có)
+            chain = [c for c in chain if c['code'] == 'RSM'][:1]
+            chain.append(self._admin_title_step(subject))
+            return chain
         if len(chain) < MAX_STEPS and self.env['ir.config_parameter'].sudo().get_param('store_checklist.admin_approval') == '1':
             chain.append({'code': 'ADM', 'level': 5, 'employee': Employee, 'user': self.env['res.users'], 'admin_only': True})
         return chain
+
+    @api.model
+    def _admin_title_employees(self):
+        """Nhân sự có chức vụ (Chức danh) Admin / Admin tổng và có User Odoo."""
+        emps = self.env['hr.employee'].sudo().search([('job_title', '=ilike', 'admin%'), ('user_id', '!=', False)])
+        return emps.filtered(lambda e: (e.job_title or '').strip().casefold() in ('admin', 'admin tổng', 'admin tong'))
+
+    def _admin_title_step(self, subject):
+        """Bước Admin duyệt cuối của check list ASM: mọi user có chức vụ Admin / Admin tổng được duyệt;
+        người hiển thị / nhận thông báo chính là Admin gần nhất trong Sơ đồ tổ chức của người thực hiện."""
+        emps = self._admin_title_employees()
+        main = self.env['hr.employee']
+        node, hops = (subject.parent_id if subject else main), 0
+        while node and hops < 8:
+            if node in emps:
+                main = node
+                break
+            node, hops = node.parent_id, hops + 1
+        main = main or emps[:1]
+        return {'code': 'Admin', 'level': 5, 'employee': main, 'user': main.user_id, 'admin_only': False,
+                'admin_title': True, 'users': emps.mapped('user_id')}
 
     def _role_info(self):
         """Mã chức vụ + cấp bậc người thực hiện, luồng đánh giá và quyền của người dùng hiện tại theo từng bước."""
@@ -369,6 +395,8 @@ class StoreNvbhCheckRole(models.Model):
                 # chỉ người được phân công đúng cấp (hoặc Quản trị viên) mới đánh giá; cấp dưới không đánh giá cấp trên;
                 # cấp chưa có User Odoo thì nhóm Quản lý Checklist thay thế
                 mine = bool(u and u.id == user.id) or (not u and user.has_group('store_checklist.group_store_manager') and not shared)
+                if st.get('admin_title'):  # duyệt cuối check list ASM: mọi user chức vụ Admin / Admin tổng
+                    mine = mine or user in st['users']
                 can_edit = cur == i and (is_admin or mine) and not locked_expired
             # sửa lại đánh giá: cấp vừa hoàn tất gần nhất (cấp sau chưa đánh giá), người của cấp đó có quyền Sửa,
             # được sửa đến 23h55 ngày đánh giá xong; sau giờ đó hệ thống khóa
@@ -583,10 +611,11 @@ class StoreNvbhCheckRole(models.Model):
     def _fix_cht_kind(self):
         """Dữ liệu cũ: phiếu tạo trước khi có check list CHT nhưng người làm là CHT (lịch ca chức vụ cấp 2) vẫn mang loại
         'nvbh' -> nhân viên vẫn thấy. Gán lại loại 'cht' (giữ nguyên dòng việc và kết quả đánh giá)."""
-        checks = self.sudo().search([('kind', '!=', 'cht'), ('schedule_line_id', '!=', False)])
-        todo = checks.filtered(lambda c: self._schedule_kind(c.schedule_line_id) == 'cht')
-        if todo:
-            todo.write({'kind': 'cht'})
+        checks = self.sudo().search([('kind', '=', 'nvbh'), ('schedule_line_id', '!=', False)])
+        for kind in ('cht', 'asm'):
+            todo = checks.filtered(lambda c: self._schedule_kind(c.schedule_line_id) == kind)
+            if todo:
+                todo.write({'kind': kind})
 
     @api.model
     def _clear_edited_evals(self):
@@ -628,7 +657,7 @@ class StoreNvbhCheckRole(models.Model):
         users = self.env['res.users']
         for i, st in enumerate(chain, 1):
             if st['user'] and (i == 1 or i <= was_done):
-                users |= st['user']
+                users |= st.get('users') or st['user']
         order = {l.id: n for n, l in enumerate(self.line_ids.sorted(lambda x: (x.sequence, x.id)), 1)}
         detail = Markup('<br/>').join(
             Markup('• %s — %s%s') % (l.name, 'Đã làm' if l.is_done else 'Chưa làm', (' · Ghi chú: %s' % l.note) if l.note else '')
@@ -663,7 +692,8 @@ class StoreNvbhCheckRole(models.Model):
         # Quản trị / Quản lý Checklist thấy đủ mọi cấp
         user = self.env.user
         if not (user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager')):
-            mine = [i for i, st in enumerate(steps) if not st['admin_only'] and st['user'] and st['user'].id == user.id]
+            mine = [i for i, st in enumerate(steps) if not st['admin_only'] and (
+                (st['user'] and st['user'].id == user.id) or (st.get('admin_title') and user in st['users']))]
             if mine:
                 steps = steps[:mine[-1] + 1]
         payload.update({
@@ -706,9 +736,10 @@ class StoreNvbhCheckRole(models.Model):
     def _notify_step(self, step):
         """Thông báo cho người ở bước đánh giá tiếp theo."""
         self.ensure_one()
-        if not step or not step.get('user'):
+        to = (step.get('users') or step.get('user')) if step else False  # duyệt cuối ASM: báo mọi Admin / Admin tổng
+        if not to:
             return
-        bot_send(self.env, step['user'], card('CHECKLIST CHỜ %s ĐÁNH GIÁ' % step['code'], [
+        bot_send(self.env, to, card('CHECKLIST CHỜ %s ĐÁNH GIÁ' % step['code'], [
             ('Người thực hiện', self.staff_name or ''),
             ('Cửa hàng', self.store_id.display_name),
             ('Ngày', self.work_date.strftime('%d/%m/%Y') if self.work_date else ''),

@@ -375,11 +375,19 @@ class StoreNvbhCheckRole(models.Model):
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit or reedit,
                               reedit=reedit, reedit_until=reedit_until if reedit else False))
         first = steps[0] if steps else {}
+        # người thực hiện sửa lại check list của mình sau khi đã gửi: đến 23h55 ngày gửi, khi cấp trên chưa bắt đầu chấm
+        self_until = False
+        if may_execute and self.state == 'pending_review' and self.step_done == 0 and not locked_expired and not any(
+                l[p + 'eval_result'] for l in self.line_ids for p in STEP_PREFIX):
+            sent = max([d for d in (self.review_sent_date, self.staff_done_date, self.submit_date) if d] or [False]) or False
+            self_until = self._cutoff_2355(sent) if sent else False
+        self_reedit = bool(self_until) and fields.Datetime.now() <= self_until
         return {
             'chain': steps, 'cur': cur, 'wait_staff': wait_staff, 'role_code': code, 'level': level, 'subject': subject,
             'reviewer': first.get('employee') or self.env['hr.employee'], 'reviewer_user': first.get('user') or self.env['res.users'],
             # tick / ghi chú: chỉ khi đang thực hiện (sau khi gửi cấp trên thì khóa)
-            'can_execute': may_execute and self.state == 'draft' and not staff_locked and not locked_expired,
+            'can_execute': (may_execute and self.state == 'draft' and not staff_locked and not locked_expired) or self_reedit,
+            'self_reedit_until': self_until if self_reedit else False,
             'can_submit': may_execute and self.state == 'draft' and not staff_locked and not locked_expired,
             'shared': shared,
             'locked_expired': locked_expired,
@@ -394,6 +402,14 @@ class StoreNvbhCheckRole(models.Model):
             return True
         return any(rights.get(k, {}).get('write') for k in ('nvbh_done', 'nvbh_mg'))
 
+    def _cutoff_2355(self, dt):
+        """23h55 (giờ Việt Nam / múi giờ của user) của ngày chứa mốc dt (UTC), trả về UTC."""
+        import pytz
+        from datetime import datetime, time
+        tz = pytz.timezone(self.env.user.tz or 'Asia/Ho_Chi_Minh')
+        local_day = pytz.utc.localize(dt).astimezone(tz).date()
+        return tz.localize(datetime.combine(local_day, time(23, 55))).astimezone(pytz.utc).replace(tzinfo=None)
+
     def _reedit_until(self, step_no):
         """Hạn sửa lại đánh giá của cấp step_no: 23h55 (giờ Việt Nam) của ngày cấp đó đánh giá xong, đổi ra UTC; False nếu chưa có."""
         self.ensure_one()
@@ -402,11 +418,7 @@ class StoreNvbhCheckRole(models.Model):
         logs = self.step_log_ids.filtered(lambda s: s.step_no == step_no and s.done_date)
         if not logs:
             return False
-        done = max(logs.mapped('done_date'))
-        tz = pytz.timezone(self.env.user.tz or 'Asia/Ho_Chi_Minh')
-        local_day = pytz.utc.localize(done).astimezone(tz).date()
-        cutoff = tz.localize(datetime.combine(local_day, time(23, 55)))
-        return cutoff.astimezone(pytz.utc).replace(tzinfo=None)
+        return self._cutoff_2355(max(logs.mapped('done_date')))
 
     # ------------------------------------------------------------------
     # Thời hạn: NVBH (ngày D -> hết D+4) · CHT (4 ngày sau khi NV hoàn thành) · ASM (4 ngày sau khi CHT đánh giá xong)
@@ -577,6 +589,9 @@ class StoreNvbhCheckRole(models.Model):
             'late_code': self._late_code(),
             'lock_msg': self._expired_message() if self._late_stage() else (self._staff_lock_message() if self._staff_late() and self.state == 'draft' else ''),
             'can_execute': info['can_execute'],
+            'self_reedit_until': fields.Datetime.context_timestamp(
+                self.with_context(tz=self.env.user.tz or 'Asia/Ho_Chi_Minh'), info['self_reedit_until']).strftime('%H:%M %d/%m/%Y')
+            if info.get('self_reedit_until') else '',
             'can_submit': info['can_submit'],
             'locked_expired': info['locked_expired'],
             'wait_staff': info['wait_staff'],

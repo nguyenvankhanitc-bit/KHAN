@@ -1106,6 +1106,7 @@
                                     <t t-if="st_index > 0"> → </t><b t-esc="st.code"/><t t-if="st.name"> (<t t-esc="st.name"/>)</t>
                                 </t></span>
                             <span t-if="!jobLocked and state.job.check.staff_deadline and state.job.check.state === 'draft'"> · <i class="fa fa-clock-o"/> Hạn check list: <b>hết ngày <t t-esc="state.job.check.staff_deadline"/></b> (quá hạn hệ thống khóa, không ghi nhận)</span>
+                            <span t-if="!jobLocked and state.job.check.self_reedit_until"> · <i class="fa fa-pencil"/> Đã gửi cấp trên, được sửa lại đến <b t-esc="state.job.check.self_reedit_until"/> (sau giờ này hệ thống tự khóa)</span>
                             <span class="lock" t-if="jobLocked"> · <t t-if="state.job.check.lock_msg"><t t-esc="state.job.check.lock_msg"/></t><t t-elif="state.job.check.state !== 'draft'">Phiếu đã gửi cấp trên đánh giá nên khóa, không sửa được nữa.</t><t t-else="">Bạn không có quyền tick checklist này (tài khoản chung CH_ chỉ tick cho Cấp 1; từ Cấp 2 phải đăng nhập User cá nhân).</t></span>
                         </div>
                         <table class="o_store_job_table o_store_job_cardtbl">

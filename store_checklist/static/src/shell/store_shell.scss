@@ -3350,5 +3350,27 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         b { display: block; color: #0f172a; margin-bottom: 2px; } p { margin: 0; }
         code { background: #fff; padding: 1px 6px; border-radius: 4px; border: 1px solid #e2e8f0; color: #1d4ed8; font-weight: 600; &.g { color: #047857; } } }
 }
+// Checklist CV CHT: điện thoại -> một cột theo thứ tự mẫu; máy tính -> dàn toàn trang 2 cột, chi tiết là hộp thoại giữa màn hình
+.o_cht_m {
+    .cm_side, .cm_main { display: contents; }
+    .cm_head { order: 1; } .cm_kpis { order: 2; } .cm_tools { order: 3; } .cm_list { order: 4; } .cm_total { order: 5; } .cm_empty { order: 4; }
+    @media (min-width: 768px) {
+        padding: 0 0 16px;
+        .cm_phone { max-width: none; background: transparent; border-radius: 0; box-shadow: none; overflow: visible; }
+        .cm_app { position: static; border-radius: 16px; padding: 12px 18px; h1 { font-size: 16px; } }
+        .cm_nav { display: none; }
+        .cm_body { padding: 14px 0 0; }
+        .cm_list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; align-items: start; }
+        .cm_sheet_wrap { justify-content: center; padding: 24px; }
+        .cm_sheet { max-width: 620px; max-height: 88vh; border-radius: 20px; border: 1px solid #e2e8f0; animation: cmFade .2s ease-out; }
+        .cm_grip { display: none; }
+        .cm_sh { padding-top: 16px; }
+    }
+    @media (min-width: 1100px) {
+        .cm_body { display: grid; grid-template-columns: minmax(340px, 400px) 1fr; gap: 16px; align-items: start; }
+        .cm_side, .cm_main { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+        .cm_side { position: sticky; top: 8px; }
+    }
+}
 @keyframes cmSheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 @keyframes cmFade { from { opacity: 0; } to { opacity: 1; } }

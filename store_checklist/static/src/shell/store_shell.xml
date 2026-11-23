@@ -1079,6 +1079,8 @@
                                 </div>
                             </header>
                             <main class="cm_body">
+                                <!-- máy tính: cột trái (nhân sự, KPI, tổng cộng kỳ) + cột phải (thẻ ngày); điện thoại: một cột như mẫu -->
+                                <div class="cm_side">
                                 <section class="cm_card cm_head">
                                     <div class="cm_who">
                                         <div class="cm_ava"><i class="fa fa-user-circle-o"/></div>
@@ -1135,6 +1137,26 @@
                                             <div class="cm_bar"><i t-attf-style="width: #{ck.pointsPct}%"/></div>
                                         </div>
                                     </section>
+                                    <section class="cm_card cm_total">
+                                        <div class="cm_th">
+                                            <div><div class="cm_tt">TỔNG CỘNG KỲ <t t-esc="chtMonthLabel()"/></div>
+                                                <small><t t-esc="ck.days"/> ngày công thực tế • Liên kết Odoo</small></div>
+                                            <span class="cm_badge b-ok"><i class="fa fa-check-circle"/> <t t-esc="ck.valid"/>/<t t-esc="ck.days"/> công hợp lệ</span>
+                                        </div>
+                                        <div class="cm_tg">
+                                            <div><small>Việc</small><b t-esc="ck.done + '/' + ck.total"/></div>
+                                            <div><small>Lỗi</small><b t-esc="ck.errors"/></div>
+                                            <div><small>Điểm TB</small><b class="cm_navy" t-esc="ck.avgPoints === null or ck.avgPoints === undefined ? '-' : jobStaffNum(ck.avgPoints)"/></div>
+                                            <div class="is-asm"><small>ASM TB</small><b class="cm_red" t-esc="ck.avgAsm === null or ck.avgAsm === undefined ? '-' : jobStaffNum(ck.avgAsm)"/></div>
+                                        </div>
+                                        <div class="cm_tf"><span>Tỷ lệ đạt trung bình kỳ:</span>
+                                            <button type="button" class="cm_link" t-on-click="() => this.state.chtm.sheet = 'formula'">
+                                                <t t-esc="ck.avgPct === null or ck.avgPct === undefined ? '-' : 'Đạt: ' + jobStaffNum(ck.avgPct) + '%'"/> <i class="fa fa-question-circle-o"/></button></div>
+                                    </section>
+                                </t>
+                                </div>
+                                <div class="cm_main">
+                                <t t-if="state.chtm.data">
                                     <section class="cm_tools">
                                         <div class="cm_seg">
                                             <button type="button" t-att-class="state.chtm.tab !== 'all' ? 'on' : ''" t-on-click="() => this.state.chtm.tab = 'worked'">
@@ -1180,24 +1202,9 @@
                                         </t>
                                         <div class="cm_empty" t-if="!chtRows.length"><i class="fa fa-info-circle"/> Chưa có ngày check list nào trong tháng. Chọn "Tất cả ngày" để xem lịch làm.</div>
                                     </section>
-                                    <section class="cm_card cm_total">
-                                        <div class="cm_th">
-                                            <div><div class="cm_tt">TỔNG CỘNG KỲ <t t-esc="chtMonthLabel()"/></div>
-                                                <small><t t-esc="ck.days"/> ngày công thực tế • Liên kết Odoo</small></div>
-                                            <span class="cm_badge b-ok"><i class="fa fa-check-circle"/> <t t-esc="ck.valid"/>/<t t-esc="ck.days"/> công hợp lệ</span>
-                                        </div>
-                                        <div class="cm_tg">
-                                            <div><small>Việc</small><b t-esc="ck.done + '/' + ck.total"/></div>
-                                            <div><small>Lỗi</small><b t-esc="ck.errors"/></div>
-                                            <div><small>Điểm TB</small><b class="cm_navy" t-esc="ck.avgPoints === null or ck.avgPoints === undefined ? '-' : jobStaffNum(ck.avgPoints)"/></div>
-                                            <div class="is-asm"><small>ASM TB</small><b class="cm_red" t-esc="ck.avgAsm === null or ck.avgAsm === undefined ? '-' : jobStaffNum(ck.avgAsm)"/></div>
-                                        </div>
-                                        <div class="cm_tf"><span>Tỷ lệ đạt trung bình kỳ:</span>
-                                            <button type="button" class="cm_link" t-on-click="() => this.state.chtm.sheet = 'formula'">
-                                                <t t-esc="ck.avgPct === null or ck.avgPct === undefined ? '-' : 'Đạt: ' + jobStaffNum(ck.avgPct) + '%'"/> <i class="fa fa-question-circle-o"/></button></div>
-                                    </section>
                                 </t>
                                 <div class="cm_empty" t-elif="!state.chtm.busy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
+                                </div>
                             </main>
                             <nav class="cm_nav">
                                 <a href="/odoo/discuss"><i class="fa fa-comment-o is-amber"/><span>Thảo luận</span></a>

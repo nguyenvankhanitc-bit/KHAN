@@ -571,6 +571,17 @@ class StoreNvbhCheckRole(models.Model):
         check._after_staff_edit(before)
         return check._checklist_payload()
 
+    @api.model
+    def _clear_edited_evals(self):
+        """Dữ liệu cũ: dòng đã chỉnh sửa (chờ chấm lại) mà còn kết quả đánh giá cũ thì xóa (chạy mỗi lần nâng cấp, không đổi gì nếu đã đúng)."""
+        lines = self.env['store.nvbh.check.line'].sudo().search([('staff_edited', '=', True)])
+        vals = {}
+        for p in STEP_PREFIX:
+            vals.update({p + 'eval_result': False, p + 'error_detail': False})
+        todo = lines.filtered(lambda l: any(l[p + 'eval_result'] or l[p + 'error_detail'] for p in STEP_PREFIX))
+        if todo:
+            todo.write(vals)
+
     def _line_state(self):
         """Ảnh chụp (đã làm, ghi chú) của từng dòng khi phiếu đã gửi cấp trên; phiếu còn đang thực hiện thì rỗng."""
         if not self or self.state == 'draft':
@@ -588,7 +599,11 @@ class StoreNvbhCheckRole(models.Model):
             return
         chain = self._approval_chain()
         was_done = self.step_done
-        changed.sudo().write({'staff_edited': True})
+        # dòng đã sửa: kết quả đánh giá cũ của mọi cấp không còn hiệu lực -> xóa, cấp trên phải tích lại
+        vals = {'staff_edited': True}
+        for p in STEP_PREFIX:
+            vals.update({p + 'eval_result': False, p + 'error_detail': False})
+        changed.sudo().write(vals)
         self.sudo().write({'state': 'pending_review', 'step_done': 0, 'approved_date': False,
                            'review_sent_date': fields.Datetime.now()})
         if not chain:

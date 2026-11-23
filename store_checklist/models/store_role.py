@@ -375,10 +375,10 @@ class StoreNvbhCheckRole(models.Model):
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit or reedit,
                               reedit=reedit, reedit_until=reedit_until if reedit else False))
         first = steps[0] if steps else {}
-        # người thực hiện sửa lại check list của mình sau khi đã gửi: đến 23h55 ngày gửi, khi cấp trên chưa bắt đầu chấm
+        # người thực hiện sửa lại check list của mình sau khi đã gửi (kể cả khi cấp trên đã đánh giá): đến 23h55 ngày gửi,
+        # sau giờ đó hệ thống khóa
         self_until = False
-        if may_execute and self.state == 'pending_review' and self.step_done == 0 and not locked_expired and not any(
-                l[p + 'eval_result'] for l in self.line_ids for p in STEP_PREFIX):
+        if may_execute and self.state in ('pending_review', 'approved') and not locked_expired:
             sent = max([d for d in (self.review_sent_date, self.staff_done_date, self.submit_date) if d] or [False]) or False
             self_until = self._cutoff_2355(sent) if sent else False
         self_reedit = bool(self_until) and fields.Datetime.now() <= self_until

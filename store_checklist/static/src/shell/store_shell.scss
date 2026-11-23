@@ -3152,3 +3152,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all{margin: 0 !important; padding: 2px 7px;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all.ev-avg, .o_store_job_page .o_store_sx_mall label.sx-all.ev-avg{color: #b45309;}
 .o_store_job_page .o_store_job_table thead th.sx-head .sx-all.ev-bad, .o_store_job_page .o_store_sx_mall label.sx-all.ev-bad{color: #b91c1c;}
+/* 3 ô tích chung ở tiêu đề KQ đánh giá: một hàng ngang, kiểu giống ô tích của từng dòng (không viền / nền tròn) */
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all3{flex-wrap: nowrap; gap: 10px; white-space: nowrap;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all{background: transparent; border: 0; border-radius: 0; padding: 0; gap: 5px; font-size: 1rem; font-weight: 500; white-space: nowrap;}
+.o_store_job_page .o_store_job_table thead th.sx-head .sx-all3 .sx-all input{width: 18px; height: 18px;}

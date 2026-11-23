@@ -291,8 +291,8 @@ class StoreNvbhCheckRole(models.Model):
 
     def _approval_chain(self):
         """Luồng đánh giá động: đi ngược Sơ đồ tổ chức từ người thực hiện, mỗi cấp bậc cao hơn (CHT -> ASM -> RSM) là một bước;
-        cấp không có người (hoặc đồng cấp / cấp thấp hơn) tự bị bỏ qua. Bước Admin duyệt chỉ thêm khi bật tham số
-        store_checklist.admin_approval = 1. Trả về list dict {code, level, employee, user, admin_only}."""
+        cấp không có người (hoặc đồng cấp / cấp thấp hơn) tự bị bỏ qua. Luồng theo loại phiếu: NVBH -> CHT; CHT -> ASM;
+        ASM -> RSM (nếu có) -> Admin / Admin tổng (nếu có). Trả về list dict {code, level, employee, user, admin_only}."""
         self.ensure_one()
         Employee = self.env['hr.employee'].sudo()
         subject = self._subject_employee()
@@ -321,16 +321,15 @@ class StoreNvbhCheckRole(models.Model):
                     last = lvl
             node = node.parent_id
             hops += 1
-        if self.kind == 'cht':
-            chain = chain[:1]  # check list CHT: chỉ ASM (cấp trên trực tiếp) đánh giá, rồi Admin phê duyệt sau cùng nếu bật
         if self.kind == 'asm':
-            # check list ASM: RSM đánh giá (nếu có) -> Admin / Admin tổng duyệt kết quả cuối cùng (luôn có)
+            # check list ASM: RSM đánh giá (nếu có) -> Admin / Admin tổng duyệt kết quả cuối cùng (nếu có user chức vụ Admin)
             chain = [c for c in chain if c['code'] == 'RSM'][:1]
-            chain.append(self._admin_title_step(subject))
+            if self._admin_title_employees():
+                chain.append(self._admin_title_step(subject))
             return chain
-        if len(chain) < MAX_STEPS and self.env['ir.config_parameter'].sudo().get_param('store_checklist.admin_approval') == '1':
-            chain.append({'code': 'ADM', 'level': 5, 'employee': Employee, 'user': self.env['res.users'], 'admin_only': True})
-        return chain
+        # NVBH check list -> CHT (cấp trên trực tiếp) đánh giá, điểm do CHT chấm là điểm cuối cùng;
+        # CHT check list -> ASM đánh giá, ASM quyết định điểm cuối cùng. Chỉ một cấp, không thêm cấp trên / Admin.
+        return chain[:1]
 
     @api.model
     def _admin_title_employees(self):

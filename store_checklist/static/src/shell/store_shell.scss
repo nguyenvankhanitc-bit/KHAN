@@ -3644,3 +3644,6 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 }
 
 .o_cht_w .cw_chip.is-reedit { background: #fefce8; border-color: #fde047; color: #a16207; font-weight: 600; }
+
+.o_cht_w .cw_btn.is-edit { background: #f59e0b; box-shadow: 0 6px 14px rgba(245, 158, 11, .3); &:hover { background: #d97706; } }
+.o_cht_w .cw_btn.is-locked { background: #e2e8f0; color: #475569; box-shadow: none; opacity: 1 !important; }

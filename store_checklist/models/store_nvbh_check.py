@@ -1057,7 +1057,7 @@ class StoreNvbhCheck(models.Model):
             'staff': self._cht_staff_info(mine[-1:]) if mine else False,
             'visit_date': str(sc['visit']), 'week_start': str(sc['a']), 'today_ymd': str(fields.Date.context_today(self)),
             'groups': [], 'kpi': {}, 'checks': [], 'carried': [], 'visits': [], 'can_eval': False, 'today': False,
-            'comment': '', 'can_comment': False, 'n_scope': 0, 'n_later': 0,
+            'comment': '', 'can_comment': False, 'n_scope': 0, 'n_later': 0, 'n_pending': 0, 'n_reedit': 0, 'reedit_until': '', 'locked_at': '',
         }
         if not mine:
             return res
@@ -1136,6 +1136,19 @@ class StoreNvbhCheck(models.Model):
         res['carried'] = [dict(row_of(c, 'carried'), week_label=self._cht_week_label(c.work_date)) for c in carried]
         res['can_eval'] = bool(evaluable)
         res['n_scope'] = len(evaluable)
+        # sửa lại đánh giá: phiếu mình đã chấm còn trong hạn (đến 23h55 ngày chấm) -> nút Chỉnh sửa; hết hạn -> báo đã khóa
+        reedit = evaluable.filtered(lambda c: c.state == 'approved')
+        res['n_pending'] = len(evaluable - reedit)
+        res['n_reedit'] = len(reedit)
+        until = [u for u in (c._reedit_until(c.step_done) for c in reedit) if u]
+        res['reedit_until'] = fields.Datetime.context_timestamp(self, min(until)).strftime('%H:%M %d/%m') if until else ''
+        locked = []
+        for c in checks.filtered(lambda c: c.state == 'approved') - reedit:
+            log = c.step_log_ids.filtered(lambda l: l.step_no == c.step_done and l.user_id == self.env.user)
+            u = c._reedit_until(c.step_done) if log else False
+            if u:
+                locked.append(u)
+        res['locked_at'] = fields.Datetime.context_timestamp(self, max(locked)).strftime('%H:%M %d/%m') if locked else ''
         res['n_later'] = len(sc['later'].filtered(lambda c: c.state == 'pending_review'))
         res['can_comment'] = self._cht_week_can_comment(checks | carried)
         # nhận xét theo từng lần ghé thăm (của tuần này hoặc có chấm phiếu của tuần này)

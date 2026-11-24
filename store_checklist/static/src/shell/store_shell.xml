@@ -1322,7 +1322,7 @@
                                 <t t-set="sc" t-value="chtwScore"/>
                                 <div class="cw_kpi k-score">
                                     <span class="ic"><i class="fa fa-trophy"/></span>
-                                    <div class="sc"><small>Tổng điểm tuần<t t-if="wd.can_eval"> (tạm tính)</t></small>
+                                    <div class="sc"><small>Tổng điểm tuần<t t-if="chtwCanEdit"> (tạm tính)</t></small>
                                         <div class="row1"><b><t t-esc="jobStaffNum(sc.points)"/> / <t t-esc="jobStaffNum(sc.max)"/></b>
                                             <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div>
                                         <span class="bar"><i t-attf-style="width: #{sc.bar}%"/></span></div>
@@ -1339,8 +1339,10 @@
                                     <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
                                 </div>
                                 <div class="cw_visit_msg">
-                                    <t t-if="wd.can_eval">Lần ghé này chấm / sửa <b t-esc="wd.n_scope"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
+                                    <t t-if="wd.n_pending">Lần ghé này chấm <b t-esc="wd.n_pending"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
                                     <t t-else="">Không có phiếu đã gửi nào đến ngày <b t-esc="chtwVisitLabel"/> đang chờ bạn chấm.</t>
+                                    <t t-if="wd.n_reedit"> <b t-esc="wd.n_reedit"/> phiếu đã chấm còn sửa được đến <b t-esc="wd.reedit_until"/> (bấm <b>Chỉnh sửa</b>).</t>
+                                    <t t-elif="wd.locked_at"> Kết quả bạn đã chấm đã khóa lúc <b t-esc="wd.locked_at"/>.</t>
                                     <t t-if="wd.n_later"> <b t-esc="wd.n_later"/> phiếu sau ngày ghé sẽ chuyển sang lần ghé tuần sau.</t>
                                 </div>
                             </div>
@@ -1373,7 +1375,7 @@
                                         </tr>
                                         <tr class="ev2">
                                             <th t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                <label t-on-click.prevent="() => this.chtwAll(h[0])" t-att-class="wd.can_eval ? '' : 'dis'">
+                                                <label t-on-click.prevent="() => this.chtwAll(h[0])" t-att-class="chtwCanEdit ? '' : 'dis'">
                                                     <span t-attf-class="cw_box b-#{h[0]} #{chtwHead(h[0])}"><i t-if="chtwHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="chtwHead(h[0]) === 'some'" class="fa fa-minus"/></span>
                                                     <t t-esc="h[1]"/></label></th>
                                         </tr>
@@ -1392,7 +1394,7 @@
                                                 <td><b t-esc="g.done + '/' + g.lines"/></td>
                                                 <td><b t-attf-class="#{g.rate >= 100 ? '' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></td>
                                                 <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                    <label t-on-click.prevent="() => this.chtwSet(g.name, h[0])" t-att-class="wd.can_eval ? '' : 'dis'">
+                                                    <label t-on-click.prevent="() => this.chtwSet(g.name, h[0])" t-att-class="chtwCanEdit ? '' : 'dis'">
                                                         <span t-attf-class="cw_box b-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'all' : 'none'}"><i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/></span>
                                                         <t t-esc="h[1]"/></label></td>
                                                 <td><button type="button" class="cw_more" t-on-click="() => this.state.chtm.wopen[g.name] = !this.state.chtm.wopen[g.name]">
@@ -1416,13 +1418,13 @@
                             <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này chưa có phiếu check list CHT nào.</div>
                             <!-- điện thoại: thẻ theo nhóm công việc thay cho bảng -->
                             <div class="cw_cards" t-if="wd.groups.length">
-                                <div t-attf-class="cw_bulk #{wd.can_eval ? '' : 'dis'}">
+                                <div t-attf-class="cw_bulk #{chtwCanEdit ? '' : 'dis'}">
                                     <span>Chọn tất cả:</span>
                                     <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
-                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-att-disabled="!wd.can_eval"
+                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-att-disabled="!chtwCanEdit"
                                             t-on-click="() => this.chtwAll(h[0])">
                                         <i t-attf-class="fa #{chtwHead(h[0]) === 'all' ? 'fa-check-square' : chtwHead(h[0]) === 'some' ? 'fa-minus-square' : 'fa-square-o'}"/> <t t-esc="h[1]"/></button>
-                                    <small class="cw_bulk_note" t-if="!wd.can_eval">(chưa có phiếu đến ngày ghé chờ bạn chấm)</small>
+                                    <small class="cw_bulk_note" t-if="!chtwCanEdit" t-esc="chtwLockNote"/>
                                 </div>
                                 <div class="cw_card" t-foreach="wd.groups" t-as="g" t-key="g.name"
                                      t-attf-class="#{state.chtm.results[g.name] ? 'is-' + state.chtm.results[g.name] : ''}">
@@ -1436,9 +1438,9 @@
                                         <div><small>Đã làm</small><b t-esc="g.done + '/' + g.lines"/></div>
                                         <div><small>Tỷ lệ</small><b t-attf-class="#{g.rate >= 100 ? 'ok' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></div>
                                     </div>
-                                    <div t-attf-class="seg #{wd.can_eval ? '' : 'dis'}">
+                                    <div t-attf-class="seg #{chtwCanEdit ? '' : 'dis'}">
                                         <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
-                                                t-attf-class="r-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'on' : ''}" t-att-disabled="!wd.can_eval"
+                                                t-attf-class="r-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'on' : ''}" t-att-disabled="!chtwCanEdit"
                                                 t-on-click="() => this.chtwSet(g.name, h[0])">
                                             <i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/> <t t-esc="h[1]"/></button>
                                     </div>
@@ -1478,7 +1480,12 @@
 
                                 </div>
                                 <div class="cw_btns">
-                                    <button type="button" class="cw_btn" t-att-disabled="!(wd.can_eval or wd.can_comment)" t-on-click="onChtwSave"
+                                    <button type="button" class="cw_btn is-edit" t-if="wd.n_reedit and !wd.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
+                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + wd.reedit_until + ' (sau giờ này hệ thống tự khóa)'"><i class="fa fa-pencil"/> Chỉnh sửa</button>
+                                    <button type="button" class="cw_btn is-light" t-if="state.chtm.editMode and !wd.n_pending" t-on-click="onChtwCancelEdit"><i class="fa fa-times"/> Hủy</button>
+                                    <button type="button" class="cw_btn is-locked" t-if="!wd.n_reedit and !wd.n_pending and wd.locked_at" disabled="disabled"
+                                            t-att-title="'Hệ thống đã khóa lúc ' + wd.locked_at"><i class="fa fa-lock"/> Đã khóa <t t-esc="wd.locked_at"/></button>
+                                    <button type="button" class="cw_btn" t-att-disabled="!(chtwCanEdit or wd.can_comment)" t-on-click="onChtwSave"
                                             title="Lưu KQ đánh giá theo nhóm (phiếu đang chờ bạn chấm) và nhận xét tuần"><i class="fa fa-save"/> Lưu</button>
                                 </div>
                             </div>

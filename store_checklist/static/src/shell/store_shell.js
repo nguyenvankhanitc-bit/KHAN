@@ -48,7 +48,7 @@ export class StoreChecklistShell extends Component {
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "" },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -2066,6 +2066,7 @@ export class StoreChecklistShell extends Component {
             cm.results = results;
             cm.wopen = {};
             cm.comment = res.comment || "";
+            cm.editMode = false;
         } finally {
             cm.wbusy = false;
         }
@@ -2098,8 +2099,30 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+    // được tích KQ: có phiếu chờ chấm, hoặc đã bấm Chỉnh sửa phiếu đã chấm còn trong hạn (đến 23h55 ngày chấm)
+    get chtwCanEdit() {
+        const d = this.state.chtm.wdata;
+        return Boolean(d?.can_eval) && (d.n_pending > 0 || this.state.chtm.editMode);
+    }
+
+    get chtwLockNote() {
+        const d = this.state.chtm.wdata || {};
+        if (d.n_reedit) {
+            return "(bấm Chỉnh sửa để sửa lại kết quả đã đánh giá)";
+        }
+        return d.locked_at ? `(đã khóa lúc ${d.locked_at})` : "(chưa có phiếu đến ngày ghé chờ bạn chấm)";
+    }
+
+    async onChtwCancelEdit() {
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
     chtwSet(name, val) {
-        if (!this.state.chtm.wdata?.can_eval) {
+        if (!this.chtwCanEdit) {
             return;
         }
         this.state.chtm.results[name] = this.state.chtm.results[name] === val ? "" : val;
@@ -2112,7 +2135,7 @@ export class StoreChecklistShell extends Component {
     }
 
     chtwAll(val) {
-        if (!this.state.chtm.wdata?.can_eval) {
+        if (!this.chtwCanEdit) {
             return;
         }
         const all = this.chtwHead(val) === "all";
@@ -2127,7 +2150,7 @@ export class StoreChecklistShell extends Component {
         // điểm các phiếu đã đánh giá xong + tạm tính các phiếu đang chờ người đăng nhập chấm (theo KQ đang tích)
         let points = d.kpi.points || 0;
         let max = d.kpi.max_points || 0;
-        if (d.can_eval) {
+        if (this.chtwCanEdit) {
             const f = { good: 1, avg: 0.5, bad: 0 };
             points += d.groups.reduce((s, g) => s + (g.max_done_eval || 0) * (f[this.state.chtm.results[g.name]] || 0), 0);
             max += d.groups.reduce((s, g) => s + (g.max_eval || 0), 0);
@@ -2200,7 +2223,7 @@ export class StoreChecklistShell extends Component {
     async onChtwSave() {
         const cm = this.state.chtm;
         const d = cm.wdata;
-        if (!d?.can_eval) {
+        if (!this.chtwCanEdit) {
             return this.onChtwSaveComment();
         }
         const missing = d.groups.filter((g) => !cm.results[g.name]).map((g) => g.name);

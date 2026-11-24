@@ -2076,6 +2076,20 @@ export class StoreChecklistShell extends Component {
         l.result = l.result === res ? "" : res;
     }
 
+    // ô tích ở dòng tiêu đề của nhóm: tất cả / một phần / chưa tiêu chí nào trong nhóm có kết quả này
+    audHead(g, res) {
+        const n = g.all.filter((l) => l.result === res).length;
+        return !n ? "none" : n === g.all.length ? "all" : "some";
+    }
+
+    audGroupSet(g, res) {
+        if (!this.audEditable) {
+            return;
+        }
+        const all = this.audHead(g, res) === "all";
+        g.all.forEach((l) => { l.result = all ? "" : res; });
+    }
+
     audGroupPass(g) {
         if (!this.audEditable) {
             return;

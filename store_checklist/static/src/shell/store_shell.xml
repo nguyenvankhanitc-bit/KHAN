@@ -1141,21 +1141,28 @@
                                 </div>
                                 <div class="ad_tw">
                                     <table class="ad_table">
-                                        <thead><tr>
-                                            <th class="c w-stt">STT</th><th class="w-name">Tiêu chí ASM trực tiếp kiểm tra</th><th class="w-std">Tiêu chuẩn</th>
-                                            <th class="c w-res">Kết quả đánh giá</th><th class="c w-pts">Điểm</th><th class="w-note">Dẫn chứng &amp; ghi chú hiện trường</th>
-                                        </tr></thead>
+                                        <thead>
+                                            <tr>
+                                                <th rowspan="2" class="c w-stt">STT</th><th rowspan="2" class="w-name">Tiêu chí ASM trực tiếp kiểm tra</th><th rowspan="2" class="w-std">Tiêu chuẩn</th>
+                                                <th colspan="3" class="c ev"><span class="ad_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
+                                                <th rowspan="2" class="c w-pts">Điểm</th><th rowspan="2" class="w-note">Dẫn chứng &amp; ghi chú hiện trường</th>
+                                            </tr>
+                                            <tr class="ev2">
+                                                <th t-foreach="[['pass', 'Đạt'], ['improve', 'T.Bình'], ['fail', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="c ev r-#{h[0]}">
+                                                    <label t-att-class="audEditable ? '' : 'dis'" t-on-click.prevent="() => this.audGroupSet(g, h[0])">
+                                                        <span t-attf-class="ad_box b-#{h[0]} #{audHead(g, h[0])}"><i t-if="audHead(g, h[0]) === 'all'" class="fa fa-check"/><i t-elif="audHead(g, h[0]) === 'some'" class="fa fa-minus"/></span>
+                                                        <t t-esc="h[1]"/></label></th>
+                                            </tr>
+                                        </thead>
                                         <tbody>
                                             <tr t-foreach="g.lines" t-as="l" t-key="l.crit_id" t-attf-class="r-#{l.result or 'none'}">
                                                 <td class="c stt" t-esc="l._no"/>
                                                 <td class="nm" t-esc="l.name"/>
                                                 <td><span class="std" t-esc="l.standard or '-'"/></td>
-                                                <td class="c">
-                                                    <div class="ad_res">
-                                                        <button type="button" t-attf-class="b-pass #{l.result === 'pass' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'pass')">Đạt (<t t-esc="audFmt(l.max_score)"/>đ)</button>
-                                                        <button type="button" t-attf-class="b-improve #{l.result === 'improve' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'improve')">Cần cải thiện (<t t-esc="audFmt(l.max_score / 2)"/>đ)</button>
-                                                        <button type="button" t-attf-class="b-fail #{l.result === 'fail' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'fail')">Không đạt (0đ)</button>
-                                                    </div>
+                                                <td t-foreach="[['pass', 'Đạt'], ['improve', 'T.Bình'], ['fail', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="c ev r-#{h[0]}">
+                                                    <label t-att-class="audEditable ? '' : 'dis'" t-on-click.prevent="() => this.audSet(l, h[0])">
+                                                        <span t-attf-class="ad_box b-#{h[0]} #{l.result === h[0] ? 'all' : 'none'}"><i t-if="l.result === h[0]" class="fa fa-check"/></span>
+                                                        <t t-esc="h[1]"/></label>
                                                 </td>
                                                 <td class="c"><span t-attf-class="ad_pts p-#{l.result or 'none'}" t-esc="l.result ? audFmt(audPts(l.result, l.max_score)) : '-'"/></td>
                                                 <td class="note">

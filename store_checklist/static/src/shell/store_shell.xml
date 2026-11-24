@@ -1278,6 +1278,97 @@
                     </div>
                     <!-- Đánh giá Checklist Cửa hàng trưởng theo tuần -->
                     <div class="o_cht_w" t-elif="state.activeNav === 'nvbh_cht' and state.chtm.mode === 'week'">
+                        <!-- người xem nhiều CHT: danh sách xổ Miền > Cửa hàng > CHT, bấm CHT để vào trang đánh giá -->
+                        <t t-if="state.chtm.view === 'list'">
+                            <t t-set="ov" t-value="state.chtm.ov"/>
+                            <div class="cw_top">
+                                <div class="cw_title">
+                                    <span class="cw_ico"><i class="fa fa-clipboard"/></span>
+                                    <div>
+                                        <h2>Đánh giá Checklist Cửa hàng trưởng</h2>
+                                        <p>Danh sách CHT theo miền / cửa hàng — bấm vào CHT để kiểm tra, chấm điểm theo tuần</p>
+                                    </div>
+                                </div>
+                                <div class="cw_filters">
+                                    <label class="cw_sel" t-if="chtMienOptions.length > 1"><i class="fa fa-map-o"/>
+                                        <select t-on-change="(ev) => this.onChtOvFilter('mien', ev)">
+                                            <option value="">Tất cả miền</option>
+                                            <option t-foreach="chtMienOptions" t-as="mo" t-key="mo.value" t-att-value="mo.value"
+                                                    t-att-selected="mo.value === state.chtm.mien" t-esc="mo.label"/>
+                                        </select><i class="fa fa-angle-down"/></label>
+                                    <label class="cw_sel"><i class="fa fa-calendar-o"/>
+                                        <select t-on-change="(ev) => this.onChtOvFilter('month', ev)">
+                                            <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
+                                                    t-att-selected="m.value === state.chtm.month" t-esc="m.label"/>
+                                        </select><i class="fa fa-angle-down"/></label>
+                                </div>
+                            </div>
+                            <t t-if="ov">
+                                <div class="cw_weeks">
+                                    <button type="button" t-foreach="ov.weeks" t-as="w" t-key="w.idx" t-att-class="w.idx === ov.week ? 'on' : ''"
+                                            t-on-click="() => this.onChtOvWeek(w.idx)">
+                                        <b t-esc="w.label"/><small>(<t t-esc="w.range"/>)</small></button>
+                                </div>
+                                <div class="cw_ovsum">
+                                    <span><b t-esc="ov.n_cht"/> CHT</span>
+                                    <span class="s-pend"><b t-esc="ov.totals.pending or 0"/> phiếu chờ ASM đánh giá</span>
+                                    <span class="s-wait"><b t-esc="ov.totals.not_sent or 0"/> phiếu chưa gửi</span>
+                                    <span class="s-ok"><b t-esc="ov.totals.evaluated or 0"/> phiếu đã đánh giá</span>
+                                    <span class="s-err" t-if="ov.totals.errors"><b t-esc="ov.totals.errors"/> lỗi</span>
+                                </div>
+                                <div class="cw_tree" t-if="ov.miens.length">
+                                    <div class="cw_mien" t-foreach="ov.miens" t-as="mn" t-key="mn.key">
+                                        <button type="button" class="cw_mien_h" t-on-click="() => this.chtOvToggle('m' + mn.key)">
+                                            <i t-attf-class="fa #{chtOvOpen('m' + mn.key) ? 'fa-caret-down' : 'fa-caret-right'}"/>
+                                            <b t-esc="mn.label"/>
+                                            <small><t t-esc="mn.n_stores"/> cửa hàng · <t t-esc="mn.n_cht"/> CHT</small>
+                                            <span class="tags">
+                                                <span class="tg t-pend" t-if="mn.pending"><t t-esc="mn.pending"/> chờ ASM</span>
+                                                <span class="tg t-wait" t-if="mn.not_sent"><t t-esc="mn.not_sent"/> chưa gửi</span>
+                                                <span class="tg t-ok" t-if="mn.evaluated"><t t-esc="mn.evaluated"/> đã đánh giá</span>
+                                            </span>
+                                        </button>
+                                        <t t-if="chtOvOpen('m' + mn.key)">
+                                            <div class="cw_store" t-foreach="mn.stores" t-as="sg" t-key="sg.id">
+                                                <button type="button" class="cw_store_h" t-on-click="() => this.chtOvToggle('s' + sg.id)">
+                                                    <i t-attf-class="fa #{chtOvOpen('s' + sg.id) ? 'fa-caret-down' : 'fa-caret-right'}"/>
+                                                    <i class="fa fa-shopping-bag ic"/>
+                                                    <b t-esc="sg.code or sg.name"/><small t-if="sg.code and sg.name" t-esc="sg.name"/>
+                                                    <span class="tags">
+                                                        <span class="tg"><t t-esc="sg.n_cht"/> CHT</span>
+                                                        <span class="tg t-pend" t-if="sg.pending"><t t-esc="sg.pending"/> chờ ASM</span>
+                                                        <span class="tg t-wait" t-if="sg.not_sent"><t t-esc="sg.not_sent"/> chưa gửi</span>
+                                                    </span>
+                                                </button>
+                                                <t t-if="chtOvOpen('s' + sg.id)">
+                                                    <div class="cw_crow" t-foreach="sg.staff" t-as="r" t-key="r.key" t-on-click="() => this.onChtOvPick(r, sg)">
+                                                        <span class="cw_av" t-esc="(r.name || '?').trim().split(' ').pop().charAt(0)"/>
+                                                        <div class="nm"><b t-esc="r.name"/><small>ID <t t-esc="r.code or '-'"/> · <t t-esc="r.days"/> ngày có lịch trong tuần</small></div>
+                                                        <div class="st">
+                                                            <span><small>Việc ca</small><b t-esc="r.done + '/' + r.tasks"/></span>
+                                                            <span><small>Lỗi</small><b t-attf-class="#{r.errors ? 'bad' : ''}" t-esc="r.errors"/></span>
+                                                            <span><small>Điểm</small><b t-esc="r.max_points ? jobStaffNum(r.points) + '/' + jobStaffNum(r.max_points) : '-'"/></span>
+                                                        </div>
+                                                        <div class="tags">
+                                                            <span class="tg t-pend" t-if="r.pending"><t t-esc="r.pending"/> chờ ASM</span>
+                                                            <span class="tg t-wait" t-if="r.not_sent"><t t-esc="r.not_sent"/> chưa gửi</span>
+                                                            <span class="tg t-ok" t-if="r.evaluated"><t t-esc="r.evaluated"/> đã đánh giá</span>
+                                                            <span class="tg" t-if="!r.n_checks">Chưa có phiếu</span>
+                                                        </div>
+                                                        <span class="go">Đánh giá <i class="fa fa-angle-right"/></span>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                                <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / miền đã chọn.</div>
+                            </t>
+                        </t>
+                        <t t-else="">
+                        <div class="o_cht_back" t-if="state.chtm.hasList">
+                            <button type="button" class="btn btn-light" t-on-click="onChtOvBack"><i class="fa fa-chevron-left"/> Danh sách CHT theo miền / cửa hàng</button>
+                        </div>
                         <t t-set="wd" t-value="state.chtm.wdata"/>
                         <div class="cw_top">
                             <div class="cw_title">
@@ -1497,6 +1588,7 @@
                             </div>
                         </t>
                         <div class="cw_empty" t-elif="!state.chtm.wbusy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
+                        </t>
                     </div>
                     <t t-else="">
                     <div class="o_cht_back" t-if="state.activeNav === 'nvbh_cht'">

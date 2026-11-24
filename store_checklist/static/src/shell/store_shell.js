@@ -48,7 +48,7 @@ export class StoreChecklistShell extends Component {
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "" },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "", view: "one", ov: null, ovOpen: {}, hasList: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1870,10 +1870,17 @@ export class StoreChecklistShell extends Component {
             }
             await this.loadJobStaff();
             if (kind === "cht") {
-                // Checklist CV CHT mở thẳng trang Đánh giá Checklist Cửa hàng trưởng theo tuần; "Xem báo cáo" -> Bảng checklist tháng
+                // Checklist CV CHT mở thẳng trang Đánh giá Checklist Cửa hàng trưởng theo tuần; "Xem báo cáo" -> Bảng checklist tháng.
+                // Người xem nhiều CHT (Quản trị / Admin / ASM nhiều cửa hàng): mở danh sách xổ Miền > Cửa hàng > CHT trước
                 this.state.chtm.mode = "week";
                 this.state.chtm.week = null;
-                await this.loadChtWeek();
+                await this.loadChtOverview();
+                const many = (this.state.chtm.ov?.n_cht || 0) > 1;
+                this.state.chtm.hasList = many;
+                this.state.chtm.view = many ? "list" : "one";
+                if (!many) {
+                    await this.loadChtWeek();
+                }
             }
         } catch (error) {
             this.notifyError(error);
@@ -2221,6 +2228,71 @@ export class StoreChecklistShell extends Component {
         this.state.chtm.visit = ymd;
         try {
             await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- danh sách xổ Miền > Cửa hàng > CHT (trang Đánh giá Checklist CHT của người xem nhiều CHT) ----
+    async loadChtOverview() {
+        const cm = this.state.chtm;
+        const res = await this.orm.call("store.nvbh.check", "get_cht_overview", [], {
+            month: cm.month || false, week: cm.week === null ? false : cm.week, context: this.chtCtx(),
+        });
+        cm.month = res.month;
+        cm.week = res.week;
+        cm.ov = res;
+    }
+
+    chtOvOpen(key) {
+        const v = this.state.chtm.ovOpen[key];
+        return v === undefined ? !key.startsWith("s") : v; // mặc định: mở miền, thu gọn cửa hàng
+    }
+
+    chtOvToggle(key) {
+        this.state.chtm.ovOpen[key] = !this.chtOvOpen(key);
+    }
+
+    async onChtOvFilter(field, ev) {
+        const cm = this.state.chtm;
+        cm[field] = ev.target.value;
+        if (field === "month") {
+            cm.week = null;
+        }
+        try {
+            await this.loadChtOverview();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtOvWeek(idx) {
+        this.state.chtm.week = idx;
+        try {
+            await this.loadChtOverview();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtOvPick(row, store) {
+        const cm = this.state.chtm;
+        cm.key = row.key;
+        cm.storeId = "";
+        cm.visit = "";
+        cm.view = "one";
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onChtOvBack() {
+        const cm = this.state.chtm;
+        cm.view = "list";
+        try {
+            await this.loadChtOverview();
         } catch (error) {
             this.notifyError(error);
         }

@@ -927,8 +927,26 @@ class StoreNvbhCheck(models.Model):
         """CHT có lịch xếp ca trong [start, end) theo quyền xem lịch: (danh sách lựa chọn, khóa đang chọn, dòng lịch của người đó).
         Người đăng nhập là CHT trên lịch thì chỉ thấy chính mình."""
         Line = self.env['store.nvbh.schedule.line']
-        if 'cht' in self._hidden_kinds():
+        lines = self._cht_lines(start, end, store_id)
+        groups = {}
+        for l in lines:
+            groups.setdefault(self._cht_line_key(l), Line)
+            groups[self._cht_line_key(l)] |= l
+        options = sorted(({'key': k, 'name': ls[-1:].staff_name or '', 'code': ls[-1:].employee_code or '',
+                           'store': ls[-1:].store_id.code or ls[-1:].store_id.display_name or ''}
+                          for k, ls in groups.items()), key=lambda o: o['name'].casefold())
+        if not options:
             return [], '', Line
+        key = staff_key if staff_key in groups else options[0]['key']
+        return options, key, groups[key]
+
+    @api.model
+    def _cht_lines(self, start, end, store_id=None):
+        """Dòng lịch xếp ca chức vụ CHT trong [start, end) theo quyền xem lịch, lọc cửa hàng / miền (context cht_mien);
+        người đăng nhập là CHT trên lịch thì chỉ dòng của chính mình."""
+        Line = self.env['store.nvbh.schedule.line']
+        if 'cht' in self._hidden_kinds():
+            return Line
         dom = [('work_date', '>=', start), ('work_date', '<', end)]
         if store_id:
             dom.append(('store_id', '=', int(store_id)))
@@ -953,17 +971,73 @@ class StoreNvbhCheck(models.Model):
                                   or (l.staff_name or '').strip().casefold() == name)
             if mine:
                 lines = mine
-        groups = {}
-        for l in lines:
-            groups.setdefault(key_of(l), self.env['store.nvbh.schedule.line'])
-            groups[key_of(l)] |= l
-        options = sorted(({'key': k, 'name': ls[-1:].staff_name or '', 'code': ls[-1:].employee_code or '',
-                           'store': ls[-1:].store_id.code or ls[-1:].store_id.display_name or ''}
-                          for k, ls in groups.items()), key=lambda o: o['name'].casefold())
-        if not options:
-            return [], '', Line
-        key = staff_key if staff_key in groups else options[0]['key']
-        return options, key, groups[key]
+        return lines
+
+    @api.model
+    def get_cht_overview(self, month=None, week=None):
+        """Danh sách tổng Đánh giá Checklist CHT (người xem nhiều CHT, vd. Quản trị / Admin): Miền > Cửa hàng > CHT,
+        mỗi CHT kèm tình hình tuần (việc ca, đã làm, lỗi, điểm đã đánh giá, số phiếu chờ ASM / chưa gửi / đã đánh giá)."""
+        start, end, _n = self._month_range(month)
+        weeks = self._month_weeks(start, end)
+        today = fields.Date.context_today(self)
+        if week is None or week == '' or week is False:
+            week = next((i for i, (a, b) in enumerate(weeks) if a <= today <= b), 0)
+        week = max(0, min(int(week), len(weeks) - 1))
+        a, b = weeks[week]
+        month_lines = self._cht_lines(start, end)
+        week_lines = month_lines.filtered(lambda l: a <= l.work_date <= b)
+        checks = self.search([('schedule_line_id', 'in', week_lines.ids), ('kind', '=', 'cht')])
+        by_line = {c.schedule_line_id.id: c for c in checks}
+        labels = {'Nam': 'Miền Nam', 'ĐTT': 'Miền ĐTT', 'Bắc': 'Miền Bắc'}
+        staff = {}
+        for l in month_lines:
+            k = self._cht_line_key(l)
+            st = staff.setdefault(k, {'key': k, 'name': l.staff_name or '', 'code': l.employee_code or '', 'store': l.store_id,
+                                      'checks': self.browse(), 'days': 0})
+            st['store'] = l.store_id  # cửa hàng của dòng lịch gần nhất trong tháng
+            if a <= l.work_date <= b:
+                st['days'] += 1
+                if l.id in by_line:
+                    st['checks'] |= by_line[l.id]
+        miens = {}
+        for st in staff.values():
+            cs = st['checks']
+            approved = cs.filtered(lambda c: c._fully_evaluated())
+            row = {
+                'key': st['key'], 'name': st['name'], 'code': st['code'], 'days': st['days'], 'n_checks': len(cs),
+                'tasks': sum(cs.mapped('cnt_total')), 'done': sum(cs.mapped('cnt_done')), 'errors': sum(cs.mapped('error_total')),
+                'points': round(sum(approved.mapped('points')), 2),
+                'max_points': sum(sum(c.line_ids.mapped('max_score')) for c in approved),
+                'pending': len(cs.filtered(lambda c: c.state == 'pending_review')),
+                'not_sent': len(cs.filtered(lambda c: c.state == 'draft')), 'evaluated': len(approved),
+            }
+            store = st['store']
+            mk = store.mien if store.mien in labels else 'other'
+            m = miens.setdefault(mk, {'key': mk, 'label': labels.get(mk, 'Khác (chưa gắn miền)'), 'stores': {}})
+            sg = m['stores'].setdefault(store.id, {'id': store.id, 'code': store.code or '', 'name': store.name or '', 'staff': []})
+            sg['staff'].append(row)
+
+        def sums(rows):
+            return {f: sum(r[f] for r in rows) for f in ('pending', 'not_sent', 'evaluated', 'n_checks', 'errors')}
+
+        out = []
+        for mk in ('Nam', 'ĐTT', 'Bắc', 'other'):
+            m = miens.get(mk)
+            if not m:
+                continue
+            stores = []
+            for sg in sorted(m['stores'].values(), key=lambda x: (x['code'] or x['name']).casefold()):
+                sg['staff'].sort(key=lambda r: r['name'].casefold())
+                stores.append(dict(sg, n_cht=len(sg['staff']), **sums(sg['staff'])))
+            rows = [r for sg in stores for r in sg['staff']]
+            out.append({'key': mk, 'label': m['label'], 'stores': stores, 'n_stores': len(stores), 'n_cht': len(rows), **sums(rows)})
+        all_rows = [r for m in out for sg in m['stores'] for r in sg['staff']]
+        return {
+            'month': start.strftime('%Y-%m'), 'week': week,
+            'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (x.strftime('%d'), y.strftime('%d/%m')),
+                       'full': '%s – %s' % (x.strftime('%d'), y.strftime('%d/%m/%Y'))} for i, (x, y) in enumerate(weeks)],
+            'miens': out, 'n_cht': len(all_rows), 'totals': sums(all_rows),
+        }
 
     # ------------------------------------------------------------------
     # Đánh giá Checklist Cửa hàng trưởng theo tuần (ASM chấm theo nhóm công việc)

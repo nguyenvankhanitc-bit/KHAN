@@ -2175,11 +2175,12 @@ export class StoreChecklistShell extends Component {
         return d ? (d.weeks || [])[d.week] || {} : {};
     }
 
+    // nút Lưu: tuần có phiếu chờ chấm -> lưu KQ đánh giá + nhận xét; không có -> chỉ lưu nhận xét tuần
     async onChtwSave() {
         const cm = this.state.chtm;
         const d = cm.wdata;
         if (!d?.can_eval) {
-            return;
+            return this.onChtwSaveComment();
         }
         const missing = d.groups.filter((g) => !cm.results[g.name]).map((g) => g.name);
         if (missing.length) {

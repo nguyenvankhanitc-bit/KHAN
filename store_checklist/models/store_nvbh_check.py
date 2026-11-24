@@ -1008,12 +1008,17 @@ class StoreNvbhCheck(models.Model):
         return (line.employee_code or '').strip() or (line.staff_name or '').strip().casefold()
 
     def _cht_my_step(self):
-        """Bước đánh giá đang đến lượt người đăng nhập trên phiếu (đang chờ đánh giá), hoặc None."""
+        """Bước người đăng nhập được chấm trên phiếu: bước đang đến lượt (phiếu chờ đánh giá), hoặc bước mình vừa chấm xong
+        còn trong hạn sửa lại (đến 23h55 ngày chấm, sau giờ đó hệ thống tự khóa); không có thì None."""
         self.ensure_one()
-        if self.state != 'pending_review':
+        if self.state not in ('pending_review', 'approved'):
             return None
         info = self._role_info()
-        return next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+        if self.state == 'pending_review':
+            st = next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+            if st:
+                return st
+        return next((st for st in info['chain'] if st.get('reedit') and st['can_edit']), None)
 
     @api.model
     def _cht_visit_scope(self, month, week, store_id, staff_key, visit_date=None):
@@ -1066,7 +1071,8 @@ class StoreNvbhCheck(models.Model):
         def row_of(c, scope):
             st = c._cht_my_step()
             if c.state == 'approved':
-                state = 'Đã đánh giá'
+                state = ('Đã đánh giá · sửa được đến %s' % fields.Datetime.context_timestamp(self, st['reedit_until']).strftime('%H:%M')
+                         if st and st.get('reedit_until') else 'Đã đánh giá')
             elif c.state == 'pending_review':
                 state = {'in': 'Chấm lần này' if st else 'Chờ đánh giá', 'later': 'Chờ lần ghé sau',
                          'carried': 'Chuyển tiếp'}.get(scope, 'Chờ đánh giá')
@@ -1074,7 +1080,7 @@ class StoreNvbhCheck(models.Model):
                 state = 'Chưa gửi (%s/%s việc)' % (c.cnt_done, c.cnt_total)
             dl = c._step_deadline(c.step_done + 1) if c.state == 'pending_review' else False
             return {'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'state': state, 'points': c.points, 'scope': scope,
-                    'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c in evaluable,
+                    'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c in evaluable, 'reedit': bool(st and st.get('reedit')),
                     'deadline': dl.strftime('%d/%m') if dl else '',
                     'line_id': c.schedule_line_id.id, 'store_id': c.store_id.id, 'ymd': str(c.work_date)}
 

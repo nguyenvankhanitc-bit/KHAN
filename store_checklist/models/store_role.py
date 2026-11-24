@@ -403,7 +403,9 @@ class StoreNvbhCheckRole(models.Model):
                 can_edit = cur == i and (is_admin or mine) and not locked_expired
             # sửa lại đánh giá: cấp vừa hoàn tất gần nhất (cấp sau chưa đánh giá), người của cấp đó có quyền Sửa,
             # được sửa đến 23h55 ngày đánh giá xong; sau giờ đó hệ thống khóa
-            reedit_until = self._reedit_until(i) if (i == self.step_done and (is_admin or mine) and may_reedit) else False
+            # check list CHT: chính ASM đã chấm được sửa lại đánh giá của mình đến 23h55 ngày chấm (không cần quyền Sửa menu)
+            reedit_until = self._reedit_until(i) if (i == self.step_done and (is_admin or mine)
+                                                     and (may_reedit or (self.kind == 'cht' and mine))) else False
             reedit = bool(reedit_until) and fields.Datetime.now() <= reedit_until
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit or reedit,
                               reedit=reedit, reedit_until=reedit_until if reedit else False))

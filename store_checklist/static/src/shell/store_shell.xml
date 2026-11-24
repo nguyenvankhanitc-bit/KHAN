@@ -1339,7 +1339,7 @@
                                     <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
                                 </div>
                                 <div class="cw_visit_msg">
-                                    <t t-if="wd.can_eval">Lần ghé này chấm <b t-esc="wd.n_scope"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
+                                    <t t-if="wd.can_eval">Lần ghé này chấm / sửa <b t-esc="wd.n_scope"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
                                     <t t-else="">Không có phiếu đã gửi nào đến ngày <b t-esc="chtwVisitLabel"/> đang chờ bạn chấm.</t>
                                     <t t-if="wd.n_later"> <b t-esc="wd.n_later"/> phiếu sau ngày ghé sẽ chuyển sang lần ghé tuần sau.</t>
                                 </div>
@@ -1347,9 +1347,9 @@
                             <div class="cw_note" t-if="wd.checks.length">
                                 <span><i class="fa fa-calendar-check-o"/> Phiếu trong tuần:</span>
                                 <span t-foreach="wd.checks" t-as="c" t-key="c.id"
-                                      t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : c.scope === 'later' and c.state === 'Chờ lần ghé sau' ? 'is-later' : 'is-wait'}"
+                                      t-attf-class="cw_chip #{c.reedit ? 'is-reedit' : c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : c.scope === 'later' and c.state === 'Chờ lần ghé sau' ? 'is-later' : 'is-wait'}"
                                       t-att-title="(c.deadline ? 'Hạn ASM đánh giá: ' + c.deadline + '. ' : '') + 'Bấm để mở check list ngày này'" t-on-click="() => this.onChtDay(c)">
-                                    <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state === 'Đã đánh giá'"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
+                                    <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state.startsWith('Đã đánh giá')"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
                             </div>
                             <div class="cw_note cw_carry" t-if="wd.carried.length">
                                 <span><i class="fa fa-share"/> Chuyển tiếp từ tuần trước:</span>

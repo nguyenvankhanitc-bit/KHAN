@@ -62,6 +62,8 @@ class StoreNvbhCheck(models.Model):
     schedule_line_id = fields.Many2one('store.nvbh.schedule.line', string='Dòng lịch làm việc', ondelete='set null', index=True)
     # check list ASM: không theo lịch xếp ca, mỗi ASM (hồ sơ nhân viên chức vụ ASM) một phiếu mỗi ngày
     asm_employee_id = fields.Many2one('hr.employee', string='ASM', ondelete='set null', index=True)
+    # Đánh giá Checklist CHT theo tuần: nhận xét tổng quan của ASM, lưu vào các phiếu được duyệt trong tuần
+    week_comment = fields.Text(string='Nhận xét đánh giá tuần (ASM)')
     staff_id = fields.Many2one('store.audit.staff', string='NVBH (cũ)')
     # NVBH: công việc lấy từ Danh sách công việc NVBH; CHT: người trên lịch xếp ca có chức vụ cấp 2 (CHT...),
     # công việc lấy từ Danh sách công việc CHT, luồng CHT check list -> ASM đánh giá -> Admin phê duyệt (nếu bật)
@@ -909,6 +911,7 @@ class StoreNvbhCheck(models.Model):
             r['store_id'] = l.store_id.id if l else False
             r['store_code'] = (l.store_id.code if l else '') or r.get('store') or ''
             r['ymd'] = '%s-%s-%s' % tuple(reversed(r['date'].split('/')))
+            r['week_comment'] = (self.browse(r['id']).week_comment or '') if r.get('id') else ''
         return {
             'options': options, 'key': key, 'month': start.strftime('%Y-%m'), 'data': data,
             'staff': self._cht_staff_info(last),
@@ -1010,7 +1013,7 @@ class StoreNvbhCheck(models.Model):
             'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m')),
                        'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(weeks)],
             'staff': self._cht_staff_info(mine[-1:]) if mine else False,
-            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False,
+            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False, 'comment': '',
         }
         if not mine:
             return res
@@ -1077,6 +1080,7 @@ class StoreNvbhCheck(models.Model):
         }
         res['checks'] = info_rows
         res['can_eval'] = bool(evaluable)
+        res['comment'] = next((c.week_comment for c in checks if (c.week_comment or '').strip()), '')
         # lịch hôm nay của CHT đang chọn (mở check list ngày từ trang tuần)
         today = fields.Date.context_today(self)
         tl = mine.filtered(lambda l: l.work_date == today)[:1]
@@ -1084,13 +1088,14 @@ class StoreNvbhCheck(models.Model):
         return res
 
     @api.model
-    def save_cht_week(self, month, week, store_id, staff_key, results):
+    def save_cht_week(self, month, week, store_id, staff_key, results, comment=None):
         """Đồng ý đánh giá tuần: áp KQ đánh giá theo nhóm công việc (results = {tên nhóm: good / avg / bad}) cho mọi dòng của
         các phiếu CHT trong tuần đang đến lượt người đăng nhập đánh giá. Việc chưa làm tự tính Không đạt; dòng có ghi lỗi giữ lỗi."""
         valid = {k for k, _l in EVAL_RESULTS}
         results = {k: v for k, v in (results or {}).items() if v in valid}
         _s, _w, _i, _o, _k, _m, _l, checks = self._cht_week_checks(month, week, store_id, staff_key)
         done = 0
+        evaluated = self.browse()
         for c in checks:
             if c.state != 'pending_review':
                 continue
@@ -1105,9 +1110,14 @@ class StoreNvbhCheck(models.Model):
             changes = [{'id': l.id, 'result': results[l.sub_category or 'Khác'], 'detail': l[pre + 'error_detail'] or ''}
                        for l in c.line_ids]
             self.save_step_evaluation(c.id, step['no'], changes)
+            evaluated |= c
             done += 1
         if not done:
             raise UserError(_('Không có phiếu nào trong tuần đang chờ bạn đánh giá.'))
+        if comment is not None:
+            # nhận xét tuần: ghi vào các phiếu vừa duyệt và các phiếu đã duyệt khác của tuần (người đánh giá là người đăng nhập)
+            text = '\n'.join(ln.rstrip() for ln in (comment or '').strip().splitlines()) or False
+            (evaluated | checks.filtered(lambda c: c.state == 'approved')).sudo().write({'week_comment': text})
         return {'done': done}
 
     @api.model

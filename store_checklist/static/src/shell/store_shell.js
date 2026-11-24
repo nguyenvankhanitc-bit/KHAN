@@ -48,7 +48,7 @@ export class StoreChecklistShell extends Component {
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "" },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1997,7 +1997,7 @@ export class StoreChecklistShell extends Component {
             if (!payload) {
                 return;
             }
-            const notes = [r.txt_asm, r.txt_cht].filter((t) => t && String(t).trim());
+            const notes = [r.week_comment ? `Nhận xét tuần (ASM): ${r.week_comment}` : "", r.txt_asm, r.txt_cht].filter((t) => t && String(t).trim());
             (payload.lines || []).forEach((l) => {
                 if ((l.note || "").trim()) {
                     notes.push(`${l.name}: ${l.note.trim()}`);
@@ -2064,6 +2064,7 @@ export class StoreChecklistShell extends Component {
             (res.groups || []).forEach((g) => { results[g.name] = g.result || ""; });
             cm.results = results;
             cm.wopen = {};
+            cm.comment = res.comment || "";
         } finally {
             cm.wbusy = false;
         }
@@ -2141,6 +2142,19 @@ export class StoreChecklistShell extends Component {
         return ((o?.name || "?").trim().split(/\s+/).pop() || "?").charAt(0);
     }
 
+    // nút gợi ý nhận xét: thêm câu vào ô nhận xét tuần
+    chtwAddComment(text) {
+        const cm = this.state.chtm;
+        if (!cm.wdata?.can_eval) {
+            return;
+        }
+        const cur = (cm.comment || "").trim();
+        if (cur.split(/\n|\.\s*/).map((x) => x.trim()).includes(text)) {
+            return;
+        }
+        cm.comment = cur ? `${cur}\n${text}` : text;
+    }
+
     get chtwWeekInfo() {
         const d = this.state.chtm.wdata;
         return d ? (d.weeks || [])[d.week] || {} : {};
@@ -2159,7 +2173,7 @@ export class StoreChecklistShell extends Component {
         }
         try {
             const res = await this.orm.call("store.nvbh.check", "save_cht_week",
-                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }]);
+                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }, cm.comment || ""]);
             this.notification.add(`Đã đánh giá ${res.done} phiếu check list trong ${this.chtwWeekInfo.label || "tuần"}`, { type: "success" });
             await this.loadChtWeek();
         } catch (error) {

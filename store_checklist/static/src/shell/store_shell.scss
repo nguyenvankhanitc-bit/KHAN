@@ -3416,7 +3416,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .cw_chip { cursor: pointer; &:hover { filter: brightness(.96); text-decoration: underline; } }
     .cw_today { border: 0; background: #16a34a; color: #fff; font-size: 12px; font-weight: 700; border-radius: 8px; padding: 5px 12px; margin-right: 6px;
         &:hover { background: #15803d; } }
-    .cw_table { background: #fff; border: 1px solid var(--cw-line); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
+    .cw_table { background: #fff; border: 1px solid var(--cw-line); border-radius: 14px; overflow: clip; box-shadow: 0 2px 10px rgba(15, 23, 42, .04);
         table { width: 100%; border-collapse: collapse; font-size: 13px; }
         th { background: #f8fafc; color: #1e293b; font-weight: 700; padding: 12px 8px; text-align: center; border-bottom: 1px solid var(--cw-line);
             small { font-weight: 400; color: var(--cw-mute); font-size: 11px; } }
@@ -3560,5 +3560,32 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         .cw_kpi.k-score { grid-column: 1 / -1; .row1 b { font-size: 18px; } }
         .cw_kpi.k-report { grid-column: 1 / -1; justify-content: center; padding: 10px; b, small { display: inline; font-size: 13px; } small { margin-left: 4px; } }
         .cw_foot .cw_btns { flex: 1; .cw_btn { flex: 1; justify-content: center; .lg { display: inline; } .sm { display: none; } } }
+    }
+}
+
+// Đánh giá tuần CHT: cố định tiêu đề bảng khi cuộn + ô nhận xét tuần của ASM
+.o_cht_w {
+    .cw_table thead { position: sticky; top: 0; z-index: 4; box-shadow: 0 2px 6px rgba(15, 23, 42, .08);
+        th { background: #f8fafc; } th.ev { background: #fefce8; } }
+    .cw_foot { align-items: stretch; }
+    .cw_cmt { flex: 1; min-width: 320px; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid #eef2f7;
+        border-radius: 12px; background: #fafbfc;
+        textarea { width: 100%; resize: vertical; min-height: 56px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: 13px;
+            background: #fff; color: #0f172a; outline: none;
+            &::placeholder { color: #94a3b8; } &:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); } } }
+    .cw_cmt_h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        .ic { width: 28px; height: 28px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; }
+        > b { font-size: 14px; color: #172554; } }
+    .cw_cmt_sub { font-size: 11px; color: #94a3b8; }
+    .cw_cmt_q { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;
+        button { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #334155;
+            &:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; } } }
+    .cw_cmt_ro { font-size: 13px; color: #334155; white-space: pre-line; padding: 8px 12px; background: #fff; border: 1px dashed #e2e8f0; border-radius: 10px; }
+    .cw_btns { align-self: center; }
+    @media (max-width: 767px) {
+        .cw_cmt { min-width: 0; }
+        .cw_foot { flex-direction: column; }
+        .cw_cmt_q { margin-left: 0; }
+        .cw_btns { align-self: stretch; }
     }
 }

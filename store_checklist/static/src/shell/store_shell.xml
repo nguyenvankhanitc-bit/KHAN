@@ -1485,7 +1485,7 @@
                                     <button type="button" class="cw_btn is-light" t-if="state.chtm.editMode and !wd.n_pending" t-on-click="onChtwCancelEdit"><i class="fa fa-times"/> Hủy</button>
                                     <button type="button" class="cw_btn is-locked" t-if="!wd.n_reedit and !wd.n_pending and wd.locked_at" disabled="disabled"
                                             t-att-title="'Hệ thống đã khóa lúc ' + wd.locked_at"><i class="fa fa-lock"/> Đã khóa <t t-esc="wd.locked_at"/></button>
-                                    <button type="button" class="cw_btn" t-att-disabled="!(chtwCanEdit or wd.can_comment)" t-on-click="onChtwSave"
+                                    <button type="button" class="cw_btn" t-att-disabled="!((chtwCanEdit or wd.can_comment) and chtwDirty)" t-on-click="onChtwSave"
                                             title="Lưu KQ đánh giá theo nhóm (phiếu đang chờ bạn chấm) và nhận xét tuần"><i class="fa fa-save"/> Lưu</button>
                                 </div>
                             </div>

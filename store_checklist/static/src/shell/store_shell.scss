@@ -3647,3 +3647,13 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 
 .o_cht_w .cw_btn.is-edit { background: #f59e0b; box-shadow: 0 6px 14px rgba(245, 158, 11, .3); &:hover { background: #d97706; } }
 .o_cht_w .cw_btn.is-locked { background: #e2e8f0; color: #475569; box-shadow: none; opacity: 1 !important; }
+
+// điện thoại: ô nhận xét gọn (bỏ nút gợi ý, bỏ dòng tuần / CHT phụ)
+@media (max-width: 767px) {
+    .o_cht_w {
+        .cw_cmt { padding: 10px; gap: 6px; }
+        .cw_cmt_q, .cw_cmt_sub { display: none !important; }
+        .cw_cmt_h > b { font-size: 13px; }
+        .cw_cmt textarea { min-height: 44px; font-size: 12px; padding: 8px 10px; }
+    }
+}

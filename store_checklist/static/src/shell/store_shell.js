@@ -2067,6 +2067,7 @@ export class StoreChecklistShell extends Component {
             cm.wopen = {};
             cm.comment = res.comment || "";
             cm.editMode = false;
+            cm.results0 = JSON.stringify(results); // để biết đã đổi KQ đánh giá chưa
         } finally {
             cm.wbusy = false;
         }
@@ -2103,6 +2104,15 @@ export class StoreChecklistShell extends Component {
     get chtwCanEdit() {
         const d = this.state.chtm.wdata;
         return Boolean(d?.can_eval) && (d.n_pending > 0 || this.state.chtm.editMode);
+    }
+
+    // nút Lưu chỉ bật khi đã nhập / sửa nhận xét hoặc đã đổi KQ đánh giá
+    get chtwDirty() {
+        const cm = this.state.chtm;
+        const d = cm.wdata || {};
+        const cmtChanged = (cm.comment || "").trim() !== (d.comment || "").trim();
+        const resChanged = this.chtwCanEdit && JSON.stringify(cm.results) !== cm.results0;
+        return cmtChanged || resChanged;
     }
 
     get chtwLockNote() {

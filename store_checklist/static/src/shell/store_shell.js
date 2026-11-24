@@ -2145,7 +2145,7 @@ export class StoreChecklistShell extends Component {
     // nút gợi ý nhận xét: thêm câu vào ô nhận xét tuần
     chtwAddComment(text) {
         const cm = this.state.chtm;
-        if (!cm.wdata?.can_eval) {
+        if (!cm.wdata?.can_comment) {
             return;
         }
         const cur = (cm.comment || "").trim();
@@ -2153,6 +2153,21 @@ export class StoreChecklistShell extends Component {
             return;
         }
         cm.comment = cur ? `${cur}\n${text}` : text;
+    }
+
+    async onChtwSaveComment() {
+        const cm = this.state.chtm;
+        if (!cm.wdata?.can_comment) {
+            return;
+        }
+        try {
+            await this.orm.call("store.nvbh.check", "save_cht_week_comment",
+                [cm.month, cm.wdata.week, cm.storeId ? Number(cm.storeId) : false, cm.key, cm.comment || ""]);
+            cm.wdata.comment = cm.comment || "";
+            this.notification.add("Đã lưu nhận xét đánh giá tuần", { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+        }
     }
 
     get chtwWeekInfo() {

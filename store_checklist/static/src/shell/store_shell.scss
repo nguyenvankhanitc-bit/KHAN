@@ -3589,3 +3589,10 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         .cw_btns { align-self: stretch; }
     }
 }
+
+.o_cht_w {
+    .cw_cmt_f { display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+        small { font-size: 11px; color: #94a3b8; margin-right: auto; } }
+    .cw_cmt_save { border: 1px solid #2563eb; background: #fff; color: #2563eb; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+        &:hover:not(:disabled) { background: #eff6ff; } &:disabled { opacity: .45; cursor: default; } }
+}

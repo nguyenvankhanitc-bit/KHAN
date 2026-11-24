@@ -1439,14 +1439,19 @@
                                         <span class="ic"><i class="fa fa-pencil-square-o"/></span>
                                         <b>Nhận xét đánh giá tuần (ASM)</b>
                                         <small class="cw_cmt_sub"><t t-esc="chtwWeekInfo.label"/>: <t t-esc="chtwWeekInfo.full"/> · <t t-esc="wd.staff ? wd.staff.name : '-'"/> · <t t-esc="wd.staff ? wd.staff.store : '-'"/></small>
-                                        <div class="cw_cmt_q" t-if="wd.can_eval">
+                                        <div class="cw_cmt_q" t-if="wd.can_comment">
                                             <button type="button" t-foreach="['Hoàn thành tốt', 'Cần cải thiện vệ sinh', 'Lưu ý kiểm tra ca']" t-as="q" t-key="q"
                                                     t-on-click="() => this.chtwAddComment(q)">+ <t t-esc="q"/></button>
                                         </div>
                                     </div>
-                                    <textarea t-if="wd.can_eval" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc tuần này..."
+                                    <textarea t-if="wd.can_comment" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc tuần này..."
                                               t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
                                     <div class="cw_cmt_ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
+                                    <div class="cw_cmt_f" t-if="wd.can_comment">
+                                        <small t-if="wd.can_eval">Nhận xét cũng được lưu khi bấm Đồng ý đánh giá tuần.</small>
+                                        <button type="button" class="cw_cmt_save" t-att-disabled="(state.chtm.comment or '') === (wd.comment or '')"
+                                                t-on-click="onChtwSaveComment"><i class="fa fa-save"/> Lưu nhận xét</button>
+                                    </div>
                                 </div>
                                 <div class="cw_btns">
                                     <button type="button" class="cw_btn" t-att-disabled="!wd.can_eval" t-on-click="onChtwSave"><i class="fa fa-check"/> <span class="lg">Đồng ý đánh giá tuần</span><span class="sm">Đồng ý</span></button>

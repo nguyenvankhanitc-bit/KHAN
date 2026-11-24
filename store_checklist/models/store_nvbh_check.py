@@ -1013,7 +1013,7 @@ class StoreNvbhCheck(models.Model):
             'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m')),
                        'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(weeks)],
             'staff': self._cht_staff_info(mine[-1:]) if mine else False,
-            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False, 'comment': '',
+            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False, 'comment': '', 'can_comment': False,
         }
         if not mine:
             return res
@@ -1081,11 +1081,39 @@ class StoreNvbhCheck(models.Model):
         res['checks'] = info_rows
         res['can_eval'] = bool(evaluable)
         res['comment'] = next((c.week_comment for c in checks if (c.week_comment or '').strip()), '')
+        res['can_comment'] = self._cht_week_can_comment(checks)
         # lịch hôm nay của CHT đang chọn (mở check list ngày từ trang tuần)
         today = fields.Date.context_today(self)
         tl = mine.filtered(lambda l: l.work_date == today)[:1]
         res['today'] = {'line_id': tl.id, 'store_id': tl.store_id.id, 'ymd': str(today)} if tl else False
         return res
+
+    @api.model
+    def _cht_week_can_comment(self, checks):
+        """Người được viết nhận xét tuần: người đánh giá trong luồng của các phiếu trong tuần (ASM phụ trách, Admin chức vụ
+        nếu có bước đó) hoặc Quản trị viên; không phụ thuộc phiếu đã duyệt hay chưa."""
+        user = self.env.user
+        if user.has_group('base.group_system'):
+            return bool(checks)
+        for c in checks:
+            for st in c._approval_chain():
+                if st.get('user') and st['user'].id == user.id:
+                    return True
+                if st.get('admin_title') and user in st.get('users', self.env['res.users']):
+                    return True
+        return False
+
+    @api.model
+    def save_cht_week_comment(self, month, week, store_id, staff_key, comment):
+        """Lưu riêng nhận xét tuần (không cần phiếu đang chờ đánh giá): ghi vào mọi phiếu CHT trong tuần."""
+        _s, _w, _i, _o, _k, _m, _l, checks = self._cht_week_checks(month, week, store_id, staff_key)
+        if not checks:
+            raise UserError(_('Tuần này chưa có phiếu check list nào để lưu nhận xét.'))
+        if not self._cht_week_can_comment(checks):
+            raise AccessError(_('Chỉ người đánh giá (ASM phụ trách) mới được nhận xét tuần này.'))
+        text = '\n'.join(ln.rstrip() for ln in (comment or '').strip().splitlines()) or False
+        checks.sudo().write({'week_comment': text})
+        return True
 
     @api.model
     def save_cht_week(self, month, week, store_id, staff_key, results, comment=None):

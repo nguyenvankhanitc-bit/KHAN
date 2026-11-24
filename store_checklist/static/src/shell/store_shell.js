@@ -2120,11 +2120,13 @@ export class StoreChecklistShell extends Component {
         if (!d || !d.groups.length) {
             return { points: 0, max: 0, pct: 0, bar: 0 };
         }
+        // điểm các phiếu đã đánh giá xong + tạm tính các phiếu đang chờ người đăng nhập chấm (theo KQ đang tích)
         let points = d.kpi.points || 0;
-        const max = d.kpi.max_points || 0;
+        let max = d.kpi.max_points || 0;
         if (d.can_eval) {
             const f = { good: 1, avg: 0.5, bad: 0 };
-            points = d.groups.reduce((s, g) => s + (g.max_done || 0) * (f[this.state.chtm.results[g.name]] || 0), 0);
+            points += d.groups.reduce((s, g) => s + (g.max_done_eval || 0) * (f[this.state.chtm.results[g.name]] || 0), 0);
+            max += d.groups.reduce((s, g) => s + (g.max_eval || 0), 0);
         }
         const pct = max ? Math.round((1000 * points) / max) / 10 : 0;
         return { points: Math.round(points * 100) / 100, max, pct, bar: Math.min(pct, 100) };

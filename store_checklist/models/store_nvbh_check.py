@@ -1034,7 +1034,7 @@ class StoreNvbhCheck(models.Model):
             for l in c.line_ids:
                 g = groups.setdefault(l.sub_category or 'Khác', {'name': l.sub_category or 'Khác', 'tasks': {}, 'lines': 0, 'done': 0,
                                                                   'hours': 0.0, 'max_total': 0.0, 'max_done': 0.0, 'results': set(),
-                                                                  'errors': 0})
+                                                                  'errors': 0, 'max_eval': 0.0, 'max_done_eval': 0.0})
                 tk = l.cht_task_id.id or ('n', l.name)
                 t = g['tasks'].setdefault(tk, {'name': l.name, 'time_slot': l.time_slot or '', 'score': l.max_score, 'days': [], 'all_done': True})
                 t['days'].append({'date': c.work_date.strftime('%d/%m'), 'done': l.is_done,
@@ -1046,6 +1046,9 @@ class StoreNvbhCheck(models.Model):
                 g['max_total'] += l.max_score or 0.0
                 g['max_done'] += (l.max_score or 0.0) if l.is_done else 0.0
                 g['errors'] += l.error_count or 0
+                if c.id in evaluable:  # phiếu đang chờ người đăng nhập chấm: dùng để tạm tính điểm tuần
+                    g['max_eval'] += l.max_score or 0.0
+                    g['max_done_eval'] += (l.max_score or 0.0) if l.is_done else 0.0
                 if c.id in evaluable or c.state == 'approved':
                     g['results'].add(l[pre + 'eval_result'] or '')
         out = []
@@ -1057,15 +1060,19 @@ class StoreNvbhCheck(models.Model):
                 'tasks_done': sum(1 for t in tasks if t['all_done']), 'lines': g['lines'], 'done': g['done'],
                 'rate': round(100.0 * g['done'] / g['lines'], 1) if g['lines'] else 0.0, 'hours': round(g['hours'], 1),
                 'max_total': g['max_total'], 'max_done': g['max_done'], 'errors': g['errors'],
+                'max_eval': g['max_eval'], 'max_done_eval': g['max_done_eval'],
                 'result': res_set.pop() if len(res_set) == 1 and '' not in g['results'] else '',
                 'task_rows': tasks,
             })
         res['groups'] = out
-        all_tasks = [t for g in out for t in g['task_rows']]
+        # KPI tính giống Bảng checklist Tổng: Tổng việc ca / Đã làm / Số lỗi (lỗi cấp trên ghi nhận) cộng các phiếu trong tuần;
+        # điểm tuần = điểm các phiếu đã đánh giá xong (như Điểm lũy kế), phiếu chưa đánh giá không tính
+        approved = checks.filtered(lambda c: c._fully_evaluated())
         res['kpi'] = {
-            'tasks': len(all_tasks), 'hours': round(sum(c.shift_id.hours or 0.0 for c in checks), 2),
-            'done': sum(1 for t in all_tasks if t['all_done']), 'errors': sum(1 for t in all_tasks if not t['all_done']),
-            'points': round(sum(checks.mapped('points')), 2), 'max_points': sum(g['max_total'] for g in out),
+            'tasks': sum(checks.mapped('cnt_total')), 'hours': round(sum(c.shift_id.hours or 0.0 for c in checks), 2),
+            'done': sum(checks.mapped('cnt_done')), 'errors': sum(checks.mapped('error_total')),
+            'points': round(sum(approved.mapped('points')), 2),
+            'max_points': sum(sum(c.line_ids.mapped('max_score')) for c in approved),
             'n_checks': len(checks), 'n_eval': len(evaluable), 'n_lines': len(lines),
         }
         res['checks'] = info_rows

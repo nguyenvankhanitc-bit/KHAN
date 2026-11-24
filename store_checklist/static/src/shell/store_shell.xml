@@ -1314,10 +1314,10 @@
                                     <b t-esc="w.label"/><small>(<t t-esc="w.range"/>)</small></button>
                             </div>
                             <div class="cw_kpis">
-                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="wd.kpi.tasks or 0"/><small>Tổng công việc</small></div></div>
+                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="wd.kpi.tasks or 0"/><small>Tổng việc ca</small></div></div>
                                 <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(wd.kpi.hours or 0)"/>h</b><small>Tổng thời gian</small></div></div>
-                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã thực hiện</small></div></div>
-                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Có lỗi</small></div></div>
+                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã làm</small></div></div>
+                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Số lỗi</small></div></div>
                                 <!-- Tổng điểm tuần + Xem báo cáo: cùng hàng với các ô KPI -->
                                 <t t-set="sc" t-value="chtwScore"/>
                                 <div class="cw_kpi k-score">
@@ -1344,7 +1344,7 @@
                                     <thead>
                                         <tr>
                                             <th rowspan="2" class="l">Nhóm công việc</th>
-                                            <th rowspan="2">Số công<br/>việc</th>
+                                            <th rowspan="2" title="Tổng số việc của các ca trong tuần (như cột Tổng việc ca của Bảng checklist Tổng)">Số việc<br/>ca</th>
                                             <th rowspan="2" title="Giờ của ca làm việc (như cột Tổng giờ của Bảng checklist Tổng), chia theo số việc của từng nhóm">Thời gian<br/><small>(giờ ca)</small></th>
                                             <th rowspan="2">Đã làm</th>
                                             <th rowspan="2">Tỷ lệ</th>
@@ -1368,9 +1368,9 @@
                                                         <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
                                                     </div>
                                                 </td>
-                                                <td><b t-esc="g.n_tasks"/></td>
+                                                <td><b t-esc="g.lines"/></td>
                                                 <td><b><t t-esc="jobStaffNum(g.hours)"/>h</b></td>
-                                                <td><b t-esc="g.tasks_done + '/' + g.n_tasks"/></td>
+                                                <td><b t-esc="g.done + '/' + g.lines"/></td>
                                                 <td><b t-attf-class="#{g.rate >= 100 ? '' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></td>
                                                 <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
                                                     <label t-on-click.prevent="() => this.chtwSet(g.name, h[0])" t-att-class="wd.can_eval ? '' : 'dis'">
@@ -1410,9 +1410,9 @@
                                         <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
                                     </div>
                                     <div class="mt">
-                                        <div><small>Số việc</small><b t-esc="g.n_tasks"/></div>
+                                        <div><small>Việc ca</small><b t-esc="g.lines"/></div>
                                         <div><small>Giờ ca</small><b><t t-esc="jobStaffNum(g.hours)"/>h</b></div>
-                                        <div><small>Đã làm</small><b t-esc="g.tasks_done + '/' + g.n_tasks"/></div>
+                                        <div><small>Đã làm</small><b t-esc="g.done + '/' + g.lines"/></div>
                                         <div><small>Tỷ lệ</small><b t-attf-class="#{g.rate >= 100 ? 'ok' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></div>
                                     </div>
                                     <div t-attf-class="seg #{wd.can_eval ? '' : 'dis'}">

@@ -1294,10 +1294,16 @@
                                         <option t-foreach="state.chtm.options" t-as="o" t-key="o.key" t-att-value="o.key"
                                                 t-att-selected="o.key === state.chtm.key" t-esc="o.name + (o.store ? ' · ' + o.store : '')"/>
                                     </select><i class="fa fa-angle-down"/></label>
+                                <label class="cw_sel" t-if="chtMienOptions.length > 1"><i class="fa fa-map-o"/>
+                                    <select t-on-change="(ev) => this.onChtwFilter('mien', ev)">
+                                        <option value="">Tất cả miền</option>
+                                        <option t-foreach="chtMienOptions" t-as="mo" t-key="mo.value" t-att-value="mo.value"
+                                                t-att-selected="mo.value === state.chtm.mien" t-esc="mo.label"/>
+                                    </select><i class="fa fa-angle-down"/></label>
                                 <label class="cw_sel"><i class="fa fa-shopping-bag"/>
                                     <select t-on-change="(ev) => this.onChtwFilter('storeId', ev)">
                                         <option value="">Tất cả cửa hàng</option>
-                                        <option t-foreach="state.job.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                        <option t-foreach="chtStoreOptions" t-as="st" t-key="st.id" t-att-value="st.id"
                                                 t-att-selected="('' + st.id) === state.chtm.storeId" t-esc="st.display_name"/>
                                     </select><i class="fa fa-angle-down"/></label>
                                 <label class="cw_sel"><i class="fa fa-calendar-o"/>

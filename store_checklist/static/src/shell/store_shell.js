@@ -48,7 +48,7 @@ export class StoreChecklistShell extends Component {
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "" },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1887,6 +1887,7 @@ export class StoreChecklistShell extends Component {
         try {
             const res = await this.orm.call("store.nvbh.check", "get_cht_month", [], {
                 month: cm.month || false, store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false,
+                context: this.chtCtx(),
             });
             cm.month = res.month;
             cm.options = res.options;
@@ -2054,6 +2055,7 @@ export class StoreChecklistShell extends Component {
             const res = await this.orm.call("store.nvbh.check", "get_cht_week", [], {
                 month: cm.month || false, week: cm.week === null ? false : cm.week,
                 store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false, visit_date: cm.visit || false,
+                context: this.chtCtx(),
             });
             cm.visit = res.visit_date || "";
             cm.month = res.month;
@@ -2091,6 +2093,10 @@ export class StoreChecklistShell extends Component {
         }
         cm.visit = "";
         if (field === "storeId") {
+            cm.key = "";
+        }
+        if (field === "mien") {
+            cm.storeId = "";
             cm.key = "";
         }
         try {
@@ -2198,7 +2204,8 @@ export class StoreChecklistShell extends Component {
         }
         try {
             await this.orm.call("store.nvbh.check", "save_cht_week_comment",
-                [cm.month, cm.wdata.week, cm.storeId ? Number(cm.storeId) : false, cm.key, cm.comment || "", cm.visit || false]);
+                [cm.month, cm.wdata.week, cm.storeId ? Number(cm.storeId) : false, cm.key, cm.comment || "", cm.visit || false],
+                { context: this.chtCtx() });
             this.notification.add("Đã lưu nhận xét lần ghé thăm", { type: "success" });
             await this.loadChtWeek();
         } catch (error) {
@@ -2217,6 +2224,24 @@ export class StoreChecklistShell extends Component {
         } catch (error) {
             this.notifyError(error);
         }
+    }
+
+    // ô Miền trên trang CHT: lọc cửa hàng / CHT theo miền (chỉ hiện khi người xem có cửa hàng ở nhiều miền, vd. Quản trị)
+    chtCtx() {
+        return { cht_mien: this.state.chtm.mien || false }; // orm.call tự gộp với context của user
+    }
+
+    get chtMienOptions() {
+        const known = { Nam: "Miền Nam", "ĐTT": "Miền ĐTT", "Bắc": "Miền Bắc" };
+        const seen = new Set((this.state.job.stores || []).map((st) => (known[st.mien] ? st.mien : "other")));
+        const order = ["Nam", "ĐTT", "Bắc", "other"].filter((m) => seen.has(m));
+        return order.map((m) => ({ value: m, label: known[m] || "Khác (chưa gắn miền)" }));
+    }
+
+    get chtStoreOptions() {
+        const m = this.state.chtm.mien;
+        const known = ["Nam", "ĐTT", "Bắc"];
+        return (this.state.job.stores || []).filter((st) => !m || (m === "other" ? !known.includes(st.mien) : st.mien === m));
     }
 
     get chtwVisitLabel() {
@@ -2243,7 +2268,8 @@ export class StoreChecklistShell extends Component {
         }
         try {
             const res = await this.orm.call("store.nvbh.check", "save_cht_week",
-                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }, cm.comment || "", cm.visit || false]);
+                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }, cm.comment || "", cm.visit || false],
+                { context: this.chtCtx() });
             this.notification.add(`Đã đánh giá ${res.done} phiếu check list (${(res.dates || []).join(", ")}) — điểm tính về đúng ngày gốc`, { type: "success" });
             await this.loadChtWeek();
         } catch (error) {

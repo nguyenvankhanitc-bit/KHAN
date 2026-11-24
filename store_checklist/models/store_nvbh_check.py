@@ -932,6 +932,12 @@ class StoreNvbhCheck(models.Model):
         dom = [('work_date', '>=', start), ('work_date', '<', end)]
         if store_id:
             dom.append(('store_id', '=', int(store_id)))
+        # lọc theo miền (ô Miền trên trang CHT, truyền qua context): Nam / ĐTT / Bắc / other = cửa hàng chưa gắn miền
+        mien = self.env.context.get('cht_mien')
+        if mien == 'other':
+            dom.append(('store_id.mien', 'not in', ['Nam', 'ĐTT', 'Bắc']))
+        elif mien:
+            dom.append(('store_id.mien', '=', mien))
         lines = self.env['store.nvbh.schedule.line'].search(dom, order='work_date, id')
         lines = lines.filtered(lambda l: self._schedule_kind(l) == 'cht')
 

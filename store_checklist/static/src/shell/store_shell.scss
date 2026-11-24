@@ -3617,3 +3617,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         .cw_visit_msg { min-width: 0; }
     }
 }
+
+.o_cht_w .cw_bulk { flex-wrap: wrap; row-gap: 4px;
+    &.dis button { opacity: .5; cursor: default; }
+    .cw_bulk_note { flex-basis: 100%; font-size: 10px; color: #94a3b8; font-style: italic; } }

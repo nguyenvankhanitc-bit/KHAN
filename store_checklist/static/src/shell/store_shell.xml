@@ -1416,11 +1416,13 @@
                             <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này chưa có phiếu check list CHT nào.</div>
                             <!-- điện thoại: thẻ theo nhóm công việc thay cho bảng -->
                             <div class="cw_cards" t-if="wd.groups.length">
-                                <div class="cw_bulk" t-if="wd.can_eval">
+                                <div t-attf-class="cw_bulk #{wd.can_eval ? '' : 'dis'}">
                                     <span>Chọn tất cả:</span>
                                     <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
-                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-on-click="() => this.chtwAll(h[0])">
+                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-att-disabled="!wd.can_eval"
+                                            t-on-click="() => this.chtwAll(h[0])">
                                         <i t-attf-class="fa #{chtwHead(h[0]) === 'all' ? 'fa-check-square' : chtwHead(h[0]) === 'some' ? 'fa-minus-square' : 'fa-square-o'}"/> <t t-esc="h[1]"/></button>
+                                    <small class="cw_bulk_note" t-if="!wd.can_eval">(chưa có phiếu đến ngày ghé chờ bạn chấm)</small>
                                 </div>
                                 <div class="cw_card" t-foreach="wd.groups" t-as="g" t-key="g.name"
                                      t-attf-class="#{state.chtm.results[g.name] ? 'is-' + state.chtm.results[g.name] : ''}">

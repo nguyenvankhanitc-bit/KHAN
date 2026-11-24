@@ -3596,3 +3596,24 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .cw_cmt_save { border: 1px solid #2563eb; background: #fff; color: #2563eb; border-radius: 8px; padding: 6px 14px; font-size: 12px; font-weight: 700;
         &:hover:not(:disabled) { background: #eff6ff; } &:disabled { opacity: .45; cursor: default; } }
 }
+
+// Đánh giá tuần CHT theo lần ASM ghé thăm: ngày ghé, phạm vi chấm, phiếu chuyển tiếp, nhận xét từng lần ghé
+.o_cht_w {
+    .cw_visit { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: #eff6ff; border: 1px solid #dbeafe; border-radius: 12px; }
+    .cw_visit_l { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .cw_vdate { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; font-weight: 700; color: #1e3a8a;
+        .o_store_date_input, input { width: 130px; height: 32px; border: 1px solid #bfdbfe; border-radius: 8px; padding: 2px 8px; background: #fff; font-weight: 600; } }
+    .cw_visit_msg { flex: 1; min-width: 260px; font-size: 12px; color: #334155; }
+    .cw_chip.is-later { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+    .cw_chip.is-carry { background: #faf5ff; border-color: #e9d5ff; color: #7e22ce; font-weight: 600; }
+    .cw_carry > span:first-child { color: #7e22ce; font-weight: 600; }
+    .cw_visits { display: flex; flex-direction: column; gap: 6px; padding-bottom: 8px; border-bottom: 1px dashed #e2e8f0; }
+    .cw_vrow { display: flex; gap: 10px; align-items: flex-start;
+        small { font-size: 11px; color: #64748b; b { color: #0f172a; } }
+        p { margin: 2px 0 0; font-size: 13px; color: #334155; white-space: pre-line; } }
+    .cw_vbadge { flex-shrink: 0; background: #2563eb; color: #fff; font-size: 11px; font-weight: 700; border-radius: 6px; padding: 2px 8px; }
+    @media (max-width: 767px) {
+        .cw_visit { padding: 10px; }
+        .cw_visit_msg { min-width: 0; }
+    }
+}

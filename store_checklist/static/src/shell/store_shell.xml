@@ -1330,14 +1330,33 @@
                                 <button type="button" class="cw_kpi k-report" t-on-click="onChtwReport" title="Xem Bảng checklist tháng">
                                     <span class="ic"><i class="fa fa-eye"/></span><div><b>Xem</b><small>báo cáo</small></div></button>
                             </div>
-                            <div class="cw_note" t-if="wd.checks.length or wd.today">
-                                <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
-                                <span><i class="fa fa-info-circle"/> Phiếu trong tuần:</span>
-                                <span t-foreach="wd.checks" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : 'is-wait'}"
-                                      title="Bấm để mở check list ngày này" t-on-click="() => this.onChtDay(c)">
+                            <!-- lần ASM ghé thăm: ngày ghé -> phạm vi chấm (phiếu đến ngày ghé + chuyển tiếp), phần sau ngày ghé chờ lần sau -->
+                            <div class="cw_visit">
+                                <div class="cw_visit_l">
+                                    <label class="cw_vdate"><i class="fa fa-map-marker"/> Ngày ASM ghé thăm:
+                                        <DateTimeInput t-key="'cwv' + wd.visit_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(wd.visit_date)"
+                                                       onChange.bind="onChtwVisitPick" class="'o_store_date_input'"/></label>
+                                    <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
+                                </div>
+                                <div class="cw_visit_msg">
+                                    <t t-if="wd.can_eval">Lần ghé này chấm <b t-esc="wd.n_scope"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
+                                    <t t-else="">Không có phiếu đã gửi nào đến ngày <b t-esc="chtwVisitLabel"/> đang chờ bạn chấm.</t>
+                                    <t t-if="wd.n_later"> <b t-esc="wd.n_later"/> phiếu sau ngày ghé sẽ chuyển sang lần ghé tuần sau.</t>
+                                </div>
+                            </div>
+                            <div class="cw_note" t-if="wd.checks.length">
+                                <span><i class="fa fa-calendar-check-o"/> Phiếu trong tuần:</span>
+                                <span t-foreach="wd.checks" t-as="c" t-key="c.id"
+                                      t-attf-class="cw_chip #{c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : c.scope === 'later' and c.state === 'Chờ lần ghé sau' ? 'is-later' : 'is-wait'}"
+                                      t-att-title="(c.deadline ? 'Hạn ASM đánh giá: ' + c.deadline + '. ' : '') + 'Bấm để mở check list ngày này'" t-on-click="() => this.onChtDay(c)">
                                     <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state === 'Đã đánh giá'"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
-                                <span class="cw_hint" t-if="wd.can_eval">Chọn KQ đánh giá theo nhóm rồi bấm <b>Lưu</b> để duyệt các phiếu đang chờ bạn.</span>
-                                <span class="cw_hint" t-else="">Không có phiếu nào trong tuần đang chờ bạn đánh giá (chỉ xem).</span>
+                            </div>
+                            <div class="cw_note cw_carry" t-if="wd.carried.length">
+                                <span><i class="fa fa-share"/> Chuyển tiếp từ tuần trước:</span>
+                                <span t-foreach="wd.carried" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-carry' : 'is-wait'}"
+                                      t-att-title="c.week_label + (c.deadline ? ' · Hạn ASM đánh giá: ' + c.deadline : '') + '. Điểm tính về đúng ngày gốc.'"
+                                      t-on-click="() => this.onChtDay(c)">
+                                    <b t-esc="c.date"/> · <t t-esc="c.week_label"/><t t-if="c.deadline"> · hạn <t t-esc="c.deadline"/></t></span>
                             </div>
                             <div class="cw_table" t-if="wd.groups.length">
                                 <table>
@@ -1435,9 +1454,16 @@
                             </div>
                             <div class="cw_foot">
                                 <div class="cw_cmt">
+                                    <div class="cw_visits" t-if="wd.visits.length">
+                                        <div class="cw_vrow" t-foreach="wd.visits" t-as="v" t-key="v.id">
+                                            <span class="cw_vbadge"><i class="fa fa-map-marker"/> <t t-esc="v.date"/></span>
+                                            <div><small><b t-esc="v.user"/><t t-if="v.days"> · chấm phiếu <t t-esc="v.days"/></t></small>
+                                                <p t-esc="v.comment or 'Không có nhận xét.'"/></div>
+                                        </div>
+                                    </div>
                                     <div class="cw_cmt_h">
                                         <span class="ic"><i class="fa fa-pencil-square-o"/></span>
-                                        <b>Nhận xét đánh giá tuần (ASM)</b>
+                                        <b>Nhận xét lần ghé <t t-esc="chtwVisitLabel"/> (ASM)</b>
                                         <small class="cw_cmt_sub"><t t-esc="chtwWeekInfo.label"/>: <t t-esc="chtwWeekInfo.full"/> · <t t-esc="wd.staff ? wd.staff.name : '-'"/> · <t t-esc="wd.staff ? wd.staff.store : '-'"/></small>
                                         <div class="cw_cmt_q" t-if="wd.can_comment">
                                             <button type="button" t-foreach="['Hoàn thành tốt', 'Cần cải thiện vệ sinh', 'Lưu ý kiểm tra ca']" t-as="q" t-key="q"
@@ -1446,7 +1472,7 @@
                                     </div>
                                     <textarea t-if="wd.can_comment" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc tuần này..."
                                               t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
-                                    <div class="cw_cmt_ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
+                                    <div class="cw_cmt_ro" t-elif="!wd.visits.length">Chưa có nhận xét của ASM cho tuần này.</div>
 
                                 </div>
                                 <div class="cw_btns">

@@ -48,7 +48,7 @@ export class StoreChecklistShell extends Component {
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "" },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "" },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -2053,8 +2053,9 @@ export class StoreChecklistShell extends Component {
         try {
             const res = await this.orm.call("store.nvbh.check", "get_cht_week", [], {
                 month: cm.month || false, week: cm.week === null ? false : cm.week,
-                store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false,
+                store_id: cm.storeId ? Number(cm.storeId) : false, staff_key: cm.key || false, visit_date: cm.visit || false,
             });
+            cm.visit = res.visit_date || "";
             cm.month = res.month;
             cm.week = res.week;
             cm.options = res.options;
@@ -2072,6 +2073,7 @@ export class StoreChecklistShell extends Component {
 
     async onChtwWeek(idx) {
         this.state.chtm.week = idx;
+        this.state.chtm.visit = "";
         try {
             await this.loadChtWeek();
         } catch (error) {
@@ -2085,6 +2087,7 @@ export class StoreChecklistShell extends Component {
         if (field === "month") {
             cm.week = null;
         }
+        cm.visit = "";
         if (field === "storeId") {
             cm.key = "";
         }
@@ -2162,12 +2165,30 @@ export class StoreChecklistShell extends Component {
         }
         try {
             await this.orm.call("store.nvbh.check", "save_cht_week_comment",
-                [cm.month, cm.wdata.week, cm.storeId ? Number(cm.storeId) : false, cm.key, cm.comment || ""]);
-            cm.wdata.comment = cm.comment || "";
-            this.notification.add("Đã lưu nhận xét đánh giá tuần", { type: "success" });
+                [cm.month, cm.wdata.week, cm.storeId ? Number(cm.storeId) : false, cm.key, cm.comment || "", cm.visit || false]);
+            this.notification.add("Đã lưu nhận xét lần ghé thăm", { type: "success" });
+            await this.loadChtWeek();
         } catch (error) {
             this.notifyError(error);
         }
+    }
+
+    async onChtwVisitPick(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.chtm.visit) {
+            return;
+        }
+        this.state.chtm.visit = ymd;
+        try {
+            await this.loadChtWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    get chtwVisitLabel() {
+        const v = this.state.chtm.wdata?.visit_date || "";
+        return v ? `${v.slice(8, 10)}/${v.slice(5, 7)}` : "";
     }
 
     get chtwWeekInfo() {
@@ -2189,8 +2210,8 @@ export class StoreChecklistShell extends Component {
         }
         try {
             const res = await this.orm.call("store.nvbh.check", "save_cht_week",
-                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }, cm.comment || ""]);
-            this.notification.add(`Đã đánh giá ${res.done} phiếu check list trong ${this.chtwWeekInfo.label || "tuần"}`, { type: "success" });
+                [cm.month, d.week, cm.storeId ? Number(cm.storeId) : false, cm.key, { ...cm.results }, cm.comment || "", cm.visit || false]);
+            this.notification.add(`Đã đánh giá ${res.done} phiếu check list (${(res.dates || []).join(", ")}) — điểm tính về đúng ngày gốc`, { type: "success" });
             await this.loadChtWeek();
         } catch (error) {
             this.notifyError(error);

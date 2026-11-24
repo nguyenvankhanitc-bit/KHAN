@@ -1003,56 +1003,106 @@ class StoreNvbhCheck(models.Model):
         checks = self.search([('schedule_line_id', 'in', lines.ids), ('kind', '=', 'cht')], order='work_date, id')
         return start, weeks, week, options, key, mine, lines, checks
 
+    @staticmethod
+    def _cht_line_key(line):
+        return (line.employee_code or '').strip() or (line.staff_name or '').strip().casefold()
+
+    def _cht_my_step(self):
+        """Bước đánh giá đang đến lượt người đăng nhập trên phiếu (đang chờ đánh giá), hoặc None."""
+        self.ensure_one()
+        if self.state != 'pending_review':
+            return None
+        info = self._role_info()
+        return next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+
     @api.model
-    def get_cht_week(self, month=None, week=None, store_id=None, staff_key=None):
-        """Trang Đánh giá Checklist CHT theo tuần: KPI tuần, bảng theo nhóm công việc (số việc, giờ, đã làm, tỷ lệ, KQ đánh giá hiện tại),
-        chi tiết từng việc theo ngày và quyền đánh giá của người đăng nhập (cấp ASM đang đến lượt trên các phiếu trong tuần)."""
+    def _cht_visit_scope(self, month, week, store_id, staff_key, visit_date=None):
+        """Phạm vi một lần ASM ghé thăm (quy trình đánh giá CHT theo tuần):
+        - tuần N = tuần đang xem [a, b]; ngày ghé thăm X (mặc định hôm nay, không quá hôm nay, không trước đầu tuần);
+        - chấm lần này: phiếu đã gửi của tuần N có ngày làm việc <= X + phiếu chuyển tiếp (tuần trước, đã gửi, chưa chấm);
+        - phiếu tuần N sau ngày X: chuyển sang hàng chờ của tuần N+1 (lần ghé sau chấm gộp)."""
         start, weeks, week, options, key, mine, lines, checks = self._cht_week_checks(month, week, store_id, staff_key)
+        a, b = weeks[week]
+        today = fields.Date.context_today(self)
+        visit = fields.Date.to_date(visit_date) if visit_date else None
+        if not visit:
+            visit = min(max(today, a), b) if today >= a else a
+        visit = min(max(visit, a), today) if today >= a else a
+        carried = self.browse()
+        if key:
+            carried = self.search([('kind', '=', 'cht'), ('state', '=', 'pending_review'), ('work_date', '<', a),
+                                   ('work_date', '>=', a - timedelta(days=42))], order='work_date, id')
+            carried = carried.filtered(lambda c: c.schedule_line_id and self._cht_line_key(c.schedule_line_id) == key)
+        in_scope = checks.filtered(lambda c: c.work_date <= visit) | carried
+        evaluable = in_scope.filtered(lambda c: c._cht_my_step())
+        later = checks.filtered(lambda c: c.work_date > visit and c.state != 'approved')
+        return {'start': start, 'weeks': weeks, 'week': week, 'a': a, 'b': b, 'options': options, 'key': key, 'mine': mine,
+                'lines': lines, 'checks': checks, 'visit': visit, 'carried': carried, 'evaluable': evaluable, 'later': later}
+
+    @api.model
+    def get_cht_week(self, month=None, week=None, store_id=None, staff_key=None, visit_date=None):
+        """Trang Đánh giá Checklist CHT theo tuần: KPI tuần (khớp Bảng checklist Tổng), bảng theo nhóm công việc, phạm vi lần ghé thăm
+        của ASM (phiếu chấm lần này / chuyển tiếp từ tuần trước / chờ lần ghé sau) và nhận xét của các lần ghé."""
+        sc = self._cht_visit_scope(month, week, store_id, staff_key, visit_date)
+        checks, mine, evaluable, carried = sc['checks'], sc['mine'], sc['evaluable'], sc['carried']
         res = {
-            'month': start.strftime('%Y-%m'), 'week': week, 'options': options, 'key': key,
+            'month': sc['start'].strftime('%Y-%m'), 'week': sc['week'], 'options': sc['options'], 'key': sc['key'],
             'weeks': [{'idx': i, 'label': 'Tuần %s' % (i + 1), 'range': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m')),
-                       'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(weeks)],
+                       'full': '%s – %s' % (a.strftime('%d'), b.strftime('%d/%m/%Y'))} for i, (a, b) in enumerate(sc['weeks'])],
             'staff': self._cht_staff_info(mine[-1:]) if mine else False,
-            'groups': [], 'kpi': {}, 'checks': [], 'can_eval': False, 'today': False, 'comment': '', 'can_comment': False,
+            'visit_date': str(sc['visit']), 'week_start': str(sc['a']), 'today_ymd': str(fields.Date.context_today(self)),
+            'groups': [], 'kpi': {}, 'checks': [], 'carried': [], 'visits': [], 'can_eval': False, 'today': False,
+            'comment': '', 'can_comment': False, 'n_scope': 0, 'n_later': 0,
         }
         if not mine:
             return res
         grp_seq = {g.name: (g.sequence, g.id) for g in self.env['store.cht.task.group'].sudo().with_context(active_test=False).search([])}
         groups = {}
-        evaluable = []
-        info_rows = []
-        for c in checks:
+
+        def new_group(name):
+            return {'name': name, 'tasks': {}, 'lines': 0, 'done': 0, 'hours': 0.0, 'max_total': 0.0, 'max_done': 0.0,
+                    'results': set(), 'errors': 0, 'max_eval': 0.0, 'max_done_eval': 0.0}
+
+        def row_of(c, scope):
+            st = c._cht_my_step()
+            if c.state == 'approved':
+                state = 'Đã đánh giá'
+            elif c.state == 'pending_review':
+                state = {'in': 'Chấm lần này' if st else 'Chờ đánh giá', 'later': 'Chờ lần ghé sau',
+                         'carried': 'Chuyển tiếp'}.get(scope, 'Chờ đánh giá')
+            else:
+                state = 'Chưa gửi (%s/%s việc)' % (c.cnt_done, c.cnt_total)
+            dl = c._step_deadline(c.step_done + 1) if c.state == 'pending_review' else False
+            return {'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'state': state, 'points': c.points, 'scope': scope,
+                    'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c in evaluable,
+                    'deadline': dl.strftime('%d/%m') if dl else '',
+                    'line_id': c.schedule_line_id.id, 'store_id': c.store_id.id, 'ymd': str(c.work_date)}
+
+        # thống kê nhóm: chỉ phiếu của tuần (khớp Bảng checklist Tổng); phiếu chuyển tiếp chỉ góp vào phần chấm / tạm tính
+        for c in checks | carried:
+            own = c in checks
             info = c._role_info()
-            step = next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
-            if step and c.state == 'pending_review':
-                evaluable.append(c.id)
-            state = ('Đã đánh giá' if c.state == 'approved' else 'Chờ đánh giá' if c.state == 'pending_review'
-                     else 'Chưa gửi (%s/%s việc)' % (c.cnt_done, c.cnt_total))
-            info_rows.append({'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'state': state, 'points': c.points,
-                              'max_points': sum(c.line_ids.mapped('max_score')), 'can_eval': c.id in evaluable,
-                              'line_id': c.schedule_line_id.id, 'store_id': c.store_id.id, 'ymd': str(c.work_date)})
             pre = STEP_PREFIX[min(max(info['cur'], c.step_done, 1), len(STEP_PREFIX)) - 1]
-            # giờ làm = giờ của ca (như cột Tổng giờ của Bảng checklist Tổng), chia đều cho các việc của phiếu để ra giờ từng nhóm
             per_line = (c.shift_id.hours or 0.0) / len(c.line_ids) if c.line_ids else 0.0
             for l in c.line_ids:
-                g = groups.setdefault(l.sub_category or 'Khác', {'name': l.sub_category or 'Khác', 'tasks': {}, 'lines': 0, 'done': 0,
-                                                                  'hours': 0.0, 'max_total': 0.0, 'max_done': 0.0, 'results': set(),
-                                                                  'errors': 0, 'max_eval': 0.0, 'max_done_eval': 0.0})
-                tk = l.cht_task_id.id or ('n', l.name)
-                t = g['tasks'].setdefault(tk, {'name': l.name, 'time_slot': l.time_slot or '', 'score': l.max_score, 'days': [], 'all_done': True})
-                t['days'].append({'date': c.work_date.strftime('%d/%m'), 'done': l.is_done,
-                                  'result': l[pre + 'eval_result'] or '', 'error': bool(l.error_count)})
-                t['all_done'] = t['all_done'] and l.is_done and not l.error_count
-                g['lines'] += 1
-                g['done'] += 1 if l.is_done else 0
-                g['hours'] += per_line
-                g['max_total'] += l.max_score or 0.0
-                g['max_done'] += (l.max_score or 0.0) if l.is_done else 0.0
-                g['errors'] += l.error_count or 0
-                if c.id in evaluable:  # phiếu đang chờ người đăng nhập chấm: dùng để tạm tính điểm tuần
+                g = groups.setdefault(l.sub_category or 'Khác', new_group(l.sub_category or 'Khác'))
+                if own:
+                    tk = l.cht_task_id.id or ('n', l.name)
+                    t = g['tasks'].setdefault(tk, {'name': l.name, 'time_slot': l.time_slot or '', 'score': l.max_score, 'days': [], 'all_done': True})
+                    t['days'].append({'date': c.work_date.strftime('%d/%m'), 'done': l.is_done,
+                                      'result': l[pre + 'eval_result'] or '', 'error': bool(l.error_count)})
+                    t['all_done'] = t['all_done'] and l.is_done and not l.error_count
+                    g['lines'] += 1
+                    g['done'] += 1 if l.is_done else 0
+                    g['hours'] += per_line
+                    g['max_total'] += l.max_score or 0.0
+                    g['max_done'] += (l.max_score or 0.0) if l.is_done else 0.0
+                    g['errors'] += l.error_count or 0
+                if c in evaluable:
                     g['max_eval'] += l.max_score or 0.0
                     g['max_done_eval'] += (l.max_score or 0.0) if l.is_done else 0.0
-                if c.id in evaluable or c.state == 'approved':
+                    g['results'].add(l[pre + 'eval_result'] or '')
+                elif own and c.state == 'approved' and not evaluable:
                     g['results'].add(l[pre + 'eval_result'] or '')
         out = []
         for g in sorted(groups.values(), key=lambda g: grp_seq.get(g['name'], (9999, 0)) + (g['name'],)):
@@ -1065,33 +1115,49 @@ class StoreNvbhCheck(models.Model):
                 'max_total': g['max_total'], 'max_done': g['max_done'], 'errors': g['errors'],
                 'max_eval': g['max_eval'], 'max_done_eval': g['max_done_eval'],
                 'result': res_set.pop() if len(res_set) == 1 and '' not in g['results'] else '',
-                'task_rows': tasks,
+                'task_rows': tasks, 'carried_only': not g['lines'],
             })
         res['groups'] = out
-        # KPI tính giống Bảng checklist Tổng: Tổng việc ca / Đã làm / Số lỗi (lỗi cấp trên ghi nhận) cộng các phiếu trong tuần;
-        # điểm tuần = điểm các phiếu đã đánh giá xong (như Điểm lũy kế), phiếu chưa đánh giá không tính
         approved = checks.filtered(lambda c: c._fully_evaluated())
         res['kpi'] = {
             'tasks': sum(checks.mapped('cnt_total')), 'hours': round(sum(c.shift_id.hours or 0.0 for c in checks), 2),
             'done': sum(checks.mapped('cnt_done')), 'errors': sum(checks.mapped('error_total')),
             'points': round(sum(approved.mapped('points')), 2),
             'max_points': sum(sum(c.line_ids.mapped('max_score')) for c in approved),
-            'n_checks': len(checks), 'n_eval': len(evaluable), 'n_lines': len(lines),
+            'n_checks': len(checks), 'n_eval': len(evaluable), 'n_lines': len(sc['lines']),
         }
-        res['checks'] = info_rows
+        res['checks'] = [row_of(c, 'later' if c in sc['later'] else 'in') for c in checks]
+        res['carried'] = [dict(row_of(c, 'carried'), week_label=self._cht_week_label(c.work_date)) for c in carried]
         res['can_eval'] = bool(evaluable)
-        res['comment'] = next((c.week_comment for c in checks if (c.week_comment or '').strip()), '')
-        res['can_comment'] = self._cht_week_can_comment(checks)
-        # lịch hôm nay của CHT đang chọn (mở check list ngày từ trang tuần)
+        res['n_scope'] = len(evaluable)
+        res['n_later'] = len(sc['later'].filtered(lambda c: c.state == 'pending_review'))
+        res['can_comment'] = self._cht_week_can_comment(checks | carried)
+        # nhận xét theo từng lần ghé thăm (của tuần này hoặc có chấm phiếu của tuần này)
+        Visit = self.env['store.cht.visit'].sudo()
+        visits = Visit.search([('staff_key', '=', sc['key']), '|', '&', ('visit_date', '>=', sc['a']), ('visit_date', '<=', sc['b']),
+                               ('check_ids', 'in', checks.ids)], order='visit_date, id')
+        res['visits'] = [{'id': v.id, 'date': v.visit_date.strftime('%d/%m/%Y'), 'user': v.user_id.name or '', 'comment': v.comment or '',
+                          'days': ', '.join(d.strftime('%d/%m') for d in sorted(set(v.check_ids.mapped('work_date')))),
+                          'mine': v.user_id == self.env.user} for v in visits]
+        cur = visits.filtered(lambda v: v.visit_date == sc['visit'] and v.user_id == self.env.user)[-1:]
+        res['comment'] = cur.comment or ''
         today = fields.Date.context_today(self)
         tl = mine.filtered(lambda l: l.work_date == today)[:1]
         res['today'] = {'line_id': tl.id, 'store_id': tl.store_id.id, 'ymd': str(today)} if tl else False
         return res
 
     @api.model
+    def _cht_week_label(self, day):
+        start, end, _n = self._month_range(day.strftime('%Y-%m'))
+        for i, (a, b) in enumerate(self._month_weeks(start, end)):
+            if a <= day <= b:
+                return 'Tuần %s (%s – %s)' % (i + 1, a.strftime('%d'), b.strftime('%d/%m'))
+        return ''
+
+    @api.model
     def _cht_week_can_comment(self, checks):
-        """Người được viết nhận xét tuần: người đánh giá trong luồng của các phiếu trong tuần (ASM phụ trách, Admin chức vụ
-        nếu có bước đó) hoặc Quản trị viên; không phụ thuộc phiếu đã duyệt hay chưa."""
+        """Người được viết nhận xét: người đánh giá trong luồng của các phiếu (ASM phụ trách, Admin chức vụ nếu có bước đó)
+        hoặc Quản trị viên; không phụ thuộc phiếu đã duyệt hay chưa."""
         user = self.env.user
         if user.has_group('base.group_system'):
             return bool(checks)
@@ -1104,31 +1170,48 @@ class StoreNvbhCheck(models.Model):
         return False
 
     @api.model
-    def save_cht_week_comment(self, month, week, store_id, staff_key, comment):
-        """Lưu riêng nhận xét tuần (không cần phiếu đang chờ đánh giá): ghi vào mọi phiếu CHT trong tuần."""
-        _s, _w, _i, _o, _k, _m, _l, checks = self._cht_week_checks(month, week, store_id, staff_key)
-        if not checks:
-            raise UserError(_('Tuần này chưa có phiếu check list nào để lưu nhận xét.'))
-        if not self._cht_week_can_comment(checks):
-            raise AccessError(_('Chỉ người đánh giá (ASM phụ trách) mới được nhận xét tuần này.'))
+    def _cht_save_visit(self, sc, comment, evaluated):
+        """Ghi / cập nhật lần ghé thăm (người đăng nhập + ngày ghé + CHT): nhận xét và các phiếu đã chấm trong lần ghé đó."""
         text = '\n'.join(ln.rstrip() for ln in (comment or '').strip().splitlines()) or False
-        checks.sudo().write({'week_comment': text})
+        Visit = self.env['store.cht.visit'].sudo()
+        v = Visit.search([('staff_key', '=', sc['key']), ('visit_date', '=', sc['visit']), ('user_id', '=', self.env.user.id)],
+                         order='id desc', limit=1)
+        vals = {'comment': text}
+        if evaluated:
+            vals['check_ids'] = [(4, c.id) for c in evaluated]
+        if v:
+            v.write(vals)
+        else:
+            staff = sc['mine'][-1:]
+            v = Visit.create(dict(vals, staff_key=sc['key'], staff_name=staff.staff_name or '', store_id=staff.store_id.id or False,
+                                  visit_date=sc['visit'], user_id=self.env.user.id))
+        # nhận xét hiện ở chi tiết từng ngày của Bảng checklist tháng
+        if text and v.check_ids:
+            v.check_ids.sudo().write({'week_comment': text})
+        return v
+
+    @api.model
+    def save_cht_week_comment(self, month, week, store_id, staff_key, comment, visit_date=None):
+        """Lưu nhận xét của lần ghé thăm (không có phiếu cần chấm)."""
+        sc = self._cht_visit_scope(month, week, store_id, staff_key, visit_date)
+        if not sc['checks'] and not sc['carried']:
+            raise UserError(_('Tuần này chưa có phiếu check list nào để lưu nhận xét.'))
+        if not self._cht_week_can_comment(sc['checks'] | sc['carried']):
+            raise AccessError(_('Chỉ người đánh giá (ASM phụ trách) mới được nhận xét tuần này.'))
+        self._cht_save_visit(sc, comment, self.browse())
         return True
 
     @api.model
-    def save_cht_week(self, month, week, store_id, staff_key, results, comment=None):
-        """Đồng ý đánh giá tuần: áp KQ đánh giá theo nhóm công việc (results = {tên nhóm: good / avg / bad}) cho mọi dòng của
-        các phiếu CHT trong tuần đang đến lượt người đăng nhập đánh giá. Việc chưa làm tự tính Không đạt; dòng có ghi lỗi giữ lỗi."""
+    def save_cht_week(self, month, week, store_id, staff_key, results, comment=None, visit_date=None):
+        """Lưu lần ASM ghé thăm: áp KQ đánh giá theo nhóm (results = {tên nhóm: good / avg / bad}) cho các phiếu trong phạm vi
+        (phiếu đã gửi của tuần đến ngày ghé thăm + phiếu chuyển tiếp từ tuần trước) đang đến lượt người đăng nhập chấm.
+        Điểm tự tính về đúng ngày / tuần / tháng gốc của từng phiếu. Việc CHT chưa làm tính Không đạt; dòng có ghi lỗi giữ lỗi."""
         valid = {k for k, _l in EVAL_RESULTS}
         results = {k: v for k, v in (results or {}).items() if v in valid}
-        _s, _w, _i, _o, _k, _m, _l, checks = self._cht_week_checks(month, week, store_id, staff_key)
-        done = 0
+        sc = self._cht_visit_scope(month, week, store_id, staff_key, visit_date)
         evaluated = self.browse()
-        for c in checks:
-            if c.state != 'pending_review':
-                continue
-            info = c._role_info()
-            step = next((st for st in info['chain'] if st['current'] and st['can_edit']), None)
+        for c in sc['evaluable']:
+            step = c._cht_my_step()
             if not step:
                 continue
             missing = {l.sub_category or 'Khác' for l in c.line_ids} - set(results)
@@ -1139,14 +1222,39 @@ class StoreNvbhCheck(models.Model):
                        for l in c.line_ids]
             self.save_step_evaluation(c.id, step['no'], changes)
             evaluated |= c
-            done += 1
-        if not done:
-            raise UserError(_('Không có phiếu nào trong tuần đang chờ bạn đánh giá.'))
-        if comment is not None:
-            # nhận xét tuần: ghi vào các phiếu vừa duyệt và các phiếu đã duyệt khác của tuần (người đánh giá là người đăng nhập)
-            text = '\n'.join(ln.rstrip() for ln in (comment or '').strip().splitlines()) or False
-            (evaluated | checks.filtered(lambda c: c.state == 'approved')).sudo().write({'week_comment': text})
-        return {'done': done}
+        if not evaluated:
+            raise UserError(_('Không có phiếu nào đến ngày ghé thăm đang chờ bạn đánh giá.'))
+        self._cht_save_visit(sc, comment, evaluated)
+        return {'done': len(evaluated), 'dates': [c.work_date.strftime('%d/%m') for c in evaluated]}
+
+    # ------------------------------------------------------------------
+    # Nhắc quá hạn: phiếu CHT ASM chưa đánh giá đến hết tuần N+1 -> hệ thống khóa (ASM trễ hạn), báo cấp trên của ASM và Admin
+    # ------------------------------------------------------------------
+    @api.model
+    def _cron_notify_cht_asm_late(self):
+        from .store_notify import bot_send, card
+        today = fields.Date.context_today(self)
+        checks = self.sudo().search([('kind', '=', 'cht'), ('state', '=', 'pending_review'),
+                                     ('work_date', '>=', today - timedelta(days=45))])
+        admins = self._admin_title_employees().mapped('user_id')
+        for c in checks:
+            no = c.step_done + 1
+            dl = c._step_deadline(no)
+            if not dl or dl != today - timedelta(days=1):
+                continue  # chỉ báo một lần, ngày ngay sau khi hết hạn
+            chain = c._approval_chain()
+            step = chain[no - 1] if no <= len(chain) else {}
+            boss = step.get('employee') and step['employee'].parent_id.user_id or self.env['res.users']
+            to = (boss | admins) - (step.get('user') or self.env['res.users'])
+            if not to:
+                continue
+            bot_send(self.env, to, card('CHECKLIST CHT QUÁ HẠN %s ĐÁNH GIÁ' % (step.get('code') or 'ASM'), [
+                ('Cửa hàng trưởng', c.staff_name or ''),
+                ('Cửa hàng', c.store_id.display_name),
+                ('Ngày', c.work_date.strftime('%d/%m/%Y')),
+                ('Người đánh giá', step.get('employee') and step['employee'].name or ''),
+                ('Hạn đánh giá', dl.strftime('%d/%m/%Y')),
+            ], label='Mở phiếu', check_id=c.id))
 
     @api.model
     def _xlsx_book(self, sheets, filename):
@@ -1410,3 +1518,18 @@ class StoreNvbhCheckLine(models.Model):
             cr.execute("UPDATE store_nvbh_check_line SET status = CASE WHEN is_done THEN 'done' "
                        "WHEN COALESCE(btrim(note), '') <> '' THEN 'doing' ELSE 'todo' END")
         self._init_scores()
+
+
+class StoreChtVisit(models.Model):
+    """Một lần ASM ghé thăm cửa hàng để đánh giá check list CHT: ngày ghé, người chấm, nhận xét, các phiếu đã chấm."""
+    _name = 'store.cht.visit'
+    _description = 'Lần ASM ghé thăm đánh giá CHT'
+    _order = 'visit_date desc, id desc'
+
+    staff_key = fields.Char(string='Khóa CHT (ID / họ tên)', index=True, required=True)
+    staff_name = fields.Char(string='Cửa hàng trưởng')
+    store_id = fields.Many2one('hr.store', string='Cửa hàng', ondelete='set null')
+    visit_date = fields.Date(string='Ngày ghé thăm', required=True, index=True)
+    user_id = fields.Many2one('res.users', string='Người đánh giá', required=True, default=lambda self: self.env.user, ondelete='cascade')
+    comment = fields.Text(string='Nhận xét')
+    check_ids = fields.Many2many('store.nvbh.check', 'store_cht_visit_check_rel', 'visit_id', 'check_id', string='Phiếu đã chấm')

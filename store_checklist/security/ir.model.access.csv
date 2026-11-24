@@ -60,3 +60,5 @@ access_store_asm_check_user,store.asm.check user,model_store_asm_check,group_sto
 access_store_asm_check_manager,store.asm.check manager,model_store_asm_check,group_store_manager,1,1,1,1
 access_store_asm_check_line_user,store.asm.check.line user,model_store_asm_check_line,group_store_user,1,0,0,0
 access_store_asm_check_line_manager,store.asm.check.line manager,model_store_asm_check_line,group_store_manager,1,1,1,1
+access_store_cht_visit_user,store.cht.visit user,model_store_cht_visit,group_store_user,1,0,0,0
+access_store_cht_visit_manager,store.cht.visit manager,model_store_cht_visit,group_store_manager,1,1,1,1

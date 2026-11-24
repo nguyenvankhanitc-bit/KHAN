@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Mỗi ngày 08:00 giờ Việt Nam (01:00 UTC): báo cấp trên của ASM và Admin các phiếu check list CHT vừa quá hạn ASM đánh giá
+         (hạn = hết tuần kế tiếp của ngày làm việc). -->
+    <data noupdate="1">
+        <record id="cron_store_cht_asm_late" model="ir.cron">
+            <field name="name">Checklist Audit: Báo phiếu CHT quá hạn ASM đánh giá</field>
+            <field name="model_id" ref="model_store_nvbh_check"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_notify_cht_asm_late()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=1, minute=0, second=0, microsecond=0) + timedelta(days=0 if DateTime.now().hour &lt; 1 else 1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

@@ -517,9 +517,16 @@ class StoreNvbhCheckRole(models.Model):
         return self._local_date(dt) or self.work_date
 
     def _step_deadline(self, no):
-        """Hạn đánh giá của cấp thứ `no`: hết ngày (ngày đến lượt + 4)."""
+        """Hạn đánh giá của cấp thứ `no`: hết ngày (ngày đến lượt + 4).
+        Check list CHT: ASM đánh giá theo lần ghé thăm, phiếu sau ngày ghé chuyển sang tuần kế tiếp -> hạn là hết Chủ nhật
+        của tuần kế tiếp (tuần N+1) tính từ ngày làm việc (không sớm hơn hạn 4 ngày)."""
         start = self._step_start(no)
-        return start + timedelta(days=self._review_days()) if start else False
+        if not start:
+            return False
+        dl = start + timedelta(days=self._review_days())
+        if self.kind == 'cht' and self.work_date:
+            dl = max(dl, self.work_date - timedelta(days=self.work_date.weekday()) + timedelta(days=13))
+        return dl
 
     def _late_stage(self):
         """Phiếu đã bị hệ thống khóa vì quá hạn: 'staff' = nhân viên chưa hoàn thành khi hết hạn (không ghi nhận);

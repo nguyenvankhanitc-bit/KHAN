@@ -1874,7 +1874,11 @@ export class StoreChecklistShell extends Component {
                 // Người xem nhiều CHT (Quản trị / Admin / ASM nhiều cửa hàng): mở danh sách xổ Miền > Cửa hàng > CHT trước
                 this.state.chtm.mode = "week";
                 this.state.chtm.week = null;
-                await this.loadChtOverview();
+                try {
+                    await this.loadChtOverview();
+                } catch {
+                    this.state.chtm.ov = null; // chưa tải được danh sách (vd. server chưa khởi động lại): mở trang đánh giá như cũ
+                }
                 const many = (this.state.chtm.ov?.n_cht || 0) > 1;
                 this.state.chtm.hasList = many;
                 this.state.chtm.view = many ? "list" : "one";

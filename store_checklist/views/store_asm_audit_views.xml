@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cài đặt › Công việc checklist NVBH › Danh sách công việc Audit (tiêu chí Phiếu Audit & Đánh giá cửa hàng của ASM) -->
+    <record id="view_store_asm_audit_crit_list" model="ir.ui.view">
+        <field name="name">store.asm.audit.crit.list</field>
+        <field name="model">store.asm.audit.crit</field>
+        <field name="arch" type="xml">
+            <list group_edit="0" group_delete="0" expand="0" multi_edit="1" string="Danh sách công việc Audit" class="o_store_shift o_store_task o_store_cht_task">
+                <field name="sequence" width="56px"/>
+                <field name="name" width="420px"/>
+                <groupby name="group_id">
+                    <button name="action_edit_popup" type="object" icon="fa-pencil" title="Sửa tên / thứ tự nhóm"/>
+                </groupby>
+                <field name="standard" width="300px"/>
+                <field name="group_id" width="220px" options="{'no_create': True}"/>
+                <field name="score" sum="Tổng điểm chuẩn" width="80px"/>
+                <button name="action_open_popup" type="object" icon="fa-pencil" title="Chỉnh sửa" width="48px"/>
+                <button name="unlink" type="object" icon="fa-trash" title="Xóa" class="text-danger" width="48px"
+                        confirm="Xóa tiêu chí này?"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_store_asm_audit_crit_form" model="ir.ui.view">
+        <field name="name">store.asm.audit.crit.form</field>
+        <field name="model">store.asm.audit.crit</field>
+        <field name="arch" type="xml">
+            <form string="Tiêu chí Audit">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="standard"/>
+                        <field name="group_id" options="{'no_create_edit': False}"/>
+                        <field name="sequence"/>
+                        <field name="score"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_store_asm_audit_crit_search" model="ir.ui.view">
+        <field name="name">store.asm.audit.crit.search</field>
+        <field name="model">store.asm.audit.crit</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="standard"/>
+                <group>
+                    <filter name="g_group" string="Nhóm tiêu chí" context="{'group_by': 'group_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_store_asm_audit_group_form" model="ir.ui.view">
+        <field name="name">store.asm.audit.group.form</field>
+        <field name="model">store.asm.audit.group</field>
+        <field name="arch" type="xml">
+            <form string="Nhóm tiêu chí Audit">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sequence"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu" special="save" class="btn-primary"/>
+                    <button string="Hủy" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_store_asm_audit_crit" model="ir.actions.act_window">
+        <field name="name">Danh sách công việc Audit</field>
+        <field name="res_model">store.asm.audit.crit</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_store_asm_audit_crit_list"/>
+        <field name="search_view_id" ref="view_store_asm_audit_crit_search"/>
+        <field name="context">{'group_by': ['group_id']}</field>
+    </record>
+</odoo>

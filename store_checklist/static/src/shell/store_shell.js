@@ -47,6 +47,9 @@ export class StoreChecklistShell extends Component {
             contentMode: "dashboard",
             shiftTab: "morning", shiftStats: { total: 0, types: 0 },
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
+            // Phiếu Audit & Đánh giá cửa hàng (ASM)
+            aud: { stores: [], storeId: "", date: "", sheet: null, history: [], tab: "audit", filter: "ALL", q: "", busy: false, snap: "",
+                newCat: "hr", newText: "" },
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
                 week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "", view: "one", ov: null, ovOpen: {}, hasList: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
@@ -235,6 +238,8 @@ export class StoreChecklistShell extends Component {
                     { id: "nvbh_cht", label: "Checklist CV CHT", icon: "fa-user-circle", sub: true, permId: "nvbh_cht" },
                     // Checklist công việc ASM: giống Checklist CV CHT (ASM tick, RSM đánh giá)
                     { id: "nvbh_asmcv", label: "Checklist CV ASM", icon: "fa-user-secret", sub: true, permId: "nvbh_asmcv" },
+                    // Phiếu Audit & Đánh giá cửa hàng của ASM: chấm tiêu chí (Danh sách công việc Audit), nhận xét, yêu cầu khắc phục
+                    { id: "nvbh_audit", label: "Phiếu Audit cửa hàng", icon: "fa-clipboard", sub: true, permId: "nvbh_audit" },
                     // Các mục phiếu khác (có trong ma trận phân quyền): ẩn / hiện theo quyền Xem của từng user
                     { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
                     { id: "review", label: "Phiếu Đánh Giá", icon: "fa-pencil-square-o", action: "store_checklist.action_store_audit" },
@@ -296,6 +301,7 @@ export class StoreChecklistShell extends Component {
                 { id: "nvbh_task", label: "Danh sách công việc NVBH", icon: "fa-list-ul", action: "store_checklist.action_store_nvbh_task", sub: true },
                 { id: "cht_task", label: "Danh sách công việc CHT", icon: "fa-list-alt", action: "store_checklist.action_store_cht_task", sub: true },
                 { id: "asm_task", label: "Danh sách công việc ASM", icon: "fa-list-alt", action: "store_checklist.action_store_asm_task", sub: true },
+                { id: "audit_task", label: "Danh sách công việc Audit", icon: "fa-list-ol", action: "store_checklist.action_store_asm_audit_crit", sub: true },
                 { id: "nvbh_rating", label: "Xếp loại", icon: "fa-trophy", action: "store_checklist.action_store_nvbh_rating", sub: true },
             ];
             const vis = (list) => (rights ? list.filter((c) => rights[c.id]?.read) : list);
@@ -1891,6 +1897,354 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+
+    // =====================================================================
+    // Phiếu Audit & Đánh giá cửa hàng (ASM)
+    // =====================================================================
+    async openAuditPage() {
+        this.state.activeNav = "nvbh_audit";
+        this.state.contentMode = "list";
+        this.state.embeddedViewProps = null;
+        try {
+            await this.loadAudit({});
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadAudit({ storeId, date, auditId } = {}) {
+        const a = this.state.aud;
+        a.busy = true;
+        try {
+            const res = await this.orm.call("store.asm.audit", "get_audit_page", [], {
+                store_id: storeId !== undefined ? (storeId ? Number(storeId) : false) : (a.storeId ? Number(a.storeId) : false),
+                audit_date: date || a.date || false, audit_id: auditId || false,
+            });
+            a.stores = res.stores;
+            a.storeId = res.store_id ? String(res.store_id) : "";
+            a.date = res.date;
+            a.history = res.history;
+            this.audSetSheet(res.sheet);
+        } finally {
+            a.busy = false;
+        }
+    }
+
+    audSetSheet(sheet) {
+        const a = this.state.aud;
+        a.sheet = sheet;
+        a.snap = this.audSnapshot();
+    }
+
+    audSnapshot() {
+        const s = this.state.aud.sheet;
+        return s ? JSON.stringify([s.lines.map((l) => [l.result, l.note]), s.remarks, s.plans]) : "";
+    }
+
+    get audDirty() {
+        return Boolean(this.state.aud.sheet) && this.audSnapshot() !== this.state.aud.snap;
+    }
+
+    get audEditable() {
+        const s = this.state.aud.sheet;
+        return Boolean(s?.can_edit) && s.state === "draft";
+    }
+
+    get audCanPlan() {
+        return Boolean(this.state.aud.sheet?.can_edit);
+    }
+
+    audConfirmLeave() {
+        return !this.audDirty || window.confirm("Phiếu Audit có thay đổi chưa lưu, nếu tiếp tục sẽ bị mất. Tiếp tục?");
+    }
+
+    async onAudStore(ev) {
+        if (!this.audConfirmLeave()) {
+            ev.target.value = this.state.aud.storeId;
+            return;
+        }
+        try {
+            await this.loadAudit({ storeId: ev.target.value });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudDate(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.aud.date || !this.audConfirmLeave()) {
+            return;
+        }
+        try {
+            await this.loadAudit({ date: ymd });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudHistory(ev) {
+        const id = Number(ev.target.value);
+        if (!id || !this.audConfirmLeave()) {
+            return;
+        }
+        try {
+            await this.loadAudit({ auditId: id });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    audPts(res, max) {
+        return res === "pass" ? max : res === "improve" ? max / 2 : 0;
+    }
+
+    get audMetrics() {
+        const lines = this.state.aud.sheet?.lines || [];
+        const cnt = (r) => lines.filter((l) => l.result === r).length;
+        const rated = lines.filter((l) => l.result).length;
+        const score = lines.reduce((s, l) => s + (l.result ? this.audPts(l.result, l.max_score) : 0), 0);
+        const max = lines.reduce((s, l) => s + (l.max_score || 0), 0);
+        const pass = cnt("pass");
+        const improve = cnt("improve");
+        const fail = cnt("fail");
+        const pct = max ? Math.round((100 * score) / max) : 0;
+        return {
+            total: lines.length, rated, ratedPct: lines.length ? Math.round((100 * rated) / lines.length) : 0,
+            score: Math.round(score * 10) / 10, max, pct, pass, improve, fail, errors: improve + fail,
+            rank: pct >= 90 ? "Xuất sắc" : pct >= 80 ? "Khá / Đạt chuẩn" : pct >= 65 ? "Trung bình" : "Cần khắc phục gấp",
+            rankTone: pct >= 80 ? "ok" : pct >= 65 ? "warn" : "bad",
+            ringDash: `${pct}, 100`,
+        };
+    }
+
+    audMatch(l) {
+        const a = this.state.aud;
+        const isIssue = l.result === "improve" || l.result === "fail";
+        if (a.filter === "ISSUES" && !isIssue) {
+            return false;
+        }
+        if (a.filter === "PASS" && l.result !== "pass") {
+            return false;
+        }
+        if (a.filter === "TODO" && l.result) {
+            return false;
+        }
+        const q = (a.q || "").trim().toLowerCase();
+        return !q || l.name.toLowerCase().includes(q) || (l.standard || "").toLowerCase().includes(q) || String(l.sequence) === q;
+    }
+
+    get audGroups() {
+        const out = [];
+        const map = {};
+        let no = 0;
+        for (const l of this.state.aud.sheet?.lines || []) {
+            no += 1;
+            l._no = no; // STT liên tục 1..n trên phiếu
+            if (!map[l.group]) {
+                map[l.group] = { name: l.group, lines: [], all: [] };
+                out.push(map[l.group]);
+            }
+            map[l.group].all.push(l);
+            if (this.audMatch(l)) {
+                map[l.group].lines.push(l);
+            }
+        }
+        return out.map((g, i) => {
+            const m = g.name.match(/^(\d+)/);
+            return {
+                ...g, idx: i, code: m ? m[1] : String(i + 1).padStart(2, "0"),
+                title: g.name.replace(/^\d+\s*[–-]\s*/, ""),
+                pass: g.all.filter((l) => l.result === "pass").length,
+                score: g.all.reduce((s, l) => s + (l.result ? this.audPts(l.result, l.max_score) : 0), 0),
+                max: g.all.reduce((s, l) => s + (l.max_score || 0), 0),
+            };
+        });
+    }
+
+    get audIssues() {
+        return (this.state.aud.sheet?.lines || []).filter((l) => l.result === "improve" || l.result === "fail");
+    }
+
+    audIssueMissing(l) {
+        return (l.result === "improve" || l.result === "fail") && !(l.note || "").trim() && !(l.photos || []).length;
+    }
+
+    audSet(l, res) {
+        if (!this.audEditable) {
+            return;
+        }
+        l.result = l.result === res ? "" : res;
+    }
+
+    audGroupPass(g) {
+        if (!this.audEditable) {
+            return;
+        }
+        g.all.forEach((l) => { l.result = "pass"; });
+        this.notification.add(`Đã chấm Đạt toàn bộ tiêu chí nhóm ${g.code}`, { type: "success" });
+    }
+
+    audFmt(n) {
+        return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 }).format(n || 0);
+    }
+
+    audLabel(cat) {
+        return { hr: "Nhân sự", ops: "Vận hành", goods: "Hàng hóa", cost: "Chi phí", posm: "POSM" }[cat] || cat;
+    }
+
+    async audSave(silent = false) {
+        const a = this.state.aud;
+        const s = a.sheet;
+        if (!s) {
+            return null;
+        }
+        const res = await this.orm.call("store.asm.audit", "save_audit", [{
+            id: s.id || false, store_id: Number(a.storeId), date: a.date,
+            lines: s.lines.map((l) => ({ id: l.id, crit_id: l.crit_id, result: l.result || false, note: l.note || "" })),
+            remarks: s.remarks.map((r) => ({ category: r.category, text: r.text })),
+            plans: s.plans.map((p) => ({ content: p.content, owner: p.owner, deadline: p.deadline || false, state: p.state })),
+        }]);
+        this.audSetSheet(res);
+        if (!silent) {
+            this.notification.add(`Đã lưu phiếu Audit ${res.name} (${this.audMetrics.pct}% đạt)`, { type: "success" });
+        }
+        await this.loadAuditHistory();
+        return res;
+    }
+
+    async loadAuditHistory() {
+        const a = this.state.aud;
+        try {
+            const res = await this.orm.call("store.asm.audit", "get_audit_page", [], {
+                store_id: a.storeId ? Number(a.storeId) : false, audit_date: a.date || false, audit_id: a.sheet?.id || false,
+            });
+            a.history = res.history;
+        } catch {
+            // lịch sử không tải được thì giữ danh sách cũ
+        }
+    }
+
+    async onAudSaveDraft() {
+        try {
+            await this.audSave();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudComplete() {
+        const m = this.audMetrics;
+        if (m.rated < m.total) {
+            this.state.aud.filter = "TODO";
+            this.notification.add(`Còn ${m.total - m.rated} tiêu chí chưa chấm.`, { type: "warning" });
+            return;
+        }
+        const miss = this.audIssues.filter((l) => this.audIssueMissing(l));
+        if (miss.length) {
+            this.state.aud.filter = "ISSUES";
+            this.notification.add(`Còn ${miss.length} tiêu chí Lỗi / Cần cải thiện (vd. #${miss[0]._no}) chưa có ghi chú hoặc ảnh dẫn chứng!`, { type: "warning" });
+            return;
+        }
+        try {
+            if (this.audEditable && (this.audDirty || !this.state.aud.sheet.id)) {
+                await this.audSave(true);
+            }
+            this.state.aud.tab = "summary";
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudSubmit() {
+        try {
+            if (this.audDirty || !this.state.aud.sheet.id) {
+                await this.audSave(true);
+            }
+            const res = await this.orm.call("store.asm.audit", "submit_audit", [this.state.aud.sheet.id]);
+            this.audSetSheet(res);
+            await this.loadAuditHistory();
+            this.notification.add(`Đã gửi kết quả Audit cửa hàng ${res.store_code} tới CHT & cấp trên`, { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudSavePlans() {
+        try {
+            await this.audSave();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudPhoto(l, ev) {
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        if (!file || !this.audEditable) {
+            return;
+        }
+        try {
+            if (!this.state.aud.sheet.id || !l.id) {
+                await this.audSave(true);
+            }
+            const line = this.state.aud.sheet.lines.find((x) => x.crit_id === l.crit_id);
+            const data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(",")[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            line.photos = await this.orm.call("store.asm.audit", "upload_audit_photo", [line.id, file.name, data]);
+            this.state.aud.snap = this.audSnapshot();
+            this.notification.add(`Đã đính kèm ảnh "${file.name}" cho tiêu chí #${line._no}`, { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudRemovePhoto(l, ph) {
+        try {
+            l.photos = await this.orm.call("store.asm.audit", "remove_audit_photo", [l.id, ph.id]);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onAudAddRemark() {
+        const a = this.state.aud;
+        const text = (a.newText || "").trim();
+        if (!text) {
+            this.notification.add("Vui lòng nhập nội dung nhận xét trước khi thêm.", { type: "warning" });
+            return;
+        }
+        a.sheet.remarks.push({ id: false, category: a.newCat, text });
+        a.newText = "";
+    }
+
+    onAudAddPlan() {
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
+        const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        this.state.aud.sheet.plans.push({ id: false, content: "", owner: "CHT", deadline: ymd, state: "in_progress" });
+    }
+
+    onAudSyncIssues() {
+        const plans = this.state.aud.sheet.plans;
+        let added = 0;
+        const d = new Date();
+        d.setDate(d.getDate() + 2);
+        const ymd = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        for (const l of this.audIssues) {
+            const prefix = `#${l._no}: `;
+            if (!plans.some((p) => (p.content || "").startsWith(prefix))) {
+                plans.push({ id: false, content: `${prefix}Khắc phục "${l.name}"`, owner: "CHT", deadline: ymd, state: "in_progress" });
+                added += 1;
+            }
+        }
+        this.notification.add(added ? `Đã thêm ${added} yêu cầu khắc phục từ các tiêu chí lỗi` : "Tất cả tiêu chí lỗi đã có trong Action Plan.", { type: "info" });
+    }
+
     // ---- Checklist CV CHT: Bảng Checklist Tổng theo tháng (thẻ ngày), bấm thẻ -> bảng check list ngày đó ----
     async loadChtMonth() {
         const cm = this.state.chtm;
@@ -2795,7 +3149,7 @@ export class StoreChecklistShell extends Component {
         return Boolean(
             (this.state.isManager || this.state.rights?.[this.state.activeNav]?.create)
             && this.state.embeddedViewProps
-            && ["benchmark", "level", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "nvbh_rating"].includes(this.state.activeNav)
+            && ["benchmark", "level", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "audit_task", "nvbh_rating"].includes(this.state.activeNav)
         );
     }
 
@@ -2808,7 +3162,7 @@ export class StoreChecklistShell extends Component {
 
     // Điểm chuẩn đánh giá: xuất / nhập Excel (giám sát = gs_benchmark, NVBH + ASM = benchmark)
     get isBenchmarkNav() {
-        return ["benchmark", "gs_benchmark", "nvbh_task", "cht_task", "asm_task"].includes(this.state.activeNav);
+        return ["benchmark", "gs_benchmark", "nvbh_task", "cht_task", "asm_task", "audit_task"].includes(this.state.activeNav);
     }
 
     // model + tham số của hàm export_xlsx / import_xlsx (Công việc NVBH không có scope)
@@ -2822,6 +3176,9 @@ export class StoreChecklistShell extends Component {
         if (this.state.activeNav === "asm_task") {
             return "store.asm.task";
         }
+        if (this.state.activeNav === "audit_task") {
+            return "store.asm.audit.crit";
+        }
         return this.state.activeNav === "nvbh_task" ? "store.nvbh.task" : "store.audit.template.line";
     }
 
@@ -2831,7 +3188,7 @@ export class StoreChecklistShell extends Component {
             const month = this.state.listFilters.month;
             return extra.length ? [...extra, month, this.state.job.kind === "asm" ? "asm" : false] : [this.schedDomain(), month];
         }
-        return ["nvbh_task", "cht_task", "asm_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
+        return ["nvbh_task", "cht_task", "asm_task", "audit_task"].includes(this.state.activeNav) ? extra : [this.benchmarkScope, ...extra];
     }
 
     get isScheduleNav() {
@@ -3093,6 +3450,7 @@ export class StoreChecklistShell extends Component {
             report_flow_nvbh: "SƠ ĐỒ QUY TRÌNH CHECK LIST NHÂN VIÊN BÁN HÀNG",
             nvbh_cht: "CHECK LIST CÔNG VIỆC CỬA HÀNG TRƯỞNG",
             nvbh_asmcv: "CHECK LIST CÔNG VIỆC ASM",
+            nvbh_audit: "PHIẾU AUDIT & ĐÁNH GIÁ CỬA HÀNG (ASM)",
         }[this.state.activeNav] || "";
     }
 
@@ -3945,6 +4303,10 @@ export class StoreChecklistShell extends Component {
             this.track({ child });
             return this.openJobsPage("asm");
         }
+        if (child?.id === "nvbh_audit") {
+            this.track({ child });
+            return this.openAuditPage();
+        }
         if (child?.id === "report_flow_nvbh") {
             // trang tĩnh: sơ đồ quy trình checklist NVBH (không có action / dữ liệu cần tải)
             this.track({ child });
@@ -4595,6 +4957,9 @@ export class StoreChecklistShell extends Component {
         if (navId === "nvbh_asmcv") {
             return this.openJobsPage("asm");
         }
+        if (navId === "nvbh_audit") {
+            return this.openAuditPage();
+        }
         if (navId === "report_flow_nvbh") {
             this.state.activeNav = "report_flow_nvbh";
             this.state.contentMode = "list";
@@ -4757,7 +5122,7 @@ export class StoreChecklistShell extends Component {
             // bấm dòng lỗi thì mở popup xử lý sai phạm của biên bản chứa dòng đó
             return this.orm.read("store.audit.action", [resId], ["audit_id"]).then(([row]) => row && this.openViolation(row.audit_id[0]));
         }
-        if (!["benchmark", "review", "review_list", "level", "nvbh_jobs", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "nvbh_rating", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
+        if (!["benchmark", "review", "review_list", "level", "nvbh_jobs", "gs_benchmark", "gs_level", "shift", "nvbh_task", "cht_task", "asm_task", "audit_task", "nvbh_rating", "nvbh", "asm", "gs", "report_gs", "violation_stores", "violation_all"].includes(navId)) {
             return this.showWindow(act, navId, "form", resId);
         }
         // Điểm chuẩn và Phiếu đánh giá mở trong popup, đóng xong thì nạp lại danh sách (giữ nguyên nhóm đang mở và vị trí cuộn)

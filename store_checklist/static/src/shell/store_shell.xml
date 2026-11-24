@@ -21,12 +21,12 @@
                 <h3>Bạn chưa được phân quyền</h3>
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick and !(isAuditListNav and state.auditStoreIds === false)"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav and state.auditStoreIds and state.auditStoreIds.length">Đang hiện phiếu của tất cả cửa hàng bạn được phân quyền. Chọn một cửa hàng ở bộ lọc để xem riêng.</t><t t-elif="isAuditListNav">Bạn chưa được phân quyền cửa hàng nào — đang hiện các phiếu do bạn đánh giá.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
                 </div>
-                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen and !(state.activeNav === 'nvbh_cht' and state.chtm.mode !== 'day')">
+                <div class="o_store_list_banner" t-if="listTitle and !isSupLayout and !isFormOpen and !(state.activeNav === 'nvbh_cht' and state.chtm.mode !== 'day') and state.activeNav !== 'nvbh_audit'">
                     <button type="button" class="o_store_page_close" title="Đóng trang (về Tổng quan)" aria-label="Đóng" t-on-click="onOverview"><i class="fa fa-times"/></button>
                     <img class="o_store_logo" src="/web/binary/company_logo" alt="Logo công ty"/>
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
@@ -1062,6 +1062,227 @@
                         </div>
                     </t>
                     <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có dữ liệu KPI nhân viên bán hàng theo ASM trong tháng đã chọn.</div>
+                </div>
+                <!-- ===== Phiếu Audit & Đánh giá cửa hàng (ASM) ===== -->
+                <div class="o_aud" t-if="state.activeNav === 'nvbh_audit'">
+                    <t t-set="ad" t-value="state.aud"/>
+                    <t t-set="am" t-value="audMetrics"/>
+                    <header class="ad_head">
+                        <div class="ad_head_top">
+                            <div class="ad_brand">
+                                <span class="ad_logo"><i/>LUG.vn</span>
+                                <div>
+                                    <h2>PHIẾU AUDIT &amp; ĐÁNH GIÁ CỬA HÀNG (ASM) <small t-if="am.total">Chuẩn hóa <t t-esc="audGroups.length"/> nhóm • <t t-esc="am.total"/> tiêu chí</small></h2>
+                                    <p>Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)</p>
+                                </div>
+                            </div>
+                            <div class="ad_head_r">
+                                <label class="ad_store"><span>Cửa hàng:</span>
+                                    <select t-on-change="onAudStore">
+                                        <option t-foreach="ad.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                                t-att-selected="('' + st.id) === ad.storeId" t-esc="st.display_name"/>
+                                    </select><i class="fa fa-angle-down"/></label>
+                                <span class="ad_chip"><b t-esc="((ad.sheet and ad.sheet.user) or '?').trim().split(' ').pop().charAt(0)"/>ASM: <t t-esc="ad.sheet and ad.sheet.user"/></span>
+                                <label class="ad_chip ad_date"><i class="fa fa-calendar"/>
+                                    <DateTimeInput t-key="'aud' + ad.date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(ad.date)" onChange.bind="onAudDate" class="'o_store_date_input'"/></label>
+                                <label class="ad_chip ad_hist" t-if="ad.history.length"><i class="fa fa-history"/>
+                                    <select t-on-change="onAudHistory">
+                                        <option value="">Phiếu đã lập (<t t-esc="ad.history.length"/>)</option>
+                                        <option t-foreach="ad.history" t-as="h" t-key="h.id" t-att-value="h.id" t-att-selected="ad.sheet and ad.sheet.id === h.id"
+                                                t-esc="h.date + ' · ' + h.user + ' · ' + audFmt(h.rate) + '%' + (h.state === 'submitted' ? ' · đã gửi' : ' · nháp')"/>
+                                    </select></label>
+                            </div>
+                        </div>
+                        <div class="ad_tabs">
+                            <div class="ad_tabs_l">
+                                <button type="button" t-att-class="ad.tab === 'audit' ? 'on' : ''" t-on-click="() => this.state.aud.tab = 'audit'">
+                                    1. Phiếu Audit <t t-esc="am.total"/> tiêu chí (<t t-esc="audGroups.length"/> nhóm)</button>
+                                <button type="button" t-att-class="ad.tab === 'summary' ? 'on' : ''" t-on-click="() => this.state.aud.tab = 'summary'">
+                                    2. Kết quả Tổng kết Audit Cửa hàng <span class="ad_pct" t-esc="am.pct + '%'"/></button>
+                            </div>
+                            <div class="ad_scale">Thang điểm: <span class="s-ok">Đạt = 2đ</span><span class="s-warn">Cần cải thiện = 1đ</span><span class="s-bad">Không đạt = 0đ</span></div>
+                        </div>
+                    </header>
+                    <div class="ad_state" t-if="ad.sheet and ad.sheet.state === 'submitted'"><i class="fa fa-lock"/> Phiếu <b t-esc="ad.sheet.name"/> đã gửi CHT &amp; cấp trên — kết quả chấm đã khóa<t t-if="audCanPlan">, vẫn cập nhật được trạng thái Yêu cầu khắc phục</t>.</div>
+                    <div class="ad_state is-ro" t-elif="ad.sheet and !ad.sheet.can_edit"><i class="fa fa-eye"/> Bạn chỉ xem phiếu này (người lập: <b t-esc="ad.sheet.user"/>).</div>
+                    <div class="ad_empty" t-if="!ad.stores.length and !ad.busy"><i class="fa fa-info-circle"/> Bạn chưa được phân quyền cửa hàng nào để lập phiếu Audit.</div>
+
+                    <!-- TAB 1: Phiếu Audit -->
+                    <t t-if="ad.sheet and ad.tab === 'audit'">
+                        <section class="ad_kpis">
+                            <div class="ad_kpi"><div><small>Tiến độ kiểm tra</small><b><t t-esc="am.rated"/><em> / <t t-esc="am.total"/> tiêu chí</em></b>
+                                <span class="sub blue">Tỷ lệ hoàn thành: <t t-esc="am.ratedPct"/>%</span></div><span class="ic i-blue"><i class="fa fa-check-square-o"/></span></div>
+                            <div class="ad_kpi"><div><small>Điểm Audit đạt được</small><b class="navy"><t t-esc="audFmt(am.score)"/><em> / <t t-esc="audFmt(am.max)"/> điểm</em></b>
+                                <span class="sub green">Tỷ lệ Audit: <t t-esc="am.pct"/>%</span></div><span class="ic i-indigo"><i class="fa fa-star"/></span></div>
+                            <div class="ad_kpi k-ok"><div><small>Đạt (2đ)</small><b t-esc="am.pass"/><span class="sub">Tiêu chí đạt chuẩn</span></div><span class="ic i-ok">2đ</span></div>
+                            <div class="ad_kpi k-warn"><div><small>Cần cải thiện (1đ)</small><b t-esc="am.improve"/><span class="sub">Cần nhắc nhở / chỉnh sửa</span></div><span class="ic i-warn">1đ</span></div>
+                            <div class="ad_kpi k-bad"><div><small>Không đạt (0đ)</small><b t-esc="am.fail"/><span class="sub">Tổng tiêu chí lỗi/cải thiện: <t t-esc="am.errors"/></span></div><span class="ic i-bad">0đ</span></div>
+                        </section>
+                        <section class="ad_filter">
+                            <div class="ad_pills">
+                                <button type="button" t-att-class="'p-all ' + (ad.filter === 'ALL' ? 'on' : '')" t-on-click="() => this.state.aud.filter = 'ALL'">Tất cả (<t t-esc="am.total"/>)</button>
+                                <button type="button" t-att-class="'p-bad ' + (ad.filter === 'ISSUES' ? 'on' : '')" t-on-click="() => this.state.aud.filter = 'ISSUES'">Chỉ tiêu chí Lỗi / Cần cải thiện (<t t-esc="am.errors"/>)</button>
+                                <button type="button" t-att-class="'p-ok ' + (ad.filter === 'PASS' ? 'on' : '')" t-on-click="() => this.state.aud.filter = 'PASS'">Chỉ tiêu chí Đạt (<t t-esc="am.pass"/>)</button>
+                                <button type="button" t-if="am.rated &lt; am.total" t-att-class="'p-todo ' + (ad.filter === 'TODO' ? 'on' : '')" t-on-click="() => this.state.aud.filter = 'TODO'">Chưa chấm (<t t-esc="am.total - am.rated"/>)</button>
+                            </div>
+                            <label class="ad_search"><i class="fa fa-search"/>
+                                <input type="text" placeholder="Tìm nhanh tiêu chí hoặc tiêu chuẩn..." t-att-value="ad.q" t-on-input="(ev) => this.state.aud.q = ev.target.value"/></label>
+                        </section>
+                        <t t-set="ags" t-value="audGroups"/>
+                        <t t-foreach="ags" t-as="g" t-key="g.name">
+                            <section class="ad_group" t-if="g.lines.length">
+                                <div class="ad_gh">
+                                    <div class="ad_gt">
+                                        <span t-attf-class="ad_gcode c#{g.idx % 7}" t-esc="g.code"/>
+                                        <div><h3>Nhóm <t t-esc="g.code"/> – <t t-esc="g.title"/></h3>
+                                            <small>Đạt chuẩn: <b class="ok"><t t-esc="g.pass"/>/<t t-esc="g.all.length"/></b> tiêu chí • Điểm nhóm: <b class="navy"><t t-esc="audFmt(g.score)"/>/<t t-esc="audFmt(g.max)"/>đ</b></small></div>
+                                    </div>
+                                    <button type="button" class="ad_gpass" t-if="audEditable" t-on-click="() => this.audGroupPass(g)">✓ Chọn Đạt cả nhóm (<t t-esc="g.all.length"/>)</button>
+                                </div>
+                                <div class="ad_tw">
+                                    <table class="ad_table">
+                                        <thead><tr>
+                                            <th class="c w-stt">STT</th><th class="w-name">Tiêu chí ASM trực tiếp kiểm tra</th><th class="w-std">Tiêu chuẩn</th>
+                                            <th class="c w-res">Kết quả đánh giá</th><th class="c w-pts">Điểm</th><th class="w-note">Dẫn chứng &amp; ghi chú hiện trường</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="g.lines" t-as="l" t-key="l.crit_id" t-attf-class="r-#{l.result or 'none'}">
+                                                <td class="c stt" t-esc="l._no"/>
+                                                <td class="nm" t-esc="l.name"/>
+                                                <td><span class="std" t-esc="l.standard or '-'"/></td>
+                                                <td class="c">
+                                                    <div class="ad_res">
+                                                        <button type="button" t-attf-class="b-pass #{l.result === 'pass' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'pass')">Đạt (<t t-esc="audFmt(l.max_score)"/>đ)</button>
+                                                        <button type="button" t-attf-class="b-improve #{l.result === 'improve' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'improve')">Cần cải thiện (<t t-esc="audFmt(l.max_score / 2)"/>đ)</button>
+                                                        <button type="button" t-attf-class="b-fail #{l.result === 'fail' ? 'on' : ''}" t-att-disabled="!audEditable" t-on-click="() => this.audSet(l, 'fail')">Không đạt (0đ)</button>
+                                                    </div>
+                                                </td>
+                                                <td class="c"><span t-attf-class="ad_pts p-#{l.result or 'none'}" t-esc="l.result ? audFmt(audPts(l.result, l.max_score)) : '-'"/></td>
+                                                <td class="note">
+                                                    <input type="text" t-attf-class="ad_in #{audIssueMissing(l) ? 'miss' : ''}" t-att-value="l.note" t-att-disabled="!audEditable"
+                                                           t-att-placeholder="(l.result === 'improve' or l.result === 'fail') ? 'Bắt buộc nhập lý do / dẫn chứng lỗi...' : 'Ghi chú thực tế / mã biên bản...'"
+                                                           t-on-input="(ev) => l.note = ev.target.value"/>
+                                                    <div class="ad_ph">
+                                                        <label class="up" t-if="audEditable"><i class="fa fa-camera"/> Đính kèm ảnh
+                                                            <input type="file" accept="image/*" t-on-change="(ev) => this.onAudPhoto(l, ev)"/></label>
+                                                        <span class="files">
+                                                            <span class="f" t-foreach="l.photos" t-as="ph" t-key="ph.id">
+                                                                <a t-att-href="'/web/content/' + ph.id" target="_blank"><i class="fa fa-paperclip"/> <t t-esc="ph.name"/></a>
+                                                                <i class="fa fa-times rm" t-if="audEditable" title="Xóa ảnh" t-on-click="() => this.onAudRemovePhoto(l, ph)"/></span>
+                                                            <span class="warn" t-if="!l.photos.length and audIssueMissing(l)">⚠ Cần ghi chú/ảnh</span>
+                                                            <span class="opt" t-elif="!l.photos.length">Tùy chọn</span>
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </section>
+                        </t>
+                        <div class="ad_empty" t-if="!ags.some((g) => g.lines.length)"><i class="fa fa-info-circle"/> Không tìm thấy tiêu chí nào phù hợp với bộ lọc hiện tại.</div>
+                        <footer class="ad_foot">
+                            <div><b>Lưu ý kiểm soát:</b> Các tiêu chí đánh dấu <span class="t-warn">Cần cải thiện</span> hoặc <span class="t-bad">Không đạt</span> bắt buộc có ghi chú/dẫn chứng hiện trường trước khi chốt phiếu.</div>
+                            <div class="btns">
+                                <button type="button" class="ad_btn is-light" t-if="audEditable" t-att-disabled="!audDirty and ad.sheet.id" t-on-click="onAudSaveDraft">Lưu nháp phiếu</button>
+                                <button type="button" class="ad_btn" t-on-click="onAudComplete">Hoàn tất &amp; Xem Kết quả Audit <i class="fa fa-arrow-right"/></button>
+                            </div>
+                        </footer>
+                    </t>
+
+                    <!-- TAB 2: Kết quả tổng kết -->
+                    <t t-if="ad.sheet and ad.tab === 'summary'">
+                        <section class="ad_rep">
+                            <div class="ad_rep_h">
+                                <div>
+                                    <span class="tag">Báo cáo tổng kết giám sát cửa hàng</span>
+                                    <h2>KẾT QUẢ AUDIT CỬA HÀNG</h2>
+                                    <p>Cửa hàng: <b t-esc="ad.sheet.store_code or (ad.stores.find((s) => ('' + s.id) === ad.storeId) || {}).display_name"/> • ASM: <b t-esc="ad.sheet.user"/> • Ngày kiểm tra: <b t-esc="ad.date.slice(8, 10) + '/' + ad.date.slice(5, 7) + '/' + ad.date.slice(0, 4)"/></p>
+                                </div>
+                                <div class="btns">
+                                    <button type="button" class="ad_btn is-ghost" t-on-click="() => this.state.aud.tab = 'audit'">← Quay lại Phiếu Audit</button>
+                                    <button type="button" class="ad_btn is-green" t-if="audEditable" t-on-click="onAudSubmit">Gửi CHT &amp; Cấp trên</button>
+                                    <span class="ad_sent" t-elif="ad.sheet.state === 'submitted'"><i class="fa fa-check-circle"/> Đã gửi CHT &amp; cấp trên</span>
+                                </div>
+                            </div>
+                            <div class="ad_rep_b">
+                                <div class="ad_cards">
+                                    <div class="ad_card c-blue">
+                                        <div><small>Đã kiểm tra (Tỷ lệ đạt)</small><b t-esc="am.pct + '%'"/><span><t t-esc="audFmt(am.score)"/> / <t t-esc="audFmt(am.max)"/> điểm tối đa</span></div>
+                                        <div class="ring"><svg viewBox="0 0 36 36"><path class="bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                            <path class="fg" t-att-stroke-dasharray="am.ringDash" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/></svg>
+                                            <em t-esc="am.pct + '%'"/></div>
+                                    </div>
+                                    <div class="ad_card c-indigo">
+                                        <div><small>Điểm Audit</small><b><t t-esc="audFmt(am.score)"/><em> / <t t-esc="audFmt(am.max)"/>đ</em></b>
+                                            <span>Xếp loại: <strong t-attf-class="rk-#{am.rankTone}" t-esc="am.rank"/></span></div>
+                                        <span class="ic"><i class="fa fa-trophy"/></span>
+                                    </div>
+                                    <div class="ad_card c-ok"><div><small>Tiêu chí đạt</small><b t-esc="am.pass"/><span>Đạt chuẩn vận hành LUG</span></div><span class="ic"><i class="fa fa-check"/></span></div>
+                                    <div class="ad_card c-bad"><div><small>Tiêu chí lỗi</small><b t-esc="am.errors"/><span><t t-esc="am.fail"/> Không đạt • <t t-esc="am.improve"/> Cần cải thiện</span></div><span class="ic"><i class="fa fa-exclamation-circle"/></span></div>
+                                </div>
+                                <div class="ad_two">
+                                    <div class="ad_remarks">
+                                        <div class="ad_sec_h"><h3><span class="dot blue"/>Nhận xét và đề xuất của ASM</h3><small t-if="audCanPlan">Chỉnh sửa trực tiếp</small></div>
+                                        <div class="ad_rm" t-foreach="ad.sheet.remarks" t-as="rm" t-key="rm_index">
+                                            <span class="cat" t-esc="audLabel(rm.category) + ':'"/>
+                                            <textarea rows="1" t-att-value="rm.text" t-att-disabled="!audCanPlan" t-on-input="(ev) => rm.text = ev.target.value"/>
+                                            <i class="fa fa-times rm" t-if="audCanPlan" title="Xóa nhận xét" t-on-click="() => this.state.aud.sheet.remarks.splice(rm_index, 1)"/>
+                                        </div>
+                                        <div class="ad_empty sm" t-if="!ad.sheet.remarks.length">Chưa có nhận xét.</div>
+                                        <div class="ad_add" t-if="audCanPlan">
+                                            <select t-on-change="(ev) => this.state.aud.newCat = ev.target.value">
+                                                <option t-foreach="[['hr', 'Nhân sự'], ['ops', 'Vận hành'], ['goods', 'Hàng hóa'], ['cost', 'Chi phí'], ['posm', 'POSM']]" t-as="c" t-key="c[0]"
+                                                        t-att-value="c[0]" t-att-selected="c[0] === ad.newCat" t-esc="c[1]"/>
+                                            </select>
+                                            <input type="text" placeholder="Thêm nhận xét / đề xuất mới..." t-att-value="ad.newText" t-on-input="(ev) => this.state.aud.newText = ev.target.value"
+                                                   t-on-keydown="(ev) => ev.key === 'Enter' and this.onAudAddRemark()"/>
+                                            <button type="button" t-on-click="onAudAddRemark">+ Thêm</button>
+                                        </div>
+                                    </div>
+                                    <div class="ad_plans">
+                                        <div class="ad_sec_h">
+                                            <div><h3><span class="dot red"/>Yêu cầu khắc phục (Action Plan)</h3>
+                                                <small>Giao việc khắc phục cho CHT kèm thời hạn hoàn thành &amp; đồng bộ từ các tiêu chí lỗi.</small></div>
+                                            <div class="btns" t-if="audCanPlan">
+                                                <button type="button" class="sync" t-on-click="onAudSyncIssues">↻ Lấy từ tiêu chí lỗi</button>
+                                                <button type="button" class="add" t-on-click="onAudAddPlan">+ Thêm yêu cầu khắc phục</button>
+                                            </div>
+                                        </div>
+                                        <div class="ad_tw">
+                                            <table class="ad_ptable">
+                                                <thead><tr><th class="w-c">Nội dung yêu cầu khắc phục</th><th>Người phụ trách</th><th>Hạn xử lý</th><th>Trạng thái</th><th/></tr></thead>
+                                                <tbody>
+                                                    <tr t-foreach="ad.sheet.plans" t-as="p" t-key="p_index" t-attf-class="#{p.overdue ? 'is-over' : ''}">
+                                                        <td><input type="text" class="ad_in b" t-att-value="p.content" t-att-disabled="!audCanPlan" placeholder="Nội dung khắc phục..." t-on-input="(ev) => p.content = ev.target.value"/></td>
+                                                        <td><input type="text" class="ad_in owner" t-att-value="p.owner" t-att-disabled="!audCanPlan" t-on-input="(ev) => p.owner = ev.target.value"/></td>
+                                                        <td><input type="date" class="ad_in" t-att-value="p.deadline" t-att-disabled="!audCanPlan" t-on-change="(ev) => p.deadline = ev.target.value"/>
+                                                            <small class="over" t-if="p.overdue">Quá hạn</small></td>
+                                                        <td><select t-attf-class="ad_st #{p.state === 'done' ? 'done' : ''}" t-att-disabled="!audCanPlan" t-on-change="(ev) => p.state = ev.target.value">
+                                                            <option value="in_progress" t-att-selected="p.state === 'in_progress'">Đang xử lý</option>
+                                                            <option value="done" t-att-selected="p.state === 'done'">Đã khắc phục</option></select></td>
+                                                        <td class="c"><i class="fa fa-times rm" t-if="audCanPlan" title="Xóa dòng" t-on-click="() => this.state.aud.sheet.plans.splice(p_index, 1)"/></td>
+                                                    </tr>
+                                                    <tr t-if="!ad.sheet.plans.length"><td colspan="5" class="ad_empty sm">Chưa có yêu cầu khắc phục.</td></tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div class="ad_issues">
+                                            <b>Danh sách tiêu chí đang ghi nhận Lỗi / Cần cải thiện từ Phiếu Audit:</b>
+                                            <div class="tags">
+                                                <span t-foreach="audIssues" t-as="l" t-key="l.crit_id" t-attf-class="tg #{l.result === 'fail' ? 'bad' : 'warn'}">
+                                                    <b>#<t t-esc="l._no"/></b> <t t-esc="l.name"/> (<t t-esc="l.result === 'fail' ? 'Không đạt' : 'Cần cải thiện'"/>)</span>
+                                                <span class="ok" t-if="!audIssues.length">✓ Tất cả tiêu chí đều đạt chuẩn!</span>
+                                            </div>
+                                        </div>
+                                        <div class="ad_plan_save" t-if="audCanPlan">
+                                            <button type="button" class="ad_btn" t-att-disabled="!audDirty" t-on-click="onAudSavePlans"><i class="fa fa-save"/> Lưu nhận xét &amp; Action Plan</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </t>
                 </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv'">
                     <!-- Checklist CV CHT: Bảng Checklist Tổng theo tháng, giao diện ứng dụng di động (một cột như mẫu LUG.vn Mobile) -->

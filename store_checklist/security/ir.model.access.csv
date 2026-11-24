@@ -62,3 +62,15 @@ access_store_asm_check_line_user,store.asm.check.line user,model_store_asm_check
 access_store_asm_check_line_manager,store.asm.check.line manager,model_store_asm_check_line,group_store_manager,1,1,1,1
 access_store_cht_visit_user,store.cht.visit user,model_store_cht_visit,group_store_user,1,0,0,0
 access_store_cht_visit_manager,store.cht.visit manager,model_store_cht_visit,group_store_manager,1,1,1,1
+access_store_asm_audit_group_user,store.asm.audit.group user,model_store_asm_audit_group,group_store_user,1,1,1,1
+access_store_asm_audit_group_manager,store.asm.audit.group manager,model_store_asm_audit_group,group_store_manager,1,1,1,1
+access_store_asm_audit_crit_user,store.asm.audit.crit user,model_store_asm_audit_crit,group_store_user,1,1,1,1
+access_store_asm_audit_crit_manager,store.asm.audit.crit manager,model_store_asm_audit_crit,group_store_manager,1,1,1,1
+access_store_asm_audit_user,store.asm.audit user,model_store_asm_audit,group_store_user,1,1,1,1
+access_store_asm_audit_manager,store.asm.audit manager,model_store_asm_audit,group_store_manager,1,1,1,1
+access_store_asm_audit_line_user,store.asm.audit.line user,model_store_asm_audit_line,group_store_user,1,1,1,1
+access_store_asm_audit_line_manager,store.asm.audit.line manager,model_store_asm_audit_line,group_store_manager,1,1,1,1
+access_store_asm_audit_remark_user,store.asm.audit.remark user,model_store_asm_audit_remark,group_store_user,1,1,1,1
+access_store_asm_audit_remark_manager,store.asm.audit.remark manager,model_store_asm_audit_remark,group_store_manager,1,1,1,1
+access_store_asm_audit_plan_user,store.asm.audit.plan user,model_store_asm_audit_plan,group_store_user,1,1,1,1
+access_store_asm_audit_plan_manager,store.asm.audit.plan manager,model_store_asm_audit_plan,group_store_manager,1,1,1,1

@@ -18,3 +18,4 @@ from . import store_nvbh_schedule
 from . import store_nvbh_rating
 from . import store_role
 from . import store_photo_retention
+from . import store_asm_audit

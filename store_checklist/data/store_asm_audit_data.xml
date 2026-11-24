@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Danh mục 30 tiêu chí Audit cửa hàng + 7 nhóm mặc định (chỉ tạo khi danh mục đang trống) -->
+    <function model="store.asm.audit.crit" name="_seed_default"/>
+</odoo>

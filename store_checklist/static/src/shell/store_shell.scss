@@ -3536,3 +3536,29 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
             .lg { display: none; } .sm { display: inline; } }
     }
 }
+
+// Đánh giá tuần CHT: Tổng điểm tuần + Xem báo cáo nằm cùng hàng với 4 ô KPI
+.o_cht_w {
+    .cw_kpis { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(220px, 1.35fr) auto;
+        @media (max-width: 1200px) { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    .cw_kpi.k-score { background: #fffbeb; border-color: #fde68a;
+        .ic { background: #f59e0b; }
+        .sc { flex: 1; min-width: 0; }
+        small { font-size: 12px; color: #92400e; }
+        .row1 { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; b { font-size: 20px; color: #172554; white-space: nowrap; } }
+        em { font-style: normal; font-size: 12px; font-weight: 700; color: #15803d; display: flex; align-items: center; gap: 4px; white-space: nowrap;
+            .dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; } }
+        .bar { display: block; height: 6px; margin-top: 6px; border-radius: 99px; background: #fde68a; overflow: hidden;
+            i { display: block; height: 100%; background: #16a34a; border-radius: 99px; } } }
+    .cw_kpi.k-report { background: #fff; border-color: #cbd5e1; cursor: pointer; text-align: left; padding-right: 20px;
+        .ic { background: #0f172a; }
+        b { font-size: 16px; color: #0f172a; } small { color: #475569; }
+        &:hover { background: #f8fafc; border-color: #94a3b8; } }
+    .cw_foot .cw_btns { margin-left: auto; }
+    @media (max-width: 767px) {
+        .cw_kpis { grid-template-columns: 1fr 1fr; }
+        .cw_kpi.k-score { grid-column: 1 / -1; .row1 b { font-size: 18px; } }
+        .cw_kpi.k-report { grid-column: 1 / -1; justify-content: center; padding: 10px; b, small { display: inline; font-size: 13px; } small { margin-left: 4px; } }
+        .cw_foot .cw_btns { flex: 1; .cw_btn { flex: 1; justify-content: center; .lg { display: inline; } .sm { display: none; } } }
+    }
+}

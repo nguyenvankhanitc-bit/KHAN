@@ -1318,6 +1318,17 @@
                                 <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(wd.kpi.hours or 0)"/>h</b><small>Tổng thời gian</small></div></div>
                                 <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã thực hiện</small></div></div>
                                 <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Có lỗi</small></div></div>
+                                <!-- Tổng điểm tuần + Xem báo cáo: cùng hàng với các ô KPI -->
+                                <t t-set="sc" t-value="chtwScore"/>
+                                <div class="cw_kpi k-score">
+                                    <span class="ic"><i class="fa fa-trophy"/></span>
+                                    <div class="sc"><small>Tổng điểm tuần<t t-if="wd.can_eval"> (tạm tính)</t></small>
+                                        <div class="row1"><b><t t-esc="jobStaffNum(sc.points)"/> / <t t-esc="jobStaffNum(sc.max)"/></b>
+                                            <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div>
+                                        <span class="bar"><i t-attf-style="width: #{sc.bar}%"/></span></div>
+                                </div>
+                                <button type="button" class="cw_kpi k-report" t-on-click="onChtwReport" title="Xem Bảng checklist tháng">
+                                    <span class="ic"><i class="fa fa-eye"/></span><div><b>Xem</b><small>báo cáo</small></div></button>
                             </div>
                             <div class="cw_note" t-if="wd.checks.length or wd.today">
                                 <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
@@ -1428,16 +1439,7 @@
                                     <div><b>Thông tin đánh giá</b>
                                         <small><t t-esc="chtwWeekInfo.label"/>: <t t-esc="chtwWeekInfo.full"/> <i>|</i> Nhân viên: <b t-esc="wd.staff ? wd.staff.name : '-'"/> <i>|</i> Cửa hàng: <b t-esc="wd.staff ? wd.staff.store : '-'"/></small></div>
                                 </div>
-                                <t t-set="sc" t-value="chtwScore"/>
-                                <div class="cw_score">
-                                    <span class="ic"><i class="fa fa-trophy"/></span>
-                                    <div><small>Tổng điểm tuần<t t-if="wd.can_eval"> (tạm tính)</t></small>
-                                        <div class="row1"><b><t t-esc="jobStaffNum(sc.points)"/> / <t t-esc="jobStaffNum(sc.max)"/></b>
-                                            <span class="bar"><i t-attf-style="width: #{sc.bar}%"/></span>
-                                            <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div></div>
-                                </div>
                                 <div class="cw_btns">
-                                    <button type="button" class="cw_btn is-light" t-on-click="onChtwReport"><i class="fa fa-eye"/> <span class="lg">Xem báo cáo</span><span class="sm">Báo cáo</span></button>
                                     <button type="button" class="cw_btn" t-att-disabled="!wd.can_eval" t-on-click="onChtwSave"><i class="fa fa-check"/> <span class="lg">Đồng ý đánh giá tuần</span><span class="sm">Đồng ý</span></button>
                                 </div>
                             </div>

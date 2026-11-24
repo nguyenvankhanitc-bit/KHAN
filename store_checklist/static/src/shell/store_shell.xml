@@ -1384,6 +1384,44 @@
                                 </table>
                             </div>
                             <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này chưa có phiếu check list CHT nào.</div>
+                            <!-- điện thoại: thẻ theo nhóm công việc thay cho bảng -->
+                            <div class="cw_cards" t-if="wd.groups.length">
+                                <div class="cw_bulk" t-if="wd.can_eval">
+                                    <span>Chọn tất cả:</span>
+                                    <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
+                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-on-click="() => this.chtwAll(h[0])">
+                                        <i t-attf-class="fa #{chtwHead(h[0]) === 'all' ? 'fa-check-square' : chtwHead(h[0]) === 'some' ? 'fa-minus-square' : 'fa-square-o'}"/> <t t-esc="h[1]"/></button>
+                                </div>
+                                <div class="cw_card" t-foreach="wd.groups" t-as="g" t-key="g.name"
+                                     t-attf-class="#{state.chtm.results[g.name] ? 'is-' + state.chtm.results[g.name] : ''}">
+                                    <div class="hd">
+                                        <span t-attf-class="cw_no n#{g_index % 4}" t-esc="g_index + 1"/>
+                                        <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
+                                    </div>
+                                    <div class="mt">
+                                        <div><small>Số việc</small><b t-esc="g.n_tasks"/></div>
+                                        <div><small>Giờ ca</small><b><t t-esc="jobStaffNum(g.hours)"/>h</b></div>
+                                        <div><small>Đã làm</small><b t-esc="g.tasks_done + '/' + g.n_tasks"/></div>
+                                        <div><small>Tỷ lệ</small><b t-attf-class="#{g.rate >= 100 ? 'ok' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></div>
+                                    </div>
+                                    <div t-attf-class="seg #{wd.can_eval ? '' : 'dis'}">
+                                        <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
+                                                t-attf-class="r-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'on' : ''}" t-att-disabled="!wd.can_eval"
+                                                t-on-click="() => this.chtwSet(g.name, h[0])">
+                                            <i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/> <t t-esc="h[1]"/></button>
+                                    </div>
+                                    <button type="button" class="cw_more" t-on-click="() => this.state.chtm.wopen[g.name] = !this.state.chtm.wopen[g.name]">
+                                        <t t-esc="state.chtm.wopen[g.name] ? 'Thu gọn' : 'Xem chi tiết ' + g.n_tasks + ' việc'"/> <i t-attf-class="fa #{state.chtm.wopen[g.name] ? 'fa-angle-up' : 'fa-angle-down'}"/></button>
+                                    <div class="dl" t-if="state.chtm.wopen[g.name]">
+                                        <div class="cw_task" t-foreach="g.task_rows" t-as="t" t-key="t_index">
+                                            <div class="nm"><b t-esc="t.name"/><small><t t-esc="t.time_slot or 'Không có khung giờ'"/> · <t t-esc="t.score"/>đ</small></div>
+                                            <div class="days">
+                                                <span t-foreach="t.days" t-as="dy" t-key="dy_index" t-attf-class="cw_day #{!dy.done ? 'd-todo' : dy.error ? 'd-err' : 'd-ok'}"><i t-attf-class="fa #{dy.done ? 'fa-check' : 'fa-times'}"/> <t t-esc="dy.date"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                             <div class="cw_foot">
                                 <div class="cw_info">
                                     <span class="ic"><i class="fa fa-info"/></span>
@@ -1399,8 +1437,8 @@
                                             <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div></div>
                                 </div>
                                 <div class="cw_btns">
-                                    <button type="button" class="cw_btn is-light" t-on-click="onChtwReport"><i class="fa fa-eye"/> Xem báo cáo</button>
-                                    <button type="button" class="cw_btn" t-att-disabled="!wd.can_eval" t-on-click="onChtwSave"><i class="fa fa-check"/> Đồng ý đánh giá tuần</button>
+                                    <button type="button" class="cw_btn is-light" t-on-click="onChtwReport"><i class="fa fa-eye"/> <span class="lg">Xem báo cáo</span><span class="sm">Báo cáo</span></button>
+                                    <button type="button" class="cw_btn" t-att-disabled="!wd.can_eval" t-on-click="onChtwSave"><i class="fa fa-check"/> <span class="lg">Đồng ý đánh giá tuần</span><span class="sm">Đồng ý</span></button>
                                 </div>
                             </div>
                         </t>

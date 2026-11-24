@@ -3621,3 +3621,24 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
 .o_cht_w .cw_bulk { flex-wrap: wrap; row-gap: 4px;
     &.dis button { opacity: .5; cursor: default; }
     .cw_bulk_note { flex-basis: 100%; font-size: 10px; color: #94a3b8; font-style: italic; } }
+
+// Đánh giá tuần CHT trên điện thoại: thu gọn tab tuần + KPI + tổng điểm để thấy KQ đánh giá sớm hơn
+@media (max-width: 767px) {
+    .o_cht_w {
+        .cw_weeks { gap: 6px;
+            button { min-width: 84px; padding: 5px 6px; border-radius: 10px; b { font-size: 11px; } small { font-size: 9px; } } }
+        .cw_kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+        .cw_kpi { flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 0; padding: 7px 4px; border-radius: 12px;
+            .ic { display: none; }
+            b { font-size: 15px; } small { font-size: 9.5px; line-height: 1.2; display: block; } }
+        .cw_kpi.k-score { grid-column: 1 / span 3; flex-direction: row; align-items: center; text-align: left; gap: 8px; padding: 7px 10px;
+            .ic { display: flex; width: 26px; height: 26px; font-size: 12px; border-radius: 8px; }
+            small { font-size: 10px; } .row1 b { font-size: 15px; } em { font-size: 10px; } .bar { height: 4px; margin-top: 3px; } }
+        .cw_kpi.k-report { grid-column: 4; flex-direction: column; justify-content: center; padding: 6px 4px;
+            .ic { display: flex; width: 24px; height: 24px; font-size: 11px; border-radius: 7px; margin-bottom: 2px; }
+            b, small { display: block; font-size: 10px; margin: 0; } }
+        .cw_visit { gap: 6px; padding: 8px 10px; }
+        .cw_vdate { font-size: 12px; .o_store_date_input, input { width: 112px; height: 28px; } }
+        .cw_visit_msg { font-size: 11px; }
+    }
+}

@@ -21,7 +21,7 @@
         <field name="paperformat_id" ref="paperformat_store_audit"/>
         <!-- cache PDF; tên chứa mốc sửa cuối của phiếu và các dòng nên sửa điểm là tự dựng lại -->
         <field name="attachment_use" eval="True"/>
-        <field name="attachment">'Bien-ban-v15-%s-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]), max(object.env['store.audit.level'].sudo().search([]).mapped('write_date') or [0]))</field>
+        <field name="attachment">'Bien-ban-v16-%s-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]), max(object.env['store.audit.level'].sudo().search([]).mapped('write_date') or [0]))</field>
     </record>
 
     <template id="report_store_audit">
@@ -80,14 +80,16 @@
                                         <td style="width:30%; vertical-align:middle; font-weight:bold; font-size:16px; padding:8px;" t-esc="r['name']"/>
                                         <td style="color:#334155; vertical-align:middle; font-size:15px; padding:8px 10px; border-left:1px solid #93b4e8;" t-esc="r['note']"/>
                                     </tr></table></td>
-                                <td style="text-align:center; vertical-align:middle; font-weight:bold; font-size:18px; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8;"><t t-esc="'%g' % r['score']"/> / <t t-esc="'%g' % r['max']"/></td>
+                                <td style="text-align:center; vertical-align:middle; font-weight:bold; font-size:18px; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8;"><t t-esc="'%g' % r['score']"/> / <t t-esc="'%g' % r['max']"/>
+                                    <div style="font-size:13px; font-weight:bold; color:#1d55bd; margin-top:2px;">Tỷ lệ đạt: <t t-esc="r['pct']"/>%</div></td>
                                 <td style="text-align:center; vertical-align:middle; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8;">
                                     <span t-att-style="'display:inline-block; padding:5px 18px 5px 10px; border-radius:16px; font-weight:bold; font-size:15px; ' + {'green': 'background:#d8f5e1; color:#15803d;', 'blue': 'background:#dbeafe; color:#1d4ed8;', 'orange': 'background:#ffe9cf; color:#c2410c;', 'red': 'background:#fddada; color:#dc2626;', 'darkred': 'background:#f3c9c9; color:#7f1d1d;'}[r['tone']]">
                                         <t t-if="r['tone'] == 'green'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#16a34a"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'blue'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#2563eb"/><path d="M8 14l4 4 8-8" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></t><t t-elif="r['tone'] == 'orange'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#f59e0b"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-elif="r['tone'] == 'red'"><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#dc2626"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t><t t-else=""><svg width="20" height="20" viewBox="0 0 28 28"><circle cx="14" cy="14" r="13" fill="#7f1d1d"/><path d="M14 7v9" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/><circle cx="14" cy="21" r="2" fill="#fff"/></svg></t>
                                         &#160;<t t-esc="r['level']"/></span></td>
                                 <td t-if="r_index == 0" t-att-rowspan="r_size" style="text-align:center; vertical-align:middle; border-bottom:1px solid #93b4e8; border-left:1px solid #93b4e8; border-right:1px solid #93b4e8;">
                                     <t t-set="rk_css" t-value="{'green': 'background:#d8f5e1; color:#15803d;', 'blue': 'background:#dbeafe; color:#1d4ed8;', 'orange': 'background:#ffedd5; color:#c2410c;', 'red': 'background:#fddada; color:#dc2626;', 'darkred': 'background:#fee2e2; color:#991b1b;'}"/>
-                                    <span t-att-style="'display:inline-block; padding:8px 26px; border-radius:20px; font-weight:bold; font-size:18px; white-space:nowrap; text-transform:uppercase; ' + (rk_css.get(o.tone_t) or rk_css['orange'])" t-esc="o.lvl_t or ('ĐẠT' if o.conclusion == 'pass' else 'KHÔNG ĐẠT')"/></td>
+                                    <span t-att-style="'display:inline-block; padding:8px 26px; border-radius:20px; font-weight:bold; font-size:18px; white-space:nowrap; text-transform:uppercase; ' + (rk_css.get(o.tone_t) or rk_css['orange'])" t-esc="o.lvl_t or ('ĐẠT' if o.conclusion == 'pass' else 'KHÔNG ĐẠT')"/>
+                                    <div style="font-size:13px; color:#334155; margin-top:6px;">Tỷ lệ đạt <b t-esc="o._report_overview()[-1]['pct'] + '%'"/></div></td>
                             </tr>
                         </t>
                     </table>

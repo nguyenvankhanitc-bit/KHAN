@@ -488,6 +488,7 @@ class StoreAudit(models.Model):
             # dòng Tổng lấy đúng "Kết luận" của phiếu (cột Kết luận ở danh sách), các mục còn lại so với cùng ngưỡng đạt
             passed = self.conclusion == 'pass' if icon == 'box' else bool(top) and pct >= self.pass_threshold
             out.append({'icon': icon, 'name': name, 'note': note, 'score': score, 'max': top,
+                        'pct': ('%.2f' % pct).rstrip('0').rstrip('.').replace('.', ','),
                         'level': level[0], 'tone': level[1], 'passed': passed})
         return out
 

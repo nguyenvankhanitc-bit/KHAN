@@ -10,4 +10,6 @@
     <function model="store.nvbh.check" name="_clear_edited_evals"/>
     <!-- phiếu cũ của CHT còn mang loại nvbh: gán lại loại cht (ẩn với nhân viên) -->
     <function model="store.nvbh.check" name="_fix_cht_kind"/>
+    <!-- Mức Đánh giá: lần đầu bật "Không được có lỗi" cho mức cao nhất (vd. Tốt: Lỗi = 0) -->
+    <function model="store.audit.level" name="_init_no_error"/>
 </odoo>

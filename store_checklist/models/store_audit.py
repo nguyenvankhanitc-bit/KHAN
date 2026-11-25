@@ -411,17 +411,20 @@ class StoreAudit(models.Model):
             rec.form_title = 'THÊM THÔNG TIN NHÂN VIÊN' if rec.staff_mode else 'PHIẾU ĐÁNH GIÁ CỬA HÀNG'
 
     @api.depends('score_a', 'max_a', 'score_b', 'max_b', 'score_c', 'max_c', 'score_x', 'max_x', 'total_score', 'max_score',
-                 'audit_date', 'line_x_ids.category')
+                 'audit_date', 'line_x_ids.category', 'error_count')
     def _compute_levels(self):
         Level = self.env['store.audit.level']
         names = dict(category_list(self.env))
         for rec in self:
             extra = [c for c in dict.fromkeys(rec.line_x_ids.sorted(lambda l: (l.sequence, l.id)).mapped('category')) if c]
             rec.extra_category_label = ', '.join(names.get(c, c.upper()) for c in extra) or 'Nhóm bổ sung'
+            errs = {'a': sum(rec.line_a_ids.mapped('error_count')), 'b': sum(rec.line_b_ids.mapped('error_count')),
+                    'c': sum(rec.line_c_ids.mapped('error_count')), 'x': sum(rec.line_x_ids.mapped('error_count')),
+                    't': rec.error_count}
             for key, score, top in (('a', rec.score_a, rec.max_a), ('b', rec.score_b, rec.max_b),
                                     ('c', rec.score_c, rec.max_c), ('x', rec.score_x, rec.max_x),
                                     ('t', rec.total_score, rec.max_score)):
-                lv = Level.level_for(100 * score / top if top else 0, rec.audit_type)
+                lv = Level.level_for(100 * score / top if top else 0, rec.audit_type, errs[key])
                 rec[f'lvl_{key}'] = lv.name or ''
                 rec[f'tone_{key}'] = lv.tone or 'orange'
             when = rec.audit_date or fields.Datetime.now()
@@ -469,21 +472,24 @@ class StoreAudit(models.Model):
         """Bảng "Tổng quan đánh giá" của biên bản: điểm từng mục kèm mức đánh giá."""
         self.ensure_one()
         rows = [
-            ('store', 'Cơ sở vật chất', 'Không gian bên ngoài, bên trong và sắp xếp sản phẩm', self.score_a, self.max_a),
-            ('people', 'Tác phong và kỹ năng', 'Tác phong, diện mạo và kỹ năng giao tiếp của nhân viên', self.score_b, self.max_b),
-            ('trend', 'Chuyên môn nghiệp vụ', 'Tìm hiểu nhu cầu, tư vấn sản phẩm và khuyến mãi', self.score_c, self.max_c),
+            ('store', 'Cơ sở vật chất', 'Không gian bên ngoài, bên trong và sắp xếp sản phẩm', self.score_a, self.max_a,
+             sum(self.line_a_ids.mapped('error_count'))),
+            ('people', 'Tác phong và kỹ năng', 'Tác phong, diện mạo và kỹ năng giao tiếp của nhân viên', self.score_b, self.max_b,
+             sum(self.line_b_ids.mapped('error_count'))),
+            ('trend', 'Chuyên môn nghiệp vụ', 'Tìm hiểu nhu cầu, tư vấn sản phẩm và khuyến mãi', self.score_c, self.max_c,
+             sum(self.line_c_ids.mapped('error_count'))),
         ]
         names = dict(category_list(self.env))
         for code in dict.fromkeys(self.line_ids.filtered(lambda l: l.category not in BASE_CATEGORY_CODES).sorted(
                 lambda l: (l.sequence, l.id)).mapped('category')):
             ls = self.line_ids.filtered(lambda l, c=code: l.category == c)
             rows.append(('list', names.get(code, code.upper()), 'Nhóm tiêu chí bổ sung',
-                         sum(ls.mapped('actual_score')), sum(ls.mapped('max_score'))))
-        rows.append(('box', 'Tổng điểm', 'Tổng điểm đánh giá của tất cả các mục', self.total_score, self.max_score))
+                         sum(ls.mapped('actual_score')), sum(ls.mapped('max_score')), sum(ls.mapped('error_count'))))
+        rows.append(('box', 'Tổng điểm', 'Tổng điểm đánh giá của tất cả các mục', self.total_score, self.max_score, self.error_count))
         out = []
-        for icon, name, note, score, top in rows:
+        for icon, name, note, score, top, errs in rows:
             pct = 100 * score / top if top else 0
-            lv = self.env['store.audit.level'].level_for(pct, self.audit_type)
+            lv = self.env['store.audit.level'].level_for(pct, self.audit_type, errs)
             level = (lv.name or '', lv.tone or 'orange')
             # dòng Tổng lấy đúng "Kết luận" của phiếu (cột Kết luận ở danh sách), các mục còn lại so với cùng ngưỡng đạt
             passed = self.conclusion == 'pass' if icon == 'box' else bool(top) and pct >= self.pass_threshold

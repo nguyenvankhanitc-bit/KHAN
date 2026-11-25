@@ -27,6 +27,8 @@ class StoreAuditLevel(models.Model):
     score_range = fields.Char(string='Khoảng điểm', compute='_compute_score_range')
     audit_type = fields.Selection(AUDIT_TYPES, string='Loại checklist', required=True, default='nvbh')
     tone = fields.Selection(TONES, string='Màu hiển thị', required=True, default='orange')
+    no_error = fields.Boolean(string='Không được có lỗi',
+                              help='Bật: phiếu chỉ được xếp mức này khi Tổng số lỗi = 0; có lỗi thì xếp xuống mức thấp hơn kế tiếp.')
 
     @api.depends('min_score', 'audit_type')
     def _compute_score_range(self):
@@ -53,8 +55,20 @@ class StoreAuditLevel(models.Model):
         return self.sudo().search(self.COMMON_DOMAIN, order='min_score desc')
 
     @api.model
-    def level_for(self, pct, audit_type=None):
+    def level_for(self, pct, audit_type=None, errors=0):
         """Mức đánh giá ứng với tỷ lệ điểm pct (0..100): mức có 'Từ điểm' lớn nhất không vượt pct, theo bảng Mức Đánh giá chung
-        (audit_type giữ để tương thích, không còn tách bảng theo loại checklist)."""
+        (audit_type giữ để tương thích, không còn tách bảng theo loại checklist). Có lỗi (errors > 0) thì bỏ qua các mức
+        đánh dấu "Không được có lỗi" (vd. Tốt: phải 0 lỗi) và xếp xuống mức kế tiếp."""
         levels = self.common_levels()
-        return next((l for l in levels if pct >= l.min_score), levels[-1:] if levels else levels)
+        return next((l for l in levels if pct >= l.min_score and not (errors and l.no_error)), levels[-1:] if levels else levels)
+
+    @api.model
+    def _init_no_error(self):
+        """Lần đầu: bật "Không được có lỗi" cho mức cao nhất của bảng chung (vd. Tốt)."""
+        ICP = self.env['ir.config_parameter'].sudo()
+        if ICP.get_param('store_checklist.level_no_error_init') == '1':
+            return
+        top = self.common_levels()[:1]
+        if top:
+            top.write({'no_error': True})
+        ICP.set_param('store_checklist.level_no_error_init', '1')

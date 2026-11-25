@@ -338,6 +338,7 @@
                 <field name="name" string="Xếp loại"/>
                 <field name="min_score" options="{'hide_trailing_zeros': true}"/>
                 <field name="score_range"/>
+                <field name="no_error" string="Lỗi = 0" widget="boolean_toggle"/>
                 <field name="tone" widget="badge"
                        decoration-success="tone == 'green'" decoration-info="tone == 'blue'"
                        decoration-warning="tone == 'orange'" decoration-danger="tone in ('red', 'darkred')"/>
@@ -357,6 +358,7 @@
                     <group>
                         <field name="name" string="Xếp loại"/>
                         <field name="min_score" options="{'hide_trailing_zeros': true}"/>
+                        <field name="no_error"/>
                         <field name="tone"/>
                     </group>
                 </sheet>

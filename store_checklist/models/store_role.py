@@ -327,9 +327,15 @@ class StoreNvbhCheckRole(models.Model):
             if self._admin_title_employees():
                 chain.append(self._admin_title_step(subject))
             return chain
-        # NVBH check list -> CHT (cấp trên trực tiếp) đánh giá, điểm do CHT chấm là điểm cuối cùng;
-        # CHT check list -> ASM đánh giá, ASM quyết định điểm cuối cùng. Chỉ một cấp, không thêm cấp trên / Admin.
-        return chain[:1]
+        # CHT check list -> ASM đánh giá, ASM quyết định điểm cuối cùng.
+        if self.kind == 'cht':
+            return chain[:1]
+        # NVBH check list -> CHT đánh giá -> ASM chốt điểm cuối cùng (ASM chấm theo lần ghé thăm ở trang Đánh giá tuần);
+        # cửa hàng không có CHT phụ trách thì ASM đánh giá luôn
+        out = chain[:1]
+        if out and out[0]['code'] == 'CHT':
+            out += [c for c in chain[1:] if c['code'] == 'ASM'][:1]
+        return out
 
     @api.model
     def _admin_title_employees(self):
@@ -405,7 +411,7 @@ class StoreNvbhCheckRole(models.Model):
             # được sửa đến 23h55 ngày đánh giá xong; sau giờ đó hệ thống khóa
             # check list CHT: chính ASM đã chấm được sửa lại đánh giá của mình đến 23h55 ngày chấm (không cần quyền Sửa menu)
             reedit_until = self._reedit_until(i) if (i == self.step_done and (is_admin or mine)
-                                                     and (may_reedit or (self.kind == 'cht' and mine))) else False
+                                                     and (may_reedit or (self.kind in ('cht', 'nvbh') and mine and st['code'] == 'ASM'))) else False
             reedit = bool(reedit_until) and fields.Datetime.now() <= reedit_until
             steps.append(dict(st, no=i, done=i <= self.step_done, current=cur == i, can_edit=can_edit or reedit,
                               reedit=reedit, reedit_until=reedit_until if reedit else False))
@@ -526,8 +532,11 @@ class StoreNvbhCheckRole(models.Model):
         if not start:
             return False
         dl = start + timedelta(days=self._review_days())
-        if self.kind == 'cht' and self.work_date:
-            dl = max(dl, self.work_date - timedelta(days=self.work_date.weekday()) + timedelta(days=13))
+        if self.kind in ('cht', 'nvbh') and self.work_date:
+            # bước ASM (chấm theo lần ghé thăm): hạn đến hết tuần kế tiếp của ngày làm việc
+            chain = self._approval_chain()
+            if no <= len(chain) and chain[no - 1]['code'] == 'ASM':
+                dl = max(dl, self.work_date - timedelta(days=self.work_date.weekday()) + timedelta(days=13))
         return dl
 
     def _late_stage(self):
@@ -909,7 +918,8 @@ class StoreNvbhCheckRole(models.Model):
             'max_points': sum(self.line_ids.mapped('max_score')),
             'result_summary': _('%s lỗi') % self.error_total if self.error_total else _('Không lỗi'),
         })
-        if not last:
+        if not last and not (self.kind == 'nvbh' and chain[step_no]['code'] == 'ASM'):
+            # NVBH: CHT chấm xong không nhắn ASM từng phiếu (ASM chấm gộp theo tuần ở trang Đánh giá toàn cửa hàng)
             self._notify_step(chain[step_no])  # chain[step_no] = bước kế tiếp (đánh số từ 1)
 
     # ------------------------------------------------------------------

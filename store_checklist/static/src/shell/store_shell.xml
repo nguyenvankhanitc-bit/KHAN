@@ -32,7 +32,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá, chốt điểm cuối cùng (4 ngày) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá, chốt điểm cuối cùng' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_perf' and state.perf.data">
                         <div class="stat"><span>Nhân viên</span><b t-esc="state.perf.data.summary.staff_count"/></div>
@@ -1066,9 +1066,74 @@
                 <!-- ===== Phiếu Audit & Đánh giá cửa hàng (ASM) ===== -->
                 <div class="o_aud" t-if="state.activeNav === 'nvbh_audit'">
                     <t t-set="ad" t-value="state.aud"/>
+                    <!-- Danh sách phiếu Audit (giống Danh sách Checklist GS) -->
+                    <t t-if="ad.view === 'list'">
+                        <t t-set="al" t-value="ad.list"/>
+                        <div class="adl_bar">
+                            <button type="button" class="btn btn-primary o_store_add_btn" t-if="al.canCreate" t-on-click="onAudNew">Thêm mới</button>
+                            <select t-on-change="(ev) => this.onAudListFilter('month', ev)">
+                                <option value="" t-att-selected="!al.month">Tất cả tháng</option>
+                                <option t-foreach="audMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === al.month" t-esc="m.label"/>
+                            </select>
+                            <select t-on-change="(ev) => this.onAudListFilter('storeId', ev)">
+                                <option value="" t-att-selected="!al.storeId">Tất cả cửa hàng</option>
+                                <option t-foreach="al.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === al.storeId" t-esc="st.display_name"/>
+                            </select>
+                            <select t-on-change="(ev) => this.onAudListFilter('mien', ev)">
+                                <option value="" t-att-selected="!al.mien">Tất cả miền</option>
+                                <option value="Nam" t-att-selected="al.mien === 'Nam'">Miền Nam</option>
+                                <option value="ĐTT" t-att-selected="al.mien === 'ĐTT'">Miền ĐTT</option>
+                                <option value="Bắc" t-att-selected="al.mien === 'Bắc'">Miền Bắc</option>
+                                <option value="other" t-att-selected="al.mien === 'other'">Khác</option>
+                            </select>
+                            <label class="adl_q"><i class="fa fa-search"/>
+                                <input type="text" placeholder="Tìm mã phiếu, cửa hàng, ASM..." t-att-value="al.q" t-on-input="onAudListSearch"/></label>
+                            <span class="adl_cnt"><t t-esc="al.rows.length"/> phiếu</span>
+                        </div>
+                        <div class="adl_wrap">
+                            <table class="adl_table">
+                                <thead><tr>
+                                    <th>Mã phiếu</th><th>Ngày audit</th><th>Cửa hàng</th><th>ASM đánh giá</th>
+                                    <th class="r">Điểm đánh giá</th><th class="r">Điểm chuẩn</th><th class="r">Tỷ lệ đạt</th><th class="r">Tổng số lỗi</th>
+                                    <th>Kết luận</th><th>Trạng thái</th><th>Nhận xét</th><th class="c">Thao tác</th>
+                                </tr></thead>
+                                <tbody>
+                                    <t t-foreach="audListGroups" t-as="g" t-key="g.key">
+                                        <tr class="adl_grp" t-on-click="() => this.audToggleGroup(g.key)">
+                                            <td colspan="12"><i t-att-class="'fa ' + (al.closed[g.key] ? 'fa-caret-right' : 'fa-caret-down')"/>
+                                                <b t-esc="g.store"/> <span>(<t t-esc="g.rows.length"/>)</span></td>
+                                        </tr>
+                                        <t t-if="!al.closed[g.key]">
+                                            <tr t-foreach="g.rows" t-as="r" t-key="r.id" class="adl_row" t-on-click="() => this.onAudOpen(r)">
+                                                <td class="b"><t t-esc="r.name"/></td>
+                                                <td t-esc="r.date"/>
+                                                <td t-esc="r.store_code or r.store"/>
+                                                <td t-esc="r.user"/>
+                                                <td class="r b" t-esc="audFmt(r.score)"/>
+                                                <td class="r" t-esc="audFmt(r.max_score)"/>
+                                                <td class="r"><span t-att-class="'adl_pct is-' + r.rank_tone" t-esc="audFmt(r.rate) + '%'"/></td>
+                                                <td class="r"><span t-att-class="r.errors ? 'adl_err' : 'adl_zero'" t-esc="r.errors"/></td>
+                                                <td><span t-att-class="'adl_rank is-' + r.rank_tone" t-esc="r.rank"/></td>
+                                                <td><span t-att-class="'adl_st is-' + r.state" t-esc="r.state === 'submitted' ? 'Đã gửi CHT' : (r.rated &lt; r.total ? 'Đang kiểm tra' : 'Đã chấm xong')"/></td>
+                                                <td class="adl_cmt" t-att-title="r.comment" t-esc="r.comment or '—'"/>
+                                                <td class="c">
+                                                    <button type="button" class="adl_btn" t-on-click.stop="() => this.onAudOpen(r)" t-att-title="r.can_edit ? 'Mở phiếu để chỉnh sửa' : 'Xem lại phiếu'">
+                                                        <i t-att-class="'fa ' + (r.can_edit ? 'fa-pencil' : 'fa-eye')"/> <t t-esc="r.can_edit ? 'Sửa' : 'Xem'"/></button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </t>
+                                    <tr t-if="!al.rows.length"><td colspan="12" class="adl_none">
+                                        <t t-if="al.busy">Đang tải...</t><t t-else="">Chưa có phiếu Audit nào phù hợp với bộ lọc.</t></td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+                    <t t-if="ad.view === 'form'">
                     <t t-set="am" t-value="audMetrics"/>
                     <header class="ad_head">
                         <div class="ad_head_top">
+                            <button type="button" class="ad_back" t-on-click="onAudBack" title="Quay lại danh sách phiếu Audit"><i class="fa fa-arrow-left"/> Danh sách phiếu</button>
                             <span class="ad_norm" t-if="am.total"><i class="fa fa-th-list"/> Chuẩn hóa <b t-esc="audGroups.length"/> nhóm • <b t-esc="am.total"/> tiêu chí</span>
                             <div class="ad_head_r">
                                 <label class="ad_store"><span>Cửa hàng:</span>
@@ -1160,11 +1225,12 @@
                                                 </td>
                                                 <td class="c"><span t-attf-class="ad_pts p-#{l.result or 'none'}" t-esc="l.result ? audFmt(audPts(l.result, l.max_score)) : '-'"/></td>
                                                 <td class="note">
+                                                    <span t-attf-class="ad_mlbl #{audIssueMissing(l) ? 'miss' : ''}">GHI CHÚ</span>
                                                     <input type="text" t-attf-class="ad_in #{audIssueMissing(l) ? 'miss' : ''}" t-att-value="l.note" t-att-disabled="!audEditable"
-                                                           t-att-placeholder="(l.result === 'improve' or l.result === 'fail') ? 'Bắt buộc nhập lý do / dẫn chứng lỗi...' : 'Ghi chú thực tế / mã biên bản...'"
+                                                           t-att-placeholder="(l.result === 'improve' or l.result === 'fail') ? 'Bắt buộc nhập lý do / dẫn chứng lỗi...' : 'Nhập ghi chú...'"
                                                            t-on-input="(ev) => l.note = ev.target.value"/>
                                                     <div class="ad_ph">
-                                                        <label class="up" t-if="audEditable"><i class="fa fa-camera"/> Đính kèm ảnh
+                                                        <label class="up" t-if="audEditable"><i class="fa fa-camera"/> <span class="ad_up_desk">Đính kèm ảnh</span><span class="ad_up_mob">Chụp hình</span>
                                                             <input type="file" accept="image/*" t-on-change="(ev) => this.onAudPhoto(l, ev)"/></label>
                                                         <span class="files">
                                                             <span class="f" t-foreach="l.photos" t-as="ph" t-key="ph.id">
@@ -1182,11 +1248,29 @@
                             </section>
                         </t>
                         <div class="ad_empty" t-if="!ags.some((g) => g.lines.length)"><i class="fa fa-info-circle"/> Không tìm thấy tiêu chí nào phù hợp với bộ lọc hiện tại.</div>
+                        <section class="ad_cmt">
+                            <div class="ad_cmt_h">
+                                <span class="ic"><i class="fa fa-pencil-square-o"/></span>
+                                <b>Nhận xét lần ghé <t t-esc="audCmtLabel"/> (ASM) <span class="text-danger" t-if="audEditable">*</span></b>
+                                <small class="ad_cmt_sub"><t t-esc="ad.sheet.user or '-'"/> · <t t-esc="audCmtStore or '-'"/></small>
+                                <div class="ad_cmt_q" t-if="audEditable">
+                                    <button type="button" t-foreach="['Hoàn thành tốt', 'Cần cải thiện vệ sinh', 'Lưu ý trưng bày']" t-as="q" t-key="q"
+                                            t-on-click="() => this.audAddComment(q)">+ <t t-esc="q"/></button>
+                                </div>
+                            </div>
+                            <textarea t-if="audEditable" rows="3" placeholder="Nhập nhận xét tổng quan của ASM về kết quả kiểm tra cửa hàng lần ghé này..."
+                                      t-att-value="ad.sheet.comment or ''" t-on-input="(ev) => this.state.aud.sheet.comment = ev.target.value"/>
+                            <div class="ad_cmt_ro" t-else="" t-esc="ad.sheet.comment or 'Chưa có nhận xét của ASM.'"/>
+                        </section>
                         <footer class="ad_foot">
                             <div><b>Lưu ý kiểm soát:</b> Các tiêu chí đánh dấu <span class="t-warn">Cần cải thiện</span> hoặc <span class="t-bad">Không đạt</span> bắt buộc có ghi chú/dẫn chứng hiện trường trước khi chốt phiếu.</div>
-                            <div class="btns">
-                                <button type="button" class="ad_btn is-light" t-if="audEditable" t-att-disabled="!audDirty and ad.sheet.id" t-on-click="onAudSaveDraft">Lưu nháp phiếu</button>
-                                <button type="button" class="ad_btn" t-on-click="onAudComplete">Hoàn tất &amp; Xem Kết quả Audit <i class="fa fa-arrow-right"/></button>
+                            <div class="btns" t-if="audEditable">
+                                <button type="button" class="ad_btn is-light" t-on-click="onAudCancel"><i class="fa fa-times"/> Hủy</button>
+                                <button type="button" class="ad_btn" t-att-disabled="!audHasComment or (!audDirty and ad.sheet.id)"
+                                        t-att-title="!audHasComment ? 'Vui lòng nhập nhận xét của ASM trước khi lưu' : ''" t-on-click="onAudSaveDraft"><i class="fa fa-save"/> Lưu</button>
+                            </div>
+                            <div class="btns" t-else="">
+                                <button type="button" class="ad_btn is-light" t-on-click="onAudBack"><i class="fa fa-arrow-left"/> Quay lại danh sách</button>
                             </div>
                         </footer>
                     </t>
@@ -1283,6 +1367,7 @@
                                 </div>
                             </div>
                         </section>
+                    </t>
                     </t>
                 </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv'">
@@ -1589,227 +1674,148 @@
                         </t>
                         <t t-else="">
                         <div class="o_cht_back" t-if="state.chtm.hasList">
-                            <button type="button" class="btn btn-light" t-on-click="onChtOvBack"><i class="fa fa-chevron-left"/> Danh sách CHT theo miền / cửa hàng</button>
+                            <button type="button" class="btn btn-light" t-on-click="onChtOvBack"><i class="fa fa-chevron-left"/> Danh sách theo miền / cửa hàng</button>
                         </div>
-                        <t t-set="wd" t-value="state.chtm.wdata"/>
+                        <!-- Đánh giá Checklist toàn cửa hàng (CHT + từng NVBH) theo tuần -->
+                        <t t-set="sw" t-value="state.chtm.sw"/>
                         <div class="cw_top">
                             <div class="cw_title">
-                                <span class="cw_ico"><i class="fa fa-clipboard"/></span>
+                                <span class="cw_ico"><i class="fa fa-check-square-o"/></span>
                                 <div>
-                                    <h2>Đánh giá Checklist Cửa hàng trưởng</h2>
-                                    <p>Kiểm tra, chấm điểm và phê duyệt kết quả thực hiện công việc định kỳ theo tuần</p>
+                                    <h2>Đánh giá Checklist Toàn Cửa Hàng</h2>
+                                    <p>Kiểm tra, chấm điểm và phê duyệt kết quả thực hiện công việc định kỳ theo tuần (CHT + NVBH)</p>
                                 </div>
                             </div>
-                            <div class="cw_filters">
-                                <label class="cw_sel cw_staff" t-if="state.chtm.options.length">
-                                    <span class="cw_av" t-esc="chtwInitial"/>
-                                    <select t-on-change="(ev) => this.onChtwFilter('key', ev)">
-                                        <option t-foreach="state.chtm.options" t-as="o" t-key="o.key" t-att-value="o.key"
-                                                t-att-selected="o.key === state.chtm.key" t-esc="o.name + (o.store ? ' · ' + o.store : '')"/>
-                                    </select><i class="fa fa-angle-down"/></label>
+                            <div class="cw_filters" t-if="sw">
                                 <label class="cw_sel" t-if="chtMienOptions.length > 1"><i class="fa fa-map-o"/>
-                                    <select t-on-change="(ev) => this.onChtwFilter('mien', ev)">
+                                    <select t-on-change="(ev) => this.onSwFilter('mien', ev)">
                                         <option value="">Tất cả miền</option>
                                         <option t-foreach="chtMienOptions" t-as="mo" t-key="mo.value" t-att-value="mo.value"
                                                 t-att-selected="mo.value === state.chtm.mien" t-esc="mo.label"/>
                                     </select><i class="fa fa-angle-down"/></label>
-                                <label class="cw_sel"><i class="fa fa-shopping-bag"/>
-                                    <select t-on-change="(ev) => this.onChtwFilter('storeId', ev)">
-                                        <option value="">Tất cả cửa hàng</option>
-                                        <option t-foreach="chtStoreOptions" t-as="st" t-key="st.id" t-att-value="st.id"
-                                                t-att-selected="('' + st.id) === state.chtm.storeId" t-esc="st.display_name"/>
+                                <label class="cw_sel cw_storesel"><i class="fa fa-shopping-bag"/>
+                                    <select t-on-change="(ev) => this.onSwFilter('store', ev)">
+                                        <option t-foreach="sw.stores" t-as="st" t-key="st.id" t-att-value="st.id"
+                                                t-att-selected="('' + st.id) === state.chtm.swStore" t-esc="st.label"/>
                                     </select><i class="fa fa-angle-down"/></label>
                                 <label class="cw_sel"><i class="fa fa-calendar-o"/>
-                                    <select t-on-change="(ev) => this.onChtwFilter('month', ev)">
+                                    <select t-on-change="(ev) => this.onSwFilter('month', ev)">
                                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
                                                 t-att-selected="m.value === state.chtm.month" t-esc="m.label"/>
                                     </select><i class="fa fa-angle-down"/></label>
                             </div>
                         </div>
-                        <t t-if="wd">
+                        <t t-if="sw and sw.store_id">
                             <div class="cw_weeks">
-                                <button type="button" t-foreach="wd.weeks" t-as="w" t-key="w.idx" t-att-class="w.idx === wd.week ? 'on' : ''"
-                                        t-on-click="() => this.onChtwWeek(w.idx)">
+                                <button type="button" t-foreach="sw.weeks" t-as="w" t-key="w.idx" t-att-class="w.idx === sw.week ? 'on' : ''"
+                                        t-on-click="() => this.onSwWeek(w.idx)">
                                     <b t-esc="w.label"/><small>(<t t-esc="w.range"/>)</small></button>
                             </div>
+                            <t t-set="ssc" t-value="swScore"/>
                             <div class="cw_kpis">
-                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="wd.kpi.tasks or 0"/><small>Tổng việc ca</small></div></div>
-                                <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(wd.kpi.hours or 0)"/>h</b><small>Tổng thời gian</small></div></div>
-                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="wd.kpi.done or 0"/><small>Đã làm</small></div></div>
-                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="wd.kpi.errors or 0"/><small>Số lỗi</small></div></div>
-                                <!-- Tổng điểm tuần + Xem báo cáo: cùng hàng với các ô KPI -->
-                                <t t-set="sc" t-value="chtwScore"/>
+                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="sw.kpi.tasks or 0"/><small>Tổng việc ca (<t t-esc="sw.store_code"/>)</small></div></div>
+                                <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(sw.kpi.hours or 0)"/>h</b><small>Tổng thời gian ca</small></div></div>
+                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="sw.kpi.done or 0"/><small>Đã làm<t t-if="sw.kpi.done_by"> (<t t-esc="sw.kpi.done_by"/>)</t></small></div></div>
+                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="sw.kpi.errors or 0"/><small>Số lỗi</small></div></div>
                                 <div class="cw_kpi k-score">
                                     <span class="ic"><i class="fa fa-trophy"/></span>
-                                    <div class="sc"><small>Tổng điểm tuần<t t-if="chtwCanEdit"> (tạm tính)</t></small>
-                                        <div class="row1"><b><t t-esc="jobStaffNum(sc.points)"/> / <t t-esc="jobStaffNum(sc.max)"/></b>
-                                            <em><span class="dot"/><t t-esc="jobStaffNum(sc.pct)"/>%</em></div>
-                                        <span class="bar"><i t-attf-style="width: #{sc.bar}%"/></span></div>
+                                    <div class="sc"><small>Tổng điểm <t t-esc="(sw.weeks[sw.week] || {}).label"/><t t-if="swCanEdit"> (tạm tính)</t></small>
+                                        <div class="row1"><b><t t-esc="jobStaffNum(ssc.points)"/> / <t t-esc="jobStaffNum(ssc.max)"/></b>
+                                            <em><span class="dot"/><t t-esc="jobStaffNum(ssc.pct)"/>%</em></div>
+                                        <span class="bar"><i t-attf-style="width: #{ssc.bar}%"/></span></div>
                                 </div>
-                                <button type="button" class="cw_kpi k-report" t-on-click="onChtwReport" title="Xem Bảng checklist tháng">
+                                <button type="button" class="cw_kpi k-report" t-on-click="onSwReport" title="Xem Bảng checklist tháng của CHT">
                                     <span class="ic"><i class="fa fa-eye"/></span><div><b>Xem</b><small>báo cáo</small></div></button>
                             </div>
-                            <!-- lần ASM ghé thăm: ngày ghé -> phạm vi chấm (phiếu đến ngày ghé + chuyển tiếp), phần sau ngày ghé chờ lần sau -->
                             <div class="cw_visit">
                                 <div class="cw_visit_l">
                                     <label class="cw_vdate"><i class="fa fa-map-marker"/> Ngày ASM ghé thăm:
-                                        <DateTimeInput t-key="'cwv' + wd.visit_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(wd.visit_date)"
-                                                       onChange.bind="onChtwVisitPick" class="'o_store_date_input'"/></label>
-                                    <button type="button" class="cw_today" t-if="wd.today" t-on-click="() => this.onChtDay(wd.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay</button>
+                                        <DateTimeInput t-key="'sw' + sw.visit_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(sw.visit_date)"
+                                                       onChange.bind="onSwVisitPick" class="'o_store_date_input'"/></label>
+                                    <button type="button" class="cw_today" t-if="sw.today" t-on-click="() => this.onChtDay(sw.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay (CHT)</button>
                                 </div>
                                 <div class="cw_visit_msg">
-                                    <t t-if="wd.n_pending">Lần ghé này chấm <b t-esc="wd.n_pending"/> phiếu đã gửi đến ngày <b t-esc="chtwVisitLabel"/><t t-if="wd.carried.length"> (gồm <b t-esc="wd.carried.filter((c) => c.can_eval).length"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
-                                    <t t-else="">Không có phiếu đã gửi nào đến ngày <b t-esc="chtwVisitLabel"/> đang chờ bạn chấm.</t>
-                                    <t t-if="wd.n_reedit"> <b t-esc="wd.n_reedit"/> phiếu đã chấm còn sửa được đến <b t-esc="wd.reedit_until"/> (bấm <b>Chỉnh sửa</b>).</t>
-                                    <t t-elif="wd.locked_at"> Kết quả bạn đã chấm đã khóa lúc <b t-esc="wd.locked_at"/>.</t>
-                                    <t t-if="wd.n_later"> <b t-esc="wd.n_later"/> phiếu sau ngày ghé sẽ chuyển sang lần ghé tuần sau.</t>
+                                    <t t-if="sw.n_pending">Lần ghé này chấm <b t-esc="sw.n_pending"/> phiếu (CHT + NVBH) đã gửi đến ngày <b t-esc="sw.visit_date.slice(8, 10) + '/' + sw.visit_date.slice(5, 7)"/><t t-if="sw.n_carried"> (gồm <b t-esc="sw.n_carried"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
+                                    <t t-else="">Không có phiếu nào đến ngày <b t-esc="sw.visit_date.slice(8, 10) + '/' + sw.visit_date.slice(5, 7)"/> đang chờ bạn chấm.</t>
+                                    <t t-if="swLockNote"> <t t-esc="swLockNote"/></t>
+                                    <t t-if="sw.n_later"> <b t-esc="sw.n_later"/> phiếu sau ngày ghé chuyển sang lần ghé tuần sau.</t>
                                 </div>
                             </div>
-                            <div class="cw_note" t-if="wd.checks.length">
-                                <span><i class="fa fa-calendar-check-o"/> Phiếu trong tuần:</span>
-                                <span t-foreach="wd.checks" t-as="c" t-key="c.id"
-                                      t-attf-class="cw_chip #{c.reedit ? 'is-reedit' : c.can_eval ? 'is-eval' : c.state === 'Đã đánh giá' ? 'is-ok' : c.scope === 'later' and c.state === 'Chờ lần ghé sau' ? 'is-later' : 'is-wait'}"
-                                      t-att-title="(c.deadline ? 'Hạn ASM đánh giá: ' + c.deadline + '. ' : '') + 'Bấm để mở check list ngày này'" t-on-click="() => this.onChtDay(c)">
-                                    <b t-esc="c.date"/> · <t t-esc="c.state"/><t t-if="c.state.startsWith('Đã đánh giá')"> (<t t-esc="jobStaffNum(c.points)"/>/<t t-esc="jobStaffNum(c.max_points)"/>)</t></span>
+                            <div class="cw_note sw_people" t-if="sw.people.length">
+                                <span><i class="fa fa-users"/> Nhân sự trong tuần:</span>
+                                <span t-foreach="sw.people" t-as="p" t-key="p.key" t-attf-class="cw_chip #{p.pending ? 'is-eval' : p.wait_cht ? 'is-later' : p.approved ? 'is-ok' : 'is-wait'}">
+                                    <b t-esc="p.short"/> (<t t-esc="p.is_cht ? 'CHT' : p.pos"/>) · <t t-esc="p.n_checks"/> phiếu<t t-if="p.pending"> · <t t-esc="p.pending"/> chờ ASM</t><t t-if="p.wait_cht"> · <t t-esc="p.wait_cht"/> chờ CHT</t><t t-if="p.not_sent"> · <t t-esc="p.not_sent"/> chưa gửi</t></span>
                             </div>
-                            <div class="cw_note cw_carry" t-if="wd.carried.length">
+                            <div class="cw_note cw_carry" t-if="sw.carried.length">
                                 <span><i class="fa fa-share"/> Chuyển tiếp từ tuần trước:</span>
-                                <span t-foreach="wd.carried" t-as="c" t-key="c.id" t-attf-class="cw_chip #{c.can_eval ? 'is-carry' : 'is-wait'}"
-                                      t-att-title="c.week_label + (c.deadline ? ' · Hạn ASM đánh giá: ' + c.deadline : '') + '. Điểm tính về đúng ngày gốc.'"
-                                      t-on-click="() => this.onChtDay(c)">
-                                    <b t-esc="c.date"/> · <t t-esc="c.week_label"/><t t-if="c.deadline"> · hạn <t t-esc="c.deadline"/></t></span>
+                                <span t-foreach="sw.carried" t-as="c" t-key="c.id" class="cw_chip is-carry"><b t-esc="c.date"/> · <t t-esc="c.name"/> · <t t-esc="c.week_label"/></span>
                             </div>
-                            <div class="cw_table" t-if="wd.groups.length">
+                            <div class="cw_table sw_table" t-if="sw.groups.length">
                                 <table>
                                     <thead>
                                         <tr>
-                                            <th rowspan="2" class="l">Nhóm công việc</th>
-                                            <th rowspan="2" title="Tổng số việc của các ca trong tuần (như cột Tổng việc ca của Bảng checklist Tổng)">Số việc<br/>ca</th>
-                                            <th rowspan="2" title="Giờ của ca làm việc (như cột Tổng giờ của Bảng checklist Tổng), chia theo số việc của từng nhóm">Thời gian<br/><small>(giờ ca)</small></th>
-                                            <th rowspan="2">Đã làm</th>
-                                            <th rowspan="2">Tỷ lệ</th>
-                                            <th colspan="3" class="ev">
-                                                <span class="cw_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
-                                            <th rowspan="2">Chi tiết</th>
+                                            <th rowspan="2" class="l">Nhóm công việc (<t t-esc="(sw.weeks[sw.week] || {}).label"/>)</th>
+                                            <th rowspan="2" class="l">Nhân sự CH</th>
+                                            <th rowspan="2">Tổng CV</th>
+                                            <th rowspan="2">Điểm đạt</th>
+                                            <th rowspan="2">Tỷ lệ %</th>
+                                            <th colspan="3" class="ev"><span class="cw_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
+                                            <th rowspan="2" class="l">Nhận xét của ASM theo nhóm</th>
                                         </tr>
                                         <tr class="ev2">
                                             <th t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                <label t-on-click.prevent="() => this.chtwAll(h[0])" t-att-class="chtwCanEdit ? '' : 'dis'">
-                                                    <span t-attf-class="cw_box b-#{h[0]} #{chtwHead(h[0])}"><i t-if="chtwHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="chtwHead(h[0]) === 'some'" class="fa fa-minus"/></span>
+                                                <label t-on-click.prevent="() => this.swAll(h[0])" t-att-class="swCanEdit ? '' : 'dis'">
+                                                    <span t-attf-class="cw_box b-#{h[0]} #{swHead(h[0])}"><i t-if="swHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="swHead(h[0]) === 'some'" class="fa fa-minus"/></span>
                                                     <t t-esc="h[1]"/></label></th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <t t-foreach="wd.groups" t-as="g" t-key="g.name">
-                                            <tr>
-                                                <td class="l">
-                                                    <div class="cw_g">
-                                                        <span t-attf-class="cw_no n#{g_index % 4}" t-esc="g_index + 1"/>
-                                                        <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
-                                                    </div>
-                                                </td>
-                                                <td><b t-esc="g.lines"/></td>
-                                                <td><b><t t-esc="jobStaffNum(g.hours)"/>h</b></td>
-                                                <td><b t-esc="g.done + '/' + g.lines"/></td>
-                                                <td><b t-attf-class="#{g.rate >= 100 ? '' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></td>
+                                        <t t-foreach="sw.groups" t-as="g" t-key="g.key">
+                                            <tr t-foreach="g.rows" t-as="r" t-key="r.key" t-attf-class="#{r_first ? 'g-first' : 'g-sub'} #{g_index % 2 ? 'g-odd' : ''}">
+                                                <td class="l gname" t-if="r_first" t-att-rowspan="g.rows.length">
+                                                    <b t-esc="g.name"/><small t-if="g.desc" t-esc="g.desc + '...'"/></td>
+                                                <td class="l"><b t-attf-class="#{r.is_cht ? 'p-cht' : 'p-nv'}" t-esc="r.name + ' (' + (r.is_cht ? 'CHT' : r.pos) + ')'"/></td>
+                                                <td><b t-esc="r.done + '/' + r.lines"/></td>
+                                                <td><b><t t-esc="jobStaffNum(r.pts)"/> / <t t-esc="jobStaffNum(r.max)"/>đ</b></td>
+                                                <td><b t-attf-class="rt-#{swRateTone(r.rate)}"><t t-esc="jobStaffNum(r.rate)"/>%</b></td>
                                                 <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                    <label t-on-click.prevent="() => this.chtwSet(g.name, h[0])" t-att-class="chtwCanEdit ? '' : 'dis'">
-                                                        <span t-attf-class="cw_box b-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'all' : 'none'}"><i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/></span>
+                                                    <label t-on-click.prevent="() => this.swSet(r, h[0])" t-att-class="swRowEdit(r) ? '' : 'dis'">
+                                                        <span t-attf-class="cw_box b-#{h[0]} #{state.chtm.results[r.key] === h[0] ? 'all' : 'none'}"><i t-if="state.chtm.results[r.key] === h[0]" class="fa fa-check"/></span>
                                                         <t t-esc="h[1]"/></label></td>
-                                                <td><button type="button" class="cw_more" t-on-click="() => this.state.chtm.wopen[g.name] = !this.state.chtm.wopen[g.name]">
-                                                    <t t-esc="state.chtm.wopen[g.name] ? 'Thu gọn' : 'Xem chi tiết'"/> <i t-attf-class="fa #{state.chtm.wopen[g.name] ? 'fa-angle-up' : 'fa-angle-right'}"/></button></td>
-                                            </tr>
-                                            <tr class="cw_det" t-if="state.chtm.wopen[g.name]">
-                                                <td colspan="9">
-                                                    <div class="cw_task" t-foreach="g.task_rows" t-as="t" t-key="t_index">
-                                                        <div class="nm"><b t-esc="t.name"/><small><t t-esc="t.time_slot or 'Không có khung giờ'"/> · <t t-esc="t.score"/>đ</small></div>
-                                                        <div class="days">
-                                                            <span t-foreach="t.days" t-as="dy" t-key="dy_index" t-attf-class="cw_day #{!dy.done ? 'd-todo' : dy.error ? 'd-err' : 'd-ok'}"
-                                                                  t-att-title="dy.done ? 'Đã làm' : 'Chưa làm'"><i t-attf-class="fa #{dy.done ? 'fa-check' : 'fa-times'}"/> <t t-esc="dy.date"/></span>
-                                                        </div>
-                                                    </div>
-                                                </td>
+                                                <td class="l"><input type="text" class="sw_note" t-att-value="state.chtm.swNotes[r.key] or ''" t-att-disabled="!sw.can_comment"
+                                                                     placeholder="Nhận xét..." t-on-input="(ev) => this.state.chtm.swNotes[r.key] = ev.target.value"/></td>
                                             </tr>
                                         </t>
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này chưa có phiếu check list CHT nào.</div>
-                            <!-- điện thoại: thẻ theo nhóm công việc thay cho bảng -->
-                            <div class="cw_cards" t-if="wd.groups.length">
-                                <div t-attf-class="cw_bulk #{chtwCanEdit ? '' : 'dis'}">
-                                    <span>Chọn tất cả:</span>
-                                    <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
-                                            t-attf-class="r-#{h[0]} #{chtwHead(h[0]) === 'all' ? 'on' : ''}" t-att-disabled="!chtwCanEdit"
-                                            t-on-click="() => this.chtwAll(h[0])">
-                                        <i t-attf-class="fa #{chtwHead(h[0]) === 'all' ? 'fa-check-square' : chtwHead(h[0]) === 'some' ? 'fa-minus-square' : 'fa-square-o'}"/> <t t-esc="h[1]"/></button>
-                                    <small class="cw_bulk_note" t-if="!chtwCanEdit" t-esc="chtwLockNote"/>
-                                </div>
-                                <div class="cw_card" t-foreach="wd.groups" t-as="g" t-key="g.name"
-                                     t-attf-class="#{state.chtm.results[g.name] ? 'is-' + state.chtm.results[g.name] : ''}">
-                                    <div class="hd">
-                                        <span t-attf-class="cw_no n#{g_index % 4}" t-esc="g_index + 1"/>
-                                        <div><b t-esc="chtwGroupName(g.name)"/><small t-esc="g.desc + '...'"/></div>
-                                    </div>
-                                    <div class="mt">
-                                        <div><small>Việc ca</small><b t-esc="g.lines"/></div>
-                                        <div><small>Giờ ca</small><b><t t-esc="jobStaffNum(g.hours)"/>h</b></div>
-                                        <div><small>Đã làm</small><b t-esc="g.done + '/' + g.lines"/></div>
-                                        <div><small>Tỷ lệ</small><b t-attf-class="#{g.rate >= 100 ? 'ok' : 'cw_warn'}"><t t-esc="jobStaffNum(g.rate)"/>%</b></div>
-                                    </div>
-                                    <div t-attf-class="seg #{chtwCanEdit ? '' : 'dis'}">
-                                        <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
-                                                t-attf-class="r-#{h[0]} #{state.chtm.results[g.name] === h[0] ? 'on' : ''}" t-att-disabled="!chtwCanEdit"
-                                                t-on-click="() => this.chtwSet(g.name, h[0])">
-                                            <i t-if="state.chtm.results[g.name] === h[0]" class="fa fa-check"/> <t t-esc="h[1]"/></button>
-                                    </div>
-                                    <button type="button" class="cw_more" t-on-click="() => this.state.chtm.wopen[g.name] = !this.state.chtm.wopen[g.name]">
-                                        <t t-esc="state.chtm.wopen[g.name] ? 'Thu gọn' : 'Xem chi tiết ' + g.n_tasks + ' việc'"/> <i t-attf-class="fa #{state.chtm.wopen[g.name] ? 'fa-angle-up' : 'fa-angle-down'}"/></button>
-                                    <div class="dl" t-if="state.chtm.wopen[g.name]">
-                                        <div class="cw_task" t-foreach="g.task_rows" t-as="t" t-key="t_index">
-                                            <div class="nm"><b t-esc="t.name"/><small><t t-esc="t.time_slot or 'Không có khung giờ'"/> · <t t-esc="t.score"/>đ</small></div>
-                                            <div class="days">
-                                                <span t-foreach="t.days" t-as="dy" t-key="dy_index" t-attf-class="cw_day #{!dy.done ? 'd-todo' : dy.error ? 'd-err' : 'd-ok'}"><i t-attf-class="fa #{dy.done ? 'fa-check' : 'fa-times'}"/> <t t-esc="dy.date"/></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                            <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này cửa hàng chưa có phiếu check list CHT / NVBH nào.</div>
                             <div class="cw_foot">
                                 <div class="cw_cmt">
-                                    <div class="cw_visits" t-if="wd.visits.length">
-                                        <div class="cw_vrow" t-foreach="wd.visits" t-as="v" t-key="v.id">
+                                    <div class="cw_visits" t-if="sw.visits.length">
+                                        <div class="cw_vrow" t-foreach="sw.visits" t-as="v" t-key="v_index">
                                             <span class="cw_vbadge"><i class="fa fa-map-marker"/> <t t-esc="v.date"/></span>
-                                            <div><small><b t-esc="v.user"/><t t-if="v.days"> · chấm phiếu <t t-esc="v.days"/></t></small>
-                                                <p t-esc="v.comment or 'Không có nhận xét.'"/></div>
+                                            <div><small><b t-esc="v.user"/></small><p t-esc="v.comment or 'Không có nhận xét.'"/></div>
                                         </div>
                                     </div>
                                     <div class="cw_cmt_h">
                                         <span class="ic"><i class="fa fa-pencil-square-o"/></span>
-                                        <b>Nhận xét lần ghé <t t-esc="chtwVisitLabel"/> (ASM)</b>
-                                        <small class="cw_cmt_sub"><t t-esc="chtwWeekInfo.label"/>: <t t-esc="chtwWeekInfo.full"/> · <t t-esc="wd.staff ? wd.staff.name : '-'"/> · <t t-esc="wd.staff ? wd.staff.store : '-'"/></small>
-                                        <div class="cw_cmt_q" t-if="wd.can_comment">
-                                            <button type="button" t-foreach="['Hoàn thành tốt', 'Cần cải thiện vệ sinh', 'Lưu ý kiểm tra ca']" t-as="q" t-key="q"
-                                                    t-on-click="() => this.chtwAddComment(q)">+ <t t-esc="q"/></button>
-                                        </div>
+                                        <b>Nhận xét tổng quan <t t-esc="(sw.weeks[sw.week] || {}).label"/> (ASM)</b>
                                     </div>
-                                    <textarea t-if="wd.can_comment" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc tuần này..."
+                                    <textarea t-if="sw.can_comment" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc của cửa hàng tuần này..."
                                               t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
-                                    <div class="cw_cmt_ro" t-elif="!wd.visits.length">Chưa có nhận xét của ASM cho tuần này.</div>
-
+                                    <div class="cw_cmt_ro" t-elif="!sw.visits.length">Chưa có nhận xét của ASM cho tuần này.</div>
                                 </div>
                                 <div class="cw_btns">
-                                    <button type="button" class="cw_btn is-edit" t-if="wd.n_reedit and !wd.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
-                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + wd.reedit_until + ' (sau giờ này hệ thống tự khóa)'"><i class="fa fa-pencil"/> Chỉnh sửa</button>
-                                    <button type="button" class="cw_btn is-light" t-if="state.chtm.editMode and !wd.n_pending" t-on-click="onChtwCancelEdit"><i class="fa fa-times"/> Hủy</button>
-                                    <button type="button" class="cw_btn is-locked" t-if="!wd.n_reedit and !wd.n_pending and wd.locked_at" disabled="disabled"
-                                            t-att-title="'Hệ thống đã khóa lúc ' + wd.locked_at"><i class="fa fa-lock"/> Đã khóa <t t-esc="wd.locked_at"/></button>
-                                    <button type="button" class="cw_btn" t-att-disabled="!((chtwCanEdit or wd.can_comment) and chtwDirty)" t-on-click="onChtwSave"
-                                            title="Lưu KQ đánh giá theo nhóm (phiếu đang chờ bạn chấm) và nhận xét tuần"><i class="fa fa-save"/> Lưu</button>
+                                    <button type="button" class="cw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
+                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa</button>
+                                    <button type="button" class="cw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
+                                    <button type="button" class="cw_btn is-locked" t-if="!sw.n_reedit and !sw.n_pending and sw.locked_at" disabled="disabled"><i class="fa fa-lock"/> Đã khóa <t t-esc="sw.locked_at"/></button>
+                                    <button type="button" class="cw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu</button>
                                 </div>
                             </div>
                         </t>
-                        <div class="cw_empty" t-elif="!state.chtm.wbusy"><i class="fa fa-info-circle"/> Chưa có CHT nào có lịch xếp ca trong tháng / cửa hàng đã chọn.</div>
+                        <div class="cw_empty" t-elif="!state.chtm.wbusy"><i class="fa fa-info-circle"/> Chưa có cửa hàng nào có lịch xếp ca CHT / NVBH trong tháng / miền đã chọn.</div>
                         </t>
                     </div>
                     <t t-else="">

@@ -49,9 +49,10 @@ export class StoreChecklistShell extends Component {
             // Checklist CV CHT dạng Bảng Checklist Tổng: mode "month" (thẻ từng ngày trong tháng) / "day" (bảng check list của một ngày)
             // Phiếu Audit & Đánh giá cửa hàng (ASM)
             aud: { stores: [], storeId: "", date: "", sheet: null, history: [], tab: "audit", filter: "ALL", q: "", busy: false, snap: "",
-                newCat: "hr", newText: "" },
+                newCat: "hr", newText: "", view: "list",
+                list: { month: "", storeId: "", mien: "", q: "", rows: [], stores: [], closed: {}, canCreate: false, busy: false } },
             chtm: { mode: "month", month: "", storeId: "", key: "", options: [], staff: false, data: null, tab: "worked", sheet: "", detail: null, pick: false, busy: false,
-                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "", view: "one", ov: null, ovOpen: {}, hasList: false },
+                week: null, wdata: null, results: {}, wopen: {}, wbusy: false, comment: "", visit: "", editMode: false, mien: "", swStore: "", sw: null, swNotes: {}, swNotes0: "{}", view: "one", ov: null, ovOpen: {}, hasList: false },
             job: { kind: "nvbh", editMode: false, date: "", storeId: "", stores: [], staff: [], off: [], storeStaff: 0, lineId: "", check: null, snap: "", closed: {} },
             done: { month: "", storeId: "", mien: "", mienOpen: {}, rowMienOpen: {}, rowStoreOpen: {}, storeStatus: {}, q: "", today: false, errors: false, rows: [], open: {}, all: {}, popup: "", dayPick: "", tab: "list", staff: "", monthly: null, onlyWork: true },
             needStore: false,
@@ -1889,7 +1890,7 @@ export class StoreChecklistShell extends Component {
                 this.state.chtm.hasList = many;
                 this.state.chtm.view = many ? "list" : "one";
                 if (!many) {
-                    await this.loadChtWeek();
+                    await this.loadStoreWeek();
                 }
             }
         } catch (error) {
@@ -1905,8 +1906,122 @@ export class StoreChecklistShell extends Component {
         this.state.activeNav = "nvbh_audit";
         this.state.contentMode = "list";
         this.state.embeddedViewProps = null;
+        const a = this.state.aud;
+        a.view = "list";
+        a.sheet = null;
+        a.snap = "";
+        if (!a.list.month) {
+            const d = new Date();
+            a.list.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
         try {
-            await this.loadAudit({});
+            await this.loadAuditList();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- Danh sách phiếu Audit (giống Danh sách Checklist GS) ----
+    async loadAuditList() {
+        const L = this.state.aud.list;
+        L.busy = true;
+        try {
+            const res = await this.orm.call("store.asm.audit", "get_audit_list", [], {
+                month: L.month || false, store_id: L.storeId ? Number(L.storeId) : false, mien: L.mien || false, q: (L.q || "").trim() || false,
+            });
+            L.rows = res.rows;
+            L.stores = res.stores;
+            L.canCreate = res.can_create;
+        } finally {
+            L.busy = false;
+        }
+    }
+
+    get audMonthOptions() {
+        const out = [];
+        const d = new Date();
+        for (let i = 0; i < 24; i++) {
+            const x = new Date(d.getFullYear(), d.getMonth() - i, 1);
+            const m = String(x.getMonth() + 1).padStart(2, "0");
+            out.push({ value: `${x.getFullYear()}-${m}`, label: `Tháng ${m}/${x.getFullYear()}` });
+        }
+        return out;
+    }
+
+    get audListGroups() {
+        const map = {};
+        const out = [];
+        for (const r of this.state.aud.list.rows) {
+            const k = String(r.store_id);
+            if (!map[k]) {
+                map[k] = { key: k, name: r.store_code || r.store, store: r.store, rows: [] };
+                out.push(map[k]);
+            }
+            map[k].rows.push(r);
+        }
+        return out.sort((x, y) => x.name.localeCompare(y.name));
+    }
+
+    async onAudListFilter(field, ev) {
+        this.state.aud.list[field] = ev.target.value;
+        try {
+            await this.loadAuditList();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onAudListSearch(ev) {
+        this.state.aud.list.q = ev.target.value;
+        clearTimeout(this._audQTimer);
+        this._audQTimer = setTimeout(() => this.loadAuditList().catch((e) => this.notifyError(e)), 350);
+    }
+
+    audToggleGroup(key) {
+        const c = this.state.aud.list.closed;
+        c[key] = !c[key];
+    }
+
+    async onAudOpen(row) {
+        const a = this.state.aud;
+        try {
+            await this.loadAudit({ auditId: row.id });
+            a.tab = "audit";
+            a.filter = "ALL";
+            a.view = "form";
+            window.scrollTo({ top: 0 });
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudNew() {
+        const a = this.state.aud;
+        try {
+            a.date = "";
+            await this.loadAudit({ storeId: a.list.storeId || a.storeId || false });
+            a.tab = "audit";
+            a.filter = "ALL";
+            a.view = "form";
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onAudBack() {
+        if (!this.audConfirmLeave()) {
+            return;
+        }
+        await this.audBackToList();
+    }
+
+    async audBackToList() {
+        const a = this.state.aud;
+        a.view = "list";
+        a.sheet = null;
+        a.snap = "";
+        try {
+            await this.loadAuditList();
         } catch (error) {
             this.notifyError(error);
         }
@@ -1938,7 +2053,7 @@ export class StoreChecklistShell extends Component {
 
     audSnapshot() {
         const s = this.state.aud.sheet;
-        return s ? JSON.stringify([s.lines.map((l) => [l.result, l.note]), s.remarks, s.plans]) : "";
+        return s ? JSON.stringify([s.lines.map((l) => [l.result, l.note]), s.remarks, s.plans, s.comment || ""]) : "";
     }
 
     get audDirty() {
@@ -2117,6 +2232,7 @@ export class StoreChecklistShell extends Component {
             lines: s.lines.map((l) => ({ id: l.id, crit_id: l.crit_id, result: l.result || false, note: l.note || "" })),
             remarks: s.remarks.map((r) => ({ category: r.category, text: r.text })),
             plans: s.plans.map((p) => ({ content: p.content, owner: p.owner, deadline: p.deadline || false, state: p.state })),
+            comment: s.comment || "",
         }]);
         this.audSetSheet(res);
         if (!silent) {
@@ -2138,12 +2254,49 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+    get audHasComment() {
+        return Boolean((this.state.aud.sheet?.comment || "").trim());
+    }
+
     async onAudSaveDraft() {
+        if (!this.audHasComment) {
+            this.notification.add("Vui lòng nhập nhận xét của ASM trước khi lưu phiếu!", { type: "warning" });
+            return;
+        }
         try {
             await this.audSave();
+            await this.audBackToList();
         } catch (error) {
             this.notifyError(error);
         }
+    }
+
+    // Hủy: bỏ mọi thay đổi chưa lưu và quay lại danh sách phiếu
+    async onAudCancel() {
+        if (this.audDirty && !window.confirm("Bỏ toàn bộ thay đổi chưa lưu trên phiếu Audit?")) {
+            return;
+        }
+        await this.audBackToList();
+    }
+
+    get audCmtLabel() {
+        const d = (this.state.aud.date || "").split("-");
+        return d.length === 3 ? `${d[2]}/${d[1]}` : "";
+    }
+
+    get audCmtStore() {
+        const a = this.state.aud;
+        const st = (a.stores || []).find((s) => String(s.id) === String(a.storeId));
+        return a.sheet?.store || (st && (st.name || st.display_name)) || "";
+    }
+
+    audAddComment(q) {
+        const s = this.state.aud.sheet;
+        if (!s || !this.audEditable) {
+            return;
+        }
+        const cur = (s.comment || "").trim();
+        s.comment = cur ? `${cur}\n${q}` : q;
     }
 
     async onAudComplete() {
@@ -2605,6 +2758,198 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+
+    // =====================================================================
+    // Đánh giá Checklist toàn cửa hàng theo tuần (CHT + từng NVBH): ASM chấm theo nhóm công việc từng người
+    // =====================================================================
+    async loadStoreWeek() {
+        const cm = this.state.chtm;
+        cm.wbusy = true;
+        try {
+            const res = await this.orm.call("store.nvbh.check", "get_store_week", [], {
+                month: cm.month || false, week: cm.week === null ? false : cm.week,
+                store_id: cm.swStore ? Number(cm.swStore) : false, visit_date: cm.visit || false, context: this.chtCtx(),
+            });
+            cm.month = res.month;
+            cm.week = res.week;
+            cm.visit = res.visit_date || "";
+            cm.swStore = res.store_id ? String(res.store_id) : "";
+            cm.sw = res;
+            const results = {};
+            (res.groups || []).forEach((g) => g.rows.forEach((r) => { results[r.key] = r.result || ""; }));
+            cm.results = results;
+            cm.results0 = JSON.stringify(results);
+            cm.swNotes = { ...(res.notes || {}) };
+            cm.swNotes0 = JSON.stringify(cm.swNotes);
+            cm.comment = res.comment || "";
+            cm.editMode = false;
+        } finally {
+            cm.wbusy = false;
+        }
+    }
+
+    get swRows() {
+        return (this.state.chtm.sw?.groups || []).flatMap((g) => g.rows);
+    }
+
+    get swCanEdit() {
+        const d = this.state.chtm.sw;
+        return Boolean(d?.can_eval) && (d.n_pending > 0 || this.state.chtm.editMode);
+    }
+
+    swRowEdit(r) {
+        return this.swCanEdit && r.can_eval;
+    }
+
+    swSet(r, val) {
+        if (!this.swRowEdit(r)) {
+            return;
+        }
+        this.state.chtm.results[r.key] = this.state.chtm.results[r.key] === val ? "" : val;
+    }
+
+    swHead(val) {
+        const rows = this.swRows.filter((r) => r.can_eval);
+        const n = rows.filter((r) => this.state.chtm.results[r.key] === val).length;
+        return !rows.length || !n ? "none" : n === rows.length ? "all" : "some";
+    }
+
+    swAll(val) {
+        if (!this.swCanEdit) {
+            return;
+        }
+        const all = this.swHead(val) === "all";
+        this.swRows.filter((r) => r.can_eval).forEach((r) => { this.state.chtm.results[r.key] = all ? "" : val; });
+    }
+
+    get swDirty() {
+        const cm = this.state.chtm;
+        const d = cm.sw || {};
+        return (cm.comment || "").trim() !== (d.comment || "").trim()
+            || JSON.stringify(cm.swNotes || {}) !== cm.swNotes0
+            || (this.swCanEdit && JSON.stringify(cm.results) !== cm.results0);
+    }
+
+    get swScore() {
+        const d = this.state.chtm.sw;
+        if (!d) {
+            return { points: 0, max: 0, pct: 0, bar: 0 };
+        }
+        let points = d.kpi.points || 0;
+        let max = d.kpi.max_points || 0;
+        if (this.swCanEdit) {
+            const f = { good: 1, avg: 0.5, bad: 0 };
+            for (const r of this.swRows) {
+                points += (r.max_done_eval || 0) * (f[this.state.chtm.results[r.key]] || 0);
+                max += r.max_eval || 0;
+            }
+        }
+        const pct = max ? Math.round((1000 * points) / max) / 10 : 0;
+        return { points: Math.round(points * 100) / 100, max, pct, bar: Math.min(pct, 100) };
+    }
+
+    get swLockNote() {
+        const d = this.state.chtm.sw || {};
+        if (d.n_reedit) {
+            return `${d.n_reedit} phiếu đã chấm còn sửa được đến ${d.reedit_until} (bấm Chỉnh sửa).`;
+        }
+        return d.locked_at ? `Kết quả bạn đã chấm đã khóa lúc ${d.locked_at}.` : "";
+    }
+
+    swRateTone(rate) {
+        return rate >= 90 ? "ok" : rate >= 70 ? "warn" : "bad";
+    }
+
+    async onSwFilter(field, ev) {
+        const cm = this.state.chtm;
+        const v = ev.target.value;
+        if (field === "store") {
+            cm.swStore = v;
+        } else if (field === "month") {
+            cm.month = v;
+            cm.week = null;
+        } else if (field === "mien") {
+            cm.mien = v;
+            cm.swStore = "";
+        }
+        cm.visit = "";
+        try {
+            await this.loadStoreWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onSwWeek(idx) {
+        this.state.chtm.week = idx;
+        this.state.chtm.visit = "";
+        try {
+            await this.loadStoreWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onSwVisitPick(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.chtm.visit) {
+            return;
+        }
+        this.state.chtm.visit = ymd;
+        try {
+            await this.loadStoreWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onSwSave() {
+        const cm = this.state.chtm;
+        const d = cm.sw;
+        if (!d) {
+            return;
+        }
+        if (this.swCanEdit) {
+            const miss = this.swRows.filter((r) => r.can_eval && !cm.results[r.key]);
+            if (miss.length) {
+                this.notification.add(`Chưa chọn KQ đánh giá cho ${miss.length} dòng (vd. ${miss[0].name} – nhóm đầu tiên còn trống)`, { type: "warning" });
+                return;
+            }
+        }
+        try {
+            const results = this.swCanEdit ? { ...cm.results } : {};
+            const res = await this.orm.call("store.nvbh.check", "save_store_week",
+                [cm.month, d.week, d.store_id, results, { ...(cm.swNotes || {}) }, cm.comment || "", cm.visit || false],
+                { context: this.chtCtx() });
+            this.notification.add(res.done
+                ? `Đã đánh giá ${res.done} phiếu (${(res.dates || []).join(", ")}) — điểm tính về đúng ngày gốc`
+                : "Đã lưu nhận xét lần ghé thăm", { type: "success" });
+            await this.loadStoreWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onSwCancelEdit() {
+        try {
+            await this.loadStoreWeek();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async onSwReport() {
+        const cm = this.state.chtm;
+        cm.key = cm.sw?.cht_key || cm.key;
+        cm.storeId = cm.swStore || "";
+        cm.mode = "month";
+        try {
+            await this.loadChtMonth();
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
     // ---- danh sách xổ Miền > Cửa hàng > CHT (trang Đánh giá Checklist CHT của người xem nhiều CHT) ----
     async loadChtOverview() {
         const cm = this.state.chtm;
@@ -2651,10 +2996,11 @@ export class StoreChecklistShell extends Component {
         const cm = this.state.chtm;
         cm.key = row.key;
         cm.storeId = "";
+        cm.swStore = store ? String(store.id) : "";
         cm.visit = "";
         cm.view = "one";
         try {
-            await this.loadChtWeek();
+            await this.loadStoreWeek();
         } catch (error) {
             this.notifyError(error);
         }
@@ -2737,7 +3083,7 @@ export class StoreChecklistShell extends Component {
         const back = this.state.chtm.from || "week";
         this.state.chtm.mode = back;
         try {
-            await (back === "week" ? this.loadChtWeek() : this.loadChtMonth());
+            await (back === "week" ? this.loadStoreWeek() : this.loadChtMonth());
         } catch (error) {
             this.notifyError(error);
         }
@@ -3464,7 +3810,7 @@ export class StoreChecklistShell extends Component {
             report_flow_nvbh: "SƠ ĐỒ QUY TRÌNH CHECK LIST NHÂN VIÊN BÁN HÀNG",
             nvbh_cht: "CHECK LIST CÔNG VIỆC CỬA HÀNG TRƯỞNG",
             nvbh_asmcv: "CHECK LIST CÔNG VIỆC ASM",
-            nvbh_audit: "PHIẾU AUDIT & ĐÁNH GIÁ CỬA HÀNG (ASM)",
+            nvbh_audit: this.state.aud.view === "list" ? "DANH SÁCH PHIẾU AUDIT CỬA HÀNG (ASM)" : "PHIẾU AUDIT & ĐÁNH GIÁ CỬA HÀNG (ASM)",
         }[this.state.activeNav] || "";
     }
 

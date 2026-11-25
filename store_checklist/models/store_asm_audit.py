@@ -207,6 +207,7 @@ class StoreAsmAudit(models.Model):
     line_ids = fields.One2many('store.asm.audit.line', 'sheet_id', string='Tiêu chí')
     remark_ids = fields.One2many('store.asm.audit.remark', 'sheet_id', string='Nhận xét và đề xuất của ASM')
     plan_ids = fields.One2many('store.asm.audit.plan', 'sheet_id', string='Yêu cầu khắc phục')
+    comment = fields.Text(string='Nhận xét tổng quan của ASM')
     total = fields.Integer(string='Tổng tiêu chí', compute='_compute_summary', store=True)
     rated = fields.Integer(string='Đã chấm', compute='_compute_summary', store=True)
     pass_count = fields.Integer(string='Đạt', compute='_compute_summary', store=True)
@@ -275,7 +276,7 @@ class StoreAsmAudit(models.Model):
             return {
                 'id': s.id, 'name': s.name, 'state': s.state, 'store_id': s.store_id.id, 'store': s.store_id.display_name,
                 'store_code': s.store_id.code or '', 'date': str(s.audit_date), 'user': s.user_id.name or '',
-                'can_edit': self._can_edit(), 'lines': lines,
+                'can_edit': self._can_edit(), 'lines': lines, 'comment': s.comment or '',
                 'remarks': [{'id': r.id, 'category': r.category, 'text': r.text or ''} for r in s.remark_ids],
                 'plans': [{'id': p.id, 'content': p.content or '', 'owner': p.owner or '', 'deadline': str(p.deadline) if p.deadline else '',
                            'state': p.state, 'overdue': bool(p.deadline and p.deadline < today and p.state != 'done')} for p in s.plan_ids],
@@ -286,7 +287,7 @@ class StoreAsmAudit(models.Model):
             'id': False, 'name': '', 'state': 'draft', 'user': self.env.user.name, 'can_edit': self._audit_rights()['create'],
             'lines': [{'id': False, 'crit_id': c.id, 'sequence': c.sequence, 'group': c.group_id.name or 'Khác', 'name': c.name,
                        'standard': c.standard or '', 'max_score': c.score, 'result': '', 'note': '', 'photos': []} for c in crits],
-            'remarks': [], 'plans': [],
+            'remarks': [], 'plans': [], 'comment': '',
         }
 
     @api.model
@@ -314,6 +315,47 @@ class StoreAsmAudit(models.Model):
             'history': [{'id': h.id, 'date': h.audit_date.strftime('%d/%m/%Y'), 'user': h.user_id.name or '', 'rate': h.rate,
                          'state': h.state} for h in history],
         }
+
+    @api.model
+    def get_audit_list(self, month=None, store_id=None, mien=None, q=None):
+        """Danh sách phiếu Audit (giống Danh sách Checklist GS): lọc theo tháng (YYYY-MM), cửa hàng, miền, từ khóa."""
+        if not self._audit_rights()['read']:
+            raise AccessError(_('Bạn không có quyền xem Phiếu Audit cửa hàng.'))
+        stores = self.env['store.nvbh.check'].get_my_stores()
+        mien_of = {s['id']: s.get('mien') or '' for s in stores}
+        ids = set(mien_of)
+        if store_id:
+            ids &= {int(store_id)}
+        if mien == 'other':
+            ids = {i for i in ids if mien_of[i] not in ('Nam', 'ĐTT', 'Bắc')}
+        elif mien:
+            ids = {i for i in ids if mien_of[i] == mien}
+        domain = [('store_id', 'in', list(ids))]
+        if month:
+            try:
+                y, m = (int(x) for x in str(month).split('-')[:2])
+                start = fields.Date.to_date('%04d-%02d-01' % (y, m))
+                end = fields.Date.to_date('%04d-%02d-01' % (y + (m == 12), 1 if m == 12 else m + 1))
+                domain += [('audit_date', '>=', start), ('audit_date', '<', end)]
+            except ValueError:
+                pass
+        if q:
+            domain += ['|', '|', ('name', 'ilike', q), ('store_id.name', 'ilike', q), ('user_id.name', 'ilike', q)]
+        rows = []
+        for s in self.sudo().search(domain, order='audit_date desc, id desc', limit=1000):
+            pct = s.rate
+            rows.append({
+                'id': s.id, 'name': s.name or '', 'date': s.audit_date.strftime('%d/%m/%Y') if s.audit_date else '',
+                'store_id': s.store_id.id, 'store': s.store_id.display_name or '', 'store_code': s.store_id.code or '',
+                'mien': mien_of.get(s.store_id.id, ''), 'user': s.user_id.name or '',
+                'score': s.score, 'max_score': s.max_score, 'rate': pct, 'rated': s.rated, 'total': s.total,
+                'errors': s.improve_count + s.fail_count, 'improve': s.improve_count, 'fail': s.fail_count,
+                'rank': 'Xuất sắc' if pct >= 90 else 'Khá / Đạt chuẩn' if pct >= 80 else 'Trung bình' if pct >= 65 else 'Cần khắc phục gấp',
+                'rank_tone': 'ok' if pct >= 80 else 'warn' if pct >= 65 else 'bad',
+                'state': s.state, 'comment': s.comment or '',
+                'can_edit': self.browse(s.id)._can_edit() and s.state == 'draft',
+            })
+        return {'stores': stores, 'rows': rows, 'can_create': self._audit_rights()['create']}
 
     @api.model
     def save_audit(self, data):
@@ -346,6 +388,8 @@ class StoreAsmAudit(models.Model):
                 if line:
                     res = row.get('result') or False
                     line.write({'result': res if res in valid else False, 'note': (row.get('note') or '').strip() or False})
+            if 'comment' in data:
+                sheet.write({'comment': (data.get('comment') or '').strip() or False})
         if 'remarks' in data:
             cats = {k for k, _l in REMARK_CATS}
             sheet.remark_ids.unlink()

@@ -3760,7 +3760,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         &:hover { background: #059669; color: #fff; } }
     .ad_tw { overflow-x: auto; }
     .ad_table { width: 100%; min-width: 1060px; border-collapse: collapse; font-size: 13px;
-        th { background: rgba(248, 250, 252, .6); color: var(--ad-mute); font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid var(--ad-line); text-align: left; }
+        th { background: rgba(248, 250, 252, .85); color: var(--ad-navy); font-size: 12px; font-weight: 800; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid var(--ad-line); text-align: center; vertical-align: middle; }
         td { padding: 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
         .c { text-align: center; } .w-stt { width: 56px; } .w-name { width: 28%; } .w-std { width: 17%; } .w-res { width: 25%; } .w-pts { width: 64px; } .w-note { width: 25%; }
         .stt { font-weight: 800; color: #475569; } .nm { font-weight: 600; color: #1e293b; line-height: 1.4; }
@@ -3775,6 +3775,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .ad_pts { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; height: 28px; border-radius: 8px; border: 1px solid; font-weight: 800; font-size: 12px;
         &.p-pass { background: #d1fae5; color: #065f46; border-color: #a7f3d0; } &.p-improve { background: #fef3c7; color: #92400e; border-color: #fde68a; }
         &.p-fail { background: #fee2e2; color: #991b1b; border-color: #fecaca; } &.p-none { background: #f8fafc; color: #94a3b8; border-color: var(--ad-line); } }
+    .ad_mlbl, .ad_up_mob { display: none; }
     .ad_in { width: 100%; border: 1px solid var(--ad-line); background: #fff; border-radius: 6px; padding: 5px 8px; font-size: 12.5px; color: #0f172a; outline: none;
         &:focus { border-color: var(--ad-pri); box-shadow: 0 0 0 2px rgba(37, 99, 235, .12); }
         &.miss { border-color: #f87171; background: rgba(254, 242, 242, .7); &::placeholder { color: #ef4444; } }
@@ -3789,6 +3790,18 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .ad_foot { background: #fff; border: 1px solid var(--ad-line); border-radius: 16px; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;
         font-size: 12px; color: #475569; b { color: var(--ad-navy); } .t-warn { color: #b45309; font-weight: 700; } .t-bad { color: #b91c1c; font-weight: 700; }
         .btns { display: flex; gap: 10px; margin-left: auto; } }
+    .ad_cmt { background: #fafbfc; border: 1px solid var(--ad-line); border-radius: 16px; padding: 14px 18px; margin-bottom: 14px; display: flex; flex-direction: column; gap: 10px;
+        textarea { width: 100%; resize: vertical; min-height: 64px; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px 12px; font-size: 13px;
+            background: #fff; color: #0f172a; outline: none;
+            &::placeholder { color: #94a3b8; } &:focus { border-color: #93c5fd; box-shadow: 0 0 0 3px rgba(37, 99, 235, .12); } } }
+    .ad_cmt_h { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        .ic { width: 28px; height: 28px; border-radius: 8px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; }
+        > b { font-size: 14px; color: #172554; } }
+    .ad_cmt_sub { font-size: 11px; color: #94a3b8; }
+    .ad_cmt_q { margin-left: auto; display: flex; gap: 6px; flex-wrap: wrap;
+        button { border: 1px solid #e2e8f0; background: #fff; border-radius: 8px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: #334155;
+            &:hover { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; } } }
+    .ad_cmt_ro { font-size: 13px; color: #334155; white-space: pre-line; padding: 8px 12px; background: #fff; border: 1px dashed #e2e8f0; border-radius: 10px; }
     .ad_btn { border: 0; border-radius: 12px; padding: 10px 18px; font-size: 13px; font-weight: 700; background: var(--ad-pri); color: #fff;
         box-shadow: 0 6px 14px rgba(37, 99, 235, .22); display: inline-flex; align-items: center; gap: 8px;
         &:hover { background: var(--ad-blue); } &:disabled { opacity: .5; box-shadow: none; cursor: not-allowed; }
@@ -3914,4 +3927,104 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         select { color: #334155; } }
     .ad_date .o_store_date_input, .ad_date input { color: #0f172a; }
     @media (max-width: 767px) { .ad_head_top { padding: 10px; } .ad_head_r { margin-left: 0; } }
+}
+
+// Phiếu Audit: Danh sách phiếu (giao diện giống Danh sách Checklist GS) + nút quay lại danh sách
+.o_aud {
+    .ad_back { border: 1px solid var(--ad-line); background: #fff; color: #334155; border-radius: 8px; padding: 5px 12px; font-size: 12px; font-weight: 700;
+        display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; &:hover { background: #eff6ff; color: var(--ad-pri); border-color: #bfdbfe; } }
+    .adl_bar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+        .o_store_add_btn { border-radius: 6px; font-size: 12px; font-weight: 700; padding: 0 14px; height: 32px; flex: 0 0 auto; }
+        select { width: auto; flex: 0 0 auto; min-width: 125px; max-width: 180px; height: 32px; border: 1px solid #d8dee8; border-radius: 6px; background: #fff; padding: 4px 10px; font-size: 12px; color: #1e293b; outline: none;
+            &:focus { border-color: var(--ad-pri); } } }
+    .adl_q { position: relative; margin: 0; width: 220px; flex: 0 0 auto;
+        i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 12px; }
+        input { width: 100%; height: 32px; border: 1px solid #d8dee8; border-radius: 6px; padding: 4px 10px 4px 28px; font-size: 12px; outline: none; &:focus { border-color: var(--ad-pri); } } }
+    .adl_cnt { margin-left: auto; font-size: 12px; color: var(--ad-mute); }
+    .adl_wrap { background: #fff; border: 1px solid #d8dee8; border-radius: 4px; overflow-x: auto; }
+    .adl_table { width: 100%; min-width: 1100px; border-collapse: collapse; font-size: 12.5px;
+        th { background: #f1f3f6; color: #374151; font-weight: 600; padding: 8px 10px; border: 1px solid #d8dee8; text-align: center; white-space: nowrap; }
+        td { padding: 7px 10px; border-bottom: 1px solid #edf0f4; vertical-align: middle; }
+        .r { text-align: right; } .c { text-align: center; } .b { font-weight: 600; } }
+    .adl_grp { background: #f8fafc; cursor: pointer; user-select: none;
+        td { font-size: 12.5px; color: #1f2937; border-bottom: 1px solid #e5e7eb; }
+        i { width: 14px; color: #6b7280; } span { color: var(--ad-mute); font-weight: 400; }
+        &:hover { background: #eef2f7; } }
+    .adl_row { cursor: pointer; td:first-child { padding-left: 26px; color: var(--ad-blue); } &:hover { background: #f5f8ff; } }
+    .adl_pct { font-weight: 700; &.is-ok { color: #047857; } &.is-warn { color: #b45309; } &.is-bad { color: #b91c1c; } }
+    .adl_err { color: #b91c1c; font-weight: 700; } .adl_zero { color: #94a3b8; }
+    .adl_rank, .adl_st { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 11px; font-weight: 700; white-space: nowrap; border: 1px solid transparent; }
+    .adl_rank { &.is-ok { background: #ecfdf5; color: #047857; border-color: #a7f3d0; } &.is-warn { background: #fffbeb; color: #b45309; border-color: #fde68a; }
+        &.is-bad { background: #fef2f2; color: #b91c1c; border-color: #fecaca; } }
+    .adl_st { &.is-draft { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; } &.is-submitted { background: #f0fdf4; color: #15803d; border-color: #bbf7d0; } }
+    .adl_cmt { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #475569; }
+    .adl_btn { border: 1px solid #bfdbfe; background: #fff; color: var(--ad-pri); border-radius: 6px; padding: 3px 10px; font-size: 12px; font-weight: 700;
+        display: inline-flex; align-items: center; gap: 5px; &:hover { background: #eff6ff; } }
+    .adl_none { text-align: center; color: var(--ad-mute); padding: 24px !important; }
+    @media (max-width: 767px) { .adl_q { min-width: 0; flex: 1; } .adl_bar select { min-width: 0; flex: 1; } }
+}
+
+// Phiếu Audit: giao diện thẻ gọn đẹp trên điện thoại (giống mẫu Phiếu đánh giá / nút Chụp hình pill)
+@media (max-width: 767px) {
+    .o_aud {
+        padding-bottom: 72px;
+        .ad_group { background: transparent; border: 0; overflow: visible; }
+        .ad_gh { background: #fff; border: 1px solid var(--ad-line); border-radius: 14px; margin-bottom: 10px; }
+        .ad_tw { overflow: visible; }
+        .ad_table { min-width: 0; border: 0 !important; background: transparent;
+            tbody { display: flex; flex-direction: column; gap: 12px; }
+            tr { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 8px; padding: 14px;
+                background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; box-shadow: 0 1px 4px rgba(15, 23, 42, .05); }
+            tr.r-fail { border-color: #fecaca; background: #fffafb; }
+            tr.r-improve { border-color: #fde68a; background: #fffdf5; }
+            td { border: 0 !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }
+            td.stt { order: 1; flex: 0 0 auto; text-align: left; font-size: 14.5px; font-weight: 800; color: var(--ad-navy); line-height: 1.35; &::after { content: "."; } }
+            td.nm { order: 2; flex: 1 1 0; min-width: 0; font-size: 14.5px; font-weight: 800; color: var(--ad-navy); line-height: 1.35; }
+            td:nth-child(7) { order: 3; flex: 0 0 auto; }
+            td:nth-child(3) { order: 4; flex: 0 0 100%; margin-top: -2px;
+                .std { display: block; background: transparent; padding: 0; border-radius: 0; color: #475569; font-size: 13px; line-height: 1.45; } }
+            td.ev { order: 5; flex: 1 1 calc(33.333% - 6px); width: auto; background: #f1f5f9 !important; border: 1px solid #e2e8f0 !important;
+                border-radius: 12px; padding: 10px 4px !important; text-align: center;
+                label { justify-content: center; width: 100%; font-size: 12.5px; } }
+            tr.r-pass td.ev.r-pass { background: #ecfdf5 !important; border-color: #86efac !important; }
+            tr.r-improve td.ev.r-improve { background: #fffbeb !important; border-color: #fcd34d !important; }
+            tr.r-fail td.ev.r-fail { background: #fef2f2 !important; border-color: #fca5a5 !important; }
+            td.note { order: 6; flex: 0 0 100%; margin-top: 2px; }
+        }
+        .ad_mlbl { display: block; font-size: 11px; font-weight: 800; color: var(--ad-pri); text-transform: uppercase; letter-spacing: .3px; margin-bottom: 6px;
+            &.miss { color: var(--ad-red); } }
+        .ad_in { background: #f1f5f9; border: 1px solid transparent; border-radius: 12px; padding: 10px 12px; font-size: 13.5px;
+            &:focus { background: #fff; border-color: #93c5fd; }
+            &.miss { background: #fef2f2; border-color: #fca5a5; } }
+        .ad_ph { flex-direction: column; align-items: stretch; gap: 8px; margin-top: 10px;
+            .up { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 11px 16px;
+                border: 1px solid #cbd5e1; border-radius: 999px; background: #fff; color: #0f172a; font-size: 14px; font-weight: 700;
+                box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+                &:hover { text-decoration: none; background: #f8fafc; }
+                i { font-size: 16px; color: #0f172a; } }
+            .ad_up_desk, .opt { display: none; }
+            .ad_up_mob { display: inline; }
+            .files { margin-left: 0; justify-content: flex-start; } }
+    }
+}
+
+// Đánh giá Checklist toàn cửa hàng (CHT + NVBH) theo tuần
+.o_cht_w {
+    .cw_storesel select { max-width: 340px; }
+    .sw_table { overflow-x: auto;
+        table { min-width: 1100px; }
+        td.gname { vertical-align: top; background: #fff !important; border-right: 1px solid #f1f5f9;
+            b { display: block; font-size: 13px; color: #0f172a; } small { display: block; font-size: 11px; color: #94a3b8; margin-top: 2px; } }
+        tr.g-first > td { border-top: 2px solid #e2e8f0; }
+        tr.g-sub > td { background: #fafbfc; }
+        tbody tr:nth-child(4n+3) > td { background: inherit; }
+        .p-cht { color: #2563eb; } .p-nv { color: #0f172a; }
+        .rt-ok { color: #15803d; } .rt-warn { color: #b45309; } .rt-bad { color: #b91c1c; } }
+    .sw_note { width: 100%; min-width: 220px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 5px 8px; font-size: 12px; background: #fff; outline: none;
+        &:focus { border-color: #93c5fd; box-shadow: 0 0 0 2px rgba(37, 99, 235, .12); } &:disabled { background: transparent; border-color: transparent; } }
+    .sw_people .cw_chip { cursor: default; }
+    @media (max-width: 767px) {
+        .sw_table { display: block !important; }
+        .cw_storesel { grid-column: 1 / -1; }
+    }
 }

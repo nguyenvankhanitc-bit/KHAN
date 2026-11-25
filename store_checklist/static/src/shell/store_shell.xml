@@ -1698,6 +1698,7 @@
                                         <option t-foreach="sw.stores" t-as="st" t-key="st.id" t-att-value="st.id"
                                                 t-att-selected="('' + st.id) === state.chtm.swStore" t-esc="st.label"/>
                                     </select><i class="fa fa-angle-down"/></label>
+                                <span class="cw_sel sw_asm"><i class="fa fa-user-circle"/> ASM: <b t-esc="sw.asm_name"/></span>
                                 <label class="cw_sel"><i class="fa fa-calendar-o"/>
                                     <select t-on-change="(ev) => this.onSwFilter('month', ev)">
                                         <option t-foreach="monthOptions" t-as="m" t-key="m.value" t-att-value="m.value"
@@ -1712,39 +1713,27 @@
                                     <b t-esc="w.label"/><small>(<t t-esc="w.range"/>)</small></button>
                             </div>
                             <t t-set="ssc" t-value="swScore"/>
-                            <div class="cw_kpis">
-                                <div class="cw_kpi k-blue"><span class="ic"><i class="fa fa-briefcase"/></span><div><b t-esc="sw.kpi.tasks or 0"/><small>Tổng việc ca (<t t-esc="sw.store_code"/>)</small></div></div>
-                                <div class="cw_kpi k-green"><span class="ic"><i class="fa fa-clock-o"/></span><div><b><t t-esc="jobStaffNum(sw.kpi.hours or 0)"/>h</b><small>Tổng thời gian ca</small></div></div>
-                                <div class="cw_kpi k-purple"><span class="ic"><i class="fa fa-check"/></span><div><b t-esc="sw.kpi.done or 0"/><small>Đã làm<t t-if="sw.kpi.done_by"> (<t t-esc="sw.kpi.done_by"/>)</t></small></div></div>
-                                <div class="cw_kpi k-red"><span class="ic"><i class="fa fa-exclamation"/></span><div><b t-esc="sw.kpi.errors or 0"/><small>Số lỗi</small></div></div>
-                                <div class="cw_kpi k-score">
-                                    <span class="ic"><i class="fa fa-trophy"/></span>
-                                    <div class="sc"><small>Tổng điểm <t t-esc="(sw.weeks[sw.week] || {}).label"/><t t-if="swCanEdit"> (tạm tính)</t></small>
-                                        <div class="row1"><b><t t-esc="jobStaffNum(ssc.points)"/> / <t t-esc="jobStaffNum(ssc.max)"/></b>
-                                            <em><span class="dot"/><t t-esc="jobStaffNum(ssc.pct)"/>%</em></div>
-                                        <span class="bar"><i t-attf-style="width: #{ssc.bar}%"/></span></div>
-                                </div>
-                                <button type="button" class="cw_kpi k-report" t-on-click="onSwReport" title="Xem Bảng checklist tháng của CHT">
-                                    <span class="ic"><i class="fa fa-eye"/></span><div><b>Xem</b><small>báo cáo</small></div></button>
+                            <t t-set="wk" t-value="sw.weeks[sw.week] || {}"/>
+                            <div class="sw_kpis">
+                                <div class="sw_kpi k-blue"><b t-esc="sw.kpi.tasks or 0"/><small>Tổng việc ca (<t t-esc="sw.store_code"/>)</small></div>
+                                <div class="sw_kpi k-green"><b><t t-esc="jobStaffNum(sw.kpi.hours or 0)"/>h</b><small>Tổng thời gian ca</small></div>
+                                <div class="sw_kpi k-purple"><b t-esc="sw.kpi.done or 0"/><small>Đã làm<t t-if="sw.kpi.done_by"> (<t t-esc="sw.kpi.done_by"/>)</t></small></div>
+                                <div class="sw_kpi k-red"><b t-esc="sw.kpi.errors or 0"/><small>Số lỗi tồn đọng</small></div>
+                                <div class="sw_kpi k-amber" t-att-title="swCanEdit ? 'Tạm tính theo KQ đang tích' : 'Điểm các phiếu đã đánh giá xong'">
+                                    <b><t t-esc="jobStaffNum(ssc.points)"/> / <t t-esc="jobStaffNum(ssc.max)"/></b>
+                                    <small>Tổng điểm <t t-esc="wk.label"/> (<t t-esc="jobStaffNum(ssc.pct)"/>%)<t t-if="swCanEdit"> · tạm tính</t></small></div>
                             </div>
-                            <div class="cw_visit">
-                                <div class="cw_visit_l">
-                                    <label class="cw_vdate"><i class="fa fa-map-marker"/> Ngày ASM ghé thăm:
-                                        <DateTimeInput t-key="'sw' + sw.visit_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(sw.visit_date)"
-                                                       onChange.bind="onSwVisitPick" class="'o_store_date_input'"/></label>
-                                    <button type="button" class="cw_today" t-if="sw.today" t-on-click="() => this.onChtDay(sw.today)"><i class="fa fa-pencil-square-o"/> Check list hôm nay (CHT)</button>
-                                </div>
-                                <div class="cw_visit_msg">
-                                    <t t-if="sw.n_pending">Lần ghé này chấm <b t-esc="sw.n_pending"/> phiếu (CHT + NVBH) đã gửi đến ngày <b t-esc="sw.visit_date.slice(8, 10) + '/' + sw.visit_date.slice(5, 7)"/><t t-if="sw.n_carried"> (gồm <b t-esc="sw.n_carried"/> phiếu chuyển tiếp)</t>. Chọn KQ theo nhóm rồi bấm <b>Lưu</b>.</t>
-                                    <t t-else="">Không có phiếu nào đến ngày <b t-esc="sw.visit_date.slice(8, 10) + '/' + sw.visit_date.slice(5, 7)"/> đang chờ bạn chấm.</t>
+                            <div class="sw_visit">
+                                <label class="sw_vdate"><i class="fa fa-map-marker"/> Ngày ASM ghé thăm <t t-esc="wk.label"/>
+                                    <DateTimeInput t-key="'sw' + sw.visit_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(sw.visit_date)"
+                                                   onChange.bind="onSwVisitPick" class="'o_store_date_input'"/></label>
+                                <button type="button" class="sw_go" t-if="sw.today" t-on-click="() => this.onChtDay(sw.today)" title="Mở check list hôm nay của CHT">
+                                    <i class="fa fa-check"/> Check list <t t-esc="wk.label"/></button>
+                                <span class="sw_info">Đang hiển thị dữ liệu tổng hợp <t t-esc="wk.label"/> (<t t-esc="wk.range"/>) của cả <t t-esc="sw.people_text"/> tại <t t-esc="sw.store_code"/>.
+                                    <t t-if="sw.n_pending"> Lần ghé này chấm <b t-esc="sw.n_pending"/> phiếu<t t-if="sw.n_carried"> (gồm <b t-esc="sw.n_carried"/> phiếu chuyển tiếp)</t>.</t>
                                     <t t-if="swLockNote"> <t t-esc="swLockNote"/></t>
-                                    <t t-if="sw.n_later"> <b t-esc="sw.n_later"/> phiếu sau ngày ghé chuyển sang lần ghé tuần sau.</t>
-                                </div>
-                            </div>
-                            <div class="cw_note sw_people" t-if="sw.people.length">
-                                <span><i class="fa fa-users"/> Nhân sự trong tuần:</span>
-                                <span t-foreach="sw.people" t-as="p" t-key="p.key" t-attf-class="cw_chip #{p.pending ? 'is-eval' : p.wait_cht ? 'is-later' : p.approved ? 'is-ok' : 'is-wait'}">
-                                    <b t-esc="p.short"/> (<t t-esc="p.is_cht ? 'CHT' : p.pos"/>) · <t t-esc="p.n_checks"/> phiếu<t t-if="p.pending"> · <t t-esc="p.pending"/> chờ ASM</t><t t-if="p.wait_cht"> · <t t-esc="p.wait_cht"/> chờ CHT</t><t t-if="p.not_sent"> · <t t-esc="p.not_sent"/> chưa gửi</t></span>
+                                    <t t-if="sw.n_later"> <b t-esc="sw.n_later"/> phiếu sau ngày ghé chuyển sang lần ghé tuần sau.</t></span>
+                                <button type="button" class="sw_rep" t-on-click="onSwReport" title="Xem Bảng checklist tháng của CHT"><i class="fa fa-eye"/> Xem báo cáo</button>
                             </div>
                             <div class="cw_note cw_carry" t-if="sw.carried.length">
                                 <span><i class="fa fa-share"/> Chuyển tiếp từ tuần trước:</span>
@@ -1772,8 +1761,8 @@
                                     <tbody>
                                         <t t-foreach="sw.groups" t-as="g" t-key="g.key">
                                             <tr t-foreach="g.rows" t-as="r" t-key="r.key" t-attf-class="#{r_first ? 'g-first' : 'g-sub'} #{g_index % 2 ? 'g-odd' : ''}">
-                                                <td class="l gname" t-if="r_first" t-att-rowspan="g.rows.length">
-                                                    <b t-esc="g.name"/><small t-if="g.desc" t-esc="g.desc + '...'"/></td>
+                                                <td class="l gname" t-if="r_first"><b t-esc="g.name"/><small t-if="g.desc" t-esc="g.desc + '...'"/></td>
+                                                <td class="l gsub" t-else="">↳ Chi tiết <t t-esc="r.is_cht ? 'CHT' : 'NVBH'"/> trong nhóm</td>
                                                 <td class="l"><b t-attf-class="#{r.is_cht ? 'p-cht' : 'p-nv'}" t-esc="r.name + ' (' + (r.is_cht ? 'CHT' : r.pos) + ')'"/></td>
                                                 <td><b t-esc="r.done + '/' + r.lines"/></td>
                                                 <td><b><t t-esc="jobStaffNum(r.pts)"/> / <t t-esc="jobStaffNum(r.max)"/>đ</b></td>
@@ -1790,28 +1779,23 @@
                                 </table>
                             </div>
                             <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này cửa hàng chưa có phiếu check list CHT / NVBH nào.</div>
-                            <div class="cw_foot">
-                                <div class="cw_cmt">
-                                    <div class="cw_visits" t-if="sw.visits.length">
-                                        <div class="cw_vrow" t-foreach="sw.visits" t-as="v" t-key="v_index">
-                                            <span class="cw_vbadge"><i class="fa fa-map-marker"/> <t t-esc="v.date"/></span>
-                                            <div><small><b t-esc="v.user"/></small><p t-esc="v.comment or 'Không có nhận xét.'"/></div>
-                                        </div>
+                            <div class="sw_foot">
+                                <div class="sw_cmt">
+                                    <b><i class="fa fa-pencil-square-o"/> Nhận xét tổng quan <t t-esc="wk.label"/> (ASM <t t-esc="sw.asm_name"/>):</b>
+                                    <input type="text" t-if="sw.can_comment" placeholder="Nhập nhận xét tổng quan của ASM về kết quả tuần này..."
+                                           t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
+                                    <div class="ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
+                                    <div class="sw_visits" t-if="sw.visits.length > 1">
+                                        <span t-foreach="sw.visits" t-as="v" t-key="v_index"><i class="fa fa-map-marker"/> <t t-esc="v.date"/> · <t t-esc="v.user"/>: <t t-esc="v.comment or '—'"/></span>
                                     </div>
-                                    <div class="cw_cmt_h">
-                                        <span class="ic"><i class="fa fa-pencil-square-o"/></span>
-                                        <b>Nhận xét tổng quan <t t-esc="(sw.weeks[sw.week] || {}).label"/> (ASM)</b>
-                                    </div>
-                                    <textarea t-if="sw.can_comment" rows="2" placeholder="Nhập nhận xét tổng quan của ASM về kết quả thực hiện công việc của cửa hàng tuần này..."
-                                              t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
-                                    <div class="cw_cmt_ro" t-elif="!sw.visits.length">Chưa có nhận xét của ASM cho tuần này.</div>
                                 </div>
-                                <div class="cw_btns">
-                                    <button type="button" class="cw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
-                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa</button>
-                                    <button type="button" class="cw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
-                                    <button type="button" class="cw_btn is-locked" t-if="!sw.n_reedit and !sw.n_pending and sw.locked_at" disabled="disabled"><i class="fa fa-lock"/> Đã khóa <t t-esc="sw.locked_at"/></button>
-                                    <button type="button" class="cw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu</button>
+                                <div class="sw_btns">
+                                    <button type="button" class="sw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
+                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa <t t-esc="wk.label"/></button>
+                                    <button type="button" class="sw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
+                                    <button type="button" class="sw_btn is-lock" t-if="!sw.n_reedit and !sw.n_pending" disabled="disabled"
+                                            t-att-title="sw.locked_at ? 'Hệ thống đã khóa lúc ' + sw.locked_at : 'Chưa có phiếu chờ chấm'"><i class="fa fa-lock"/> Khóa <t t-esc="(wk.label || '').toLowerCase()"/></button>
+                                    <button type="button" class="sw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu <t t-esc="wk.label"/></button>
                                 </div>
                             </div>
                         </t>

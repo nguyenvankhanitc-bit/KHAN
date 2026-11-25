@@ -244,6 +244,11 @@ class StoreNvbhCheckWeek(models.Model):
                          for v in self.env['store.cht.visit'].sudo().search([('staff_key', '=', 'store:%s' % store.id),
                                                                             ('visit_date', '>=', sc['a']), ('visit_date', '<=', sc['b'])],
                                                                            order='visit_date, id')]
+        # ASM phụ trách (theo luồng đánh giá các phiếu trong tuần), không có thì người đăng nhập
+        asm = next((st['employee'].name for c in (checks | carried) for st in c._approval_chain() if st['code'] == 'ASM' and st.get('employee')), '')
+        res['asm_name'] = asm or self.env.user.name
+        res['people_text'] = ' & '.join(('CHT ' if p['is_cht'] else '%s ' % (p['pos'] or 'NVBH')) + (p['name'] or '').title()
+                                        for p in res['people'])
         # CHT của cửa hàng (mở Bảng checklist tháng / check list hôm nay)
         cht = next((p for p in res['people'] if p['is_cht']), None)
         res['cht_key'] = cht['key'] if cht else ''

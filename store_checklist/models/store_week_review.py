@@ -157,6 +157,8 @@ class StoreNvbhCheckWeek(models.Model):
         grp_seq = {}
         for g in self.env['store.cht.task.group'].sudo().with_context(active_test=False).search([]):
             grp_seq.setdefault(group_norm(g.name), (0, g.sequence, g.id))
+        for g in self.env['store.nvbh.task.group'].sudo().with_context(active_test=False).search([]):
+            grp_seq.setdefault(group_norm(g.name), (0, g.sequence, g.id))
         for i, (_k, label) in enumerate(TASK_GROUPS):
             grp_seq.setdefault(group_norm(label), (1, i, 0))
         groups = {}
@@ -166,11 +168,38 @@ class StoreNvbhCheckWeek(models.Model):
             line = c.schedule_line_id
             p = self._sw_person(line) if line else {'key': (c.staff_name or '').casefold(), 'name': c.staff_name or '', 'short': c.staff_name or '',
                                                      'pos': '', 'is_cht': c.kind == 'cht'}
-            pp = people.setdefault(p['key'], dict(p, n_checks=0, tasks=0, done=0, pending=0, wait_cht=0, approved=0, not_sent=0))
+            pp = people.setdefault(p['key'], dict(
+                p, n_checks=0, n_checked=0, tasks=0, done=0, errors=0, hours=0.0, points=0.0, std_points=0.0,
+                n_eval=0, cht_sum=0.0, cht_cnt=0, asm_sum=0.0, asm_cnt=0, dates=set(),
+                uncheck_dates=set(), uneval_dates=set(),
+                pending=0, wait_cht=0, approved=0, not_sent=0,
+            ))
             if own:
                 pp['n_checks'] += 1
+                if c.cnt_done > 0:
+                    pp['n_checked'] += 1
+                    if c.work_date:
+                        pp['dates'].add(c.work_date)
+                elif c.work_date:
+                    pp['uncheck_dates'].add(c.work_date)
                 pp['tasks'] += c.cnt_total
                 pp['done'] += c.cnt_done
+                pp['errors'] += c.error_total
+                pp['hours'] += c.shift_id.hours or 0.0
+                p_cht = c._step_points('CHT')
+                if p_cht is not None:
+                    pp['cht_sum'] += p_cht
+                    pp['cht_cnt'] += 1
+                p_asm = c._step_points('ASM')
+                if p_asm is not None:
+                    pp['asm_sum'] += p_asm
+                    pp['asm_cnt'] += 1
+                if c._fully_evaluated() or p_asm is not None:
+                    pp['points'] += c.points if c._fully_evaluated() else p_asm
+                    pp['std_points'] += sum(c.line_ids.mapped('max_score'))
+                    pp['n_eval'] += 1
+                elif c.work_date and c.cnt_done > 0:
+                    pp['uneval_dates'].add(c.work_date)
             if c in evaluable and c.state == 'pending_review':
                 pp['pending'] += 1
             elif c.state == 'pending_review':
@@ -180,16 +209,24 @@ class StoreNvbhCheckWeek(models.Model):
             else:
                 pp['not_sent'] += 1
             pre = c._sw_asm_prefix()
+            # Bảng 2 chỉ hiển thị các dòng chưa được ASM chấm (chưa có asm_eval_result) của các phiếu đến ngày ghé thăm
+            if c.work_date and c.work_date > sc['visit'] and own:
+                continue
+            if not (c.submitted or c.cnt_done > 0):
+                continue
             for l in c.line_ids:
+                if l.asm_eval_result:
+                    continue
                 gk = group_norm(l.sub_category)
                 g = groups.setdefault(gk, {'key': gk, 'name': l.sub_category or 'Khác', 'rows': {}, 'tasks': []})
                 row = g['rows'].setdefault(p['key'], {'key': '%s|%s' % (gk, p['key']), 'person': p['key'], 'lines': 0, 'done': 0, 'max': 0.0,
-                                                      'pts': 0.0, 'results': set(), 'max_eval': 0.0, 'max_done_eval': 0.0, 'n_eval': 0})
+                                                      'pts': 0.0, 'errors': 0, 'results': set(), 'max_eval': 0.0, 'max_done_eval': 0.0, 'n_eval': 0})
                 if own:
                     row['lines'] += 1
                     row['done'] += 1 if l.is_done else 0
                     row['max'] += l.max_score or 0.0
                     row['pts'] += l.actual_score or 0.0
+                    row['errors'] += l.error_count or 0
                     if l.name not in g['tasks']:
                         g['tasks'].append(l.name)
                 if c in evaluable:
@@ -197,21 +234,66 @@ class StoreNvbhCheckWeek(models.Model):
                     row['max_eval'] += l.max_score or 0.0
                     row['max_done_eval'] += (l.max_score or 0.0) if l.is_done else 0.0
                     row['results'].add(l[pre + 'eval_result'] or '' if pre is not None else '')
-                elif own and pre is not None and c.state == 'approved' and not evaluable:
-                    row['results'].add(l[pre + 'eval_result'] or '')
         order = lambda k: (not people[k]['is_cht'], people[k]['name'].casefold())  # noqa: E731
+        Rating = self.env['store.nvbh.rating']
+        visit = self._sw_visit(sc, create=False)
+        is_asm = self._sw_is_asm(store)
         out = []
         for g in sorted(groups.values(), key=lambda g: grp_seq.get(g['key'], (2, 0, 0)) + (g['name'],)):
             rows = []
+            g_pts = g_max = 0.0
+            g_err = 0
             for pk in sorted(g['rows'], key=order):
                 r = g['rows'][pk]
+                g_pts += r['pts']
+                g_max += r['max']
+                g_err += r.get('errors', 0)
                 rs = r.pop('results') - {''}
-                rows.append(dict(r, result=rs.pop() if len(rs) == 1 else '', rate=round(100.0 * r['pts'] / r['max'], 1) if r['max'] else 0.0,
+                res_val = rs.pop() if len(rs) == 1 else ''
+                rows.append(dict(r, result=res_val, rate=round(100.0 * r['pts'] / r['max'], 1) if r['max'] else 0.0,
                                  pts=round(r['pts'], 2), name=people[pk]['short'], full=people[pk]['name'], pos=people[pk]['pos'],
-                                 is_cht=people[pk]['is_cht'], can_eval=r['n_eval'] > 0))
-            out.append({'key': g['key'], 'name': g['name'], 'desc': ', '.join(g['tasks'][:3]), 'rows': rows})
+                                 is_cht=people[pk]['is_cht'], can_eval=r['n_eval'] > 0 or is_asm))
+            g_rate = round(100.0 * g_pts / g_max, 1) if g_max else 0.0
+            lvl = Rating.rating_for(g_rate) if g_max else Rating.browse()
+            out.append({
+                'key': g['key'], 'name': g['name'], 'desc': ', '.join(g['tasks'][:3]), 'rows': rows,
+                'errors': g_err, 'rank_label': lvl.name if lvl else '', 'rank_tone': lvl.tone if lvl else '',
+            })
         res['groups'] = out
-        res['people'] = sorted(people.values(), key=lambda p: (not p['is_cht'], p['name'].casefold()))
+        plist = sorted(people.values(), key=lambda p: (not p['is_cht'], p['name'].casefold()))
+        for p in plist:
+            p['dates'] = [d.strftime('%d/%m') for d in sorted(p['dates'])]
+            uncheck = [d.strftime('%d/%m') for d in sorted(p.pop('uncheck_dates'))]
+            uneval = [d.strftime('%d/%m') for d in sorted(p.pop('uneval_dates'))]
+            parts = []
+            if uneval:
+                parts.append('Ngày %s chưa đánh giá' % ', '.join(uneval))
+            if uncheck:
+                parts.append('Ngày %s chưa check list' % ', '.join(uncheck))
+            p['note'] = '; '.join(parts)
+            p['n_uneval'] = len(uneval) + len(uncheck)
+            p['hours'] = round(p['hours'], 1)
+            p['std_points'] = round(p['std_points'], 1)
+            p['points'] = round(p['points'], 1) if p['n_eval'] else None
+            p['pts_cht'] = round(p['cht_sum'], 1) if p['cht_cnt'] else None
+            p['pts_asm'] = round(p['asm_sum'], 1) if p['asm_cnt'] else None
+        res['people'] = plist
+        pts_vals = [p['points'] for p in plist if p['points'] is not None]
+        cht_vals = [p['pts_cht'] for p in plist if p['pts_cht'] is not None]
+        asm_vals = [p['pts_asm'] for p in plist if p['pts_asm'] is not None]
+        res['people_total'] = {
+            'n_checks': sum(p['n_checks'] for p in plist),
+            'n_checked': sum(p['n_checked'] for p in plist),
+            'tasks': sum(p['tasks'] for p in plist),
+            'done': sum(p['done'] for p in plist),
+            'errors': sum(p['errors'] for p in plist),
+            'hours': round(sum(p['hours'] for p in plist), 1),
+            'points': round(sum(pts_vals), 1) if pts_vals else None,
+            'std_points': round(sum(p['std_points'] for p in plist), 1),
+            'pts_cht': round(sum(cht_vals), 1) if cht_vals else None,
+            'pts_asm': round(sum(asm_vals), 1) if asm_vals else None,
+            'n_uneval': sum(p['n_uneval'] for p in plist),
+        }
         approved = checks.filtered(lambda c: c._fully_evaluated())
         res['kpi'] = {
             'tasks': sum(checks.mapped('cnt_total')), 'hours': round(sum(c.shift_id.hours or 0.0 for c in checks), 2),
@@ -220,8 +302,8 @@ class StoreNvbhCheckWeek(models.Model):
             'done_by': ' | '.join('%s: %s' % (p['short'], p['done']) for p in res['people'] if p['n_checks']),
         }
         reedit = evaluable.filtered(lambda c: c.state == 'approved')
-        res['can_eval'] = bool(evaluable)
-        res['n_pending'] = len(evaluable - reedit)
+        res['can_eval'] = bool(evaluable) or (is_asm and bool(out))
+        res['n_pending'] = len(evaluable - reedit) or (len(out) if (is_asm and out) else 0)
         res['n_reedit'] = len(reedit)
         res['n_carried'] = len(carried.filtered(lambda c: c in evaluable))
         res['n_later'] = len(sc['later'].filtered(lambda c: c.state == 'pending_review'))
@@ -236,16 +318,16 @@ class StoreNvbhCheckWeek(models.Model):
         res['locked_at'] = fields.Datetime.context_timestamp(self, max(locked)).strftime('%H:%M %d/%m') if locked else ''
         res['carried'] = [{'id': c.id, 'date': c.work_date.strftime('%d/%m'), 'name': c.staff_name or '',
                            'week_label': self._cht_week_label(c.work_date)} for c in carried]
-        res['can_comment'] = self._sw_can_comment(checks | carried)
-        visit = self._sw_visit(sc, create=False)
+        res['can_comment'] = is_asm or self._sw_can_comment(checks | carried)
         res['comment'] = visit.comment or '' if visit else ''
         res['notes'] = {r.row_key: r.comment or '' for r in visit.row_ids} if visit else {}
         res['visits'] = [{'date': v.visit_date.strftime('%d/%m/%Y'), 'user': v.user_id.name or '', 'comment': v.comment or ''}
                          for v in self.env['store.cht.visit'].sudo().search([('staff_key', '=', 'store:%s' % store.id),
                                                                             ('visit_date', '>=', sc['a']), ('visit_date', '<=', sc['b'])],
                                                                            order='visit_date, id')]
-        # ASM phụ trách (theo luồng đánh giá các phiếu trong tuần), không có thì người đăng nhập
-        asm = next((st['employee'].name for c in (checks | carried) for st in c._approval_chain() if st['code'] == 'ASM' and st.get('employee')), '')
+        # ASM phụ trách cửa hàng (manager_id trên hr.store), không có thì người đăng nhập
+        asm = (store.manager_id.name if store and store.manager_id else '') or next(
+            (st['employee'].name for c in (checks | carried) for st in c._approval_chain() if st['code'] == 'ASM' and st.get('employee')), '')
         res['asm_name'] = asm or self.env.user.name
         res['people_text'] = ' & '.join(('CHT ' if p['is_cht'] else '%s ' % (p['pos'] or 'NVBH')) + (p['name'] or '').title()
                                         for p in res['people'])
@@ -258,10 +340,23 @@ class StoreNvbhCheckWeek(models.Model):
         return res
 
     @api.model
+    def _sw_is_asm(self, store):
+        """Người đăng nhập có quyền ASM đánh giá tổng theo tuần cho cửa hàng (Admin / Quản lý / ASM phụ trách cửa hàng / nhân sự cấp ASM trở lên)."""
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
+            return True
+        if store and store.manager_id and store.manager_id.user_id and store.manager_id.user_id.id == user.id:
+            return True
+        emp = self.env['hr.employee'].sudo().search([('user_id', '=', user.id)], limit=1)
+        return bool(emp and emp._checklist_effective_level() >= 3)
+
+    @api.model
     def _sw_can_comment(self, checks):
         user = self.env.user
-        if user.has_group('base.group_system'):
+        if user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
             return bool(checks)
+        if any(c.store_id and self._sw_is_asm(c.store_id) for c in checks):
+            return True
         for c in checks:
             for st in c._approval_chain():
                 if st['code'] == 'ASM' and st.get('user') and st['user'].id == user.id:
@@ -331,7 +426,27 @@ class StoreNvbhCheckWeek(models.Model):
             self.save_step_evaluation(c.id, step['no'], changes)
             evaluated |= c
         if not evaluated:
-            if not self._sw_can_comment(sc['checks'] | sc['carried']):
+            if not self._sw_is_asm(sc['store']) and not self._sw_can_comment(sc['checks'] | sc['carried']):
                 raise AccessError(_('Không có phiếu nào đến ngày ghé thăm đang chờ bạn đánh giá.'))
-        self._sw_save_visit(sc, comment, notes, results, evaluated)
+            # Luồng mới: ASM đánh giá tổng theo tuần -> ghi kết quả vào cột bước ASM ('asm_eval_result')
+            # của các phiếu CHT / NVBH trong tuần để Bảng checklist Tổng & Danh sách checklist NV tự cập nhật Điểm ASM đánh giá
+            if results:
+                in_scope = sc['checks'].filtered(lambda c: c.work_date <= sc['visit']) | sc['carried']
+                for c in in_scope:
+                    if not (c.submitted or c.cnt_done > 0):
+                        continue
+                    pkey = self._cht_line_key(c.schedule_line_id) if c.schedule_line_id else (c.staff_name or '').casefold()
+                    touched = False
+                    for l in c.line_ids:
+                        if l.asm_eval_result:  # đã chấm ở lần trước -> giữ nguyên, không ghi đè
+                            continue
+                        k = '%s|%s' % (group_norm(l.sub_category), pkey)
+                        if k in results:
+                            l.sudo().write({'asm_eval_result': results[k], 'asm_reviewer_id': self.env.user.id})
+                            touched = True
+                    if touched:
+                        if c.state != 'approved' and c.line_ids and all(l.asm_eval_result for l in c.line_ids):
+                            c.sudo().write({'state': 'approved', 'approved_date': fields.Datetime.now()})
+                        evaluated |= c
+        self._sw_save_visit(sc, comment, notes, results, evaluated or sc['checks'])
         return {'done': len(evaluated), 'dates': sorted({c.work_date.strftime('%d/%m') for c in evaluated})}

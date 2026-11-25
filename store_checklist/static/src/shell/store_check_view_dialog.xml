@@ -134,4 +134,45 @@
             </t>
         </Dialog>
     </t>
+    <t t-name="store_checklist.PerfExportDialog">
+        <Dialog title="'Xuất Excel BC Hiệu suất NVBH' + (props.monthLabel ? ' · Tháng ' + props.monthLabel : '')" size="'md'">
+            <p class="text-muted mb-2">Chọn miền và các cửa hàng cần xuất (mỗi cửa hàng sẽ xuất ra <b>1 sheet</b> riêng):</p>
+            <div class="row g-2 mb-2">
+                <div class="col-sm-5">
+                    <label class="form-label small fw-bold mb-1">Miền</label>
+                    <select class="form-select" t-on-change="onChangeMien">
+                        <option value="" t-att-selected="!state.mien">Tất cả miền</option>
+                        <option value="Nam" t-att-selected="state.mien === 'Nam'">Miền Nam</option>
+                        <option value="ĐTT" t-att-selected="state.mien === 'ĐTT'">Miền ĐTT</option>
+                        <option value="Bắc" t-att-selected="state.mien === 'Bắc'">Miền Bắc</option>
+                        <option value="VP" t-att-selected="state.mien === 'VP'">Văn phòng</option>
+                    </select>
+                </div>
+                <div class="col-sm-7">
+                    <label class="form-label small fw-bold mb-1">Tìm cửa hàng / ASM</label>
+                    <input type="text" class="form-control" placeholder="Nhập tên, mã CH, ASM..." t-model="state.q"/>
+                </div>
+            </div>
+            <label class="d-flex align-items-center gap-2 fw-bold border-bottom pb-2 mb-2" style="cursor:pointer;">
+                <input type="checkbox" t-att-checked="allShownPicked" t-att-disabled="!shown.length" t-on-change="toggleAllShown"/>
+                <span>Chọn tất cả danh sách đang hiện (<t t-esc="shown.length"/> cửa hàng)</span>
+            </label>
+            <div style="max-height: 320px; overflow-y: auto;">
+                <div t-if="!shown.length" class="text-muted text-center py-3">Không có cửa hàng nào khớp bộ lọc.</div>
+                <label t-foreach="shown" t-as="s" t-key="s.id" class="d-flex align-items-center justify-content-between gap-2 py-1 px-1 border-bottom" style="cursor:pointer;">
+                    <span class="d-flex align-items-center gap-2">
+                        <input type="checkbox" t-model="state.picked[s.id]"/>
+                        <b t-esc="s.name"/>
+                    </span>
+                    <small class="text-muted text-end">
+                        <t t-if="s.mien">Miền <t t-esc="s.mien"/> · </t>ASM <t t-esc="s.asm"/> · <t t-esc="s.staff_count"/> NV
+                    </small>
+                </label>
+            </div>
+            <t t-set-slot="footer">
+                <button class="btn btn-success text-white" t-att-disabled="!pickedIds.length" t-on-click="confirm"><i class="fa fa-file-excel-o"/> Xuất Excel (<t t-esc="pickedIds.length"/> sheet)</button>
+                <button class="btn btn-secondary" t-on-click="props.close">Hủy</button>
+            </t>
+        </Dialog>
+    </t>
 </templates>

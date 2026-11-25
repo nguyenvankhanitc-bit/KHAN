@@ -5,6 +5,14 @@ from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 TASK_GROUPS = [
+    ('01', '01. Quản lý nhân sự và đào tạo'),
+    ('02', '02. Quản lý vận hành cửa hàng'),
+    ('03', '03. Quản lý tài sản, thiết bị và CCDC'),
+    ('04', '04. Quản lý truyền thông và Marketing'),
+    ('05', '05. Quản lý hàng hóa và tồn kho'),
+    ('06', '06. POSM – Quản lý trưng bày và hình ảnh'),
+    ('07', '07. Quản lý tài chính và doanh thu'),
+    ('08', '08. Quản lý hành chính và an toàn'),
     ('I', 'I. TRANG THIẾT BỊ, VẬT TƯ'),
     ('II', 'II. HÀNG HÓA, CTKM'),
     ('III', 'III. NHÂN VIÊN'),
@@ -21,6 +29,57 @@ TASK_STORE_TYPES = [('ALL', 'ALL'), ('TTTM', 'TTTM')]
 # Thứ áp dụng của công việc: (trường, nhãn, chỉ số thứ theo date.weekday())
 TASK_WEEKDAYS = [('wd_mon', 'T2', 0), ('wd_tue', 'T3', 1), ('wd_wed', 'T4', 2), ('wd_thu', 'T5', 3),
                  ('wd_fri', 'T6', 4), ('wd_sat', 'T7', 5), ('wd_sun', 'CN', 6)]
+
+
+class StoreNvbhTaskGroup(models.Model):
+    _name = 'store.nvbh.task.group'
+    _inherit = 'store.perm.mixin'
+    _description = 'Nhóm công việc NVBH'
+    _order = 'sequence, id'
+    _perm_enforce_read = False
+    _perm_manager_ops = ('create', 'write', 'unlink')
+
+    def _perm_key(self):
+        return 'nvbh_task'
+
+    @api.model
+    def _perm_key_vals(self, vals):
+        return 'nvbh_task'
+
+    name = fields.Char(string='Nhóm công việc', required=True)
+    sequence = fields.Integer(string='Thứ tự', default=10)
+    active = fields.Boolean(default=True)
+
+    def action_edit_popup(self):
+        """Nút bút chì trên dòng nhóm của Danh sách công việc NVBH: sửa tên / thứ tự nhóm trong popup."""
+        self.ensure_one()
+        return {'type': 'ir.actions.act_window', 'name': 'Sửa nhóm công việc', 'res_model': self._name, 'res_id': self.id,
+                'views': [(self.env.ref('store_checklist.view_store_nvbh_task_group_form').id, 'form')], 'target': 'new'}
+
+    def write(self, vals):
+        res = super().write(vals)
+        if 'name' in vals:
+            Line = self.env['store.nvbh.check.line'].sudo()
+            for g in self:
+                lines = Line.search([('task_id.group_id', '=', g.id), ('sub_category', '!=', g.name)])
+                if lines:
+                    lines.write({'sub_category': g.name})
+        return res
+
+    @api.model
+    def _find_or_create(self, text):
+        """Tìm nhóm theo tên (chuẩn hóa dấu gạch ngang) hoặc theo mã đầu (vd. "01"); chưa có thì tạo nhóm mới."""
+        t = ' '.join((text or '').split())
+        if not t:
+            return self.browse()
+        norm = lambda s: ' '.join((s or '').replace('–', '-').replace('—', '-').split()).casefold()  # noqa: E731
+        nt = norm(t)
+        G = self.sudo()
+        for g in G.search([]):
+            if norm(g.name) == nt or (len(t) <= 3 and norm(g.name).startswith(nt + '.')):
+                return g
+        last = G.search([], order='sequence desc', limit=1)
+        return G.create({'name': t, 'sequence': (last.sequence or 0) + 10})
 
 
 class StoreNvbhTask(models.Model):
@@ -40,7 +99,8 @@ class StoreNvbhTask(models.Model):
 
     sequence = fields.Integer(default=10)
     name = fields.Char(string='Tên công việc', required=True)
-    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc')
+    group_id = fields.Many2one('store.nvbh.task.group', string='Nhóm công việc', ondelete='restrict', index=True)
+    task_group = fields.Selection(TASK_GROUPS, string='Nhóm công việc (mã cũ)')
     # Loại ca áp dụng: chọn nhiều loại ca (SÁNG, CHIỀU, FULL, GÃY SÁNG, GÃY CHIỀU); mã ca chi tiết tự tra trong Danh mục ca
     shift_type_ids = fields.Many2many('store.shift.type', 'store_nvbh_task_shift_type_rel', 'task_id', 'type_id', string='Loại ca áp dụng')
     shift_codes = fields.Char(string='Mã ca áp dụng', compute='_compute_shift_codes',
@@ -108,6 +168,16 @@ class StoreNvbhTask(models.Model):
         """Đồng bộ một lần mọi dòng checklist cũ theo Điểm chuẩn hiện tại của công việc."""
         self.search([])._sync_check_line_scores()
 
+    @api.model
+    def _sync_group_ids(self):
+        """Chuyển mã nhóm cũ (task_group) sang danh mục Nhóm công việc NVBH (group_id) cho các công việc chưa có group_id."""
+        labels = dict(TASK_GROUPS)
+        Group = self.env['store.nvbh.task.group'].sudo()
+        for t in self.sudo().search([('group_id', '=', False), ('task_group', '!=', False)], order='task_group, sequence, id'):
+            lbl = labels.get(t.task_group)
+            if lbl:
+                t.write({'group_id': Group._find_or_create(lbl).id})
+
     def init(self):
         """Chuyển Loại ca áp dụng cũ (theo Nhóm mã ca) sang Loại ca của các mã ca trong nhóm đó, chạy một lần."""
         cr = self.env.cr
@@ -153,7 +223,7 @@ class StoreNvbhTask(models.Model):
             sheet.write(0, i, h, head)
             sheet.set_column(i, i, w)
         for r, t in enumerate(tasks, 1):
-            vals = [t.sequence, groups.get(t.task_group, ''), t.name, ', '.join(t.shift_type_ids.mapped('name')), t.store_type or '',
+            vals = [t.sequence, t.group_id.name or groups.get(t.task_group, ''), t.name, ', '.join(t.shift_type_ids.mapped('name')), t.store_type or '',
                     t.time_slot or '', t.executor or '', t.controller or '', t.final_check or '', t.score, t.weekdays_label]
             for c, v in enumerate(vals):
                 sheet.write(r, c, v, num if c in (0, 9) else cell)
@@ -191,12 +261,15 @@ class StoreNvbhTask(models.Model):
             i = col.get(name.casefold())
             return txt(r[i]) if i is not None and i < len(r) else ''
 
-        # nhóm: nhận mã (I, II...) hoặc nhãn đầy đủ; ca: nhận khóa hoặc nhãn
+        # nhóm: nhận mã (01..08, I..VI) hoặc nhãn đầy đủ (chuẩn hóa dấu gạch ngang - / – / —)
+        def norm_g(s):
+            return ' '.join((s or '').replace('–', '-').replace('—', '-').split()).casefold()
+
         group_map = {}
         for k, label in TASK_GROUPS:
-            group_map[k.casefold()] = k
-            group_map[label.casefold()] = k
-            group_map[label.split('.', 1)[-1].strip().casefold()] = k
+            group_map[norm_g(k)] = k
+            group_map[norm_g(label)] = k
+            group_map[norm_g(label.split('.', 1)[-1])] = k
         Shift = self.env['store.shift']
         types_by_key = {}
         for t in self.env['store.shift.type'].search([]):
@@ -223,7 +296,8 @@ class StoreNvbhTask(models.Model):
 
         store_types = {k for k, _l in TASK_STORE_TYPES}
 
-        created = updated = 0
+        created = updated = removed = 0
+        kept_ids = set()
         errors = []
         next_seq = (self.search([], order='sequence desc', limit=1).sequence or 0) + 1
         for n, r in enumerate(rows[hi + 1:], hi + 2):
@@ -238,10 +312,15 @@ class StoreNvbhTask(models.Model):
             vals = {'name': name, 'shift_type_ids': [(6, 0, types.ids)]}
             if 'nhóm công việc' in col:
                 gtxt = get(r, 'Nhóm công việc')
-                if gtxt and gtxt.casefold() not in group_map:
-                    errors.append('Dòng %s: Nhóm công việc "%s" không hợp lệ' % (n, gtxt))
-                    continue
-                vals['task_group'] = group_map.get(gtxt.casefold(), False)
+                if gtxt:
+                    gkey = norm_g(gtxt)
+                    code = group_map.get(gkey)
+                    label = dict(TASK_GROUPS).get(code, gtxt) if code else gtxt
+                    vals['group_id'] = self.env['store.nvbh.task.group']._find_or_create(label).id
+                    vals['task_group'] = code or False
+                else:
+                    vals['group_id'] = False
+                    vals['task_group'] = False
             if 'loại cửa hàng' in col and get(r, 'Loại cửa hàng'):
                 st = get(r, 'Loại cửa hàng').upper()
                 if st not in store_types:
@@ -276,12 +355,20 @@ class StoreNvbhTask(models.Model):
             try:
                 if rec:
                     rec.write(vals)
+                    kept_ids.add(rec.id)
                     updated += 1
                 else:
                     vals.setdefault('sequence', next_seq)
                     next_seq = max(next_seq, vals['sequence']) + 1
-                    self.create(vals)
+                    kept_ids.add(self.create(vals).id)
                     created += 1
             except Exception as e:  # lỗi quyền / dữ liệu: bỏ qua dòng và báo lại
                 errors.append('Dòng %s: %s' % (n, getattr(e, 'args', [e])[0]))
-        return {'created': created, 'updated': updated, 'errors': errors[:20], 'error_count': len(errors)}
+        # chỉ xóa công việc cũ không còn trong file khi file nhập có dữ liệu hợp lệ và không bị lỗi
+        if kept_ids and not errors:
+            stale = self.search([('id', 'not in', list(kept_ids))])
+            removed = len(stale)
+            if stale:
+                stale.unlink()
+        return {'label': 'Công việc NVBH', 'created': created, 'updated': updated, 'removed': removed,
+                'errors': errors[:20], 'error_count': len(errors)}

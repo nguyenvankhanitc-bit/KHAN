@@ -45,5 +45,11 @@ class StoreNvbhRating(models.Model):
     @api.model
     def rating_for(self, pct):
         """Xếp loại ứng với tỷ lệ điểm pct (0..100): mức có 'Từ điểm' lớn nhất không vượt pct."""
-        levels = self.sudo().search([], order='min_score desc')
+        cache = self.env.cr.cache.setdefault('store_nvbh_rating_levels', {})
+        ids = cache.get('ids')
+        if ids is None:
+            levels = self.sudo().search([], order='min_score desc')
+            cache['ids'] = levels.ids
+        else:
+            levels = self.sudo().browse(ids)
         return next((l for l in levels if pct >= l.min_score), levels[-1:] if levels else levels)

@@ -76,3 +76,5 @@ access_store_asm_audit_plan_user,store.asm.audit.plan user,model_store_asm_audit
 access_store_asm_audit_plan_manager,store.asm.audit.plan manager,model_store_asm_audit_plan,group_store_manager,1,1,1,1
 access_store_cht_visit_row_user,store.cht.visit.row user,model_store_cht_visit_row,group_store_user,1,0,0,0
 access_store_cht_visit_row_manager,store.cht.visit.row manager,model_store_cht_visit_row,group_store_manager,1,1,1,1
+access_store_nvbh_task_group_user,store.nvbh.task.group user,model_store_nvbh_task_group,group_store_user,1,1,1,1
+access_store_nvbh_task_group_manager,store.nvbh.task.group manager,model_store_nvbh_task_group,group_store_manager,1,1,1,1

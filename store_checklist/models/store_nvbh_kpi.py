@@ -92,6 +92,10 @@ def _vn(n, digits=1):
     return ('%.*f' % (digits, n)).replace('.', ',')
 
 
+def _norm_grp(s):
+    return ' '.join((s or '').replace('–', '-').replace('—', '-').split()).casefold()
+
+
 class StoreNvbhCheckKpi(models.Model):
     _inherit = 'store.nvbh.check'
 
@@ -119,10 +123,51 @@ class StoreNvbhCheckKpi(models.Model):
         return sorted(out.values(), key=lambda o: o['name'])
 
     @api.model
+    def _dynamic_kpi_groups(self, profile='kpi'):
+        """Lấy danh sách nhóm công việc hiện tại từ Cài đặt > Danh sách công việc NVBH (store.nvbh.task.group),
+        tự động phân bổ trọng số (40đ cho KPI / 70đ cho Năng suất) tỷ lệ thuận theo tổng điểm chuẩn của từng nhóm.
+        Mỗi khi thay đổi nhóm hoặc điểm chuẩn công việc ở Cài đặt, mọi báo cáo sẽ tự động cập nhật theo."""
+        cache = self.env.cr.cache.setdefault('store_dyn_kpi_groups', {})
+        if profile in cache:
+            return cache[profile]
+        prof = PROFILES.get(profile) or PROFILES['kpi']
+        total_w = round(sum(g[2] for g in prof['groups']), 1)
+        groups = self.env['store.nvbh.task.group'].sudo().search([], order='sequence, id')
+        tasks = self.env['store.nvbh.task'].sudo().search([('group_id', 'in', groups.ids)])
+        by_grp = {}
+        for t in tasks:
+            by_grp[t.group_id.id] = by_grp.get(t.group_id.id, 0) + (t.score or 1)
+        scored = [(g.name, by_grp[g.id]) for g in groups if g.id in by_grp]
+        if not scored:
+            labels = dict(TASK_GROUPS)
+            out = [(labels.get(c, t), t, w, tg) for c, t, w, tg in prof['groups']]
+            cache[profile] = out
+            return out
+        total_pts = sum(p for _n, p in scored) or 1.0
+        out = []
+        acc = 0.0
+        for i, (gname, pts) in enumerate(scored):
+            if i == len(scored) - 1:
+                w = round(max(total_w - acc, 0.0), 1)
+            else:
+                w = round(total_w * pts / total_pts, 1)
+                acc = round(acc + w, 1)
+            out.append((gname, gname, w, 95.0))
+        cache[profile] = out
+        return out
+
+    @api.model
     def get_kpi_report(self, month=None, store_id=None, staff_name=None, profile='kpi'):
         """Phiếu đánh giá năng suất & tính KPI cá nhân của một nhân viên trong tháng."""
         prof = PROFILES.get(profile) or PROFILES['kpi']
-        groups_cfg = prof['groups']
+        groups_cfg = self._dynamic_kpi_groups(profile)
+        labels_cfg = dict(prof['labels'])
+        n_grp = len(groups_cfg)
+        labels_cfg['sub_label'] = (
+            'CỘNG NHÓM 1: CHẤT LƯỢNG THỰC HIỆN CHECKLIST (%d NHÓM NGHIỆP VỤ)' % n_grp
+            if profile == 'kpi' else
+            'CỘNG TRỤ CỘT 1: CHẤT LƯỢNG THỰC HIỆN %d NHÓM CÔNG VIỆC (TỔNG 70 ĐIỂM)' % n_grp
+        )
         start, end, _days = self._month_range(month)
         name = (staff_name or '').strip()
         if not name:
@@ -153,11 +198,11 @@ class StoreNvbhCheckKpi(models.Model):
         saved = evaluated  # ca đã check list & đánh giá đủ
         n_days = tot.get('days', 0)
 
-        group_label = dict(TASK_GROUPS)
         crit = []
         kpi_checklist = 0.0
         for code_g, title, weight, target in groups_cfg:
-            glines = lines.filtered(lambda l, lbl=group_label.get(code_g): l.sub_category == lbl)
+            target_key = _norm_grp(code_g)
+            glines = lines.filtered(lambda l, k=target_key: _norm_grp(l.sub_category) == k)
             g_max = sum(glines.mapped('max_score'))
             g_pts = sum(glines.mapped('actual_score'))
             pct = 100.0 * g_pts / g_max if g_max else 0.0
@@ -228,8 +273,8 @@ class StoreNvbhCheckKpi(models.Model):
             },
             'groups': crit, 'sub': sub, 'others': rows2,
             'total': {'weight': total_weight, 'max': total_weight, 'kpi': total_kpi, 'pct': round(100.0 * total_kpi / total_weight, 1) if total_weight else 0.0,
-                      'target': '%s đ' % _vn(total_weight, 2), 'note': prof['labels']['total_note']},
-            'rank': rank[1], 'bonus': rank[2], 'profile': profile, 'labels': prof['labels'], 'manual': prof['manual'],
+                      'target': '%s đ' % _vn(total_weight, 2), 'note': labels_cfg['total_note']},
+            'rank': rank[1], 'bonus': rank[2], 'profile': profile, 'labels': labels_cfg, 'manual': prof['manual'],
         }
 
     @api.model
@@ -471,6 +516,12 @@ class StoreNvbhCheckKpi(models.Model):
             if nm and chk.store_id:
                 pairs.setdefault((chk.store_id.id, nm.casefold()), (chk.store_id, nm))
 
+        dyn_groups = self._dynamic_kpi_groups('kpi')
+        n_g = len(dyn_groups)
+        g_keys = ['g%d' % (i + 1) for i in range(n_g)]
+        g_weights = [g[2] for g in dyn_groups]
+        w_chk = sum(g_weights)
+
         by_store = {}
         for (_sid, _nc), (store, nm) in pairs.items():
             d = self.get_kpi_report(mkey, store.id, nm, 'kpi')
@@ -479,19 +530,17 @@ class StoreNvbhCheckKpi(models.Model):
             other = {r['no']: r for r in d['others']}
             grps = d['groups']
             s_entry = by_store.setdefault(store.id, {'store': store, 'staff': []})
-            s_entry['staff'].append({
+            row_sf = {
                 'name': d['staff'], 'code': d['code'],
-                'g1': grps[0]['kpi'] if len(grps) > 0 else 0.0,
-                'g2': grps[1]['kpi'] if len(grps) > 1 else 0.0,
-                'g3': grps[2]['kpi'] if len(grps) > 2 else 0.0,
-                'g4': grps[3]['kpi'] if len(grps) > 3 else 0.0,
-                'g5': grps[4]['kpi'] if len(grps) > 4 else 0.0,
                 'complete': other['2']['kpi'], 'discipline': other['3']['kpi'],
                 'sales': other['4']['kpi'], 'attitude': other['5']['kpi'],
                 'kpi_total': d['total']['kpi'],
                 'shifts_pct': d['summary']['shifts_pct'],
                 'rank': d['rank'], 'bonus': d['bonus'],
-            })
+            }
+            for i, gk in enumerate(g_keys):
+                row_sf[gk] = grps[i]['kpi'] if i < len(grps) else 0.0
+            s_entry['staff'].append(row_sf)
 
         def avg_key(items, key):
             return round(sum(x[key] for x in items) / len(items), 2) if items else 0.0
@@ -515,8 +564,7 @@ class StoreNvbhCheckKpi(models.Model):
             st_row = {
                 'store_id': store.id, 'store': store.display_name or store.name or '-',
                 'staff_count': len(staff),
-                'g1': avg_key(staff, 'g1'), 'g2': avg_key(staff, 'g2'), 'g3': avg_key(staff, 'g3'),
-                'g4': avg_key(staff, 'g4'), 'g5': avg_key(staff, 'g5'),
+                **{gk: avg_key(staff, gk) for gk in g_keys},
                 'complete': avg_key(staff, 'complete'), 'discipline': avg_key(staff, 'discipline'),
                 'sales': avg_key(staff, 'sales'), 'attitude': avg_key(staff, 'attitude'),
                 'kpi_total': avg_key(staff, 'kpi_total'),
@@ -530,11 +578,9 @@ class StoreNvbhCheckKpi(models.Model):
             a['stores'].append(st_row)
 
         all_asms = []
-        w1, w2, w3, w4, w5 = [g[2] for g in KPI_GROUPS]
-        w_chk = w1 + w2 + w3 + w4 + w5
         for aid, a in asm_map.items():
             stores = sorted(a['stores'], key=lambda s: (-s['kpi_total'], s['store']))
-            g1, g2, g3, g4, g5 = [avg_key(stores, k) for k in ('g1', 'g2', 'g3', 'g4', 'g5')]
+            g_avgs = [avg_key(stores, gk) for gk in g_keys]
             comp = avg_key(stores, 'complete')
             disc = avg_key(stores, 'discipline')
             sales = avg_key(stores, 'sales')
@@ -542,30 +588,26 @@ class StoreNvbhCheckKpi(models.Model):
             tot = avg_key(stores, 'kpi_total')
             sh_pct = avg_key(stores, 'shifts_pct')
             r_short, r_code = short_rank(tot)
-            # 5 nhóm Checklist (%) + Tổng 5 nhóm cho biểu đồ xếp hạng ASM
-            p1 = round(100.0 * g1 / w1, 1) if w1 else 0.0
-            p2 = round(100.0 * g2 / w2, 1) if w2 else 0.0
-            p3 = round(100.0 * g3 / w3, 1) if w3 else 0.0
-            p4 = round(100.0 * g4 / w4, 1) if w4 else 0.0
-            p5 = round(100.0 * g5 / w5, 1) if w5 else 0.0
-            p_all5 = round(100.0 * (g1 + g2 + g3 + g4 + g5) / w_chk, 1) if w_chk else 0.0
-            # 6 trục (%) theo chiều kim đồng hồ cho biểu đồ Radar lục giác: Kỷ luật, Thái độ, Tỷ lệ đi ca, Doanh số, Hàng hóa, Hoàn thành
+            # N nhóm Checklist (%) + Tổng các nhóm cho biểu đồ xếp hạng ASM
+            p_list = [round(100.0 * gv / gw, 1) if gw else 0.0 for gv, gw in zip(g_avgs, g_weights)]
+            p_all = round(100.0 * sum(g_avgs) / w_chk, 1) if w_chk else 0.0
+            # 6 trục (%) theo chiều kim đồng hồ cho biểu đồ Radar lục giác: Kỷ luật, Thái độ, Tỷ lệ đi ca, Doanh số, Checklist, Hoàn thành
             radar = [
                 round(100.0 * disc / W_DISCIPLINE, 1),
                 round(100.0 * att / W_ATTITUDE, 1),
                 round(min(sh_pct, 100.0), 1),
                 round(100.0 * sales / W_SALES, 1),
-                round(100.0 * (g1 + g2 + g3 + g4 + g5) / w_chk, 1) if w_chk else 0.0,
+                p_all,
                 round(100.0 * comp / W_COMPLETE, 1),
             ]
             all_asms.append({
                 'id': aid, 'name': a['name'],
                 'store_count': len(stores), 'staff_count': sum(s['staff_count'] for s in stores),
-                'g1': g1, 'g2': g2, 'g3': g3, 'g4': g4, 'g5': g5,
+                **{gk: gv for gk, gv in zip(g_keys, g_avgs)},
                 'complete': comp, 'discipline': disc, 'sales': sales, 'attitude': att,
                 'kpi_total': tot, 'shifts_pct': sh_pct,
                 'rank_short': r_short, 'rank_code': r_code,
-                'pillars': [p1, p2, p3, p4, p5, p_all5],
+                'pillars': [*p_list, p_all],
                 'radar': radar,
                 'stores': stores,
             })
@@ -586,7 +628,7 @@ class StoreNvbhCheckKpi(models.Model):
             'store_count': len(all_stores),
             'staff_count': sum(s['staff_count'] for s in all_stores),
             'avg_kpi': round(sum(s['kpi_total'] for s in all_stores) / len(all_stores), 2) if all_stores else 0.0,
-            'pillar_avgs': [round(sum(a['pillars'][i] for a in all_asms) / len(all_asms), 1) if all_asms else 0.0 for i in range(6)],
+            'pillar_avgs': [round(sum(a['pillars'][i] for a in all_asms) / len(all_asms), 1) if all_asms else 0.0 for i in range(n_g + 1)],
             'rank_counts': {
                 'all': len(asms),
                 'A': sum(1 for a in asms if a['rank_code'] == 'A'),
@@ -598,9 +640,8 @@ class StoreNvbhCheckKpi(models.Model):
         return {
             'month': mkey, 'month_label': start.strftime('%m/%Y'),
             'updated_at': fields.Date.context_today(self).strftime('%d/%m/%Y'),
-            # tên 5 nhóm theo danh mục Nhóm công việc (I. TRANG THIẾT BỊ, VẬT TƯ ...) dùng làm tiêu đề cột
-            'group_names': [dict(TASK_GROUPS).get(c, 'Nhóm %s' % c) for c in ('I', 'II', 'III', 'IV', 'V')],
-            'weights': {'g1': w1, 'g2': w2, 'g3': w3, 'g4': w4, 'g5': w5,
+            'group_names': [g[1] for g in dyn_groups],
+            'weights': {**{gk: gw for gk, gw in zip(g_keys, g_weights)},
                         'complete': W_COMPLETE, 'discipline': W_DISCIPLINE, 'sales': W_SALES, 'attitude': W_ATTITUDE},
             'region': region,
             'asm_opts': asm_opts,
@@ -615,9 +656,10 @@ class StoreNvbhCheckKpi(models.Model):
         if not data['asms']:
             raise UserError(_('Không có dữ liệu ASM để xuất.'))
         w = data['weights']
+        g_keys = ['g%d' % (i + 1) for i in range(len(data['group_names']))]
         headers = [
             'Hạng', 'ASM', 'Cửa hàng',
-            *['%s (%gđ)' % (n, w['g%d' % (i + 1)]) for i, n in enumerate(data['group_names'])],
+            *['%s (%gđ)' % (n, w[gk]) for n, gk in zip(data['group_names'], g_keys)],
             'Hoàn thành việc (%gđ)' % w['complete'], 'Kỷ luật (%gđ)' % w['discipline'],
             'Doanh số (%gđ)' % w['sales'], 'Thái độ (%gđ)' % w['attitude'],
             'Tổng KPI (100)', 'Xếp loại',
@@ -626,13 +668,13 @@ class StoreNvbhCheckKpi(models.Model):
         for a in data['asms']:
             all_rows.append([
                 a['rank_no'], '%s (TB · %d CH, %d NV)' % (a['name'], a['store_count'], a['staff_count']), '',
-                a['g1'], a['g2'], a['g3'], a['g4'], a['g5'],
+                *[a.get(gk, 0.0) for gk in g_keys],
                 a['complete'], a['discipline'], a['sales'], a['attitude'], a['kpi_total'], a['rank_short'],
             ])
             for s in a['stores']:
                 all_rows.append([
                     '', a['name'], '%s (%d NV)' % (s['store'], s['staff_count']),
-                    s['g1'], s['g2'], s['g3'], s['g4'], s['g5'],
+                    *[s.get(gk, 0.0) for gk in g_keys],
                     s['complete'], s['discipline'], s['sales'], s['attitude'], s['kpi_total'], s['status'],
                 ])
         sheets = [{
@@ -645,13 +687,13 @@ class StoreNvbhCheckKpi(models.Model):
         for a in data['asms']:
             srows = [
                 [i, a['name'], '%s (%d NV)' % (s['store'], s['staff_count']),
-                 s['g1'], s['g2'], s['g3'], s['g4'], s['g5'],
+                 *[s.get(gk, 0.0) for gk in g_keys],
                  s['complete'], s['discipline'], s['sales'], s['attitude'], s['kpi_total'], s['status']]
                 for i, s in enumerate(a['stores'], 1)
             ]
             foot = [
                 '', 'TRUNG BÌNH %s (%d CH, %d NV)' % (a['name'], a['store_count'], a['staff_count']), '',
-                a['g1'], a['g2'], a['g3'], a['g4'], a['g5'],
+                *[a.get(gk, 0.0) for gk in g_keys],
                 a['complete'], a['discipline'], a['sales'], a['attitude'], a['kpi_total'], a['rank_short'],
             ]
             sname = ''.join(ch for ch in (a['name'] or 'ASM') if ch not in '[]:*?/\\')[:31] or 'ASM'
@@ -668,144 +710,326 @@ class StoreNvbhCheckKpi(models.Model):
             })
         return self._xlsx_book(sheets, 'Bao_cao_Checklist_NVBH_ASM')
 
-    # ---- Báo cáo hiệu suất NVBH: mỗi dòng một nhân viên, xếp hạng theo Tổng KPI (cùng bộ số liệu với BC Checklist NVBH ASM) ----
+    # ---- Báo cáo hiệu suất NVBH: tổng điểm thực tế ASM đã đánh giá theo từng nhóm công việc ----
     @api.model
     def get_nvbh_perf_report(self, month=None, mien=None, asm_id=None, store_id=None):
-        data = self.get_kpi_asm_report(month, mien, asm_id)
-        rows = []
-        stores = {}
-        for a in data['asms']:
-            for s in a['stores']:
-                stores[s['store_id']] = s['store']
-                if store_id and s['store_id'] != int(store_id):
+        from .store_nvbh_check import count_errors, eval_score
+        start, end, _days = self._month_range(month)
+        mkey = start.strftime('%Y-%m')
+        dyn_groups = self._dynamic_kpi_groups('kpi')
+        group_names = [g[1] for g in dyn_groups]
+        g_norm_idx = {_norm_grp(g[0]): i for i, g in enumerate(dyn_groups)}
+        g_keys = ['g%d' % (i + 1) for i in range(len(group_names))]
+
+        dom = [('work_date', '>=', start), ('work_date', '<', end), ('kind', 'in', ('nvbh', 'cht'))]
+        checks = self.search(dom, order='work_date, id')
+
+        export_store_map = {}
+        asm_opts_map = {}
+        store_opts_map = {}
+        staff_map = {}
+        for c in checks:
+            st = c.store_id
+            if not st:
+                continue
+            nm = (c.staff_name or '').strip()
+            if not nm:
+                continue
+            mgr = st.manager_id
+            aid = mgr.id or 0
+            aname = mgr.name or 'Chưa gán ASM'
+            smien = st.mien or ''
+            sname = st.display_name or st.name or '-'
+            se = export_store_map.setdefault(st.id, {
+                'id': st.id, 'name': sname, 'mien': smien,
+                'asm_id': aid, 'asm': aname, 'staff_set': set(),
+            })
+            se['staff_set'].add(nm.casefold())
+            if mien and smien != mien:
+                continue
+            asm_opts_map[aid] = aname
+            if asm_id not in (None, '', False) and aid != int(asm_id):
+                continue
+            store_opts_map[st.id] = sname
+            if store_id and st.id != int(store_id):
+                continue
+            sk = (st.id, nm.casefold())
+            rec = staff_map.setdefault(sk, {
+                'name': nm, 'code': '', 'store_id': st.id, 'store': sname, 'mien': smien,
+                'asm': aname, 'g_pts': [0.0] * len(g_keys), 'g_max': [0.0] * len(g_keys),
+                'done': 0, 'total': 0, 'rate_vals': [],
+            })
+            if not rec['code'] and c.schedule_line_id and c.schedule_line_id.employee_code:
+                rec['code'] = c.schedule_line_id.employee_code
+            rec['done'] += c.cnt_done
+            rec['total'] += c.cnt_total
+            mp = sum(l.max_score or 0.0 for l in c.line_ids)
+            if c._fully_evaluated():
+                rec['rate_vals'].append(round(100.0 * c.points / mp, 1) if mp else 0.0)
+            for l in c.line_ids:
+                if not l.asm_eval_result:
                     continue
-                for sf in s['staff']:
-                    rank = sf.get('rank') or ''
-                    code = rank[5:6] if rank.upper().startswith('HẠNG ') else ''
-                    rows.append(dict(sf, store_id=s['store_id'], store=s['store'], asm=a['name'], rank_short=rank.split(' - ')[0],
-                                     rank_code=code or 'D', passed=sf['kpi_total'] >= 72.0))
-        rows.sort(key=lambda r: (-r['kpi_total'], r['name']))
+                idx = g_norm_idx.get(_norm_grp(l.sub_category))
+                if idx is None:
+                    continue
+                pts = eval_score(l.max_score, l.asm_eval_result, count_errors(l.asm_error_detail))
+                rec['g_pts'][idx] += pts
+                rec['g_max'][idx] += l.max_score or 0.0
+
+        Rating = self.env['store.nvbh.rating']
+        rating_levels = Rating.sudo().search([], order='min_score desc, id')
+        rank_levels = [{
+            'code': str(lv.id),
+            'name': lv.name,
+            'score_range': lv.score_range,
+            'tone': lv.tone or 'orange',
+            'count': 0,
+        } for lv in rating_levels]
+        lv_idx_map = {str(lv.id): i for i, lv in enumerate(rating_levels)}
+        wait_count = 0
+
+        rows = []
+        for rec in staff_map.values():
+            g_vals = [round(v, 2) for v in rec['g_pts']]
+            tasks_total = round(sum(g_vals), 2)
+            max_total = round(sum(rec['g_max']), 2)
+            tasks_pct = round(100.0 * tasks_total / max_total, 1) if max_total else 0.0
+            avg_pct = round(sum(rec['rate_vals']) / len(rec['rate_vals']), 2) if rec['rate_vals'] else None
+            if avg_pct is not None:
+                r1 = round(avg_pct, 1)
+                rate_label = ('%d%%' % int(r1)) if r1 == int(r1) else ('%s%%' % ('%.1f' % r1).replace('.', ','))
+                lvl = Rating.rating_for(avg_pct)
+                rank_code = str(lvl.id) if lvl else 'wait'
+                rank_short = lvl.name if lvl else 'Chờ đánh giá'
+                rank_tone = (lvl.tone or 'orange') if lvl else 'wait'
+                passed = bool(lvl and lvl.tone in ('green', 'blue'))
+                if rank_code in lv_idx_map:
+                    rank_levels[lv_idx_map[rank_code]]['count'] += 1
+                else:
+                    wait_count += 1
+            else:
+                rate_label = '-'
+                rank_code = 'wait'
+                rank_short = 'Chờ đánh giá'
+                rank_tone = 'wait'
+                passed = False
+                wait_count += 1
+            row = {
+                'name': rec['name'], 'code': rec['code'],
+                'store_id': rec['store_id'], 'store': rec['store'], 'mien': rec.get('mien', ''), 'asm': rec['asm'],
+                **{gk: gv for gk, gv in zip(g_keys, g_vals)},
+                'tasks_total': tasks_total, 'max_total': max_total, 'tasks_pct': tasks_pct,
+                'avg_pct': avg_pct, 'rate_label': rate_label,
+                'complete': avg_pct or 0.0, 'complete_label': rate_label,
+                'rank_short': rank_short, 'rank_code': rank_code, 'rank_tone': rank_tone, 'passed': passed,
+            }
+            rows.append(row)
+
+        if wait_count:
+            rank_levels.append({'code': 'wait', 'name': 'Chờ đánh giá', 'score_range': '', 'tone': 'wait', 'count': wait_count})
+        rank_legend = ' · '.join('%s: %s%%' % (lv['name'], lv['score_range']) for lv in rank_levels if lv.get('score_range'))
+
+        rows.sort(key=lambda r: (-r['tasks_total'], -r['complete'], r['name']))
         for i, r in enumerate(rows, 1):
             r['no'] = i
         n = len(rows)
-        counts = {k: sum(1 for r in rows if r['rank_code'] == k) for k in ('A', 'B', 'C', 'D')}
+        counts = {lv['code']: lv['count'] for lv in rank_levels}
+        # Nhận xét theo tuần của ASM cho từng cửa hàng trong tháng (luôn đủ Tuần 1..N)
+        weeks = self._month_weeks(start, end)
+        store_ids = list({r['store_id'] for r in rows})
+        store_comments = {}
+        if store_ids:
+            visits = self.env['store.cht.visit'].sudo().search(
+                [('store_id', 'in', store_ids), ('visit_date', '>=', start), ('visit_date', '<', end), ('comment', '!=', False)],
+                order='visit_date, id')
+            by_sw = {}
+            for v in visits:
+                txt = (v.comment or '').strip()
+                if not txt:
+                    continue
+                wk_idx = next((idx + 1 for idx, (a, b) in enumerate(weeks) if a <= v.visit_date <= b), 0)
+                if wk_idx:
+                    by_sw.setdefault((v.store_id.id, wk_idx), []).append({
+                        'date': v.visit_date.strftime('%d/%m') if v.visit_date else '',
+                        'user': v.user_id.name or '',
+                        'comment': txt,
+                    })
+            for sid in store_ids:
+                store_comments[sid] = [{
+                    'week_num': idx,
+                    'label': 'Nhận xét tuần %d' % idx,
+                    'range': '%s – %s' % (a.strftime('%d/%m'), b.strftime('%d/%m')),
+                    'items': by_sw.get((sid, idx), []),
+                } for idx, (a, b) in enumerate(weeks, 1)]
+        export_stores = [{
+            'id': v['id'], 'name': v['name'], 'mien': v['mien'],
+            'asm_id': v['asm_id'], 'asm': v['asm'], 'staff_count': len(v['staff_set']),
+        } for v in sorted(export_store_map.values(), key=lambda x: x['name'].casefold())]
         return {
-            'month': data['month'], 'month_label': data['month_label'], 'updated_at': data['updated_at'],
-            'weights': data['weights'], 'group_names': data['group_names'], 'asm_opts': data['asm_opts'],
-            'store_opts': [{'id': k, 'name': v} for k, v in sorted(stores.items(), key=lambda x: x[1])],
+            'month': mkey, 'month_label': start.strftime('%m/%Y'),
+            'updated_at': fields.Date.context_today(self).strftime('%d/%m/%Y'),
+            'weights': {}, 'group_names': group_names,
+            'asm_opts': [{'id': k, 'name': v} for k, v in sorted(asm_opts_map.items(), key=lambda x: x[1])],
+            'store_opts': [{'id': k, 'name': v} for k, v in sorted(store_opts_map.items(), key=lambda x: x[1])],
+            'export_stores': export_stores,
             'rows': rows,
+            'rank_levels': rank_levels,
+            'rank_legend': rank_legend,
+            'store_comments': store_comments,
             'summary': {
                 'staff_count': n, 'store_count': len({r['store_id'] for r in rows}),
-                'avg_kpi': round(sum(r['kpi_total'] for r in rows) / n, 2) if n else 0.0,
+                'avg_kpi': round(sum(r['tasks_total'] for r in rows) / n, 2) if n else 0.0,
                 'passed': sum(1 for r in rows if r['passed']), 'counts': counts,
-                'avgs': {k: round(sum(r[k] for r in rows) / n, 2) if n else 0.0
-                         for k in ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'discipline', 'sales', 'attitude', 'kpi_total')},
+                'avgs': {k: round(sum(r.get(k, 0.0) for r in rows) / n, 2) if n else 0.0
+                         for k in (*g_keys, 'tasks_total', 'complete')},
             },
         }
 
     @api.model
-    def export_nvbh_perf_xlsx(self, month=None, mien=None, asm_id=None, store_id=None):
-        """Xuất Báo cáo hiệu suất NVBH ra Excel đúng như bảng trên màn hình:
-        #, ID, Nhân viên / Cửa hàng, 5 nhóm công việc, Hoàn thành việc, Doanh số, Thái độ, Tổng KPI, Xếp loại;
-        nhóm theo cửa hàng (cửa hàng TB Tổng KPI cao xếp trước), # là thứ tự trong cửa hàng."""
+    def export_nvbh_perf_xlsx(self, month=None, mien=None, asm_id=None, store_id=None, store_ids=None):
+        """Xuất Báo cáo hiệu suất NVBH ra Excel: cho phép chọn theo miền / nhiều cửa hàng,
+        mỗi cửa hàng xuất thành 1 sheet riêng kèm nhận xét theo tuần của ASM."""
         import base64
         import io as _io
+        import re as _re
         import xlsxwriter
         self.env['store.perm.rule'].check_export()
-        data = self.get_nvbh_perf_report(month, mien, asm_id, store_id)
-        if not data['rows']:
+        if store_ids:
+            data = self.get_nvbh_perf_report(month)
+            wanted_list = [int(x) for x in store_ids if x]
+            wanted_set = set(wanted_list)
+            rows_src = [r for r in data['rows'] if r['store_id'] in wanted_set]
+        else:
+            data = self.get_nvbh_perf_report(month, mien, asm_id, store_id)
+            wanted_list = []
+            rows_src = data['rows']
+        if not rows_src:
             raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
-        keys = ('g1', 'g2', 'g3', 'g4', 'g5', 'complete', 'sales', 'attitude', 'kpi_total')
-        headers = ['#', 'ID', 'Nhân viên / Cửa hàng', *data['group_names'], 'Hoàn thành việc', 'Doanh số', 'Thái độ', 'Tổng KPI', 'Xếp loại']
-        widths = [7, 13, 36, 18, 18, 15, 18, 13, 17, 13, 13, 13, 16]
+        g_keys = ['g%d' % (i + 1) for i in range(len(data['group_names']))]
+        keys = (*g_keys, 'tasks_total', 'complete')
+        headers = ['#', 'ID', 'Nhân viên', *data['group_names'], 'Tổng công việc', 'Tỷ lệ đạt (%)', 'Xếp loại']
+        widths = [7, 13, 34, *([18] * len(g_keys)), 16, 15, 16]
         ncol = len(headers)
 
         groups = {}
-        for r in data['rows']:
+        for r in rows_src:
             groups.setdefault(r['store_id'], []).append(r)
-        avg = lambda items, k: sum(x[k] for x in items) / len(items)
-        ordered = sorted(groups.values(), key=lambda st: (-avg(st, 'kpi_total'), st[0]['store']))
+        if wanted_list:
+            ordered = [groups[sid] for sid in wanted_list if sid in groups]
+        else:
+            avg = lambda items, k: sum(x[k] for x in items) / len(items)
+            ordered = sorted(groups.values(), key=lambda st: (-avg(st, 'tasks_total'), st[0]['store']))
 
         buf = _io.BytesIO()
         book = xlsxwriter.Workbook(buf, {'in_memory': True})
-        ws = book.add_worksheet('Hieu suat NVBH')
         base = {'font_name': 'Times New Roman', 'font_size': 12, 'valign': 'vcenter', 'border': 1, 'border_color': '#CBD5E1'}
         F = lambda **kw: book.add_format(dict(base, **kw))
         f_title = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 14, 'font_color': '#163363', 'align': 'center', 'valign': 'vcenter'})
-        f_sub = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B', 'align': 'left', 'valign': 'vcenter'})
+        f_sub = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'font_color': '#475569', 'align': 'center', 'valign': 'vcenter'})
         f_head = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='center', text_wrap=True, border_color='#2B4A80')
         f_head_l = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='left', text_wrap=True, border_color='#2B4A80')
-        f_store = F(bold=True, font_color='#0F172A', bg_color='#F8FAFC')
-        f_store_cnt = F(font_color='#64748B', bg_color='#F8FAFC')
         f_no = F(bold=True, align='center', font_color='#FFFFFF', bg_color='#DC2626')
         f_id = F(align='center', bold=True)
         f_name = F(bold=True)
         f_num = F(align='center', num_format='0.00')
         f_tot = F(align='center', bold=True, num_format='0.00')
+        f_pct = F(align='center')
+        f_wk_lbl = F(bold=True, font_color='#1D4ED8', bg_color='#EFF6FF', align='left')
+        f_wk_val = F(font_color='#0F172A', bg_color='#F8FAFC', align='left', text_wrap=True)
+        f_wk_empty = F(italic=True, font_color='#94A3B8', bg_color='#F8FAFC', align='left')
         rank_fmt = {
-            'A': F(align='center', bold=True, font_color='#15803D', bg_color='#DCFCE7'),
-            'B': F(align='center', bold=True, font_color='#1D4ED8', bg_color='#DBEAFE'),
-            'C': F(align='center', bold=True, font_color='#B45309', bg_color='#FEF3C7'),
-            'D': F(align='center', bold=True, font_color='#B91C1C', bg_color='#FEE2E2'),
+            'green': F(align='center', bold=True, font_color='#15803D', bg_color='#DCFCE7'),
+            'blue': F(align='center', bold=True, font_color='#1D4ED8', bg_color='#DBEAFE'),
+            'orange': F(align='center', bold=True, font_color='#C2410C', bg_color='#FFEDD5'),
+            'red': F(align='center', bold=True, font_color='#B91C1C', bg_color='#FEE2E2'),
+            'darkred': F(align='center', bold=True, font_color='#9F1239', bg_color='#FECDD3'),
+            'wait': F(align='center', bold=True, font_color='#64748B', bg_color='#F1F5F9'),
         }
         no_fmt = {
-            'A': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#16A34A'),
-            'B': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#2563EB'),
-            'C': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#F59E0B'),
-            'D': f_no,
+            'green': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#16A34A'),
+            'blue': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#2563EB'),
+            'orange': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#F97316'),
+            'red': f_no,
+            'darkred': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#BE123C'),
+            'wait': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#94A3B8'),
         }
-        f_foot = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B'})
+        f_foot = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'font_color': '#64748B'})
         f_sign = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'bold': True, 'align': 'center'})
         f_sign_note = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'italic': True, 'align': 'center', 'font_color': '#64748B'})
 
-        sm = data['summary']
-        ws.merge_range(0, 0, 0, ncol - 1, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG · THÁNG %s' % data['month_label'], f_title)
-        ws.merge_range(1, 0, 1, ncol - 1, 'Nhân viên: %d · Đạt (≥ 72): %d · TB KPI: %s' % (
-            sm['staff_count'], sm['passed'], _vn(sm['avg_kpi'], 2)), f_sub)
-        ws.set_row(0, 30)
-        ws.set_row(1, 22)
-        hr = 3
-        for c, h in enumerate(headers):
-            ws.write(hr, c, h, f_head_l if c == 2 else f_head)
-        ws.set_row(hr, 48)
-        r = hr + 1
+        used_sheets = set()
+        store_comments = data.get('store_comments') or {}
         for staff in ordered:
             st = staff[0]
-            ws.write_blank(r, 0, None, f_store)
-            ws.merge_range(r, 1, r, ncol - 1, '', f_store)
-            ws.write_rich_string(r, 1, book.add_format({'bold': True, 'font_name': 'Times New Roman', 'font_size': 12}), st['store'],
-                                 book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'font_color': '#64748B'}),
-                                 ' · %d NV · ASM %s' % (len(staff), st['asm']), f_store)
-            ws.set_row(r, 26)
-            r += 1
+            raw_name = _re.sub(r'[\[\]:*?/\\]', ' ', st['store'] or 'Cua hang').strip()[:31] or 'Cua hang'
+            sname, idx_dup = raw_name, 2
+            while sname.lower() in used_sheets:
+                suf = ' (%d)' % idx_dup
+                sname = raw_name[:31 - len(suf)] + suf
+                idx_dup += 1
+            used_sheets.add(sname.lower())
+
+            ws = book.add_worksheet(sname)
+            ws.merge_range(0, 0, 0, ncol - 1, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG · THÁNG %s' % data['month_label'], f_title)
+            mien_txt = (' · Miền %s' % st['mien']) if st.get('mien') else ''
+            ws.merge_range(1, 0, 1, ncol - 1, 'Cửa hàng: %s%s · ASM: %s · Nhân sự: %d NV' % (st['store'], mien_txt, st['asm'], len(staff)), f_sub)
+            ws.set_row(0, 28)
+            ws.set_row(1, 20)
+            hr = 3
+            for c, h in enumerate(headers):
+                ws.write(hr, c, h, f_head_l if c == 2 else f_head)
+            ws.set_row(hr, 46)
+            r = hr + 1
             for i, x in enumerate(staff, 1):
-                code = x.get('rank_code') or 'D'
-                ws.write_number(r, 0, i, no_fmt.get(code, f_no))
+                tone = x.get('rank_tone') or 'wait'
+                ws.write_number(r, 0, i, no_fmt.get(tone, f_no))
                 ws.write_string(r, 1, x.get('code') or '-', f_id)
                 ws.write_string(r, 2, x['name'], f_name)
                 for c, k in enumerate(keys, 3):
-                    ws.write_number(r, c, x[k] or 0.0, f_tot if k == 'kpi_total' else f_num)
-                ws.write_string(r, ncol - 1, x.get('rank_short') or (x.get('rank') or '').split(' - ')[0], rank_fmt.get(code, rank_fmt['D']))
+                    if k == 'tasks_total':
+                        ws.write_number(r, c, x[k] or 0.0, f_tot)
+                    elif k == 'complete':
+                        ws.write_string(r, c, x.get('rate_label') or '-', f_pct)
+                    else:
+                        ws.write_number(r, c, x[k] or 0.0, f_num)
+                ws.write_string(r, ncol - 1, x.get('rank_short') or '-', rank_fmt.get(tone, rank_fmt['wait']))
                 ws.set_row(r, 26)
                 r += 1
-        r += 1
-        ws.write_string(r, 0, 'Ngưỡng ĐẠT: Tổng KPI ≥ 72    Hạng A ≥ 95 · Hạng B ≥ 85 · Hạng C ≥ 75 · Hạng D < 75', f_foot)
-        ws.write_string(r, ncol - 2, 'Cập nhật: %s' % data['updated_at'], f_foot)
-        # chữ ký
-        r += 3
-        ws.merge_range(r, 1, r, 2, 'NGƯỜI LẬP', f_sign)
-        ws.merge_range(r, ncol - 4, r, ncol - 2, 'NGƯỜI DUYỆT', f_sign)
-        ws.merge_range(r + 1, 1, r + 1, 2, '(Ký, ghi rõ họ tên)', f_sign_note)
-        ws.merge_range(r + 1, ncol - 4, r + 1, ncol - 2, '(Ký, ghi rõ họ tên)', f_sign_note)
-        for c, w in enumerate(widths[:ncol]):
-            ws.set_column(c, c, w)
-        ws.freeze_panes(hr + 1, 3)
-        ws.set_landscape()
-        ws.set_paper(9)
-        ws.fit_to_pages(1, 0)
-        ws.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
-        ws.hide_gridlines(0)
-        ws.repeat_rows(hr)
+
+            wk_list = store_comments.get(st['store_id']) or []
+            for wk in wk_list:
+                ws.merge_range(r, 0, r, 2, '%s (%s)' % (wk['label'], wk['range']), f_wk_lbl)
+                items = wk.get('items') or []
+                if items:
+                    txt = '\n'.join(
+                        ('%s%s: %s' % (cm['user'], (' (%s)' % cm['date']) if cm.get('date') else '', cm['comment'])
+                         if cm.get('user') else cm['comment'])
+                        for cm in items
+                    )
+                    ws.merge_range(r, 3, r, ncol - 1, txt, f_wk_val)
+                    ws.set_row(r, max(24, 18 * (txt.count('\n') + 1)))
+                else:
+                    ws.merge_range(r, 3, r, ncol - 1, 'Chưa có nhận xét', f_wk_empty)
+                    ws.set_row(r, 22)
+                r += 1
+
+            r += 1
+            ws.write_string(r, 0, data.get('rank_legend') or '', f_foot)
+            ws.write_string(r, ncol - 2, 'Cập nhật: %s' % data['updated_at'], f_foot)
+            r += 3
+            ws.merge_range(r, 1, r, 2, 'NGƯỜI LẬP', f_sign)
+            ws.merge_range(r, ncol - 4, r, ncol - 2, 'NGƯỜI DUYỆT', f_sign)
+            ws.merge_range(r + 1, 1, r + 1, 2, '(Ký, ghi rõ họ tên)', f_sign_note)
+            ws.merge_range(r + 1, ncol - 4, r + 1, ncol - 2, '(Ký, ghi rõ họ tên)', f_sign_note)
+            for c, w in enumerate(widths[:ncol]):
+                ws.set_column(c, c, w)
+            ws.freeze_panes(hr + 1, 3)
+            ws.set_landscape()
+            ws.set_paper(9)
+            ws.fit_to_pages(1, 0)
+            ws.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
+            ws.hide_gridlines(0)
+            ws.repeat_rows(hr)
         book.close()
         return {'name': 'Bao_cao_hieu_suat_NVBH_%s.xlsx' % fields.Date.context_today(self).strftime('%Y%m%d'),
                 'data': base64.b64encode(buf.getvalue()).decode()}

@@ -34,11 +34,6 @@
                         <h2 t-esc="listTitle"/>
                         <p t-esc="state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
-                    <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_perf' and state.perf.data">
-                        <div class="stat"><span>Nhân viên</span><b t-esc="state.perf.data.summary.staff_count"/></div>
-                        <div class="stat"><span>Đạt (≥ 72)</span><b t-esc="state.perf.data.summary.passed"/></div>
-                        <div class="stat"><span>TB KPI</span><b t-esc="fmtKpi(state.perf.data.summary.avg_kpi)"/></div>
-                    </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
                         <div class="stat"><span>Nhân viên</span><b t-esc="state.kpiAsm.data.region.staff_count"/></div>
@@ -800,7 +795,7 @@
                     <div class="asm_toolbar">
                         <div class="perf_ranks" t-if="pd">
                             <button type="button" t-att-class="'rk_all ' + (!pf.rank ? 'active' : '')" t-on-click="() => this.onPerfRank('')">Tất cả <b t-esc="pd.summary.staff_count"/></button>
-                            <button type="button" t-foreach="['A', 'B', 'C', 'D']" t-as="rk" t-key="rk" t-attf-class="rk rk-#{rk} #{pf.rank === rk ? 'active' : ''}" t-on-click="() => this.onPerfRank(rk)">Hạng <t t-esc="rk"/> <b t-esc="pd.summary.counts[rk]"/></button>
+                            <button type="button" t-foreach="pd.rank_levels or []" t-as="lv" t-key="lv.code" t-attf-class="rk tone-#{lv.tone} #{pf.rank === lv.code ? 'active' : ''}" t-on-click="() => this.onPerfRank(lv.code)"><t t-esc="lv.name"/> <b t-esc="lv.count"/></button>
                         </div>
                         <div class="asm_filters">
                             <label><span>Tháng</span>
@@ -838,15 +833,9 @@
                                         <th>#</th>
                                         <th class="perf_id">ID</th>
                                         <th class="l">Nhân viên / Cửa hàng</th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(0)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(1)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(2)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(3)"/></th>
-                                        <th class="kp_grp"><span t-esc="perfGroupName(4)"/></th>
-                                        <th>Hoàn thành việc</th>
-                                        <th>Doanh số</th>
-                                        <th>Thái độ</th>
-                                        <th>Tổng KPI</th>
+                                        <th class="kp_grp" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index"><span t-esc="gn"/></th>
+                                        <th>Tổng công việc</th>
+                                        <th>Tỷ lệ đạt (%)</th>
                                         <th>Xếp loại</th>
                                     </tr></thead>
                                     <tbody>
@@ -854,30 +843,45 @@
                                         <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
                                             <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
                                             <td class="l" colspan="2"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
-                                            <td colspan="10"/>
+                                            <td t-att-colspan="(pd.group_names || []).length + 3"/>
                                         </tr>
                                         <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
-                                            <td class="c"><span t-attf-class="perf_no rk-#{r.rank_code}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
+                                            <td class="c"><span t-attf-class="perf_no tone-#{r.rank_tone || 'wait'}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
                                             <td class="c perf_id" t-esc="r.code or '-'"/>
                                             <td class="l"><b class="sf_nm" t-esc="r.name"/></td>
-                                            <td class="c" t-esc="fmtKpi(r.g1)"/>
-                                            <td class="c" t-esc="fmtKpi(r.g2)"/>
-                                            <td class="c" t-esc="fmtKpi(r.g3)"/>
-                                            <td class="c" t-esc="fmtKpi(r.g4)"/>
-                                            <td class="c" t-esc="fmtKpi(r.g5)"/>
-                                            <td class="c" t-esc="fmtKpi(r.complete)"/>
-                                            <td class="c" t-esc="fmtKpi(r.sales)"/>
-                                            <td class="c" t-esc="fmtKpi(r.attitude)"/>
-                                            <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-esc="fmtKpi(r.kpi_total)"/>
-                                            <td class="c"><span t-attf-class="perf_rank rk-#{r.rank_code}" t-esc="r.rank_short or (r.rank or '').split(' - ')[0]"/></td>
+                                            <td class="c" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index" t-esc="fmtKpi(r['g' + (gn_index + 1)])"/>
+                                            <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-att-title="(r.max_total ? (r.tasks_total + '/' + r.max_total + 'đ · ' + r.tasks_pct + '%') : 'Chưa có điểm ASM đánh giá')" t-esc="fmtKpi(r.tasks_total)"/>
+                                            <td class="c" t-esc="r.rate_label || '-'"/>
+                                            <td class="c"><span t-attf-class="perf_rank tone-#{r.rank_tone || 'wait'}" t-esc="r.rank_short or '-'"/></td>
+                                        </tr>
+                                        <tr t-if="isPerfStoreOpen(g.store_id) and pd.store_comments and (pd.store_comments[g.store_id] || []).length" class="perf_cmt_row">
+                                            <td t-att-colspan="(pd.group_names || []).length + 6" class="l">
+                                                <div class="perf_cmt_grid">
+                                                    <div class="perf_cmt_wk_row" t-foreach="pd.store_comments[g.store_id]" t-as="wk" t-key="wk.week_num">
+                                                        <div class="perf_cmt_wk_lbl">
+                                                            <span class="perf_cmt_wk" t-esc="wk.label"/>
+                                                            <small class="perf_cmt_rng" t-esc="'(' + wk.range + ')'"/>
+                                                        </div>
+                                                        <div class="perf_cmt_wk_val">
+                                                            <t t-if="(wk.items || []).length">
+                                                                <div class="perf_cmt_item" t-foreach="wk.items" t-as="cm" t-key="cm_index">
+                                                                    <b t-if="cm.user" t-esc="cm.user + (cm.date ? ' (' + cm.date + ')' : '') + ':'"/>
+                                                                    <span class="perf_cmt_txt" t-esc="cm.comment"/>
+                                                                </div>
+                                                            </t>
+                                                            <span t-else="" class="perf_cmt_empty">Chưa có nhận xét</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
                                         </tr>
                                         </t>
                                     </tbody>
                                 </table>
                             </div>
                             <div class="asm_tbl_foot">
-                                <span>Ngưỡng ĐẠT: Tổng KPI ≥ 72</span>
-                                <span>Hạng A ≥ 95 · Hạng B ≥ 85 · Hạng C ≥ 75 · Hạng D &lt; 75</span>
+                                <span>Tổng điểm thực tế ASM đã đánh giá theo từng nhóm công việc · Xếp loại theo Tỷ lệ đạt (%)</span>
+                                <span t-if="pd.rank_legend" t-esc="pd.rank_legend"/>
                                 <span class="upd">Cập nhật: <t t-esc="pd.updated_at"/></span>
                             </div>
                         </div>
@@ -983,11 +987,7 @@
                                             <div class="mc_tot"><strong t-esc="fmtKpi(s.kpi_total)"/><small t-att-class="s.passed ? 'ok' : 'bad'" t-esc="s.status"/></div>
                                         </div>
                                         <div class="mc_grid">
-                                            <div><small t-esc="kpiAsmGroupName(0)"/><b t-esc="fmtKpi(s.g1)"/></div>
-                                            <div><small t-esc="kpiAsmGroupName(1)"/><b t-esc="fmtKpi(s.g2)"/></div>
-                                            <div><small t-esc="kpiAsmGroupName(2)"/><b t-esc="fmtKpi(s.g3)"/></div>
-                                            <div><small t-esc="kpiAsmGroupName(3)"/><b t-esc="fmtKpi(s.g4)"/></div>
-                                            <div><small t-esc="kpiAsmGroupName(4)"/><b t-esc="fmtKpi(s.g5)"/></div>
+                                            <div t-foreach="kad.group_names" t-as="gn" t-key="gn_index"><small t-esc="gn"/><b t-esc="fmtKpi(s['g' + (gn_index + 1)])"/></div>
                                         </div>
                                         <div class="mc_grid mc_grid4">
                                             <div><small>HT việc</small><b t-esc="fmtKpi(s.complete)"/></div>
@@ -998,16 +998,12 @@
                                     </div>
                                 </t>
                             </div>
-                            <!-- Desktop table (12 cột sạch sẽ) -->
+                            <!-- Desktop table -->
                             <div class="kp_scroll kp_desktop">
                                 <table class="kp_table asm_table">
                                     <thead><tr>
                                         <th class="l">ASM / Cửa hàng</th>
-                                        <th class="kp_grp"><span t-esc="kpiAsmGroupName(0)"/><small t-esc="fmtKpiWeight(kad.weights.g1)"/></th>
-                                        <th class="kp_grp"><span t-esc="kpiAsmGroupName(1)"/><small t-esc="fmtKpiWeight(kad.weights.g2)"/></th>
-                                        <th class="kp_grp"><span t-esc="kpiAsmGroupName(2)"/><small t-esc="fmtKpiWeight(kad.weights.g3)"/></th>
-                                        <th class="kp_grp"><span t-esc="kpiAsmGroupName(3)"/><small t-esc="fmtKpiWeight(kad.weights.g4)"/></th>
-                                        <th class="kp_grp"><span t-esc="kpiAsmGroupName(4)"/><small t-esc="fmtKpiWeight(kad.weights.g5)"/></th>
+                                        <th class="kp_grp" t-foreach="kad.group_names" t-as="gn" t-key="gn_index"><span t-esc="gn"/><small t-esc="fmtKpiWeight(kad.weights['g' + (gn_index + 1)])"/></th>
                                         <th>Hoàn thành việc</th><th>Kỷ luật</th><th>Doanh số</th><th>Thái độ</th>
                                         <th>Tổng KPI<small>100đ</small></th>
                                         <th>Xếp loại</th>
@@ -1016,18 +1012,14 @@
                                         <t t-foreach="kpiAsmFilteredAsms" t-as="a" t-key="a.id">
                                             <tr t-attf-class="asm_parent rk-row-#{a.rank_code}" t-on-click="() => this.toggleKpiAsmRow(a.id)">
                                                 <td class="l"><i t-attf-class="fa #{isKpiAsmOpen(a.id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/> <b t-esc="a.name"/> <span class="cnt">· <t t-esc="a.store_count"/> CH, <t t-esc="a.staff_count"/> NV · trung bình</span></td>
-                                                <td/><td/><td/><td/><td/><td/><td/><td/><td/>
+                                                <td t-att-colspan="kad.group_names.length + 4"/>
                                                 <td t-attf-class="c b kpi-val rk-txt-#{a.rank_code}" t-esc="fmtKpi(a.kpi_total)"/>
                                                 <td class="c"><span t-attf-class="asm_pill rk-#{a.rank_code}" t-esc="a.rank_short"/></td>
                                             </tr>
                                             <t t-foreach="isKpiAsmOpen(a.id) ? a.stores : []" t-as="s" t-key="s.store_id">
                                                 <tr class="asm_child" t-on-click="() => this.toggleKpiAsmStore(s.store_id)">
                                                     <td class="l"><i t-attf-class="fa #{isKpiAsmStoreOpen(s.store_id) ? 'fa-caret-down' : 'fa-caret-right'} asm_st_caret"/> <span class="st_nm" t-esc="s.store"/> <span class="cnt">(<t t-esc="s.staff_count"/> NV)</span></td>
-                                                    <td class="c" t-esc="fmtKpi(s.g1)"/>
-                                                    <td class="c" t-esc="fmtKpi(s.g2)"/>
-                                                    <td class="c" t-esc="fmtKpi(s.g3)"/>
-                                                    <td class="c" t-esc="fmtKpi(s.g4)"/>
-                                                    <td class="c" t-esc="fmtKpi(s.g5)"/>
+                                                    <td class="c" t-foreach="kad.group_names" t-as="gn" t-key="gn_index" t-esc="fmtKpi(s['g' + (gn_index + 1)])"/>
                                                     <td class="c" t-esc="fmtKpi(s.complete)"/>
                                                     <td class="c" t-esc="fmtKpi(s.discipline)"/>
                                                     <td class="c" t-esc="fmtKpi(s.sales)"/>
@@ -1037,11 +1029,7 @@
                                                 </tr>
                                                 <tr t-foreach="isKpiAsmStoreOpen(s.store_id) ? s.staff : []" t-as="sf" t-key="sf.name + (sf.code or '')" class="asm_staff_row">
                                                     <td class="l"><span class="sf_nm" t-esc="sf.name"/><small t-if="sf.code" class="cnt"> (<t t-esc="sf.code"/>)</small></td>
-                                                    <td class="c" t-esc="fmtKpi(sf.g1)"/>
-                                                    <td class="c" t-esc="fmtKpi(sf.g2)"/>
-                                                    <td class="c" t-esc="fmtKpi(sf.g3)"/>
-                                                    <td class="c" t-esc="fmtKpi(sf.g4)"/>
-                                                    <td class="c" t-esc="fmtKpi(sf.g5)"/>
+                                                    <td class="c" t-foreach="kad.group_names" t-as="gn" t-key="gn_index" t-esc="fmtKpi(sf['g' + (gn_index + 1)])"/>
                                                     <td class="c" t-esc="fmtKpi(sf.complete)"/>
                                                     <td class="c" t-esc="fmtKpi(sf.discipline)"/>
                                                     <td class="c" t-esc="fmtKpi(sf.sales)"/>
@@ -1384,6 +1372,7 @@
                                     <button type="button" class="cm_app_week" t-on-click="openChtWeek" title="ASM chấm check list CHT theo tuần, theo nhóm công việc"><i class="fa fa-check-square-o"/> Đánh giá tuần</button>
                                     <a class="cm_app_btn" href="/odoo/discuss" title="Thông báo / Thảo luận"><i class="fa fa-bell-o"/></a>
                                     <span class="cm_avatar" t-att-title="state.chtm.staff ? state.chtm.staff.name : ''"><t t-esc="chtInitial"/><i/></span>
+                                    <button type="button" class="cm_app_btn cm_app_close" t-on-click="openChtWeek" title="Thoát / quay lại Đánh giá tuần"><i class="fa fa-times"/></button>
                                 </div>
                             </header>
                             <main class="cm_body">
@@ -1739,65 +1728,233 @@
                                 <span><i class="fa fa-share"/> Chuyển tiếp từ tuần trước:</span>
                                 <span t-foreach="sw.carried" t-as="c" t-key="c.id" class="cw_chip is-carry"><b t-esc="c.date"/> · <t t-esc="c.name"/> · <t t-esc="c.week_label"/></span>
                             </div>
-                            <div class="cw_table sw_table" t-if="sw.groups.length">
-                                <table>
-                                    <thead>
-                                        <tr>
-                                            <th rowspan="2" class="l">Nhóm công việc (<t t-esc="(sw.weeks[sw.week] || {}).label"/>)</th>
-                                            <th rowspan="2" class="l">Nhân sự CH</th>
-                                            <th rowspan="2">Tổng CV</th>
-                                            <th rowspan="2">Điểm đạt</th>
-                                            <th rowspan="2">Tỷ lệ %</th>
-                                            <th colspan="3" class="ev"><span class="cw_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
-                                            <th rowspan="2" class="l">Nhận xét của ASM theo nhóm</th>
-                                        </tr>
-                                        <tr class="ev2">
-                                            <th t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                <label t-on-click.prevent="() => this.swAll(h[0])" t-att-class="swCanEdit ? '' : 'dis'">
-                                                    <span t-attf-class="cw_box b-#{h[0]} #{swHead(h[0])}"><i t-if="swHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="swHead(h[0]) === 'some'" class="fa fa-minus"/></span>
-                                                    <t t-esc="h[1]"/></label></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <t t-foreach="sw.groups" t-as="g" t-key="g.key">
-                                            <tr t-foreach="g.rows" t-as="r" t-key="r.key" t-attf-class="#{r_first ? 'g-first' : 'g-sub'} #{g_index % 2 ? 'g-odd' : ''}">
-                                                <td class="l gname" t-if="r_first"><b t-esc="g.name"/><small t-if="g.desc" t-esc="g.desc + '...'"/></td>
-                                                <td class="l gsub" t-else="">↳ Chi tiết <t t-esc="r.is_cht ? 'CHT' : 'NVBH'"/> trong nhóm</td>
-                                                <td class="l"><b t-attf-class="#{r.is_cht ? 'p-cht' : 'p-nv'}" t-esc="r.name + ' (' + (r.is_cht ? 'CHT' : r.pos) + ')'"/></td>
-                                                <td><b t-esc="r.done + '/' + r.lines"/></td>
-                                                <td><b><t t-esc="jobStaffNum(r.pts)"/> / <t t-esc="jobStaffNum(r.max)"/>đ</b></td>
-                                                <td><b t-attf-class="rt-#{swRateTone(r.rate)}"><t t-esc="jobStaffNum(r.rate)"/>%</b></td>
-                                                <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
-                                                    <label t-on-click.prevent="() => this.swSet(r, h[0])" t-att-class="swRowEdit(r) ? '' : 'dis'">
-                                                        <span t-attf-class="cw_box b-#{h[0]} #{state.chtm.results[r.key] === h[0] ? 'all' : 'none'}"><i t-if="state.chtm.results[r.key] === h[0]" class="fa fa-check"/></span>
-                                                        <t t-esc="h[1]"/></label></td>
-                                                <td class="l"><input type="text" class="sw_note" t-att-value="state.chtm.swNotes[r.key] or ''" t-att-disabled="!sw.can_comment"
-                                                                     placeholder="Nhận xét..." t-on-input="(ev) => this.state.chtm.swNotes[r.key] = ev.target.value"/></td>
-                                            </tr>
-                                        </t>
-                                    </tbody>
-                                </table>
-                            </div>
+                            <t t-if="sw.people.length">
+                                <!-- 1. Tổng hợp theo Nhân sự (từ Bảng checklist Tổng trong tuần) -->
+                                <section class="sw_card">
+                                    <div class="sw_card_h">
+                                        <h3>1. Phân tích Chi tiết theo Nhân sự</h3>
+                                        <small><t t-esc="sw.people.length"/> nhân sự · <t t-esc="wk.label"/> (<t t-esc="wk.range"/>)</small>
+                                    </div>
+                                    <div class="cw_table sw_matrix sw_sum_tbl">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th class="l">Nhân sự CH</th>
+                                                    <th>Ngày checklist</th>
+                                                    <th>Tổng việc ca</th>
+                                                    <th>Đã làm</th>
+                                                    <th>Số lỗi</th>
+                                                    <th>Tổng giờ</th>
+                                                    <th>Điểm đạt</th>
+                                                    <th>Điểm chuẩn ca</th>
+                                                    <th>Điểm CHT đánh giá</th>
+                                                    <th>Điểm ASM đánh giá</th>
+                                                    <th class="l">Ghi chú</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr t-foreach="sw.people" t-as="p" t-key="p.key">
+                                                    <td class="l gname">
+                                                        <b t-attf-class="#{p.is_cht ? 'p-cht' : 'p-nv'}" t-esc="p.name"/>
+                                                        <small t-esc="(p.is_cht ? 'CHT' : (p.pos or 'NVBH')) + ' · ' + (p.n_checks or 0) + ' ngày công'"/>
+                                                    </td>
+                                                    <td t-att-title="(p.dates || []).length ? 'Các ngày đã check list: ' + p.dates.join(', ') : 'Chưa có ngày nào check list'">
+                                                        <b t-esc="p.n_checked or 0"/><small class="text-muted">/<t t-esc="p.n_checks or 0"/></small>
+                                                    </td>
+                                                    <td t-esc="p.tasks or 0"/>
+                                                    <td t-esc="p.done or 0"/>
+                                                    <td t-att-class="p.errors ? 'sw_err_cell' : ''" t-esc="p.errors or 0"/>
+                                                    <td t-esc="p.hours ? jobStaffNum(p.hours) : '-'"/>
+                                                    <td t-esc="p.points !== null and p.points !== undefined ? jobStaffNum(p.points) : '-'"/>
+                                                    <td t-esc="p.std_points ? jobStaffNum(p.std_points) : 0"/>
+                                                    <td t-esc="p.pts_cht !== null and p.pts_cht !== undefined ? jobStaffNum(p.pts_cht) : '-'"/>
+                                                    <td class="sw_asm_pts" t-esc="p.pts_asm !== null and p.pts_asm !== undefined ? jobStaffNum(p.pts_asm) : '-'"/>
+                                                    <td class="l sw_pnote">
+                                                        <span t-if="p.note" class="sw_pnote_warn" t-esc="p.note"/>
+                                                        <span t-else="" class="sw_pnote_ok">✓ Đã đánh giá đủ</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                            <tfoot t-if="sw.people_total">
+                                                <t t-set="pt" t-value="sw.people_total"/>
+                                                <tr class="sw_tot_row">
+                                                    <td class="l"><b>TỔNG CỘNG <t t-esc="(wk.label || '').toUpperCase()"/> (<t t-esc="pt.n_checks"/> ngày công)</b></td>
+                                                    <td><b><t t-esc="pt.n_checked or 0"/></b>/<t t-esc="pt.n_checks or 0"/></td>
+                                                    <td t-esc="pt.tasks or 0"/>
+                                                    <td t-esc="pt.done or 0"/>
+                                                    <td t-esc="pt.errors or 0"/>
+                                                    <td t-esc="pt.hours ? jobStaffNum(pt.hours) : '-'"/>
+                                                    <td t-esc="pt.points !== null and pt.points !== undefined ? jobStaffNum(pt.points) : '-'"/>
+                                                    <td t-esc="pt.std_points ? jobStaffNum(pt.std_points) : 0"/>
+                                                    <td t-esc="pt.pts_cht !== null and pt.pts_cht !== undefined ? jobStaffNum(pt.pts_cht) : '-'"/>
+                                                    <td class="sw_asm_pts" t-esc="pt.pts_asm !== null and pt.pts_asm !== undefined ? jobStaffNum(pt.pts_asm) : '-'"/>
+                                                    <td class="l"><span t-if="pt.n_uneval" class="sw_pnote_warn" t-esc="pt.n_uneval + ' ngày chưa đánh giá / chưa check list'"/><span t-else="" class="sw_pnote_ok">✓ Đủ</span></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                    <div class="sw_m_people">
+                                        <div class="sw_mp_card" t-foreach="sw.people" t-as="p" t-key="p.key">
+                                            <div class="sw_mp_head">
+                                                <div class="sw_mp_who">
+                                                    <b t-attf-class="#{p.is_cht ? 'p-cht' : 'p-nv'}" t-esc="p.name"/>
+                                                    <small t-esc="(p.is_cht ? 'CHT' : (p.pos or 'NVBH')) + ' · ' + (p.n_checks or 0) + ' ngày công'"/>
+                                                </div>
+                                                <span t-if="p.note" class="sw_mp_tag is-warn" t-esc="p.note"/>
+                                                <span t-else="" class="sw_mp_tag is-ok">✓ Đã đánh giá đủ</span>
+                                            </div>
+                                            <div class="sw_mp_grid">
+                                                <div class="cell"><span>Ngày CL</span><b><t t-esc="p.n_checked or 0"/><small>/<t t-esc="p.n_checks or 0"/></small></b></div>
+                                                <div class="cell"><span>Đã làm</span><b><t t-esc="p.done or 0"/><small>/<t t-esc="p.tasks or 0"/></small></b></div>
+                                                <div t-attf-class="cell #{p.errors ? 'is-err' : ''}"><span>Số lỗi</span><b t-esc="p.errors or 0"/></div>
+                                                <div class="cell"><span>Tổng giờ</span><b t-esc="p.hours ? (jobStaffNum(p.hours) + 'h') : '-'"/></div>
+                                                <div class="cell"><span>Điểm đạt</span><b t-esc="p.points !== null and p.points !== undefined ? jobStaffNum(p.points) : '-'"/></div>
+                                                <div class="cell"><span>Chuẩn ca</span><b t-esc="p.std_points ? jobStaffNum(p.std_points) : 0"/></div>
+                                                <div class="cell"><span>Điểm CHT</span><b t-esc="p.pts_cht !== null and p.pts_cht !== undefined ? jobStaffNum(p.pts_cht) : '-'"/></div>
+                                                <div class="cell is-asm"><span>Điểm ASM</span><b t-esc="p.pts_asm !== null and p.pts_asm !== undefined ? jobStaffNum(p.pts_asm) : '-'"/></div>
+                                            </div>
+                                        </div>
+                                        <div class="sw_mp_card is-tot" t-if="sw.people_total">
+                                            <t t-set="pt" t-value="sw.people_total"/>
+                                            <div class="sw_mp_head">
+                                                <div class="sw_mp_who">
+                                                    <b>TỔNG CỘNG <t t-esc="(wk.label || '').toUpperCase()"/></b>
+                                                    <small><t t-esc="pt.n_checks or 0"/> ngày công</small>
+                                                </div>
+                                                <span t-if="pt.n_uneval" class="sw_mp_tag is-warn" t-esc="pt.n_uneval + ' ngày chưa đánh giá'"/>
+                                                <span t-else="" class="sw_mp_tag is-ok">✓ Đủ</span>
+                                            </div>
+                                            <div class="sw_mp_grid">
+                                                <div class="cell"><span>Ngày CL</span><b><t t-esc="pt.n_checked or 0"/><small>/<t t-esc="pt.n_checks or 0"/></small></b></div>
+                                                <div class="cell"><span>Đã làm</span><b><t t-esc="pt.done or 0"/><small>/<t t-esc="pt.tasks or 0"/></small></b></div>
+                                                <div t-attf-class="cell #{pt.errors ? 'is-err' : ''}"><span>Số lỗi</span><b t-esc="pt.errors or 0"/></div>
+                                                <div class="cell"><span>Tổng giờ</span><b t-esc="pt.hours ? (jobStaffNum(pt.hours) + 'h') : '-'"/></div>
+                                                <div class="cell"><span>Điểm đạt</span><b t-esc="pt.points !== null and pt.points !== undefined ? jobStaffNum(pt.points) : '-'"/></div>
+                                                <div class="cell"><span>Chuẩn ca</span><b t-esc="pt.std_points ? jobStaffNum(pt.std_points) : 0"/></div>
+                                                <div class="cell"><span>Điểm CHT</span><b t-esc="pt.pts_cht !== null and pt.pts_cht !== undefined ? jobStaffNum(pt.pts_cht) : '-'"/></div>
+                                                <div class="cell is-asm"><span>Điểm ASM</span><b t-esc="pt.pts_asm !== null and pt.pts_asm !== undefined ? jobStaffNum(pt.pts_asm) : '-'"/></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </section>
+
+                                <!-- 2. Bảng Đánh giá Hiệu suất và Xếp loại Tổng hợp -->
+                                <section class="sw_card" t-if="sw.groups.length">
+                                    <div class="sw_card_h">
+                                        <h3>2. Bảng Đánh giá Hiệu suất và Xếp loại Tổng hợp</h3>
+                                        <small>ASM chấm đánh giá &amp; ghi nhận xét chi tiết cho từng nhóm công việc (<t t-esc="wk.label"/>)</small>
+                                    </div>
+                                    <div class="cw_table sw_table sw_eval_tbl">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th rowspan="2" class="l">Nhóm công việc</th>
+                                                    <th rowspan="2">Điểm đạt</th>
+                                                    <th rowspan="2">Xếp loại (ASM)</th>
+                                                    <th colspan="3" class="ev"><span class="cw_evtag">KQ ĐÁNH GIÁ</span> <small>(Tích chọn tất cả)</small></th>
+                                                    <th rowspan="2" class="l">Nhận xét chi tiết</th>
+                                                </tr>
+                                                <tr class="ev2">
+                                                    <th t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
+                                                        <label t-on-click.prevent="() => this.swAll(h[0])" t-att-class="swCanEdit ? '' : 'dis'">
+                                                            <span t-attf-class="cw_box b-#{h[0]} #{swHead(h[0])}"><i t-if="swHead(h[0]) === 'all'" class="fa fa-check"/><i t-elif="swHead(h[0]) === 'some'" class="fa fa-minus"/></span>
+                                                            <t t-esc="h[1]"/></label></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <t t-foreach="sw.groups" t-as="g" t-key="g.key">
+                                                    <t t-set="gs" t-value="swGroupSum(g)"/>
+                                                    <t t-set="gv" t-value="swGroupVal(g)"/>
+                                                    <tr t-attf-class="#{g_index % 2 ? 'g-odd' : ''}">
+                                                        <td class="l gname"><b t-esc="g.name"/><small t-if="g.desc" t-esc="g.desc + '...'"/></td>
+                                                        <td>
+                                                            <b t-attf-class="rt-#{gs.tone}"><t t-esc="jobStaffNum(gs.pts)"/>/<t t-esc="jobStaffNum(gs.max)"/>đ</b>
+                                                            <small class="sw_mcv"><t t-esc="gs.done"/>/<t t-esc="gs.lines"/> CV (<t t-esc="jobStaffNum(gs.rate)"/>%)</small>
+                                                        </td>
+                                                        <td>
+                                                            <span t-if="gv === 'good'" class="sw_badge is-ok">Đạt</span>
+                                                            <span t-elif="gv === 'avg'" class="sw_badge is-warn">Trung bình</span>
+                                                            <span t-elif="gv === 'bad'" class="sw_badge is-bad">Không đạt</span>
+                                                            <span t-elif="gv === 'mixed'" class="sw_badge is-warn">Nhiều mức</span>
+                                                            <span t-else="" class="sw_badge is-none">Chưa chấm</span>
+                                                        </td>
+                                                        <td t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]" t-attf-class="ev r-#{h[0]}">
+                                                            <label t-on-click.prevent="() => this.swGroupSet(g, h[0])" t-att-class="swGroupCanEdit(g) ? '' : 'dis'">
+                                                                <span t-attf-class="cw_box b-#{h[0]} #{swGroupState(g, h[0])}"><i t-if="swGroupState(g, h[0]) === 'all'" class="fa fa-check"/><i t-elif="swGroupState(g, h[0]) === 'some'" class="fa fa-minus"/></span>
+                                                                <t t-esc="h[1]"/></label></td>
+                                                        <td class="l"><input type="text" class="sw_note" t-att-value="swGroupNote(g)" t-att-disabled="!sw.can_comment"
+                                                                             placeholder="Nhập nhận xét chi tiết..." t-on-input="(ev) => this.onSwGroupNote(g, ev.target.value)"/></td>
+                                                    </tr>
+                                                </t>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="sw_m_groups">
+                                        <div class="sw_mg_all" t-if="swCanEdit">
+                                            <span>Tích chọn tất cả:</span>
+                                            <div class="sw_mg_btns">
+                                                <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
+                                                        t-attf-class="sw_mg_opt r-#{h[0]} #{swHead(h[0]) === 'all' ? 'on' : ''}"
+                                                        t-on-click="() => this.swAll(h[0])"><t t-esc="h[1]"/></button>
+                                            </div>
+                                        </div>
+                                        <div class="sw_mg_card" t-foreach="sw.groups" t-as="g" t-key="g.key">
+                                            <t t-set="gs" t-value="swGroupSum(g)"/>
+                                            <t t-set="gv" t-value="swGroupVal(g)"/>
+                                            <div class="sw_mg_top">
+                                                <div class="sw_mg_nm">
+                                                    <b t-esc="g.name"/>
+                                                    <small t-if="g.desc" t-esc="g.desc + '...'"/>
+                                                </div>
+                                                <div class="sw_mg_sc">
+                                                    <b><t t-esc="jobStaffNum(gs.pts)"/>/<t t-esc="jobStaffNum(gs.max)"/>đ</b>
+                                                    <small><t t-esc="gs.done"/>/<t t-esc="gs.lines"/> CV (<t t-esc="jobStaffNum(gs.rate)"/>%)</small>
+                                                </div>
+                                            </div>
+                                            <div class="sw_mg_btns">
+                                                <button type="button" t-foreach="[['good', 'Đạt'], ['avg', 'T.Bình'], ['bad', 'Không đạt']]" t-as="h" t-key="h[0]"
+                                                        t-att-disabled="!swGroupCanEdit(g)"
+                                                        t-attf-class="sw_mg_opt r-#{h[0]} #{swGroupState(g, h[0]) === 'all' ? 'on' : (swGroupState(g, h[0]) === 'some' ? 'some' : '')}"
+                                                        t-on-click="() => this.swGroupSet(g, h[0])"><t t-esc="h[1]"/></button>
+                                            </div>
+                                            <input type="text" class="sw_mg_note" t-att-value="swGroupNote(g)" t-att-disabled="!sw.can_comment"
+                                                   placeholder="Nhập nhận xét chi tiết..." t-on-input="(ev) => this.onSwGroupNote(g, ev.target.value)"/>
+                                        </div>
+                                    </div>
+                                </section>
+                                <div class="cw_empty sw_all_done" t-else="">
+                                    <i class="fa fa-check-circle text-success"/> Tất cả công việc đã nộp trong <b t-esc="wk.label"/> đều đã được ASM đánh giá xong. Khi CHT / NVBH cập nhật thêm ngày check list mới, các công việc mới sẽ tự động hiển thị tại đây để ASM đánh giá tiếp.
+                                </div>
+                            </t>
                             <div class="cw_empty" t-else=""><i class="fa fa-info-circle"/> Tuần này cửa hàng chưa có phiếu check list CHT / NVBH nào.</div>
-                            <div class="sw_foot">
-                                <div class="sw_cmt">
-                                    <b><i class="fa fa-pencil-square-o"/> Nhận xét tổng quan <t t-esc="wk.label"/> (ASM <t t-esc="sw.asm_name"/>):</b>
-                                    <input type="text" t-if="sw.can_comment" placeholder="Nhập nhận xét tổng quan của ASM về kết quả tuần này..."
-                                           t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
-                                    <div class="ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
-                                    <div class="sw_visits" t-if="sw.visits.length > 1">
-                                        <span t-foreach="sw.visits" t-as="v" t-key="v_index"><i class="fa fa-map-marker"/> <t t-esc="v.date"/> · <t t-esc="v.user"/>: <t t-esc="v.comment or '—'"/></span>
+
+                            <!-- 3. Tổng kết Đánh giá Tuần -->
+                            <section class="sw_card sw_summary">
+                                <div class="sw_card_h">
+                                    <h3>Tổng kết Đánh giá Tuần <t t-if="wk.label">(<t t-esc="wk.label"/>)</t></h3>
+                                </div>
+                                <div class="sw_sum_body">
+                                    <div class="sw_sum_right">
+                                        <div class="sw_cmt">
+                                            <b><i class="fa fa-pencil-square-o"/> Nhận xét tổng quan <t t-esc="wk.label"/> (ASM <t t-esc="sw.asm_name"/>):</b>
+                                            <textarea rows="2" t-if="sw.can_comment" placeholder="Nhập nhận xét tổng quan của ASM về kết quả tuần này..."
+                                                      t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
+                                            <div class="ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
+                                            <div class="sw_visits" t-if="sw.visits.length > 1">
+                                                <span t-foreach="sw.visits" t-as="v" t-key="v_index"><i class="fa fa-map-marker"/> <t t-esc="v.date"/> · <t t-esc="v.user"/>: <t t-esc="v.comment or '—'"/></span>
+                                            </div>
+                                        </div>
+                                        <div class="sw_btns">
+                                            <button type="button" class="sw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
+                                                    t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa <t t-esc="wk.label"/></button>
+                                            <button type="button" class="sw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
+                                            <button type="button" class="sw_btn is-lock" t-if="!sw.n_reedit and !sw.n_pending" disabled="disabled"
+                                                    t-att-title="sw.locked_at ? 'Hệ thống đã khóa lúc ' + sw.locked_at : 'Chưa có phiếu chờ chấm'"><i class="fa fa-lock"/> Khóa <t t-esc="(wk.label || '').toLowerCase()"/></button>
+                                            <button type="button" class="sw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu <t t-esc="wk.label"/></button>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="sw_btns">
-                                    <button type="button" class="sw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
-                                            t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa <t t-esc="wk.label"/></button>
-                                    <button type="button" class="sw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
-                                    <button type="button" class="sw_btn is-lock" t-if="!sw.n_reedit and !sw.n_pending" disabled="disabled"
-                                            t-att-title="sw.locked_at ? 'Hệ thống đã khóa lúc ' + sw.locked_at : 'Chưa có phiếu chờ chấm'"><i class="fa fa-lock"/> Khóa <t t-esc="(wk.label || '').toLowerCase()"/></button>
-                                    <button type="button" class="sw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu <t t-esc="wk.label"/></button>
-                                </div>
-                            </div>
+                            </section>
                         </t>
                         <div class="cw_empty" t-elif="!state.chtm.wbusy"><i class="fa fa-info-circle"/> Chưa có cửa hàng nào có lịch xếp ca CHT / NVBH trong tháng / miền đã chọn.</div>
                         </t>

@@ -32,7 +32,7 @@ class StoreAuditLevel(models.Model):
     def _compute_score_range(self):
         # mức nào cũng kéo dài tới ngay dưới mức cao hơn kế tiếp
         for rec in self:
-            levels = self.search([('audit_type', '=', rec.audit_type)], order='min_score asc')
+            levels = self.search(self.COMMON_DOMAIN if rec.audit_type != 'gs' else [('audit_type', '=', 'gs')], order='min_score asc')
             higher = levels.filtered(lambda l: l.min_score > rec.min_score)[:1]
             top = '%g' % (higher.min_score - 1) if higher else '100'
             rec.score_range = '%g - %s' % (rec.min_score, top) if rec.min_score < float(top) else '%g' % rec.min_score
@@ -44,8 +44,17 @@ class StoreAuditLevel(models.Model):
             'views': [(False, 'form')], 'target': 'new', 'context': {'dialog_size': 'large'},
         }
 
+    # Một bảng chung cho mọi phiếu đánh giá (NVBH / ASM / GS): Cài đặt › Công việc đánh giá › Mức Đánh giá.
+    # Trang "Mức độ đánh giá" của Công việc giám sát mở cùng bảng này; các dòng loại GS cũ không còn dùng.
+    COMMON_DOMAIN = [('audit_type', '!=', 'gs')]
+
     @api.model
-    def level_for(self, pct, audit_type='nvbh'):
-        """Mức đánh giá ứng với tỷ lệ điểm pct (0..100): mức có 'Từ điểm' lớn nhất không vượt pct, theo loại checklist."""
-        levels = self.sudo().search([('audit_type', '=', audit_type or 'nvbh')], order='min_score desc')
+    def common_levels(self):
+        return self.sudo().search(self.COMMON_DOMAIN, order='min_score desc')
+
+    @api.model
+    def level_for(self, pct, audit_type=None):
+        """Mức đánh giá ứng với tỷ lệ điểm pct (0..100): mức có 'Từ điểm' lớn nhất không vượt pct, theo bảng Mức Đánh giá chung
+        (audit_type giữ để tương thích, không còn tách bảng theo loại checklist)."""
+        levels = self.common_levels()
         return next((l for l in levels if pct >= l.min_score), levels[-1:] if levels else levels)

@@ -181,13 +181,14 @@ class StoreNvbhCheck(models.Model):
         groups = dict(TASK_GROUPS)
         if not shift or not shift.shift_type_id:
             return []
-        tasks = self.env['store.nvbh.task'].search([('shift_type_ids', 'in', shift.shift_type_id.id)], order='task_group, sequence, id')
-        tasks = tasks.filtered(lambda t: t.runs_on(work_date))
+        tasks = self.env['store.nvbh.task'].search([('shift_type_ids', 'in', shift.shift_type_id.id)], order='sequence, id')
+        tasks = tasks.filtered(lambda t: t.runs_on(work_date)).sorted(
+            lambda t: (t.group_id.sequence if t.group_id else 9999, t.group_id.id or 0, t.task_group or '', t.sequence, t.id))
         return [Command.create({
             'task_id': t.id,
             'sequence': t.sequence,
             'name': t.name,
-            'sub_category': groups.get(t.task_group) or 'Khác',
+            'sub_category': t.group_id.name or groups.get(t.task_group) or 'Khác',
             'time_slot': t.time_slot,
             'controller': t.controller,
             'max_score': t.score,
@@ -879,7 +880,8 @@ class StoreNvbhCheck(models.Model):
                 if evaluated:  # ngày chưa đánh giá không tính vào điểm lũy kế / tỷ lệ
                     tot['points'] += c.points
                     tot['max_points'] += mp
-                day_set.add(day)
+                if c.cnt_done > 0:
+                    day_set.add(day)
                 tot['valid'] += 1 if evaluated else 0
         tot['days'] = len(day_set)
 

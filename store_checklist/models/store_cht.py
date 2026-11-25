@@ -142,6 +142,16 @@ class StoreChtTaskGroup(models.Model):
         return {'type': 'ir.actions.act_window', 'name': 'Sửa nhóm công việc', 'res_model': self._name, 'res_id': self.id,
                 'views': [(self.env.ref(self._form_view_xmlid).id, 'form')], 'target': 'new'}
 
+    def write(self, vals):
+        res = super().write(vals)
+        if 'name' in vals and self._name == 'store.cht.task.group':
+            Line = self.env['store.nvbh.check.line'].sudo()
+            for g in self:
+                lines = Line.search([('cht_task_id.group_id', '=', g.id), ('sub_category', '!=', g.name)])
+                if lines:
+                    lines.write({'sub_category': g.name})
+        return res
+
     @api.model
     def _ensure_default_groups(self):
         """Tạo 8 nhóm mặc định 01-08 nếu chưa có (so theo tên; nhóm đã đổi tên thì không tạo lại khi danh mục đã có nhóm)."""

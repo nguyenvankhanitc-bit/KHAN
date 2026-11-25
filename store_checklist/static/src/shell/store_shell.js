@@ -11,7 +11,7 @@ import { View } from "@web/views/view";
 import { DateTimeInput } from "@web/core/datetime/datetime_input";
 import { StoreMgrDetailDialog, StoreViolPickDialog } from "@store_checklist/violation/violation_header";
 import { PhanHeInternetShell } from "@lug_phan_he/internet_shell/phan_he_internet_shell";
-import { StoreCheckViewDialog, StoreStaffPickDialog } from "@store_checklist/shell/store_check_view_dialog";
+import { StoreCheckViewDialog, StoreStaffPickDialog, StorePerfExportDialog } from "@store_checklist/shell/store_check_view_dialog";
 import { StoreChtPage } from "@store_checklist/shell/store_cht_page";
 
 function normalizeViews(act, preferredType) {
@@ -1588,7 +1588,8 @@ export class StoreChecklistShell extends Component {
 
     // nhóm nhân viên theo cửa hàng: dòng cửa hàng = trung bình các NV đang hiện, xếp theo TB Tổng KPI
     get perfGroups() {
-        const keys = ["g1", "g2", "g3", "g4", "g5", "complete", "discipline", "sales", "attitude", "kpi_total"];
+        const gCount = (this.state.perf.data?.group_names || []).length;
+        const keys = [...Array.from({ length: gCount }, (_, i) => `g${i + 1}`), "tasks_total", "complete"];
         const map = new Map();
         for (const r of this.perfRows) {
             if (!map.has(r.store_id)) {
@@ -1600,10 +1601,9 @@ export class StoreChecklistShell extends Component {
             for (const k of keys) {
                 g[k] = Math.round((100 * g.staff.reduce((s, x) => s + (x[k] || 0), 0)) / g.staff.length) / 100;
             }
-            g.passed = g.kpi_total >= 72;
             return g;
         });
-        return groups.sort((a, b) => b.kpi_total - a.kpi_total || a.store.localeCompare(b.store));
+        return groups.sort((a, b) => (b.tasks_total || 0) - (a.tasks_total || 0) || a.store.localeCompare(b.store));
     }
 
     isPerfStoreOpen(id) {
@@ -1614,9 +1614,39 @@ export class StoreChecklistShell extends Component {
         this.state.perf.closed[id] = !this.state.perf.closed[id];
     }
 
-    async onPerfExport() {
+    onPerfExport() {
+        const pf = this.state.perf;
+        const stores = pf.data?.export_stores || [];
+        if (!stores.length) {
+            this.notification.add("Không có dữ liệu cửa hàng nào trong tháng đã chọn để xuất.", { type: "warning" });
+            return;
+        }
+        let defaultSelected;
+        if (pf.storeId) {
+            defaultSelected = [Number(pf.storeId)];
+        } else if (pf.asmId !== "") {
+            defaultSelected = stores
+                .filter((s) => (!pf.mien || (s.mien || "") === pf.mien) && s.asm_id === Number(pf.asmId))
+                .map((s) => s.id);
+        } else {
+            defaultSelected = stores.filter((s) => !pf.mien || (s.mien || "") === pf.mien).map((s) => s.id);
+        }
+        this.dialog.add(StorePerfExportDialog, {
+            stores,
+            defaultMien: pf.mien || "",
+            defaultSelected,
+            monthLabel: pf.data?.month_label || "",
+            onConfirm: (storeIds) => this.doPerfExport(storeIds),
+        });
+    }
+
+    async doPerfExport(storeIds) {
         try {
-            const file = await this.orm.call("store.nvbh.check", "export_nvbh_perf_xlsx", [], this.perfArgs());
+            const pf = this.state.perf;
+            const file = await this.orm.call("store.nvbh.check", "export_nvbh_perf_xlsx", [], {
+                month: pf.month || false,
+                store_ids: storeIds,
+            });
             const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
             const link = document.createElement("a");
             link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
@@ -1772,9 +1802,10 @@ export class StoreChecklistShell extends Component {
     }
 
     get kpiAsmPillarTabs() {
+        const names = this.state.kpiAsm.data?.group_names || [];
         return [
-            ...[0, 1, 2, 3, 4].map((i) => ({ label: this.kpiAsmGroupName(i), desc: this.kpiAsmGroupName(i) })),
-            { label: "Tổng 5 nhóm", desc: "Tổng hợp chất lượng thực hiện Checklist (5 nhóm)" },
+            ...names.map((n) => ({ label: n, desc: n })),
+            { label: `Tổng ${names.length} nhóm`, desc: `Tổng hợp chất lượng thực hiện Checklist (${names.length} nhóm)` },
         ];
     }
 
@@ -1891,6 +1922,11 @@ export class StoreChecklistShell extends Component {
                 this.state.chtm.view = many ? "list" : "one";
                 if (!many) {
                     await this.loadStoreWeek();
+                    // chính CHT (người thực hiện, không phải ASM/Admin đánh giá tuần) -> mở thẳng màn hình Check list công việc hằng ngày
+                    if (!this.state.chtm.sw?.can_eval && !this.state.chtm.sw?.can_comment) {
+                        this.state.chtm.from = "week";
+                        this.state.chtm.mode = "day";
+                    }
                 }
             }
         } catch (error) {
@@ -2857,7 +2893,80 @@ export class StoreChecklistShell extends Component {
     }
 
     swRateTone(rate) {
-        return rate >= 90 ? "ok" : rate >= 70 ? "warn" : "bad";
+        return rate >= 80 ? "ok" : rate >= 50 ? "warn" : "bad";
+    }
+
+    // ---- Helper cho giao diện 2 bảng (1. Ma trận Nhân sự, 2. Tổng hợp Nhóm + Tổng kết Tuần) ----
+    swCell(g, personKey) {
+        return (g.rows || []).find((r) => r.person === personKey) || null;
+    }
+
+    swGroupSum(g) {
+        let done = 0, lines = 0, pts = 0, max = 0;
+        for (const r of g.rows || []) {
+            done += r.done || 0;
+            lines += r.lines || 0;
+            pts += r.pts || 0;
+            max += r.max || 0;
+        }
+        pts = Math.round(pts * 100) / 100;
+        const rate = max ? Math.round((1000 * pts) / max) / 10 : 0;
+        const tone = g.rank_tone || this.swRateTone(rate);
+        const rankLabel = g.rank_label || (!max ? "—" : rate >= 80 ? "Đạt" : rate >= 50 ? "Trung bình" : "Không đạt");
+        return { done, lines, pts, max, rate, tone, rankLabel };
+    }
+
+    swGroupCanEdit(g) {
+        return this.swCanEdit && (g.rows || []).some((r) => r.can_eval);
+    }
+
+    swGroupState(g, val) {
+        const rows = (g.rows || []).filter((r) => r.can_eval);
+        const pool = rows.length ? rows : (g.rows || []);
+        const n = pool.filter((r) => this.state.chtm.results[r.key] === val).length;
+        return !pool.length || !n ? "none" : n === pool.length ? "all" : "some";
+    }
+
+    swGroupVal(g) {
+        const vals = [...new Set((g.rows || []).map((r) => this.state.chtm.results[r.key]).filter(Boolean))];
+        return vals.length === 1 ? vals[0] : vals.length > 1 ? "mixed" : "";
+    }
+
+    swGroupSet(g, val) {
+        if (!this.swGroupCanEdit(g)) {
+            return;
+        }
+        const all = this.swGroupState(g, val) === "all";
+        (g.rows || []).filter((r) => r.can_eval).forEach((r) => { this.state.chtm.results[r.key] = all ? "" : val; });
+    }
+
+    swGroupNote(g) {
+        const notes = this.state.chtm.swNotes || {};
+        for (const r of g.rows || []) {
+            if (notes[r.key]) {
+                return notes[r.key];
+            }
+        }
+        return "";
+    }
+
+    onSwGroupNote(g, val) {
+        (g.rows || []).forEach((r) => { this.state.chtm.swNotes[r.key] = val; });
+    }
+
+    get swSummaryGrade() {
+        const s = this.swScore;
+        const score10 = s.max ? Math.round((100 * s.points) / s.max) / 10 : 0;
+        if (!s.max) {
+            return { score10: 0, label: "Chưa đánh giá", tone: "none" };
+        }
+        if (s.pct >= 80) {
+            return { score10, label: "Đạt", tone: "ok" };
+        }
+        if (s.pct >= 65) {
+            return { score10, label: "Trung bình", tone: "warn" };
+        }
+        return { score10, label: "Không đạt", tone: "bad" };
     }
 
     async onSwFilter(field, ev) {
@@ -3611,11 +3720,13 @@ export class StoreChecklistShell extends Component {
                         this.notifyError(error);
                     }
                 };
-                if (this.excelModel === "store.audit.template.line") {
-                    // Điểm chuẩn: nhập kiểu thay thế -> hỏi trước
+                if (this.excelModel === "store.audit.template.line" || this.excelModel === "store.nvbh.task") {
+                    const isTask = this.excelModel === "store.nvbh.task";
                     this.dialog.add(ConfirmationDialog, {
-                        title: "Nhập Điểm chuẩn từ Excel",
-                        body: `File "${file.name}" sẽ THAY THẾ toàn bộ tiêu chí của mẫu checklist có trong file: tiêu chí không còn trong file sẽ bị xóa, STT đánh lại theo thứ tự dòng trong file. Phiếu đánh giá đã tạo không bị ảnh hưởng. Tiếp tục?`,
+                        title: isTask ? "Nhập Danh sách công việc NVBH từ Excel" : "Nhập Điểm chuẩn từ Excel",
+                        body: isTask
+                            ? `File "${file.name}" sẽ THAY THẾ toàn bộ Danh sách công việc NVBH: các công việc cũ không còn trong file sẽ bị xóa (chỉ xóa khi file không có dòng lỗi). Các phiếu checklist đã tạo không bị ảnh hưởng. Tiếp tục?`
+                            : `File "${file.name}" sẽ THAY THẾ toàn bộ tiêu chí của mẫu checklist có trong file: tiêu chí không còn trong file sẽ bị xóa, STT đánh lại theo thứ tự dòng trong file. Phiếu đánh giá đã tạo không bị ảnh hưởng. Tiếp tục?`,
                         confirmLabel: "Nhập và thay thế",
                         confirm: run,
                         cancel: () => {},

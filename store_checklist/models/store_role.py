@@ -243,17 +243,26 @@ class StoreNvbhCheckRole(models.Model):
     def _subject_employee(self):
         """Hồ sơ nhân viên của người thực hiện checklist (khớp theo ID, rồi theo họ tên trong cửa hàng, rồi toàn công ty)."""
         self.ensure_one()
+        line = self.schedule_line_id
+        code = (line.employee_code or '').strip() if line else ''
+        name = (self.staff_name or '').strip().casefold()
+        cache = self.env.cr.cache.setdefault('store_subject_emp', {})
+        ck = (self.asm_employee_id.id or 0, self.store_id.id or 0, code, name)
+        if ck in cache:
+            return self.env['hr.employee'].sudo().browse(cache[ck])
+        emp = self._subject_employee_uncached(code, name)
+        cache[ck] = emp.id or False
+        return emp
+
+    def _subject_employee_uncached(self, code, name):
         Employee = self.env['hr.employee'].sudo()
         if self.asm_employee_id:  # check list ASM: gắn thẳng hồ sơ ASM
             return self.asm_employee_id.sudo()
-        line = self.schedule_line_id
-        code = (line.employee_code or '').strip() if line else ''
         for fname in ('barcode', 'ma_cham_cong', 'ma_nv_ke_toan'):
             if code and fname in Employee._fields:
                 emp = Employee.search([(fname, '=', code)], limit=1)
                 if emp:
                     return emp
-        name = (self.staff_name or '').strip().casefold()
         if not name:
             return Employee
         members = self.store_id.sudo().member_ids if 'member_ids' in self.store_id._fields else Employee
@@ -294,6 +303,19 @@ class StoreNvbhCheckRole(models.Model):
         cấp không có người (hoặc đồng cấp / cấp thấp hơn) tự bị bỏ qua. Luồng theo loại phiếu: NVBH -> CHT; CHT -> ASM;
         ASM -> RSM (nếu có) -> Admin / Admin tổng (nếu có). Trả về list dict {code, level, employee, user, admin_only}."""
         self.ensure_one()
+        line = self.schedule_line_id
+        cache = self.env.cr.cache.setdefault('store_approval_chain', {})
+        ck = (self.asm_employee_id.id or 0, self.store_id.id or 0, self.kind or '',
+              (self.staff_name or '').strip().casefold(),
+              (line.employee_code or '').strip() if line else '',
+              (line.position or '').strip().upper() if line else '')
+        if ck in cache:
+            return [dict(s) for s in cache[ck]]
+        chain = self._approval_chain_uncached()
+        cache[ck] = chain
+        return [dict(s) for s in chain]
+
+    def _approval_chain_uncached(self):
         Employee = self.env['hr.employee'].sudo()
         subject = self._subject_employee()
         _code, level = self._subject_level()
@@ -327,15 +349,13 @@ class StoreNvbhCheckRole(models.Model):
             if self._admin_title_employees():
                 chain.append(self._admin_title_step(subject))
             return chain
-        # CHT check list -> ASM đánh giá, ASM quyết định điểm cuối cùng.
+        # CHT tự đánh giá checklist của mình (ASM đánh giá tổng theo tuần ở trang Đánh giá Toàn Cửa Hàng)
         if self.kind == 'cht':
+            if subject:
+                return [{'code': 'CHT', 'level': 2, 'employee': subject, 'user': subject.user_id, 'admin_only': False}]
             return chain[:1]
-        # NVBH check list -> CHT đánh giá -> ASM chốt điểm cuối cùng (ASM chấm theo lần ghé thăm ở trang Đánh giá tuần);
-        # cửa hàng không có CHT phụ trách thì ASM đánh giá luôn
-        out = chain[:1]
-        if out and out[0]['code'] == 'CHT':
-            out += [c for c in chain[1:] if c['code'] == 'ASM'][:1]
-        return out
+        # NVBH check list -> CHT đánh giá, chốt điểm cuối cùng (không chờ ASM duyệt từng ngày; ASM đánh giá tổng theo tuần)
+        return chain[:1]
 
     @api.model
     def _admin_title_employees(self):
@@ -853,55 +873,59 @@ class StoreNvbhCheckRole(models.Model):
             check._finish_step(step_no, step, info['chain'])
         return check._checklist_payload()
 
+    def _step_prefix_for(self, code):
+        """Trả về (step_no, prefix) cho cấp `code` (CHT / ASM / RSM): ưu tiên theo luồng duyệt;
+        riêng ASM (đánh giá tổng theo tuần ở Đánh giá Toàn Cửa Hàng) luôn đọc cột bước 2 ('asm_')."""
+        for i, st in enumerate(self._approval_chain(), 1):
+            if st['code'] == code:
+                return i, STEP_PREFIX[i - 1]
+        if code == 'ASM':
+            return 2, 'asm_'
+        return None, None
+
     def _step_points(self, code):
         """Điểm do cấp đánh giá có mã `code` (CHT / ASM / RSM) chấm cho phiếu; None nếu phiếu không có cấp đó hoặc cấp đó chưa chấm đủ."""
         self.ensure_one()
-        for i, st in enumerate(self._approval_chain(), 1):
-            if st['code'] != code:
-                continue
-            pre = STEP_PREFIX[i - 1]
-            lines = self.line_ids
-            if not lines or not all(l[pre + 'eval_result'] for l in lines):
-                # cấp này trễ hạn đánh giá (hệ thống đã khóa): điểm cấp đó tính 0đ
-                return 0.0 if self._late_stage() == i else None
-            return round(sum(eval_score(l.max_score, l[pre + 'eval_result'], count_errors(l[pre + 'error_detail'])) for l in lines), 2)
-        return None
+        i, pre = self._step_prefix_for(code)
+        if pre is None:
+            return None
+        lines = self.line_ids
+        if not lines or not all(l[pre + 'eval_result'] for l in lines):
+            # cấp này trễ hạn đánh giá (hệ thống đã khóa): điểm cấp đó tính 0đ
+            return 0.0 if self._late_stage() == i else None
+        return round(sum(eval_score(l.max_score, l[pre + 'eval_result'], count_errors(l[pre + 'error_detail'])) for l in lines), 2)
 
     def _step_errors(self, code):
         """Số lỗi do cấp `code` (CHT / ASM / RSM) ghi ở cột Chi tiết lỗi (mỗi dòng là một lỗi);
         None nếu phiếu không có cấp đó hoặc cấp đó chưa đánh giá dòng nào."""
         self.ensure_one()
-        for i, st in enumerate(self._approval_chain(), 1):
-            if st['code'] != code:
-                continue
-            pre = STEP_PREFIX[i - 1]
-            lines = self.line_ids
-            if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
-                return None
-            return sum(count_errors(l[pre + 'error_detail']) for l in lines)
-        return None
+        _i, pre = self._step_prefix_for(code)
+        if pre is None:
+            return None
+        lines = self.line_ids
+        if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
+            return None
+        return sum(count_errors(l[pre + 'error_detail']) for l in lines)
 
     def _step_error_text(self, code):
         """Nội dung Chi tiết lỗi do cấp `code` (CHT / ASM / RSM) ghi nhận (mỗi lỗi một dòng);
         None nếu phiếu không có cấp đó hoặc cấp đó chưa đánh giá dòng nào."""
         self.ensure_one()
-        for i, st in enumerate(self._approval_chain(), 1):
-            if st['code'] != code:
-                continue
-            pre = STEP_PREFIX[i - 1]
-            # cùng thứ tự / STT như popup Checklist công việc (theo nhóm I, II, III... rồi thứ tự công việc)
-            from .store_nvbh_task import TASK_GROUPS
-            order = {label: n for n, (_k, label) in enumerate(TASK_GROUPS)}
-            lines = self.line_ids.sorted(lambda l: (order.get(l.sub_category, len(order)), l.sequence, l.id))
-            if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
-                return None
-            out = []
-            for stt, l in enumerate(lines, 1):
-                for ln in (l[pre + 'error_detail'] or '').splitlines():
-                    if ln.strip():
-                        out.append(ln.strip())  # chỉ lấy nội dung Chi tiết lỗi đúng như ô trong popup
-            return chr(10).join(out)
-        return None
+        _i, pre = self._step_prefix_for(code)
+        if pre is None:
+            return None
+        # cùng thứ tự / STT như popup Checklist công việc (theo nhóm rồi thứ tự công việc)
+        from .store_nvbh_task import TASK_GROUPS
+        order = {label: n for n, (_k, label) in enumerate(TASK_GROUPS)}
+        lines = self.line_ids.sorted(lambda l: (order.get(l.sub_category, len(order)), l.sequence, l.id))
+        if not any(l[pre + 'eval_result'] or l[pre + 'error_detail'] for l in lines):
+            return None
+        out = []
+        for stt, l in enumerate(lines, 1):
+            for ln in (l[pre + 'error_detail'] or '').splitlines():
+                if ln.strip():
+                    out.append(ln.strip())  # chỉ lấy nội dung Chi tiết lỗi đúng như ô trong popup
+        return chr(10).join(out)
 
     def _finish_step(self, step_no, step, chain):
         """Hoàn tất một cấp: ghi lịch sử, khóa cấp đó, chuyển cho cấp tiếp theo hoặc hoàn tất phiếu."""

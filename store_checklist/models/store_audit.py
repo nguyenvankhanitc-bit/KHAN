@@ -658,7 +658,7 @@ class StoreAudit(models.Model):
             return round(100 * sum(recs.mapped('pass_rate')) / len(recs), 1) if recs else 0.0
 
         chain_avg = avg(done)
-        levels = self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc')
+        levels = self.env['store.audit.level'].common_levels()
         prev_done = self.search(prev_domain).filtered(lambda r: r.state != 'draft') if prev_domain else self.browse()
 
         def row_of(a):
@@ -762,7 +762,7 @@ class StoreAudit(models.Model):
         for a in self.search(domain, order='audit_date desc, id desc').filtered(lambda r: r.state != 'draft'):
             latest.setdefault(a.store_id, a)
         miens = dict(self.env['hr.store']._fields['mien'].selection)
-        levels = self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc')
+        levels = self.env['store.audit.level'].common_levels()
 
         def short(m):
             return (miens.get(m) or 'Khác').replace('Miền ', 'M.')
@@ -958,7 +958,7 @@ class StoreAudit(models.Model):
                 'capa': 'Không có' if not due else ('Trong ngày' if due == today else due.strftime('%d/%m/%Y')),
             })
         levels = []
-        for lv in self.env['store.audit.level'].search([('audit_type', '=', 'gs')], order='min_score desc'):
+        for lv in self.env['store.audit.level'].common_levels():
             sel = [x for x in rows if not x['draft'] and x['level'] == lv.name]
             if sel:
                 levels.append({'name': lv.name, 'tone': lv.tone, 'count': len(sel), 'rows': sel})

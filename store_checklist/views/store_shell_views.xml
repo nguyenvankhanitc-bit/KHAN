@@ -375,8 +375,9 @@
         <field name="name">Mức đánh giá giám sát</field>
         <field name="res_model">store.audit.level</field>
         <field name="view_mode">list</field>
-        <field name="domain">[('audit_type', '=', 'gs')]</field>
-        <field name="context">{'default_audit_type': 'gs'}</field>
+        <!-- dùng chung bảng Mức Đánh giá với phiếu đánh giá (một bảng cho mọi loại phiếu) -->
+        <field name="domain">[('audit_type', '!=', 'gs')]</field>
+        <field name="context">{'default_audit_type': 'nvbh'}</field>
     </record>
 
     <!-- Cài đặt > Công việc checklist NVBH > Xếp loại -->
@@ -488,7 +489,10 @@
         <field name="arch" type="xml">
             <list group_edit="0" group_delete="0" string="Danh sách công việc NVBH" class="o_store_shift o_store_task">
                 <field name="name"/>
-                <field name="task_group"/>
+                <groupby name="group_id">
+                    <button name="action_edit_popup" type="object" icon="fa-pencil" title="Sửa tên / thứ tự nhóm"/>
+                </groupby>
+                <field name="group_id" options="{'no_create': True}"/>
                 <field name="wd_mon" width="38px"/>
                 <field name="wd_tue" width="38px"/>
                 <field name="wd_wed" width="38px"/>
@@ -519,7 +523,7 @@
                     <group>
                         <group>
                             <field name="name"/>
-                            <field name="task_group"/>
+                            <field name="group_id" options="{'no_create_edit': False}"/>
                             <field name="shift_type_ids" widget="many2many_tags" options="{'no_create': True}"/>
                             <field name="shift_codes"/>
                             <field name="store_type"/>
@@ -556,12 +560,33 @@
                 <filter name="f_full" string="Ca Full" domain="[('shift_type_ids.code', '=', 'full')]"/>
                 <filter name="f_afternoon" string="Ca chiều" domain="[('shift_type_ids.code', '=', 'afternoon')]"/>
                 <group>
-                    <filter name="g_group" string="Nhóm công việc" context="{'group_by': 'task_group'}"/>
+                    <filter name="g_group" string="Nhóm công việc" context="{'group_by': 'group_id'}"/>
                     <filter name="g_shift" string="Loại ca áp dụng" context="{'group_by': 'shift_type_ids'}"/>
                 </group>
             </search>
         </field>
     </record>
+
+    <record id="view_store_nvbh_task_group_form" model="ir.ui.view">
+        <field name="name">store.nvbh.task.group.form</field>
+        <field name="model">store.nvbh.task.group</field>
+        <field name="arch" type="xml">
+            <form string="Nhóm công việc NVBH">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sequence"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Lưu" special="save" class="btn-primary"/>
+                    <button string="Hủy" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <function model="store.nvbh.task" name="_sync_group_ids"/>
 
     <record id="action_store_nvbh_task" model="ir.actions.act_window">
         <field name="name">Danh sách công việc NVBH</field>

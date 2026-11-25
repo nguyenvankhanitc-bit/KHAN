@@ -360,3 +360,72 @@ export class StoreStaffPickDialog extends Component {
         }
     }
 }
+
+
+// Hộp chọn Miền & nhiều Cửa hàng trước khi Xuất Excel BC Hiệu suất NVBH (mỗi cửa hàng 1 sheet)
+export class StorePerfExportDialog extends Component {
+    static template = "store_checklist.PerfExportDialog";
+    static components = { Dialog };
+    static props = {
+        stores: Array,
+        defaultMien: { type: String, optional: true },
+        defaultSelected: { type: Array, optional: true },
+        monthLabel: { type: String, optional: true },
+        onConfirm: Function,
+        close: Function,
+    };
+
+    setup() {
+        const initMien = this.props.defaultMien || "";
+        const sel = new Set(this.props.defaultSelected || []);
+        const picked = {};
+        for (const s of this.props.stores) {
+            picked[s.id] = sel.size ? sel.has(s.id) : !initMien || (s.mien || "") === initMien;
+        }
+        this.state = useState({ mien: initMien, q: "", picked });
+    }
+
+    get mienStores() {
+        const m = this.state.mien;
+        return m ? this.props.stores.filter((s) => (s.mien || "") === m) : this.props.stores;
+    }
+
+    get shown() {
+        const q = this.state.q.trim().toLowerCase();
+        if (!q) {
+            return this.mienStores;
+        }
+        return this.mienStores.filter((s) => `${s.name} ${s.asm || ""} ${s.mien || ""}`.toLowerCase().includes(q));
+    }
+
+    get pickedIds() {
+        return this.props.stores.filter((s) => this.state.picked[s.id]).map((s) => s.id);
+    }
+
+    get allShownPicked() {
+        return this.shown.length > 0 && this.shown.every((s) => this.state.picked[s.id]);
+    }
+
+    onChangeMien(ev) {
+        const m = ev.target.value;
+        this.state.mien = m;
+        for (const s of this.props.stores) {
+            this.state.picked[s.id] = !m || (s.mien || "") === m;
+        }
+    }
+
+    toggleAllShown() {
+        const v = !this.allShownPicked;
+        for (const s of this.shown) {
+            this.state.picked[s.id] = v;
+        }
+    }
+
+    confirm() {
+        const ids = this.pickedIds;
+        if (ids.length) {
+            this.props.close();
+            this.props.onConfirm(ids);
+        }
+    }
+}

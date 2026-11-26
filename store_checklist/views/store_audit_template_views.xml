@@ -19,6 +19,7 @@
                             <field name="sub_group_id" domain="category and [('category', '=', category)] or []"/>
                             <field name="name"/>
                             <field name="requirement"/>
+                            <field name="store_place_ids" string="Store Place" widget="many2many_tags" options="{'color_field': 'color', 'no_create': true}" column_invisible="parent.audit_type != 'gs'"/>
                             <field name="max_score" sum="Tổng" options="{'hide_trailing_zeros': true}"/>
                         </list>
                     </field>

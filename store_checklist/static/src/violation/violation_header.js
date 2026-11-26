@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, onMounted, onWillStart, onWillUnmount, useState } from "@odoo/owl";
+import { Component, onMounted, onPatched, onWillStart, onWillUnmount, useState } from "@odoo/owl";
 import { Dialog } from "@web/core/dialog/dialog";
 import { registry } from "@web/core/registry";
 import { useBus, useService } from "@web/core/utils/hooks";
@@ -141,7 +141,7 @@ export class StoreViolationHeader extends Component {
 
 // Điểm chuẩn đánh giá: sửa trong popup xong thì giữ nguyên các nhóm đang mở và vị trí cuộn của bảng
 // Cột của bảng Điểm chuẩn được kéo copy như Excel (nắm ô vuông nhỏ góc dưới phải ô rồi kéo lên / xuống)
-const FILL_FIELDS = ["sub_group_id", "responsible_ids", "controller_ids", "lug_group_ids", "max_score"];
+const FILL_FIELDS = ["sub_group_id", "store_place_ids", "responsible_ids", "controller_ids", "lug_group_ids", "max_score"];
 
 function allListRecords(list) {
     if (!list) {
@@ -158,7 +158,11 @@ export class StoreBenchmarkController extends ListController {
         super.setup();
         this.fillNotify = useService("notification");
         this.fillOrm = useService("orm");
-        onMounted(() => this.setupFillHandle());
+        onMounted(() => {
+            this.setupFillHandle();
+            this.ensurePlaceHeaderBtn();
+        });
+        onPatched(() => this.ensurePlaceHeaderBtn());
         onWillUnmount(() => this.teardownFillHandle());
         let wasOpen = false;
         let keep = null;
@@ -278,6 +282,13 @@ export class StoreBenchmarkController extends ListController {
             if (this._fillSuppressClick || ev.target === handle) {
                 ev.preventDefault();
                 ev.stopPropagation();
+                return;
+            }
+            const td = ev.target.closest?.('td.o_data_cell[name="store_place_ids"]');
+            if (td && root.contains(td)) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                this.openPlacePicker(td);
             }
         };
         root.addEventListener("mouseover", this._fillOver);
@@ -290,6 +301,7 @@ export class StoreBenchmarkController extends ListController {
     }
 
     teardownFillHandle() {
+        this.closePlacePicker(false);
         if (!this._fill) {
             return;
         }
@@ -302,6 +314,291 @@ export class StoreBenchmarkController extends ListController {
         document.removeEventListener("scroll", this._fillLeave, true);
         handle.remove();
         document.body.classList.remove("o_store_filling");
+    }
+
+    ensurePlaceHeaderBtn() {
+        const root = this.rootRef?.el;
+        const th = root?.querySelector?.('th[data-name="store_place_ids"]');
+        if (!th || th.querySelector(".o_sp_head_btn")) {
+            return;
+        }
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "o_sp_head_btn";
+        btn.textContent = "Tích All ▾";
+        btn.title = "Tích chọn Store Place hàng loạt cho tất cả dòng đang lọc";
+        btn.addEventListener("click", (ev) => {
+            ev.preventDefault();
+            ev.stopPropagation();
+            this.openBulkPlacePicker(btn);
+        });
+        const wrap = th.querySelector(".d-flex") || th;
+        wrap.appendChild(btn);
+    }
+
+    async _ensurePlaceOpts() {
+        if (!this._placeOpts) {
+            this._placeOpts = await this.fillOrm.call("store.audit.place", "get_place_options", []);
+        }
+        return this._placeOpts;
+    }
+
+    async openBulkPlacePicker(anchor) {
+        if (this._placePop?.td === anchor) {
+            this.closePlacePicker(false);
+            return;
+        }
+        await this.closePlacePicker(true);
+        let opts;
+        try {
+            opts = await this._ensurePlaceOpts();
+        } catch {
+            return;
+        }
+        const cur = new Set(opts.map((o) => o.id));
+        const pop = document.createElement("div");
+        pop.className = "o_store_place_pop";
+        const hd = document.createElement("div");
+        hd.className = "sp_hd";
+        hd.textContent = "Tích hàng loạt cho tất cả tiêu chí";
+        pop.appendChild(hd);
+
+        const boxes = [];
+        const lblAll = document.createElement("label");
+        lblAll.className = "sp_it sp_all";
+        const cbAll = document.createElement("input");
+        cbAll.type = "checkbox";
+        cbAll.checked = true;
+        const spAll = document.createElement("span");
+        spAll.textContent = "Chọn tất cả";
+        lblAll.append(cbAll, spAll);
+        pop.appendChild(lblAll);
+
+        const syncAllState = () => {
+            cbAll.checked = opts.length > 0 && cur.size === opts.length;
+            cbAll.indeterminate = cur.size > 0 && cur.size < opts.length;
+        };
+
+        cbAll.addEventListener("change", () => {
+            cur.clear();
+            if (cbAll.checked) {
+                opts.forEach((o) => cur.add(o.id));
+            }
+            boxes.forEach((b, i) => (b.checked = cur.has(opts[i].id)));
+            syncAllState();
+        });
+
+        for (const opt of opts) {
+            const lbl = document.createElement("label");
+            lbl.className = "sp_it";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = cur.has(opt.id);
+            cb.addEventListener("change", () => {
+                if (cb.checked) {
+                    cur.add(opt.id);
+                } else {
+                    cur.delete(opt.id);
+                }
+                syncAllState();
+            });
+            boxes.push(cb);
+            const sp = document.createElement("span");
+            sp.textContent = opt.name;
+            lbl.append(cb, sp);
+            pop.appendChild(lbl);
+        }
+
+        const applyBulk = async (ids) => {
+            try {
+                const domain = this.model.root?.domain || [];
+                const found = await this.fillOrm.searchRead(this.props.resModel, domain, ["id"]);
+                const lineIds = found.map((r) => r.id);
+                if (!lineIds.length) {
+                    this.closePlacePicker(false);
+                    return;
+                }
+                await this.fillOrm.write(this.props.resModel, lineIds, {
+                    store_place_ids: [[6, 0, ids]],
+                });
+                await this.closePlacePicker(false);
+                const saved = this.snapshot();
+                await this.model.load();
+                this.restore(saved);
+                this.fillNotify.add(_t("Đã cập nhật Store Place cho %s tiêu chí.", lineIds.length), { type: "success" });
+            } catch (error) {
+                this.fillNotify.add(error?.data?.message || error?.message || _t("Không cập nhật được Store Place."), { type: "danger" });
+            }
+        };
+
+        const ft = document.createElement("div");
+        ft.className = "sp_ft";
+        const btnClr = document.createElement("button");
+        btnClr.type = "button";
+        btnClr.className = "sp_clr";
+        btnClr.textContent = "Bỏ chọn hết";
+        btnClr.addEventListener("click", () => applyBulk([]));
+        const btnOk = document.createElement("button");
+        btnOk.type = "button";
+        btnOk.className = "sp_ok";
+        btnOk.textContent = "Áp dụng";
+        btnOk.addEventListener("click", () => applyBulk([...cur]));
+        ft.append(btnClr, btnOk);
+        pop.appendChild(ft);
+
+        this._mountPlacePop(pop, anchor, () => false);
+    }
+
+    async openPlacePicker(td) {
+        if (this._placePop?.td === td) {
+            this.closePlacePicker(true);
+            return;
+        }
+        await this.closePlacePicker(true);
+        const tr = td.closest("tr.o_data_row");
+        const rec = tr && allListRecords(this.model.root).find((r) => r.id === tr.dataset.id);
+        if (!rec || !rec.resId) {
+            return;
+        }
+        let opts;
+        try {
+            opts = await this._ensurePlaceOpts();
+        } catch {
+            return;
+        }
+        const cur = new Set(rec.data.store_place_ids?.currentIds || []);
+        let dirty = false;
+        const pop = document.createElement("div");
+        pop.className = "o_store_place_pop";
+        const hd = document.createElement("div");
+        hd.className = "sp_hd";
+        hd.textContent = "Chọn Store Place (nhiều loại)";
+        pop.appendChild(hd);
+
+        const saveNow = async () => {
+            dirty = true;
+            try {
+                await this.fillOrm.write(this.props.resModel, [rec.resId], {
+                    store_place_ids: [[6, 0, [...cur]]],
+                });
+            } catch (error) {
+                this.fillNotify.add(error?.data?.message || error?.message || _t("Không lưu được Store Place."), { type: "danger" });
+            }
+        };
+
+        const boxes = [];
+        const lblAll = document.createElement("label");
+        lblAll.className = "sp_it sp_all";
+        const cbAll = document.createElement("input");
+        cbAll.type = "checkbox";
+        const spAll = document.createElement("span");
+        spAll.textContent = "Chọn tất cả";
+        lblAll.append(cbAll, spAll);
+        pop.appendChild(lblAll);
+
+        const syncAllState = () => {
+            cbAll.checked = opts.length > 0 && cur.size === opts.length;
+            cbAll.indeterminate = cur.size > 0 && cur.size < opts.length;
+        };
+
+        cbAll.addEventListener("change", () => {
+            cur.clear();
+            if (cbAll.checked) {
+                opts.forEach((o) => cur.add(o.id));
+            }
+            boxes.forEach((b, i) => (b.checked = cur.has(opts[i].id)));
+            syncAllState();
+            saveNow();
+        });
+
+        for (const opt of opts) {
+            const lbl = document.createElement("label");
+            lbl.className = "sp_it";
+            const cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.checked = cur.has(opt.id);
+            cb.addEventListener("change", () => {
+                if (cb.checked) {
+                    cur.add(opt.id);
+                } else {
+                    cur.delete(opt.id);
+                }
+                syncAllState();
+                saveNow();
+            });
+            boxes.push(cb);
+            const sp = document.createElement("span");
+            sp.textContent = opt.name;
+            lbl.append(cb, sp);
+            pop.appendChild(lbl);
+        }
+        syncAllState();
+
+        const ft = document.createElement("div");
+        ft.className = "sp_ft";
+        const btnClr = document.createElement("button");
+        btnClr.type = "button";
+        btnClr.className = "sp_clr";
+        btnClr.textContent = "Bỏ chọn";
+        btnClr.title = "Bỏ chọn hết (chưa gán Store Place — sẽ không đưa vào Checklist Giám sát)";
+        btnClr.addEventListener("click", async () => {
+            cur.clear();
+            boxes.forEach((b) => (b.checked = false));
+            syncAllState();
+            await saveNow();
+            this.closePlacePicker(true);
+        });
+        const btnOk = document.createElement("button");
+        btnOk.type = "button";
+        btnOk.className = "sp_ok";
+        btnOk.textContent = "Xong";
+        btnOk.addEventListener("click", () => this.closePlacePicker(true));
+        ft.append(btnClr, btnOk);
+        pop.appendChild(ft);
+
+        this._mountPlacePop(pop, td, () => dirty);
+    }
+
+    _mountPlacePop(pop, anchor, isDirty) {
+        document.body.appendChild(pop);
+        const rect = anchor.getBoundingClientRect();
+        const popRect = pop.getBoundingClientRect();
+        const top = rect.bottom + popRect.height + 8 > window.innerHeight ? Math.max(8, rect.top - popRect.height - 4) : rect.bottom + 2;
+        const left = Math.min(rect.left, Math.max(8, window.innerWidth - popRect.width - 8));
+        pop.style.top = `${top}px`;
+        pop.style.left = `${left}px`;
+
+        const onOut = (ev) => {
+            if (!pop.contains(ev.target) && !anchor.contains(ev.target)) {
+                this.closePlacePicker(true);
+            }
+        };
+        const onKey = (ev) => {
+            if (ev.key === "Escape") {
+                this.closePlacePicker(true);
+            }
+        };
+        setTimeout(() => {
+            document.addEventListener("mousedown", onOut, true);
+            document.addEventListener("keydown", onKey, true);
+        }, 0);
+        this._placePop = { pop, td: anchor, onOut, onKey, isDirty };
+    }
+
+    async closePlacePicker(reloadIfDirty = true) {
+        const cur = this._placePop;
+        if (!cur) {
+            return;
+        }
+        this._placePop = null;
+        document.removeEventListener("mousedown", cur.onOut, true);
+        document.removeEventListener("keydown", cur.onKey, true);
+        cur.pop.remove();
+        if (reloadIfDirty && cur.isDirty()) {
+            const saved = this.snapshot();
+            await this.model.load();
+            this.restore(saved);
+        }
     }
 
     // copy giá trị ô nguồn sang cùng cột của các dòng đã kéo qua (ghi thẳng xuống server, quyền Sửa vẫn được kiểm tra)

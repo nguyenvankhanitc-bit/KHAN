@@ -14,6 +14,61 @@ CATEGORIES = [
 ]
 BASE_CATEGORY_CODES = ('a', 'b', 'c')  # 3 nhóm gốc có tab / cột điểm riêng trên phiếu; nhóm thêm sau (d, e...) gộp vào "Nhóm bổ sung"
 
+DEFAULT_STORE_PLACES = [
+    ('GO', 'GO', 10),
+    ('TTTM', 'TTTM', 4),
+    ('AEON', 'AEON', 6),
+    ('Nhà Phố', 'Nhà Phố', 2),
+]
+
+
+class StoreAuditPlace(models.Model):
+    """Loại vị trí cửa hàng (đồng bộ từ trường Store Place trên hồ sơ Cửa hàng hr.store)
+    để chọn một hoặc nhiều loại trên từng dòng Điểm chuẩn đánh giá giám sát."""
+    _name = 'store.audit.place'
+    _description = 'Loại vị trí cửa hàng (Store Place)'
+    _order = 'sequence, id'
+
+    name = fields.Char(string='Store Place', required=True)
+    code = fields.Char(string='Mã', required=True, index=True)
+    sequence = fields.Integer(string='STT', default=10)
+    color = fields.Integer(string='Màu', default=4)
+
+    _code_uniq = models.Constraint('unique(code)', 'Mã Store Place đã tồn tại.')
+
+    @api.model
+    def _sync_from_hr_store(self):
+        existing = {p.code: p for p in self.sudo().search([])}
+        colors = {'GO': 10, 'TTTM': 4, 'AEON': 6, 'Nhà Phố': 2}
+        items = list(DEFAULT_STORE_PLACES)
+        if 'hr.store' in self.env and 'store_place' in self.env['hr.store']._fields:
+            sel = self.env['hr.store']._fields['store_place'].selection
+            if callable(sel):
+                sel = sel(self.env['hr.store'])
+            if sel:
+                items = [(k, lbl, colors.get(k, (i % 10) + 1)) for i, (k, lbl) in enumerate(sel)]
+        if 'Mặt phố' in existing and 'Nhà Phố' not in existing:
+            existing['Mặt phố'].sudo().write({'code': 'Nhà Phố', 'name': 'Nhà Phố', 'color': 2})
+            existing['Nhà Phố'] = existing.pop('Mặt phố')
+        for idx, (code, label, color) in enumerate(items, 1):
+            rec = existing.get(code)
+            if rec:
+                if rec.name != label:
+                    rec.sudo().write({'name': label})
+            else:
+                existing[code] = self.sudo().create({
+                    'code': code, 'name': label, 'sequence': idx * 10, 'color': color,
+                })
+        return self.sudo().search([], order='sequence, id')
+
+    def init(self):
+        self._sync_from_hr_store()
+
+    @api.model
+    def get_place_options(self):
+        recs = self._sync_from_hr_store()
+        return [{'id': r.id, 'code': r.code, 'name': r.name, 'color': r.color} for r in recs]
+
 
 def category_selection(model):
     """Danh sách Nhóm tiêu chí: 3 nhóm gốc A/B/C (tên lấy theo danh mục nếu đã đổi) + các nhóm người dùng tự thêm."""
@@ -239,6 +294,27 @@ class StoreAuditTemplateLine(models.Model):
     lug_group_ids = fields.Many2many(
         'lug.group', 'store_audit_template_line_lug_group_rel', 'line_id', 'group_id',
         string='Group (LUG Permission)')
+    store_place_ids = fields.Many2many(
+        'store.audit.place', 'store_audit_template_line_place_rel', 'line_id', 'place_id',
+        string='Store Place',
+        help='Chọn loại hình cửa hàng áp dụng (GO, TTTM, AEON, Nhà Phố). Để trống = không đưa vào Checklist Giám sát của bất kỳ cửa hàng nào.')
+
+    def matches_store(self, store):
+        """Logic lọc Store Place cho Checklist Giám sát (audit_type == 'gs'):
+        - Không gán Store Place -> không hiển thị ở bất kỳ cửa hàng nào.
+        - Cửa hàng chưa chọn hoặc không khớp loại hình được gán -> không hiển thị.
+        - Cửa hàng thuộc loại hình được gán tại Store Place -> hiển thị.
+        Các loại phiếu khác (nvbh, asm) không dùng Store Place -> luôn hiển thị."""
+        if self.template_id.audit_type != 'gs':
+            return True
+        places = self.sudo().store_place_ids
+        if not places or not store:
+            return False
+        st = store.sudo()
+        splace = (st.store_place or '').strip() if 'store_place' in st._fields else ''
+        if not splace:
+            return False
+        return splace in {(p.code or '').strip() for p in places}
 
     def web_read(self, specification):
         """User thường không xem được hồ sơ nhân viên khác (hr_employee_self_only) nên đọc cột này báo MissingError;
@@ -253,6 +329,8 @@ class StoreAuditTemplateLine(models.Model):
 
     _XLS_HEAD = ['Mẫu checklist', 'STT', 'Nhóm tiêu chí', 'Phân nhóm', 'Tiêu chí đánh giá', 'Yêu cầu / Tiêu chuẩn', 'Điểm chuẩn',
                  'Người phụ trách', 'Người kiểm soát', 'Group (LUG Permission)']
+    _XLS_HEAD_GS = ['Mẫu checklist', 'STT', 'Nhóm tiêu chí', 'Phân nhóm', 'Tiêu chí đánh giá', 'Yêu cầu / Tiêu chuẩn', 'Store Place',
+                    'Điểm chuẩn', 'Người phụ trách', 'Người kiểm soát', 'Group (LUG Permission)']
 
     @api.model
     def _xls_domain(self, scope):
@@ -272,16 +350,24 @@ class StoreAuditTemplateLine(models.Model):
         head = book.add_format({'bold': True, 'font_color': '#FFFFFF', 'bg_color': '#1E3A6E', 'align': 'center', 'valign': 'vcenter', 'border': 1, 'text_wrap': True})
         cell = book.add_format({'border': 1, 'valign': 'top', 'text_wrap': True})
         num = book.add_format({'border': 1, 'valign': 'top', 'num_format': '0.##'})
-        for i, (h, w) in enumerate(zip(self._XLS_HEAD, [18, 6, 26, 24, 34, 60, 10, 28, 28, 26])):
+        is_gs = scope == 'gs'
+        headers = self._XLS_HEAD_GS if is_gs else self._XLS_HEAD
+        widths = [18, 6, 26, 24, 34, 60, 20, 10, 28, 28, 26] if is_gs else [18, 6, 26, 24, 34, 60, 10, 28, 28, 26]
+        num_cols = (1, 7) if is_gs else (1, 6)
+        for i, (h, w) in enumerate(zip(headers, widths)):
             sheet.write(0, i, h, head)
             sheet.set_column(i, i, w)
         cats = dict(category_list(self.env))
         for r, ln in enumerate(lines, 1):
-            vals = [ln.template_id.name, ln.sequence, cats.get(ln.category, ''), ln.sub_group_id.name or '', ln.name, ln.requirement or '',
-                    ln.max_score, ', '.join(ln.sudo().responsible_ids.mapped('name')), ', '.join(ln.controller_ids.mapped('name')),
-                    ', '.join(ln.sudo().lug_group_ids.mapped('name'))]
+            vals = [ln.template_id.name, ln.sequence, cats.get(ln.category, ''), ln.sub_group_id.name or '', ln.name, ln.requirement or '']
+            if is_gs:
+                vals.append(', '.join(ln.sudo().store_place_ids.mapped('name')))
+            vals.extend([
+                ln.max_score, ', '.join(ln.sudo().responsible_ids.mapped('name')), ', '.join(ln.controller_ids.mapped('name')),
+                ', '.join(ln.sudo().lug_group_ids.mapped('name')),
+            ])
             for c, v in enumerate(vals):
-                sheet.write(r, c, v, num if c in (1, 6) else cell)
+                sheet.write(r, c, v, num if c in num_cols else cell)
         sheet.freeze_panes(1, 0)
         book.close()
         name = 'Diem_chuan_%s.xlsx' % ('giam_sat' if scope == 'gs' else 'nvbh_asm')
@@ -325,6 +411,13 @@ class StoreAuditTemplateLine(models.Model):
         Emp, User = self.env['hr.employee'].sudo(), self.env['res.users'].sudo()
         Group = self.env['lug.group'].sudo() if 'lug.group' in self.env else None
         SubGroup = self.env['store.audit.sub.group'].sudo()
+        places = self.env['store.audit.place'].sudo()._sync_from_hr_store()
+        place_map = {}
+        for p in places:
+            place_map[p.code.strip().casefold()] = p.id
+            place_map[p.name.strip().casefold()] = p.id
+        if 'nhà phố' in place_map:
+            place_map['mặt phố'] = place_map['nhà phố']
         cat_list = category_list(self.env)
         cat_keys = {k for k, _l in cat_list}
         cat_by_name = {l.strip().casefold(): k for k, l in cat_list}
@@ -383,8 +476,25 @@ class StoreAuditTemplateLine(models.Model):
             if Group is not None and 'group (lug permission)' in col:
                 ids3, miss3 = many(Group, get(r, 'Group (LUG Permission)'), lambda x: [('name', '=ilike', x)])
                 vals['lug_group_ids'] = [Command.set(ids3)]
-            if miss or miss2 or miss3:
-                errors.append('Dòng %s: không tìm thấy %s (đã bỏ qua phần này)' % (n, ', '.join(miss + miss2 + miss3)))
+            miss_sp = []
+            if 'store place' in col:
+                raw_sp = get(r, 'Store Place')
+                if raw_sp.casefold() in ('', '-'):
+                    vals['store_place_ids'] = [Command.set([])]
+                elif raw_sp.casefold() in ('tất cả', 'all'):
+                    vals['store_place_ids'] = [Command.set(places.ids)]
+                else:
+                    pids = []
+                    for tok in [x.strip() for x in raw_sp.replace(';', ',').replace('/', ',').split(',') if x.strip()]:
+                        pid = place_map.get(tok.casefold())
+                        if pid:
+                            if pid not in pids:
+                                pids.append(pid)
+                        else:
+                            miss_sp.append(tok)
+                    vals['store_place_ids'] = [Command.set(pids)]
+            if miss or miss2 or miss3 or miss_sp:
+                errors.append('Dòng %s: không tìm thấy %s (đã bỏ qua phần này)' % (n, ', '.join(miss + miss2 + miss3 + miss_sp)))
             if line:
                 line.with_context(skip_renumber=True).write(vals)
                 if 'category' in vals or 'sub_group_id' in vals:

@@ -78,3 +78,12 @@ access_store_cht_visit_row_user,store.cht.visit.row user,model_store_cht_visit_r
 access_store_cht_visit_row_manager,store.cht.visit.row manager,model_store_cht_visit_row,group_store_manager,1,1,1,1
 access_store_nvbh_task_group_user,store.nvbh.task.group user,model_store_nvbh_task_group,group_store_user,1,1,1,1
 access_store_nvbh_task_group_manager,store.nvbh.task.group manager,model_store_nvbh_task_group,group_store_manager,1,1,1,1
+access_store_audit_place_internal,store.audit.place internal,model_store_audit_place,base.group_user,1,0,0,0
+access_store_audit_place_user,store.audit.place user,model_store_audit_place,group_store_user,1,0,0,0
+access_store_audit_place_manager,store.audit.place manager,model_store_audit_place,group_store_manager,1,1,1,1
+access_store_nvbh_revenue_user,store.nvbh.revenue user,model_store_nvbh_revenue,group_store_user,1,1,1,0
+access_store_nvbh_revenue_manager,store.nvbh.revenue manager,model_store_nvbh_revenue,group_store_manager,1,1,1,1
+access_store_nvbh_target_user,store.nvbh.target user,model_store_nvbh_target,group_store_user,1,1,1,0
+access_store_nvbh_target_manager,store.nvbh.target manager,model_store_nvbh_target,group_store_manager,1,1,1,1
+access_store_nvbh_target_line_user,store.nvbh.target.line user,model_store_nvbh_target_line,group_store_user,1,1,1,1
+access_store_nvbh_target_line_manager,store.nvbh.target.line manager,model_store_nvbh_target_line,group_store_manager,1,1,1,1

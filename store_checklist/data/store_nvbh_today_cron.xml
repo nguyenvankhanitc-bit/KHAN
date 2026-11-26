@@ -15,4 +15,18 @@
             <field name="active" eval="True"/>
         </record>
     </data>
+    <!-- Mỗi sáng 05:30 (giờ Việt Nam = 22:30 UTC hôm trước): tự điền Họ và tên NV + ID vào mục Doanh thu theo Lịch xếp ca -->
+    <data noupdate="1">
+        <record id="cron_store_nvbh_revenue_daily" model="ir.cron">
+            <field name="name">Checklist NVBH: Tự động tạo danh sách Doanh thu hằng ngày từ Lịch xếp ca</field>
+            <field name="model_id" ref="model_store_nvbh_revenue"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_sync_today_revenue()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now().replace(hour=22, minute=30, second=0, microsecond=0) + timedelta(days=0 if (DateTime.now().hour, DateTime.now().minute) &lt; (22, 30) else 1)).strftime('%Y-%m-%d %H:%M:%S')"/>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
 </odoo>

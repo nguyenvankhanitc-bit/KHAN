@@ -104,6 +104,7 @@ export class StoreChecklistShell extends Component {
             staffScope: [], // các mục Checklist NVBH user hiện tại có Phân quyền xem nhân sự
             staffStores: [], // cửa hàng được cấp ở mục Nhân sự (ô lọc cửa hàng)
             today: { mien: "", store: "", miens: [], stores: [] }, // Lịch ca hôm nay: bộ lọc Miền / Cửa hàng
+            rev: { tab: "day", date: "", month: "", mien: "", storeId: "", q: "", data: null, mData: null, onlyHasRev: false, openStores: {}, mienOpen: {}, storeOpen: {}, mMienOpen: {}, tgData: null, tgStores: [], tgDirty: false, trData: null, trStoreId: "", trDays: 0, trWeek: 0, trOpenDay: "", tgSaving: false, busy: false, saving: false, drafts: {}, editing: {}, selectedId: null }, // Doanh thu NVBH (Theo ngày & Tháng)
         });
         this.history = [{ home: true }];
         // Popup "Xử lý sai phạm" nằm bên phải thanh menu và co giãn theo bề rộng thanh menu (biến CSS --store-sidebar-w)
@@ -229,6 +230,8 @@ export class StoreChecklistShell extends Component {
                     { id: "nvbh_staff", label: "Nhân sự", icon: "fa-id-badge", sub: true, permId: "nvbh_staff", action: "store_checklist.action_store_nvbh_staff" },
                     // Ca làm việc của ngày hôm nay (lấy từ Lịch xếp ca), nhóm theo Miền / Cửa hàng
                     { id: "nvbh_today", label: "Lịch ca hôm nay", icon: "fa-calendar-check-o", sub: true, permId: "nvbh_today", action: "store_checklist.action_store_nvbh_today" },
+                    // Doanh thu nhân viên bán hàng hằng ngày (tự động điền Họ tên & ID từ Lịch xếp ca)
+                    { id: "nvbh_revenue", label: "Doanh thu", icon: "fa-money", sub: true, permId: "nvbh_revenue" },
                     // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
                     { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh_jobs", action: "store_checklist.action_store_nvbh_jobs" },
                     // Danh sách nhân viên đã check list (đã bấm Lưu); bấm vào tên để xem nội dung
@@ -1646,6 +1649,852 @@ export class StoreChecklistShell extends Component {
             const file = await this.orm.call("store.nvbh.check", "export_nvbh_perf_xlsx", [], {
                 month: pf.month || false,
                 store_ids: storeIds,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- Checklist NVBH > Doanh thu: Tab 1 (Doanh thu theo ngày) & Tab 2 (Doanh Thu Tháng) ----
+    async openRevenuePage() {
+        try {
+            const rv = this.state.rev;
+            this.state.activeNav = "nvbh_revenue";
+            this.state.contentMode = "list";
+            this.state.embeddedViewProps = null;
+            const d = new Date();
+            if (!rv.date) {
+                rv.date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            }
+            if (!rv.month) {
+                rv.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            }
+            if (rv.tab === "month" || rv.tab === "target" || rv.tab === "track") {
+                await this.reloadRevTab();
+            } else {
+                await this.loadRevenue();
+            }
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onRevTab(tab) {
+        const rv = this.state.rev;
+        if (rv.tab === tab) {
+            return;
+        }
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        rv.tab = tab;
+        if (tab === "month" || tab === "target" || tab === "track") {
+            if (!rv.month) {
+                const d = rv.date ? new Date(rv.date + "T00:00:00") : new Date();
+                rv.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+            }
+            return this.reloadRevTab().catch((e) => this.notifyError(e));
+        }
+        return this.loadRevenue().catch((e) => this.notifyError(e));
+    }
+
+    reloadRevTab() {
+        const tab = this.state.rev.tab;
+        if (tab === "month") {
+            return this.loadRevenueMonth();
+        }
+        if (tab === "target") {
+            return this.loadRevenueTarget();
+        }
+        if (tab === "track") {
+            return this.loadRevenueTrack();
+        }
+        return this.loadRevenue();
+    }
+
+    // ---- Tab 4: Theo Dõi Target (chỉ tiêu cửa hàng, tiến độ nhân viên, theo tuần, từng ngày) ----
+    async loadRevenueTrack() {
+        const rv = this.state.rev;
+        rv.busy = true;
+        try {
+            const res = await this.orm.call("store.nvbh.target", "get_target_track", [], {
+                month: rv.month || false,
+                store_id: rv.trStoreId ? Number(rv.trStoreId) : false,
+                mien: rv.mien || false,
+                days: rv.trDays || false,
+            });
+            rv.trData = res;
+            if (res.store) {
+                rv.trStoreId = String(res.store.id);
+                rv.trDays = res.days;
+            }
+            rv.trOpenDay = "";
+        } finally {
+            rv.busy = false;
+        }
+    }
+
+    onTrStore(ev) {
+        const rv = this.state.rev;
+        rv.trStoreId = ev.target.value;
+        rv.trWeek = 0;
+        return this.loadRevenueTrack().catch((e) => this.notifyError(e));
+    }
+
+    onTrDays(ev) {
+        const rv = this.state.rev;
+        const n = parseInt(String(ev.target.value || "").replace(/\D+/g, ""), 10);
+        const month = rv.trData ? rv.trData.month_days : 30;
+        rv.trDays = n >= 1 && n <= 31 ? n : month;
+        ev.target.value = rv.trDays;
+        return this.loadRevenueTrack().catch((e) => this.notifyError(e));
+    }
+
+    onTrWeek(w) {
+        const rv = this.state.rev;
+        rv.trWeek = rv.trWeek === w ? 0 : w;
+        rv.trOpenDay = "";
+    }
+
+    onTrDay(d) {
+        const rv = this.state.rev;
+        rv.trOpenDay = rv.trOpenDay === d.date ? "" : d.date;
+    }
+
+    get trDayRows() {
+        const rv = this.state.rev;
+        const rows = (rv.trData && rv.trData.day_rows) || [];
+        return rv.trWeek ? rows.filter((r) => r.week === rv.trWeek) : rows;
+    }
+
+    get trDayTotals() {
+        const rows = this.trDayRows;
+        return {
+            target: rows.reduce((s, r) => s + r.target, 0),
+            done: rows.reduce((s, r) => s + r.done, 0),
+            ok: rows.filter((r) => r.result === "Đạt").length,
+        };
+    }
+
+    fmtTrPct(v) {
+        return new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(Number(v) || 0) + "%";
+    }
+
+    fmtTrDiff(v) {
+        const n = Math.round(Number(v) || 0);
+        return (n > 0 ? "+" : "") + this.fmtRevDisplay(n);
+    }
+
+    trResCls(v) {
+        return v === "Đạt" ? "tr_ok" : v === "Chưa nhập" ? "tr_na" : "tr_bad";
+    }
+
+    async onTrExport() {
+        try {
+            const rv = this.state.rev;
+            const file = await this.orm.call("store.nvbh.target", "export_track_xlsx", [], {
+                month: rv.month || false,
+                store_id: rv.trStoreId ? Number(rv.trStoreId) : false,
+                mien: rv.mien || false,
+                days: rv.trDays || false,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    // ---- Tab 3: Phân Bổ Target (Target cửa hàng theo tháng, phân bổ NV theo %) ----
+    fmtTgPct(v) {
+        const n = Number(v) || 0;
+        return n ? new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(n) : "";
+    }
+
+    parseTgPct(str) {
+        const s = String(str || "").replace(/[\s%]/g, "").replace(",", ".");
+        const n = Number(s);
+        return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
+    }
+
+    parseTgMoney(str) {
+        const d = String(str || "").replace(/\D+/g, "");
+        return d ? Number(d) : 0;
+    }
+
+    async loadRevenueTarget() {
+        const rv = this.state.rev;
+        rv.busy = true;
+        try {
+            const res = await this.orm.call("store.nvbh.target", "get_target_page", [], {
+                month: rv.month || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+            });
+            rv.tgData = res;
+            rv.tgStores = (res.stores || []).map((s) => ({
+                ...s,
+                targetStr: this.fmtRevMoney(s.target),
+                lines: s.lines.map((l) => ({ ...l, pctStr: this.fmtTgPct(l.pct) })),
+            }));
+            rv.tgDirty = false;
+        } finally {
+            rv.busy = false;
+        }
+    }
+
+    tgTarget(st) {
+        return this.parseTgMoney(st.targetStr);
+    }
+
+    tgAmount(st, l) {
+        return Math.round((this.tgTarget(st) * this.parseTgPct(l.pctStr)) / 100);
+    }
+
+    tgStorePct(st) {
+        return Math.round(st.lines.reduce((s, l) => s + this.parseTgPct(l.pctStr), 0) * 100) / 100;
+    }
+
+    tgStoreAmount(st) {
+        return st.lines.reduce((s, l) => s + this.tgAmount(st, l), 0);
+    }
+
+    get tgView() {
+        const rv = this.state.rev;
+        const q = (rv.q || "").trim().toLowerCase();
+        let stt = 0;
+        const out = [];
+        for (const st of rv.tgStores || []) {
+            if (q && !`${st.store} ${st.lines.map((l) => `${l.staff_name} ${l.employee_code}`).join(" ")}`.toLowerCase().includes(q)) {
+                continue;
+            }
+            out.push({ st, rows: st.lines.map((l) => ({ l, stt: ++stt })) });
+        }
+        return out;
+    }
+
+    get tgGrandTarget() {
+        return this.tgView.reduce((s, g) => s + this.tgTarget(g.st), 0);
+    }
+
+    get tgGrandAmount() {
+        return this.tgView.reduce((s, g) => s + this.tgStoreAmount(g.st), 0);
+    }
+
+    get tgGrandPct() {
+        const t = this.tgGrandTarget;
+        return t ? Math.round((this.tgGrandAmount * 1000) / t) / 10 : 0;
+    }
+
+    onTgTargetInput(st, ev) {
+        const n = this.parseTgMoney(ev.target.value);
+        st.targetStr = n ? this.fmtRevDisplay(n) : "";
+        ev.target.value = st.targetStr;
+        this.state.rev.tgDirty = true;
+    }
+
+    onTgPctInput(l, ev) {
+        l.pctStr = String(ev.target.value || "").replace(/[^\d,.]/g, "");
+        ev.target.value = l.pctStr;
+        this.state.rev.tgDirty = true;
+    }
+
+    onTgPctBlur(l) {
+        l.pctStr = this.fmtTgPct(this.parseTgPct(l.pctStr));
+    }
+
+    onTgSplitEven(st) {
+        const n = st.lines.length;
+        if (!n) {
+            return;
+        }
+        const base = Math.floor(10000 / n) / 100;
+        const rest = Math.round((100 - base * n) * 100) / 100;
+        st.lines.forEach((l, i) => {
+            l.pctStr = this.fmtTgPct(i === 0 ? Math.round((base + rest) * 100) / 100 : base);
+        });
+        this.state.rev.tgDirty = true;
+    }
+
+    async onTgSave() {
+        const rv = this.state.rev;
+        const over = (rv.tgStores || []).find((st) => this.tgStorePct(st) > 100);
+        if (over) {
+            this.notification.add(`Tổng tỷ trọng cửa hàng ${over.store} đang là ${this.fmtTgPct(this.tgStorePct(over))}%, vượt quá 100%.`, { type: "danger" });
+            return;
+        }
+        const payload = (rv.tgStores || []).map((st) => ({
+            store_id: st.store_id,
+            target: this.tgTarget(st),
+            lines: st.lines.map((l) => ({
+                staff_key: l.staff_key,
+                staff_name: l.staff_name,
+                employee_code: l.employee_code,
+                position: l.position,
+                is_cht: l.is_cht,
+                pct: this.parseTgPct(l.pctStr),
+            })),
+        }));
+        rv.tgSaving = true;
+        try {
+            await this.orm.call("store.nvbh.target", "save_target_batch", [rv.month, payload]);
+            this.notification.add("Đã lưu phân bổ target.", { type: "success" });
+            await this.loadRevenueTarget();
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            rv.tgSaving = false;
+        }
+    }
+
+    onTgCancel() {
+        return this.loadRevenueTarget().catch((e) => this.notifyError(e));
+    }
+
+    async onTgImport(ev) {
+        const file = ev.target.files && ev.target.files[0];
+        ev.target.value = "";
+        const rv = this.state.rev;
+        if (!file || rv.tgImporting) {
+            return;
+        }
+        if (rv.tgDirty && !window.confirm("Bảng đang có thay đổi chưa lưu. Import sẽ tải lại dữ liệu và bỏ các thay đổi này. Tiếp tục?")) {
+            return;
+        }
+        rv.tgImporting = true;
+        try {
+            const data = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(String(reader.result).split(",")[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+            const res = await this.orm.call("store.nvbh.target", "import_target_xlsx", [rv.month || false, data]);
+            await this.loadRevenueTarget();
+            this.notification.add(`Đã import ${res.stores} cửa hàng, ${res.staff} nhân viên.`, { type: "success" });
+            if (res.skipped && res.skipped.length) {
+                this.notification.add("Bỏ qua: " + res.skipped.join("; "), { type: "warning", sticky: true });
+            }
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            rv.tgImporting = false;
+        }
+    }
+
+    async onTgExport() {
+        try {
+            const rv = this.state.rev;
+            const file = await this.orm.call("store.nvbh.target", "export_target_xlsx", [], {
+                month: rv.month || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    async loadRevenue() {
+        const rv = this.state.rev;
+        rv.busy = true;
+        try {
+            rv.data = await this.orm.call("store.nvbh.revenue", "get_revenue_page", [], {
+                work_date: rv.date || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+            });
+            rv.drafts = {};
+            rv.editing = {};
+            rv.selectedId = null;
+        } finally {
+            rv.busy = false;
+        }
+    }
+
+    async loadRevenueMonth() {
+        const rv = this.state.rev;
+        rv.busy = true;
+        try {
+            rv.mData = await this.orm.call("store.nvbh.revenue", "get_revenue_month", [], {
+                month: rv.month || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+            });
+        } finally {
+            rv.busy = false;
+        }
+    }
+
+    revConfirmLeave() {
+        const rv = this.state.rev;
+        const dirty = rv.tab === "target" ? rv.tgDirty : rv.tab === "day" ? this.revDirtyCount > 0 : false;
+        if (dirty && !window.confirm("Bạn có dữ liệu vừa nhập chưa bấm Lưu. Bỏ qua các thay đổi chưa lưu?")) {
+            return false;
+        }
+        return true;
+    }
+
+    onRevFilter(key, ev) {
+        const rv = this.state.rev;
+        if (!this.revConfirmLeave()) {
+            ev.target.value = rv[key] || "";
+            return;
+        }
+        rv[key] = ev.target.value;
+        if (key === "mien") {
+            rv.storeId = "";
+            rv.trStoreId = "";
+        }
+        return this.reloadRevTab().catch((e) => this.notifyError(e));
+    }
+
+    get revMonthOptions() {
+        const opts = [...this.monthOptions];
+        const cur = this.state.rev.month;
+        if (cur && !opts.some((o) => o.value === cur)) {
+            const [y, m] = cur.split("-");
+            opts.unshift({ value: cur, label: `Tháng ${m}/${y}` });
+        }
+        return opts;
+    }
+
+    onRevStepMonth(delta) {
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        const rv = this.state.rev;
+        const [y, m] = (rv.month || "").split("-").map(Number);
+        const base = y && m ? new Date(y, m - 1 + delta, 1) : new Date();
+        rv.month = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}`;
+        return this.reloadRevTab().catch((e) => this.notifyError(e));
+    }
+
+    onRevThisMonth() {
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        const d = new Date();
+        this.state.rev.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        return this.reloadRevTab().catch((e) => this.notifyError(e));
+    }
+
+    toggleRevOnlyHasRev() {
+        this.state.rev.onlyHasRev = !this.state.rev.onlyHasRev;
+    }
+
+    toggleRevStoreDetail(storeId) {
+        const os = this.state.rev.openStores;
+        os[storeId] = !os[storeId];
+    }
+
+    onRevJumpDay(storeRow, dayRow) {
+        const rv = this.state.rev;
+        rv.date = dayRow.work_date;
+        rv.storeId = String(storeRow.id);
+        rv.tab = "day";
+        return this.loadRevenue().catch((e) => this.notifyError(e));
+    }
+
+    get revMonthStores() {
+        const rv = this.state.rev;
+        const q = (rv.q || "").trim().toLowerCase();
+        let src = rv.mData?.stores || [];
+        if (rv.onlyHasRev) {
+            src = src.filter((s) => (Number(s.revenue) || 0) > 0);
+        }
+        if (q) {
+            src = src.filter(
+                (s) =>
+                    `${s.store} ${s.mien || ""} ${s.asm || ""}`.toLowerCase().includes(q) ||
+                    (s.staff_rows || []).some((sr) => `${sr.staff_name} ${sr.employee_code || ""}`.toLowerCase().includes(q))
+            );
+        }
+        const tot = src.reduce((sum, s) => sum + (Number(s.revenue) || 0), 0);
+        return src.map((s, i) => ({
+            ...s,
+            stt: i + 1,
+            share_pct: tot > 0 ? Math.round(((Number(s.revenue) || 0) * 1000) / tot) / 10 : 0,
+        }));
+    }
+
+    get revMonthTotal() {
+        return this.revMonthStores.reduce((s, r) => s + (Number(r.revenue) || 0), 0);
+    }
+
+    get revMonthStaffTotal() {
+        return this.revMonthStores.reduce((s, r) => s + (Number(r.staff_count) || 0), 0);
+    }
+
+    isRevMonthMienOpen(key, hasRev) {
+        const rv = this.state.rev;
+        const v = rv.mMienOpen[key];
+        return v === undefined ? Boolean(rv.mien || rv.onlyHasRev || hasRev) : v;
+    }
+
+    toggleRevMonthMien(key, hasRev) {
+        this.state.rev.mMienOpen[key] = !this.isRevMonthMienOpen(key, hasRev);
+    }
+
+    get revMonthDisplayItems() {
+        const rv = this.state.rev;
+        const stores = this.revMonthStores;
+        if (!this.isAdminUser || rv.storeId || (rv.q || "").trim()) {
+            return stores.map((st) => ({ type: "store", key: `ms:${st.id}`, st }));
+        }
+        const grand = this.revMonthTotal;
+        const out = [];
+        for (const g of this.mienGroups(stores)) {
+            const total = g.stores.reduce((s, st) => s + (Number(st.revenue) || 0), 0);
+            const staffTotal = g.stores.reduce((s, st) => s + (Number(st.staff_count) || 0), 0);
+            const activeCount = g.stores.filter((st) => (Number(st.revenue) || 0) > 0).length;
+            const sharePct = grand > 0 ? Math.round((total * 1000) / grand) / 10 : 0;
+            const open = this.isRevMonthMienOpen(g.key, total > 0);
+            out.push({
+                type: "mien",
+                key: `mm:${g.key}`,
+                gkey: g.key,
+                label: g.label,
+                storeCount: g.stores.length,
+                activeCount,
+                staffTotal,
+                total,
+                sharePct,
+                open,
+            });
+            if (open) {
+                g.stores.forEach((st, idx) => {
+                    out.push({ type: "store", key: `ms:${st.id}`, st: { ...st, stt: idx + 1 } });
+                });
+            }
+        }
+        return out;
+    }
+
+    async onRevExportMonth() {
+        try {
+            const rv = this.state.rev;
+            const file = await this.orm.call("store.nvbh.revenue", "export_revenue_month_xlsx", [], {
+                month: rv.month || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+                q: rv.q || false,
+                only_has_rev: Boolean(rv.onlyHasRev),
+            });
+            const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(new Blob([bytes], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+            link.download = file.name;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        } catch (error) {
+            this.notifyError(error);
+        }
+    }
+
+    onRevDatePick(dt) {
+        const ymd = this.dtToYmd(dt);
+        if (!ymd || ymd === this.state.rev.date) {
+            return;
+        }
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        this.state.rev.date = ymd;
+        return this.loadRevenue().catch((e) => this.notifyError(e));
+    }
+
+    onRevStepDate(delta) {
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        const rv = this.state.rev;
+        const base = rv.date ? new Date(rv.date + "T00:00:00") : new Date();
+        base.setDate(base.getDate() + delta);
+        rv.date = `${base.getFullYear()}-${String(base.getMonth() + 1).padStart(2, "0")}-${String(base.getDate()).padStart(2, "0")}`;
+        return this.loadRevenue().catch((e) => this.notifyError(e));
+    }
+
+    onRevToday() {
+        if (!this.revConfirmLeave()) {
+            return;
+        }
+        const d = new Date();
+        this.state.rev.date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        return this.loadRevenue().catch((e) => this.notifyError(e));
+    }
+
+    fmtRevMoney(val) {
+        const n = Math.round(Number(val) || 0);
+        return n ? new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(n) : "";
+    }
+
+    fmtRevDisplay(val) {
+        return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Math.round(Number(val) || 0));
+    }
+
+    revRowEditable(row) {
+        const rd = this.state.rev.data;
+        if (!rd || !rd.can_edit || row.is_locked) {
+            return false;
+        }
+        return !row.is_saved || Boolean(this.state.rev.editing[row.id]);
+    }
+
+    revRowDirty(row) {
+        const d = this.state.rev.drafts;
+        if (!Object.prototype.hasOwnProperty.call(d, row.id)) {
+            return false;
+        }
+        const raw = String(d[row.id] || "").trim();
+        const digits = raw.replace(/\D+/g, "");
+        const num = digits ? Number(digits) : 0;
+        if (!row.is_saved) {
+            return raw !== "";
+        }
+        return num !== Math.round(row.revenue || 0);
+    }
+
+    get revDirtyCount() {
+        return (this.state.rev.data?.rows || []).filter((r) => this.revRowDirty(r)).length;
+    }
+
+    get revCanSave() {
+        const rv = this.state.rev;
+        return this.revDirtyCount > 0 || Object.keys(rv.editing || {}).length > 0;
+    }
+
+    get revCanCancel() {
+        const rv = this.state.rev;
+        return Object.keys(rv.drafts || {}).length > 0 || Object.keys(rv.editing || {}).length > 0;
+    }
+
+    revInputVal(row) {
+        const d = this.state.rev.drafts;
+        if (Object.prototype.hasOwnProperty.call(d, row.id)) {
+            return d[row.id];
+        }
+        return row.is_saved ? this.fmtRevDisplay(row.revenue) : this.fmtRevMoney(row.revenue);
+    }
+
+    onRevInput(row, ev) {
+        const digits = String(ev.target.value || "").replace(/\D+/g, "");
+        const formatted = digits ? new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 0 }).format(Number(digits)) : "";
+        this.state.rev.drafts[row.id] = formatted;
+        ev.target.value = formatted;
+    }
+
+    onRevKeydown(row, ev) {
+        if (ev.key === "Enter") {
+            ev.preventDefault();
+            const inputs = Array.from(document.querySelectorAll(".o_store_rev_page .rev_input"));
+            const idx = inputs.indexOf(ev.target);
+            if (idx >= 0 && idx + 1 < inputs.length) {
+                inputs[idx + 1].focus();
+                inputs[idx + 1].select();
+            }
+        }
+    }
+
+    onRevClickName(row) {
+        const rv = this.state.rev;
+        rv.selectedId = rv.selectedId === row.id ? null : row.id;
+        if (rv.selectedId === row.id && this.revRowEditable(row)) {
+            setTimeout(() => {
+                const el = document.querySelector(`.o_store_rev_page .rev_input[data-rev-id="${row.id}"]`);
+                el?.focus();
+            }, 30);
+        }
+    }
+
+    onRevStartEdit(row) {
+        if (row.is_locked) {
+            this.notification.add(`Doanh thu của ${row.staff_name} đã tự động khóa sau 48h.`, { type: "warning" });
+            return;
+        }
+        const rv = this.state.rev;
+        rv.editing[row.id] = true;
+        if (!Object.prototype.hasOwnProperty.call(rv.drafts, row.id)) {
+            rv.drafts[row.id] = this.fmtRevDisplay(row.revenue);
+        }
+        setTimeout(() => {
+            const el = document.querySelector(`.o_store_rev_page .rev_input[data-rev-id="${row.id}"]`);
+            if (el) {
+                el.focus();
+                el.select();
+            }
+        }, 30);
+    }
+
+    onRevCancel() {
+        const rv = this.state.rev;
+        rv.drafts = {};
+        rv.editing = {};
+        rv.selectedId = null;
+    }
+
+    async onRevSave() {
+        const rv = this.state.rev;
+        const rows = rv.data?.rows || [];
+        const items = [];
+        for (const r of rows) {
+            if (r.is_locked) {
+                continue;
+            }
+            if (this.revRowDirty(r) || rv.editing[r.id]) {
+                const raw = Object.prototype.hasOwnProperty.call(rv.drafts, r.id) ? String(rv.drafts[r.id] || "") : String(r.revenue || 0);
+                const digits = raw.replace(/\D+/g, "");
+                items.push({ id: r.id, revenue: digits ? Number(digits) : 0 });
+            }
+        }
+        if (!items.length) {
+            rv.editing = {};
+            rv.selectedId = null;
+            return;
+        }
+        rv.saving = true;
+        try {
+            const res = await this.orm.call("store.nvbh.revenue", "save_revenue_batch", [items]);
+            const byId = new Map((res.rows || []).map((u) => [u.id, u]));
+            for (const r of rows) {
+                const upd = byId.get(r.id);
+                if (upd) {
+                    Object.assign(r, upd);
+                }
+            }
+            rv.drafts = {};
+            rv.editing = {};
+            rv.selectedId = null;
+            this.notification.add(`Đã lưu doanh thu cho ${items.length} nhân sự.`, { type: "success" });
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            rv.saving = false;
+        }
+    }
+
+    revRowEffectiveVal(row) {
+        const d = this.state.rev.drafts || {};
+        if (Object.prototype.hasOwnProperty.call(d, row.id)) {
+            const digits = String(d[row.id] || "").replace(/\D+/g, "");
+            return digits ? Number(digits) : 0;
+        }
+        return Number(row.revenue) || 0;
+    }
+
+    get revRows() {
+        const rv = this.state.rev;
+        const q = (rv.q || "").trim().toLowerCase();
+        const src = rv.data?.rows || [];
+        const filtered = q
+            ? src.filter((r) => `${r.staff_name} ${r.employee_code || ""} ${r.store || ""}`.toLowerCase().includes(q))
+            : src;
+        return filtered.map((r, i) => ({ ...r, stt: i + 1 }));
+    }
+
+    isRevDayMienOpen(key) {
+        const v = this.state.rev.mienOpen[key];
+        return v === undefined ? true : v;
+    }
+
+    toggleRevDayMien(key) {
+        this.state.rev.mienOpen[key] = !this.isRevDayMienOpen(key);
+    }
+
+    isRevDayStoreOpen(storeId, totalStores) {
+        const v = this.state.rev.storeOpen[storeId];
+        return v === undefined ? totalStores <= 12 : v;
+    }
+
+    toggleRevDayStore(storeId, totalStores) {
+        this.state.rev.storeOpen[storeId] = !this.isRevDayStoreOpen(storeId, totalStores);
+    }
+
+    get revDisplayRows() {
+        const rv = this.state.rev;
+        const rows = this.revRows;
+        if (!this.isAdminUser || rv.storeId || (rv.q || "").trim()) {
+            return rows.map((r) => ({ type: "emp", key: `e:${r.id}`, row: r }));
+        }
+        const storesMap = new Map();
+        for (const r of rows) {
+            const k = r.store_id || r.store;
+            if (!storesMap.has(k)) {
+                storesMap.set(k, { id: k, display_name: r.store, mien: r.mien, rows: [] });
+            }
+            storesMap.get(k).rows.push(r);
+        }
+        const totalStores = storesMap.size;
+        const out = [];
+        for (const g of this.mienGroups([...storesMap.values()])) {
+            const open = this.isRevDayMienOpen(g.key);
+            const staffCount = g.stores.reduce((n, st) => n + st.rows.length, 0);
+            const mienTotal = g.stores.reduce((sum, st) => sum + st.rows.reduce((s, r) => s + this.revRowEffectiveVal(r), 0), 0);
+            out.push({
+                type: "mien",
+                key: `m:${g.key}`,
+                gkey: g.key,
+                label: g.label,
+                storeCount: g.stores.length,
+                staffCount,
+                total: mienTotal,
+                open,
+            });
+            if (!open) {
+                continue;
+            }
+            const sorted = [...g.stores].sort((a, b) => String(a.display_name).localeCompare(String(b.display_name), "vi"));
+            for (const st of sorted) {
+                const sopen = this.isRevDayStoreOpen(st.id, totalStores);
+                const storeTotal = st.rows.reduce((s, r) => s + this.revRowEffectiveVal(r), 0);
+                out.push({
+                    type: "store",
+                    key: `s:${st.id}`,
+                    id: st.id,
+                    totalStores,
+                    label: st.display_name,
+                    count: st.rows.length,
+                    total: storeTotal,
+                    open: sopen,
+                });
+                if (sopen) {
+                    st.rows.forEach((r, idx) => {
+                        out.push({ type: "emp", key: `e:${r.id}`, row: { ...r, stt: idx + 1 } });
+                    });
+                }
+            }
+        }
+        return out;
+    }
+
+    get revTotal() {
+        return this.revRows.reduce((s, r) => s + this.revRowEffectiveVal(r), 0);
+    }
+
+    async onRevExport() {
+        try {
+            const rv = this.state.rev;
+            const file = await this.orm.call("store.nvbh.revenue", "export_revenue_xlsx", [], {
+                work_date: rv.date || false,
+                mien: rv.mien || false,
+                store_id: rv.storeId ? Number(rv.storeId) : false,
+                q: rv.q || false,
             });
             const bytes = Uint8Array.from(atob(file.data), (c) => c.charCodeAt(0));
             const link = document.createElement("a");
@@ -3903,6 +4752,14 @@ export class StoreChecklistShell extends Component {
             nvbh_jobs: "CHECKLIST CÔNG VIỆC NVBH",
             nvbh_schedule: "LỊCH XẾP CA",
             nvbh_today: `LỊCH CA HÔM NAY · ${new Date().toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" })}`,
+            nvbh_revenue:
+                this.state.rev.tab === "track"
+                    ? `THEO DÕI TARGET DOANH THU${this.state.rev.trData?.month_label ? " · THÁNG " + this.state.rev.trData.month_label : ""}${this.state.rev.trData?.store ? " · " + this.state.rev.trData.store.code : ""}`
+                    : this.state.rev.tab === "target"
+                    ? `PHÂN BỔ TARGET DOANH THU${this.state.rev.tgData?.month_label ? " · THÁNG " + this.state.rev.tgData.month_label : ""}`
+                    : this.state.rev.tab === "month"
+                    ? `DOANH THU THÁNG${this.state.rev.mData?.month_label ? " · THÁNG " + this.state.rev.mData.month_label : ""}`
+                    : `DOANH THU THEO NGÀY${this.state.rev.data?.date_label ? " · NGÀY " + this.state.rev.data.date_label : ""}`,
             report_nvbh: "BÁO CÁO CHECKLIST NVBH - PHIẾU KPI CÁ NHÂN",
             report_nsuat: "BÁO CÁO NĂNG SUẤT NVBH THEO TIÊU CHÍ CÔNG VIỆC",
             report_nvbh_perf: `BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG${this.state.perf.data?.month_label ? " · THÁNG " + this.state.perf.data.month_label : ""}`,
@@ -4778,6 +5635,10 @@ export class StoreChecklistShell extends Component {
             this.track({ child });
             return this.openAuditPage();
         }
+        if (child?.id === "nvbh_revenue") {
+            this.track({ child });
+            return this.openRevenuePage();
+        }
         if (child?.id === "report_flow_nvbh") {
             // trang tĩnh: sơ đồ quy trình checklist NVBH (không có action / dữ liệu cần tải)
             this.track({ child });
@@ -5430,6 +6291,9 @@ export class StoreChecklistShell extends Component {
         }
         if (navId === "nvbh_audit") {
             return this.openAuditPage();
+        }
+        if (navId === "nvbh_revenue") {
+            return this.openRevenuePage();
         }
         if (navId === "report_flow_nvbh") {
             this.state.activeNav = "report_flow_nvbh";

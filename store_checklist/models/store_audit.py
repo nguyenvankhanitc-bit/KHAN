@@ -67,6 +67,7 @@ class StoreAudit(models.Model):
     max_x = fields.Float(string='Chuẩn nhóm bổ sung', compute='_compute_scores', store=True)
     total_score = fields.Float(string='Tổng điểm đạt', compute='_compute_scores', store=True)
     max_score = fields.Float(string='Tổng điểm chuẩn', compute='_compute_scores', store=True)
+    deduct_score = fields.Float(string='Điểm trừ', compute='_compute_deduct_score')
     # Tỷ lệ 0..1 để widget percentage hiển thị đúng
     pass_rate = fields.Float(string='Tỷ lệ đạt', compute='_compute_scores', store=True)
     conclusion = fields.Selection(
@@ -135,21 +136,30 @@ class StoreAudit(models.Model):
     @api.model
     def _default_lines(self, category):
         template = self._default_template()
-        return self._template_line_commands(template, category)
+        def_sid = self.env.context.get('default_store_id')
+        store = self.env['hr.store'].browse(def_sid) if def_sid else self.env['hr.store']
+        return self._template_line_commands(template, category, store)
 
     @api.onchange('store_id')
     def _onchange_store_id_mien(self):
         if self.store_id.mien:
             self.mien_pick = self.store_id.mien
+        if self.state == 'draft' and not self.staff_mode and self.template_id:
+            all_lines = self.line_a_ids | self.line_b_ids | self.line_c_ids | self.line_x_ids
+            if not any(all_lines.mapped('is_scored')):
+                self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a', self.store_id)
+                self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b', self.store_id)
+                self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c', self.store_id)
+                self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x', self.store_id)
 
     @api.onchange('template_id')
     def _onchange_template_id(self):
         # đổi mẫu thì nạp lại tiêu chí theo điểm chuẩn của mẫu (chỉ khi phiếu còn nháp)
         if self.state == 'draft':
-            self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a')
-            self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b')
-            self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c')
-            self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x')
+            self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a', self.store_id)
+            self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b', self.store_id)
+            self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c', self.store_id)
+            self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x', self.store_id)
 
     @api.model
     def get_dashboard_data(self, month=None, mien=None, store_id=None):
@@ -327,6 +337,16 @@ class StoreAudit(models.Model):
             rec.max_score = rec.max_a + rec.max_b + rec.max_c + rec.max_x
             rec.pass_rate = rec.total_score / rec.max_score if rec.max_score else 0.0
             rec.conclusion = 'pass' if rec.max_score and rec.pass_rate * 100 >= rec.pass_threshold else 'fail'
+
+    @api.depends('line_ids.actual_score', 'line_ids.max_score', 'line_ids.is_scored',
+                 'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score', 'line_x_ids.actual_score',
+                 'line_a_ids.is_scored', 'line_b_ids.is_scored', 'line_c_ids.is_scored', 'line_x_ids.is_scored')
+    def _compute_deduct_score(self):
+        for rec in self:
+            lines = rec.line_a_ids | rec.line_b_ids | rec.line_c_ids | rec.line_x_ids
+            scored = lines.filtered('is_scored')
+            diff = sum((l.actual_score or 0.0) - (l.max_score or 0.0) for l in scored if (l.actual_score or 0.0) < (l.max_score or 0.0))
+            rec.deduct_score = round(diff, 2) or 0.0
 
     @api.depends('line_a_ids.result', 'line_b_ids.result', 'line_c_ids.result', 'line_x_ids.result',
                  'line_a_ids.actual_score', 'line_b_ids.actual_score', 'line_c_ids.actual_score', 'line_x_ids.actual_score')
@@ -524,16 +544,22 @@ class StoreAudit(models.Model):
             rec.action_count = len(rec.action_ids)
 
     @staticmethod
-    def _template_line_commands(template, category=None):
+    def _template_line_commands(template, category=None, store=None):
+        if not template:
+            return []
+        matched_all = [t for t in template.line_ids if t.matches_store(store)]
+        seq_map = {t.id: idx for idx, t in enumerate(matched_all, 1)}
         return [Command.create({
-            'sequence': t.sequence,
+            'sequence': seq_map[t.id],
             'category': t.category,
             'sub_category': t.sub_group_id.name,
             'name': t.name,
             'requirement': t.requirement,
             'max_score': t.max_score,
-        }) for t in template.line_ids if not category or t.category == category
-            or (category == 'x' and t.category not in BASE_CATEGORY_CODES)]
+        }) for t in matched_all if (
+            not category or t.category == category
+            or (category == 'x' and t.category not in BASE_CATEGORY_CODES)
+        )]
 
     # --- Ma trận quyền theo mục con (store.perm.mixin) ---
     def _perm_key(self):
@@ -552,7 +578,7 @@ class StoreAudit(models.Model):
         audits = super().create(vals_list)
         # sau super() để áp dụng cả template_id mặc định
         for audit in audits.filtered(lambda a: a.template_id and not a.line_ids):
-            audit.line_ids = self._template_line_commands(audit.template_id)
+            audit.line_ids = self._template_line_commands(audit.template_id, store=audit.store_id)
         audits._auto_state()
         audits._lark_queue_gs_done()
         return audits
@@ -1001,8 +1027,8 @@ class StoreAudit(models.Model):
         ctr = book.add_format({'border': 1, 'align': 'center'})
         big = book.add_format({'bold': True, 'font_size': 16, 'font_color': '#12285F'})
         cols = ['STT', 'Mã phiếu', 'Cửa hàng', 'Miền', 'Ngày giờ audit', 'Người đánh giá', 'Điểm đánh giá',
-                'Điểm chuẩn', 'Tỷ lệ đạt (%)', 'Kết luận', 'Trạng thái']
-        widths = [6, 28, 16, 12, 20, 22, 14, 12, 14, 14, 16]
+                'Điểm chuẩn', 'Điểm trừ', 'Tỷ lệ đạt (%)', 'Kết luận', 'Trạng thái']
+        widths = [6, 28, 16, 12, 20, 22, 14, 12, 12, 14, 14, 16]
         sheet.merge_range(0, 0, 0, len(cols) - 1, title, big)
         sheet.set_row(2, 30)
         for i, (name, width) in enumerate(zip(cols, widths)):
@@ -1019,9 +1045,10 @@ class StoreAudit(models.Model):
             sheet.write(r, 5, a.auditor_id.name or '', cell)
             sheet.write(r, 6, a.total_score, num)
             sheet.write(r, 7, a.max_score, num)
-            sheet.write(r, 8, a.pass_rate * 100, pct)
-            sheet.write(r, 9, a.lvl_t or '', ctr)
-            sheet.write(r, 10, states.get(a.state, ''), ctr)
+            sheet.write(r, 8, a.deduct_score, num)
+            sheet.write(r, 9, a.pass_rate * 100, pct)
+            sheet.write(r, 10, a.lvl_t or '', ctr)
+            sheet.write(r, 11, states.get(a.state, ''), ctr)
         sheet.freeze_panes(3, 0)
         book.close()
         stamp = fields.Datetime.context_timestamp(self, fields.Datetime.now()).strftime('%d%m%Y_%H%M')
@@ -1050,11 +1077,16 @@ class StoreAudit(models.Model):
                 raise UserError('Chỉ nạp lại tiêu chí khi phiếu đang ở trạng thái Nháp.')
             if not rec.template_id:
                 raise UserError('Vui lòng chọn Mẫu checklist.')
-            rec.line_ids = [Command.clear()] + self._template_line_commands(rec.template_id)
+            rec.line_ids = [Command.clear()] + self._template_line_commands(rec.template_id, store=rec.store_id)
 
     def action_audit(self):
         for rec in self:
             if not rec.line_ids:
+                if rec.audit_type == 'gs' and rec.store_id:
+                    splace = (rec.store_id.sudo().store_place or '').strip() if 'store_place' in rec.store_id._fields else ''
+                    if not splace:
+                        raise UserError('Cửa hàng "%s" chưa được cấu hình loại hình (Store Place) trong hồ sơ cửa hàng.' % rec.store_id.display_name)
+                    raise UserError('Chưa có tiêu chí Điểm chuẩn giám sát nào được gán Store Place "%s" cho cửa hàng "%s".' % (splace, rec.store_id.display_name))
                 raise UserError('Phiếu chưa có tiêu chí nào.')
             todo = rec.line_ids.filtered(lambda l: not l.is_scored)
             if todo:

@@ -20,3 +20,5 @@ from . import store_role
 from . import store_photo_retention
 from . import store_asm_audit
 from . import store_week_review
+from . import store_nvbh_revenue
+from . import store_nvbh_target

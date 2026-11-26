@@ -280,7 +280,9 @@ class LinkqMonthlyRoster(models.Model):
         if not domain:
             return self.browse()
         allowed = set(self.env.user._linkq_allowed_hr_store_ids())
-        return self.filtered(lambda rec: rec.store_id.id and rec.store_id.id not in allowed)
+        # đọc store_id bằng sudo: hàm này chạy BÊN TRONG kiểm tra quyền; đọc thường sẽ lại kiểm tra quyền và ném lỗi
+        # (vd. Odoo lọc file đính kèm của Bảng xếp ca khi đọc trường ir.attachment ở model khác -> "Failed to read field")
+        return self.browse(self.sudo().filtered(lambda rec: rec.store_id.id and rec.store_id.id not in allowed).ids)
 
     def _check_access(self, operation):
         result = super()._check_access(operation)

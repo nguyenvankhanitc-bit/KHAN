@@ -16,6 +16,7 @@ MENUS = [
     ('nvbh', 'Checklist NVBH', 'audit'),
     ('nvbh_staff', 'Checklist NVBH › Nhân sự', 'audit'),
     ('nvbh_today', 'Checklist NVBH › Lịch ca hôm nay', 'audit'),
+    ('nvbh_revenue', 'Checklist NVBH › Doanh thu', 'audit'),
     ('nvbh_jobs', 'Checklist NVBH › Công việc check list', 'audit'),
     ('nvbh_done', 'Checklist NVBH › Danh sách checklist NV', 'audit'),
     ('nvbh_mg', 'Checklist NVBH › Quản lý & đánh giá', 'audit'),
@@ -56,6 +57,7 @@ OPS = ('read', 'create', 'write', 'unlink', 'export')
 PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
     'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
+    'nvbh_revenue': 'nvbh_jobs',  # Doanh thu NVBH: mặc định theo quyền Công việc check list
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
     'report_nvbh_perf': 'report_nvbh_asm',
     'nvbh_cht': 'nvbh_mg',  # Checklist CV CHT: mặc định theo quyền Quản lý & đánh giá NVBH
@@ -66,7 +68,7 @@ PERM_INHERIT = {
     'cht_task': 'nvbh_task',  # Danh sách công việc CHT: mặc định theo quyền Danh sách công việc NVBH
     'report_flow_nvbh': 'report_flow',  # Sơ đồ quy trình checklist NVBH: mặc định theo quyền Sơ đồ quy trình vận hành giám sát  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
-NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_done', 'nvbh_mg', 'nvbh_cht')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
+NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_revenue', 'nvbh_done', 'nvbh_mg', 'nvbh_cht')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 
 
 def perm_of(perms, key):

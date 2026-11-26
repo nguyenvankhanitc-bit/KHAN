@@ -172,7 +172,8 @@
                 <field name="category" width="150px" column_invisible="context.get('hide_category_col')"/>
                 <field name="sub_group_id" width="170px"/>
                 <field name="name" width="220px"/>
-                <field name="requirement" width="700px"/>
+                <field name="requirement" width="620px"/>
+                <field name="store_place_ids" string="Store Place" widget="many2many_tags" options="{'color_field': 'color', 'no_create': true}" width="180px" column_invisible="not context.get('hide_category_col')"/>
                 <field name="responsible_ids" widget="many2many_tags" width="160px"/>
                 <field name="controller_ids" widget="many2many_tags" width="150px"/>
                 <field name="lug_group_ids" widget="many2many_tags" width="140px"/>
@@ -204,6 +205,7 @@
                         <group>
                             <field name="sequence" string="STT"/>
                             <field name="max_score" options="{'hide_trailing_zeros': true}"/>
+                            <field name="store_place_ids" string="Store Place" widget="many2many_tags" options="{'color_field': 'color', 'no_create': true}" placeholder="Chọn loại hình cửa hàng áp dụng..." invisible="audit_type != 'gs'"/>
                             <field name="responsible_ids" widget="many2many_tags" options="{'no_create': true}"/>
                             <field name="controller_ids" widget="many2many_tags" options="{'no_create': true}"/>
                             <field name="lug_group_ids" widget="many2many_tags" options="{'no_create': true}"/>
@@ -225,6 +227,7 @@
             <search>
                 <field name="name"/>
                 <field name="template_id"/>
+                <field name="store_place_ids" string="Store Place"/>
                 <group>
                     <filter name="group_template" string="Loại checklist" context="{'group_by': 'template_id'}"/>
                     <filter name="group_category" string="Nhóm tiêu chí" context="{'group_by': 'category'}"/>

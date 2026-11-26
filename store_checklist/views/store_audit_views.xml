@@ -301,6 +301,7 @@
                 <field name="auditor_id" optional="show"/>
                 <field name="total_score" string="Điểm đánh giá" options="{'hide_trailing_zeros': true}"/>
                 <field name="max_score" string="Điểm chuẩn" options="{'hide_trailing_zeros': true}"/>
+                <field name="deduct_score" string="Điểm trừ" options="{'hide_trailing_zeros': true}" decoration-danger="deduct_score &lt; 0" decoration-bf="deduct_score &lt; 0"/>
                 <field name="pass_rate" widget="percentage"/>
                 <field name="error_count" string="Tổng số lỗi"/>
                 <field name="tone_t" column_invisible="True"/>

@@ -270,7 +270,17 @@ class StoreNvbhCheckRole(models.Model):
             if (emp.name or '').strip().casefold() == name:
                 return emp
         safe = (self.staff_name or '').strip().replace('%', r'\%').replace('_', r'\_')
-        return Employee.search([('name', '=ilike', safe)], limit=1)
+        emp = Employee.search([('name', '=ilike', safe)], limit=1)
+        if emp:
+            return emp
+        # ILIKE của PostgreSQL không đổi hoa/thường chữ có dấu (vd. "CAO NGỌC NHI" ≠ "Cao Ngọc Nhi") -> lọc sơ bằng các từ
+        # không dấu (CAO, NHI) rồi so khớp họ tên (casefold) ở Python
+        words = [w for w in (self.staff_name or '').split() if w.isascii() and w.isalpha()]
+        domain = [('name', 'ilike', w) for w in words]
+        for emp in Employee.search(domain, limit=None if domain else 5000):
+            if (emp.name or '').strip().casefold() == name:
+                return emp
+        return Employee
 
     def _find_reviewer(self, level, subject):
         """Người đánh giá đầu tiên:

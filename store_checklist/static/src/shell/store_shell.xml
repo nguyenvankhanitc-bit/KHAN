@@ -21,7 +21,7 @@
                 <h3>Bạn chưa được phân quyền</h3>
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_revenue' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick and !(isAuditListNav and state.auditStoreIds === false)"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav and state.auditStoreIds and state.auditStoreIds.length">Đang hiện phiếu của tất cả cửa hàng bạn được phân quyền. Chọn một cửa hàng ở bộ lọc để xem riêng.</t><t t-elif="isAuditListNav">Bạn chưa được phân quyền cửa hàng nào — đang hiện các phiếu do bạn đánh giá.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
@@ -32,7 +32,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'nvbh_revenue' ? (state.rev.tab === 'target' ? 'Nhập Target Cửa Hàng và Tỷ trọng % từng nhân viên • Thành tiền Target NV tự động quy đổi (VNĐ)' : state.rev.tab === 'month' ? 'Thể hiện tất cả doanh thu cửa hàng trong tháng • Bấm vào cửa hàng để xem chi tiết theo nhân viên &amp; từng ngày' : 'Tự động liên kết Lịch xếp ca hằng ngày (Họ và tên NV, ID) • Nhập doanh thu xong bấm Lưu mới thực hiện, tự khóa sau 48h') : state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
@@ -1050,6 +1050,655 @@
                         </div>
                     </t>
                     <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có dữ liệu KPI nhân viên bán hàng theo ASM trong tháng đã chọn.</div>
+                </div>
+                <!-- ===== Checklist NVBH > Doanh thu (2 tab: Doanh thu theo ngày & Doanh Thu Tháng) ===== -->
+                <div class="o_store_kpi_page o_store_asm_kpi_page o_store_rev_page" t-if="state.activeNav === 'nvbh_revenue'">
+                    <t t-set="rv" t-value="state.rev"/>
+                    <t t-set="rd" t-value="rv.data"/>
+                    <t t-set="rm" t-value="rv.mData"/>
+                    <div class="kp_tabs rev_tabs">
+                        <button type="button" t-att-class="rv.tab === 'day' ? 'active' : ''" t-on-click="() => this.onRevTab('day')">
+                            <i class="fa fa-calendar-check-o"/> Doanh thu theo ngày
+                        </button>
+                        <button type="button" t-att-class="rv.tab === 'month' ? 'active' : ''" t-on-click="() => this.onRevTab('month')">
+                            <i class="fa fa-bar-chart"/> Doanh Thu Tháng
+                        </button>
+                        <button type="button" t-att-class="rv.tab === 'target' ? 'active' : ''" t-on-click="() => this.onRevTab('target')">
+                            <i class="fa fa-bullseye"/> Phân Bổ Target
+                        </button>
+                        <button type="button" t-att-class="rv.tab === 'track' ? 'active' : ''" t-on-click="() => this.onRevTab('track')">
+                            <i class="fa fa-line-chart"/> Theo Dõi Target
+                        </button>
+                    </div>
+
+                    <!-- TAB 1: DOANH THU THEO NGÀY -->
+                    <t t-if="rv.tab === 'day'">
+                        <div class="asm_toolbar rev_toolbar">
+                            <div class="asm_filters rev_filters">
+                                <label><span>Ngày</span>
+                                    <div class="rev_date_grp">
+                                        <button type="button" class="rev_nav_btn" title="Ngày trước" t-on-click="() => this.onRevStepDate(-1)"><i class="fa fa-chevron-left"/></button>
+                                        <DateTimeInput t-key="'rev' + rv.date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(rv.date)" onChange.bind="onRevDatePick" class="'o_store_date_input'"/>
+                                        <button type="button" class="rev_nav_btn" title="Ngày sau" t-on-click="() => this.onRevStepDate(1)"><i class="fa fa-chevron-right"/></button>
+                                        <button type="button" class="rev_today_btn" t-on-click="onRevToday">Hôm nay</button>
+                                    </div>
+                                </label>
+                                <label><span>Miền</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('mien', ev)">
+                                        <option value="" t-att-selected="!rv.mien">Tất cả miền</option>
+                                        <option value="Nam" t-att-selected="rv.mien === 'Nam'">Miền Nam</option>
+                                        <option value="ĐTT" t-att-selected="rv.mien === 'ĐTT'">Miền ĐTT</option>
+                                        <option value="Bắc" t-att-selected="rv.mien === 'Bắc'">Miền Bắc</option>
+                                        <option value="VP" t-att-selected="rv.mien === 'VP'">Văn phòng</option>
+                                    </select>
+                                </label>
+                                <label><span>Cửa hàng</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('storeId', ev)">
+                                        <option value="" t-att-selected="!rv.storeId">Tất cả cửa hàng</option>
+                                        <option t-foreach="rd ? rd.store_opts : []" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + rv.storeId)" t-esc="st.name"/>
+                                    </select>
+                                </label>
+                                <label><span>Tìm nhân viên</span>
+                                    <input type="search" placeholder="Họ tên, ID..." t-att-value="rv.q" t-on-input="(ev) => { state.rev.q = ev.target.value; }"/>
+                                </label>
+                                <div class="rev_sum_pill" t-if="rd">
+                                    <span>Tổng doanh thu:</span>
+                                    <b t-esc="fmtRevDisplay(revTotal)"/>
+                                </div>
+                                <button type="button" class="btn btn-primary rev_top_save_btn" t-if="rd and rd.can_edit" t-att-disabled="!revCanSave or rv.saving" t-on-click="onRevSave">
+                                    <i t-att-class="rv.saving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
+                                </button>
+                                <button type="button" class="btn btn-success text-white asm_export_btn" t-if="rd and rd.can_export" t-on-click="onRevExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                            </div>
+                        </div>
+                        <t t-if="rd and revRows.length">
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table">
+                                        <thead>
+                                            <tr>
+                                                <th class="c_stt">STT</th>
+                                                <th class="l">Họ và tên NV</th>
+                                                <th class="c_id">ID</th>
+                                                <th class="c_rev">Doanh thu</th>
+                                                <th class="c_date">Ngày</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="revDisplayRows" t-as="it" t-key="it.key">
+                                                <tr class="rev_grp_mien" t-if="it.type === 'mien'" t-on-click="() => this.toggleRevDayMien(it.gkey)">
+                                                    <td colspan="3" class="l">
+                                                        <i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'} rev_grp_caret"/>
+                                                        <i class="fa fa-map-marker"/> <b t-esc="it.label"/>
+                                                        <span class="rev_grp_cnt"><t t-esc="it.storeCount"/> cửa hàng · <t t-esc="it.staffCount"/> nhân sự</span>
+                                                    </td>
+                                                    <td class="c c_rev"><b class="rev_grp_sum" t-esc="fmtRevDisplay(it.total)"/></td>
+                                                    <td class="c" t-esc="rd.date_label"/>
+                                                </tr>
+                                                <tr class="rev_grp_store" t-if="it.type === 'store'" t-on-click="() => this.toggleRevDayStore(it.id, it.totalStores)">
+                                                    <td colspan="3" class="l">
+                                                        <i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'} rev_grp_caret"/>
+                                                        <i class="fa fa-building"/> <b t-esc="it.label"/>
+                                                        <span class="rev_grp_cnt"><t t-esc="it.count"/> nhân sự</span>
+                                                    </td>
+                                                    <td class="c c_rev"><b class="rev_grp_sum is-store" t-esc="fmtRevDisplay(it.total)"/></td>
+                                                    <td class="c" t-esc="rd.date_label"/>
+                                                </tr>
+                                                <t t-if="it.type === 'emp'">
+                                                    <t t-set="r" t-value="it.row"/>
+                                                    <tr t-att-class="(rv.selectedId === r.id ? 'is-selected ' : '') + (r.is_locked ? 'is-locked' : '')">
+                                                        <td class="c b" t-esc="r.stt"/>
+                                                        <td class="l rev_staff_cell">
+                                                            <div class="rev_nm_row">
+                                                                <a href="#" class="rev_nm_link" title="Bấm vào tên nhân viên để hiện nút Chỉnh sửa" t-on-click.prevent="() => this.onRevClickName(r)">
+                                                                    <b class="rev_nm" t-esc="r.staff_name"/>
+                                                                </a>
+                                                                <t t-if="rv.selectedId === r.id">
+                                                                    <span class="rev_badge is-locked" t-if="r.is_locked">
+                                                                        <i class="fa fa-lock"/> Đã khóa sau 48h<t t-if="r.lock_until"> (<t t-esc="r.lock_until"/>)</t>
+                                                                    </span>
+                                                                    <button type="button" class="rev_edit_btn" t-elif="rd.can_edit and r.is_saved and !rv.editing[r.id]" t-on-click.stop="() => this.onRevStartEdit(r)">
+                                                                        <i class="fa fa-pencil"/> Chỉnh sửa
+                                                                    </button>
+                                                                    <span class="rev_badge is-editing" t-elif="rd.can_edit and (!r.is_saved or rv.editing[r.id])">
+                                                                        <i class="fa fa-pencil-square-o"/> Đang mở nhập — bấm Lưu để ghi nhận
+                                                                    </span>
+                                                                </t>
+                                                            </div>
+                                                            <small class="rev_meta">
+                                                                <t t-esc="r.store"/><t t-if="r.shift_code"> · Ca <t t-esc="r.shift_code"/></t>
+                                                                <t t-if="rv.selectedId === r.id and r.is_saved and !r.is_locked and r.lock_until"> · Tự khóa lúc <t t-esc="r.lock_until"/></t>
+                                                            </small>
+                                                        </td>
+                                                        <td class="c rev_code" t-esc="r.employee_code || '-'"/>
+                                                        <td class="c c_rev">
+                                                            <div t-att-class="'rev_in_wrap' + (revRowDirty(r) ? ' is-dirty' : '')" t-if="revRowEditable(r)">
+                                                                <input type="text" inputmode="numeric" class="rev_input" placeholder="0 (vd: 5.500.000)"
+                                                                       t-att-data-rev-id="r.id"
+                                                                       t-att-value="revInputVal(r)"
+                                                                       t-on-input="(ev) => this.onRevInput(r, ev)"
+                                                                       t-on-keydown="(ev) => this.onRevKeydown(r, ev)"/>
+                                                            </div>
+                                                            <div class="rev_ro_wrap" t-else="">
+                                                                <b class="rev_val_ro" t-esc="fmtRevDisplay(r.revenue)"/>
+                                                                <span class="rev_st_tag locked" t-if="r.is_locked" t-att-title="'Đã tự động khóa sau 48h (' + r.lock_until + ')'"><i class="fa fa-lock"/> Đã khóa</span>
+                                                                <span class="rev_st_tag saved" t-elif="r.is_saved" t-att-title="'Đã lưu lúc ' + r.saved_at + ' • Tự khóa lúc ' + r.lock_until + ' • Bấm vào tên NV để chỉnh sửa'"><i class="fa fa-check-circle"/> Đã lưu</span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="c rev_date" t-esc="r.date_label"/>
+                                                    </tr>
+                                                </t>
+                                            </t>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="rev_tot_row">
+                                                <td colspan="3" class="l"><b>TỔNG CỘNG (<t t-esc="revRows.length"/> nhân sự)</b></td>
+                                                <td class="c c_rev"><b class="rev_tot_val" t-esc="fmtRevDisplay(revTotal)"/></td>
+                                                <td class="c" t-esc="rd.date_label"/>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rev_action_bar" t-if="rd.can_edit">
+                                <button type="button" class="btn btn-primary rev_save_btn" t-att-disabled="!revCanSave or rv.saving" t-on-click="onRevSave">
+                                    <i t-att-class="rv.saving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
+                                </button>
+                                <button type="button" class="btn btn-secondary rev_cancel_btn" t-if="revCanCancel" t-att-disabled="rv.saving" t-on-click="onRevCancel">
+                                    Hủy
+                                </button>
+                                <span class="rev_dirty_msg" t-if="revDirtyCount">
+                                    <i class="fa fa-exclamation-circle"/> Có <b t-esc="revDirtyCount"/> dòng chưa lưu — bấm <b>Lưu</b> để hệ thống thực hiện.
+                                </span>
+                                <span class="rev_hint_msg" t-else="">
+                                    <i class="fa fa-info-circle"/> Bấm vào <b>Họ và tên NV</b> để hiện nút <b>Chỉnh sửa</b> • Hệ thống tự khóa sau <b>48h</b>.
+                                </span>
+                            </div>
+                        </t>
+                        <div class="o_store_job_empty" t-elif="!rv.busy">
+                            <i class="fa fa-info-circle"/> Không có nhân sự nào có ca làm việc trong Lịch xếp ca ngày <b t-esc="rd ? rd.date_label : rv.date"/>.
+                        </div>
+                    </t>
+
+                    <!-- TAB 2: DOANH THU THÁNG (TẤT CẢ CỬA HÀNG TRONG THÁNG) -->
+                    <t t-if="rv.tab === 'month'">
+                        <div class="asm_toolbar rev_toolbar">
+                            <div class="asm_filters rev_filters">
+                                <label><span>Tháng</span>
+                                    <div class="rev_date_grp">
+                                        <button type="button" class="rev_nav_btn" title="Tháng trước" t-on-click="() => this.onRevStepMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                                        <select class="rev_month_sel" t-on-change="(ev) => this.onRevFilter('month', ev)">
+                                            <option t-foreach="revMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === rv.month" t-esc="m.label"/>
+                                        </select>
+                                        <button type="button" class="rev_nav_btn" title="Tháng sau" t-on-click="() => this.onRevStepMonth(1)"><i class="fa fa-chevron-right"/></button>
+                                        <button type="button" class="rev_today_btn" t-on-click="onRevThisMonth">Tháng này</button>
+                                    </div>
+                                </label>
+                                <label><span>Miền</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('mien', ev)">
+                                        <option value="" t-att-selected="!rv.mien">Tất cả miền</option>
+                                        <option value="Nam" t-att-selected="rv.mien === 'Nam'">Miền Nam</option>
+                                        <option value="ĐTT" t-att-selected="rv.mien === 'ĐTT'">Miền ĐTT</option>
+                                        <option value="Bắc" t-att-selected="rv.mien === 'Bắc'">Miền Bắc</option>
+                                        <option value="VP" t-att-selected="rv.mien === 'VP'">Văn phòng</option>
+                                    </select>
+                                </label>
+                                <label><span>Cửa hàng</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('storeId', ev)">
+                                        <option value="" t-att-selected="!rv.storeId">Tất cả cửa hàng</option>
+                                        <option t-foreach="rm ? rm.store_opts : []" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + rv.storeId)" t-esc="st.name"/>
+                                    </select>
+                                </label>
+                                <label><span>Tìm kiếm</span>
+                                    <input type="search" placeholder="Cửa hàng, ASM, NV..." t-att-value="rv.q" t-on-input="(ev) => { state.rev.q = ev.target.value; }"/>
+                                </label>
+                                <button type="button" t-att-class="'rev_chip_btn' + (rv.onlyHasRev ? ' active' : '')" t-on-click="toggleRevOnlyHasRev">
+                                    <i class="fa fa-filter"/> Chỉ CH có DT (<t t-esc="rm ? rm.active_store_count : 0"/>/<t t-esc="rm ? rm.total_store_count : 0"/>)
+                                </button>
+                                <div class="rev_sum_pill" t-if="rm">
+                                    <span>Tổng DT tháng:</span>
+                                    <b t-esc="fmtRevDisplay(revMonthTotal)"/>
+                                </div>
+                                <button type="button" class="btn btn-success text-white asm_export_btn" t-if="rm and rm.can_export" t-on-click="onRevExportMonth"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                            </div>
+                        </div>
+                        <t t-if="rm and revMonthStores.length">
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table rev_month_table">
+                                        <thead>
+                                            <tr>
+                                                <th class="c_stt">STT</th>
+                                                <th class="l">Cửa hàng</th>
+                                                <th class="c_mien">Miền</th>
+                                                <th class="c_cnt">Nhân sự</th>
+                                                <th class="c_cnt">Ngày có DT</th>
+                                                <th class="c_rev">Doanh thu tháng</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="revMonthDisplayItems" t-as="mit" t-key="mit.key">
+                                                <tr class="rev_grp_mien" t-if="mit.type === 'mien'" t-on-click="() => this.toggleRevMonthMien(mit.gkey, mit.total &gt; 0)">
+                                                    <td colspan="3" class="l">
+                                                        <i t-attf-class="fa #{mit.open ? 'fa-caret-down' : 'fa-caret-right'} rev_grp_caret"/>
+                                                        <i class="fa fa-map-marker"/> <b t-esc="mit.label"/>
+                                                        <span class="rev_grp_cnt"><t t-esc="mit.storeCount"/> cửa hàng (<t t-esc="mit.activeCount"/> có DT)</span>
+                                                    </td>
+                                                    <td class="c b" t-esc="mit.staffTotal"/>
+                                                    <td class="c">Tháng <t t-esc="rm.month_label"/></td>
+                                                    <td class="r c_rev"><b class="rev_grp_sum" t-esc="fmtRevDisplay(mit.total)"/></td>
+                                                </tr>
+                                                <t t-if="mit.type === 'store'">
+                                                <t t-set="st" t-value="mit.st"/>
+                                                <tr t-att-class="'rev_m_row' + (rv.openStores[st.id] ? ' is-open' : '') + (st.revenue ? ' has-rev' : ' is-zero')"
+                                                    t-on-click="() => this.toggleRevStoreDetail(st.id)">
+                                                    <td class="c b" t-esc="st.stt"/>
+                                                    <td class="l">
+                                                        <div class="rev_st_head">
+                                                            <i t-attf-class="fa #{rv.openStores[st.id] ? 'fa-caret-down' : 'fa-caret-right'} rev_caret"/>
+                                                            <b class="rev_nm" t-esc="st.store"/>
+                                                        </div>
+                                                        <small class="rev_meta" t-if="st.asm">ASM: <t t-esc="st.asm"/></small>
+                                                    </td>
+                                                    <td class="c"><span class="rev_mien_tag" t-if="st.mien" t-esc="st.mien"/><span t-else="">-</span></td>
+                                                    <td class="c b" t-esc="st.staff_count"/>
+                                                    <td class="c"><span t-esc="st.days_with_rev + '/' + st.days_in_month"/></td>
+                                                    <td class="r c_rev">
+                                                        <b t-att-class="'rev_m_val' + (st.revenue ? ' pos' : '')" t-esc="fmtRevDisplay(st.revenue)"/>
+                                                    </td>
+                                                </tr>
+                                                <tr class="rev_m_detail" t-if="rv.openStores[st.id]">
+                                                    <td colspan="6">
+                                                        <div class="rev_sub_grid" t-if="st.staff_rows.length or st.day_rows.length">
+                                                            <div class="rev_sub_box">
+                                                                <div class="rev_sub_hd"><i class="fa fa-users"/> Doanh thu nhân viên · <b t-esc="st.store"/> (Tháng <t t-esc="rm.month_label"/>)</div>
+                                                                <table class="rev_sub_tbl">
+                                                                    <thead><tr><th>STT</th><th class="l">Họ và tên NV</th><th>ID</th><th>Số ngày</th><th class="r">Doanh thu</th></tr></thead>
+                                                                    <tbody>
+                                                                        <tr t-foreach="st.staff_rows" t-as="sr" t-key="sr.stt">
+                                                                            <td class="c" t-esc="sr.stt"/>
+                                                                            <td class="l"><b t-esc="sr.staff_name"/></td>
+                                                                            <td class="c" t-esc="sr.employee_code || '-'"/>
+                                                                            <td class="c" t-esc="sr.days"/>
+                                                                            <td class="r"><b t-esc="fmtRevDisplay(sr.revenue)"/></td>
+                                                                        </tr>
+                                                                        <tr t-if="!st.staff_rows.length"><td colspan="5" class="c text-muted">Chưa có nhân viên ghi nhận doanh thu.</td></tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                            <div class="rev_sub_box">
+                                                                <div class="rev_sub_hd"><i class="fa fa-calendar"/> Doanh thu theo ngày trong tháng (bấm ngày để xem chi tiết)</div>
+                                                                <table class="rev_sub_tbl">
+                                                                    <thead><tr><th>Ngày</th><th>Số NV</th><th class="r">Doanh thu ngày</th><th/></tr></thead>
+                                                                    <tbody>
+                                                                        <tr t-foreach="st.day_rows" t-as="dr" t-key="dr.work_date">
+                                                                            <td class="c"><b t-esc="dr.date_label"/></td>
+                                                                            <td class="c" t-esc="dr.staff_count"/>
+                                                                            <td class="r"><b t-esc="fmtRevDisplay(dr.revenue)"/></td>
+                                                                            <td class="c">
+                                                                                <button type="button" class="rev_jump_btn" t-on-click.stop="() => this.onRevJumpDay(st, dr)">
+                                                                                    <i class="fa fa-external-link"/> Xem ngày
+                                                                                </button>
+                                                                            </td>
+                                                                        </tr>
+                                                                        <tr t-if="!st.day_rows.length"><td colspan="4" class="c text-muted">Chưa phát sinh doanh thu ngày nào trong tháng.</td></tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </div>
+                                                        </div>
+                                                        <div class="rev_sub_empty" t-else="">
+                                                            <i class="fa fa-info-circle"/> Cửa hàng <b t-esc="st.store"/> chưa có dữ liệu doanh thu trong Tháng <t t-esc="rm.month_label"/>.
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                                </t>
+                                            </t>
+                                        </tbody>
+                                        <tfoot>
+                                            <tr class="rev_tot_row">
+                                                <td colspan="3" class="l"><b>TỔNG CỘNG DOANH THU THÁNG (<t t-esc="revMonthStores.length"/> cửa hàng)</b></td>
+                                                <td class="c"><b t-esc="revMonthStaffTotal"/></td>
+                                                <td class="c">Tháng <t t-esc="rm.month_label"/></td>
+                                                <td class="r c_rev"><b class="rev_tot_val" t-esc="fmtRevDisplay(revMonthTotal)"/></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </t>
+                        <div class="o_store_job_empty" t-elif="!rv.busy">
+                            <i class="fa fa-info-circle"/> Không có cửa hàng nào khớp bộ lọc trong Tháng <b t-esc="rm ? rm.month_label : rv.month"/>.
+                        </div>
+                    </t>
+
+                    <!-- TAB 4: THEO DÕI TARGET -->
+                    <t t-if="rv.tab === 'track'">
+                        <t t-set="tr" t-value="rv.trData"/>
+                        <div class="asm_toolbar rev_toolbar">
+                            <div class="asm_filters rev_filters">
+                                <label><span>Tháng</span>
+                                    <div class="rev_date_grp">
+                                        <button type="button" class="rev_nav_btn" title="Tháng trước" t-on-click="() => this.onRevStepMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                                        <select class="rev_month_sel" t-on-change="(ev) => this.onRevFilter('month', ev)">
+                                            <option t-foreach="revMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === rv.month" t-esc="m.label"/>
+                                        </select>
+                                        <button type="button" class="rev_nav_btn" title="Tháng sau" t-on-click="() => this.onRevStepMonth(1)"><i class="fa fa-chevron-right"/></button>
+                                        <button type="button" class="rev_today_btn" t-on-click="onRevThisMonth">Tháng này</button>
+                                    </div>
+                                </label>
+                                <label><span>Miền</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('mien', ev)">
+                                        <option value="" t-att-selected="!rv.mien">Tất cả miền</option>
+                                        <option value="Nam" t-att-selected="rv.mien === 'Nam'">Miền Nam</option>
+                                        <option value="ĐTT" t-att-selected="rv.mien === 'ĐTT'">Miền ĐTT</option>
+                                        <option value="Bắc" t-att-selected="rv.mien === 'Bắc'">Miền Bắc</option>
+                                        <option value="VP" t-att-selected="rv.mien === 'VP'">Văn phòng</option>
+                                    </select>
+                                </label>
+                                <label><span>Cửa hàng</span>
+                                    <select t-on-change="onTrStore">
+                                        <option t-foreach="tr ? tr.store_opts : []" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + rv.trStoreId)" t-esc="st.name"/>
+                                    </select>
+                                </label>
+                                <div class="rev_sum_pill" t-if="tr and tr.store">
+                                    <span>Target Tháng:</span>
+                                    <b t-esc="fmtRevDisplay(tr.summary.target)"/>
+                                </div>
+                                <button type="button" class="btn btn-success text-white asm_export_btn" t-if="tr and tr.store and tr.can_export" t-on-click="onTrExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                            </div>
+                        </div>
+                        <div class="o_store_job_empty" t-if="tr and !tr.store"><i class="fa fa-info-circle"/> Không có cửa hàng nào trong phạm vi được xem.</div>
+                        <t t-if="tr and tr.store">
+                            <t t-set="sm" t-value="tr.summary"/>
+                            <!-- Khối 1 -->
+                            <div class="tr_sec"><span class="tr_no">1</span> Chỉ tiêu cửa hàng trong tháng</div>
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table tr_table">
+                                        <thead><tr>
+                                            <th>Mã Cửa Hàng</th><th>Miền</th><th>Số Ngày Tháng</th><th>Target Tháng</th><th>Target Ngày</th>
+                                            <th>Doanh thu đã đạt</th><th>Còn lại phải đạt</th><th>% Đạt được</th><th>% Còn lại</th><th>Đánh giá tháng</th>
+                                        </tr></thead>
+                                        <tbody><tr>
+                                            <td class="c b" t-esc="tr.store.code"/>
+                                            <td class="c" t-esc="tr.store.mien_label"/>
+                                            <td class="c tr_in_cell">
+                                                <input type="text" inputmode="numeric" class="tr_days_in" t-att-value="tr.days" title="Số ngày dùng để tính Target Ngày (mặc định = số ngày của tháng)" t-on-change="onTrDays"/>
+                                            </td>
+                                            <td class="r b tr_red" t-esc="fmtRevDisplay(sm.target)"/>
+                                            <td class="r b" t-esc="fmtRevDisplay(sm.day_target)"/>
+                                            <td class="r b tr_red" t-esc="fmtRevDisplay(sm.done)"/>
+                                            <td class="r b" t-esc="fmtRevDisplay(sm.left)"/>
+                                            <td class="c b" t-esc="fmtTrPct(sm.pct)"/>
+                                            <td class="c b" t-esc="fmtTrPct(sm.left_pct)"/>
+                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(sm.result)" t-esc="sm.result"/></td>
+                                        </tr></tbody>
+                                    </table>
+                                </div>
+                                <div class="tr_bar"><div class="tr_bar_fill" t-att-style="'width:' + (sm.pct &gt; 100 ? 100 : sm.pct) + '%'"/></div>
+                            </div>
+                            <!-- Khối 2 -->
+                            <div class="tr_sec"><span class="tr_no">2</span> Target &amp; tiến độ từng nhân viên</div>
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table tr_table">
+                                        <thead><tr>
+                                            <th>STT</th><th>ID HRM</th><th class="l">Tên nhân viên</th><th>Phân bổ target (%)</th><th>Target Tháng NV</th>
+                                            <th>Target Ngày NV</th><th>Doanh thu đã đạt</th><th>% Đạt được</th><th>Còn lại phải đạt</th><th>% Còn lại</th><th>Đánh giá tiến độ</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="tr.staff" t-as="s" t-key="s.staff_key">
+                                                <td class="c" t-esc="s.stt"/>
+                                                <td class="c" t-esc="s.employee_code or '-'"/>
+                                                <td class="l"><b t-if="s.is_cht"><t t-esc="s.staff_name"/> (CHT)</b><span t-else="" t-esc="s.staff_name"/></td>
+                                                <td class="c b tr_blue" t-esc="fmtTrPct(s.alloc)"/>
+                                                <td class="r b tr_red" t-esc="fmtRevDisplay(s.target)"/>
+                                                <td class="r" t-esc="fmtRevDisplay(s.day_target)"/>
+                                                <td class="r b tr_red" t-esc="fmtRevDisplay(s.done)"/>
+                                                <td class="c b" t-esc="fmtTrPct(s.pct)"/>
+                                                <td class="r" t-esc="fmtRevDisplay(s.left)"/>
+                                                <td class="c" t-esc="fmtTrPct(s.left_pct)"/>
+                                                <td class="c"><span t-att-class="'tr_res ' + trResCls(s.result)" t-esc="s.result"/></td>
+                                            </tr>
+                                            <tr t-if="!tr.staff.length"><td colspan="11" class="c text-muted">Chưa có nhân viên được phân bổ target (xem tab Phân Bổ Target).</td></tr>
+                                        </tbody>
+                                        <tfoot t-if="tr.staff.length"><tr class="tr_total">
+                                            <td colspan="3" class="c">TỔNG CỘNG NHÂN VIÊN</td>
+                                            <td t-att-class="'c ' + (tr.staff_total.alloc === 100 ? '' : 'tr_warn')" t-esc="fmtTrPct(tr.staff_total.alloc)"/>
+                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.staff_total.target)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(tr.staff_total.day_target)"/>
+                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.staff_total.done)"/>
+                                            <td class="c" t-esc="fmtTrPct(tr.staff_total.pct)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(tr.staff_total.left)"/>
+                                            <td class="c" t-esc="fmtTrPct(tr.staff_total.left_pct)"/>
+                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(tr.staff_total.result)" t-esc="tr.staff_total.result"/></td>
+                                        </tr></tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Khối 3 -->
+                            <div class="tr_sec"><span class="tr_no">3</span> Đánh giá doanh thu &amp; Target theo tuần <small>(bấm vào tuần để lọc danh sách ngày bên dưới)</small></div>
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table tr_table">
+                                        <thead><tr>
+                                            <th>Tuần</th><th>Từ ngày - Đến ngày</th><th>Số ngày</th><th>Target Tuần</th><th>Doanh thu đã đạt</th>
+                                            <th>Chênh lệch (+/-)</th><th>Còn lại trong tuần</th><th>% Đạt được</th><th>% Còn lại</th><th>Đánh giá tuần</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <tr t-foreach="tr.weeks" t-as="w" t-key="w.week" t-att-class="'tr_click' + (rv.trWeek === w.week ? ' tr_sel' : '')" t-on-click="() => this.onTrWeek(w.week)">
+                                                <td class="c b"><i t-att-class="rv.trWeek === w.week ? 'fa fa-filter' : 'fa fa-calendar-o'"/> <t t-esc="w.label"/></td>
+                                                <td class="c" t-esc="w.range"/>
+                                                <td class="c" t-esc="w.days"/>
+                                                <td class="r b tr_red" t-esc="fmtRevDisplay(w.target)"/>
+                                                <td class="r b tr_red" t-esc="fmtRevDisplay(w.done)"/>
+                                                <td t-att-class="'r ' + (w.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(w.diff)"/>
+                                                <td class="r" t-esc="fmtRevDisplay(w.left)"/>
+                                                <td class="c b" t-esc="fmtTrPct(w.pct)"/>
+                                                <td class="c" t-esc="fmtTrPct(w.left_pct)"/>
+                                                <td class="c"><span t-att-class="'tr_res ' + trResCls(w.result)" t-esc="w.result"/></td>
+                                            </tr>
+                                        </tbody>
+                                        <tfoot><tr class="tr_total">
+                                            <td colspan="2" class="c">TỔNG CỘNG 4 TUẦN</td>
+                                            <td class="c" t-esc="tr.weeks_total.days"/>
+                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.weeks_total.target)"/>
+                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.weeks_total.done)"/>
+                                            <td class="r" t-esc="fmtTrDiff(tr.weeks_total.diff)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(tr.weeks_total.left)"/>
+                                            <td class="c" t-esc="fmtTrPct(tr.weeks_total.pct)"/>
+                                            <td class="c" t-esc="fmtTrPct(tr.weeks_total.left_pct)"/>
+                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(tr.weeks_total.result)" t-esc="tr.weeks_total.result"/></td>
+                                        </tr></tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <!-- Khối 4 -->
+                            <div class="tr_sec"><span class="tr_no">4</span> Chi tiết từng ngày trong tháng
+                                <small t-if="rv.trWeek"> · đang lọc Tuần <t t-esc="rv.trWeek"/> <a href="#" t-on-click.prevent="() => this.onTrWeek(rv.trWeek)">(bỏ lọc)</a></small>
+                                <small t-else=""> (bấm vào ngày để xem doanh thu từng nhân viên)</small>
+                            </div>
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table tr_table tr_days">
+                                        <thead><tr>
+                                            <th>Ngày</th><th>Thứ</th><th>Tuần</th><th>Target Ngày CH</th><th>Doanh thu đã đạt</th><th>Chênh lệch ngày</th>
+                                            <th>Đánh giá ngày</th><th>Tổng đã đạt từ đầu tháng</th><th>Còn lại Target Tháng</th>
+                                        </tr></thead>
+                                        <tbody>
+                                            <t t-foreach="trDayRows" t-as="d" t-key="d.date">
+                                                <tr t-att-class="'tr_click' + (rv.trOpenDay === d.date ? ' tr_sel' : '') + (d.is_today ? ' tr_today' : '')" t-on-click="() => this.onTrDay(d)">
+                                                    <td class="c b"><i t-att-class="rv.trOpenDay === d.date ? 'fa fa-caret-down' : 'fa fa-caret-right'"/> <t t-esc="d.label"/></td>
+                                                    <td class="c" t-esc="d.weekday"/>
+                                                    <td class="c" t-esc="'Tuần ' + d.week"/>
+                                                    <td class="r" t-esc="fmtRevDisplay(d.target)"/>
+                                                    <td class="r b tr_red" t-esc="fmtRevDisplay(d.done)"/>
+                                                    <td t-att-class="'r ' + (d.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(d.diff)"/>
+                                                    <td class="c"><span t-att-class="'tr_res ' + trResCls(d.result)" t-esc="d.result"/></td>
+                                                    <td class="r" t-esc="fmtRevDisplay(d.cum)"/>
+                                                    <td class="r b" t-esc="fmtRevDisplay(d.left_month)"/>
+                                                </tr>
+                                                <tr class="tr_detail" t-if="rv.trOpenDay === d.date">
+                                                    <td colspan="9">
+                                                        <table class="tr_sub">
+                                                            <thead><tr><th class="l">Nhân viên</th><th>ID HRM</th><th>Target Ngày NV</th><th>Doanh thu đã đạt</th><th>Chênh lệch</th><th>Đánh giá</th></tr></thead>
+                                                            <tbody>
+                                                                <tr t-foreach="d.staff" t-as="p" t-key="p_index">
+                                                                    <td class="l"><b t-if="p.is_cht"><t t-esc="p.staff_name"/> (CHT)</b><span t-else="" t-esc="p.staff_name"/></td>
+                                                                    <td class="c" t-esc="p.employee_code or '-'"/>
+                                                                    <td class="r" t-esc="fmtRevDisplay(p.day_target)"/>
+                                                                    <td class="r b tr_red" t-esc="fmtRevDisplay(p.done)"/>
+                                                                    <td t-att-class="'r ' + (p.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(p.diff)"/>
+                                                                    <td class="c"><span t-att-class="'tr_res ' + trResCls(p.result)" t-esc="p.result"/></td>
+                                                                </tr>
+                                                                <tr t-if="!d.staff.length"><td colspan="6" class="c text-muted">Không có nhân viên.</td></tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                        <tfoot><tr class="tr_total">
+                                            <td colspan="3" class="c" t-esc="rv.trWeek ? ('TỔNG CỘNG TUẦN ' + rv.trWeek) : ('TỔNG CỘNG THÁNG ' + tr.month_label)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(trDayTotals.target)"/>
+                                            <td class="r tr_red" t-esc="fmtRevDisplay(trDayTotals.done)"/>
+                                            <td class="r" t-esc="fmtTrDiff(trDayTotals.done - trDayTotals.target)"/>
+                                            <td class="c"><t t-esc="trDayTotals.ok"/> ngày Đạt</td>
+                                            <td class="r" t-esc="fmtRevDisplay(sm.done)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(sm.left)"/>
+                                        </tr></tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                    <!-- TAB 3: PHÂN BỔ TARGET -->
+                    <t t-if="rv.tab === 'target'">
+                        <t t-set="tg" t-value="rv.tgData"/>
+                        <div class="asm_toolbar rev_toolbar">
+                            <div class="asm_filters rev_filters">
+                                <label><span>Tháng</span>
+                                    <div class="rev_date_grp">
+                                        <button type="button" class="rev_nav_btn" title="Tháng trước" t-on-click="() => this.onRevStepMonth(-1)"><i class="fa fa-chevron-left"/></button>
+                                        <select class="rev_month_sel" t-on-change="(ev) => this.onRevFilter('month', ev)">
+                                            <option t-foreach="revMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === rv.month" t-esc="m.label"/>
+                                        </select>
+                                        <button type="button" class="rev_nav_btn" title="Tháng sau" t-on-click="() => this.onRevStepMonth(1)"><i class="fa fa-chevron-right"/></button>
+                                        <button type="button" class="rev_today_btn" t-on-click="onRevThisMonth">Tháng này</button>
+                                    </div>
+                                </label>
+                                <label><span>Miền</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('mien', ev)">
+                                        <option value="" t-att-selected="!rv.mien">Tất cả miền</option>
+                                        <option value="Nam" t-att-selected="rv.mien === 'Nam'">Miền Nam</option>
+                                        <option value="ĐTT" t-att-selected="rv.mien === 'ĐTT'">Miền ĐTT</option>
+                                        <option value="Bắc" t-att-selected="rv.mien === 'Bắc'">Miền Bắc</option>
+                                        <option value="VP" t-att-selected="rv.mien === 'VP'">Văn phòng</option>
+                                    </select>
+                                </label>
+                                <label><span>Cửa hàng</span>
+                                    <select t-on-change="(ev) => this.onRevFilter('storeId', ev)">
+                                        <option value="" t-att-selected="!rv.storeId">Tất cả cửa hàng</option>
+                                        <option t-foreach="tg ? tg.store_opts : []" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + rv.storeId)" t-esc="st.name"/>
+                                    </select>
+                                </label>
+                                <label><span>Tìm kiếm</span>
+                                    <input type="search" placeholder="Cửa hàng, nhân viên..." t-att-value="rv.q" t-on-input="(ev) => { state.rev.q = ev.target.value; }"/>
+                                </label>
+                                <div class="rev_sum_pill" t-if="tg">
+                                    <span>Tổng Target:</span>
+                                    <b t-esc="fmtRevDisplay(tgGrandTarget)"/>
+                                </div>
+                                <t t-if="tg and tg.can_edit">
+                                    <button type="button" class="btn btn-primary tg_import_btn" t-att-disabled="rv.tgImporting"
+                                            title="Import file Excel cùng mẫu Xuất Excel (Target Cửa Hàng, % phân bổ)"
+                                            t-on-click="(ev) => ev.currentTarget.nextElementSibling.click()">
+                                        <i t-att-class="rv.tgImporting ? 'fa fa-spinner fa-spin' : 'fa fa-upload'"/> Import Excel
+                                    </button>
+                                    <input type="file" accept=".xlsx" class="d-none" t-on-change="onTgImport"/>
+                                </t>
+                                <button type="button" class="btn btn-success text-white asm_export_btn" t-if="tg and tg.can_export" t-on-click="onTgExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
+                            </div>
+                        </div>
+                        <t t-if="tg and tgView.length">
+                            <div class="asm_card">
+                                <div class="kp_scroll">
+                                    <table class="kp_table asm_table rev_table rev_tg_table">
+                                        <thead>
+                                            <tr>
+                                                <th class="c_stt">STT</th>
+                                                <th class="c_mien">Miền</th>
+                                                <th class="c_store">Mã Cửa Hàng</th>
+                                                <th class="l">Tên nhân viên</th>
+                                                <th class="c_hrm">ID HRM</th>
+                                                <th class="c_pos">Mã chức vụ</th>
+                                                <th class="c_tg">Target Cửa Hàng</th>
+                                                <th class="c_pct">Đã Phân Bổ NV theo %</th>
+                                                <th class="c_amt">Thành tiền Target NV (VNĐ)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="tgView" t-as="g" t-key="g.st.store_id">
+                                                <tr t-foreach="g.rows" t-as="row" t-key="row.l.staff_key">
+                                                    <td class="c" t-esc="row.stt"/>
+                                                    <td class="c" t-esc="g.st.mien_label"/>
+                                                    <td class="c b" t-esc="g.st.store"/>
+                                                    <td class="l">
+                                                        <b t-if="row.l.is_cht"><t t-esc="row.l.staff_name"/> (CHT)</b>
+                                                        <span t-else="" t-esc="row.l.staff_name"/>
+                                                    </td>
+                                                    <td class="c" t-esc="row.l.employee_code or '-'"/>
+                                                    <td class="c" t-esc="row.l.position or '-'"/>
+                                                    <td class="c tg_cell" t-if="row_index === 0" t-att-rowspan="g.rows.length">
+                                                        <input t-if="tg.can_edit" type="text" inputmode="numeric" class="tg_in tg_target" placeholder="0"
+                                                               t-att-value="g.st.targetStr" t-on-input="(ev) => this.onTgTargetInput(g.st, ev)"/>
+                                                        <b t-else="" class="tg_val" t-esc="fmtRevDisplay(tgTarget(g.st))"/>
+                                                    </td>
+                                                    <td class="c pct_cell">
+                                                        <div class="tg_pct_wrap" t-if="tg.can_edit">
+                                                            <input type="text" inputmode="decimal" class="tg_in tg_pct" placeholder="0"
+                                                                   t-att-value="row.l.pctStr" t-on-input="(ev) => this.onTgPctInput(row.l, ev)" t-on-blur="() => this.onTgPctBlur(row.l)"/>
+                                                            <span>%</span>
+                                                        </div>
+                                                        <b t-else="" class="tg_val" t-esc="(fmtTgPct(parseTgPct(row.l.pctStr)) || '0') + '%'"/>
+                                                    </td>
+                                                    <td class="r b" t-esc="fmtRevDisplay(tgAmount(g.st, row.l))"/>
+                                                </tr>
+                                                <tr class="tg_sum_row">
+                                                    <td colspan="6" class="c">
+                                                        <button type="button" class="tg_even_btn" t-if="tg.can_edit" t-on-click="() => this.onTgSplitEven(g.st)" title="Chia đều 100% cho các nhân viên"><i class="fa fa-balance-scale"/> Chia đều</button>
+                                                        <b>Tổng phân bổ cửa hàng <t t-esc="g.st.store"/></b>
+                                                    </td>
+                                                    <td class="c b" t-esc="fmtRevDisplay(tgTarget(g.st))"/>
+                                                    <td t-att-class="'c b ' + (tgStorePct(g.st) === 100 ? 'tg_ok' : 'tg_bad')" t-esc="(fmtTgPct(tgStorePct(g.st)) || '0') + '%'"/>
+                                                    <td class="r b" t-esc="fmtRevDisplay(tgStoreAmount(g.st))"/>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                        <tfoot t-if="tg.show_grand">
+                                            <tr class="rev_tot_row">
+                                                <td colspan="6" class="c"><b>TỔNG HỆ THỐNG</b></td>
+                                                <td class="c"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandTarget)"/></td>
+                                                <td class="c"><b t-esc="(fmtTgPct(tgGrandPct) || '0') + '%'"/></td>
+                                                <td class="r"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandAmount)"/></td>
+                                            </tr>
+                                        </tfoot>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="rev_action_bar" t-if="tg.can_edit">
+                                <button type="button" class="btn btn-primary rev_save_btn" t-att-disabled="!rv.tgDirty or rv.tgSaving" t-on-click="onTgSave">
+                                    <i t-att-class="rv.tgSaving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
+                                </button>
+                                <button type="button" class="btn btn-secondary rev_cancel_btn" t-if="rv.tgDirty" t-att-disabled="rv.tgSaving" t-on-click="onTgCancel">Hủy</button>
+                                <span class="rev_dirty_msg" t-if="rv.tgDirty"><i class="fa fa-exclamation-circle"/> Có thay đổi chưa lưu — bấm <b>Lưu</b> để hệ thống thực hiện.</span>
+                                <span class="rev_hint_msg" t-else=""><i class="fa fa-info-circle"/> Nhập <b>Target Cửa Hàng</b> và <b>Tỷ trọng %</b> từng nhân viên • Tổng mỗi cửa hàng phải đạt <b>100%</b>.</span>
+                            </div>
+                        </t>
+                        <div class="o_store_job_empty" t-elif="!rv.busy">
+                            <i class="fa fa-info-circle"/> Không có cửa hàng nào có nhân sự xếp ca trong Tháng <b t-esc="tg ? tg.month_label : rv.month"/>.
+                        </div>
+                    </t>
                 </div>
                 <!-- ===== Phiếu Audit & Đánh giá cửa hàng (ASM) ===== -->
                 <div class="o_aud" t-if="state.activeNav === 'nvbh_audit'">

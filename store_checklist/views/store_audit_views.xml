@@ -146,7 +146,7 @@
                                     <field name="name" readonly="1" force_save="1" width="220px"/>
                                     <field name="requirement" readonly="1" force_save="1"/>
                                     <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
-                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px" decoration-danger="note"/>
                                     <field name="is_scored" column_invisible="1"/>
                                     <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
                                            decoration-success="result == 'pass'"
@@ -175,7 +175,7 @@
                                     <field name="name" readonly="1" force_save="1" width="220px"/>
                                     <field name="requirement" readonly="1" force_save="1"/>
                                     <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
-                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px" decoration-danger="note"/>
                                     <field name="is_scored" column_invisible="1"/>
                                     <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
                                            decoration-success="result == 'pass'"
@@ -204,7 +204,7 @@
                                     <field name="name" readonly="1" force_save="1" width="220px"/>
                                     <field name="requirement" readonly="1" force_save="1"/>
                                     <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
-                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px" decoration-danger="note"/>
                                     <field name="is_scored" column_invisible="1"/>
                                     <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
                                            decoration-success="result == 'pass'"
@@ -233,7 +233,7 @@
                                     <field name="name" readonly="1" force_save="1" width="220px"/>
                                     <field name="requirement" readonly="1" force_save="1"/>
                                     <field name="max_score" readonly="1" force_save="1" options="{'hide_trailing_zeros': true}" sum="Điểm chuẩn" width="115px"/>
-                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px"/>
+                                    <field name="actual_score" widget="store_score" options="{'hide_trailing_zeros': true}" sum="Điểm đánh giá" width="105px" decoration-danger="note"/>
                                     <field name="is_scored" column_invisible="1"/>
                                     <field name="result" widget="badge" width="110px" invisible="result == 'todo'"
                                            decoration-success="result == 'pass'"

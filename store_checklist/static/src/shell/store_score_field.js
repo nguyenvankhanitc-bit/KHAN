@@ -6,7 +6,12 @@ import { FloatField, floatField } from "@web/views/fields/float/float_field";
 // Ô điểm đánh giá: để trống khi dòng chưa chấm; nhập kể cả 0 cũng tính là đã chấm
 export class StoreScoreField extends FloatField {
     get formattedValue() {
-        return this.props.record.data.is_scored ? super.formattedValue : "";
+        const data = this.props.record.data;
+        // tiêu chí có "Chi tiết lỗi": hiện số điểm bị trừ (= -điểm chuẩn), điểm tính vào tổng vẫn là 0
+        if ((data.note || "").trim() && data.max_score) {
+            return `-${Number(data.max_score.toFixed(2))}`;
+        }
+        return data.is_scored ? super.formattedValue : "";
     }
 
     parse(value) {

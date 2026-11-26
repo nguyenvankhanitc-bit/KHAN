@@ -21,7 +21,7 @@
         <field name="paperformat_id" ref="paperformat_store_audit"/>
         <!-- cache PDF; tên chứa mốc sửa cuối của phiếu và các dòng nên sửa điểm là tự dựng lại -->
         <field name="attachment_use" eval="True"/>
-        <field name="attachment">'Bien-ban-v17-%s-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]), max(object.env['store.audit.level'].sudo().search([]).mapped('write_date') or [0]))</field>
+        <field name="attachment">'Bien-ban-v18-%s-%s-%s-%s.pdf' % (object.id, len(object.line_ids), max(object.line_ids.mapped('write_date') + [object.write_date]), max(object.env['store.audit.level'].sudo().search([]).mapped('write_date') or [0]))</field>
     </record>
 
     <template id="report_store_audit">
@@ -112,7 +112,7 @@
                                         <td><t t-esc="l.name"/></td>
                                         <td><t t-esc="l.requirement"/></td>
                                         <td class="c"><t t-esc="'%g' % l.max_score"/></td>
-                                        <td class="c red"><t t-if="l.is_scored"><t t-esc="'%g' % l.actual_score"/></t></td>
+                                        <td class="c red"><t t-if="(l.note or '').strip()"><t t-esc="'-%g' % l.max_score"/></t><t t-elif="l.is_scored"><t t-esc="'%g' % l.actual_score"/></t></td>
                                         <td class="c"><t t-esc="l.note"/></td>
                                         <td class="c" style="padding:4px;">
                                             <!-- ô cố định 200x250px; ảnh vừa khung, giữ tỉ lệ, không méo -->

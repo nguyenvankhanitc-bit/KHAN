@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_employee_form_inherit_location" model="ir.ui.view">
+        <field name="name">hr.employee.form.inherit.location</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Vị trí &amp; Cửa hàng" name="employee_location_page">
+                    <group>
+                        <group string="Tọa độ GPS gần nhất">
+                            <field name="gps_status" widget="badge"
+                                   decoration-success="gps_status == 'active'"
+                                   decoration-warning="gps_status == 'stale'"
+                                   decoration-muted="gps_status == 'none'"/>
+                            <field name="last_latitude"/>
+                            <field name="last_longitude"/>
+                            <field name="last_location_time"/>
+                        </group>
+                        <group string="Phụ trách mạng lưới cửa hàng">
+                            <field name="store_ids" widget="many2many_tags" placeholder="Chọn các cửa hàng nhân viên phụ trách..."/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

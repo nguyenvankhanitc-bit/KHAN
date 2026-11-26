@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_hr_employee_location_user_emp,hr.employee.location.user,hr.model_hr_employee,group_hr_employee_location_user,1,0,0,0
+access_hr_employee_location_manager_emp,hr.employee.location.manager,hr.model_hr_employee,group_hr_employee_location_manager,1,1,1,1
+access_hr_employee_location_user_store,hr.store.location.user,hr_store.model_hr_store,group_hr_employee_location_user,1,0,0,0
+access_hr_employee_location_manager_store,hr.store.location.manager,hr_store.model_hr_store,group_hr_employee_location_manager,1,1,1,1

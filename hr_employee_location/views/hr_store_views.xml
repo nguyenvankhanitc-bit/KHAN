@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hr_store_form_inherit_location" model="ir.ui.view">
+        <field name="name">hr.store.form.inherit.location</field>
+        <field name="model">hr.store</field>
+        <field name="inherit_id" ref="hr_store.view_hr_store_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_geocode_address"
+                            type="object"
+                            string="Định vị tọa độ (geopy)"
+                            class="btn-primary"
+                            icon="fa-map-marker"/>
+                </header>
+            </xpath>
+            <xpath expr="//field[@name='address']" position="after">
+                <group string="Tọa độ OpenStreetMap (Vĩ độ / Kinh độ)">
+                    <group>
+                        <field name="latitude"/>
+                        <field name="longitude"/>
+                    </group>
+                    <group>
+                        <field name="geocode_status" widget="badge"
+                               decoration-success="geocode_status == 'success'"
+                               decoration-info="geocode_status == 'manual'"
+                               decoration-danger="geocode_status == 'failed'"
+                               decoration-muted="geocode_status == 'draft'"/>
+                        <field name="last_geocode_time"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

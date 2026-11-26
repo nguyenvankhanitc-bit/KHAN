@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Menu -->
+    <menuitem id="menu_hr_employee_location_root"
+              name="Bản đồ nhân viên"
+              sequence="85"
+              web_icon="hr_employee_location,static/description/icon.png"
+              groups="group_hr_employee_location_user"/>
+
+    <!-- Map Action Menu -->
+    <menuitem id="menu_hr_employee_location_map"
+              name="Bản đồ mạng lưới"
+              parent="menu_hr_employee_location_root"
+              action="action_employee_store_map"
+              sequence="10"/>
+
+    <!-- Configuration / Submenu for Stores and Employees -->
+    <menuitem id="menu_hr_employee_location_config"
+              name="Dữ liệu vị trí"
+              parent="menu_hr_employee_location_root"
+              sequence="20"
+              groups="group_hr_employee_location_manager"/>
+
+    <menuitem id="menu_hr_employee_location_stores"
+              name="Tọa độ cửa hàng"
+              parent="menu_hr_employee_location_config"
+              action="hr_store.action_hr_store"
+              sequence="10"/>
+</odoo>

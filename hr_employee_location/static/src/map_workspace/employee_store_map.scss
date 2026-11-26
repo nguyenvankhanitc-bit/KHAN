@@ -1,0 +1,169 @@
+.o_employee_map_workspace {
+    position: relative;
+    background-color: #f8f9fa;
+    overflow: hidden;
+
+    .o_employee_sidebar {
+        width: 360px;
+        min-width: 300px;
+        max-width: 420px;
+        z-index: 2;
+
+        .o_employee_card {
+            transition: all 0.2s ease-in-out;
+            border-radius: 8px;
+
+            &:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+            }
+
+            &.bg-primary-subtle {
+                border-left: 4px solid #0d6efd !important;
+            }
+        }
+    }
+
+    .o_map_viewport {
+        z-index: 1;
+
+        .o_leaflet_map_dom {
+            background-color: #e5e3df;
+        }
+
+        .o_map_floating_bar {
+            backdrop-filter: blur(8px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .o_legend_dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .o_legend_line {
+            display: inline-block;
+            width: 16px;
+            height: 3px;
+            background-color: #0d6efd;
+            border-radius: 2px;
+            vertical-align: middle;
+        }
+    }
+}
+
+/* Custom Leaflet Marker Styling */
+.o_leaflet_store_marker {
+    background: transparent;
+    border: none;
+
+    .o_store_pin_wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .o_store_pin_badge {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #dc3545, #b02a37);
+            color: #ffffff;
+            border: 2px solid #ffffff;
+            border-radius: 50% 50% 50% 0;
+            transform: rotate(-45deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 8px rgba(220, 53, 69, 0.4);
+
+            i {
+                transform: rotate(45deg);
+                font-size: 14px;
+            }
+        }
+
+        .o_store_pin_label {
+            margin-top: 4px;
+            background: rgba(33, 37, 41, 0.85);
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+    }
+}
+
+.o_leaflet_emp_marker {
+    background: transparent;
+    border: none;
+
+    .o_emp_pin_wrapper {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        .o_emp_pin_pulse {
+            position: absolute;
+            top: 0;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(13, 110, 253, 0.4);
+            animation: o_emp_pulse_anim 2s infinite ease-out;
+            z-index: 1;
+        }
+
+        .o_emp_pin_badge {
+            position: relative;
+            z-index: 2;
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #0d6efd, #0a58ca);
+            color: #ffffff;
+            border: 2.5px solid #ffffff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 3px 10px rgba(13, 110, 253, 0.5);
+
+            i {
+                font-size: 15px;
+            }
+        }
+
+        .o_emp_pin_label {
+            position: relative;
+            z-index: 2;
+            margin-top: 4px;
+            background: #0d6efd;
+            color: #ffffff;
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            white-space: nowrap;
+            box-shadow: 0 2px 5px rgba(13, 110, 253, 0.3);
+        }
+    }
+}
+
+@keyframes o_emp_pulse_anim {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.8;
+    }
+    70% {
+        transform: scale(1.8);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}

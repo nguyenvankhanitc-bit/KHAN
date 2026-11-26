@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hr_employee_location.EmployeeStoreMap">
+        <div class="o_employee_map_workspace d-flex w-100 h-100">
+            <!-- Sidebar: Danh sách nhân viên & Tìm kiếm -->
+            <div class="o_employee_sidebar d-flex flex-column bg-view border-end">
+                <!-- Sidebar Header -->
+                <div class="p-3 border-bottom bg-light">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <h5 class="m-0 fw-bold text-primary">
+                            <i class="fa fa-map-marked-alt me-2"/>Mạng lưới nhân viên
+                        </h5>
+                        <button class="btn btn-sm btn-outline-secondary" t-on-click="loadData" title="Làm mới">
+                            <i class="fa fa-refresh" t-att-class="{'fa-spin': state.isLoading}"/>
+                        </button>
+                    </div>
+
+                    <!-- Search Input -->
+                    <div class="input-group input-group-sm mb-2">
+                        <span class="input-group-text bg-white">
+                            <i class="fa fa-search text-muted"/>
+                        </span>
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Tìm theo tên hoặc chức danh..."
+                               t-model="state.searchQuery"/>
+                        <button t-if="state.searchQuery"
+                                class="btn btn-outline-secondary"
+                                type="button"
+                                t-on-click="() => this.state.searchQuery = ''">
+                            <i class="fa fa-times"/>
+                        </button>
+                    </div>
+
+                    <!-- Filter pills -->
+                    <div class="btn-group btn-group-sm w-100 mb-2" role="group">
+                        <button type="button"
+                                class="btn"
+                                t-att-class="state.filterStatus === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
+                                t-on-click="() => this.state.filterStatus = 'all'">
+                            Tất cả (<t t-esc="state.stats.totalEmployees"/>)
+                        </button>
+                        <button type="button"
+                                class="btn"
+                                t-att-class="state.filterStatus === 'active' ? 'btn-success text-white' : 'btn-outline-secondary'"
+                                t-on-click="() => this.state.filterStatus = 'active'">
+                            GPS Online (<t t-esc="state.stats.activeGpsCount"/>)
+                        </button>
+                        <button type="button"
+                                class="btn"
+                                t-att-class="state.filterStatus === 'none' ? 'btn-secondary text-white' : 'btn-outline-secondary'"
+                                t-on-click="() => this.state.filterStatus = 'none'">
+                            Chưa có GPS
+                        </button>
+                    </div>
+
+                    <!-- Summary Stats Bar -->
+                    <div class="d-flex justify-content-between text-muted small px-1">
+                        <span><i class="fa fa-users me-1"/> <t t-esc="filteredEmployees.length"/> nhân viên</span>
+                        <span><i class="fa fa-store me-1"/> <t t-esc="state.stats.totalStores"/> cửa hàng</span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Employee Cards List -->
+                <div class="o_employee_list flex-grow-1 overflow-auto p-2">
+                    <t t-if="state.isLoading">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa fa-circle-o-notch fa-spin fa-2x mb-2"/>
+                            <div>Đang tải dữ liệu bản đồ...</div>
+                        </div>
+                    </t>
+                    <t t-elif="filteredEmployees.length === 0">
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa fa-user-times fa-2x mb-2 text-secondary"/>
+                            <div>Không tìm thấy nhân viên phù hợp</div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <t t-foreach="filteredEmployees" t-as="emp" t-key="emp.id">
+                            <div class="o_employee_card card mb-2 cursor-pointer shadow-sm transition"
+                                 t-att-class="{
+                                     'border-primary bg-primary-subtle text-primary': state.selectedEmployeeId === emp.id,
+                                     'border-light-subtle': state.selectedEmployeeId !== emp.id
+                                 }"
+                                 t-on-click="() => this.selectEmployee(emp)">
+                                <div class="card-body p-2 d-flex align-items-center">
+                                    <!-- Avatar / Icon -->
+                                    <div class="o_emp_avatar me-2 rounded-circle d-flex align-items-center justify-content-center bg-light text-primary">
+                                        <i class="fa fa-user-circle fa-2x"/>
+                                    </div>
+                                    
+                                    <!-- Employee Details -->
+                                    <div class="flex-grow-1 min-w-0">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <h6 class="mb-0 text-truncate fw-semibold" t-att-class="state.selectedEmployeeId === emp.id ? 'text-primary' : 'text-dark'">
+                                                <t t-esc="emp.name"/>
+                                            </h6>
+                                            <!-- GPS Badge -->
+                                            <span t-if="emp.gps_status === 'active'" class="badge bg-success-subtle text-success border border-success-subtle small">
+                                                <i class="fa fa-circle text-success me-1"/>GPS Online
+                                            </span>
+                                            <span t-elif="emp.gps_status === 'stale'" class="badge bg-warning-subtle text-warning border border-warning-subtle small">
+                                                <i class="fa fa-clock-o me-1"/>Tín hiệu cũ
+                                            </span>
+                                            <span t-else="" class="badge bg-secondary-subtle text-secondary small">
+                                                Chưa có GPS
+                                            </span>
+                                        </div>
+                                        <div class="text-muted small text-truncate">
+                                            <t t-esc="emp.job_title || 'Chưa có chức vụ'"/>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-1 text-muted small">
+                                            <span>
+                                                <i class="fa fa-store-alt me-1"/>
+                                                <t t-esc="(emp.store_ids || []).length"/> cửa hàng
+                                            </span>
+                                            <span t-if="emp.last_location_time" class="text-muted">
+                                                <t t-esc="emp.last_location_time.slice(11, 16)"/>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </t>
+                </div>
+            </div>
+
+            <!-- Main Map Viewport -->
+            <div class="o_map_viewport flex-grow-1 position-relative h-100">
+                <!-- Top floating actions bar -->
+                <div class="o_map_floating_bar position-absolute top-0 start-0 m-3 z-3 d-flex gap-2 bg-white p-2 rounded shadow-sm border">
+                    <button class="btn btn-sm btn-outline-primary" t-on-click="resetView">
+                        <i class="fa fa-globe me-1"/>Xem tất cả cửa hàng
+                    </button>
+                    <div class="vr my-1"/>
+                    <div class="d-flex align-items-center gap-3 px-2 text-muted small">
+                        <span><span class="o_legend_dot bg-primary me-1"/> Nhân viên</span>
+                        <span><span class="o_legend_dot bg-danger me-1"/> Cửa hàng</span>
+                        <span><span class="o_legend_line me-1"/> Mạng lưới liên kết</span>
+                    </div>
+                </div>
+
+                <!-- Leaflet DOM Map Container -->
+                <div t-ref="mapContainer" class="w-100 h-100 o_leaflet_map_dom"/>
+            </div>
+        </div>
+    </t>
+</templates>

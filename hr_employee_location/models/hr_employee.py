@@ -6,6 +6,22 @@ from odoo import api, fields, models
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
+    tz = fields.Selection(
+        default=lambda self: self.env.user.tz or "Asia/Ho_Chi_Minh",
+    )
+
+    def _auto_init(self):
+        super()._auto_init()
+        # Đảm bảo tất cả nhân viên chưa có timezone sẽ tự động nhận 'Asia/Ho_Chi_Minh'
+        try:
+            self.env.cr.execute("""
+                UPDATE resource_resource
+                SET tz = 'Asia/Ho_Chi_Minh'
+                WHERE tz IS NULL OR tz = '';
+            """)
+        except Exception:
+            pass
+
     last_latitude = fields.Float(
         string="Vĩ độ gần nhất",
         digits=(10, 7),

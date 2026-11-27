@@ -21,7 +21,6 @@
                             <field name="store_ids" widget="many2many_tags" placeholder="Chọn các cửa hàng nhân viên phụ trách..."/>
                         </group>
                         <group string="Thiết bị truy cập gần nhất">
-                            <field name="device_identifier"/>
                             <field name="device_name"/>
                             <field name="device_type" widget="badge"
                                    decoration-info="device_type == 'computer'"

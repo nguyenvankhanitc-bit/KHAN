@@ -9,7 +9,7 @@ _logger = logging.getLogger(__name__)
 class GeolocationController(http.Controller):
 
     @http.route("/hr_employee_location/update_position", type="jsonrpc", auth="user", methods=["POST"])
-    def update_position(self, latitude=None, longitude=None, accuracy=None, device_id=None, device_name=None, device_type=None):
+    def update_position(self, latitude=None, longitude=None, accuracy=None, device_name=None, device_type=None, **kwargs):
         """
         Nhận tọa độ GPS và thông tin thiết bị từ browser webclient của nhân viên và cập nhật vào hr.employee.
         Yêu cầu user đã đăng nhập.
@@ -33,8 +33,6 @@ class GeolocationController(http.Controller):
             except (ValueError, TypeError):
                 pass
 
-        if device_id:
-            vals["device_identifier"] = str(device_id)[:100]
         if device_name:
             vals["device_name"] = str(device_name)[:100]
         if device_type in ("computer", "mobile", "tablet"):
@@ -50,18 +48,18 @@ class GeolocationController(http.Controller):
                     vals["device_name"] = f"{platform.capitalize()} ({browser.capitalize()})"
                 if not vals.get("device_type"):
                     vals["device_type"] = "mobile" if platform.lower() in ["android", "iphone", "ipad"] else "computer"
-        if not vals.get("device_identifier"):
-            sid = request.session.sid or ""
-            vals["device_identifier"] = f"DEV-{sid[:8].upper()}" if sid else "DEV-UNKNOWN"
+
+        # Dọn dẹp mã DEV-* tự sinh cũ nếu còn lưu trong hồ sơ nhân viên
+        if employee.device_identifier and employee.device_identifier.startswith("DEV-"):
+            vals["device_identifier"] = False
 
         if vals:
             employee.sudo().write(vals)
 
-        _logger.debug("Đã cập nhật vị trí & thiết bị nhân viên %s: (%s, %s)", employee.name, vals.get("device_name"), vals.get("device_identifier"))
+        _logger.debug("Đã cập nhật vị trí & thiết bị nhân viên %s: (%s, %s)", employee.name, vals.get("device_name"), vals.get("device_type"))
         return {
             "status": "ok",
             "employee_id": employee.id,
-            "device_identifier": employee.device_identifier,
             "device_name": employee.device_name,
             "device_type": employee.device_type,
             "last_location_time": fields.Datetime.to_string(employee.last_location_time) if employee.last_location_time else False,

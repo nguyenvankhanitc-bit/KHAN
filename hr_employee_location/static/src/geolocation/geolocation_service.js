@@ -4,19 +4,10 @@ import { registry } from "@web/core/registry";
 import { rpc } from "@web/core/network/rpc";
 import { user } from "@web/core/user";
 
-function getOrCreateDeviceId() {
-    try {
-        let deviceId = localStorage.getItem("odoo_device_id");
-        if (!deviceId) {
-            const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
-            deviceId = `DEV-${rand}`;
-            localStorage.setItem("odoo_device_id", deviceId);
-        }
-        return deviceId;
-    } catch (_e) {
-        return "DEV-UNKNOWN";
-    }
-}
+// Xóa device_id tự sinh cũ trong localStorage nếu có
+try {
+    localStorage.removeItem("odoo_device_id");
+} catch (_e) {}
 
 function getDeviceInfo() {
     const ua = typeof navigator !== "undefined" ? navigator.userAgent || "" : "";
@@ -59,7 +50,6 @@ function getDeviceInfo() {
     }
 
     return {
-        deviceId: getOrCreateDeviceId(),
         deviceName: `${osName} (${browserName})`,
         deviceType: deviceType,
     };
@@ -86,7 +76,6 @@ export const geolocationService = {
             const sendPayload = async (coords = null) => {
                 try {
                     const payload = {
-                        device_id: info.deviceId,
                         device_name: info.deviceName,
                         device_type: info.deviceType,
                     };

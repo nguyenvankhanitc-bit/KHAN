@@ -108,7 +108,6 @@ export class EmployeeStoreMap extends Component {
                         "last_location_time",
                         "gps_status",
                         "store_ids",
-                        "device_identifier",
                         "device_name",
                         "device_type",
                     ],
@@ -249,11 +248,10 @@ export class EmployeeStoreMap extends Component {
                 <div class="o_emp_popup">
                     <h6 class="mb-1 text-success"><i class="fa fa-user-circle me-1"></i>${employee.name}</h6>
                     <div class="text-muted small">${employee.job_title || "Nhân viên"}</div>
-                    ${employee.device_name || employee.device_identifier ? `
+                    ${employee.device_name ? `
                     <div class="mt-1 small py-1 px-2 bg-light rounded border text-muted">
                         <i class="fa ${employee.device_type === 'mobile' ? 'fa-mobile' : employee.device_type === 'tablet' ? 'fa-tablet' : 'fa-laptop'} me-1 text-primary"></i>
-                        <span>${employee.device_name || 'Thiết bị'}</span>
-                        ${employee.device_identifier ? `<span class="badge bg-secondary-subtle text-secondary ms-1 font-monospace">${employee.device_identifier}</span>` : ''}
+                        <span>${employee.device_name}</span>
                     </div>` : ''}
                     <div class="small mt-1">Cập nhật lúc: <b>${employee.last_location_time || "Chưa rõ"}</b></div>
                     <div class="mt-1 text-muted small">Tọa độ: ${employee.last_latitude.toFixed(5)}, ${employee.last_longitude.toFixed(5)}</div>
@@ -343,8 +341,7 @@ export class EmployeeStoreMap extends Component {
                 !query ||
                 (emp.name && emp.name.toLowerCase().includes(query)) ||
                 (emp.job_title && emp.job_title.toLowerCase().includes(query)) ||
-                (emp.device_name && emp.device_name.toLowerCase().includes(query)) ||
-                (emp.device_identifier && emp.device_identifier.toLowerCase().includes(query));
+                (emp.device_name && emp.device_name.toLowerCase().includes(query));
 
             const matchesStatus =
                 status === "all" ||

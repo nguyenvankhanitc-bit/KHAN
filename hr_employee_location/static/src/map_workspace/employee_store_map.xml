@@ -108,19 +108,15 @@
                                             </span>
                                         </div>
 
-                                        <!-- Device info row: Type, Name, ID -->
+                                        <!-- Device info row: Type & Name -->
                                         <div class="d-flex align-items-center gap-1 mt-1 text-truncate" style="font-size: 0.76rem;">
-                                            <t t-if="emp.device_name || emp.device_identifier">
+                                            <t t-if="emp.device_name">
                                                 <i t-if="emp.device_type === 'mobile'" class="fa fa-mobile text-primary me-1" title="Điện thoại"/>
                                                 <i t-elif="emp.device_type === 'tablet'" class="fa fa-tablet text-warning me-1" title="Máy tính bảng"/>
                                                 <i t-else="" class="fa fa-laptop text-info me-1" title="Máy tính"/>
 
-                                                <span class="text-dark fw-medium text-truncate" t-att-title="emp.device_name || 'Thiết bị'">
-                                                    <t t-esc="emp.device_name || 'Thiết bị'"/>
-                                                </span>
-
-                                                <span t-if="emp.device_identifier" class="badge bg-light text-secondary border px-1 font-monospace" style="font-size: 0.68rem;" t-att-title="'Mã thiết bị: ' + emp.device_identifier">
-                                                    <t t-esc="emp.device_identifier"/>
+                                                <span class="text-dark fw-medium text-truncate" t-att-title="emp.device_name">
+                                                    <t t-esc="emp.device_name"/>
                                                 </span>
                                             </t>
                                             <t t-else="">

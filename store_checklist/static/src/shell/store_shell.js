@@ -62,7 +62,7 @@ export class StoreChecklistShell extends Component {
             perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false, closed: {} },
             kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
             mg: { month: "", date: "", storeStatus: {}, storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
-            openGroups: { audit: true, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
+            openGroups: { audit: true, nvbh: false, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
             embeddedViewProps: null,
             viewKey: 1,
             dash: null,
@@ -218,6 +218,28 @@ export class StoreChecklistShell extends Component {
     }
 
     get navSections() {
+        const rights = this.state.rights; // ma trận quyền: ẩn mục không có quyền Xem
+        const nvbhSubs = [
+            // Mục con của Checklist NVBH: bấm là mở popup nhập thông tin nhân sự (không đổi màn hình), dùng quyền của mục NVBH
+            { id: "nvbh_staff", label: "Nhân sự", icon: "fa-id-badge", sub: true, permId: "nvbh_staff", action: "store_checklist.action_store_nvbh_staff" },
+            // Ca làm việc của ngày hôm nay (lấy từ Lịch xếp ca), nhóm theo Miền / Cửa hàng
+            { id: "nvbh_today", label: "Lịch ca hôm nay", icon: "fa-calendar-check-o", sub: true, permId: "nvbh_today", action: "store_checklist.action_store_nvbh_today" },
+            // Doanh thu nhân viên bán hàng hằng ngày (tự động điền Họ tên & ID từ Lịch xếp ca)
+            { id: "nvbh_revenue", label: "Doanh thu", icon: "fa-money", sub: true, permId: "nvbh_revenue" },
+            // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
+            { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh_jobs", action: "store_checklist.action_store_nvbh_jobs" },
+            // Danh sách nhân viên đã check list (đã bấm Lưu); bấm vào tên để xem nội dung
+            { id: "nvbh_done", label: "Danh sách checklist NV", icon: "fa-check-square-o", sub: true, permId: "nvbh_done", action: "store_checklist.action_store_nvbh_done" },
+            // Quản lý & đánh giá checklist NVBH: 2 tab Bảng Nhân viên (theo tháng) / Bảng Đánh giá (theo ngày)
+            { id: "nvbh_mg_staff", label: "Quản lý & đánh giá", icon: "fa-th-list", sub: true, permId: "nvbh_mg", action: "store_checklist.action_store_nvbh_done" },
+            // Checklist công việc Cửa hàng trưởng: CHT tick việc đến hạn trong ngày, ASM đánh giá, tự tính lần vi phạm / mức phạt
+            { id: "nvbh_cht", label: "Checklist CV CHT", icon: "fa-user-circle", sub: true, permId: "nvbh_cht" },
+            // Checklist công việc ASM: giống Checklist CV CHT (ASM tick, RSM đánh giá)
+            { id: "nvbh_asmcv", label: "Checklist CV ASM", icon: "fa-user-secret", sub: true, permId: "nvbh_asmcv" },
+            // Phiếu Audit & Đánh giá cửa hàng của ASM: chấm tiêu chí (Danh sách công việc Audit), nhận xét, yêu cầu khắc phục
+            { id: "nvbh_audit", label: "Phiếu Audit cửa hàng", icon: "fa-clipboard", sub: true, permId: "nvbh_audit" },
+        ];
+        const nvbhHasSub = !rights || nvbhSubs.some((c) => rights[c.permId || c.id]?.read);
         const sections = [
             {
                 id: "audit",
@@ -225,25 +247,8 @@ export class StoreChecklistShell extends Component {
                 icon: "fa-check-square-o",
                 iconTone: "audit",
                 children: [
-                    { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh" },
-                    // Mục con của Checklist NVBH: bấm là mở popup nhập thông tin nhân sự (không đổi màn hình), dùng quyền của mục NVBH
-                    { id: "nvbh_staff", label: "Nhân sự", icon: "fa-id-badge", sub: true, permId: "nvbh_staff", action: "store_checklist.action_store_nvbh_staff" },
-                    // Ca làm việc của ngày hôm nay (lấy từ Lịch xếp ca), nhóm theo Miền / Cửa hàng
-                    { id: "nvbh_today", label: "Lịch ca hôm nay", icon: "fa-calendar-check-o", sub: true, permId: "nvbh_today", action: "store_checklist.action_store_nvbh_today" },
-                    // Doanh thu nhân viên bán hàng hằng ngày (tự động điền Họ tên & ID từ Lịch xếp ca)
-                    { id: "nvbh_revenue", label: "Doanh thu", icon: "fa-money", sub: true, permId: "nvbh_revenue" },
-                    // Mục con "Công việc" của Checklist NVBH: màn hình có 2 tab (Check list công việc / Lịch làm việc)
-                    { id: "nvbh_jobs", label: "Công việc check list", icon: "fa-tasks", sub: true, permId: "nvbh_jobs", action: "store_checklist.action_store_nvbh_jobs" },
-                    // Danh sách nhân viên đã check list (đã bấm Lưu); bấm vào tên để xem nội dung
-                    { id: "nvbh_done", label: "Danh sách checklist NV", icon: "fa-check-square-o", sub: true, permId: "nvbh_done", action: "store_checklist.action_store_nvbh_done" },
-                    // Quản lý & đánh giá checklist NVBH: 2 tab Bảng Nhân viên (theo tháng) / Bảng Đánh giá (theo ngày)
-                    { id: "nvbh_mg_staff", label: "Quản lý & đánh giá", icon: "fa-th-list", sub: true, permId: "nvbh_mg", action: "store_checklist.action_store_nvbh_done" },
-                    // Checklist công việc Cửa hàng trưởng: CHT tick việc đến hạn trong ngày, ASM đánh giá, tự tính lần vi phạm / mức phạt
-                    { id: "nvbh_cht", label: "Checklist CV CHT", icon: "fa-user-circle", sub: true, permId: "nvbh_cht" },
-                    // Checklist công việc ASM: giống Checklist CV CHT (ASM tick, RSM đánh giá)
-                    { id: "nvbh_asmcv", label: "Checklist CV ASM", icon: "fa-user-secret", sub: true, permId: "nvbh_asmcv" },
-                    // Phiếu Audit & Đánh giá cửa hàng của ASM: chấm tiêu chí (Danh sách công việc Audit), nhận xét, yêu cầu khắc phục
-                    { id: "nvbh_audit", label: "Phiếu Audit cửa hàng", icon: "fa-clipboard", sub: true, permId: "nvbh_audit" },
+                    { id: "nvbh", label: "Checklist NVBH", icon: "fa-user", action: "store_checklist.action_store_audit_nvbh", hasSub: nvbhHasSub },
+                    ...(this.state.openGroups.nvbh ? nvbhSubs : []),
                     // Các mục phiếu khác (có trong ma trận phân quyền): ẩn / hiện theo quyền Xem của từng user
                     { id: "gs", label: "Checklist GS", icon: "fa-eye", action: "store_checklist.action_store_audit_gs" },
                     { id: "review", label: "Phiếu Đánh Giá", icon: "fa-pencil-square-o", action: "store_checklist.action_store_audit" },
@@ -257,8 +262,6 @@ export class StoreChecklistShell extends Component {
                 iconTone: "report",
                 children: [
                     { id: "report_gs", label: "Báo cáo GS", icon: "fa-file-text", action: "store_checklist.action_store_report_gs" },
-                    { id: "report_nvbh", label: "BC Checklist NVBH KPI", icon: "fa-clipboard", action: "store_checklist.action_store_nvbh_done" },
-                    { id: "report_nsuat", label: "BC Năng suất NVBH", icon: "fa-line-chart", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_nvbh_asm", label: "BC Checklist NVBH ASM", icon: "fa-users", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_nvbh_perf", label: "BC Hiệu suất NVBH", icon: "fa-tachometer", action: "store_checklist.action_store_nvbh_done" },
                     { id: "report_store", label: "Báo cáo Audit CH", icon: "fa-building" },
@@ -281,7 +284,6 @@ export class StoreChecklistShell extends Component {
                 ],
             },
         ];
-        const rights = this.state.rights; // ma trận quyền: ẩn mục không có quyền Xem
         if (rights) {
             for (const sec of sections) {
                 sec.children = sec.children.filter((c) => rights[c.permId || c.id]?.read);
@@ -788,9 +790,6 @@ export class StoreChecklistShell extends Component {
         }
         if (nav === "nvbh_mg_staff" || nav === "nvbh_mg_eval") {
             return !this.state.mg.storeId;
-        }
-        if (nav === "report_nvbh" || nav === "report_nsuat") {
-            return !this.state.kpi.storeId;
         }
         if (nav === "nvbh_schedule" || this.filterNavs.includes(nav)) {
             return !this.state.listFilters.store && nav !== "report_flow";
@@ -1549,6 +1548,7 @@ export class StoreChecklistShell extends Component {
         pf.busy = true;
         try {
             pf.data = await this.orm.call("store.nvbh.check", "get_nvbh_perf_report", [], this.perfArgs());
+            pf.closed = {};
         } finally {
             pf.busy = false;
         }
@@ -1645,11 +1645,27 @@ export class StoreChecklistShell extends Component {
     }
 
     isPerfStoreOpen(id) {
-        return !this.state.perf.closed[id];
+        const pf = this.state.perf;
+        if (Object.prototype.hasOwnProperty.call(pf.closed, id)) {
+            return !pf.closed[id];
+        }
+        return Boolean(pf.storeId || (pf.q || "").trim() || this.perfGroups.length <= 1);
     }
 
     togglePerfStore(id) {
-        this.state.perf.closed[id] = !this.state.perf.closed[id];
+        this.state.perf.closed[id] = this.isPerfStoreOpen(id);
+    }
+
+    get perfAllOpen() {
+        const gs = this.perfGroups;
+        return gs.length > 0 && gs.every((g) => this.isPerfStoreOpen(g.store_id));
+    }
+
+    togglePerfAllStores() {
+        const targetClosed = this.perfAllOpen;
+        for (const g of this.perfGroups) {
+            this.state.perf.closed[g.store_id] = targetClosed;
+        }
     }
 
     onPerfExport() {
@@ -2354,6 +2370,11 @@ export class StoreChecklistShell extends Component {
                 inputs[idx + 1].select();
             }
         }
+    }
+
+    get revSelectedRow() {
+        const id = this.state.rev.selectedId;
+        return id ? (this.state.rev.data?.rows || []).find((r) => r.id === id) || null : null;
     }
 
     onRevClickName(row) {
@@ -4448,7 +4469,7 @@ export class StoreChecklistShell extends Component {
         if (child.sub) {
             cls.push("is-sub");
         }
-        if (child.folder) {
+        if (child.folder || child.hasSub) {
             cls.push("is-folder", this.state.openGroups[child.id] ? "is-open" : "is-closed");
         }
         return cls.join(" ");
@@ -4819,8 +4840,6 @@ export class StoreChecklistShell extends Component {
                     : this.state.rev.tab === "month"
                     ? `DOANH THU THÁNG${this.state.rev.mData?.month_label ? " · THÁNG " + this.state.rev.mData.month_label : ""}`
                     : `DOANH THU THEO NGÀY${this.state.rev.data?.date_label ? " · NGÀY " + this.state.rev.data.date_label : ""}`,
-            report_nvbh: "BÁO CÁO CHECKLIST NVBH - PHIẾU KPI CÁ NHÂN",
-            report_nsuat: "BÁO CÁO NĂNG SUẤT NVBH THEO TIÊU CHÍ CÔNG VIỆC",
             report_nvbh_perf: `BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG${this.state.perf.data?.month_label ? " · THÁNG " + this.state.perf.data.month_label : ""}`,
             report_nvbh_asm: `BÁO CÁO QUẢN TRỊ KHU VỰC THEO ASM${this.state.kpiAsm.data?.month_label ? " · THÁNG " + this.state.kpiAsm.data.month_label : ""}`,
             nvbh_done: this.state.done.tab === "total" ? "BẢNG CHECKLIST TỔNG" : "DANH SÁCH CHECKLIST NHÂN VIÊN",
@@ -5651,6 +5670,12 @@ export class StoreChecklistShell extends Component {
             this.state.openGroups[child.id] = !this.state.openGroups[child.id];
             return;
         }
+        if (child?.hasSub) {
+            this.state.openGroups[child.id] = !this.state.openGroups[child.id];
+            if (this.state.activeNav === child.id) {
+                return;
+            }
+        }
         this.resetStorePick();
         // popup đang mở (ví dụ Xử lý sai phạm) không che nội dung mục vừa chọn: đóng lại khi chuyển mục
         if (document.querySelector(".modal")) {
@@ -6332,9 +6357,6 @@ export class StoreChecklistShell extends Component {
         }
         if (navId === "nvbh_jobs") {
             return this.openJobsPage("nvbh");
-        }
-        if (navId === "report_nvbh" || navId === "report_nsuat") {
-            return this.openKpiPage(navId === "report_nsuat" ? "productivity" : "kpi");
         }
         if (navId === "report_nvbh_asm") {
             return this.openKpiAsmPage();

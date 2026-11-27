@@ -21,7 +21,7 @@
                 <h3>Bạn chưa được phân quyền</h3>
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_revenue' or state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_revenue' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick and !(isAuditListNav and state.auditStoreIds === false)"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav and state.auditStoreIds and state.auditStoreIds.length">Đang hiện phiếu của tất cả cửa hàng bạn được phân quyền. Chọn một cửa hàng ở bộ lọc để xem riêng.</t><t t-elif="isAuditListNav">Bạn chưa được phân quyền cửa hàng nào — đang hiện các phiếu do bạn đánh giá.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
@@ -545,230 +545,6 @@
                     </div>
 
                 </div>
-                <div class="o_store_kpi_page" t-if="state.activeNav === 'report_nvbh' or state.activeNav === 'report_nsuat'">
-                    <t t-set="kp" t-value="state.kpi"/>
-                    <div class="kp_tabs" t-if="kp.profile === 'kpi'">
-                        <button type="button" t-att-class="kp.tab === 'staff' ? 'active' : ''" t-on-click="() => this.onKpiTab('staff')">Phiếu KPI cá nhân</button>
-                        <button type="button" t-att-class="kp.tab === 'compare' ? 'active' : ''" t-on-click="() => this.onKpiTab('compare')">Bảng So Sánh Tổng Thể</button>
-                    </div>
-                    <div class="kp_bar">
-                        <label><span>Tháng:</span><DateTimeInput t-key="'kpi' + kp.month" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(kp.month + '-01')" onChange.bind="onKpiMonthPick" class="'o_store_date_input'"/></label>
-                        <label><span>Miền:</span>
-                            <select t-on-change="onKpiMien">
-                                <option value="" t-att-selected="!kp.mien">Tất cả miền</option>
-                                <option value="Nam" t-att-selected="kp.mien === 'Nam'">Miền Nam</option>
-                                <option value="ĐTT" t-att-selected="kp.mien === 'ĐTT'">Miền ĐTT</option>
-                                <option value="Bắc" t-att-selected="kp.mien === 'Bắc'">Miền Bắc</option>
-                                <option value="VP" t-att-selected="kp.mien === 'VP'">Văn phòng</option>
-                            </select></label>
-                        <label><span>Cửa hàng:</span>
-                            <select t-on-change="onKpiStore">
-                                <option value="" t-esc="state.needStore ? 'Chọn cửa hàng' : 'Tất cả cửa hàng'"/>
-                                <option t-foreach="kpiStores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="jobSel(st.id, kp.storeId)" t-esc="st.display_name"/>
-                            </select></label>
-                        <label t-if="kp.tab === 'staff'"><span>Nhân viên:</span>
-                            <select t-on-change="onKpiStaff">
-                                <option t-foreach="kp.staffOpts" t-as="o" t-key="o.name" t-att-value="o.name" t-att-selected="o.name === kp.staff" t-esc="o.code ? o.name + ' (ID: ' + o.code + ')' : o.name"/>
-                            </select></label>
-                        <button type="button" class="btn btn-success text-white" t-on-click="onKpiExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
-                    </div>
-                    <div class="o_store_pickstores" t-if="needStorePick">
-                        <span class="lbl"><i class="fa fa-building"/> Cửa hàng<t t-if="kp.mien"> miền <t t-esc="kp.mien"/></t> (<t t-esc="kpiStores.length"/>) - bấm để xem dữ liệu:
-                            <em class="legend"><i class="d done"/> Đã đánh giá xong <i class="d todo"/> Đã gửi check list, chờ đánh giá <i class="d none"/> Chưa gửi check list</em></span>
-                        <div class="grp" t-foreach="kpiPickGroups" t-as="g" t-key="g.key">
-                            <div class="grp_h" t-on-click="() => this.toggleMienGroup(g.key)">
-                                <i t-attf-class="fa #{isMienOpen(g.key, kp.mien) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-map-marker"/> <t t-esc="g.label"/> (<t t-esc="g.stores.length"/>)
-                            </div>
-                            <div class="grp_b" t-if="isMienOpen(g.key, kp.mien)">
-                                <button type="button" t-att-class="'chip ' + (kp.storeStatus[st.id] === 'done' ? 'is-done' : kp.storeStatus[st.id] === 'pending' ? 'is-pending' : 'is-none')" t-foreach="g.stores" t-as="st" t-key="st.id" t-on-click="() => this.onKpiPickStore(st)" t-esc="st.display_name"/>
-                            </div>
-                        </div>
-                        <span class="none" t-if="!kpiStores.length">Không có cửa hàng nào thuộc miền này.</span>
-                    </div>
-                    <t t-if="kp.tab === 'compare' and kp.profile === 'kpi'">
-                        <div class="kp_head"><div class="t1">BẢNG SO SÁNH TỔNG THỂ KPI NHÂN VIÊN BÁN HÀNG</div>
-                            <div class="t2">Tháng <t t-esc="kp.overview ? kp.overview.month_label : ''"/> | Nhóm theo cửa hàng, xếp hạng theo tổng điểm KPI giảm dần trong từng cửa hàng | Bấm một dòng để xem phiếu cá nhân</div></div>
-                        <div class="kp_mcards" t-if="kp.overview and kp.overview.rows.length">
-                            <t t-foreach="kpiOverviewGroups" t-as="g" t-key="g.store">
-                                <div class="mc_grp" t-on-click="() =&gt; this.toggleKpiStore(g.store)"><i t-attf-class="fa #{isKpiStoreOpen(g.store) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-building"/> <b t-esc="g.store"/> <span class="cnt"><t t-esc="g.rows.length"/> NV · TB <t t-esc="fmtKpi(g.avg)"/></span></div>
-                                <div class="mc" t-foreach="isKpiStoreOpen(g.store) ? g.rows : []" t-as="r" t-key="r.name" t-on-click="() =&gt; this.onKpiOpen(r)">
-                                    <div class="mc_top">
-                                        <span t-attf-class="mc_rank r#{r.rank_in_store &lt;= 3 ? r.rank_in_store : 0}" t-esc="r.rank_in_store"/>
-                                        <div class="mc_who"><b t-esc="r.name"/><small><t t-esc="r.code or '-'"/> · <t t-esc="r.store"/></small></div>
-                                        <div class="mc_tot"><strong t-esc="fmtKpi(r.kpi_total)"/><small><t t-esc="r.rank"/> · <t t-esc="r.bonus + '%'"/></small></div>
-                                    </div>
-                                    <div class="mc_meta">
-                                        <span>Ca <b t-esc="r.shifts"/></span><span>Việc <b t-esc="r.jobs"/></span><span>NS <b t-esc="r.productivity"/></span><span class="bad">Lỗi <b t-esc="r.errors"/></span>
-                                    </div>
-                                    <div class="mc_grid">
-                                        <div><small>Checklist/40</small><b t-esc="fmtKpi(r.kpi_checklist)"/></div>
-                                        <div><small>Hoàn thành/15</small><b t-esc="fmtKpi(r.kpi_complete)"/></div>
-                                        <div><small>Kỷ luật/15</small><b t-esc="fmtKpi(r.kpi_discipline)"/></div>
-                                        <div><small>Doanh số/20</small><b t-esc="fmtKpi(r.kpi_sales)"/></div>
-                                        <div><small>Thái độ/10</small><b t-esc="fmtKpi(r.kpi_attitude)"/></div>
-                                    </div>
-                                </div>
-                            </t>
-                        </div>
-                        <div class="kp_scroll kp_desktop" t-if="kp.overview and kp.overview.rows.length">
-                        <table class="kp_table kp_cmp">
-                            <thead><tr>
-                                <th>Hạng</th><th>Nhân viên</th><th>Mã NV</th><th>Cửa hàng</th><th>Ca HT / Lịch</th><th>Việc làm / Giao</th><th>Năng suất Checklist</th><th>Số lỗi</th>
-                                <th>KPI Checklist (40)</th><th>Hoàn thành việc (15)</th><th>Kỷ luật (15)</th><th>Doanh số (20)</th><th>Thái độ (10)</th><th>TỔNG KPI (100)</th><th>Xếp loại</th><th>Hệ số thưởng</th>
-                            </tr></thead>
-                            <tbody>
-                                <t t-foreach="kpiOverviewGroups" t-as="g" t-key="g.store">
-                                    <tr class="kp_grp" t-on-click="() => this.toggleKpiStore(g.store)" style="cursor:pointer"><td colspan="16"><i t-attf-class="fa #{isKpiStoreOpen(g.store) ? 'fa-caret-down' : 'fa-caret-right'}"/> <i class="fa fa-building"/> Cửa hàng: <b t-esc="g.store"/> <span class="cnt">(<t t-esc="g.rows.length"/> nhân viên · TB KPI <t t-esc="fmtKpi(g.avg)"/>)</span></td></tr>
-                                    <tr t-foreach="isKpiStoreOpen(g.store) ? g.rows : []" t-as="r" t-key="r.name" class="kp_click" t-on-click="() => this.onKpiOpen(r)">
-                                        <td class="c" t-esc="r.rank_in_store"/><td class="b" t-esc="r.name"/><td class="c" t-esc="r.code or '-'"/><td t-esc="r.store"/>
-                                        <td class="c" t-esc="r.shifts"/><td class="c" t-esc="r.jobs"/><td class="c" t-esc="r.productivity"/><td class="c" t-esc="r.errors"/>
-                                        <td class="c" t-esc="fmtKpi(r.kpi_checklist)"/><td class="c" t-esc="fmtKpi(r.kpi_complete)"/><td class="c" t-esc="fmtKpi(r.kpi_discipline)"/>
-                                        <td class="c" t-esc="fmtKpi(r.kpi_sales)"/><td class="c" t-esc="fmtKpi(r.kpi_attitude)"/><td class="c b" t-esc="fmtKpi(r.kpi_total)"/>
-                                        <td class="c b" t-esc="r.rank"/><td class="c" t-esc="r.bonus + '%'"/>
-                                    </tr>
-                                </t>
-                            </tbody>
-                        </table>
-                        </div>
-                        <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có nhân viên nào có lịch hoặc checklist trong tháng đã chọn.</div>
-                    </t>
-                    <t t-elif="kp.data">
-                        <t t-set="kd" t-value="kp.data"/>
-                        <t t-if="kp.profile === 'productivity'">
-                        <div class="kd_wrap">
-                            <div class="kd_top">
-                                <span class="ico"><i class="fa fa-line-chart"/></span>
-                                <div class="ttl"><t t-esc="kd.labels.title"/> — <t t-esc="kd.staff.toUpperCase()"/></div>
-                                <span class="chip"><i class="fa fa-calendar"/> Tháng <t t-esc="kd.month_label"/></span>
-                                <span class="chip"><i class="fa fa-building"/> Cửa hàng: <t t-esc="kd.store"/></span>
-                            </div>
-                            <div class="kd_info">
-                                <span><i class="fa fa-user"/> Mã NV: <b t-esc="kd.code or '-'"/></span>
-                                <span t-if="kd.asm"><i class="fa fa-star"/> Cấp đánh giá: <b><t t-esc="kd.asm"/> (ASM)</b></span>
-                                <span><i class="fa fa-refresh"/> <t t-esc="kd.labels.subtitle_extra"/></span>
-                            </div>
-                            <div class="kd_cards">
-                                <div class="cd"><span class="ic blue"><i class="fa fa-calendar-check-o"/></span><div class="tx"><span class="lb">Số ca hoàn thành / Lịch</span>
-                                    <b t-esc="kd.summary.shifts"/><div class="bar"><i t-attf-style="width: #{Math.min(kd.summary.shifts_pct, 100)}%"/></div></div></div>
-                                <div class="cd"><span class="ic green"><i class="fa fa-check"/></span><div class="tx"><span class="lb">Tổng việc đã làm / Giao</span>
-                                    <b class="ok" t-esc="kd.summary.jobs"/><div class="bar g"><i t-attf-style="width: #{Math.min(kd.summary.jobs_pct, 100)}%"/></div></div></div>
-                                <div class="cd"><span class="ic purple"><i class="fa fa-trophy"/></span><div class="tx"><span class="lb">Tỷ lệ HT đầu việc</span><b class="pp" t-esc="kd.summary.complete"/></div></div>
-                                <div class="cd"><span class="ic amber"><i class="fa fa-star"/></span><div class="tx"><span class="lb">Điểm đạt / Điểm chuẩn</span><b t-esc="kd.summary.points"/></div></div>
-                                <div class="cd"><span class="ic teal"><i class="fa fa-tachometer"/></span><div class="tx"><span class="lb">Hiệu suất Checklist</span><b class="tl" t-esc="kd.summary.productivity"/></div></div>
-                                <div class="cd red"><span class="ic redic"><i class="fa fa-exclamation"/></span><div class="tx"><span class="lb">Số lỗi vi phạm</span><b class="bad" t-esc="kd.summary.errors"/></div></div>
-                                <div class="cd"><span class="ic green2"><i class="fa fa-star"/></span><div class="tx"><span class="lb">Điểm TB / Ca</span><b class="ok" t-esc="kd.summary.avg"/></div></div>
-                            </div>
-                            <div class="kd_sec"><i class="fa fa-list"/> CHI TIẾT TỪNG TIÊU CHÍ ĐÁNH GIÁ</div>
-                            <div class="kp_scroll">
-                            <table class="kd_table">
-                                <thead><tr>
-                                    <th>STT</th><th t-esc="kd.labels.col_first"/><th t-esc="kd.labels.col_source"/><th>Trọng số<br/>(%)</th><th>Điểm tối đa<br/>(Thang 100)</th>
-                                    <th>Tỷ lệ đạt<br/>thực tế (%)</th><th class="hl" t-esc="kd.labels.col_kpi"/><th>Chỉ tiêu<br/>chuẩn</th><th>Ghi chú &amp; Diễn giải chi tiết</th>
-                                </tr></thead>
-                                <tbody>
-                                    <tr t-foreach="kd.groups" t-as="g" t-key="g.no">
-                                        <td class="c"><span t-attf-class="bdg b#{g_index % 5}" t-esc="g.no"/></td>
-                                        <td class="nm" t-esc="g.title"/><td class="c" t-esc="g.source"/>
-                                        <td class="c" t-esc="fmtKpiPct(g.weight)"/><td class="c" t-esc="fmtKpi(g.max)"/>
-                                        <td class="c pc" t-esc="fmtKpiPct(g.pct)"/><td class="c pt" t-esc="fmtKpi(g.kpi)"/>
-                                        <td class="c" t-esc="g.target"/><td class="nt" t-esc="g.note"/>
-                                    </tr>
-                                    <tr class="sumrow">
-                                        <td class="c"><i class="fa fa-star"/></td><td class="nm" t-esc="kd.labels.sub_label"/><td/>
-                                        <td class="c b" t-esc="fmtKpiPct(kd.sub.weight)"/><td class="c b" t-esc="fmtKpi(kd.sub.max)"/><td class="c b" t-esc="fmtKpiPct(kd.sub.pct)"/>
-                                        <td class="c"><span class="pill" t-esc="fmtKpi(kd.sub.kpi)"/></td><td class="c b" t-esc="kd.sub.target"/><td class="nt" t-esc="kd.sub.note"/>
-                                    </tr>
-                                    <tr t-foreach="kd.others" t-as="o" t-key="o.no" class="pillar">
-                                        <td class="c"><span class="bdg bn" t-esc="o.no"/></td>
-                                        <td class="nm" t-esc="o.title"/><td class="c" t-esc="o.source"/>
-                                        <td class="c" t-esc="fmtKpiPct(o.weight)"/><td class="c" t-esc="fmtKpi(o.max)"/>
-                                        <td class="c pc"><t t-if="o.extra"><t t-esc="o.extra"/> (<t t-esc="fmtKpiPct(o.pct)"/>)</t><t t-else=""><t t-esc="fmtKpiPct(o.pct)"/></t></td>
-                                        <td class="c pt" t-esc="fmtKpi(o.kpi)"/><td class="c" t-esc="o.target"/><td class="nt" t-esc="o.note"/>
-                                    </tr>
-                                </tbody>
-                            </table>
-                            </div>
-                            <div class="kd_foot">
-                                <div class="f1">
-                                    <div class="l"><i class="fa fa-trophy"/> <t t-esc="kd.labels.total_label.replace('%s', kd.month_label).replace('%d', kd.total.weight)"/></div>
-                                    <div class="mid">
-                                        <div class="nums"><b t-esc="fmtKpiPct(kd.total.pct)"/><i/><b class="s"><t t-esc="fmtKpi(kd.total.kpi)"/> / <t t-esc="kd.total.weight"/> đ</b></div>
-                                        <div class="dn" t-attf-style="--p: #{Math.min(kd.total.pct, 100)}"><span t-esc="fmtKpiPct(kd.total.pct)"/></div>
-                                    </div>
-                                    <div class="tag"><i class="fa fa-check-circle"/> <t t-esc="kd.labels.total_note"/></div>
-                                </div>
-                                <div class="f2">
-                                    <div class="h"><i class="fa fa-star"/> <t t-esc="kd.labels.rank_label"/></div>
-                                    <div class="rk" t-esc="kd.rank"/>
-                                    <div class="th">Ngưỡng chuẩn:<br/>≥95đ Hạng A | 85–94.9đ Hạng B | 75–84.9đ Hạng C | &lt;75đ Hạng D</div>
-                                </div>
-                            </div>
-                        </div>
-                        </t>
-                        <t t-else="">
-                        <div class="kp_head">
-                            <div class="t1"><t t-esc="kd.labels.title"/> — <t t-esc="kd.staff.toUpperCase()"/></div>
-                            <div class="t2">Cửa hàng: <t t-esc="kd.store"/> | Mã NV: <t t-esc="kd.code or '-'"/> | Kỳ: Tháng <t t-esc="kd.month_label"/><t t-if="kd.asm"> | Cấp đánh giá: <t t-esc="kd.asm"/> (ASM)</t><t t-if="kd.labels.subtitle_extra"> | <t t-esc="kd.labels.subtitle_extra"/></t></div>
-                        </div>
-                        <div class="kp_sum">
-                            <div><span>Mã NV</span><b t-esc="kd.code or '-'"/></div>
-                            <div><span>Số ca hoàn thành / Lịch</span><b t-esc="kd.summary.shifts"/></div>
-                            <div><span>Tổng việc đã làm / Giao</span><b t-esc="kd.summary.jobs"/></div>
-                            <div><span>Tỷ lệ HT đầu việc</span><b t-esc="kd.summary.complete"/></div>
-                            <div><span>Điểm đạt / Điểm chuẩn</span><b t-esc="kd.summary.points"/></div>
-                            <div><span>Năng suất Checklist</span><b t-esc="kd.summary.productivity"/></div>
-                            <div><span>Số lỗi vi phạm</span><b t-esc="kd.summary.errors"/></div>
-                            <div><span>Điểm TB / Ca</span><b t-esc="kd.summary.avg"/></div>
-                            <div><span t-esc="kd.labels.status_label"/><b t-esc="kd.summary.status"/></div>
-                        </div>
-                        <div class="kp_scroll">
-                        <table class="kp_table">
-                            <thead><tr>
-                                <th>STT</th><th t-esc="kd.labels.col_first"/><th t-esc="kd.labels.col_source"/><th>Trọng số (%)</th><th>Điểm tối đa<br/>(Thang 100)</th>
-                                <th>Tỷ lệ đạt thực tế (%)</th><th t-esc="kd.labels.col_kpi"/><th>Chỉ tiêu chuẩn</th><th>Ghi chú &amp; Diễn giải kết quả</th>
-                            </tr></thead>
-                            <tbody>
-                                <tr t-foreach="kd.groups" t-as="g" t-key="g.no">
-                                    <td class="c" t-esc="g.no"/><td t-esc="g.title"/><td class="c" t-esc="g.source"/>
-                                    <td class="c" t-esc="fmtKpiPct(g.weight)"/><td class="c" t-esc="fmtKpi(g.max)"/><td class="c" t-esc="fmtKpiPct(g.pct)"/>
-                                    <td class="c b" t-esc="fmtKpi(g.kpi)"/><td class="c" t-esc="g.target"/><td t-esc="g.note"/>
-                                </tr>
-                                <tr class="sec">
-                                    <td/><td t-esc="kd.labels.sub_label"/><td/>
-                                    <td class="c" t-esc="fmtKpiPct(kd.sub.weight)"/><td class="c" t-esc="fmtKpi(kd.sub.max)"/><td class="c" t-esc="fmtKpiPct(kd.sub.pct)"/>
-                                    <td class="c" t-esc="fmtKpi(kd.sub.kpi)"/><td class="c" t-esc="kd.sub.target"/><td t-esc="kd.sub.note"/>
-                                </tr>
-                                <tr t-foreach="kd.others" t-as="o" t-key="o.no">
-                                    <td class="c" t-esc="o.no"/><td class="b" t-esc="o.title"/><td class="c" t-esc="o.source"/>
-                                    <td class="c" t-esc="fmtKpiPct(o.weight)"/><td class="c" t-esc="fmtKpi(o.max)"/>
-                                    <td class="c">
-                                        <t t-if="o.manual">
-                                            <input type="text" class="kp_in" t-att-value="o.pct === null ? '' : ('' + o.pct).replace('.', ',')" placeholder="% (0-100)"
-                                                   t-att-disabled="!state.isManager" t-on-change="(ev) => this.onKpiManual(o, ev)"/>
-                                        </t>
-                                        <t t-elif="o.extra"><t t-esc="o.extra"/> (<t t-esc="fmtKpiPct(o.pct)"/>)</t>
-                                        <t t-else=""><t t-esc="fmtKpiPct(o.pct)"/></t>
-                                    </td>
-                                    <td class="c b" t-esc="fmtKpi(o.kpi)"/><td class="c" t-esc="o.target"/><td t-esc="o.note"/>
-                                </tr>
-                                <tr class="tot">
-                                    <td/><td t-esc="kd.labels.total_label.replace('%s', kd.month_label).replace('%d', kd.total.weight)"/><td/>
-                                    <td class="c" t-esc="fmtKpiPct(kd.total.weight)"/><td class="c" t-esc="fmtKpi(kd.total.max)"/><td class="c" t-esc="fmtKpiPct(kd.total.pct)"/>
-                                    <td class="c" t-esc="fmtKpi(kd.total.kpi)"/><td class="c" t-esc="kd.total.target"/><td t-esc="kd.total.note"/>
-                                </tr>
-                            </tbody>
-                        </table>
-                        </div>
-                        <div class="kp_rank">
-                            <div><span t-esc="kd.labels.rank_label"/><b t-esc="kd.rank"/>
-                                <em>Ngưỡng chuẩn: ≥95đ Hạng A | 85–94.9đ Hạng B | 75–84.9đ Hạng C | &lt;75đ Hạng D</em></div>
-                            <div><span t-esc="kd.labels.bonus_label"/><b t-esc="kd.bonus + '%'"/>
-                                <em>Hạng A: 120% | Hạng B: 100% | Hạng C: 80% | Hạng D: 0%</em></div>
-                        </div>
-                        </t>
-                    </t>
-                    <div class="o_store_job_empty" t-else=""><i class="fa fa-info-circle"/> Chưa có nhân viên nào có lịch hoặc checklist trong tháng đã chọn.</div>
-                </div>
                 <div class="o_store_nvbh_flow" t-if="state.activeNav === 'report_flow_nvbh'">
                     <div class="nf_card">
                         <div class="nf_head"><i class="fa fa-random"/> Sơ đồ quy trình
@@ -822,6 +598,9 @@
                                 </select></label>
                             <label><span>Tìm nhân viên</span>
                                 <input type="search" placeholder="Tên, mã NV..." t-att-value="pf.q" t-on-input="onPerfSearch"/></label>
+                            <button type="button" class="perf_toggle_all" t-if="pd and perfGroups.length &gt; 1" t-on-click="togglePerfAllStores">
+                                <i t-attf-class="fa #{perfAllOpen ? 'fa-compress' : 'fa-expand'}"/> <t t-esc="perfAllOpen ? 'Thu gọn' : 'Mở tất cả'"/>
+                            </button>
                             <button type="button" class="btn btn-success text-white asm_export_btn" t-on-click="onPerfExport"><i class="fa fa-download"/> Xuất Excel</button>
                         </div>
                     </div>
@@ -852,6 +631,22 @@
                                     </tr></thead>
                                     <tbody>
                                         <t t-foreach="perfGroups" t-as="g" t-key="g.store_id">
+                                        <tr class="perf_store_head" t-on-click="() => this.togglePerfStore(g.store_id)">
+                                            <td colspan="4" class="l">
+                                                <i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-caret-down' : 'fa-caret-right'} perf_caret"/>
+                                                <i class="fa fa-building"/> <b t-esc="g.store"/>
+                                                <span class="perf_head_meta"><t t-esc="g.staff.length"/> NV · ASM: <t t-esc="g.asm"/></span>
+                                            </td>
+                                            <td class="r b" t-esc="fmtRevDisplay(g.sumTargetNv)"/>
+                                            <td class="r b" t-esc="fmtRevDisplay(g.sumRevenue)"/>
+                                            <td t-attf-class="r b perf_pcell #{g.sumPct !== null and g.sumPct &gt;= 100 ? 'is-ok' : ''}" t-esc="fmtPerfPct(g.sumPct)"/>
+                                            <td t-attf-class="c b perf_tgk #{perfTargetRank(g.sumTargetNv, g.sumPct)[1]}" t-esc="perfTargetRank(g.sumTargetNv, g.sumPct)[0]"/>
+                                            <td class="r" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index" t-esc="fmtPerfNum(g.sum['g' + (gn_index + 1)])"/>
+                                            <td class="r b" t-esc="fmtPerfNum(g.sum.tasks_total)"/>
+                                            <td class="r b" t-esc="fmtPerfPct(g.avgRate)"/>
+                                            <td class="c"/>
+                                        </tr>
+                                        <t t-if="isPerfStoreOpen(g.store_id)">
                                         <tr t-foreach="g.staff" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="perf_staff_row">
                                             <td class="c" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/>
                                             <td class="c b" t-esc="r.store"/>
@@ -904,6 +699,7 @@
                                                 </div>
                                             </td>
                                         </tr>
+                                        </t>
                                         </t>
                                     </tbody>
                                 </table>
@@ -1160,8 +956,8 @@
                                                         <i class="fa fa-map-marker"/> <b t-esc="it.label"/>
                                                         <span class="rev_grp_cnt"><t t-esc="it.storeCount"/> cửa hàng · <t t-esc="it.staffCount"/> nhân sự</span>
                                                     </td>
-                                                    <td class="c c_rev"><b class="rev_grp_sum" t-esc="fmtRevDisplay(it.total)"/></td>
-                                                    <td class="c" t-esc="rd.date_label"/>
+                                                    <td class="c c_rev" data-label="Tổng doanh thu"><b class="rev_grp_sum" t-esc="fmtRevDisplay(it.total)"/></td>
+                                                    <td class="c" data-label="Ngày" t-esc="rd.date_label"/>
                                                 </tr>
                                                 <tr class="rev_grp_store" t-if="it.type === 'store'" t-on-click="() => this.toggleRevDayStore(it.id, it.totalStores)">
                                                     <td colspan="4" class="l">
@@ -1169,12 +965,12 @@
                                                         <i class="fa fa-building"/> <b t-esc="it.label"/>
                                                         <span class="rev_grp_cnt"><t t-esc="it.count"/> nhân sự</span>
                                                     </td>
-                                                    <td class="c c_rev"><b class="rev_grp_sum is-store" t-esc="fmtRevDisplay(it.total)"/></td>
-                                                    <td class="c" t-esc="rd.date_label"/>
+                                                    <td class="c c_rev" data-label="Tổng doanh thu"><b class="rev_grp_sum is-store" t-esc="fmtRevDisplay(it.total)"/></td>
+                                                    <td class="c" data-label="Ngày" t-esc="rd.date_label"/>
                                                 </tr>
                                                 <t t-if="it.type === 'emp'">
                                                     <t t-set="r" t-value="it.row"/>
-                                                    <tr t-att-class="(rv.selectedId === r.id ? 'is-selected ' : '') + (r.is_locked ? 'is-locked' : '')">
+                                                    <tr t-att-class="'rev_emp_row ' + (rv.selectedId === r.id ? 'is-selected ' : '') + (r.is_locked ? 'is-locked' : '')">
                                                         <td class="c b" t-esc="r.stt"/>
                                                         <td class="l rev_staff_cell">
                                                             <div class="rev_nm_row">
@@ -1185,9 +981,6 @@
                                                                     <span class="rev_badge is-locked" t-if="r.is_locked">
                                                                         <i class="fa fa-lock"/> Đã khóa sau 48h<t t-if="r.lock_until"> (<t t-esc="r.lock_until"/>)</t>
                                                                     </span>
-                                                                    <button type="button" class="rev_edit_btn" t-elif="rd.can_edit and r.is_saved and !rv.editing[r.id]" t-on-click.stop="() => this.onRevStartEdit(r)">
-                                                                        <i class="fa fa-pencil"/> Chỉnh sửa
-                                                                    </button>
                                                                     <span class="rev_badge is-editing" t-elif="rd.can_edit and (!r.is_saved or rv.editing[r.id])">
                                                                         <i class="fa fa-pencil-square-o"/> Đang mở nhập — bấm Lưu để ghi nhận
                                                                     </span>
@@ -1198,15 +991,15 @@
                                                                 <t t-if="rv.selectedId === r.id and r.is_saved and !r.is_locked and r.lock_until"> · Tự khóa lúc <t t-esc="r.lock_until"/></t>
                                                             </small>
                                                         </td>
-                                                        <td class="c rev_code" t-esc="r.employee_code || '-'"/>
-                                                        <td class="c rev_shift">
+                                                        <td class="c rev_code" data-label="ID" t-esc="r.employee_code || '-'"/>
+                                                        <td class="c rev_shift" data-label="Lịch ca">
                                                             <t t-if="r.shift_code">
                                                                 <span class="rev_shift_tag" t-esc="'Ca ' + r.shift_code"/>
                                                                 <small class="rev_shift_time" t-if="r.shift_time" t-esc="r.shift_time"/>
                                                             </t>
                                                             <span t-else="" class="text-muted">-</span>
                                                         </td>
-                                                        <td class="c c_rev">
+                                                        <td class="c c_rev" data-label="Doanh thu">
                                                             <div t-att-class="'rev_in_wrap' + (revRowDirty(r) ? ' is-dirty' : '')" t-if="revRowEditable(r)">
                                                                 <input type="text" inputmode="numeric" class="rev_input" placeholder="0 (vd: 5.500.000)"
                                                                        t-att-data-rev-id="r.id"
@@ -1220,7 +1013,7 @@
                                                                 <span class="rev_st_tag saved" t-elif="r.is_saved" t-att-title="'Đã lưu lúc ' + r.saved_at + ' • Tự khóa lúc ' + r.lock_until + ' • Bấm vào tên NV để chỉnh sửa'"><i class="fa fa-check-circle"/> Đã lưu</span>
                                                             </div>
                                                         </td>
-                                                        <td class="c rev_date" t-esc="r.date_label"/>
+                                                        <td class="c rev_date" data-label="Ngày" t-esc="r.date_label"/>
                                                     </tr>
                                                 </t>
                                             </t>
@@ -1228,8 +1021,8 @@
                                         <tfoot>
                                             <tr class="rev_tot_row">
                                                 <td colspan="4" class="l"><b>TỔNG CỘNG (<t t-esc="revRows.length"/> nhân sự)</b></td>
-                                                <td class="c c_rev"><b class="rev_tot_val" t-esc="fmtRevDisplay(revTotal)"/></td>
-                                                <td class="c" t-esc="rd.date_label"/>
+                                                <td class="c c_rev" data-label="Tổng doanh thu"><b class="rev_tot_val" t-esc="fmtRevDisplay(revTotal)"/></td>
+                                                <td class="c" data-label="Ngày" t-esc="rd.date_label"/>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -1238,6 +1031,11 @@
                             <div class="rev_action_bar" t-if="rd.can_edit">
                                 <button type="button" class="btn btn-primary rev_save_btn" t-att-disabled="!revCanSave or rv.saving" t-on-click="onRevSave">
                                     <i t-att-class="rv.saving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
+                                </button>
+                                <button type="button" class="btn rev_edit_bar_btn"
+                                        t-if="revSelectedRow and revSelectedRow.is_saved and !revSelectedRow.is_locked and !rv.editing[revSelectedRow.id]"
+                                        t-on-click="() => this.onRevStartEdit(revSelectedRow)">
+                                    <i class="fa fa-pencil"/> Chỉnh sửa
                                 </button>
                                 <button type="button" class="btn btn-secondary rev_cancel_btn" t-if="revCanCancel" t-att-disabled="rv.saving" t-on-click="onRevCancel">
                                     Hủy
@@ -1469,18 +1267,18 @@
                                             <th>Doanh thu đã đạt</th><th>Còn lại phải đạt</th><th>% Đạt được</th><th>% Còn lại</th><th>Đánh giá tháng</th>
                                         </tr></thead>
                                         <tbody><tr>
-                                            <td class="c b" t-esc="tr.store.code"/>
-                                            <td class="c" t-esc="tr.store.mien_label"/>
-                                            <td class="c tr_in_cell">
+                                            <td class="c b" data-label="Cửa hàng" t-esc="tr.store.code"/>
+                                            <td class="c" data-label="Miền" t-esc="tr.store.mien_label"/>
+                                            <td class="c tr_in_cell" data-label="Số ngày">
                                                 <input type="text" inputmode="numeric" class="tr_days_in" t-att-value="tr.days" title="Số ngày dùng để tính Target Ngày (mặc định = số ngày của tháng)" t-on-change="onTrDays"/>
                                             </td>
-                                            <td class="r b tr_red" t-esc="fmtRevDisplay(sm.target)"/>
-                                            <td class="r b" t-esc="fmtRevDisplay(sm.day_target)"/>
-                                            <td class="r b tr_red" t-esc="fmtRevDisplay(sm.done)"/>
-                                            <td class="r b" t-esc="fmtRevDisplay(sm.left)"/>
-                                            <td class="c b" t-esc="fmtTrPct(sm.pct)"/>
-                                            <td class="c b" t-esc="fmtTrPct(sm.left_pct)"/>
-                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(sm.result)" t-esc="sm.result"/></td>
+                                            <td class="r b tr_red" data-label="Target tháng" t-esc="fmtRevDisplay(sm.target)"/>
+                                            <td class="r b" data-label="Target ngày" t-esc="fmtRevDisplay(sm.day_target)"/>
+                                            <td class="r b tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(sm.done)"/>
+                                            <td class="r b" data-label="Còn lại" t-esc="fmtRevDisplay(sm.left)"/>
+                                            <td class="c b" data-label="% Đạt" t-esc="fmtTrPct(sm.pct)"/>
+                                            <td class="c b" data-label="% Còn lại" t-esc="fmtTrPct(sm.left_pct)"/>
+                                            <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(sm.result)" t-esc="sm.result"/></td>
                                         </tr></tbody>
                                     </table>
                                 </div>
@@ -1498,29 +1296,29 @@
                                         <tbody>
                                             <tr t-foreach="tr.staff" t-as="s" t-key="s.staff_key">
                                                 <td class="c" t-esc="s.stt"/>
-                                                <td class="c" t-esc="s.employee_code or '-'"/>
-                                                <td class="l"><b t-if="s.is_cht"><t t-esc="s.staff_name"/> (CHT)</b><span t-else="" t-esc="s.staff_name"/></td>
-                                                <td class="c b tr_blue" t-esc="fmtTrPct(s.alloc)"/>
-                                                <td class="r b tr_red" t-esc="fmtRevDisplay(s.target)"/>
-                                                <td class="r" t-esc="fmtRevDisplay(s.day_target)"/>
-                                                <td class="r b tr_red" t-esc="fmtRevDisplay(s.done)"/>
-                                                <td class="c b" t-esc="fmtTrPct(s.pct)"/>
-                                                <td class="r" t-esc="fmtRevDisplay(s.left)"/>
-                                                <td class="c" t-esc="fmtTrPct(s.left_pct)"/>
-                                                <td class="c"><span t-att-class="'tr_res ' + trResCls(s.result)" t-esc="s.result"/></td>
+                                                <td class="c tr_m_id" data-label="ID" t-esc="s.employee_code or '-'"/>
+                                                <td class="l tr_m_name" data-label="Nhân viên"><b t-if="s.is_cht"><t t-esc="s.staff_name"/> (CHT)</b><span t-else="" t-esc="s.staff_name"/></td>
+                                                <td class="c b tr_blue" data-label="Phân bổ (%)" t-esc="fmtTrPct(s.alloc)"/>
+                                                <td class="r b tr_red" data-label="Target tháng" t-esc="fmtRevDisplay(s.target)"/>
+                                                <td class="r" data-label="Target ngày" t-esc="fmtRevDisplay(s.day_target)"/>
+                                                <td class="r b tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(s.done)"/>
+                                                <td class="c b" data-label="% Đạt" t-esc="fmtTrPct(s.pct)"/>
+                                                <td class="r" data-label="Còn lại" t-esc="fmtRevDisplay(s.left)"/>
+                                                <td class="c" data-label="% Còn lại" t-esc="fmtTrPct(s.left_pct)"/>
+                                                <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(s.result)" t-esc="s.result"/></td>
                                             </tr>
                                             <tr t-if="!tr.staff.length"><td colspan="11" class="c text-muted">Chưa có nhân viên được phân bổ target (xem tab Phân Bổ Target).</td></tr>
                                         </tbody>
                                         <tfoot t-if="tr.staff.length"><tr class="tr_total">
                                             <td colspan="3" class="c">TỔNG CỘNG NHÂN VIÊN</td>
-                                            <td t-att-class="'c ' + (tr.staff_total.alloc === 100 ? '' : 'tr_warn')" t-esc="fmtTrPct(tr.staff_total.alloc)"/>
-                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.staff_total.target)"/>
-                                            <td class="r" t-esc="fmtRevDisplay(tr.staff_total.day_target)"/>
-                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.staff_total.done)"/>
-                                            <td class="c" t-esc="fmtTrPct(tr.staff_total.pct)"/>
-                                            <td class="r" t-esc="fmtRevDisplay(tr.staff_total.left)"/>
-                                            <td class="c" t-esc="fmtTrPct(tr.staff_total.left_pct)"/>
-                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(tr.staff_total.result)" t-esc="tr.staff_total.result"/></td>
+                                            <td data-label="Phân bổ (%)" t-att-class="'c ' + (tr.staff_total.alloc === 100 ? '' : 'tr_warn')" t-esc="fmtTrPct(tr.staff_total.alloc)"/>
+                                            <td class="r tr_red" data-label="Target tháng" t-esc="fmtRevDisplay(tr.staff_total.target)"/>
+                                            <td class="r" data-label="Target ngày" t-esc="fmtRevDisplay(tr.staff_total.day_target)"/>
+                                            <td class="r tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(tr.staff_total.done)"/>
+                                            <td class="c" data-label="% Đạt" t-esc="fmtTrPct(tr.staff_total.pct)"/>
+                                            <td class="r" data-label="Còn lại" t-esc="fmtRevDisplay(tr.staff_total.left)"/>
+                                            <td class="c" data-label="% Còn lại" t-esc="fmtTrPct(tr.staff_total.left_pct)"/>
+                                            <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(tr.staff_total.result)" t-esc="tr.staff_total.result"/></td>
                                         </tr></tfoot>
                                     </table>
                                 </div>
@@ -1537,27 +1335,27 @@
                                         <tbody>
                                             <tr t-foreach="tr.weeks" t-as="w" t-key="w.week" t-att-class="'tr_click' + (rv.trWeek === w.week ? ' tr_sel' : '')" t-on-click="() => this.onTrWeek(w.week)">
                                                 <td class="c b"><i t-att-class="rv.trWeek === w.week ? 'fa fa-filter' : 'fa fa-calendar-o'"/> <t t-esc="w.label"/></td>
-                                                <td class="c" t-esc="w.range"/>
-                                                <td class="c" t-esc="w.days"/>
-                                                <td class="r b tr_red" t-esc="fmtRevDisplay(w.target)"/>
-                                                <td class="r b tr_red" t-esc="fmtRevDisplay(w.done)"/>
-                                                <td t-att-class="'r ' + (w.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(w.diff)"/>
-                                                <td class="r" t-esc="fmtRevDisplay(w.left)"/>
-                                                <td class="c b" t-esc="fmtTrPct(w.pct)"/>
-                                                <td class="c" t-esc="fmtTrPct(w.left_pct)"/>
-                                                <td class="c"><span t-att-class="'tr_res ' + trResCls(w.result)" t-esc="w.result"/></td>
+                                                <td class="c tr_m_name" data-label="Từ - Đến" t-esc="w.range"/>
+                                                <td class="c" data-label="Số ngày" t-esc="w.days"/>
+                                                <td class="r b tr_red" data-label="Target tuần" t-esc="fmtRevDisplay(w.target)"/>
+                                                <td class="r b tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(w.done)"/>
+                                                <td data-label="Chênh lệch" t-att-class="'r ' + (w.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(w.diff)"/>
+                                                <td class="r" data-label="Còn lại" t-esc="fmtRevDisplay(w.left)"/>
+                                                <td class="c b" data-label="% Đạt" t-esc="fmtTrPct(w.pct)"/>
+                                                <td class="c" data-label="% Còn lại" t-esc="fmtTrPct(w.left_pct)"/>
+                                                <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(w.result)" t-esc="w.result"/></td>
                                             </tr>
                                         </tbody>
                                         <tfoot><tr class="tr_total">
                                             <td colspan="2" class="c">TỔNG CỘNG 4 TUẦN</td>
-                                            <td class="c" t-esc="tr.weeks_total.days"/>
-                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.weeks_total.target)"/>
-                                            <td class="r tr_red" t-esc="fmtRevDisplay(tr.weeks_total.done)"/>
-                                            <td class="r" t-esc="fmtTrDiff(tr.weeks_total.diff)"/>
-                                            <td class="r" t-esc="fmtRevDisplay(tr.weeks_total.left)"/>
-                                            <td class="c" t-esc="fmtTrPct(tr.weeks_total.pct)"/>
-                                            <td class="c" t-esc="fmtTrPct(tr.weeks_total.left_pct)"/>
-                                            <td class="c"><span t-att-class="'tr_res ' + trResCls(tr.weeks_total.result)" t-esc="tr.weeks_total.result"/></td>
+                                            <td class="c" data-label="Số ngày" t-esc="tr.weeks_total.days"/>
+                                            <td class="r tr_red" data-label="Target tuần" t-esc="fmtRevDisplay(tr.weeks_total.target)"/>
+                                            <td class="r tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(tr.weeks_total.done)"/>
+                                            <td class="r" data-label="Chênh lệch" t-esc="fmtTrDiff(tr.weeks_total.diff)"/>
+                                            <td class="r" data-label="Còn lại" t-esc="fmtRevDisplay(tr.weeks_total.left)"/>
+                                            <td class="c" data-label="% Đạt" t-esc="fmtTrPct(tr.weeks_total.pct)"/>
+                                            <td class="c" data-label="% Còn lại" t-esc="fmtTrPct(tr.weeks_total.left_pct)"/>
+                                            <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(tr.weeks_total.result)" t-esc="tr.weeks_total.result"/></td>
                                         </tr></tfoot>
                                     </table>
                                 </div>
@@ -1578,14 +1376,14 @@
                                             <t t-foreach="trDayRows" t-as="d" t-key="d.date">
                                                 <tr t-att-class="'tr_click' + (rv.trOpenDay === d.date ? ' tr_sel' : '') + (d.is_today ? ' tr_today' : '')" t-on-click="() => this.onTrDay(d)">
                                                     <td class="c b"><i t-att-class="rv.trOpenDay === d.date ? 'fa fa-caret-down' : 'fa fa-caret-right'"/> <t t-esc="d.label"/></td>
-                                                    <td class="c" t-esc="d.weekday"/>
-                                                    <td class="c" t-esc="'Tuần ' + d.week"/>
-                                                    <td class="r" t-esc="fmtRevDisplay(d.target)"/>
-                                                    <td class="r b tr_red" t-esc="fmtRevDisplay(d.done)"/>
-                                                    <td t-att-class="'r ' + (d.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(d.diff)"/>
-                                                    <td class="c"><span t-att-class="'tr_res ' + trResCls(d.result)" t-esc="d.result"/></td>
-                                                    <td class="r" t-esc="fmtRevDisplay(d.cum)"/>
-                                                    <td class="r b" t-esc="fmtRevDisplay(d.left_month)"/>
+                                                    <td class="c" data-label="Thứ" t-esc="d.weekday"/>
+                                                    <td class="c" data-label="Tuần" t-esc="'Tuần ' + d.week"/>
+                                                    <td class="r" data-label="Target ngày" t-esc="fmtRevDisplay(d.target)"/>
+                                                    <td class="r b tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(d.done)"/>
+                                                    <td data-label="Chênh lệch" t-att-class="'r ' + (d.diff &lt; 0 ? 'tr_neg' : 'tr_pos')" t-esc="fmtTrDiff(d.diff)"/>
+                                                    <td class="c" data-label="Đánh giá"><span t-att-class="'tr_res ' + trResCls(d.result)" t-esc="d.result"/></td>
+                                                    <td class="r" data-label="Lũy kế tháng" t-esc="fmtRevDisplay(d.cum)"/>
+                                                    <td class="r b" data-label="Còn lại tháng" t-esc="fmtRevDisplay(d.left_month)"/>
                                                 </tr>
                                                 <tr class="tr_detail" t-if="rv.trOpenDay === d.date">
                                                     <td colspan="9">
@@ -1609,12 +1407,12 @@
                                         </tbody>
                                         <tfoot><tr class="tr_total">
                                             <td colspan="3" class="c" t-esc="rv.trWeek ? ('TỔNG CỘNG TUẦN ' + rv.trWeek) : ('TỔNG CỘNG THÁNG ' + tr.month_label)"/>
-                                            <td class="r" t-esc="fmtRevDisplay(trDayTotals.target)"/>
-                                            <td class="r tr_red" t-esc="fmtRevDisplay(trDayTotals.done)"/>
-                                            <td class="r" t-esc="fmtTrDiff(trDayTotals.done - trDayTotals.target)"/>
-                                            <td class="c"><t t-esc="trDayTotals.ok"/> ngày Đạt</td>
-                                            <td class="r" t-esc="fmtRevDisplay(sm.done)"/>
-                                            <td class="r" t-esc="fmtRevDisplay(sm.left)"/>
+                                            <td class="r" data-label="Target" t-esc="fmtRevDisplay(trDayTotals.target)"/>
+                                            <td class="r tr_red" data-label="DT đã đạt" t-esc="fmtRevDisplay(trDayTotals.done)"/>
+                                            <td class="r" data-label="Chênh lệch" t-esc="fmtTrDiff(trDayTotals.done - trDayTotals.target)"/>
+                                            <td class="c" data-label="Ngày đạt"><t t-esc="trDayTotals.ok"/> ngày Đạt</td>
+                                            <td class="r" data-label="Lũy kế tháng" t-esc="fmtRevDisplay(sm.done)"/>
+                                            <td class="r" data-label="Còn lại tháng" t-esc="fmtRevDisplay(sm.left)"/>
                                         </tr></tfoot>
                                     </table>
                                 </div>
@@ -1690,20 +1488,20 @@
                                             <t t-foreach="tgView" t-as="g" t-key="g.st.store_id">
                                                 <tr t-foreach="g.rows" t-as="row" t-key="row.l.staff_key">
                                                     <td class="c" t-esc="row.stt"/>
-                                                    <td class="c" t-esc="g.st.mien_label"/>
-                                                    <td class="c b" t-esc="g.st.store"/>
-                                                    <td class="l">
+                                                    <td class="c" data-label="Miền" t-esc="g.st.mien_label"/>
+                                                    <td class="c b" data-label="Cửa hàng" t-esc="g.st.store"/>
+                                                    <td class="l tr_m_name" data-label="Nhân viên">
                                                         <b t-if="row.l.is_cht"><t t-esc="row.l.staff_name"/> (CHT)</b>
                                                         <span t-else="" t-esc="row.l.staff_name"/>
                                                     </td>
-                                                    <td class="c" t-esc="row.l.employee_code or '-'"/>
-                                                    <td class="c" t-esc="row.l.position or '-'"/>
-                                                    <td class="c tg_cell" t-if="row_index === 0" t-att-rowspan="g.rows.length">
+                                                    <td class="c" data-label="ID HRM" t-esc="row.l.employee_code or '-'"/>
+                                                    <td class="c" data-label="Chức vụ" t-esc="row.l.position or '-'"/>
+                                                    <td class="c tg_cell" data-label="Target CH" t-if="row_index === 0" t-att-rowspan="g.rows.length">
                                                         <input t-if="tg.can_edit" type="text" inputmode="numeric" class="tg_in tg_target" placeholder="0"
                                                                t-att-value="g.st.targetStr" t-on-input="(ev) => this.onTgTargetInput(g.st, ev)"/>
                                                         <b t-else="" class="tg_val" t-esc="fmtRevDisplay(tgTarget(g.st))"/>
                                                     </td>
-                                                    <td class="c pct_cell">
+                                                    <td class="c pct_cell" data-label="Phân bổ (%)">
                                                         <div class="tg_pct_wrap" t-if="tg.can_edit">
                                                             <input type="text" inputmode="decimal" class="tg_in tg_pct" placeholder="0"
                                                                    t-att-value="row.l.pctStr" t-on-input="(ev) => this.onTgPctInput(row.l, ev)" t-on-blur="() => this.onTgPctBlur(row.l)"/>
@@ -1711,25 +1509,25 @@
                                                         </div>
                                                         <b t-else="" class="tg_val" t-esc="(fmtTgPct(parseTgPct(row.l.pctStr)) || '0') + '%'"/>
                                                     </td>
-                                                    <td class="r b" t-esc="fmtRevDisplay(tgAmount(g.st, row.l))"/>
+                                                    <td class="r b" data-label="Target NV" t-esc="fmtRevDisplay(tgAmount(g.st, row.l))"/>
                                                 </tr>
                                                 <tr class="tg_sum_row">
                                                     <td colspan="6" class="c">
                                                         <button type="button" class="tg_even_btn" t-if="tg.can_edit" t-on-click="() => this.onTgSplitEven(g.st)" title="Chia đều 100% cho các nhân viên"><i class="fa fa-balance-scale"/> Chia đều</button>
                                                         <b>Tổng phân bổ cửa hàng <t t-esc="g.st.store"/></b>
                                                     </td>
-                                                    <td class="c b" t-esc="fmtRevDisplay(tgTarget(g.st))"/>
-                                                    <td t-att-class="'c b ' + (tgStorePct(g.st) === 100 ? 'tg_ok' : 'tg_bad')" t-esc="(fmtTgPct(tgStorePct(g.st)) || '0') + '%'"/>
-                                                    <td class="r b" t-esc="fmtRevDisplay(tgStoreAmount(g.st))"/>
+                                                    <td class="c b" data-label="Target CH" t-esc="fmtRevDisplay(tgTarget(g.st))"/>
+                                                    <td data-label="Phân bổ (%)" t-att-class="'c b ' + (tgStorePct(g.st) === 100 ? 'tg_ok' : 'tg_bad')" t-esc="(fmtTgPct(tgStorePct(g.st)) || '0') + '%'"/>
+                                                    <td class="r b" data-label="Target NV" t-esc="fmtRevDisplay(tgStoreAmount(g.st))"/>
                                                 </tr>
                                             </t>
                                         </tbody>
                                         <tfoot t-if="tg.show_grand">
                                             <tr class="rev_tot_row">
                                                 <td colspan="6" class="c"><b>TỔNG HỆ THỐNG</b></td>
-                                                <td class="c"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandTarget)"/></td>
-                                                <td class="c"><b t-esc="(fmtTgPct(tgGrandPct) || '0') + '%'"/></td>
-                                                <td class="r"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandAmount)"/></td>
+                                                <td class="c" data-label="Target CH"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandTarget)"/></td>
+                                                <td class="c" data-label="Phân bổ (%)"><b t-esc="(fmtTgPct(tgGrandPct) || '0') + '%'"/></td>
+                                                <td class="r" data-label="Target NV"><b class="rev_tot_val" t-esc="fmtRevDisplay(tgGrandAmount)"/></td>
                                             </tr>
                                         </tfoot>
                                     </table>

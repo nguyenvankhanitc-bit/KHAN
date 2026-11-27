@@ -246,8 +246,8 @@
 .o_store_list_wrap .o_store_list_filters select{width: auto; min-width: 160px; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; background: #fff;}
 .o_phan_he_nav_sub.is-sub{padding-left: 38px !important;}
 .o_phan_he_nav_sub.is-folder{font-weight: 600;}
-.o_phan_he_nav_sub.is-folder::after{font-family: FontAwesome; margin-left: auto; content: "\f107";}
-.o_phan_he_nav_sub.is-folder.is-closed::after{content: "\f105";}
+.o_phan_he_nav_sub.is-folder::after{font-family: FontAwesome; margin-left: auto; content: "\f106";}
+.o_phan_he_nav_sub.is-folder.is-closed::after{content: "\f107";}
 .o_store_audit_form{zoom: 0.9;}
 .o_store_audit_form .o_notebook_headers .nav-link{font-weight: 700;}
 @media (max-width: 767.98px){.o_store_audit_list{}
@@ -2488,8 +2488,6 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_today > i:first-child{color: #db2777 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_done > i:first-child{color: #16a34a !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_mg_staff > i:first-child{color: #7c3aed !important;}
-.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-report_nvbh > i:first-child{color: #7c3aed !important;}
-.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-report_nsuat > i:first-child{color: #ea580c !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-report_store > i:first-child{color: #0891b2 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-report_flow > i:first-child{color: #e11d48 !important;}
 
@@ -4463,6 +4461,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
         background: #fff; border: 1px solid #cbd5e1; border-radius: 10px; padding: 10px 16px; margin-top: -6px; margin-bottom: 16px;
         .rev_save_btn { min-width: 105px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; }
+        .rev_edit_bar_btn { min-width: 112px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 6px; border-radius: 8px; border: 1px solid #f59e0b; background: #fef3c7; color: #b45309; &:hover { background: #fde68a; border-color: #d97706; color: #92400e; } }
         .rev_cancel_btn { font-weight: 600; border-radius: 8px; }
         .rev_dirty_msg { color: #b45309; font-weight: 700; font-size: 13px; }
         .rev_hint_msg { color: #475569; font-size: 12.5px; }
@@ -4550,9 +4549,160 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         .rev_tabs { width: 100%; button { flex: 1; justify-content: center; padding: 8px 10px; font-size: 12.5px; } }
         .rev_filters label, .rev_filters select, .rev_filters input[type="search"], .rev_chip_btn { width: 100%; min-width: 0; }
         .rev_date_grp { width: 100%; input, select { flex: 1; min-width: 0; } }
-        .rev_sum_pill, .rev_top_save_btn { width: 100%; justify-content: center; }
-        .rev_ro_wrap { min-width: 0; }
-        .rev_month_table .rev_sub_grid { grid-template-columns: 1fr; }
+        .rev_sum_pill { width: 100%; flex-direction: column; align-items: flex-start; justify-content: center; gap: 1px; height: auto; padding: 6px 12px; border-radius: 12px; background: #eaf2ff; border: 1px solid #dbeafe; span { font-size: 11px; color: #475569; line-height: 1.2; } b { font-size: 15px; line-height: 1.25; } }
+        .rev_top_save_btn { width: 100%; justify-content: center; }
+        .asm_card { background: transparent; border: 0; box-shadow: none; overflow: visible; margin-bottom: 10px; }
+        .rev_ro_wrap { min-width: 0; justify-content: flex-start; flex-wrap: wrap; gap: 8px; }
+        /* Doanh thu theo ngày & Phân Bổ Target: giao diện thẻ mobile theo mẫu */
+        table.rev_table:not(.rev_month_table):not(.tr_table) {
+            tfoot { display: block; }
+            > tbody > tr, > tfoot > tr {
+                position: relative; padding: 14px; gap: 10px 0; align-items: flex-start;
+                border-radius: 16px; border: 1px solid #e2e8f0; background: #fff;
+                box-shadow: 0 2px 10px rgba(15, 23, 42, .05); margin-bottom: 12px;
+                > td {
+                    margin-top: 0 !important; padding: 2px 4px !important; border-top: 0 !important;
+                    &::before {
+                        content: attr(data-label) !important; display: block !important;
+                        font-size: .64rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .03em; margin-bottom: 3px;
+                    }
+                    &:not([data-label])::before { display: none !important; content: none !important; }
+                }
+                > td[colspan] { flex: 0 0 100% !important; font-size: .92rem; color: #0f172a; border-bottom: 1px solid #dbeafe !important; padding-bottom: 8px !important; margin-bottom: 2px; }
+            }
+            > tbody > tr.rev_emp_row {
+                border-left: 3.5px solid #5b4bb7;
+                &.is-selected { border-color: #4f46e5; background: #f8faff; box-shadow: 0 3px 12px rgba(79, 70, 229, .12); }
+                > td:nth-child(1) {
+                    flex: 0 0 30px !important; width: 30px; height: 30px; border-radius: 50%;
+                    background: #eef0ff !important; color: #3b49df; font-weight: 800; font-size: .88rem;
+                    display: inline-flex !important; align-items: center; justify-content: center;
+                    padding: 0 !important; margin-right: 10px; margin-top: 2px !important;
+                }
+                > td.rev_staff_cell {
+                    flex: 1 1 50% !important; min-width: 0;
+                    .rev_nm { font-size: .92rem; font-weight: 800; color: #0f172a; }
+                    .rev_meta { font-size: .76rem; color: #64748b; margin-top: 2px; }
+                }
+                > td.rev_code {
+                    flex: 0 0 auto !important; text-align: right !important; font-size: .92rem; font-weight: 800; color: #0f172a;
+                    &::before { text-align: right; }
+                }
+                > td.rev_shift {
+                    flex: 0 0 50% !important;
+                    .rev_shift_tag {
+                        background: #e9ecff; color: #3730a3; border: 0; padding: 3px 10px; font-size: 12px;
+                        &::before { font-family: FontAwesome; content: "\f133"; margin-right: 5px; font-weight: 400; }
+                    }
+                    .rev_shift_time { margin-top: 4px; color: #334155; font-size: 12px; font-weight: 500; }
+                }
+                > td.rev_date {
+                    flex: 0 0 50% !important; text-align: left !important; font-size: .88rem; font-weight: 600; color: #1e293b;
+                }
+                > td.c_rev {
+                    flex: 0 0 100% !important; order: 6; padding-top: 4px !important;
+                    .rev_val_ro { font-size: 1.02rem; font-weight: 800; color: #0f172a; }
+                    .rev_st_tag { padding: 3px 10px; font-size: 11.5px; }
+                    .rev_in_wrap {
+                        width: 100%;
+                        .rev_input { height: 38px; border-radius: 10px; background: #f8fafc; border-color: #dbe4f0; text-align: center; font-size: 13.5px; }
+                    }
+                }
+            }
+            > tbody > tr.rev_grp_mien, > tbody > tr.rev_grp_store, > tfoot > tr.rev_tot_row {
+                > td.c_rev { flex: 0 0 58% !important; }
+                > td:last-child { flex: 0 0 42% !important; text-align: right !important; &::before { text-align: right; } }
+            }
+            > tbody > tr.rev_grp_mien { background: #dbeafe !important; border-color: #93c5fd !important; }
+            > tbody > tr.rev_grp_store { background: #f1f5f9 !important; border-color: #cbd5e1 !important; }
+            > tfoot > tr.rev_tot_row {
+                background: linear-gradient(180deg, #eef4ff 0%, #f5f8ff 100%) !important;
+                border: 1.5px solid #bfdbfe !important; border-radius: 16px;
+                .rev_tot_val { font-size: 1.06rem; font-weight: 800; color: #1d4ed8; }
+                > td:last-child { font-weight: 700; color: #1e3a8a; }
+            }
+        }
+        .rev_action_bar {
+            background: transparent; border: 0; padding: 6px 2px; margin-top: 0; gap: 10px;
+            .rev_save_btn, .rev_edit_bar_btn, .rev_cancel_btn { height: 40px; border-radius: 12px; padding: 0 20px; font-size: 14px; }
+            .rev_hint_msg, .rev_dirty_msg { flex: 0 0 100%; font-size: 12px; line-height: 1.45; }
+        }
+        table.rev_tg_table {
+            > tbody > tr > td { flex: 0 0 33.333% !important; }
+            > tbody > tr > td:first-child:not([data-label]) { flex: 0 0 auto !important; padding-right: 6px !important; }
+            > tbody > tr > td.tr_m_name { flex: 1 1 60% !important; min-width: 0; }
+            > tbody > tr > td.tg_cell, > tbody > tr > td.pct_cell { flex: 0 0 50% !important; .tg_target { width: 100%; } }
+            > tbody > tr.tg_sum_row, > tfoot > tr.rev_tot_row { > td:not([colspan]) { flex: 0 0 33.333% !important; } }
+        }
+        .rev_filters > label:has(.rev_date_grp), .rev_filters .asm_export_btn { grid-column: 1 / -1; }
+        .rev_date_grp {
+            width: 100%;
+            .rev_month_sel { flex: 1 1 auto; min-width: 0; width: auto; }
+            .rev_nav_btn { flex: 0 0 34px; padding: 0; display: inline-flex; align-items: center; justify-content: center; }
+            .rev_today_btn { flex: 0 0 auto; white-space: nowrap; padding: 0 10px; }
+        }
+        /* Doanh Thu Tháng: sửa nhãn thẻ mobile (tránh kế thừa nhãn KPI Nguồn / Trọng số / Điểm tối đa / Tỷ lệ đạt) */
+        table.rev_month_table {
+            tfoot { display: block; }
+            > tbody > tr.rev_m_row {
+                padding: 10px 12px; gap: 6px 0;
+                > td:nth-child(1) { flex: 0 0 auto; padding-right: 6px !important; }
+                > td:nth-child(2) { flex: 1 1 55%; min-width: 0; }
+                > td:nth-child(3) { flex: 0 0 auto; text-align: right !important; &::before { content: "Miền"; } }
+                > td:nth-child(4) { flex: 0 0 26%; &::before { content: "Nhân sự"; } }
+                > td:nth-child(5) { flex: 0 0 32%; &::before { content: "Ngày có DT"; } }
+                > td:nth-child(6) { flex: 0 0 42%; text-align: right !important; &::before { content: "Doanh thu tháng"; } }
+            }
+            > tbody > tr.rev_grp_mien {
+                background: #dbeafe !important; border-color: #93c5fd !important; padding: 10px 12px; gap: 6px 0;
+                > td:nth-child(1) { flex: 0 0 100%; color: #1e3a8a; font-size: .88rem; }
+                > td:nth-child(2) { flex: 0 0 26%; font-size: .84rem; &::before { content: "Nhân sự"; display: block; font-size: .62rem; font-weight: 600; color: #475569; text-transform: uppercase; } }
+                > td:nth-child(3) { flex: 0 0 32%; font-size: .82rem; &::before { content: "Kỳ"; } }
+                > td:nth-child(4) { flex: 0 0 42%; text-align: right !important; &::before { content: "Tổng DT"; } }
+            }
+            > tbody > tr.rev_m_detail {
+                background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; margin-top: -4px; margin-bottom: 12px;
+                > td { flex: 0 0 100%; width: 100%; padding: 0 !important; &::before { display: none !important; content: none !important; } }
+            }
+            .rev_sub_grid { grid-template-columns: 1fr; gap: 10px; }
+            .rev_sub_box {
+                overflow-x: auto;
+                .rev_sub_hd { font-size: 12px; padding: 7px 10px; }
+            }
+            /* Khôi phục bảng con (Doanh thu NV & Theo ngày) về dạng bảng chuẩn, không bị biến thành thẻ KPI */
+            table.rev_sub_tbl {
+                display: table !important; width: 100% !important; border-collapse: collapse !important; table-layout: auto !important;
+                thead { display: table-header-group !important; }
+                tbody { display: table-row-group !important; }
+                tr { display: table-row !important; background: #fff !important; border: 0 !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+                th { font-size: 11px !important; padding: 6px 5px !important; white-space: nowrap; }
+                td {
+                    display: table-cell !important; font-size: 12px !important; padding: 6px 5px !important; border-bottom: 1px solid #f1f5f9 !important; vertical-align: middle;
+                    &::before { display: none !important; content: none !important; }
+                    &.c { text-align: center !important; }
+                    &.l { text-align: left !important; }
+                    &.r { text-align: right !important; }
+                }
+                .rev_jump_btn { padding: 3px 6px; font-size: 11px; white-space: nowrap; }
+            }
+            > tfoot > tr.rev_tot_row {
+                background: #eff6ff !important; border: 1.5px solid #93c5fd !important; border-radius: 12px; padding: 10px 12px; margin-bottom: 4px; box-shadow: none;
+                > td.rev_tot_cell { flex: 0 0 100%; width: 100%; padding: 0 !important; &::before { display: none !important; content: none !important; } }
+                .rev_sub_grid { gap: 6px; }
+                .rev_tot_lbl { font-size: 12.5px; color: #1e3a8a; }
+                .rev_tot_box {
+                    border: 0; background: #fff; border-radius: 8px; padding: 6px 8px;
+                    table.rev_sub_tbl {
+                        tr { background: transparent !important; }
+                        td { border: 0 !important; padding: 2px 4px !important; font-size: 12.5px !important; }
+                        td:nth-child(1) { text-align: left !important; }
+                        td:nth-child(2) { text-align: center !important; &::after { content: " NV"; font-weight: 500; color: #64748b; font-size: 11px; } }
+                        td:nth-child(3) { text-align: right !important; }
+                        td:nth-child(4) { display: none !important; }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -4610,6 +4760,45 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     @media (max-width: 767px) {
         .tr_sec { font-size: 13px; }
         tr.tr_detail > td { padding-left: 8px; }
+        /* Theo Dõi Target: hiển thị đúng nhãn theo data-label (tránh kế thừa nhãn KPI Nguồn / Trọng số / ...) */
+        table.tr_table {
+            tfoot { display: block; }
+            > tbody > tr, > tfoot > tr {
+                padding: 10px 12px; gap: 8px 0; align-items: flex-start;
+                > td {
+                    flex: 0 0 33.333% !important; box-sizing: border-box; font-size: .84rem;
+                    margin-top: 0 !important; padding: 2px 4px !important; border-top: 0 !important; font-weight: 600;
+                    &::before {
+                        content: attr(data-label) !important; display: block !important;
+                        font-size: .62rem; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: .02em; margin-bottom: 1px;
+                    }
+                    &:not([data-label])::before { display: none !important; content: none !important; }
+                }
+                > td:first-child:not([data-label]) { flex: 0 0 auto !important; padding-right: 8px !important; font-weight: 800; color: #1e4fb3; }
+                > td.tr_m_id { flex: 0 0 28% !important; font-weight: 700; color: #0f172a; }
+                > td.tr_m_name { flex: 1 1 55% !important; min-width: 0; font-size: .88rem; color: #0f172a; }
+                > td[colspan] { flex: 0 0 100% !important; font-size: .88rem; font-weight: 800; color: #1e3a8a; border-bottom: 1px solid #cbd5e1 !important; padding-bottom: 6px !important; margin-bottom: 2px; }
+            }
+            > tfoot > tr.tr_total {
+                background: #eff6ff !important; border: 1.5px solid #93c5fd !important;
+                > td { color: #1e293b; }
+            }
+            > tbody > tr.tr_detail {
+                background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; margin-top: -4px; margin-bottom: 12px;
+                > td { flex: 0 0 100% !important; width: 100%; padding: 0 !important; border-bottom: 0 !important; overflow-x: auto; }
+            }
+            table.tr_sub {
+                display: table !important; width: 100% !important; border-collapse: collapse !important;
+                thead { display: table-header-group !important; }
+                tbody { display: table-row-group !important; }
+                tr { display: table-row !important; background: #fff !important; border: 0 !important; border-radius: 0 !important; margin: 0 !important; padding: 0 !important; box-shadow: none !important; }
+                th { font-size: 11px !important; padding: 6px 5px !important; white-space: nowrap; }
+                td {
+                    display: table-cell !important; font-size: 12px !important; padding: 6px 5px !important; border-bottom: 1px solid #eef2f7 !important;
+                    &::before { display: none !important; content: none !important; }
+                }
+            }
+        }
     }
 }
 
@@ -4648,6 +4837,39 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     .perf_brief_asm { font-weight: 500; color: #475569; margin-left: 6px; }
 }
 
+/* Doanh thu: cố định tiêu đề + thanh tab khi cuộn */
+.o_store_list_wrap:has(.o_store_rev_page) {
+    > .o_store_list_banner {
+        position: sticky; top: 0; z-index: 25; height: 120px; box-sizing: border-box;
+        box-shadow: 0 -12px 0 12px #f4f6fb;
+    }
+    .o_store_rev_page > .rev_tabs {
+        position: sticky; top: 120px; z-index: 24;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, .08);
+    }
+    @media (max-width: 767.98px) {
+        > .o_store_list_banner {
+            height: 64px; min-height: 64px; margin-bottom: 0 !important;
+            border-bottom-left-radius: 0; border-bottom-right-radius: 0;
+            box-shadow: 0 -10px 0 10px #f4f6fb;
+        }
+        .o_store_rev_page > .rev_tabs {
+            top: 64px; margin-top: -6px; border-top-left-radius: 0; border-top-right-radius: 0;
+            box-shadow: 0 4px 10px rgba(15, 23, 42, .1);
+        }
+    }
+}
+/* Tô đỏ số tiền doanh thu (cả máy tính & điện thoại) */
+.o_store_rev_page {
+    .rev_sum_pill b,
+    .rev_val_ro,
+    .rev_input,
+    .rev_grp_sum,
+    .rev_grp_sum.is-store,
+    .rev_tot_val,
+    .rev_m_val.pos,
+    .rev_month_table .rev_sub_box .rev_sub_tbl td.r b { color: #dc2626 !important; }
+}
 /* Doanh thu theo ngày: cột Lịch ca */
 .o_store_rev_page {
     th.c_shift { width: 130px; }
@@ -4658,3 +4880,13 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     }
     .rev_shift_time { display: block; margin-top: 2px; color: #64748b; font-size: 11.5px; }
 }
+
+/* BC Hiệu suất NVBH: dropdown theo cửa hàng */
+.o_store_perf_page .perf_table > tbody > tr.perf_store_head > td { background: #dbeafe !important; color: #1e3a8a; font-size: 13.5px; padding: 9px 10px !important; cursor: pointer; border-top: 2px solid #93c5fd !important; }
+.o_store_perf_page .perf_table > tbody > tr.perf_store_head:hover > td { background: #bfdbfe !important; }
+.o_store_perf_page .perf_table > tbody > tr.perf_store_head > td.perf_pcell { background: #fff2cc !important; color: #9c0006; }
+.o_store_perf_page .perf_table > tbody > tr.perf_store_head > td.perf_pcell.is-ok { background: #e2efda !important; color: #006100; }
+.o_store_perf_page .perf_table .perf_caret { width: 14px; display: inline-block; margin-right: 4px; }
+.o_store_perf_page .perf_table .perf_head_meta { margin-left: 10px; font-weight: 500; color: #475569; font-size: 12px; }
+.o_store_perf_page .perf_toggle_all { height: 36px; border: 1px solid #cbd5e1; background: #fff; color: #334155; border-radius: 8px; padding: 0 12px; font-size: 12.5px; font-weight: 700; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.o_store_perf_page .perf_toggle_all:hover { border-color: #93c5fd; color: #1d4ed8; }

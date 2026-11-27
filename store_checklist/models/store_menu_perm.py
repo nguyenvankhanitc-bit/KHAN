@@ -32,8 +32,6 @@ MENUS = [
     ('review', 'Phiếu Đánh Giá', 'audit'),
     ('review_list', 'Danh Sách Đánh Giá', 'audit'),
     ('report_gs', 'Báo cáo GS', 'report'),
-    ('report_nvbh', 'BC Checklist NVBH KPI', 'report'),
-    ('report_nsuat', 'BC Năng suất NVBH', 'report'),
     ('report_nvbh_asm', 'BC Checklist NVBH ASM', 'report'),
     ('report_nvbh_perf', 'BC Hiệu suất NVBH', 'report'),
     ('report_store', 'Báo cáo Audit CH', 'report'),
@@ -65,7 +63,7 @@ PERM_INHERIT = {
     # 4 tab Doanh thu: mặc định theo quyền mục Doanh thu
     'nvbh_rev_day': 'nvbh_revenue', 'nvbh_rev_month': 'nvbh_revenue',
     'nvbh_rev_target': 'nvbh_revenue', 'nvbh_rev_track': 'nvbh_revenue',
-    'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
+    'report_nvbh_asm': 'report_gs',
     'report_nvbh_perf': 'report_nvbh_asm',
     'nvbh_cht': 'nvbh_mg',  # Checklist CV CHT: mặc định theo quyền Quản lý & đánh giá NVBH
     'nvbh_asmcv': 'nvbh_cht',  # Checklist CV ASM: mặc định theo quyền Checklist CV CHT

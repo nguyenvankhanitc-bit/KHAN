@@ -4,15 +4,17 @@
     <menuitem id="menu_hr_employee_location_root"
               name="Bản đồ nhân viên"
               sequence="85"
+              action="action_employee_store_map"
               web_icon="hr_employee_location,static/description/icon.png"
-              groups="group_hr_employee_location_user"/>
+              groups="base.group_user"/>
 
     <!-- Map Action Menu -->
     <menuitem id="menu_hr_employee_location_map"
               name="Bản đồ mạng lưới"
               parent="menu_hr_employee_location_root"
               action="action_employee_store_map"
-              sequence="10"/>
+              sequence="10"
+              groups="base.group_user"/>
 
     <!-- Configuration / Submenu for Stores and Employees -->
     <menuitem id="menu_hr_employee_location_config"

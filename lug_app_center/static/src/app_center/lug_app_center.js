@@ -37,6 +37,7 @@ const SIDEBAR_ICONS = {
     "point_of_sale.menu_point_root": "fa-shopping-basket",
     "lug_email_account.menu_lug_email_root": "fa-envelope",
     "lug_phan_he.menu_phan_he_root": "fa-th-large",
+    "hr_employee_location.menu_hr_employee_location_root": "fa-map-marker",
 };
 
 export class LugAppCenter extends Component {
@@ -167,6 +168,8 @@ export class LugAppCenter extends Component {
         const STATIC_APP_ICONS = {
             "lug_phan_he.menu_phan_he_root":
                 "/lug_phan_he/static/description/icon.png?v=phanhe63",
+            "hr_employee_location.menu_hr_employee_location_root":
+                "/hr_employee_location/static/description/icon.png",
         };
         if (app.xmlid && STATIC_APP_ICONS[app.xmlid]) {
             return { type: "img", src: STATIC_APP_ICONS[app.xmlid] };

@@ -3,6 +3,7 @@
     <record id="action_employee_store_map" model="ir.actions.client">
         <field name="name">Bản đồ vị trí nhân viên &amp; Cửa hàng</field>
         <field name="tag">hr_employee_location.map_workspace</field>
+        <field name="path">employee-map</field>
         <field name="target">current</field>
     </record>
 </odoo>

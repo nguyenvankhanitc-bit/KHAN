@@ -9,9 +9,9 @@ _logger = logging.getLogger(__name__)
 class GeolocationController(http.Controller):
 
     @http.route("/hr_employee_location/update_position", type="jsonrpc", auth="user", methods=["POST"])
-    def update_position(self, latitude, longitude, accuracy=None):
+    def update_position(self, latitude=None, longitude=None, accuracy=None, device_id=None, device_name=None, device_type=None):
         """
-        Nhận tọa độ GPS từ browser webclient của nhân viên và cập nhật vào hr.employee.
+        Nhận tọa độ GPS và thông tin thiết bị từ browser webclient của nhân viên và cập nhật vào hr.employee.
         Yêu cầu user đã đăng nhập.
         """
         user = request.env.user
@@ -21,25 +21,48 @@ class GeolocationController(http.Controller):
             employee = request.env["hr.employee"].sudo().search([("user_id", "=", user.id)], limit=1)
 
         if not employee:
-            _logger.info("User %s không liên kết với hồ sơ nhân viên nào, bỏ qua lưu GPS.", user.login)
+            _logger.info("User %s không liên kết với hồ sơ nhân viên nào, bỏ qua lưu vị trí/thiết bị.", user.login)
             return {"status": "no_employee"}
 
-        try:
-            lat = float(latitude)
-            lng = float(longitude)
-        except (ValueError, TypeError):
-            return {"status": "invalid_coordinates"}
+        vals = {}
+        if latitude is not None and longitude is not None:
+            try:
+                vals["last_latitude"] = float(latitude)
+                vals["last_longitude"] = float(longitude)
+                vals["last_location_time"] = fields.Datetime.now()
+            except (ValueError, TypeError):
+                pass
 
-        # Cập nhật bằng sudo để nhân viên tự cập nhật được vị trí của mình
-        employee.sudo().write({
-            "last_latitude": lat,
-            "last_longitude": lng,
-            "last_location_time": fields.Datetime.now(),
-        })
+        if device_id:
+            vals["device_identifier"] = str(device_id)[:100]
+        if device_name:
+            vals["device_name"] = str(device_name)[:100]
+        if device_type in ("computer", "mobile", "tablet"):
+            vals["device_type"] = device_type
 
-        _logger.debug("Đã cập nhật vị trí GPS nhân viên %s: (%f, %f)", employee.name, lat, lng)
+        # Fallback nhận diện thiết bị qua HTTP User-Agent nếu client chưa gửi đủ
+        if not vals.get("device_name") or not vals.get("device_type"):
+            ua = request.httprequest.user_agent
+            if ua:
+                platform = ua.platform or "Thiết bị"
+                browser = ua.browser or "Web"
+                if not vals.get("device_name"):
+                    vals["device_name"] = f"{platform.capitalize()} ({browser.capitalize()})"
+                if not vals.get("device_type"):
+                    vals["device_type"] = "mobile" if platform.lower() in ["android", "iphone", "ipad"] else "computer"
+        if not vals.get("device_identifier"):
+            sid = request.session.sid or ""
+            vals["device_identifier"] = f"DEV-{sid[:8].upper()}" if sid else "DEV-UNKNOWN"
+
+        if vals:
+            employee.sudo().write(vals)
+
+        _logger.debug("Đã cập nhật vị trí & thiết bị nhân viên %s: (%s, %s)", employee.name, vals.get("device_name"), vals.get("device_identifier"))
         return {
             "status": "ok",
             "employee_id": employee.id,
-            "last_location_time": fields.Datetime.to_string(employee.last_location_time),
+            "device_identifier": employee.device_identifier,
+            "device_name": employee.device_name,
+            "device_type": employee.device_type,
+            "last_location_time": fields.Datetime.to_string(employee.last_location_time) if employee.last_location_time else False,
         }

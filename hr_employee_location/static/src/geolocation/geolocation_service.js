@@ -1,10 +1,11 @@
 /** @odoo-module **/
 
 import { registry } from "@web/core/registry";
+import { rpc } from "@web/core/network/rpc";
+import { user } from "@web/core/user";
 
 export const geolocationService = {
-    dependencies: ["rpc", "user"],
-    start(env, { rpc, user }) {
+    start() {
         const STORAGE_KEY = "odoo_last_gps_sync";
         const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 phút throttle
 

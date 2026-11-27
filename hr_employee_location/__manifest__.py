@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Bản đồ vị trí nhân viên & Cửa hàng",
-    "version": "19.0.1.0.4",
+    "version": "19.0.1.0.5",
     "category": "Human Resources",
     "summary": "Định vị vị trí nhân viên và trực quan hóa mạng lưới cửa hàng trên OpenStreetMap (OWL & geopy)",
     "description": """
@@ -31,8 +31,6 @@ Bản đồ vị trí nhân viên & Cửa hàng
     ],
     "assets": {
         "web.assets_backend": [
-            "hr_employee_location/static/lib/leaflet/leaflet.css",
-            "hr_employee_location/static/lib/leaflet/leaflet.js",
             "hr_employee_location/static/src/geolocation/geolocation_service.js",
             "hr_employee_location/static/src/map_workspace/employee_store_map.scss",
             "hr_employee_location/static/src/map_workspace/employee_store_map.xml",

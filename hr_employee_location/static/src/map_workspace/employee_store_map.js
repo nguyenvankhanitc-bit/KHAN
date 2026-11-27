@@ -1,9 +1,10 @@
 /** @odoo-module **/
 
-import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
+import { Component, onMounted, onWillStart, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 import { standardActionServiceProps } from "@web/webclient/actions/action_service";
+import { loadJS, loadCSS } from "@web/core/assets";
 
 export class EmployeeStoreMap extends Component {
     static template = "hr_employee_location.EmployeeStoreMap";
@@ -27,6 +28,7 @@ export class EmployeeStoreMap extends Component {
             searchQuery: "",
             filterStatus: "all", // all, active, stale, none
             isLoading: true,
+            displayLimit: 40,
             stats: {
                 totalEmployees: 0,
                 activeGpsCount: 0,
@@ -34,9 +36,18 @@ export class EmployeeStoreMap extends Component {
             },
         });
 
-        onMounted(async () => {
-            this.initMap();
+        onWillStart(async () => {
+            // Lazy-load Leaflet on demand: web.assets_backend is NOT bloated
+            await Promise.all([
+                loadJS("/hr_employee_location/static/lib/leaflet/leaflet.js"),
+                loadCSS("/hr_employee_location/static/lib/leaflet/leaflet.css"),
+            ]);
             await this.loadData();
+        });
+
+        onMounted(() => {
+            this.initMap();
+            this.renderStoreMarkers();
         });
 
         onWillUnmount(() => {
@@ -54,10 +65,13 @@ export class EmployeeStoreMap extends Component {
         }
 
         const el = this.mapContainer.el;
+        if (!el || this.map) return;
+
         // Tọa độ mặc định trung tâm (Việt Nam / TP.HCM)
         this.map = window.L.map(el, {
             zoomControl: true,
             attributionControl: true,
+            preferCanvas: true,
         }).setView([10.7769, 106.7009], 12);
 
         // Tile layer OpenStreetMap chuẩn
@@ -75,7 +89,7 @@ export class EmployeeStoreMap extends Component {
             if (this.map) {
                 this.map.invalidateSize();
             }
-        }, 200);
+        }, 150);
     }
 
     async loadData() {
@@ -89,7 +103,6 @@ export class EmployeeStoreMap extends Component {
                         "id",
                         "name",
                         "job_title",
-                        "work_email",
                         "last_latitude",
                         "last_longitude",
                         "last_location_time",
@@ -120,7 +133,9 @@ export class EmployeeStoreMap extends Component {
             this.state.stats.activeGpsCount = employees.filter((e) => e.gps_status === "active").length;
             this.state.stats.totalStores = stores.length;
 
-            this.renderStoreMarkers();
+            if (this.map) {
+                this.renderStoreMarkers();
+            }
         } catch (error) {
             this.notification.add("Lỗi khi tải dữ liệu nhân viên và cửa hàng: " + error.message, {
                 type: "danger",
@@ -134,15 +149,14 @@ export class EmployeeStoreMap extends Component {
         return window.L.divIcon({
             className: "o_leaflet_store_marker",
             html: `
-                <div class="o_store_pin_wrapper">
+                <div class="o_store_pin_wrapper" title="${storeName}">
                     <div class="o_store_pin_badge">
                         <i class="fa fa-shopping-bag"></i>
                     </div>
-                    <div class="o_store_pin_label">${storeName}</div>
                 </div>
             `,
-            iconSize: [120, 40],
-            iconAnchor: [60, 36],
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
         });
     }
 
@@ -172,6 +186,10 @@ export class EmployeeStoreMap extends Component {
             if (store.latitude && store.longitude) {
                 const marker = window.L.marker([store.latitude, store.longitude], {
                     icon: this.createStoreIcon(store.name),
+                });
+                marker.bindTooltip(store.name, {
+                    direction: "top",
+                    offset: [0, -28],
                 });
                 marker.bindPopup(`
                     <div class="o_store_popup">
@@ -307,7 +325,7 @@ export class EmployeeStoreMap extends Component {
         this.renderStoreMarkers();
     }
 
-    get filteredEmployees() {
+    get allFilteredEmployees() {
         const query = (this.state.searchQuery || "").trim().toLowerCase();
         const status = this.state.filterStatus;
 
@@ -325,6 +343,28 @@ export class EmployeeStoreMap extends Component {
 
             return matchesQuery && matchesStatus;
         });
+    }
+
+    get displayedEmployees() {
+        return this.allFilteredEmployees.slice(0, this.state.displayLimit);
+    }
+
+    get hasMoreEmployees() {
+        return this.allFilteredEmployees.length > this.state.displayLimit;
+    }
+
+    loadMoreEmployees() {
+        this.state.displayLimit += 40;
+    }
+
+    setFilterStatus(status) {
+        this.state.filterStatus = status;
+        this.state.displayLimit = 40;
+    }
+
+    onSearchInput(ev) {
+        this.state.searchQuery = ev.target.value;
+        this.state.displayLimit = 40;
     }
 }
 

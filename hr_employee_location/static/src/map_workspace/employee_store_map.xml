@@ -23,11 +23,12 @@
                         <input type="text"
                                class="form-control"
                                placeholder="Tìm theo tên hoặc chức danh..."
-                               t-model="state.searchQuery"/>
+                               t-att-value="state.searchQuery"
+                               t-on-input="onSearchInput"/>
                         <button t-if="state.searchQuery"
                                 class="btn btn-outline-secondary"
                                 type="button"
-                                t-on-click="() => this.state.searchQuery = ''">
+                                t-on-click="() => { this.state.searchQuery = ''; this.state.displayLimit = 40; }">
                             <i class="fa fa-times"/>
                         </button>
                     </div>
@@ -37,26 +38,26 @@
                         <button type="button"
                                 class="btn"
                                 t-att-class="state.filterStatus === 'all' ? 'btn-primary' : 'btn-outline-secondary'"
-                                t-on-click="() => this.state.filterStatus = 'all'">
+                                t-on-click="() => this.setFilterStatus('all')">
                             Tất cả (<t t-esc="state.stats.totalEmployees"/>)
                         </button>
                         <button type="button"
                                 class="btn"
                                 t-att-class="state.filterStatus === 'active' ? 'btn-success text-white' : 'btn-outline-secondary'"
-                                t-on-click="() => this.state.filterStatus = 'active'">
+                                t-on-click="() => this.setFilterStatus('active')">
                             GPS Online (<t t-esc="state.stats.activeGpsCount"/>)
                         </button>
                         <button type="button"
                                 class="btn"
                                 t-att-class="state.filterStatus === 'none' ? 'btn-secondary text-white' : 'btn-outline-secondary'"
-                                t-on-click="() => this.state.filterStatus = 'none'">
+                                t-on-click="() => this.setFilterStatus('none')">
                             Chưa có GPS
                         </button>
                     </div>
 
                     <!-- Summary Stats Bar -->
                     <div class="d-flex justify-content-between text-muted small px-1">
-                        <span><i class="fa fa-users me-1"/> <t t-esc="filteredEmployees.length"/> nhân viên</span>
+                        <span><i class="fa fa-users me-1"/> <t t-esc="allFilteredEmployees.length"/> nhân viên</span>
                         <span><i class="fa fa-store me-1"/> <t t-esc="state.stats.totalStores"/> cửa hàng</span>
                     </div>
                 </div>
@@ -69,14 +70,14 @@
                             <div>Đang tải dữ liệu bản đồ...</div>
                         </div>
                     </t>
-                    <t t-elif="filteredEmployees.length === 0">
+                    <t t-elif="allFilteredEmployees.length === 0">
                         <div class="text-center py-5 text-muted">
                             <i class="fa fa-user-times fa-2x mb-2 text-secondary"/>
                             <div>Không tìm thấy nhân viên phù hợp</div>
                         </div>
                     </t>
                     <t t-else="">
-                        <t t-foreach="filteredEmployees" t-as="emp" t-key="emp.id">
+                        <t t-foreach="displayedEmployees" t-as="emp" t-key="emp.id">
                             <div class="o_employee_card card mb-2 cursor-pointer shadow-sm transition"
                                  t-att-class="{
                                      'border-primary bg-primary-subtle text-primary': state.selectedEmployeeId === emp.id,
@@ -120,6 +121,13 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </t>
+                        <t t-if="hasMoreEmployees">
+                            <div class="text-center py-2">
+                                <button class="btn btn-sm btn-outline-primary w-100" t-on-click="() => this.loadMoreEmployees()">
+                                    <i class="fa fa-chevron-down me-1"/>Xem thêm (<t t-esc="allFilteredEmployees.length - state.displayLimit"/> nhân viên)
+                                </button>
                             </div>
                         </t>
                     </t>

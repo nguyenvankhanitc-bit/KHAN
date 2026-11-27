@@ -10,20 +10,17 @@ class HrEmployee(models.Model):
         string="Vĩ độ gần nhất",
         digits=(10, 7),
         readonly=True,
-        tracking=True,
         help="Vĩ độ GPS được trích xuất tự động khi nhân viên thao tác trên webclient.",
     )
     last_longitude = fields.Float(
         string="Kinh độ gần nhất",
         digits=(10, 7),
         readonly=True,
-        tracking=True,
         help="Kinh độ GPS được trích xuất tự động khi nhân viên thao tác trên webclient.",
     )
     last_location_time = fields.Datetime(
         string="Thời gian ghi nhận GPS",
         readonly=True,
-        tracking=True,
         help="Thời điểm cuối cùng tọa độ GPS được gửi về từ trình duyệt.",
     )
     store_ids = fields.Many2many(

@@ -62,26 +62,15 @@ class HrStore(models.Model):
         records = super().create(vals_list)
         for record, vals in zip(records, vals_list):
             if "latitude" in vals or "longitude" in vals:
-                # Nếu admin chủ động nhập tọa độ khi tạo
                 if vals.get("latitude") or vals.get("longitude"):
                     record.geocode_status = "manual"
-            elif (record.address or record.street) and record.geocode_status != "manual":
-                record._auto_geocode_safely()
         return records
 
     def write(self, vals):
-        # Nếu sửa trực tiếp tọa độ -> đánh dấu là nhập thủ công để geopy không ghi đè sau này
         if "latitude" in vals or "longitude" in vals:
             if "geocode_status" not in vals:
                 vals["geocode_status"] = "manual"
-        res = super().write(vals)
-
-        # Nếu thay đổi địa chỉ và không phải manual -> tự động tính lại tọa độ
-        if ("address" in vals or "street" in vals) and "latitude" not in vals and "longitude" not in vals:
-            for rec in self:
-                if rec.geocode_status != "manual" and (rec.address or rec.street):
-                    rec._auto_geocode_safely()
-        return res
+        return super().write(vals)
 
     def _auto_geocode_safely(self):
         """Hàm helper chạy ngầm geocode mà không throw UserError nếu lỗi kết nối."""

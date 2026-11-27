@@ -41,12 +41,28 @@ class StoreAuditPlace(models.Model):
         existing = {p.code: p for p in self.sudo().search([])}
         colors = {'GO': 10, 'TTTM': 4, 'AEON': 6, 'Nhà Phố': 2}
         items = list(DEFAULT_STORE_PLACES)
-        if 'hr.store' in self.env and 'store_place' in self.env['hr.store']._fields:
-            sel = self.env['hr.store']._fields['store_place'].selection
-            if callable(sel):
-                sel = sel(self.env['hr.store'])
-            if sel:
-                items = [(k, lbl, colors.get(k, (i % 10) + 1)) for i, (k, lbl) in enumerate(sel)]
+        if 'hr.store.place' in self.env:
+            try:
+                places = self.env['hr.store.place'].sudo().search([], order='sequence, id')
+                if places:
+                    items = []
+                    for i, p in enumerate(places):
+                        name = (p.name or p.code or '').strip()
+                        code = 'Nhà Phố' if name == 'Mặt phố' else name
+                        items.append((code, code, colors.get(code, (i % 10) + 1)))
+            except Exception:
+                pass
+        elif 'hr.store' in self.env and 'store_place' in self.env['hr.store']._fields:
+            field = self.env['hr.store']._fields['store_place']
+            if getattr(field, 'type', None) == 'selection':
+                sel = getattr(field, 'selection', None)
+                if callable(sel):
+                    try:
+                        sel = sel(self.env['hr.store'])
+                    except Exception:
+                        sel = None
+                if sel:
+                    items = [(k, lbl, colors.get(k, (i % 10) + 1)) for i, (k, lbl) in enumerate(sel)]
         if 'Mặt phố' in existing and 'Nhà Phố' not in existing:
             existing['Mặt phố'].sudo().write({'code': 'Nhà Phố', 'name': 'Nhà Phố', 'color': 2})
             existing['Nhà Phố'] = existing.pop('Mặt phố')

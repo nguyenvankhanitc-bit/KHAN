@@ -27,13 +27,11 @@ class HrStore(models.Model):
     latitude = fields.Float(
         string="Vĩ độ",
         digits=(10, 7),
-        tracking=True,
         help="Tọa độ vĩ độ địa lý của cửa hàng (do geopy tự động tính hoặc admin nhập tay).",
     )
     longitude = fields.Float(
         string="Kinh độ",
         digits=(10, 7),
-        tracking=True,
         help="Tọa độ kinh độ địa lý của cửa hàng (do geopy tự động tính hoặc admin nhập tay).",
     )
     geocode_status = fields.Selection(
@@ -45,13 +43,11 @@ class HrStore(models.Model):
         ],
         string="Trạng thái định vị",
         default="draft",
-        tracking=True,
         help="Nguồn gốc tọa độ cửa hàng: geopy tự động, nhập tay, hay chưa tính.",
     )
     last_geocode_time = fields.Datetime(
         string="Thời gian định vị",
         readonly=True,
-        tracking=True,
     )
     employee_ids = fields.Many2many(
         "hr.employee",

@@ -56,7 +56,7 @@ class StoreNvbhCheck(models.Model):
     store_id = fields.Many2one('hr.store', string='Cửa hàng', required=True, index=True)
     mien = fields.Selection(related='store_id.mien', string='Miền')
     shift_id = fields.Many2one('store.shift', string='Ca', help='Mã ca của nhân viên trong Lịch làm việc')
-    shift_type = fields.Selection(SHIFT_TYPES, related='shift_id.shift_type', string='Loại ca', store=True, readonly=True)
+    shift_type = fields.Selection(related='shift_id.shift_type', string='Loại ca', store=True, readonly=True)
     work_date = fields.Date(string='Ngày', required=True, default=fields.Date.context_today)
     staff_name = fields.Char(string='Nhân viên')
     schedule_line_id = fields.Many2one('store.nvbh.schedule.line', string='Dòng lịch làm việc', ondelete='set null', index=True)

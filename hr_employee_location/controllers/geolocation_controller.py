@@ -8,7 +8,7 @@ _logger = logging.getLogger(__name__)
 
 class GeolocationController(http.Controller):
 
-    @http.route("/hr_employee_location/update_position", type="json", auth="user", methods=["POST"])
+    @http.route("/hr_employee_location/update_position", type="jsonrpc", auth="user", methods=["POST"])
     def update_position(self, latitude, longitude, accuracy=None):
         """
         Nhận tọa độ GPS từ browser webclient của nhân viên và cập nhật vào hr.employee.

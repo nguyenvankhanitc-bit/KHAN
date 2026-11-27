@@ -38,7 +38,8 @@ class StoreNvbhTarget(models.Model):
     @api.model
     def get_target_page(self, month=None, mien=None, store_id=None):
         Rev = self.env['store.nvbh.revenue']
-        Rev._check_perm('read')
+        # gọi nội bộ từ Theo Dõi Target / Import: kiểm tra quyền theo tab gọi
+        Rev._check_perm('read', self.env.context.get('tg_perm_key') or 'nvbh_rev_target')
         start_d, end_d, m_key, m_label, _days = Rev._month_bounds(month)
         allowed = Rev._allowed_stores()
         if mien:
@@ -112,14 +113,11 @@ class StoreNvbhTarget(models.Model):
             })
         stores.sort(key=lambda s: (list(MIEN_LABELS).index(s['mien']) if s['mien'] in MIEN_LABELS else 99, s['store'].casefold()))
 
-        rights = self.env['store.perm.rule']._rights()
-        is_mgr = self.env.user.has_group('base.group_system') or self.env.user.has_group('store_checklist.group_store_manager')
-        perm = (rights or {}).get('nvbh_revenue') or {}
         return {
             'month': m_key,
             'month_label': m_label,
-            'can_edit': bool(is_mgr or rights is None or perm.get('write')),
-            'can_export': bool(is_mgr or rights is None or perm.get('export')),
+            'can_edit': Rev._rev_right('nvbh_rev_target', 'write'),
+            'can_export': Rev._rev_right('nvbh_rev_target', 'export'),
             'show_grand': self._tg_show_grand(),
             'store_opts': store_opts,
             'stores': stores,
@@ -129,7 +127,7 @@ class StoreNvbhTarget(models.Model):
     def save_target_batch(self, month, stores):
         """Lưu Target cửa hàng + tỷ trọng % từng nhân viên (bấm nút Lưu)."""
         Rev = self.env['store.nvbh.revenue']
-        Rev._check_perm('write')
+        Rev._check_perm('write', 'nvbh_rev_target')
         m_key = Rev._month_bounds(month)[2]
         allowed = Rev._allowed_stores()
         allowed_ids = set(allowed.ids)
@@ -174,7 +172,7 @@ class StoreNvbhTarget(models.Model):
         days: Số Ngày Tháng (mặc định = số ngày thực của tháng)."""
         from datetime import timedelta
         Rev = self.env['store.nvbh.revenue']
-        Rev._check_perm('read')
+        Rev._check_perm('read', 'nvbh_rev_track')
         start_d, end_d, m_key, m_label, month_days = Rev._month_bounds(month)
         allowed = Rev._allowed_stores()
         if mien:
@@ -191,9 +189,7 @@ class StoreNvbhTarget(models.Model):
             pick = sorted(has_tg.mapped('store_id') or allowed, key=lambda x: code_of(x).casefold())
             store = pick[0] if pick else allowed.browse()
         base = {'month': m_key, 'month_label': m_label, 'store_opts': store_opts}
-        rights = self.env['store.perm.rule']._rights()
-        is_mgr = self.env.user.has_group('base.group_system') or self.env.user.has_group('store_checklist.group_store_manager')
-        base['can_export'] = bool(is_mgr or rights is None or ((rights or {}).get('nvbh_revenue') or {}).get('export'))
+        base['can_export'] = Rev._rev_right('nvbh_rev_track', 'export')
         if not store:
             base['store'] = False
             return base
@@ -201,7 +197,7 @@ class StoreNvbhTarget(models.Model):
 
         ndays = int(days or 0) or month_days
         ndays = max(1, min(31, ndays))
-        page = self.get_target_page(m_key, False, store.id)
+        page = self.with_context(tg_perm_key='nvbh_rev_track').get_target_page(m_key, False, store.id)
         sdata = next((s for s in page['stores'] if s['store_id'] == store.id), None)
         target = float(sdata['target']) if sdata else float(self.sudo().search(
             [('month', '=', m_key), ('store_id', '=', store.id)], limit=1).target or 0)
@@ -316,7 +312,7 @@ class StoreNvbhTarget(models.Model):
 
     @api.model
     def export_track_xlsx(self, month=None, store_id=None, mien=None, days=None):
-        self.env['store.perm.rule'].check_export()
+        self.env['store.nvbh.revenue']._check_perm('export', 'nvbh_rev_track')
         import xlsxwriter
         data = self.get_target_track(month, store_id, mien, days)
         if not data.get('store'):
@@ -486,6 +482,7 @@ class StoreNvbhTarget(models.Model):
         """Import file Excel Phân Bổ Target (cùng mẫu với Xuất Excel): đọc cột Mã Cửa Hàng, Tên nhân viên, ID HRM,
         Target Cửa Hàng, Đã Phân Bổ NV theo %. Chỉ cập nhật cửa hàng có trong file; nhân viên không có trong file giữ nguyên %."""
         import openpyxl
+        self.env['store.nvbh.revenue']._check_perm('write', 'nvbh_rev_target')
         try:
             wb = openpyxl.load_workbook(io.BytesIO(base64.b64decode(data)), data_only=True)
         except Exception:
@@ -577,7 +574,7 @@ class StoreNvbhTarget(models.Model):
 
     @api.model
     def export_target_xlsx(self, month=None, mien=None, store_id=None):
-        self.env['store.perm.rule'].check_export()
+        self.env['store.nvbh.revenue']._check_perm('export', 'nvbh_rev_target')
         import xlsxwriter
         data = self.get_target_page(month, mien, store_id)
         stores = data['stores']
@@ -607,7 +604,7 @@ class StoreNvbhTarget(models.Model):
         f_gt_p = book.add_format(dict(base, align='center', bold=True, bg_color='#CBD5E1', num_format='0.0%'))
 
         headers = ['STT', 'Miền', 'Mã Cửa Hàng', 'Tên nhân viên', 'ID HRM', 'Mã chức vụ', 'Target Cửa Hàng',
-                   'Đã Phân Bổ NV theo %', 'Thành tiền Target NV (VNĐ)']
+                   'Đã Phân Bổ NV theo %', 'Target NV']
         for c, w in enumerate([8, 14, 16, 34, 14, 14, 20, 20, 26]):
             ws.set_column(c, c, w)
         ws.merge_range(0, 0, 0, 8, 'LUG.VN - BẢNG PHÂN BỔ TARGET DOANH THU CỬA HÀNG & NHÂN VIÊN · THÁNG %s' % data['month_label'], f_title)

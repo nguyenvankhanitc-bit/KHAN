@@ -6,7 +6,7 @@
 - Bản mới nhất: v2.156 (đã push). Theo Dõi Target: 4 khối (chỉ tiêu CH, tiến độ NV, tuần 1-4, từng ngày) + Excel 2 sheet.
 
 ## Đã chốt (chạy ổn, không sửa lại)
-- Luồng duyệt: NVBH → CHT chốt; CHT tự đánh giá checklist của mình, ASM đánh giá lại theo tuần; ASM → RSM → Admin.
+- Luồng duyệt: NVBH → CHT chốt; CHT làm xong → chờ ASM (quản lý trực tiếp) đánh giá, ASM chấm từng phiếu hoặc theo tuần (v2.157, KHÔNG có bước CHT tự đánh giá); ASM → RSM → Admin.
 - Đánh giá tuần toàn cửa hàng (CHT + từng NVBH), KPI khớp Bảng Tổng. Phiếu Audit ASM (30 tiêu chí).
 - Bảng Mức Đánh giá chung; Tốt yêu cầu Lỗi = 0; tiêu chí có Chi tiết lỗi hiện −điểm chuẩn.
 - Phân Bổ Target: cột ID HRM / Mã chức vụ, Import Excel, dòng TỔNG HỆ THỐNG ẩn với cấp 1-5 (NV, CHT, ASM, RSM, GS).

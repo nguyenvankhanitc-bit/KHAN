@@ -716,13 +716,24 @@ class StoreNvbhCheckKpi(models.Model):
         from .store_nvbh_check import count_errors, eval_score
         start, end, _days = self._month_range(month)
         mkey = start.strftime('%Y-%m')
-        dyn_groups = self._dynamic_kpi_groups('kpi')
+        dom = [('work_date', '>=', start), ('work_date', '<', end), ('kind', 'in', ('nvbh', 'cht'))]
+        checks = self.search(dom, order='work_date, id')
+
+        # Cột nhóm công việc = đúng các nhóm có trong checklist NVBH / CHT của tháng (không lấy nhóm cài đặt chưa dùng),
+        # sắp theo thứ tự nhóm ở Cài đặt (Danh sách công việc NVBH, rồi CHT)
+        seen = {}
+        for ln in checks.line_ids:
+            k = _norm_grp(ln.sub_category)
+            if k and k not in seen:
+                seen[k] = (ln.sub_category or '').strip()
+        order = {}
+        for model in ('store.nvbh.task.group', 'store.cht.task.group'):
+            for g in self.env[model].sudo().search([], order='sequence, id'):
+                order.setdefault(_norm_grp(g.name), len(order))
+        dyn_groups = [(n, n) for k, n in sorted(seen.items(), key=lambda kv: (order.get(kv[0], 9999), kv[1].casefold()))]             or [(g[0], g[1]) for g in self._dynamic_kpi_groups('kpi')]
         group_names = [g[1] for g in dyn_groups]
         g_norm_idx = {_norm_grp(g[0]): i for i, g in enumerate(dyn_groups)}
         g_keys = ['g%d' % (i + 1) for i in range(len(group_names))]
-
-        dom = [('work_date', '>=', start), ('work_date', '<', end), ('kind', 'in', ('nvbh', 'cht'))]
-        checks = self.search(dom, order='work_date, id')
 
         export_store_map = {}
         asm_opts_map = {}
@@ -739,7 +750,7 @@ class StoreNvbhCheckKpi(models.Model):
             aid = mgr.id or 0
             aname = mgr.name or 'Chưa gán ASM'
             smien = st.mien or ''
-            sname = st.display_name or st.name or '-'
+            sname = st.code or st.display_name or st.name or '-'  # Mã cửa hàng (LUG_KDV) như mẫu báo cáo
             se = export_store_map.setdefault(st.id, {
                 'id': st.id, 'name': sname, 'mien': smien,
                 'asm_id': aid, 'asm': aname, 'staff_set': set(),
@@ -757,8 +768,10 @@ class StoreNvbhCheckKpi(models.Model):
             rec = staff_map.setdefault(sk, {
                 'name': nm, 'code': '', 'store_id': st.id, 'store': sname, 'mien': smien,
                 'asm': aname, 'g_pts': [0.0] * len(g_keys), 'g_max': [0.0] * len(g_keys),
-                'done': 0, 'total': 0, 'rate_vals': [],
+                'done': 0, 'total': 0, 'rate_vals': [], 'is_cht': False,
             })
+            if c.kind == 'cht':
+                rec['is_cht'] = True
             if not rec['code'] and c.schedule_line_id and c.schedule_line_id.employee_code:
                 rec['code'] = c.schedule_line_id.employee_code
             rec['done'] += c.cnt_done
@@ -767,12 +780,14 @@ class StoreNvbhCheckKpi(models.Model):
             if c._fully_evaluated():
                 rec['rate_vals'].append(round(100.0 * c.points / mp, 1) if mp else 0.0)
             for l in c.line_ids:
-                if not l.asm_eval_result:
+                # kết quả ASM chấm: trong phiếu (CHT: bước 1) hoặc ở trang Đánh giá tuần (cột bước 2)
+                res, err = c._asm_line_result(l)
+                if not res:
                     continue
                 idx = g_norm_idx.get(_norm_grp(l.sub_category))
                 if idx is None:
                     continue
-                pts = eval_score(l.max_score, l.asm_eval_result, count_errors(l.asm_error_detail))
+                pts = eval_score(l.max_score, res, count_errors(err))
                 rec['g_pts'][idx] += pts
                 rec['g_max'][idx] += l.max_score or 0.0
 
@@ -815,7 +830,7 @@ class StoreNvbhCheckKpi(models.Model):
                 passed = False
                 wait_count += 1
             row = {
-                'name': rec['name'], 'code': rec['code'],
+                'name': rec['name'], 'code': rec['code'], 'is_cht': rec.get('is_cht', False),
                 'store_id': rec['store_id'], 'store': rec['store'], 'mien': rec.get('mien', ''), 'asm': rec['asm'],
                 **{gk: gv for gk, gv in zip(g_keys, g_vals)},
                 'tasks_total': tasks_total, 'max_total': max_total, 'tasks_pct': tasks_pct,
@@ -824,6 +839,8 @@ class StoreNvbhCheckKpi(models.Model):
                 'rank_short': rank_short, 'rank_code': rank_code, 'rank_tone': rank_tone, 'passed': passed,
             }
             rows.append(row)
+
+        store_sales = self._perf_attach_sales(rows, mkey, start, end)
 
         if wait_count:
             rank_levels.append({'code': 'wait', 'name': 'Chờ đánh giá', 'score_range': '', 'tone': 'wait', 'count': wait_count})
@@ -876,6 +893,7 @@ class StoreNvbhCheckKpi(models.Model):
             'rank_levels': rank_levels,
             'rank_legend': rank_legend,
             'store_comments': store_comments,
+            'store_sales': store_sales,
             'summary': {
                 'staff_count': n, 'store_count': len({r['store_id'] for r in rows}),
                 'avg_kpi': round(sum(r['tasks_total'] for r in rows) / n, 2) if n else 0.0,
@@ -884,6 +902,101 @@ class StoreNvbhCheckKpi(models.Model):
                          for k in (*g_keys, 'tasks_total', 'complete')},
             },
         }
+
+    @api.model
+    def _perf_attach_sales(self, rows, mkey, start, end):
+        """Gắn Target NV (Phân Bổ Target: Target CH x %) + Doanh thu đạt (Doanh thu theo ngày, đã lưu) + % Đạt Target vào từng dòng
+        nhân viên; trả về {store_id: {target, revenue, pct}} cho dòng cửa hàng."""
+        import math
+
+        def norm(v):
+            return (v or '').strip().casefold()
+
+        def pct(done, tg):
+            return math.floor(1000.0 * done / tg + 0.5) / 10 if tg else None
+
+        sids = list({r['store_id'] for r in rows})
+        out = {}
+        if not sids:
+            return out
+        targets = {t.store_id.id: t for t in self.env['store.nvbh.target'].sudo().search(
+            [('month', '=', mkey), ('store_id', 'in', sids)])}
+        revs = self.env['store.nvbh.revenue'].sudo().search([
+            ('store_id', 'in', sids), ('work_date', '>=', start), ('work_date', '<', end), ('is_saved', '=', True)])
+        rev_code, rev_name, rev_store = {}, {}, {}
+        for r in revs:
+            sid = r.store_id.id
+            v = r.revenue or 0.0
+            rev_store[sid] = rev_store.get(sid, 0.0) + v
+            if (r.employee_code or '').strip():
+                k = (sid, r.employee_code.strip())
+                rev_code[k] = rev_code.get(k, 0.0) + v
+            else:
+                k = (sid, norm(r.staff_name))
+                rev_name[k] = rev_name.get(k, 0.0) + v
+        for sid in sids:
+            t = targets.get(sid)
+            tg = round(t.target) if t else 0
+            out[sid] = {'target': tg, 'revenue': round(rev_store.get(sid, 0.0)), 'pct': pct(rev_store.get(sid, 0.0), tg)}
+        for row in rows:
+            sid = row['store_id']
+            t = targets.get(sid)
+            code = (row.get('code') or '').strip()
+            line = False
+            if t:
+                line = (code and t.line_ids.filtered(lambda l: (l.employee_code or '').strip() == code)[:1]) \
+                    or t.line_ids.filtered(lambda l: norm(l.staff_name) == norm(row['name']))[:1]
+            tg_nv = round((t.target or 0) * (line.pct or 0) / 100.0) if (t and line) else 0
+            rev = (rev_code.get((sid, code), 0.0) if code else 0.0) + rev_name.get((sid, norm(row['name'])), 0.0)
+            row['target_nv'] = tg_nv
+            row['revenue'] = round(rev)
+            row['rev_pct'] = pct(rev, tg_nv)
+        return out
+
+    @api.model
+    def _perf_xlsx_banner(self, book, ws, ncol, c_right, title, subtitle):
+        """Khung tiêu đề giống màn hình: logo công ty | biểu tượng | tiêu đề + mô tả | ảnh minh họa (3 dòng đầu sheet)."""
+        import base64
+        import io as _io
+        from odoo.tools.misc import file_path
+        BG = '#EEF4FF'
+        f_bg = book.add_format({'bg_color': BG, 'top': 1, 'bottom': 1, 'border_color': '#C7D2FE'})
+        f_t = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 18, 'font_color': '#1E3A6E',
+                               'bg_color': BG, 'valign': 'bottom', 'top': 1, 'border_color': '#C7D2FE'})
+        f_s = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'font_color': '#475569',
+                               'bg_color': BG, 'valign': 'top', 'bottom': 1, 'border_color': '#C7D2FE', 'text_wrap': True})
+        for r in (0, 1, 2):
+            ws.set_row(r, 28)
+        ws.merge_range(0, 0, 2, 2, '', f_bg)
+        ws.merge_range(0, 3, 2, 3, '', f_bg)
+        ws.merge_range(0, 4, 1, c_right - 1, title, f_t)
+        ws.merge_range(2, 4, 2, c_right - 1, subtitle, f_s)
+        ws.merge_range(0, c_right, 2, ncol - 1, '', f_bg)
+        H = 78.0
+
+        def put(row, col, raw, max_w=None, x_off=4, y_off=3):
+            scale = 1.0
+            try:
+                from PIL import Image
+                w, h = Image.open(_io.BytesIO(raw)).size
+                scale = (H - 6) / h
+                if max_w and w * scale > max_w:
+                    scale = max_w / w
+            except Exception:
+                pass
+            ws.insert_image(row, col, 'img.png', {'image_data': _io.BytesIO(raw), 'x_scale': scale, 'y_scale': scale,
+                                                  'x_offset': x_off, 'y_offset': y_off, 'object_position': 2})
+
+        logo = self.env.company.logo_web or self.env.company.logo
+        if logo:
+            put(0, 0, base64.b64decode(logo), max_w=230)
+        for rel, col, mw in (('store_checklist/static/src/shell/img/audit_icon.png', 3, 70),
+                             ('store_checklist/static/src/shell/img/banner_bg.jpg', c_right, 300)):
+            try:
+                with open(file_path(rel), 'rb') as fh:
+                    put(0, col, fh.read(), max_w=mw)
+            except Exception:
+                pass
 
     @api.model
     def export_nvbh_perf_xlsx(self, month=None, mien=None, asm_id=None, store_id=None, store_ids=None):
@@ -905,11 +1018,19 @@ class StoreNvbhCheckKpi(models.Model):
             rows_src = data['rows']
         if not rows_src:
             raise UserError(_('Không có dữ liệu nhân viên để xuất.'))
+        from xlsxwriter.utility import xl_rowcol_to_cell as cell
         g_keys = ['g%d' % (i + 1) for i in range(len(data['group_names']))]
-        keys = (*g_keys, 'tasks_total', 'complete')
-        headers = ['#', 'ID', 'Nhân viên', *data['group_names'], 'Tổng công việc', 'Tỷ lệ đạt (%)', 'Xếp loại']
-        widths = [7, 13, 34, *([18] * len(g_keys)), 16, 15, 16]
-        ncol = len(headers)
+        ng = len(g_keys)
+        # Cột theo mẫu: STT | Cửa hàng | Họ và tên NV | ID HRM | Target NV | Doanh thu đạt | % Đạt Target | nhóm checklist |
+        # Tổng điểm công việc | Tỷ lệ đạt Checklist | Xếp loại Checklist
+        C_TG, C_REV, C_PCT, C_RKT = 4, 5, 6, 7
+        C_G0 = 8
+        C_TOT, C_RATE, C_RANK = C_G0 + ng, C_G0 + ng + 1, C_G0 + ng + 2
+        ncol = C_RANK + 1
+        headers = ['STT', 'Cửa hàng', 'Họ và tên nhân viên', 'ID HRM', 'Target NV\n(VNĐ)', 'Doanh thu đạt\n(VNĐ)',
+                   '% Đạt Target\n(Doanh số)', 'Xếp loại\nTarget', *data['group_names'], 'Tổng điểm\ncông việc', 'Tỷ lệ đạt\nChecklist (%)', 'Xếp loại\nChecklist']
+        widths = [6, 12, 26, 11, 17, 17, 14, 18, *([16] * ng), 13, 14, 16]
+        sales = data.get('store_sales') or {}
 
         groups = {}
         for r in rows_src:
@@ -922,45 +1043,52 @@ class StoreNvbhCheckKpi(models.Model):
 
         buf = _io.BytesIO()
         book = xlsxwriter.Workbook(buf, {'in_memory': True})
-        base = {'font_name': 'Times New Roman', 'font_size': 12, 'valign': 'vcenter', 'border': 1, 'border_color': '#CBD5E1'}
+        base = {'font_name': 'Times New Roman', 'font_size': 12, 'valign': 'vcenter', 'border': 1, 'border_color': '#808080'}
         F = lambda **kw: book.add_format(dict(base, **kw))
-        f_title = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 14, 'font_color': '#163363', 'align': 'center', 'valign': 'vcenter'})
-        f_sub = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'font_color': '#475569', 'align': 'center', 'valign': 'vcenter'})
-        f_head = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='center', text_wrap=True, border_color='#2B4A80')
-        f_head_l = F(bold=True, font_color='#FFFFFF', bg_color='#1E3A6E', align='left', text_wrap=True, border_color='#2B4A80')
-        f_no = F(bold=True, align='center', font_color='#FFFFFF', bg_color='#DC2626')
-        f_id = F(align='center', bold=True)
-        f_name = F(bold=True)
-        f_num = F(align='center', num_format='0.00')
-        f_tot = F(align='center', bold=True, num_format='0.00')
-        f_pct = F(align='center')
-        f_wk_lbl = F(bold=True, font_color='#1D4ED8', bg_color='#EFF6FF', align='left')
-        f_wk_val = F(font_color='#0F172A', bg_color='#F8FAFC', align='left', text_wrap=True)
-        f_wk_empty = F(italic=True, font_color='#94A3B8', bg_color='#F8FAFC', align='left')
-        rank_fmt = {
-            'green': F(align='center', bold=True, font_color='#15803D', bg_color='#DCFCE7'),
-            'blue': F(align='center', bold=True, font_color='#1D4ED8', bg_color='#DBEAFE'),
-            'orange': F(align='center', bold=True, font_color='#C2410C', bg_color='#FFEDD5'),
-            'red': F(align='center', bold=True, font_color='#B91C1C', bg_color='#FEE2E2'),
-            'darkred': F(align='center', bold=True, font_color='#9F1239', bg_color='#FECDD3'),
-            'wait': F(align='center', bold=True, font_color='#64748B', bg_color='#F1F5F9'),
-        }
-        no_fmt = {
-            'green': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#16A34A'),
-            'blue': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#2563EB'),
-            'orange': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#F97316'),
-            'red': f_no,
-            'darkred': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#BE123C'),
-            'wait': F(bold=True, align='center', font_color='#FFFFFF', bg_color='#94A3B8'),
-        }
-        f_foot = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'font_color': '#64748B'})
-        f_sign = book.add_format({'font_name': 'Times New Roman', 'font_size': 12, 'bold': True, 'align': 'center'})
+        # màu theo mẫu: Thông tin NS (trắng) | Chỉ tiêu & doanh thu (xanh lá) | Điểm checklist (xanh dương) | Tổng hợp (cam)
+        C_GREEN, C_BLUE, C_ORANGE = '#00B050', '#5B9BD5', '#E26B0A'
+        f_title = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter'})
+        f_band_ns = F(bold=True, align='center')
+        f_band_sl = F(bold=True, font_color='#FFFFFF', bg_color=C_GREEN, align='center')
+        f_band_ck = F(bold=True, font_color='#FFFFFF', bg_color=C_BLUE, align='center')
+        f_band_sm = F(bold=True, font_color='#FFFFFF', bg_color=C_ORANGE, align='center')
+        f_head_ns = F(bold=True, align='center', text_wrap=True)
+        f_head_sl = F(bold=True, font_color='#FFFFFF', bg_color=C_GREEN, align='center', text_wrap=True)
+        f_head_ck = F(bold=True, font_color='#FFFFFF', bg_color=C_BLUE, align='center', text_wrap=True)
+        f_head_sm = F(bold=True, font_color='#FFFFFF', bg_color=C_ORANGE, align='center', text_wrap=True)
+        f_c = F(align='center')
+        f_cb = F(align='center', bold=True)
+        f_name = F()
+        f_money = F(align='right', num_format='#,##0')
+        f_pct = F(align='right', bold=True, num_format='0.0%', bg_color='#FFF2CC', font_color='#9C0006')
+        f_num = F(align='right', num_format='General')
+        f_tot = F(align='right', bold=True, num_format='General')
+        f_rate = F(align='right', num_format='0.0%')
+        f_rank = F(align='center', bold=True)
+        f_rkt = F(align='center', bold=True, font_size=11)
+        GRAY = '#D6DCE4'
+        f_sum_l = F(bold=True, bg_color=GRAY, align='center', font_color='#1F3864')
+        f_sum_m = F(bold=True, bg_color=GRAY, align='right', num_format='#,##0', font_color='#FF0000')
+        f_sum_n = F(bold=True, bg_color=GRAY, align='right', num_format='General', font_color='#FF0000')
+        f_sum_p = F(bold=True, bg_color='#FFF2CC', align='right', num_format='0.0%', font_color='#9C0006')
+        f_sum_r = F(bold=True, bg_color=GRAY, align='right', num_format='0.0%', font_color='#FF0000')
+        f_sum_t = F(bold=True, bg_color=GRAY, align='center', text_wrap=True, font_color='#1F3864')
+        f_brief = F(bold=True, align='left')
+        f_wk_lbl = F(bold=True, font_color='#1F4E79', bg_color='#DDEBF7', align='left', text_wrap=True, font_size=11)
+        f_wk_val = F(align='left', text_wrap=True, font_size=11)
+        f_wk_empty = F(italic=True, font_color='#7F7F7F', align='left', font_size=11)
+        f_foot = book.add_format({'font_name': 'Times New Roman', 'font_size': 10, 'italic': True, 'font_color': '#64748B'})
+        f_sign = book.add_format({'font_name': 'Times New Roman', 'font_size': 13, 'bold': True, 'align': 'center'})
         f_sign_note = book.add_format({'font_name': 'Times New Roman', 'font_size': 11, 'italic': True, 'align': 'center', 'font_color': '#64748B'})
+        cf_ok = book.add_format({'font_color': '#006100', 'bg_color': '#E2EFDA'})
+        cf_rk_ok = book.add_format({'font_color': '#006100'})
+        cf_rk_bad = book.add_format({'font_color': '#C00000'})
 
         used_sheets = set()
         store_comments = data.get('store_comments') or {}
         for staff in ordered:
             st = staff[0]
+            sl = sales.get(st['store_id']) or {'target': 0, 'revenue': 0}
             raw_name = _re.sub(r'[\[\]:*?/\\]', ' ', st['store'] or 'Cua hang').strip()[:31] or 'Cua hang'
             sname, idx_dup = raw_name, 2
             while sname.lower() in used_sheets:
@@ -970,35 +1098,74 @@ class StoreNvbhCheckKpi(models.Model):
             used_sheets.add(sname.lower())
 
             ws = book.add_worksheet(sname)
-            ws.merge_range(0, 0, 0, ncol - 1, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG · THÁNG %s' % data['month_label'], f_title)
-            mien_txt = (' · Miền %s' % st['mien']) if st.get('mien') else ''
-            ws.merge_range(1, 0, 1, ncol - 1, 'Cửa hàng: %s%s · ASM: %s · Nhân sự: %d NV' % (st['store'], mien_txt, st['asm'], len(staff)), f_sub)
-            ws.set_row(0, 28)
-            ws.set_row(1, 20)
-            hr = 3
+            ws.hide_gridlines(2)
+            self._perf_xlsx_banner(book, ws, ncol, C_TOT, 'BÁO CÁO HIỆU SUẤT NHÂN VIÊN BÁN HÀNG & DOANH SỐ · THÁNG %s' % data['month_label'],
+                                   'Đánh giá hiệu suất từng nhân viên bán hàng: nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ'
+                                   ' · Cửa hàng %s · ASM %s' % (st['store'], st['asm']))
+            br, hr = 4, 5
+            ws.merge_range(br, 0, br, 3, 'THÔNG TIN NHÂN SỰ', f_band_ns)
+            ws.merge_range(br, C_TG, br, C_RKT, 'CHỈ TIÊU & DOANH THU THỰC TẾ', f_band_sl)
+            if ng > 1:
+                ws.merge_range(br, C_G0, br, C_G0 + ng - 1, 'ĐIỂM ĐÁNH GIÁ CHECKLIST CÔNG VIỆC', f_band_ck)
+            elif ng == 1:
+                ws.write(br, C_G0, 'ĐIỂM CHECKLIST', f_band_ck)
+            ws.merge_range(br, C_TOT, br, C_RANK, 'TỔNG HỢP HIỆU SUẤT', f_band_sm)
+            ws.set_row(br, 26)
             for c, h in enumerate(headers):
-                ws.write(hr, c, h, f_head_l if c == 2 else f_head)
-            ws.set_row(hr, 46)
-            r = hr + 1
+                fmt = f_head_ns if c < C_TG else f_head_sl if c <= C_RKT else f_head_ck if c < C_TOT else f_head_sm
+                ws.write(hr, c, h, fmt)
+            ws.set_row(hr, 44)
+            first = hr + 1
+            last = first + len(staff) - 1
+            r_sum = last + 1
+            r = first
             for i, x in enumerate(staff, 1):
-                tone = x.get('rank_tone') or 'wait'
-                ws.write_number(r, 0, i, no_fmt.get(tone, f_no))
-                ws.write_string(r, 1, x.get('code') or '-', f_id)
-                ws.write_string(r, 2, x['name'], f_name)
-                for c, k in enumerate(keys, 3):
-                    if k == 'tasks_total':
-                        ws.write_number(r, c, x[k] or 0.0, f_tot)
-                    elif k == 'complete':
-                        ws.write_string(r, c, x.get('rate_label') or '-', f_pct)
-                    else:
-                        ws.write_number(r, c, x[k] or 0.0, f_num)
-                ws.write_string(r, ncol - 1, x.get('rank_short') or '-', rank_fmt.get(tone, rank_fmt['wait']))
+                ws.write_number(r, 0, i, f_c)
+                ws.write_string(r, 1, st['store'], f_cb)
+                ws.write_string(r, 2, x['name'] + (' (CHT)' if x.get('is_cht') else ''), f_name)
+                ws.write_string(r, 3, x.get('code') or '-', f_cb)
+                ws.write_number(r, C_TG, x.get('target_nv') or 0, f_money)
+                ws.write_number(r, C_REV, x.get('revenue') or 0, f_money)
+                ws.write_formula(r, C_PCT, '=IF(%s>0,%s/%s,"")' % (cell(r, C_TG), cell(r, C_REV), cell(r, C_TG)), f_pct)
+                ws.write_formula(r, C_RKT, '=IF(%s>0,IF(%s>=1,"ĐẠT","CHƯA ĐẠT"),"-")' % (cell(r, C_TG), cell(r, C_PCT)), f_rkt)
+                for j, k in enumerate(g_keys):
+                    ws.write_number(r, C_G0 + j, x.get(k) or 0.0, f_num)
+                ws.write_formula(r, C_TOT, ('=SUM(%s:%s)' % (cell(r, C_G0), cell(r, C_G0 + ng - 1))) if ng else '=0', f_tot, x.get('tasks_total') or 0.0)
+                if x.get('avg_pct') is not None:
+                    ws.write_number(r, C_RATE, x['avg_pct'] / 100.0, f_rate)
+                else:
+                    ws.write_string(r, C_RATE, '-', f_c)
+                ws.write_string(r, C_RANK, x.get('rank_short') or '-', f_rank)
                 ws.set_row(r, 26)
                 r += 1
-
-            wk_list = store_comments.get(st['store_id']) or []
-            for wk in wk_list:
-                ws.merge_range(r, 0, r, 2, '%s (%s)' % (wk['label'], wk['range']), f_wk_lbl)
+            # dòng tổng cộng cửa hàng (công thức)
+            ws.merge_range(r_sum, 0, r_sum, 3, 'TỔNG CỘNG CỬA HÀNG %s' % st['store'], f_sum_l)
+            for c in (C_TG, C_REV):
+                ws.write_formula(r_sum, c, '=SUM(%s:%s)' % (cell(first, c), cell(last, c)), f_sum_m)
+            ws.write_formula(r_sum, C_PCT, '=IF(%s>0,%s/%s,"")' % (cell(r_sum, C_TG), cell(r_sum, C_REV), cell(r_sum, C_TG)), f_sum_p)
+            ws.write_formula(r_sum, C_RKT, '=IF(%s>0,IF(%s>=1,"ĐẠT","CHƯA ĐẠT"),"-")' % (cell(r_sum, C_TG), cell(r_sum, C_PCT)), f_sum_t)
+            for c in range(C_G0, C_TOT + 1):
+                ws.write_formula(r_sum, c, '=SUM(%s:%s)' % (cell(first, c), cell(last, c)), f_sum_n)
+            ws.write_formula(r_sum, C_RATE, '=IFERROR(AVERAGE(%s:%s),"-")' % (cell(first, C_RATE), cell(last, C_RATE)), f_sum_r)
+            ws.write_blank(r_sum, C_RANK, None, f_sum_t)
+            ws.set_row(r_sum, 34)
+            # % >= 100%: nền xanh lá nhạt
+            ws.conditional_format('%s:%s' % (cell(first, C_PCT), cell(r_sum, C_PCT)),
+                                  {'type': 'cell', 'criteria': '>=', 'value': 1, 'format': cf_ok})
+            # Xếp loại Target: xanh = ĐẠT TARGET, đỏ = CHƯA ĐẠT TARGET
+            rk = '%s:%s' % (cell(first, C_RKT), cell(r_sum, C_RKT))
+            ws.conditional_format(rk, {'type': 'cell', 'criteria': '==', 'value': '"ĐẠT"', 'format': cf_rk_ok})
+            ws.conditional_format(rk, {'type': 'cell', 'criteria': '==', 'value': '"CHƯA ĐẠT"', 'format': cf_rk_bad})
+            # dòng tóm tắt cửa hàng
+            r = r_sum + 1
+            pct_txt = ('%s%%' % ('%.1f' % (100.0 * sl['revenue'] / sl['target'])).replace('.', ',').replace(',0%', '%')) if sl['target'] else '-'
+            ws.merge_range(r, 0, r, ncol - 1, 'Tóm tắt CH %s: Target %s đ | Thực đạt %s đ | Hoàn thành %s' % (
+                st['store'], '{:,.0f}'.format(sl['target'] or 0).replace(',', '.'),
+                '{:,.0f}'.format(sl['revenue'] or 0).replace(',', '.'), pct_txt), f_brief)
+            ws.set_row(r, 30)
+            r += 1
+            for wk in store_comments.get(st['store_id']) or []:
+                ws.merge_range(r, 0, r, 1, '%s (%s)' % (wk['label'], wk['range']), f_wk_lbl)
                 items = wk.get('items') or []
                 if items:
                     txt = '\n'.join(
@@ -1006,30 +1173,32 @@ class StoreNvbhCheckKpi(models.Model):
                          if cm.get('user') else cm['comment'])
                         for cm in items
                     )
-                    ws.merge_range(r, 3, r, ncol - 1, txt, f_wk_val)
-                    ws.set_row(r, max(24, 18 * (txt.count('\n') + 1)))
+                    ws.merge_range(r, 2, r, ncol - 1, txt, f_wk_val)
+                    ws.set_row(r, max(30, 16 * (txt.count('\n') + 1)))
                 else:
-                    ws.merge_range(r, 3, r, ncol - 1, 'Chưa có nhận xét', f_wk_empty)
-                    ws.set_row(r, 22)
+                    ws.merge_range(r, 2, r, ncol - 1, 'Chưa có nhận xét', f_wk_empty)
+                    ws.set_row(r, 30)
                 r += 1
 
             r += 1
-            ws.write_string(r, 0, data.get('rank_legend') or '', f_foot)
-            ws.write_string(r, ncol - 2, 'Cập nhật: %s' % data['updated_at'], f_foot)
+            ws.write_string(r, 0, 'Ghi chú: Target NV lấy từ Phân Bổ Target (Target CH x Phân bổ %%); Doanh thu đạt lấy từ Doanh thu theo ngày (đã lưu); '
+                                  'các cột %%, tổng tự động tính bằng công thức. Cập nhật: %s' % data['updated_at'], f_foot)
             r += 3
-            ws.merge_range(r, 1, r, 2, 'NGƯỜI LẬP', f_sign)
-            ws.merge_range(r, ncol - 4, r, ncol - 2, 'NGƯỜI DUYỆT', f_sign)
-            ws.merge_range(r + 1, 1, r + 1, 2, '(Ký, ghi rõ họ tên)', f_sign_note)
-            ws.merge_range(r + 1, ncol - 4, r + 1, ncol - 2, '(Ký, ghi rõ họ tên)', f_sign_note)
+            third = max(1, ncol // 3)
+            ws.merge_range(r, 0, r, third - 1, 'NGƯỜI LẬP', f_sign)
+            ws.merge_range(r, third, r, 2 * third - 1, 'TRƯỞNG BỘ PHẬN', f_sign)
+            ws.merge_range(r, 2 * third, r, ncol - 1, 'BAN GIÁM ĐỐC', f_sign)
+            ws.merge_range(r + 1, 0, r + 1, third - 1, '(Ký, ghi rõ họ tên)', f_sign_note)
+            ws.merge_range(r + 1, third, r + 1, 2 * third - 1, '(Ký, ghi rõ họ tên)', f_sign_note)
+            ws.merge_range(r + 1, 2 * third, r + 1, ncol - 1, '(Ký, ghi rõ họ tên)', f_sign_note)
             for c, w in enumerate(widths[:ncol]):
                 ws.set_column(c, c, w)
-            ws.freeze_panes(hr + 1, 3)
+            ws.freeze_panes(hr + 1, 4)
             ws.set_landscape()
             ws.set_paper(9)
             ws.fit_to_pages(1, 0)
             ws.set_margins(left=0.4, right=0.4, top=0.5, bottom=0.5)
-            ws.hide_gridlines(0)
-            ws.repeat_rows(hr)
+            ws.repeat_rows(br, hr)
         book.close()
         return {'name': 'Bao_cao_hieu_suat_NVBH_%s.xlsx' % fields.Date.context_today(self).strftime('%Y%m%d'),
                 'data': base64.b64encode(buf.getvalue()).decode()}

@@ -215,7 +215,7 @@ class StoreNvbhCheckWeek(models.Model):
             if not (c.submitted or c.cnt_done > 0):
                 continue
             for l in c.line_ids:
-                if l.asm_eval_result:
+                if c._asm_line_result(l)[0]:  # ASM đã chấm (trong phiếu hoặc tuần trước)
                     continue
                 gk = group_norm(l.sub_category)
                 g = groups.setdefault(gk, {'key': gk, 'name': l.sub_category or 'Khác', 'rows': {}, 'tasks': []})
@@ -438,14 +438,14 @@ class StoreNvbhCheckWeek(models.Model):
                     pkey = self._cht_line_key(c.schedule_line_id) if c.schedule_line_id else (c.staff_name or '').casefold()
                     touched = False
                     for l in c.line_ids:
-                        if l.asm_eval_result:  # đã chấm ở lần trước -> giữ nguyên, không ghi đè
+                        if c._asm_line_result(l)[0]:  # đã chấm ở lần trước -> giữ nguyên, không ghi đè
                             continue
                         k = '%s|%s' % (group_norm(l.sub_category), pkey)
                         if k in results:
                             l.sudo().write({'asm_eval_result': results[k], 'asm_reviewer_id': self.env.user.id})
                             touched = True
                     if touched:
-                        if c.state != 'approved' and c.line_ids and all(l.asm_eval_result for l in c.line_ids):
+                        if c.state != 'approved' and c.line_ids and all(c._asm_line_result(l)[0] for l in c.line_ids):
                             c.sudo().write({'state': 'approved', 'approved_date': fields.Datetime.now()})
                         evaluated |= c
         self._sw_save_visit(sc, comment, notes, results, evaluated or sc['checks'])

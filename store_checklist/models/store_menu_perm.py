@@ -17,6 +17,10 @@ MENUS = [
     ('nvbh_staff', 'Checklist NVBH › Nhân sự', 'audit'),
     ('nvbh_today', 'Checklist NVBH › Lịch ca hôm nay', 'audit'),
     ('nvbh_revenue', 'Checklist NVBH › Doanh thu', 'audit'),
+    ('nvbh_rev_day', 'Checklist NVBH › Doanh thu › Doanh thu theo ngày', 'audit'),
+    ('nvbh_rev_month', 'Checklist NVBH › Doanh thu › Doanh Thu Tháng', 'audit'),
+    ('nvbh_rev_target', 'Checklist NVBH › Doanh thu › Phân Bổ Target', 'audit'),
+    ('nvbh_rev_track', 'Checklist NVBH › Doanh thu › Theo Dõi Target', 'audit'),
     ('nvbh_jobs', 'Checklist NVBH › Công việc check list', 'audit'),
     ('nvbh_done', 'Checklist NVBH › Danh sách checklist NV', 'audit'),
     ('nvbh_mg', 'Checklist NVBH › Quản lý & đánh giá', 'audit'),
@@ -58,6 +62,9 @@ PERM_INHERIT = {
     'overview': 'nvbh', 'nvbh_staff': 'nvbh', 'nvbh_jobs': 'nvbh', 'nvbh_done': 'nvbh', 'nvbh_mg': 'nvbh',
     'nvbh_today': 'nvbh_jobs',  # Lịch ca hôm nay: mặc định theo quyền Công việc check list
     'nvbh_revenue': 'nvbh_jobs',  # Doanh thu NVBH: mặc định theo quyền Công việc check list
+    # 4 tab Doanh thu: mặc định theo quyền mục Doanh thu
+    'nvbh_rev_day': 'nvbh_revenue', 'nvbh_rev_month': 'nvbh_revenue',
+    'nvbh_rev_target': 'nvbh_revenue', 'nvbh_rev_track': 'nvbh_revenue',
     'report_nvbh': 'report_gs', 'report_nsuat': 'report_gs', 'report_nvbh_asm': 'report_gs',
     'report_nvbh_perf': 'report_nvbh_asm',
     'nvbh_cht': 'nvbh_mg',  # Checklist CV CHT: mặc định theo quyền Quản lý & đánh giá NVBH
@@ -68,7 +75,8 @@ PERM_INHERIT = {
     'cht_task': 'nvbh_task',  # Danh sách công việc CHT: mặc định theo quyền Danh sách công việc NVBH
     'report_flow_nvbh': 'report_flow',  # Sơ đồ quy trình checklist NVBH: mặc định theo quyền Sơ đồ quy trình vận hành giám sát  # Báo cáo hiệu suất NVBH: mặc định theo quyền BC Checklist NVBH ASM
 }
-NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_revenue', 'nvbh_done', 'nvbh_mg', 'nvbh_cht')  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
+REV_TAB_KEYS = ('nvbh_rev_day', 'nvbh_rev_month', 'nvbh_rev_target', 'nvbh_rev_track')
+NVBH_SUB_KEYS = ('nvbh_staff', 'nvbh_jobs', 'nvbh_today', 'nvbh_revenue', 'nvbh_done', 'nvbh_mg', 'nvbh_cht') + REV_TAB_KEYS  # quyền gốc 'nvbh' (dữ liệu phiếu NVBH) = có ít nhất một mục con
 
 
 def perm_of(perms, key):
@@ -157,6 +165,8 @@ class StorePermRule(models.Model):
                 return {key: {op: False for op in OPS} for key, _l, _f in MENUS}
             return None
         rights = {key: {op: any(perm_of(r.perms, key).get(op) for r in rules) for op in OPS} for key, _l, _f in MENUS}
+        for op in OPS:  # mục Doanh thu (menu + dữ liệu) mở khi có ít nhất một tab Doanh thu được phép
+            rights['nvbh_revenue'][op] = rights['nvbh_revenue'][op] or any(rights[k][op] for k in REV_TAB_KEYS)
         for op in OPS:  # 'nvbh' (phiếu / dữ liệu NVBH) mở khi có ít nhất một mục con NVBH
             rights['nvbh'][op] = rights['nvbh'][op] or any(rights[k][op] for k in NVBH_SUB_KEYS)
         return rights

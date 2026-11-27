@@ -30,11 +30,22 @@ class StoreNvbhRevenue(models.Model):
     def _perm_key_vals(self, vals):
         return 'nvbh_revenue'
 
+    TAB_LABELS = {'nvbh_rev_day': 'Doanh thu theo ngày', 'nvbh_rev_month': 'Doanh Thu Tháng',
+                  'nvbh_rev_target': 'Phân Bổ Target', 'nvbh_rev_track': 'Theo Dõi Target'}
+
     @api.model
-    def _check_perm(self, op):
+    def _rev_right(self, key, op):
+        """Quyền `op` (read/write/export...) ở tab Doanh thu `key` theo ma trận phân quyền (Quản lý / Admin: luôn có)."""
+        user = self.env.user
+        if user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
+            return True
         rights = self.env['store.perm.rule']._rights()
-        if rights is not None and not (rights.get('nvbh_revenue') or {}).get(op):
-            raise AccessError(_('Bạn không có quyền thực hiện thao tác này tại mục Doanh thu.'))
+        return rights is None or bool((rights.get(key) or {}).get(op))
+
+    @api.model
+    def _check_perm(self, op, key='nvbh_revenue'):
+        if not self._rev_right(key, op):
+            raise AccessError(_('Bạn không có quyền thực hiện thao tác này tại mục %s.') % self.TAB_LABELS.get(key, 'Doanh thu'))
 
     schedule_line_id = fields.Many2one('store.nvbh.schedule.line', string='Dòng lịch xếp ca', ondelete='set null', index=True)
     store_id = fields.Many2one('hr.store', string='Cửa hàng', required=True, index=True)
@@ -88,6 +99,19 @@ class StoreNvbhRevenue(models.Model):
             deadline_utc = end_local.astimezone(pytz.utc).replace(tzinfo=None)
         return (now_utc >= deadline_utc), deadline_utc, self._fmt_dt(deadline_utc, tz)
 
+    def _shift_time_label(self):
+        """Giờ ca theo Lịch xếp ca (vd. 8h - 17h30); rỗng nếu không có ca / chưa khai báo giờ."""
+        sh = self.schedule_line_id.shift_id if self.schedule_line_id else False
+        if not sh and self.shift_code:
+            sh = self.env['store.shift'].sudo().search([('code', '=', self.shift_code)], limit=1)
+        if not sh or not (sh.start_time or sh.end_time):
+            return ''
+
+        def hm(v):
+            h, m = int(v), int(round((v - int(v)) * 60))
+            return '%dh%02d' % (h, m) if m else '%dh' % h
+        return '%s - %s' % (hm(sh.start_time or 0), hm(sh.end_time or 0))
+
     def _row_payload(self, now_utc=None, tz=None):
         self.ensure_one()
         now_utc = now_utc or fields.Datetime.now()
@@ -103,6 +127,7 @@ class StoreNvbhRevenue(models.Model):
             'store': sname,
             'mien': st.mien or '',
             'shift_code': self.shift_code or '',
+            'shift_time': self._shift_time_label(),
             'position': self.position or '',
             'revenue': round(self.revenue or 0.0),
             'work_date': self.work_date.strftime('%Y-%m-%d'),
@@ -198,7 +223,53 @@ class StoreNvbhRevenue(models.Model):
         self._sync_date(fields.Date.context_today(self))
 
     @api.model
+    def _role_store_ids(self):
+        """Cửa hàng "của mình" theo chức vụ (Doanh thu chỉ cho xem đúng cửa hàng của mình):
+        - Nhân viên (NVBH / NT / PT...) và CHT: cửa hàng trên hồ sơ, cửa hàng phụ trách, cửa hàng có lịch xếp ca 62 ngày gần nhất;
+        - ASM: thêm các cửa hàng mình là Quản lý (ASM phụ trách);
+        - RSM: thêm các cửa hàng của các ASM thuộc quyền (Sơ đồ tổ chức).
+        Trả về set id; None = chức vụ khác (GS, QLBH, Admin...) / quản lý: không giới hạn theo chức vụ."""
+        from datetime import timedelta
+        from .store_role import role_level
+        user = self.env.user
+        if self.env.su or user.has_group('base.group_system') or user.has_group('store_checklist.group_store_manager'):
+            return None
+        emp = user.sudo().employee_id
+        if not emp:
+            return None
+        level = emp._checklist_effective_level() or role_level(emp.checklist_role_code)
+        if level not in (1, 2, 3, 4):
+            return None
+        Store = self.env['hr.store'].sudo()
+        ids = set()
+        if emp.store_id:
+            ids.add(emp.store_id.id)
+        ids |= set(emp.checklist_store_ids.ids)
+        if 'member_ids' in Store._fields:
+            ids |= set(Store.search([('member_ids', 'in', emp.id)]).ids)
+        # cửa hàng có lịch xếp ca gần đây (khớp ID, rồi họ tên không phân biệt hoa/thường kể cả chữ có dấu)
+        Line = self.env['store.nvbh.schedule.line'].sudo()
+        since = fields.Date.context_today(self) - timedelta(days=62)
+        code = (emp.barcode or '').strip()
+        if code:
+            ids |= set(Line.search([('employee_code', '=', code), ('work_date', '>=', since)]).store_id.ids)
+        name = (emp.name or '').strip().casefold()
+        words = [w for w in (emp.name or '').split() if w.isascii() and w.isalpha()]
+        if name:
+            dom = [('work_date', '>=', since)] + [('staff_name', 'ilike', w) for w in words]
+            ids |= set(Line.search(dom).filtered(lambda l: (l.staff_name or '').strip().casefold() == name).store_id.ids)
+        if level >= 3:
+            mgrs = emp
+            if level == 4:  # RSM: cả các ASM dưới quyền
+                mgrs |= self.env['hr.employee'].sudo().search([('parent_id', 'child_of', emp.id)])
+            ids |= set(Store.search([('manager_id', 'in', mgrs.ids)]).ids)
+        return ids
+
+    @api.model
     def _scope_domain(self):
+        role_ids = self._role_store_ids()
+        if role_ids is not None:
+            return [('store_id', 'in', list(self._allowed_stores().ids))]
         rule = self.env['store.staff.view.rule']._staff_domain(CHECK_MENUS)
         if rule is not None:
             return rule
@@ -212,12 +283,19 @@ class StoreNvbhRevenue(models.Model):
         Store = self.env['hr.store'].sudo()
         ids = self.env['store.staff.view.rule']._scope_store_ids(CHECK_MENUS)
         if ids is True:
-            return Store.search([], order='name')
-        if ids is not None:
-            return Store.search([('id', 'in', list(ids))], order='name')
-        scope = self.env['store.audit']._user_store_scope()
-        if scope is not None:
-            return Store.search([('id', 'in', scope)], order='name')
+            base = None
+        elif ids is not None:
+            base = set(ids)
+        else:
+            scope = self.env['store.audit']._user_store_scope()
+            base = set(scope) if scope is not None else None
+        role_ids = self._role_store_ids()
+        if role_ids is not None:
+            # Nhân viên / CHT / ASM / RSM: chỉ đúng cửa hàng của mình (giao với phạm vi được cấp nếu phạm vi đó có giao)
+            keep = (role_ids & base) if (base is not None and role_ids & base) else role_ids
+            return Store.search([('id', 'in', list(keep))], order='name')
+        if base is not None:
+            return Store.search([('id', 'in', list(base))], order='name')
         return Store.search([], order='name')
 
     @api.model
@@ -235,6 +313,7 @@ class StoreNvbhRevenue(models.Model):
 
     @api.model
     def get_revenue_page(self, work_date=None, mien=None, store_id=None):
+        self._check_perm('read', 'nvbh_rev_day')
         self._check_perm('read')
         day = fields.Date.to_date(work_date) if work_date else fields.Date.context_today(self)
         self._sync_date(day)
@@ -261,10 +340,8 @@ class StoreNvbhRevenue(models.Model):
         for idx, r in enumerate(rows, 1):
             r['stt'] = idx
 
-        rights = self.env['store.perm.rule']._rights()
-        is_mgr = self.env.user.has_group('base.group_system') or self.env.user.has_group('store_checklist.group_store_manager')
-        can_edit = bool(is_mgr or (rights is None) or (rights.get('nvbh_revenue') or {}).get('write'))
-        can_export = bool(is_mgr or (rights is None) or (rights.get('nvbh_revenue') or {}).get('export'))
+        can_edit = self._rev_right('nvbh_rev_day', 'write')
+        can_export = self._rev_right('nvbh_rev_day', 'export')
 
         return {
             'date': day.strftime('%Y-%m-%d'),
@@ -278,6 +355,7 @@ class StoreNvbhRevenue(models.Model):
 
     @api.model
     def get_revenue_month(self, month=None, mien=None, store_id=None):
+        self._check_perm('read', 'nvbh_rev_month')
         """Tab 2 — Doanh Thu Tháng: thể hiện tất cả doanh thu cửa hàng trong tháng."""
         self._check_perm('read')
         start_d, end_d, m_key, m_label, days_in_month = self._month_bounds(month)
@@ -409,9 +487,7 @@ class StoreNvbhRevenue(models.Model):
             r['stt'] = idx
             r['share_pct'] = round(r['revenue'] * 100.0 / grand_total, 1) if grand_total > 0 else 0.0
 
-        rights = self.env['store.perm.rule']._rights()
-        is_mgr = self.env.user.has_group('base.group_system') or self.env.user.has_group('store_checklist.group_store_manager')
-        can_export = bool(is_mgr or (rights is None) or (rights.get('nvbh_revenue') or {}).get('export'))
+        can_export = self._rev_right('nvbh_rev_month', 'export')
 
         return {
             'month': m_key,
@@ -428,7 +504,7 @@ class StoreNvbhRevenue(models.Model):
     @api.model
     def save_revenue_batch(self, items):
         """Lưu danh sách doanh thu khi người dùng bấm nút Lưu; chặn nếu đã quá 48h."""
-        self._check_perm('write')
+        self._check_perm('write', 'nvbh_rev_day')
         if not items:
             return {'rows': []}
 
@@ -472,7 +548,7 @@ class StoreNvbhRevenue(models.Model):
 
     @api.model
     def export_revenue_xlsx(self, work_date=None, mien=None, store_id=None, q=None):
-        self.env['store.perm.rule'].check_export()
+        self._check_perm('export', 'nvbh_rev_day')
         import xlsxwriter
         data = self.get_revenue_page(work_date, mien, store_id)
         rows = data['rows']
@@ -493,8 +569,8 @@ class StoreNvbhRevenue(models.Model):
         f_tot_lbl = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 12, 'align': 'center', 'valign': 'vcenter', 'bg_color': '#EFF6FF', 'border': 1})
         f_tot_val = book.add_format({'font_name': 'Times New Roman', 'bold': True, 'font_size': 12, 'align': 'right', 'valign': 'vcenter', 'bg_color': '#EFF6FF', 'font_color': '#1D4ED8', 'border': 1, 'num_format': '#,##0'})
 
-        headers = ['STT', 'Họ và tên NV', 'ID', 'Cửa hàng', 'Doanh thu', 'Ngày', 'Trạng thái']
-        widths = [8, 32, 14, 18, 18, 15, 22]
+        headers = ['STT', 'Họ và tên NV', 'ID', 'Lịch ca', 'Cửa hàng', 'Doanh thu', 'Ngày', 'Trạng thái']
+        widths = [8, 32, 14, 20, 18, 18, 15, 22]
         ws.merge_range(0, 0, 0, len(headers) - 1, 'BẢNG DOANH THU NHÂN VIÊN BÁN HÀNG · NGÀY %s' % data['date_label'], f_title)
         ws.set_row(0, 28)
         for c, (h, w) in enumerate(zip(headers, widths)):
@@ -509,18 +585,19 @@ class StoreNvbhRevenue(models.Model):
             ws.write_number(r_idx, 0, idx, f_c)
             ws.write_string(r_idx, 1, r['staff_name'], f_l)
             ws.write_string(r_idx, 2, r['employee_code'] or '-', f_c)
-            ws.write_string(r_idx, 3, r['store'] or '-', f_c)
-            ws.write_number(r_idx, 4, r['revenue'] or 0, f_money)
-            ws.write_string(r_idx, 5, r['date_label'], f_c)
-            ws.write_string(r_idx, 6, st_txt, f_c)
+            ws.write_string(r_idx, 3, ('Ca %s' % r['shift_code'] + (' (%s)' % r['shift_time'] if r.get('shift_time') else '')) if r.get('shift_code') else '-', f_c)
+            ws.write_string(r_idx, 4, r['store'] or '-', f_c)
+            ws.write_number(r_idx, 5, r['revenue'] or 0, f_money)
+            ws.write_string(r_idx, 6, r['date_label'], f_c)
+            ws.write_string(r_idx, 7, st_txt, f_c)
             ws.set_row(r_idx, 24)
             total_rev += r['revenue'] or 0
             r_idx += 1
 
-        ws.merge_range(r_idx, 0, r_idx, 3, 'TỔNG CỘNG DOANH THU', f_tot_lbl)
-        ws.write_number(r_idx, 4, total_rev, f_tot_val)
-        ws.write_string(r_idx, 5, data['date_label'], f_tot_lbl)
-        ws.write_string(r_idx, 6, '', f_tot_lbl)
+        ws.merge_range(r_idx, 0, r_idx, 4, 'TỔNG CỘNG DOANH THU', f_tot_lbl)
+        ws.write_number(r_idx, 5, total_rev, f_tot_val)
+        ws.write_string(r_idx, 6, data['date_label'], f_tot_lbl)
+        ws.write_string(r_idx, 7, '', f_tot_lbl)
         ws.set_row(r_idx, 26)
         ws.freeze_panes(3, 0)
         book.close()
@@ -531,7 +608,7 @@ class StoreNvbhRevenue(models.Model):
 
     @api.model
     def export_revenue_month_xlsx(self, month=None, mien=None, store_id=None, q=None, only_has_rev=False):
-        self.env['store.perm.rule'].check_export()
+        self._check_perm('export', 'nvbh_rev_month')
         import xlsxwriter
         data = self.get_revenue_month(month=month, mien=mien, store_id=store_id)
         stores = data['stores']

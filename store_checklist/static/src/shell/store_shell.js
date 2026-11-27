@@ -1600,13 +1600,48 @@ export class StoreChecklistShell extends Component {
             }
             map.get(r.store_id).staff.push(r);
         }
+        const sales = this.state.perf.data?.store_sales || {};
         const groups = [...map.values()].map((g) => {
+            g.sum = {};
             for (const k of keys) {
-                g[k] = Math.round((100 * g.staff.reduce((s, x) => s + (x[k] || 0), 0)) / g.staff.length) / 100;
+                const total = g.staff.reduce((s, x) => s + (x[k] || 0), 0);
+                g[k] = Math.round((100 * total) / g.staff.length) / 100;
+                g.sum[k] = Math.round(100 * total) / 100;
             }
+            // Doanh số: Target CH / Thực đạt CH / Hoàn thành CH (Phân Bổ Target + Doanh thu theo ngày)
+            g.sales = sales[g.store_id] || { target: 0, revenue: 0, pct: null };
+            g.sumTargetNv = g.staff.reduce((s, x) => s + (x.target_nv || 0), 0);
+            g.sumRevenue = g.staff.reduce((s, x) => s + (x.revenue || 0), 0);
+            g.sumPct = g.sumTargetNv ? Math.floor((1000 * g.sumRevenue) / g.sumTargetNv + 0.5) / 10 : null;
+            const rated = g.staff.filter((x) => x.avg_pct !== null && x.avg_pct !== undefined);
+            g.avgRate = rated.length ? Math.round((10 * rated.reduce((s, x) => s + x.avg_pct, 0)) / rated.length) / 10 : null;
             return g;
         });
         return groups.sort((a, b) => (b.tasks_total || 0) - (a.tasks_total || 0) || a.store.localeCompare(b.store));
+    }
+
+    perfPctTone(p) {
+        if (p === null || p === undefined) {
+            return "none";
+        }
+        return p >= 100 ? "ok" : p >= 80 ? "warn" : "bad";
+    }
+
+    // điểm checklist: bỏ số 0 thừa sau dấu phẩy (88,00 -> 88; 100,50 -> 100,5)
+    fmtPerfNum(v) {
+        return new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 2 }).format(Number(v) || 0);
+    }
+
+    // Xếp loại Target theo từng nhân viên: % Đạt Target >= 100% -> ĐẠT (chưa tới: CHƯA ĐẠT); chưa giao target -> '-'
+    perfTargetRank(target, pct) {
+        if (!target) {
+            return ["-", "is-none"];
+        }
+        return pct !== null && pct !== undefined && pct >= 100 ? ["ĐẠT", "is-ok"] : ["CHƯA ĐẠT", "is-bad"];
+    }
+
+    fmtPerfPct(p) {
+        return p === null || p === undefined ? "-" : new Intl.NumberFormat("vi-VN", { minimumFractionDigits: 1, maximumFractionDigits: 1 }).format(p) + "%";
     }
 
     isPerfStoreOpen(id) {
@@ -1661,10 +1696,19 @@ export class StoreChecklistShell extends Component {
         }
     }
 
-    // ---- Checklist NVBH > Doanh thu: Tab 1 (Doanh thu theo ngày) & Tab 2 (Doanh Thu Tháng) ----
+    // ---- Checklist NVBH > Doanh thu: 4 tab, mỗi tab phân quyền riêng (Phân quyền › Checklist NVBH › Doanh thu › ...) ----
+    revTabOk(tab) {
+        const key = { day: "nvbh_rev_day", month: "nvbh_rev_month", target: "nvbh_rev_target", track: "nvbh_rev_track" }[tab];
+        const rights = this.state.rights;
+        return !rights || Boolean(rights[key]?.read);
+    }
+
     async openRevenuePage() {
         try {
             const rv = this.state.rev;
+            if (!this.revTabOk(rv.tab)) {
+                rv.tab = ["day", "month", "target", "track"].find((t) => this.revTabOk(t)) || "day";
+            }
             this.state.activeNav = "nvbh_revenue";
             this.state.contentMode = "list";
             this.state.embeddedViewProps = null;
@@ -3677,9 +3721,24 @@ export class StoreChecklistShell extends Component {
         return (this.state.chtm.sw?.groups || []).flatMap((g) => g.rows);
     }
 
+    // Đã lưu đánh giá / nhận xét tuần: mở ra ở chế độ xem, bấm "Chỉnh sửa" mới được sửa (không sửa trực tiếp)
+    get swViewLock() {
+        const cm = this.state.chtm;
+        const d = cm.sw;
+        if (!d || cm.editMode) {
+            return false;
+        }
+        return Boolean((d.comment || "").trim() || d.n_reedit > 0 || Object.values(d.notes || {}).some((v) => (v || "").trim()));
+    }
+
     get swCanEdit() {
         const d = this.state.chtm.sw;
-        return Boolean(d?.can_eval) && (d.n_pending > 0 || this.state.chtm.editMode);
+        return Boolean(d?.can_eval) && !this.swViewLock && (d.n_pending > 0 || this.state.chtm.editMode);
+    }
+
+    get swCanComment() {
+        const d = this.state.chtm.sw;
+        return Boolean(d?.can_comment) && !this.swViewLock;
     }
 
     swRowEdit(r) {

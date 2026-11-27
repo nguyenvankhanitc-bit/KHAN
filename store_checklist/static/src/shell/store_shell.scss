@@ -4538,6 +4538,13 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
             &:hover { background: #dbeafe; }
         }
         .rev_sub_empty { text-align: center; color: #64748b; padding: 8px; font-size: 12.5px; }
+        .rev_day_tbl { table-layout: fixed; }
+        tfoot tr.rev_tot_row td.rev_tot_cell { padding: 10px 16px; }
+        .rev_tot_lbl { display: flex; align-items: center; font-size: 13px; }
+        .rev_tot_box {
+            border: 1px solid transparent;  /* cùng bề rộng với khung chi tiết (viền 1px) để các cột thẳng hàng */
+            .rev_sub_tbl td { border: 0 !important; background: transparent !important; padding: 2px 10px !important; font-size: 13px; color: #1e3a8a; }
+        }
     }
     @media (max-width: 767.98px) {
         .rev_tabs { width: 100%; button { flex: 1; justify-content: center; padding: 8px 10px; font-size: 12.5px; } }
@@ -4604,4 +4611,50 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         .tr_sec { font-size: 13px; }
         tr.tr_detail > td { padding-left: 8px; }
     }
+}
+
+/* Báo cáo hiệu suất NVBH: doanh số + checklist (màu theo mẫu Excel) */
+.perf_table {
+    font-family: "Times New Roman", Times, serif;
+    > thead > tr > th { border: 1px solid #808080 !important; vertical-align: middle; text-align: center; font-weight: 700; }
+    > thead > tr > th.h_ns { background: #fff !important; color: #000 !important; }
+    > thead > tr > th.h_sl { background: #00b050 !important; color: #fff !important; }
+    > thead > tr > th.h_ck { background: #5b9bd5 !important; color: #fff !important; }
+    > thead > tr > th.h_sm { background: #e26b0a !important; color: #fff !important; }
+    border-collapse: collapse !important;
+    > tbody > tr > td { border: 1px solid #a6a6a6 !important; color: #000; }
+    /* dòng tổng cộng + dòng tóm tắt: đóng khung đầy đủ */
+    > tbody > tr.perf_store_total > td { border: 1px solid #808080 !important; border-top: 2px solid #595959 !important; height: 44px; }
+    > tbody > tr.perf_brief > td {
+        border: 1px solid #808080 !important; height: 38px; line-height: 1.5; white-space: normal; overflow: visible;
+        vertical-align: middle; padding: 8px 10px !important;
+    }
+    th.perf_stt { width: 48px; }
+    th.perf_st { min-width: 90px; }
+    th.perf_nm { min-width: 190px; }
+    th.perf_money { min-width: 118px; }
+    th.perf_pctc { min-width: 100px; }
+    td.r { text-align: right; padding-right: 8px; }
+    td.b { font-weight: 700; }
+    td.perf_pcell { background: #fff2cc !important; color: #9c0006; font-weight: 700; }
+    th.perf_rkt { min-width: 96px; }
+    td.perf_tgk { font-size: 12px; white-space: nowrap; &.is-ok { color: #006100; } &.is-bad { color: #c00000; } &.is-none { color: #94a3b8; } }
+    td.perf_pcell.is-ok { background: #e2efda !important; color: #006100; }
+    tr.perf_store_total td { background: #d6dce4 !important; font-weight: 700; color: #1f3864; }
+    tr.perf_store_total td.red { color: #ff0000; }
+    tr.perf_store_total td.perf_pcell { background: #fff2cc !important; color: #9c0006; }
+    tr.perf_store_total td.perf_pcell.is-ok { background: #e2efda !important; color: #006100; }
+    tr.perf_brief td { background: #fff !important; font-weight: 700; padding: 8px; }
+    .perf_brief_asm { font-weight: 500; color: #475569; margin-left: 6px; }
+}
+
+/* Doanh thu theo ngày: cột Lịch ca */
+.o_store_rev_page {
+    th.c_shift { width: 130px; }
+    td.rev_shift { white-space: nowrap; }
+    .rev_shift_tag {
+        display: inline-block; padding: 2px 9px; border-radius: 999px; background: #eef2ff; color: #3730a3;
+        border: 1px solid #c7d2fe; font-weight: 700; font-size: 12px;
+    }
+    .rev_shift_time { display: block; margin-top: 2px; color: #64748b; font-size: 11.5px; }
 }

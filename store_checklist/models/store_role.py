@@ -892,6 +892,18 @@ class StoreNvbhCheckRole(models.Model):
             return 2, 'asm_'
         return None, None
 
+    def _asm_prefixes(self):
+        """Các cột có thể chứa kết quả ASM chấm: cột của bước ASM theo luồng (CHT: bước 1) + cột 'asm_' (trang Đánh giá tuần)."""
+        _i, pre = self._step_prefix_for('ASM')
+        return list(dict.fromkeys([p for p in (pre, 'asm_') if p is not None]))
+
+    def _asm_line_result(self, line):
+        """(KQ, chi tiết lỗi) ASM đã chấm cho 1 dòng (chấm trong phiếu hoặc ở trang Đánh giá tuần); (False, '') nếu chưa chấm."""
+        for p in self._asm_prefixes():
+            if line[p + 'eval_result']:
+                return line[p + 'eval_result'], line[p + 'error_detail'] or ''
+        return False, ''
+
     def _step_points(self, code):
         """Điểm do cấp đánh giá có mã `code` (CHT / ASM / RSM) chấm cho phiếu; None nếu phiếu không có cấp đó hoặc cấp đó chưa chấm đủ."""
         self.ensure_one()

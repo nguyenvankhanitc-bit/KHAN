@@ -32,7 +32,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'nvbh_revenue' ? (state.rev.tab === 'target' ? 'Nhập Target Cửa Hàng và Tỷ trọng % từng nhân viên • Thành tiền Target NV tự động quy đổi (VNĐ)' : state.rev.tab === 'month' ? 'Thể hiện tất cả doanh thu cửa hàng trong tháng • Bấm vào cửa hàng để xem chi tiết theo nhân viên &amp; từng ngày' : 'Tự động liên kết Lịch xếp ca hằng ngày (Họ và tên NV, ID) • Nhập doanh thu xong bấm Lưu mới thực hiện, tự khóa sau 48h') : state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'nvbh_revenue' ? (state.rev.tab === 'target' ? 'Nhập Target Cửa Hàng và Tỷ trọng % từng nhân viên • Target NV tự động quy đổi' : state.rev.tab === 'month' ? 'Thể hiện tất cả doanh thu cửa hàng trong tháng • Bấm vào cửa hàng để xem chi tiết theo nhân viên &amp; từng ngày' : 'Tự động liên kết Lịch xếp ca hằng ngày (Họ và tên NV, ID) • Nhập doanh thu xong bấm Lưu mới thực hiện, tự khóa sau 48h') : state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
@@ -829,33 +829,62 @@
                         <div class="asm_card">
                             <div class="kp_scroll">
                                 <table class="kp_table asm_table perf_table">
-                                    <thead><tr>
-                                        <th>#</th>
-                                        <th class="perf_id">ID</th>
-                                        <th class="l">Nhân viên / Cửa hàng</th>
-                                        <th class="kp_grp" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index"><span t-esc="gn"/></th>
-                                        <th>Tổng công việc</th>
-                                        <th>Tỷ lệ đạt (%)</th>
-                                        <th>Xếp loại</th>
+                                    <thead>
+                                    <tr class="perf_band">
+                                        <th colspan="4" class="h_ns">THÔNG TIN NHÂN SỰ</th>
+                                        <th colspan="4" class="h_sl">CHỈ TIÊU &amp; DOANH THU THỰC TẾ</th>
+                                        <th t-att-colspan="(pd.group_names || []).length" class="h_ck">ĐIỂM ĐÁNH GIÁ CHECKLIST CÔNG VIỆC</th>
+                                        <th colspan="3" class="h_sm">TỔNG HỢP HIỆU SUẤT</th>
+                                    </tr>
+                                    <tr>
+                                        <th class="h_ns perf_stt">STT</th>
+                                        <th class="h_ns perf_st">Cửa hàng</th>
+                                        <th class="h_ns perf_nm">Họ và tên nhân viên</th>
+                                        <th class="h_ns perf_id">ID HRM</th>
+                                        <th class="h_sl perf_money">Target NV<br/>(VNĐ)</th>
+                                        <th class="h_sl perf_money">Doanh thu đạt<br/>(VNĐ)</th>
+                                        <th class="h_sl perf_pctc">% Đạt Target<br/>(Doanh số)</th>
+                                        <th class="h_sl perf_rkt">Xếp loại<br/>Target</th>
+                                        <th class="h_ck kp_grp" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index"><span t-esc="gn"/></th>
+                                        <th class="h_sm">Tổng điểm<br/>công việc</th>
+                                        <th class="h_sm">Tỷ lệ đạt<br/>Checklist (%)</th>
+                                        <th class="h_sm">Xếp loại<br/>Checklist</th>
                                     </tr></thead>
                                     <tbody>
                                         <t t-foreach="perfGroups" t-as="g" t-key="g.store_id">
-                                        <tr class="asm_parent perf_store_row" t-on-click="() => this.togglePerfStore(g.store_id)">
-                                            <td class="c"><i t-attf-class="fa #{isPerfStoreOpen(g.store_id) ? 'fa-angle-down' : 'fa-angle-right'} asm_caret"/></td>
-                                            <td class="l" colspan="2"><i class="fa fa-building-o"/> <b t-esc="g.store"/> <span class="cnt">· <t t-esc="g.staff.length"/> NV · ASM <t t-esc="g.asm"/></span></td>
-                                            <td t-att-colspan="(pd.group_names || []).length + 3"/>
+                                        <tr t-foreach="g.staff" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="perf_staff_row">
+                                            <td class="c" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/>
+                                            <td class="c b" t-esc="r.store"/>
+                                            <td class="l"><t t-esc="r.name"/><t t-if="r.is_cht"> (CHT)</t></td>
+                                            <td class="c b perf_id" t-esc="r.code or '-'"/>
+                                            <td class="r" t-esc="fmtRevDisplay(r.target_nv)"/>
+                                            <td class="r" t-esc="fmtRevDisplay(r.revenue)"/>
+                                            <td t-attf-class="r b perf_pcell #{r.rev_pct !== null and r.rev_pct &gt;= 100 ? 'is-ok' : ''}" t-esc="fmtPerfPct(r.rev_pct)"/>
+                                            <td t-attf-class="c b perf_tgk #{perfTargetRank(r.target_nv, r.rev_pct)[1]}" t-esc="perfTargetRank(r.target_nv, r.rev_pct)[0]"/>
+                                            <td class="r" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index" t-esc="fmtPerfNum(r['g' + (gn_index + 1)])"/>
+                                            <td class="r b" t-att-title="(r.max_total ? (r.tasks_total + '/' + r.max_total + 'đ · ' + r.tasks_pct + '%') : 'Chưa có điểm ASM đánh giá')" t-esc="fmtPerfNum(r.tasks_total)"/>
+                                            <td class="r" t-esc="r.avg_pct !== null and r.avg_pct !== undefined ? fmtPerfPct(r.avg_pct) : '-'"/>
+                                            <td class="c b" t-esc="r.rank_short or '-'"/>
                                         </tr>
-                                        <tr t-foreach="isPerfStoreOpen(g.store_id) ? g.staff : []" t-as="r" t-key="r.store_id + '|' + r.name + '|' + (r.code or '')" class="asm_staff_row">
-                                            <td class="c"><span t-attf-class="perf_no tone-#{r.rank_tone || 'wait'}" t-esc="r_index + 1" t-att-title="'Hạng chung: ' + r.no"/></td>
-                                            <td class="c perf_id" t-esc="r.code or '-'"/>
-                                            <td class="l"><b class="sf_nm" t-esc="r.name"/></td>
-                                            <td class="c" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index" t-esc="fmtKpi(r['g' + (gn_index + 1)])"/>
-                                            <td t-attf-class="c b kpi-val #{r.passed ? 'perf_ok' : 'perf_bad'}" t-att-title="(r.max_total ? (r.tasks_total + '/' + r.max_total + 'đ · ' + r.tasks_pct + '%') : 'Chưa có điểm ASM đánh giá')" t-esc="fmtKpi(r.tasks_total)"/>
-                                            <td class="c" t-esc="r.rate_label || '-'"/>
-                                            <td class="c"><span t-attf-class="perf_rank tone-#{r.rank_tone || 'wait'}" t-esc="r.rank_short or '-'"/></td>
+                                        <tr class="perf_store_total">
+                                            <td colspan="4" class="c">TỔNG CỘNG CỬA HÀNG <t t-esc="g.store"/></td>
+                                            <td class="r red" t-esc="fmtRevDisplay(g.sumTargetNv)"/>
+                                            <td class="r red" t-esc="fmtRevDisplay(g.sumRevenue)"/>
+                                            <td t-attf-class="r perf_pcell #{g.sumPct !== null and g.sumPct &gt;= 100 ? 'is-ok' : ''}" t-esc="fmtPerfPct(g.sumPct)"/>
+                                            <td t-attf-class="c perf_tgk #{perfTargetRank(g.sumTargetNv, g.sumPct)[1]}" t-esc="perfTargetRank(g.sumTargetNv, g.sumPct)[0]"/>
+                                            <td class="r red" t-foreach="pd.group_names or []" t-as="gn" t-key="gn_index" t-esc="fmtPerfNum(g.sum['g' + (gn_index + 1)])"/>
+                                            <td class="r red" t-esc="fmtPerfNum(g.sum.tasks_total)"/>
+                                            <td class="r red" t-esc="fmtPerfPct(g.avgRate)"/>
+                                            <td class="c"/>
                                         </tr>
-                                        <tr t-if="isPerfStoreOpen(g.store_id) and pd.store_comments and (pd.store_comments[g.store_id] || []).length" class="perf_cmt_row">
-                                            <td t-att-colspan="(pd.group_names || []).length + 6" class="l">
+                                        <tr class="perf_brief">
+                                            <td t-att-colspan="(pd.group_names || []).length + 11" class="l">
+                                                Tóm tắt CH <t t-esc="g.store"/>: Target <t t-esc="fmtRevDisplay(g.sales.target)"/> đ | Thực đạt <t t-esc="fmtRevDisplay(g.sales.revenue)"/> đ | Hoàn thành <t t-esc="fmtPerfPct(g.sales.pct)"/>
+                                                <span class="perf_brief_asm">· ASM: <t t-esc="g.asm"/></span>
+                                            </td>
+                                        </tr>
+                                        <tr t-if="pd.store_comments and (pd.store_comments[g.store_id] || []).length" class="perf_cmt_row">
+                                            <td t-att-colspan="(pd.group_names || []).length + 11" class="l">
                                                 <div class="perf_cmt_grid">
                                                     <div class="perf_cmt_wk_row" t-foreach="pd.store_comments[g.store_id]" t-as="wk" t-key="wk.week_num">
                                                         <div class="perf_cmt_wk_lbl">
@@ -880,7 +909,8 @@
                                 </table>
                             </div>
                             <div class="asm_tbl_foot">
-                                <span>Tổng điểm thực tế ASM đã đánh giá theo từng nhóm công việc · Xếp loại theo Tỷ lệ đạt (%)</span>
+                                <span>Target NV theo Phân Bổ Target · Doanh thu đạt theo Doanh thu theo ngày (đã lưu) · % Đạt Target: xanh ≥ 100%, cam 80–99,9%, đỏ &lt; 80%</span>
+                                <span>Điểm checklist: tổng điểm thực tế ASM đã đánh giá theo nhóm công việc · Xếp loại theo Tỷ lệ đạt Checklist (%)</span>
                                 <span t-if="pd.rank_legend" t-esc="pd.rank_legend"/>
                                 <span class="upd">Cập nhật: <t t-esc="pd.updated_at"/></span>
                             </div>
@@ -1057,16 +1087,16 @@
                     <t t-set="rd" t-value="rv.data"/>
                     <t t-set="rm" t-value="rv.mData"/>
                     <div class="kp_tabs rev_tabs">
-                        <button type="button" t-att-class="rv.tab === 'day' ? 'active' : ''" t-on-click="() => this.onRevTab('day')">
+                        <button type="button" t-if="revTabOk('day')" t-att-class="rv.tab === 'day' ? 'active' : ''" t-on-click="() => this.onRevTab('day')">
                             <i class="fa fa-calendar-check-o"/> Doanh thu theo ngày
                         </button>
-                        <button type="button" t-att-class="rv.tab === 'month' ? 'active' : ''" t-on-click="() => this.onRevTab('month')">
+                        <button type="button" t-if="revTabOk('month')" t-att-class="rv.tab === 'month' ? 'active' : ''" t-on-click="() => this.onRevTab('month')">
                             <i class="fa fa-bar-chart"/> Doanh Thu Tháng
                         </button>
-                        <button type="button" t-att-class="rv.tab === 'target' ? 'active' : ''" t-on-click="() => this.onRevTab('target')">
+                        <button type="button" t-if="revTabOk('target')" t-att-class="rv.tab === 'target' ? 'active' : ''" t-on-click="() => this.onRevTab('target')">
                             <i class="fa fa-bullseye"/> Phân Bổ Target
                         </button>
-                        <button type="button" t-att-class="rv.tab === 'track' ? 'active' : ''" t-on-click="() => this.onRevTab('track')">
+                        <button type="button" t-if="revTabOk('track')" t-att-class="rv.tab === 'track' ? 'active' : ''" t-on-click="() => this.onRevTab('track')">
                             <i class="fa fa-line-chart"/> Theo Dõi Target
                         </button>
                     </div>
@@ -1105,9 +1135,6 @@
                                     <span>Tổng doanh thu:</span>
                                     <b t-esc="fmtRevDisplay(revTotal)"/>
                                 </div>
-                                <button type="button" class="btn btn-primary rev_top_save_btn" t-if="rd and rd.can_edit" t-att-disabled="!revCanSave or rv.saving" t-on-click="onRevSave">
-                                    <i t-att-class="rv.saving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu
-                                </button>
                                 <button type="button" class="btn btn-success text-white asm_export_btn" t-if="rd and rd.can_export" t-on-click="onRevExport"><i class="fa fa-file-excel-o"/> Xuất Excel</button>
                             </div>
                         </div>
@@ -1120,6 +1147,7 @@
                                                 <th class="c_stt">STT</th>
                                                 <th class="l">Họ và tên NV</th>
                                                 <th class="c_id">ID</th>
+                                                <th class="c_shift">Lịch ca</th>
                                                 <th class="c_rev">Doanh thu</th>
                                                 <th class="c_date">Ngày</th>
                                             </tr>
@@ -1127,7 +1155,7 @@
                                         <tbody>
                                             <t t-foreach="revDisplayRows" t-as="it" t-key="it.key">
                                                 <tr class="rev_grp_mien" t-if="it.type === 'mien'" t-on-click="() => this.toggleRevDayMien(it.gkey)">
-                                                    <td colspan="3" class="l">
+                                                    <td colspan="4" class="l">
                                                         <i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'} rev_grp_caret"/>
                                                         <i class="fa fa-map-marker"/> <b t-esc="it.label"/>
                                                         <span class="rev_grp_cnt"><t t-esc="it.storeCount"/> cửa hàng · <t t-esc="it.staffCount"/> nhân sự</span>
@@ -1136,7 +1164,7 @@
                                                     <td class="c" t-esc="rd.date_label"/>
                                                 </tr>
                                                 <tr class="rev_grp_store" t-if="it.type === 'store'" t-on-click="() => this.toggleRevDayStore(it.id, it.totalStores)">
-                                                    <td colspan="3" class="l">
+                                                    <td colspan="4" class="l">
                                                         <i t-attf-class="fa #{it.open ? 'fa-caret-down' : 'fa-caret-right'} rev_grp_caret"/>
                                                         <i class="fa fa-building"/> <b t-esc="it.label"/>
                                                         <span class="rev_grp_cnt"><t t-esc="it.count"/> nhân sự</span>
@@ -1171,6 +1199,13 @@
                                                             </small>
                                                         </td>
                                                         <td class="c rev_code" t-esc="r.employee_code || '-'"/>
+                                                        <td class="c rev_shift">
+                                                            <t t-if="r.shift_code">
+                                                                <span class="rev_shift_tag" t-esc="'Ca ' + r.shift_code"/>
+                                                                <small class="rev_shift_time" t-if="r.shift_time" t-esc="r.shift_time"/>
+                                                            </t>
+                                                            <span t-else="" class="text-muted">-</span>
+                                                        </td>
                                                         <td class="c c_rev">
                                                             <div t-att-class="'rev_in_wrap' + (revRowDirty(r) ? ' is-dirty' : '')" t-if="revRowEditable(r)">
                                                                 <input type="text" inputmode="numeric" class="rev_input" placeholder="0 (vd: 5.500.000)"
@@ -1192,7 +1227,7 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="rev_tot_row">
-                                                <td colspan="3" class="l"><b>TỔNG CỘNG (<t t-esc="revRows.length"/> nhân sự)</b></td>
+                                                <td colspan="4" class="l"><b>TỔNG CỘNG (<t t-esc="revRows.length"/> nhân sự)</b></td>
                                                 <td class="c c_rev"><b class="rev_tot_val" t-esc="fmtRevDisplay(revTotal)"/></td>
                                                 <td class="c" t-esc="rd.date_label"/>
                                             </tr>
@@ -1328,7 +1363,8 @@
                                                             </div>
                                                             <div class="rev_sub_box">
                                                                 <div class="rev_sub_hd"><i class="fa fa-calendar"/> Doanh thu theo ngày trong tháng (bấm ngày để xem chi tiết)</div>
-                                                                <table class="rev_sub_tbl">
+                                                                <table class="rev_sub_tbl rev_day_tbl">
+                                                                    <colgroup><col style="width:34%"/><col style="width:16%"/><col style="width:30%"/><col style="width:20%"/></colgroup>
                                                                     <thead><tr><th>Ngày</th><th>Số NV</th><th class="r">Doanh thu ngày</th><th/></tr></thead>
                                                                     <tbody>
                                                                         <tr t-foreach="st.day_rows" t-as="dr" t-key="dr.work_date">
@@ -1356,10 +1392,23 @@
                                         </tbody>
                                         <tfoot>
                                             <tr class="rev_tot_row">
-                                                <td colspan="3" class="l"><b>TỔNG CỘNG DOANH THU THÁNG (<t t-esc="revMonthStores.length"/> cửa hàng)</b></td>
-                                                <td class="c"><b t-esc="revMonthStaffTotal"/></td>
-                                                <td class="c">Tháng <t t-esc="rm.month_label"/></td>
-                                                <td class="r c_rev"><b class="rev_tot_val" t-esc="fmtRevDisplay(revMonthTotal)"/></td>
+                                                <td colspan="6" class="rev_tot_cell">
+                                                    <!-- cùng bố cục 2 khung với phần chi tiết cửa hàng: Tháng / Số NV / Doanh thu thẳng cột Ngày / Số NV / Doanh thu ngày -->
+                                                    <div class="rev_sub_grid">
+                                                        <div class="rev_tot_lbl"><b>TỔNG CỘNG DOANH THU THÁNG (<t t-esc="revMonthStores.length"/> cửa hàng)</b></div>
+                                                        <div class="rev_tot_box">
+                                                            <table class="rev_sub_tbl rev_day_tbl">
+                                                                <colgroup><col style="width:34%"/><col style="width:16%"/><col style="width:30%"/><col style="width:20%"/></colgroup>
+                                                                <tbody><tr>
+                                                                    <td class="c"><b>Tháng <t t-esc="rm.month_label"/></b></td>
+                                                                    <td class="c"><b t-esc="revMonthStaffTotal"/></td>
+                                                                    <td class="r"><b class="rev_tot_val" t-esc="fmtRevDisplay(revMonthTotal)"/></td>
+                                                                    <td/>
+                                                                </tr></tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                </td>
                                             </tr>
                                         </tfoot>
                                     </table>
@@ -1634,7 +1683,7 @@
                                                 <th class="c_pos">Mã chức vụ</th>
                                                 <th class="c_tg">Target Cửa Hàng</th>
                                                 <th class="c_pct">Đã Phân Bổ NV theo %</th>
-                                                <th class="c_amt">Thành tiền Target NV (VNĐ)</th>
+                                                <th class="c_amt">Target NV</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -2531,7 +2580,7 @@
                                                             <label t-on-click.prevent="() => this.swGroupSet(g, h[0])" t-att-class="swGroupCanEdit(g) ? '' : 'dis'">
                                                                 <span t-attf-class="cw_box b-#{h[0]} #{swGroupState(g, h[0])}"><i t-if="swGroupState(g, h[0]) === 'all'" class="fa fa-check"/><i t-elif="swGroupState(g, h[0]) === 'some'" class="fa fa-minus"/></span>
                                                                 <t t-esc="h[1]"/></label></td>
-                                                        <td class="l"><input type="text" class="sw_note" t-att-value="swGroupNote(g)" t-att-disabled="!sw.can_comment"
+                                                        <td class="l"><input type="text" class="sw_note" t-att-value="swGroupNote(g)" t-att-disabled="!swCanComment"
                                                                              placeholder="Nhập nhận xét chi tiết..." t-on-input="(ev) => this.onSwGroupNote(g, ev.target.value)"/></td>
                                                     </tr>
                                                 </t>
@@ -2566,7 +2615,7 @@
                                                         t-attf-class="sw_mg_opt r-#{h[0]} #{swGroupState(g, h[0]) === 'all' ? 'on' : (swGroupState(g, h[0]) === 'some' ? 'some' : '')}"
                                                         t-on-click="() => this.swGroupSet(g, h[0])"><t t-esc="h[1]"/></button>
                                             </div>
-                                            <input type="text" class="sw_mg_note" t-att-value="swGroupNote(g)" t-att-disabled="!sw.can_comment"
+                                            <input type="text" class="sw_mg_note" t-att-value="swGroupNote(g)" t-att-disabled="!swCanComment"
                                                    placeholder="Nhập nhận xét chi tiết..." t-on-input="(ev) => this.onSwGroupNote(g, ev.target.value)"/>
                                         </div>
                                     </div>
@@ -2586,7 +2635,7 @@
                                     <div class="sw_sum_right">
                                         <div class="sw_cmt">
                                             <b><i class="fa fa-pencil-square-o"/> Nhận xét tổng quan <t t-esc="wk.label"/> (ASM <t t-esc="sw.asm_name"/>):</b>
-                                            <textarea rows="2" t-if="sw.can_comment" placeholder="Nhập nhận xét tổng quan của ASM về kết quả tuần này..."
+                                            <textarea rows="2" t-if="swCanComment" placeholder="Nhập nhận xét tổng quan của ASM về kết quả tuần này..."
                                                       t-att-value="state.chtm.comment" t-on-input="(ev) => this.state.chtm.comment = ev.target.value"/>
                                             <div class="ro" t-else="" t-esc="state.chtm.comment or 'Chưa có nhận xét của ASM cho tuần này.'"/>
                                             <div class="sw_visits" t-if="sw.visits.length > 1">
@@ -2594,12 +2643,12 @@
                                             </div>
                                         </div>
                                         <div class="sw_btns">
-                                            <button type="button" class="sw_btn is-edit" t-if="sw.n_reedit and !sw.n_pending and !state.chtm.editMode" t-on-click="() => this.state.chtm.editMode = true"
-                                                    t-att-title="'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until"><i class="fa fa-pencil"/> Chỉnh sửa <t t-esc="wk.label"/></button>
-                                            <button type="button" class="sw_btn is-light" t-if="state.chtm.editMode and !sw.n_pending" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
-                                            <button type="button" class="sw_btn is-lock" t-if="!sw.n_reedit and !sw.n_pending" disabled="disabled"
+                                            <button type="button" class="sw_btn is-edit" t-if="swViewLock and (sw.n_reedit or sw.n_pending or sw.can_comment)" t-on-click="() => this.state.chtm.editMode = true"
+                                                    t-att-title="sw.reedit_until ? 'Sửa lại kết quả đã đánh giá, được sửa đến ' + sw.reedit_until : 'Bấm để chỉnh sửa đánh giá / nhận xét'"><i class="fa fa-pencil"/> Chỉnh sửa <t t-esc="wk.label"/></button>
+                                            <button type="button" class="sw_btn is-light" t-if="state.chtm.editMode" t-on-click="onSwCancelEdit"><i class="fa fa-times"/> Hủy</button>
+                                            <button type="button" class="sw_btn is-lock" t-if="!sw.n_reedit and !sw.n_pending and !(swViewLock and sw.can_comment)" disabled="disabled"
                                                     t-att-title="sw.locked_at ? 'Hệ thống đã khóa lúc ' + sw.locked_at : 'Chưa có phiếu chờ chấm'"><i class="fa fa-lock"/> Khóa <t t-esc="(wk.label || '').toLowerCase()"/></button>
-                                            <button type="button" class="sw_btn" t-att-disabled="!((swCanEdit or sw.can_comment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu <t t-esc="wk.label"/></button>
+                                            <button type="button" class="sw_btn" t-att-disabled="!((swCanEdit or swCanComment) and swDirty)" t-on-click="onSwSave"><i class="fa fa-save"/> Lưu <t t-esc="wk.label"/></button>
                                         </div>
                                     </div>
                                 </div>

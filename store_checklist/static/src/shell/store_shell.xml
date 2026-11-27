@@ -605,7 +605,7 @@
                         </div>
                     </div>
                     <t t-if="pd and pd.rows.length">
-                        <div class="asm_card">
+                        <div class="asm_card perf_desktop_card">
                             <div class="kp_scroll">
                                 <table class="kp_table asm_table perf_table">
                                     <thead>
@@ -709,6 +709,105 @@
                                 <span>Điểm checklist: tổng điểm thực tế ASM đã đánh giá theo nhóm công việc · Xếp loại theo Tỷ lệ đạt Checklist (%)</span>
                                 <span t-if="pd.rank_legend" t-esc="pd.rank_legend"/>
                                 <span class="upd">Cập nhật: <t t-esc="pd.updated_at"/></span>
+                            </div>
+                        </div>
+                        <!-- Giao diện di động theo mẫu: thẻ từng nhân viên thu gọn/mở rộng, không cuộn ngang -->
+                        <div class="perf_mobile_wrap">
+                            <t t-foreach="perfGroups" t-as="g" t-key="'mg_' + g.store_id">
+                                <t t-foreach="g.staff" t-as="r" t-key="'mc_' + r.store_id + '|' + r.name + '|' + (r.code or '')">
+                                    <t t-set="isCardFirst" t-value="g_index === 0 and r_index === 0"/>
+                                    <t t-set="cardOpen" t-value="isPerfCardOpen(r, isCardFirst)"/>
+                                    <div t-attf-class="perf_mc_card #{cardOpen ? 'is-open' : ''}">
+                                        <div class="perf_mc_hd" t-on-click="() => this.togglePerfCard(r, isCardFirst)">
+                                            <div class="perf_mc_av"><i class="fa fa-user"/></div>
+                                            <div class="perf_mc_info">
+                                                <div class="perf_mc_name"><t t-esc="r.name"/><t t-if="r.is_cht"> (CHT)</t></div>
+                                                <div class="perf_mc_sub"><i class="fa fa-building-o"/> <t t-esc="r.store"/> <span class="sep">|</span> ID: <t t-esc="r.code or '-'"/></div>
+                                            </div>
+                                            <span t-attf-class="perf_mc_rank tone-#{r.rank_tone || 'wait'}" t-if="r.rank_short">
+                                                <i class="fa fa-star"/> <t t-esc="r.rank_short"/>
+                                            </span>
+                                            <i t-attf-class="fa #{cardOpen ? 'fa-chevron-up' : 'fa-chevron-down'} perf_mc_chev"/>
+                                        </div>
+                                        <div class="perf_mc_bd" t-if="cardOpen">
+                                            <!-- Khối 1: Chỉ tiêu & Doanh thu thực tế -->
+                                            <div class="perf_mc_sec">
+                                                <div class="perf_mc_sec_hd"><i class="fa fa-bar-chart"/> Chỉ tiêu &amp; Doanh thu thực tế</div>
+                                                <div class="perf_mc_grid3">
+                                                    <div class="perf_mc_m">
+                                                        <span>Target NV (VNĐ)</span>
+                                                        <b t-esc="fmtRevDisplay(r.target_nv)"/>
+                                                    </div>
+                                                    <div class="perf_mc_m">
+                                                        <span>Doanh thu đạt (VNĐ)</span>
+                                                        <b class="red" t-esc="fmtRevDisplay(r.revenue)"/>
+                                                    </div>
+                                                    <div class="perf_mc_m">
+                                                        <span>% Đạt Target</span>
+                                                        <b t-att-class="r.rev_pct !== null and r.rev_pct &gt;= 100 ? 'ok' : 'bad'" t-esc="fmtPerfPct(r.rev_pct)"/>
+                                                    </div>
+                                                </div>
+                                                <div class="perf_mc_tgrank">
+                                                    <span>Xếp loại:</span>
+                                                    <b t-att-class="perfTargetRank(r.target_nv, r.rev_pct)[1]" t-esc="perfTargetRank(r.target_nv, r.rev_pct)[0]"/>
+                                                </div>
+                                            </div>
+                                            <!-- Khối 2: Điểm đánh giá Checklist công việc -->
+                                            <div class="perf_mc_sec">
+                                                <div class="perf_mc_sec_hd"><i class="fa fa-clipboard"/> Điểm đánh giá Checklist công việc</div>
+                                                <div class="perf_mc_grid3">
+                                                    <div class="perf_mc_m">
+                                                        <span>Tổng điểm</span>
+                                                        <b><t t-esc="fmtPerfNum(r.tasks_total)"/><t t-if="r.max_total"> / <t t-esc="fmtPerfNum(r.max_total)"/></t></b>
+                                                    </div>
+                                                    <div class="perf_mc_m">
+                                                        <span>Tỷ lệ đạt Checklist</span>
+                                                        <b class="blue" t-esc="r.avg_pct !== null and r.avg_pct !== undefined ? fmtPerfPct(r.avg_pct) : '-'"/>
+                                                    </div>
+                                                    <div class="perf_mc_m">
+                                                        <span>Xếp loại</span>
+                                                        <span t-attf-class="perf_mc_pill tone-#{r.rank_tone || 'wait'}" t-esc="r.rank_short or '-'"/>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Khối 3: Điểm từng nhóm công việc -->
+                                            <div class="perf_mc_sec" t-if="(pd.group_names || []).length">
+                                                <div class="perf_mc_sec_hd"><i class="fa fa-star text-warning"/> Điểm từng nhóm công việc</div>
+                                                <div class="perf_mc_glist">
+                                                    <div class="perf_mc_grow" t-foreach="pd.group_names or []" t-as="gn" t-key="'mgrp_' + gn_index">
+                                                        <i t-att-class="perfGroupIcon(gn_index)"/>
+                                                        <span class="perf_mc_gname" t-esc="gn"/>
+                                                        <span class="perf_mc_gval"><t t-esc="fmtPerfNum(r['g' + (gn_index + 1)])"/> đ</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <!-- Khối 4: Nhận xét tuần 1..4 -->
+                                            <div class="perf_mc_wkbox" t-if="pd.store_comments and (pd.store_comments[g.store_id] || []).length">
+                                                <div class="perf_mc_wktabs">
+                                                    <span class="perf_mc_wklbl"><i class="fa fa-commenting-o"/> Nhận xét tuần:</span>
+                                                    <button type="button" t-foreach="pd.store_comments[g.store_id]" t-as="wk" t-key="'wt_' + wk.week_num"
+                                                            t-att-class="perfCardWeek(g.store_id) === wk.week_num ? 'active' : ''"
+                                                            t-on-click.stop="() => this.setPerfCardWeek(g.store_id, wk.week_num)" t-esc="'Tuần ' + wk.week_num"/>
+                                                </div>
+                                                <t t-foreach="pd.store_comments[g.store_id]" t-as="wk" t-key="'wb_' + wk.week_num">
+                                                    <div class="perf_mc_wkbody" t-if="perfCardWeek(g.store_id) === wk.week_num">
+                                                        <t t-if="(wk.items || []).length">
+                                                            <div class="perf_mc_wkitem" t-foreach="wk.items" t-as="cm" t-key="cm_index">
+                                                                <span t-esc="cm.comment"/>
+                                                                <small t-if="cm.user">— <t t-esc="cm.user"/></small>
+                                                            </div>
+                                                        </t>
+                                                        <div class="perf_mc_wkempty" t-else="">Chưa có nhận xét (<t t-esc="wk.range"/>)</div>
+                                                    </div>
+                                                </t>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+                            </t>
+                            <div class="perf_m_actions">
+                                <button type="button" class="btn btn-success text-white" t-on-click="onPerfExport"><i class="fa fa-download"/> Xuất Excel</button>
+                                <button type="button" class="btn btn-outline-primary" t-on-click="printReport"><i class="fa fa-print"/> In báo cáo</button>
                             </div>
                         </div>
                     </t>
@@ -883,16 +982,16 @@
                     <t t-set="rd" t-value="rv.data"/>
                     <t t-set="rm" t-value="rv.mData"/>
                     <div class="kp_tabs rev_tabs">
-                        <button type="button" t-if="revTabOk('day')" t-att-class="rv.tab === 'day' ? 'active' : ''" t-on-click="() => this.onRevTab('day')">
+                        <button type="button" t-if="revTabOk('day')" t-att-class="'tab-day' + (rv.tab === 'day' ? ' active' : '')" t-on-click="() => this.onRevTab('day')">
                             <i class="fa fa-calendar-check-o"/> Doanh thu theo ngày
                         </button>
-                        <button type="button" t-if="revTabOk('month')" t-att-class="rv.tab === 'month' ? 'active' : ''" t-on-click="() => this.onRevTab('month')">
+                        <button type="button" t-if="revTabOk('month')" t-att-class="'tab-month' + (rv.tab === 'month' ? ' active' : '')" t-on-click="() => this.onRevTab('month')">
                             <i class="fa fa-bar-chart"/> Doanh Thu Tháng
                         </button>
-                        <button type="button" t-if="revTabOk('target')" t-att-class="rv.tab === 'target' ? 'active' : ''" t-on-click="() => this.onRevTab('target')">
+                        <button type="button" t-if="revTabOk('target')" t-att-class="'tab-target' + (rv.tab === 'target' ? ' active' : '')" t-on-click="() => this.onRevTab('target')">
                             <i class="fa fa-bullseye"/> Phân Bổ Target
                         </button>
-                        <button type="button" t-if="revTabOk('track')" t-att-class="rv.tab === 'track' ? 'active' : ''" t-on-click="() => this.onRevTab('track')">
+                        <button type="button" t-if="revTabOk('track')" t-att-class="'tab-track' + (rv.tab === 'track' ? ' active' : '')" t-on-click="() => this.onRevTab('track')">
                             <i class="fa fa-line-chart"/> Theo Dõi Target
                         </button>
                     </div>
@@ -1366,7 +1465,7 @@
                                 <small t-else=""> (bấm vào ngày để xem doanh thu từng nhân viên)</small>
                             </div>
                             <div class="asm_card">
-                                <div class="kp_scroll">
+                                <div class="kp_scroll tr_days_scroll">
                                     <table class="kp_table asm_table rev_table tr_table tr_days">
                                         <thead><tr>
                                             <th>Ngày</th><th>Thứ</th><th>Tuần</th><th>Target Ngày CH</th><th>Doanh thu đã đạt</th><th>Chênh lệch ngày</th>

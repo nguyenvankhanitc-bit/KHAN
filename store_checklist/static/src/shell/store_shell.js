@@ -59,7 +59,7 @@ export class StoreChecklistShell extends Component {
             auditStoreIds: [],
             myRole: "",
             kpi: { month: "", mien: "", closedStores: {}, storeStatus: {}, storeId: "", stores: [], staffOpts: [], staff: "", data: null, busy: false, tab: "staff", overview: null, profile: "kpi" },
-            perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false, closed: {} },
+            perf: { month: "", mien: "", asmId: "", storeId: "", rank: "", q: "", data: null, busy: false, closed: {}, mOpen: {}, mWeek: {} },
             kpiAsm: { month: "", mien: "", asmId: "", tab: "compare", pillarIdx: 0, rankFilter: "", data: null, closed: {}, openStores: {}, busy: false },
             mg: { month: "", date: "", storeStatus: {}, storeId: "", q: "", errors: false, active: true, evalMode: "day", name: "", names: [], rows: [], evalRows: [], week: { days: [], rows: [], week_label: "" }, busy: false },
             openGroups: { audit: true, nvbh: false, nvbh_jobs_folder: true, evaluation: false, supervision: false, nvbh_work: false, settings: true },
@@ -1654,6 +1654,33 @@ export class StoreChecklistShell extends Component {
 
     togglePerfStore(id) {
         this.state.perf.closed[id] = this.isPerfStoreOpen(id);
+    }
+
+    perfCardKey(r) {
+        return `${r.store_id}|${r.name}|${r.code || ""}`;
+    }
+
+    isPerfCardOpen(r, isFirst) {
+        const k = this.perfCardKey(r);
+        return Object.prototype.hasOwnProperty.call(this.state.perf.mOpen, k) ? Boolean(this.state.perf.mOpen[k]) : Boolean(isFirst);
+    }
+
+    togglePerfCard(r, isFirst) {
+        const k = this.perfCardKey(r);
+        this.state.perf.mOpen[k] = !this.isPerfCardOpen(r, isFirst);
+    }
+
+    perfCardWeek(storeId) {
+        return this.state.perf.mWeek[storeId] || 1;
+    }
+
+    setPerfCardWeek(storeId, wkNum) {
+        this.state.perf.mWeek[storeId] = wkNum;
+    }
+
+    perfGroupIcon(idx) {
+        const list = ["fa-users ic-purple", "fa-cube ic-green", "fa-bar-chart ic-orange", "fa-bullhorn ic-blue", "fa-shopping-cart ic-emerald", "fa-money ic-rose"];
+        return "fa " + list[idx % list.length];
     }
 
     get perfAllOpen() {

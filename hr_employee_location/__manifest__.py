@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     "name": "Bản đồ vị trí nhân viên & Cửa hàng",
-    "version": "19.0.1.0.6",
+    "version": "19.0.1.0.7",
     "category": "Human Resources",
     "summary": "Định vị vị trí nhân viên và trực quan hóa mạng lưới cửa hàng trên OpenStreetMap (OWL & geopy)",
     "description": """
@@ -26,6 +26,7 @@ Bản đồ vị trí nhân viên & Cửa hàng
         "security/ir.model.access.csv",
         "views/hr_employee_views.xml",
         "views/hr_store_views.xml",
+        "views/res_users_views.xml",
         "views/action_views.xml",
         "views/menu_views.xml",
     ],

@@ -62,10 +62,6 @@
                 <attribute name="filter_domain">['|', ('name', 'ilike', self), ('code', 'ilike', self)]</attribute>
                 <attribute name="string">Tên hoặc mã cửa hàng</attribute>
             </field>
-            <field name="code" position="replace"/>
-            <field name="mien" position="replace"/>
-            <field name="manager_id" position="replace"/>
-            <field name="city" position="replace"/>
         </field>
     </record>
 

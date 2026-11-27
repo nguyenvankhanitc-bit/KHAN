@@ -10,10 +10,15 @@ _logger = logging.getLogger(__name__)
 class ResUsers(models.Model):
     _inherit = "res.users"
 
+    max_device_count = fields.Integer(
+        string="Số thiết bị tối đa",
+        default=2,
+        help="Số lượng thiết bị tối đa được phép đăng nhập đồng thời (Mặc định: 2, gồm 1 PC và 1 Điện thoại). Đặt 0 để không giới hạn.",
+    )
     exempt_device_limit = fields.Boolean(
         string="Miễn giới hạn thiết bị đăng nhập",
         default=False,
-        help="Nếu bật, người dùng này không bị giới hạn tối đa 2 thiết bị (1 PC, 1 Phone) và các phiên cũ không bị tự động thu hồi.",
+        help="Nếu bật, người dùng này không bị giới hạn số lượng thiết bị đăng nhập và các phiên cũ không bị tự động thu hồi.",
     )
 
 
@@ -49,6 +54,13 @@ class ResDeviceLog(models.Model):
         # Kiểm tra người dùng có thuộc diện miễn giới hạn thiết bị không
         user = self.env["res.users"].sudo().browse(user_id)
         if not user.exists() or user.exempt_device_limit:
+            request.session["_device_limits_enforced"] = current_sid
+            return
+
+        max_devices = user.max_device_count
+        if max_devices is None:
+            max_devices = 2
+        if max_devices <= 0:
             request.session["_device_limits_enforced"] = current_sid
             return
 
@@ -98,23 +110,30 @@ class ResDeviceLog(models.Model):
 
         to_revoke = []
 
-        # Quy tắc 1: Tối đa 1 máy tính (computer / PC / laptop)
-        if current_device_type == "computer":
-            # Phiên hiện tại là máy tính mới -> thu hồi tất cả các máy tính cũ trước đó
-            to_revoke.extend(computer_sids)
-        elif len(computer_sids) > 1:
-            # Phiên hiện tại là điện thoại -> chỉ giữ lại 1 máy tính gần nhất, thu hồi các máy tính còn lại
-            to_revoke.extend(computer_sids[1:])
+        if max_devices == 1:
+            # Tối đa 1 thiết bị duy nhất: thu hồi toàn bộ các phiên khác (bất kể loại thiết bị)
+            to_revoke.extend([r["session_identifier"] for r in rows if r["session_identifier"] != current_sid])
 
-        # Quy tắc 2: Tối đa 1 điện thoại/máy tính bảng (mobile / phone / tablet)
-        if current_device_type == "mobile":
-            # Phiên hiện tại là điện thoại mới -> thu hồi tất cả các điện thoại cũ trước đó
-            to_revoke.extend(mobile_sids)
-        elif len(mobile_sids) > 1:
-            # Phiên hiện tại là máy tính -> chỉ giữ lại 1 điện thoại gần nhất, thu hồi các điện thoại còn lại
-            to_revoke.extend(mobile_sids[1:])
+        elif max_devices == 2:
+            # Tối đa 2 thiết bị chuẩn: 1 Máy tính + 1 Điện thoại
+            if current_device_type == "computer":
+                to_revoke.extend(computer_sids)
+            elif len(computer_sids) > 1:
+                to_revoke.extend(computer_sids[1:])
 
-        # Thu hồi các session vi phạm vượt quá giới hạn 2 thiết bị (1 PC, 1 Phone)
+            if current_device_type == "mobile":
+                to_revoke.extend(mobile_sids)
+            elif len(mobile_sids) > 1:
+                to_revoke.extend(mobile_sids[1:])
+
+        else:
+            # Trường hợp cấu hình > 2 thiết bị: thu hồi các phiên cũ nhất vượt quá hạn mức
+            other_sids = [r["session_identifier"] for r in rows if r["session_identifier"] != current_sid]
+            allowed_others = max(0, max_devices - 1)
+            if len(other_sids) > allowed_others:
+                to_revoke.extend(other_sids[allowed_others:])
+
+        # Thu hồi các session vi phạm vượt quá giới hạn
         if to_revoke:
             # Lọc chỉ những session identifier hợp lệ và không chứa session hiện tại
             to_revoke = list(set(s for s in to_revoke if s and s != current_sid and len(s) == STORED_SESSION_BYTES))
@@ -127,10 +146,11 @@ class ResDeviceLog(models.Model):
                     ("session_identifier", "in", to_revoke),
                 ]).write({"revoked": True})
                 _logger.info(
-                    "Đã thu hồi %d phiên cũ (%s) của user_id=%d để đảm bảo giới hạn tối đa 2 thiết bị (1 PC, 1 Phone). Phiên hiện tại: %s (%s)",
+                    "Đã thu hồi %d phiên cũ (%s) của user_id=%d để đảm bảo giới hạn tối đa %d thiết bị. Phiên hiện tại: %s (%s)",
                     len(to_revoke),
                     ", ".join(to_revoke),
                     user_id,
+                    max_devices,
                     current_sid,
                     current_device_type,
                 )

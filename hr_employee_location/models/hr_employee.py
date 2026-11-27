@@ -52,6 +52,12 @@ class HrEmployee(models.Model):
         default="computer",
         help="Phân loại thiết bị truy cập: Máy tính, Điện thoại hoặc Máy tính bảng.",
     )
+    max_device_count = fields.Integer(
+        string="Số thiết bị tối đa",
+        related="user_id.max_device_count",
+        readonly=True,
+        help="Số thiết bị tối đa được phép đăng nhập đồng thời được cấu hình cho tài khoản người dùng liên kết.",
+    )
     gps_status = fields.Selection(
         [
             ("active", "Đang hoạt động (GPS mới)"),
@@ -86,3 +92,4 @@ class HrEmployeePublic(models.Model):
     device_identifier = fields.Char(related="employee_id.device_identifier", readonly=True)
     device_name = fields.Char(related="employee_id.device_name", readonly=True)
     device_type = fields.Selection(related="employee_id.device_type", readonly=True)
+    max_device_count = fields.Integer(related="employee_id.max_device_count", readonly=True)

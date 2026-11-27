@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='page_security']" position="inside">
                 <group string="Giới hạn thiết bị đăng nhập" groups="base.group_system">
+                    <field name="max_device_count"/>
                     <field name="exempt_device_limit"/>
                 </group>
             </xpath>

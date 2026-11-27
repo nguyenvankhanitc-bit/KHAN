@@ -27,6 +27,7 @@
                                    decoration-info="device_type == 'computer'"
                                    decoration-success="device_type == 'mobile'"
                                    decoration-warning="device_type == 'tablet'"/>
+                            <field name="max_device_count"/>
                         </group>
                     </group>
                 </page>

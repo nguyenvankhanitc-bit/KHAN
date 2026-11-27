@@ -359,10 +359,9 @@ class StoreNvbhCheckRole(models.Model):
             if self._admin_title_employees():
                 chain.append(self._admin_title_step(subject))
             return chain
-        # CHT tự đánh giá checklist của mình (ASM đánh giá tổng theo tuần ở trang Đánh giá Toàn Cửa Hàng)
+        # CHT check list: CHT làm xong -> chờ ASM (quản lý trực tiếp) đánh giá, ASM quyết định điểm cuối cùng
+        # (ASM chấm từng phiếu hoặc chấm theo tuần ở trang Đánh giá Toàn Cửa Hàng)
         if self.kind == 'cht':
-            if subject:
-                return [{'code': 'CHT', 'level': 2, 'employee': subject, 'user': subject.user_id, 'admin_only': False}]
             return chain[:1]
         # NVBH check list -> CHT đánh giá, chốt điểm cuối cùng (không chờ ASM duyệt từng ngày; ASM đánh giá tổng theo tuần)
         return chain[:1]

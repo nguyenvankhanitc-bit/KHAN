@@ -18,6 +18,12 @@ except ImportError:
 class HrStore(models.Model):
     _inherit = "hr.store"
 
+    address = fields.Char(
+        string="Địa chỉ",
+        related="street",
+        readonly=False,
+        store=True,
+    )
     latitude = fields.Float(
         string="Vĩ độ",
         digits=(10, 7),
@@ -63,7 +69,7 @@ class HrStore(models.Model):
                 # Nếu admin chủ động nhập tọa độ khi tạo
                 if vals.get("latitude") or vals.get("longitude"):
                     record.geocode_status = "manual"
-            elif record.address and record.geocode_status != "manual":
+            elif (record.address or record.street) and record.geocode_status != "manual":
                 record._auto_geocode_safely()
         return records
 
@@ -75,9 +81,9 @@ class HrStore(models.Model):
         res = super().write(vals)
 
         # Nếu thay đổi địa chỉ và không phải manual -> tự động tính lại tọa độ
-        if "address" in vals and "latitude" not in vals and "longitude" not in vals:
+        if ("address" in vals or "street" in vals) and "latitude" not in vals and "longitude" not in vals:
             for rec in self:
-                if rec.geocode_status != "manual" and rec.address:
+                if rec.geocode_status != "manual" and (rec.address or rec.street):
                     rec._auto_geocode_safely()
         return res
 
@@ -116,7 +122,7 @@ class HrStore(models.Model):
             _logger.error(msg)
             return False
 
-        address = (self.address or "").strip()
+        address = (self.address or self.street or "").strip()
         if not address:
             if raise_if_error:
                 raise UserError(_("Vui lòng nhập địa chỉ trước khi định vị tọa độ."))

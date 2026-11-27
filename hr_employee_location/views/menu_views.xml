@@ -24,6 +24,6 @@
     <menuitem id="menu_hr_employee_location_stores"
               name="Tọa độ cửa hàng"
               parent="menu_hr_employee_location_config"
-              action="hr_store.action_hr_store"
+              action="hr_store.hr_store_action"
               sequence="10"/>
 </odoo>

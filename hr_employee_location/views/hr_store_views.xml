@@ -14,7 +14,7 @@
                             icon="fa-map-marker"/>
                 </header>
             </xpath>
-            <xpath expr="//field[@name='address']" position="after">
+            <xpath expr="//field[@name='street']" position="after">
                 <group string="Tọa độ OpenStreetMap (Vĩ độ / Kinh độ)">
                     <group>
                         <field name="latitude"/>

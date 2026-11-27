@@ -1,11 +1,13 @@
 /** @odoo-module **/
 
-import { Component, onMounted, onWillUnload, useRef, useState } from "@odoo/owl";
+import { Component, onMounted, onWillUnmount, useRef, useState } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { standardActionServiceProps } from "@web/webclient/actions/action_service";
 
 export class EmployeeStoreMap extends Component {
     static template = "hr_employee_location.EmployeeStoreMap";
+    static props = { ...standardActionServiceProps, "*": true };
 
     setup() {
         this.orm = useService("orm");
@@ -37,7 +39,7 @@ export class EmployeeStoreMap extends Component {
             await this.loadData();
         });
 
-        onWillUnload(() => {
+        onWillUnmount(() => {
             if (this.map) {
                 this.map.remove();
                 this.map = null;

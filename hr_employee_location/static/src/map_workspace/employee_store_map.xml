@@ -10,7 +10,7 @@
                         <h5 class="m-0 fw-bold text-primary">
                             <i class="fa fa-map-marked-alt me-2"/>Mạng lưới nhân viên
                         </h5>
-                        <button class="btn btn-sm btn-outline-secondary" t-on-click="loadData" title="Làm mới">
+                        <button class="btn btn-sm btn-outline-secondary" t-on-click="() => this.loadData()" title="Làm mới">
                             <i class="fa fa-refresh" t-att-class="{'fa-spin': state.isLoading}"/>
                         </button>
                     </div>
@@ -130,7 +130,7 @@
             <div class="o_map_viewport flex-grow-1 position-relative h-100">
                 <!-- Top floating actions bar -->
                 <div class="o_map_floating_bar position-absolute top-0 start-0 m-3 z-3 d-flex gap-2 bg-white p-2 rounded shadow-sm border">
-                    <button class="btn btn-sm btn-outline-primary" t-on-click="resetView">
+                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.resetView()">
                         <i class="fa fa-globe me-1"/>Xem tất cả cửa hàng
                     </button>
                     <div class="vr my-1"/>

@@ -22,3 +22,4 @@ from . import store_asm_audit
 from . import store_week_review
 from . import store_nvbh_revenue
 from . import store_nvbh_target
+from . import store_asm_work_report

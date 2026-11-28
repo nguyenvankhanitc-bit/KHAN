@@ -4997,3 +4997,140 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         button { height: 42px; border-radius: 10px; font-weight: 700; font-size: 13.5px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     }
 }
+
+/* ===== Báo cáo CV ASM (tab trong Checklist CV ASM) ===== */
+.o_store_asm_rep_page {
+    display: flex; flex-direction: column; gap: 12px;
+    .ar_toolbar {
+        display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px;
+        background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 12px 14px;
+    }
+    .ar_filters {
+        display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px;
+        label { display: flex; flex-direction: column; gap: 3px; margin: 0; font-size: 12px; font-weight: 600; color: #64748b; }
+        select, input { height: 36px; min-width: 165px; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0 10px; font-size: 13px; color: #0f172a; background: #fff; }
+    }
+    .ar_add_btn { height: 36px; border-radius: 8px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; padding: 0 16px; }
+    .ar_form_card {
+        background: #fff; border: 1.5px solid #93c5fd; border-radius: 12px; overflow: visible; box-shadow: 0 4px 14px rgba(37, 99, 235, .08);
+    }
+    .ar_form_hd {
+        background: #eff6ff; color: #1e3a8a; font-weight: 800; font-size: 14px; padding: 10px 14px;
+        border-bottom: 1px solid #bfdbfe; display: flex; align-items: center; justify-content: space-between;
+    }
+    .ar_form_x { border: 0; background: transparent; color: #64748b; font-size: 16px; cursor: pointer; &:hover { color: #dc2626; } }
+    .ar_form_grid {
+        display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 12px; padding: 14px;
+        label { display: flex; flex-direction: column; gap: 4px; margin: 0; font-size: 12px; font-weight: 700; color: #334155; }
+        label.ar_full, .ar_field.ar_full { grid-column: span 2; }
+        label.ar_full_all, .ar_field.ar_full_all { grid-column: 1 / -1; }
+        .ar_field { display: flex; flex-direction: column; gap: 4px; .ar_lbl { font-size: 12px; font-weight: 700; color: #334155; } }
+        .ar_ms_wrap { position: relative; }
+        .ar_ms_btn {
+            width: 100%; height: 36px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; padding: 0 10px;
+            display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: #64748b; cursor: pointer; text-align: left;
+            &.has-val { color: #0f172a; font-weight: 600; }
+            &.is-open { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37, 99, 235, .14); }
+            .ar_ms_txt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            i { font-size: 11px; color: #64748b; flex: 0 0 auto; }
+        }
+        .ar_ms_menu {
+            position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30;
+            background: #fff; border: 1px solid #93c5fd; border-radius: 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, .14);
+            max-height: 260px; overflow-y: auto; padding: 4px 0;
+        }
+        .ar_ms_opt {
+            display: flex !important; flex-direction: row !important; align-items: center; gap: 8px; padding: 8px 12px; margin: 0;
+            font-size: 13px; font-weight: 500; color: #0f172a; cursor: pointer;
+            &:hover { background: #f1f5f9; }
+            &.active { background: #eff6ff; color: #1d4ed8; font-weight: 700; }
+            input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: #2563eb; flex: 0 0 auto; }
+        }
+        .ar_ms_foot {
+            display: flex; align-items: center; justify-content: space-between; padding: 6px 12px;
+            border-top: 1px solid #e2e8f0; background: #f8fafc; position: sticky; bottom: 0;
+            .ar_ms_cnt { font-size: 12px; color: #475569; }
+            button { padding: 3px 12px; font-size: 12px; font-weight: 700; border-radius: 6px; }
+        }
+        input, select, textarea { border: 1px solid #cbd5e1; border-radius: 8px; padding: 7px 10px; font-size: 13px; color: #0f172a; background: #fff; }
+        input, select { height: 36px; }
+        textarea { resize: vertical; min-height: 54px; }
+    }
+    .ar_form_foot { display: flex; gap: 10px; padding: 10px 14px; background: #f8fafc; border-top: 1px solid #e2e8f0; button { border-radius: 8px; font-weight: 700; } }
+    .ar_table_wrap { background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; overflow-x: auto; box-shadow: 0 2px 6px rgba(15, 23, 42, .04); }
+    .ar_table {
+        width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 1120px;
+        th { background: #1e3a8a; color: #fff; font-weight: 700; padding: 9px 8px; text-align: center; border-right: 1px solid rgba(255, 255, 255, .18); white-space: nowrap; }
+        td { padding: 8px; border-bottom: 1px solid #e2e8f0; border-right: 1px solid #f1f5f9; vertical-align: top; color: #0f172a; &.c { text-align: center; } &.l { text-align: left; } &.b { font-weight: 700; } }
+        tr:hover td { background: #f8fbff; }
+        .ar_time { white-space: nowrap; span { display: block; font-size: 12px; } }
+        .ar_pre { white-space: pre-wrap; max-width: 220px; }
+        .ar_err_pos { color: #dc2626; font-weight: 800; }
+        .ar_grp_tags { display: flex; flex-wrap: wrap; gap: 4px; }
+        .ar_grp_tag { display: inline-block; padding: 2px 7px; border-radius: 6px; background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 11.5px; font-weight: 600; }
+    }
+    .ar_badge {
+        display: inline-block; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 700; white-space: nowrap;
+        &.res-ok, &.rat-excellent, &.st-done { background: #dcfce7; color: #15803d; }
+        &.res-discrepancy, &.rat-need_improve, &.rat-average { background: #fef3c7; color: #b45309; }
+        &.res-violation, &.rat-fail { background: #fee2e2; color: #b91c1c; }
+        &.rat-pass { background: #dbeafe; color: #1d4ed8; }
+        &.st-draft { background: #f1f5f9; color: #64748b; }
+    }
+    .ar_ops { white-space: nowrap; }
+    .ar_op_btn {
+        border: 1px solid #cbd5e1; background: #fff; color: #2563eb; border-radius: 6px; width: 28px; height: 28px; margin: 0 2px; cursor: pointer;
+        &:hover { background: #eff6ff; border-color: #93c5fd; }
+        &.del { color: #dc2626; &:hover { background: #fee2e2; border-color: #fca5a5; } }
+    }
+    @media (max-width: 767.98px) {
+        .ar_filters { width: 100%; display: grid; grid-template-columns: 1fr 1fr; select, input { min-width: 0; width: 100%; } }
+        .ar_add_btn { width: 100%; justify-content: center; }
+        .ar_form_grid { grid-template-columns: 1fr 1fr; label.ar_full { grid-column: 1 / -1; } }
+        .ar_table_wrap { background: transparent; border: 0; box-shadow: none; overflow: visible; }
+        .ar_table {
+            min-width: 0; display: block;
+            thead { display: none; }
+            tbody { display: block; }
+            tr { display: flex; flex-wrap: wrap; background: #fff; border: 1px solid #cbd5e1; border-radius: 12px; padding: 10px 12px; margin-bottom: 10px; gap: 6px 0; }
+            td {
+                display: block; flex: 0 0 50%; border: 0; padding: 3px 4px; text-align: left !important;
+                &::before { content: attr(data-label); display: block; font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 2px; }
+            }
+            td.ar_pre, td.ar_ops { flex: 0 0 100%; max-width: none; }
+        }
+    }
+}
+
+/* Báo cáo CV ASM: danh sách gom theo cửa hàng (giống Danh sách check list giám sát) */
+.o_store_asm_rep_page {
+    .ar_grp_tools { display: flex; align-items: flex-end; gap: 10px; padding-bottom: 6px; font-size: 12.5px; color: #475569; }
+    .ar_link_btn { border: 0; background: none; color: #2563eb; font-weight: 600; padding: 0; cursor: pointer; &:hover { text-decoration: underline; } }
+    .ar_table tr.ar_grp_row td {
+        background: #fff !important; cursor: pointer; text-align: left !important; padding: 9px 12px !important;
+        border-bottom: 1px solid #e2e8f0; color: #0f172a; font-size: 13px;
+    }
+    .ar_table tr.ar_grp_row:hover td { background: #f1f5f9 !important; }
+    .ar_grp_caret { width: 14px; color: #334155; margin-right: 4px; }
+    @media (max-width: 767px) {
+        .ar_table tr.ar_grp_row { display: block; }
+        .ar_table tr.ar_grp_row td { display: block; }
+        .ar_table tr.ar_grp_row td::before { content: none !important; }
+    }
+}
+
+/* Báo cáo CV ASM: form tạo / sửa hiện dạng popup */
+.o_store_asm_rep_page .ar_modal {
+    position: fixed; inset: 0; z-index: 1050; background: rgba(15, 23, 42, .45);
+    display: flex; align-items: flex-start; justify-content: center; padding: 3vh 16px; overflow-y: auto;
+    .ar_form_card {
+        width: 94vw; max-width: 1600px; min-height: 88vh; margin: 0; box-shadow: 0 20px 50px rgba(15, 23, 42, .35); border-radius: 12px;
+        display: flex; flex-direction: column; font-size: 14px;
+    }
+    .ar_form_grid { flex: 1; gap: 16px 20px !important; padding: 22px 26px !important; }
+    .ar_form_hd { font-size: 16px; padding: 14px 22px !important; }
+    .ar_form_foot { padding: 14px 26px !important; }
+    input, select, .ar_ms_btn { min-height: 42px; font-size: 14px; }
+    textarea { min-height: 120px; font-size: 14px; }
+    @media (max-width: 767px) { padding: 10px 8px; }
+}

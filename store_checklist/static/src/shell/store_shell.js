@@ -105,6 +105,7 @@ export class StoreChecklistShell extends Component {
             staffStores: [], // cửa hàng được cấp ở mục Nhân sự (ô lọc cửa hàng)
             today: { mien: "", store: "", miens: [], stores: [] }, // Lịch ca hôm nay: bộ lọc Miền / Cửa hàng
             rev: { tab: "day", date: "", month: "", mien: "", storeId: "", q: "", data: null, mData: null, onlyHasRev: false, openStores: {}, mienOpen: {}, storeOpen: {}, mMienOpen: {}, tgData: null, tgStores: [], tgDirty: false, trData: null, trStoreId: "", trDays: 0, trWeek: 0, trOpenDay: "", tgSaving: false, busy: false, saving: false, drafts: {}, editing: {}, selectedId: null }, // Doanh thu NVBH (Theo ngày & Tháng)
+            asmRep: { month: "", storeId: "", q: "", stores: [], groups: [], rows: [], busy: false, saving: false, form: null, grpOpen: false, open: {} }, // Báo cáo CV ASM
         });
         this.history = [{ home: true }];
         // Popup "Xử lý sai phạm" nằm bên phải thanh menu và co giãn theo bề rộng thanh menu (biến CSS --store-sidebar-w)
@@ -348,9 +349,9 @@ export class StoreChecklistShell extends Component {
         this.state.openGroups[groupId] = !this.state.openGroups[groupId];
     }
 
-    // 2 tab của màn Công việc (Checklist NVBH > Công việc)
+    // Các tab của màn Công việc (Checklist NVBH > Công việc / Checklist CV ASM)
     get jobTabs() {
-        return [
+        const tabs = [
             this.state.job.kind === "cht"
                 ? { id: "nvbh_cht", label: "Check list công việc CHT", action: "" }
                 : this.state.job.kind === "asm"
@@ -358,12 +359,16 @@ export class StoreChecklistShell extends Component {
                 : { id: "nvbh_jobs", label: "Check list công việc", action: "store_checklist.action_store_nvbh_jobs" },
             { id: "nvbh_schedule", label: "Lịch xếp ca", action: "store_checklist.action_store_nvbh_schedule" },
         ];
+        if (this.state.job.kind === "asm") {
+            tabs.push({ id: "nvbh_asm_report", label: "Báo cáo CV ASM", action: "" });
+        }
+        return tabs;
     }
 
     get isJobTabs() {
         // Checklist CV CHT: không có tab (lịch ca đã xem / nhập ở Công việc check list NVBH)
-        // Checklist CV ASM: 2 tab Check list công việc ASM / Lịch xếp ca (lịch ASM, nhập Excel riêng)
-        return (["nvbh_jobs", "nvbh_schedule"].includes(this.state.activeNav) || this.state.activeNav === "nvbh_asmcv")
+        // Checklist CV ASM: 3 tab Check list công việc ASM / Lịch xếp ca / Báo cáo CV ASM
+        return (["nvbh_jobs", "nvbh_schedule", "nvbh_asm_report"].includes(this.state.activeNav) || this.state.activeNav === "nvbh_asmcv")
             && !(this.state.activeNav === "nvbh_schedule" && this.state.job.kind === "cht");
     }
 
@@ -4475,7 +4480,204 @@ export class StoreChecklistShell extends Component {
         if (tab.id === "nvbh_asmcv") {
             return this.openJobsPage("asm");
         }
+        if (tab.id === "nvbh_asm_report") {
+            return this.openAsmReportPage();
+        }
         await this.openAction(tab.action, tab.id);
+    }
+
+    // ---- Báo cáo CV ASM (tab trong Checklist CV ASM) ----
+    async openAsmReportPage() {
+        const ar = this.state.asmRep;
+        this.state.job.kind = "asm";
+        this.state.activeNav = "nvbh_asm_report";
+        this.state.contentMode = "list";
+        this.state.embeddedViewProps = null;
+        if (!ar.month) {
+            const d = new Date();
+            ar.month = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+        }
+        await this.loadAsmReports();
+    }
+
+    async loadAsmReports() {
+        const ar = this.state.asmRep;
+        ar.busy = true;
+        try {
+            const res = await this.orm.call("store.asm.work.report", "get_asm_work_reports", [
+                ar.month || false,
+                ar.storeId ? Number(ar.storeId) : false,
+                ar.q || false,
+            ]);
+            ar.month = res.month || ar.month;
+            ar.stores = res.stores || [];
+            ar.groups = res.groups || [];
+            ar.rows = res.rows || [];
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            ar.busy = false;
+        }
+    }
+
+    // Danh sách Báo cáo CV ASM gom theo cửa hàng (giống Danh sách check list giám sát): dòng nhóm "CỬA HÀNG (số phiếu)" bấm để mở / thu gọn
+    get asmRepGroups() {
+        const ar = this.state.asmRep;
+        const map = new Map();
+        for (const row of ar.rows || []) {
+            const key = String(row.store_id || row.store_name || "-");
+            if (!map.has(key)) {
+                map.set(key, { key, name: row.store_name || "-", rows: [] });
+            }
+            map.get(key).rows.push(row);
+        }
+        return [...map.values()]
+            .sort((a, b) => a.name.localeCompare(b.name))
+            .map((g) => ({ ...g, open: Boolean(ar.open[g.key]) }));
+    }
+
+    toggleAsmRepStore(key) {
+        const ar = this.state.asmRep;
+        ar.open[key] = !ar.open[key];
+    }
+
+    asmRepExpandAll(open) {
+        const ar = this.state.asmRep;
+        for (const g of this.asmRepGroups) {
+            ar.open[g.key] = open;
+        }
+    }
+
+    onAsmRepFilter(key, ev) {
+        this.state.asmRep[key] = ev.target.value;
+        this.loadAsmReports();
+    }
+
+    onAsmRepNew() {
+        const ar = this.state.asmRep;
+        ar.form = {
+            id: 0,
+            work_date: this.jobToday(),
+            time_in: "",
+            time_out: "",
+            store_id: ar.storeId || (ar.stores[0] ? String(ar.stores[0].id) : ""),
+            work_group_ids: [],
+            goal_plan: "",
+            work_content: "",
+            result: "ok",
+            error_count: 0,
+            rating: "pass",
+            note: "",
+        };
+    }
+
+    onAsmRepEdit(row) {
+        this.state.asmRep.form = {
+            id: row.id,
+            work_date: row.work_date || this.jobToday(),
+            time_in: row.time_in || "",
+            time_out: row.time_out || "",
+            store_id: row.store_id ? String(row.store_id) : "",
+            work_group_ids: [...(row.work_group_ids || [])],
+            goal_plan: row.goal_plan || "",
+            work_content: row.work_content || "",
+            result: row.result || "ok",
+            error_count: row.error_count || 0,
+            rating: row.rating || "pass",
+            note: row.note || "",
+        };
+    }
+
+    onAsmRepCancel() {
+        this.state.asmRep.form = null;
+        this.state.asmRep.grpOpen = false;
+    }
+
+    get asmRepGroupSummary() {
+        const ar = this.state.asmRep;
+        const ids = ar.form?.work_group_ids || [];
+        if (!ids.length) {
+            return "-- Chọn nhóm công việc --";
+        }
+        const names = (ar.groups || []).filter((g) => ids.includes(g.id)).map((g) => g.name);
+        if (names.length === 1) {
+            return names[0];
+        }
+        return `Đã chọn ${names.length} nhóm: ${names.map((n) => n.slice(0, 2)).join(", ")}`;
+    }
+
+    toggleAsmRepGroup(gid) {
+        const f = this.state.asmRep.form;
+        if (!f) {
+            return;
+        }
+        const id = Number(gid);
+        const idx = f.work_group_ids.indexOf(id);
+        if (idx >= 0) {
+            f.work_group_ids.splice(idx, 1);
+        } else {
+            f.work_group_ids.push(id);
+        }
+    }
+
+    onAsmRepDatePick(dt) {
+        if (this.state.asmRep.form && dt) {
+            this.state.asmRep.form.work_date = dt.toFormat("yyyy-MM-dd");
+        }
+    }
+
+    onAsmRepTimeBlur(field) {
+        const f = this.state.asmRep.form;
+        if (!f) {
+            return;
+        }
+        const digits = String(f[field] || "").replace(/\D+/g, "");
+        if (digits.length === 4) {
+            f[field] = `${digits.slice(0, 2)}:${digits.slice(2, 4)}`;
+        } else if (digits.length === 3) {
+            f[field] = `0${digits[0]}:${digits.slice(1, 3)}`;
+        }
+    }
+
+    async onAsmRepSave() {
+        const ar = this.state.asmRep;
+        const f = ar.form;
+        if (!f || ar.saving) {
+            return;
+        }
+        this.onAsmRepTimeBlur("time_in");
+        this.onAsmRepTimeBlur("time_out");
+        ar.saving = true;
+        try {
+            const saved = await this.orm.call("store.asm.work.report", "save_asm_work_report", [f]);
+            ar.form = null;
+            // Đảm bảo phiếu vừa lưu luôn hiển thị ngay (nếu đang lọc khác tháng hoặc khác cửa hàng)
+            if (saved?.work_date && saved.work_date.slice(0, 7) !== ar.month) {
+                ar.month = saved.work_date.slice(0, 7);
+            }
+            if (ar.storeId && saved?.store_id && String(saved.store_id) !== String(ar.storeId)) {
+                ar.storeId = "";
+            }
+            this.notification.add("Đã lưu báo cáo CV ASM (Trạng thái: Hoàn thành).", { type: "success" });
+            await this.loadAsmReports();
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            ar.saving = false;
+        }
+    }
+
+    async onAsmRepDelete(row) {
+        if (!window.confirm(`Xóa báo cáo ngày ${row.date_label} của cửa hàng ${row.store_name}?`)) {
+            return;
+        }
+        try {
+            await this.orm.call("store.asm.work.report", "delete_asm_work_report", [row.id]);
+            this.notification.add("Đã xóa báo cáo CV ASM.", { type: "success" });
+            await this.loadAsmReports();
+        } catch (error) {
+            this.notifyError(error);
+        }
     }
 
     // Lịch xếp ca: tab của Checklist CV ASM chỉ hiện lịch chức vụ ASM; tab của NVBH không hiện lịch ASM
@@ -4490,7 +4692,7 @@ export class StoreChecklistShell extends Component {
     navChildClass(child) {
         const cls = ["store-tn-" + child.id];
         // mục "Công việc" vẫn sáng khi đang ở tab Lịch làm việc
-        if (this.state.activeNav === child.id || (child.id === ({ cht: "nvbh_cht", asm: "nvbh_asmcv" }[this.state.job.kind] || "nvbh_jobs") && this.state.activeNav === "nvbh_schedule") || (child.id === "nvbh_mg_staff" && this.state.activeNav === "nvbh_mg_eval")) {
+        if (this.state.activeNav === child.id || (child.id === ({ cht: "nvbh_cht", asm: "nvbh_asmcv" }[this.state.job.kind] || "nvbh_jobs") && (this.state.activeNav === "nvbh_schedule" || this.state.activeNav === "nvbh_asm_report")) || (child.id === "nvbh_mg_staff" && this.state.activeNav === "nvbh_mg_eval")) {
             cls.push("is-active");
         }
         if (child.sub) {
@@ -4883,6 +5085,7 @@ export class StoreChecklistShell extends Component {
             report_flow_nvbh: "SƠ ĐỒ QUY TRÌNH CHECK LIST NHÂN VIÊN BÁN HÀNG",
             nvbh_cht: "CHECK LIST CÔNG VIỆC CỬA HÀNG TRƯỞNG",
             nvbh_asmcv: "CHECK LIST CÔNG VIỆC ASM",
+            nvbh_asm_report: "BÁO CÁO CÔNG VIỆC ASM",
             nvbh_audit: this.state.aud.view === "list" ? "DANH SÁCH PHIẾU AUDIT CỬA HÀNG (ASM)" : "PHIẾU AUDIT & ĐÁNH GIÁ CỬA HÀNG (ASM)",
         }[this.state.activeNav] || "";
     }

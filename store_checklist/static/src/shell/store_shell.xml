@@ -21,7 +21,7 @@
                 <h3>Bạn chưa được phân quyền</h3>
                 <p>Tài khoản của bạn chưa được gán nhóm phân quyền Checklist Audit. Vui lòng liên hệ Quản lý để được cấp quyền.</p>
             </div>
-            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_revenue' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
+            <div class="o_store_list_wrap" t-att-class="(showOwnAdd or showSettingsAdd ? 'has-own-add ' : '') + (state.isManager ? '' : 'is-plain-user')" t-if="state.contentMode === 'list' and (state.embeddedViewProps or reportNavs.includes(state.activeNav) or (state.activeNav === 'access' and state.perm) or (state.activeNav === 'photo_retention' and state.photoCfg) or state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_revenue' or state.activeNav === 'report_nvbh_asm' or state.activeNav === 'report_nvbh_perf' or state.activeNav === 'report_flow_nvbh' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv' or state.activeNav === 'nvbh_asm_report' or state.activeNav === 'nvbh_audit' or state.activeNav === 'nvbh_schedule' or state.activeNav === 'nvbh_done' or isMgTabs)">
                 <div class="o_store_pick_notice" t-if="needStorePick and !(isAuditListNav and state.auditStoreIds === false)"><i class="fa fa-info-circle"/> <t t-if="isAuditListNav and state.auditStoreIds and state.auditStoreIds.length">Đang hiện phiếu của tất cả cửa hàng bạn được phân quyền. Chọn một cửa hàng ở bộ lọc để xem riêng.</t><t t-elif="isAuditListNav">Bạn chưa được phân quyền cửa hàng nào — đang hiện các phiếu do bạn đánh giá.</t><t t-else="">Hãy chọn một cửa hàng ở bộ lọc để xem dữ liệu.</t></div>
                 <div class="o_store_back" t-if="state.canBack">
                     <button type="button" t-on-click="goBack"><i class="fa fa-arrow-left"/> Quay lại</button>
@@ -32,7 +32,7 @@
                     <img class="o_store_audit_icon" src="/store_checklist/static/src/shell/img/audit_icon.png" alt=""/>
                     <div>
                         <h2 t-esc="listTitle"/>
-                        <p t-esc="state.activeNav === 'nvbh_revenue' ? (state.rev.tab === 'target' ? 'Nhập Target Cửa Hàng và Tỷ trọng % từng nhân viên • Target NV tự động quy đổi' : state.rev.tab === 'month' ? 'Thể hiện tất cả doanh thu cửa hàng trong tháng • Bấm vào cửa hàng để xem chi tiết theo nhân viên &amp; từng ngày' : 'Tự động liên kết Lịch xếp ca hằng ngày (Họ và tên NV, ID) • Nhập doanh thu xong bấm Lưu mới thực hiện, tự khóa sau 48h') : state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
+                        <p t-esc="state.activeNav === 'nvbh_revenue' ? (state.rev.tab === 'target' ? 'Nhập Target Cửa Hàng và Tỷ trọng % từng nhân viên • Target NV tự động quy đổi' : state.rev.tab === 'month' ? 'Thể hiện tất cả doanh thu cửa hàng trong tháng • Bấm vào cửa hàng để xem chi tiết theo nhân viên &amp; từng ngày' : 'Tự động liên kết Lịch xếp ca hằng ngày (Họ và tên NV, ID) • Nhập doanh thu xong bấm Lưu mới thực hiện, tự khóa sau 48h') : state.activeNav === 'nvbh_audit' ? 'Giám sát trực tiếp tại cửa hàng • Ghi nhận kết quả kèm dẫn chứng thực tế &amp; Yêu cầu khắc phục (Action Plan)' : state.activeNav === 'nvbh_asm_report' ? 'Ghi nhận chi tiết công việc thực tế của ASM tại từng cửa hàng quản lý (lưu phiếu tự động Hoàn thành)' : state.activeNav === 'nvbh_asmcv' ? 'Theo lịch xếp ca ASM: ASM check list công việc (Danh sách công việc ASM) → RSM đánh giá (nếu có) → Admin / Admin tổng duyệt kết quả cuối cùng' : state.activeNav === 'nvbh_cht' ? 'Theo lịch xếp ca: CHT check list công việc (Danh sách công việc CHT) → thông báo ASM → ASM đánh giá, quyết định điểm cuối cùng' : state.activeNav === 'report_flow_nvbh' ? 'Quy trình: lịch xếp ca → NVBH check list (D → hết D+4) → CHT đánh giá (4 ngày) → ASM chốt điểm theo lần ghé thăm (hết tuần kế tiếp) → báo cáo' : state.activeNav === 'report_nvbh_perf' ? 'Đánh giá hiệu suất từng nhân viên bán hàng: 5 nhóm công việc checklist, hoàn thành việc, kỷ luật, doanh số, thái độ' : state.activeNav === 'report_nvbh_asm' ? 'Theo dõi và quản lý hiệu quả hoạt động các cửa hàng theo ASM' : state.activeNav === 'report_sup' ? 'Tổng quan hiệu suất kiểm tra và đánh giá cửa hàng trong tháng' : state.activeNav === 'report_flow' ? 'Quy trình 4 bước: giám sát kiểm tra → xử lý vi phạm → kiểm soát → báo cáo giám đốc' : state.activeNav === 'report_manager' ? 'Thống kê, đánh giá hiệu quả quản lý trong tháng' : state.activeNav === 'report_rank' ? 'Theo dõi kết quả đánh giá và xếp loại cửa hàng theo tháng' : state.activeNav === 'violation_stores' ? 'Các cửa hàng đã có biên bản do giám sát kiểm tra' : state.activeNav === 'nvbh_staff' ? 'Danh sách nhân viên bán hàng của các cửa hàng được đánh giá' : state.activeNav === 'nvbh_today' ? 'Ca làm việc hôm nay của nhân viên theo Lịch xếp ca, nhóm theo miền và cửa hàng' : isMgTabs ? 'Theo dõi hồ sơ nhân sự và chấm điểm công việc theo ngày / theo tuần' : state.activeNav === 'nvbh_done' ? (state.done.tab === 'total' ? 'Tổng hợp theo dõi và kiểm tra checklist công việc của nhân viên theo ngày hằng tháng' : 'Tổng hợp theo dõi ngày công theo nhân viên, bấm vào tên để xem chi tiết từng ngày') : state.activeNav === 'nvbh_schedule' ? 'Phân ca làm việc cho nhân viên bán hàng theo cửa hàng và ngày' : state.activeNav === 'nvbh_jobs' ? 'Tích làm việc theo ca hằng ngày → gửi thông báo CHT → CHT đánh giá → ASM chốt điểm cuối cùng (theo lần ghé thăm)' : state.activeNav === 'violation_all' ? 'Toàn bộ lỗi của các biên bản giám sát kèm nội dung xử lý' : ['gs', 'report_gs'].includes(state.activeNav) ? 'Theo dõi và quản lý các phiếu giám sát cửa hàng' : 'Theo dõi và quản lý các phiếu đánh giá cửa hàng'"/>
                     </div>
                     <div class="asm_banner_stats" t-if="state.activeNav === 'report_nvbh_asm' and state.kpiAsm.data">
                         <div class="stat"><span>Cửa hàng</span><b t-esc="state.kpiAsm.data.region.store_count"/></div>
@@ -1952,6 +1952,192 @@
                         </section>
                     </t>
                     </t>
+                </div>
+                <!-- ===== Tab 3 trong Checklist CV ASM: Báo cáo CV ASM ===== -->
+                <div class="o_store_asm_rep_page" t-if="state.activeNav === 'nvbh_asm_report'">
+                    <t t-set="ar" t-value="state.asmRep"/>
+                    <div class="ar_toolbar">
+                        <div class="ar_filters">
+                            <label><span>Tháng</span>
+                                <select t-on-change="(ev) => this.onAsmRepFilter('month', ev)">
+                                    <option t-foreach="revMonthOptions" t-as="m" t-key="m.value" t-att-value="m.value" t-att-selected="m.value === ar.month" t-esc="m.label"/>
+                                </select>
+                            </label>
+                            <label><span>Cửa hàng</span>
+                                <select t-att-value="ar.storeId" t-on-change="(ev) => this.onAsmRepFilter('storeId', ev)">
+                                    <option value="" t-att-selected="!ar.storeId">Tất cả cửa hàng quản lý</option>
+                                    <option t-foreach="ar.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + ar.storeId)" t-esc="st.display_name"/>
+                                </select>
+                            </label>
+                            <label><span>Tìm kiếm</span>
+                                <input type="search" placeholder="Cửa hàng, ASM, nội dung..." t-att-value="ar.q" t-on-change="(ev) => this.onAsmRepFilter('q', ev)"/>
+                            </label>
+                            <div class="ar_grp_tools" t-if="ar.rows.length">
+                                <span class="ar_cnt"><t t-esc="asmRepGroups.length"/> cửa hàng · <t t-esc="ar.rows.length"/> phiếu</span>
+                                <button type="button" class="ar_link_btn" t-on-click="() => this.asmRepExpandAll(true)"><i class="fa fa-plus-square-o"/> Mở tất cả</button>
+                                <button type="button" class="ar_link_btn" t-on-click="() => this.asmRepExpandAll(false)"><i class="fa fa-minus-square-o"/> Thu gọn</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary ar_add_btn" t-on-click="onAsmRepNew">
+                            <i class="fa fa-plus"/> Tạo báo cáo CV ASM
+                        </button>
+                    </div>
+
+                    <!-- Form tạo / chỉnh sửa báo cáo -->
+                    <div class="ar_modal" t-if="ar.form">
+                    <div class="ar_form_card">
+                        <t t-set="f" t-value="ar.form"/>
+                        <div class="ar_form_hd">
+                            <span><i class="fa fa-file-text-o"/> <t t-esc="f.id ? 'Chỉnh sửa báo cáo CV ASM' : 'Tạo báo cáo CV ASM mới'"/></span>
+                            <button type="button" class="ar_form_x" t-on-click="onAsmRepCancel" title="Đóng"><i class="fa fa-times"/></button>
+                        </div>
+                        <div class="ar_form_grid">
+                            <label><span>Ngày (dd/mm/yyyy) *</span>
+                                <DateTimeInput t-key="'ar_dt_' + f.id + '_' + f.work_date" type="'date'" format="'dd/MM/yyyy'" value="ymdToDt(f.work_date)" onChange.bind="onAsmRepDatePick" class="'o_store_date_input'"/>
+                            </label>
+                            <label><span>Tên cửa hàng *</span>
+                                <select t-on-change="(ev) => { f.store_id = ev.target.value; }">
+                                    <option value="">-- Chọn cửa hàng quản lý --</option>
+                                    <option t-foreach="ar.stores" t-as="st" t-key="st.id" t-att-value="st.id" t-att-selected="('' + st.id) === ('' + f.store_id)" t-esc="st.display_name"/>
+                                </select>
+                            </label>
+                            <label><span>Giờ vào (24h, vd: 10:30)</span>
+                                <input type="text" inputmode="numeric" maxlength="5" placeholder="10:30" t-att-value="f.time_in" t-on-input="(ev) => { f.time_in = ev.target.value; }" t-on-blur="() => this.onAsmRepTimeBlur('time_in')"/>
+                            </label>
+                            <label><span>Giờ ra (24h, vd: 12:00)</span>
+                                <input type="text" inputmode="numeric" maxlength="5" placeholder="12:00" t-att-value="f.time_out" t-on-input="(ev) => { f.time_out = ev.target.value; }" t-on-blur="() => this.onAsmRepTimeBlur('time_out')"/>
+                            </label>
+                            <div class="ar_field ar_full_all">
+                                <span class="ar_lbl">Nhóm công việc</span>
+                                <div class="ar_ms_wrap">
+                                    <button type="button" t-att-class="'ar_ms_btn' + (ar.grpOpen ? ' is-open' : '') + (f.work_group_ids.length ? ' has-val' : '')"
+                                            t-on-click="() => { ar.grpOpen = !ar.grpOpen; }">
+                                        <span class="ar_ms_txt" t-esc="asmRepGroupSummary"/>
+                                        <i t-attf-class="fa #{ar.grpOpen ? 'fa-chevron-up' : 'fa-chevron-down'}"/>
+                                    </button>
+                                    <div class="ar_ms_menu" t-if="ar.grpOpen">
+                                        <label class="ar_ms_opt" t-foreach="ar.groups" t-as="g" t-key="g.id"
+                                               t-att-class="'ar_ms_opt' + (f.work_group_ids.includes(g.id) ? ' active' : '')">
+                                            <input type="checkbox" t-att-checked="f.work_group_ids.includes(g.id)" t-on-change="() => this.toggleAsmRepGroup(g.id)"/>
+                                            <span t-esc="g.name"/>
+                                        </label>
+                                        <div class="ar_ms_foot">
+                                            <span class="ar_ms_cnt">Đã chọn <b t-esc="f.work_group_ids.length"/> nhóm</span>
+                                            <button type="button" class="btn btn-sm btn-primary" t-on-click="() => { ar.grpOpen = false; }">Xong</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <label><span>Kết quả đạt được</span>
+                                <select t-on-change="(ev) => { f.result = ev.target.value; }">
+                                    <option value="ok" t-att-selected="f.result === 'ok'">Không có vấn đề gì</option>
+                                    <option value="discrepancy" t-att-selected="f.result === 'discrepancy'">Sai lệch</option>
+                                    <option value="violation" t-att-selected="f.result === 'violation'">Phát hiện vi phạm</option>
+                                </select>
+                            </label>
+                            <label><span>Chi tiết lỗi (số lượng)</span>
+                                <input type="number" min="0" step="1" t-att-value="f.error_count" t-on-input="(ev) => { f.error_count = ev.target.value; }"/>
+                            </label>
+                            <label><span>Đánh giá</span>
+                                <select t-on-change="(ev) => { f.rating = ev.target.value; }">
+                                    <option value="excellent" t-att-selected="f.rating === 'excellent'">Xuất sắc</option>
+                                    <option value="pass" t-att-selected="f.rating === 'pass'">Đạt</option>
+                                    <option value="need_improve" t-att-selected="f.rating === 'need_improve'">Cần cải thiện</option>
+                                    <option value="average" t-att-selected="f.rating === 'average'">Trung bình</option>
+                                    <option value="fail" t-att-selected="f.rating === 'fail'">Chưa đạt</option>
+                                </select>
+                            </label>
+                            <label class="ar_full"><span>Mục tiêu / kế hoạch</span>
+                                <textarea rows="2" placeholder="Nhập mục tiêu / kế hoạch..." t-on-input="(ev) => { f.goal_plan = ev.target.value; }" t-esc="f.goal_plan"/>
+                            </label>
+                            <label class="ar_full"><span>Nội dung công việc</span>
+                                <textarea rows="2" placeholder="Nhập nội dung công việc..." t-on-input="(ev) => { f.work_content = ev.target.value; }" t-esc="f.work_content"/>
+                            </label>
+                            <label class="ar_full"><span>Ghi chú</span>
+                                <textarea rows="2" placeholder="Nhập ghi chú..." t-on-input="(ev) => { f.note = ev.target.value; }" t-esc="f.note"/>
+                            </label>
+                        </div>
+                        <div class="ar_form_foot">
+                            <button type="button" class="btn btn-primary" t-att-disabled="ar.saving" t-on-click="onAsmRepSave">
+                                <i t-att-class="ar.saving ? 'fa fa-spinner fa-spin' : 'fa fa-floppy-o'"/> Lưu phiếu (Hoàn thành)
+                            </button>
+                            <button type="button" class="btn btn-secondary" t-att-disabled="ar.saving" t-on-click="onAsmRepCancel">Hủy</button>
+                        </div>
+                    </div>
+                    </div>
+
+                    <!-- Bảng danh sách Báo cáo CV ASM -->
+                    <div class="ar_table_wrap" t-if="ar.rows.length">
+                        <table class="ar_table">
+                            <thead>
+                                <tr>
+                                    <th>Ngày</th>
+                                    <th>Tên cửa hàng</th>
+                                    <th>Thời gian</th>
+                                    <th>Tên ASM</th>
+                                    <th>Nhóm công việc</th>
+                                    <th>Mục tiêu / kế hoạch</th>
+                                    <th>Nội dung công việc</th>
+                                    <th>Kết quả đạt được</th>
+                                    <th>Chi tiết lỗi</th>
+                                    <th>Đánh giá</th>
+                                    <th>Ghi chú</th>
+                                    <th>Trạng thái</th>
+                                    <th>Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="asmRepGroups" t-as="grp" t-key="grp.key">
+                                <tr class="ar_grp_row" t-on-click="() => this.toggleAsmRepStore(grp.key)">
+                                    <td colspan="13">
+                                        <i t-attf-class="fa #{grp.open ? 'fa-caret-down' : 'fa-caret-right'} ar_grp_caret"/>
+                                        <b t-esc="grp.name"/> (<t t-esc="grp.rows.length"/>)
+                                    </td>
+                                </tr>
+                                <tr t-foreach="grp.open ? grp.rows : []" t-as="row" t-key="row.id">
+                                    <td class="c b" data-label="Ngày" t-esc="row.date_label"/>
+                                    <td class="l b" data-label="Tên cửa hàng" t-esc="row.store_name"/>
+                                    <td class="c ar_time" data-label="Thời gian">
+                                        <t t-if="row.time_in or row.time_out">
+                                            <span t-if="row.time_in">Vào: <b t-esc="row.time_in"/></span>
+                                            <span t-if="row.time_out">Ra: <b t-esc="row.time_out"/></span>
+                                        </t>
+                                        <span t-else="" class="text-muted">-</span>
+                                    </td>
+                                    <td class="l b" data-label="Tên ASM" t-esc="row.user_name || '-'"/>
+                                    <td class="l" data-label="Nhóm công việc">
+                                        <div class="ar_grp_tags" t-if="(row.work_group_names || []).length">
+                                            <span class="ar_grp_tag" t-foreach="row.work_group_names" t-as="gn" t-key="gn_index" t-esc="gn"/>
+                                        </div>
+                                        <span t-else="" t-esc="row.work_group || '-'"/>
+                                    </td>
+                                    <td class="l ar_pre" data-label="Mục tiêu / kế hoạch" t-esc="row.goal_plan || '-'"/>
+                                    <td class="l ar_pre" data-label="Nội dung công việc" t-esc="row.work_content || '-'"/>
+                                    <td class="c" data-label="Kết quả đạt được">
+                                        <span t-attf-class="ar_badge res-#{row.result}" t-esc="row.result_label"/>
+                                    </td>
+                                    <td class="c b" data-label="Chi tiết lỗi">
+                                        <span t-att-class="row.error_count &gt; 0 ? 'ar_err_pos' : ''" t-esc="row.error_count"/>
+                                    </td>
+                                    <td class="c" data-label="Đánh giá">
+                                        <span t-attf-class="ar_badge rat-#{row.rating}" t-esc="row.rating_label"/>
+                                    </td>
+                                    <td class="l ar_pre" data-label="Ghi chú" t-esc="row.note || '-'"/>
+                                    <td class="c" data-label="Trạng thái">
+                                        <span t-attf-class="ar_badge st-#{row.state}" t-esc="row.state_label"/>
+                                    </td>
+                                    <td class="c ar_ops" data-label="Thao tác">
+                                        <button type="button" class="ar_op_btn" t-if="row.can_edit" title="Sửa" t-on-click="() => this.onAsmRepEdit(row)"><i class="fa fa-pencil"/></button>
+                                        <button type="button" class="ar_op_btn del" t-if="row.can_edit" title="Xóa" t-on-click="() => this.onAsmRepDelete(row)"><i class="fa fa-trash"/></button>
+                                    </td>
+                                </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="o_store_job_empty" t-elif="!ar.busy">
+                        <i class="fa fa-info-circle"/> Chưa có báo cáo công việc ASM nào trong tháng đã chọn. Bấm <b>+ Tạo báo cáo CV ASM</b> để thêm mới.
+                    </div>
                 </div>
                 <div class="o_store_job_page" t-if="state.activeNav === 'nvbh_jobs' or state.activeNav === 'nvbh_cht' or state.activeNav === 'nvbh_asmcv'">
                     <!-- Checklist CV CHT: Bảng Checklist Tổng theo tháng, giao diện ứng dụng di động (một cột như mẫu LUG.vn Mobile) -->

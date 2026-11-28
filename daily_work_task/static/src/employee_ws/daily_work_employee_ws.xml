@@ -479,7 +479,7 @@
                                                             <i class="fa fa-undo"/> QL trả lại
                                                         </span>
                                                     </td>
-                                                    <td class="o_ews_col_date" t-esc="task.assign_date_display || '—'"/>
+                                                    <td t-att-class="'o_ews_col_date' + (isStartDateHighlight(task) ? ' o_ews_deadline_today' : '')" t-esc="task.assign_date_display || '—'"/>
                                                     <td t-att-class="'o_ews_col_date' + (isDeadlineToday(task) ? ' o_ews_deadline_today' : '')"
                                                         t-esc="task.deadline_display"/>
                                                     <td t-att-class="'o_ews_col_date o_ews_col_done_date' + (task.date_done ? ' is-done' : '')"

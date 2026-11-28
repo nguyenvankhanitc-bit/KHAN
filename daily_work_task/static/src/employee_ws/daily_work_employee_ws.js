@@ -960,6 +960,22 @@ export class DailyWorkEmployeeWs extends Component {
         return task.deadline === this._formatIsoDate(new Date());
     }
 
+    // Đã đến Ngày bắt đầu (Ngày bắt đầu <= hôm nay <= Deadline) hoặc Deadline = hôm nay:
+    // tô cột Ngày bắt đầu cùng màu cột Deadline
+    isStartDateHighlight(task) {
+        if (!task) {
+            return false;
+        }
+        if (this.isDeadlineToday(task)) {
+            return true;
+        }
+        const today = this._formatIsoDate(new Date());
+        if (!task.assign_date || task.assign_date > today) {
+            return false;
+        }
+        return !task.deadline || today <= task.deadline;
+    }
+
     get monthTitle() {
         return `Tổng công việc tháng ${String(this.state.monthMonth).padStart(2, "0")}/${this.state.monthYear}`;
     }

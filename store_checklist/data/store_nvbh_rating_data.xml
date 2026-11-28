@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="1">
-    <record id="nvbh_rating_excellent" model="store.nvbh.rating"><field name="name">XUẤT SẮC</field><field name="min_score">90</field><field name="tone">green</field></record>
-    <record id="nvbh_rating_good" model="store.nvbh.rating"><field name="name">ĐẠT TỐT</field><field name="min_score">80</field><field name="tone">blue</field></record>
-    <record id="nvbh_rating_improve" model="store.nvbh.rating"><field name="name">CẦN CẢI THIỆN</field><field name="min_score">60</field><field name="tone">orange</field></record>
-    <record id="nvbh_rating_fail" model="store.nvbh.rating"><field name="name">KHÔNG ĐẠT</field><field name="min_score">0</field><field name="tone">red</field></record>
+    <record id="nvbh_rating_excellent" model="store.nvbh.rating" forcecreate="0"><field name="name">XUẤT SẮC</field><field name="min_score">90</field><field name="tone">green</field></record>
+    <record id="nvbh_rating_good" model="store.nvbh.rating" forcecreate="0"><field name="name">ĐẠT TỐT</field><field name="min_score">80</field><field name="tone">blue</field></record>
+    <record id="nvbh_rating_improve" model="store.nvbh.rating" forcecreate="0"><field name="name">CẦN CẢI THIỆN</field><field name="min_score">60</field><field name="tone">orange</field></record>
+    <record id="nvbh_rating_fail" model="store.nvbh.rating" forcecreate="0"><field name="name">KHÔNG ĐẠT</field><field name="min_score">0</field><field name="tone">red</field></record>
 </odoo>

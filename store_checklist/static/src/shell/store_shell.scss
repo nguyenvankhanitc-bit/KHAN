@@ -5081,6 +5081,33 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
         &.st-draft { background: #f1f5f9; color: #64748b; }
     }
     .ar_ops { white-space: nowrap; }
+    .ar_chk_cell { white-space: nowrap; }
+    .ar_chk_btn {
+        display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 7px; font-size: 11.5px; font-weight: 700; cursor: pointer; border: 1px solid transparent; transition: all .12s;
+        &.in { background: #dcfce7; border-color: #86efac; color: #15803d; &:hover { background: #16a34a; color: #fff; } }
+        &.out { background: #ffedd5; border-color: #fdba74; color: #c2410c; &:hover { background: #ea580c; color: #fff; } }
+        &:disabled { opacity: .6; cursor: wait; }
+    }
+    .ar_chk_info {
+        display: flex; flex-direction: column; align-items: center; gap: 2px; line-height: 1.25;
+        .ar_chk_time {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 6px; font-size: 12px;
+            &.in { background: #dcfce7; color: #15803d; }
+            &.out { background: #dbeafe; color: #1d4ed8; }
+        }
+        .ar_chk_dt { font-size: 10.5px; color: #64748b; }
+        .ar_chk_gps { font-size: 11px; font-weight: 700; color: #2563eb; text-decoration: none; &:hover { text-decoration: underline; } }
+        .ar_loc {
+            display: inline-block; margin-top: 2px; padding: 1px 7px; border-radius: 10px;
+            font-size: 10.5px; font-weight: 700; white-space: nowrap; cursor: help;
+            &.verified, &.valid { background: #dcfce7; color: #15803d; }
+            &.network { background: #e0f2fe; color: #0369a1; }
+            &.verify { background: #fef3c7; color: #b45309; }
+            &.invalid { background: #fee2e2; color: #b91c1c; }
+            &.unknown { background: #f1f5f9; color: #475569; }
+        }
+        .ar_auto { display: block; margin-top: 2px; font-size: 10px; font-weight: 700; color: #7c3aed; cursor: help; }
+    }
     .ar_op_btn {
         border: 1px solid #cbd5e1; background: #fff; color: #2563eb; border-radius: 6px; width: 28px; height: 28px; margin: 0 2px; cursor: pointer;
         &:hover { background: #eff6ff; border-color: #93c5fd; }

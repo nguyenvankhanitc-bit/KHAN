@@ -110,6 +110,10 @@ export class EmployeeStoreMap extends Component {
                         "store_ids",
                         "device_name",
                         "device_type",
+                        "last_ip",
+                        "last_ip_time",
+                        "ip_store_id",
+                        "ip_store_status",
                     ],
                     { order: "name asc" }
                 ),
@@ -236,10 +240,26 @@ export class EmployeeStoreMap extends Component {
 
         const boundsPoints = [];
 
-        // 1. Kiểm tra vị trí của nhân viên
-        const hasEmpCoords = employee.last_latitude && employee.last_longitude;
+        // 1. Kiểm tra vị trí của nhân viên: GPS; chưa có GPS mà đang dùng mạng cửa hàng (IP trùng IP WAN) -> đặt tại cửa hàng đó
+        const ipStore = employee.ip_store_id ? this.state.storesById[employee.ip_store_id[0]] : null;
+        const ipStoreName = employee.ip_store_id ? employee.ip_store_id[1] : "";
+        let empLat = employee.last_latitude;
+        let empLng = employee.last_longitude;
+        let byIp = false;
+        if (!(empLat && empLng) && employee.ip_store_status === "at_store" && ipStore && ipStore.latitude && ipStore.longitude) {
+            empLat = ipStore.latitude;
+            empLng = ipStore.longitude;
+            byIp = true;
+        }
+        const ipLine = employee.ip_store_id
+            ? `<div class="mt-1 small py-1 px-2 rounded border ${employee.ip_store_status === "at_store" ? "bg-success-subtle text-success" : "bg-light text-muted"}">
+                   <i class="fa fa-wifi me-1"></i>${employee.ip_store_status === "at_store" ? "Đang dùng mạng cửa hàng" : "Đã dùng mạng cửa hàng"} <b>${ipStoreName}</b>
+                   <div class="text-muted">IP ${employee.last_ip || ""} · ${employee.last_ip_time || ""}</div>
+               </div>`
+            : (employee.last_ip ? `<div class="mt-1 text-muted small">IP truy cập: ${employee.last_ip}</div>` : "");
+        const hasEmpCoords = Boolean(empLat && empLng);
         if (hasEmpCoords) {
-            const empCoords = [employee.last_latitude, employee.last_longitude];
+            const empCoords = [empLat, empLng];
             const empMarker = window.L.marker(empCoords, {
                 icon: this.createEmployeeIcon(employee.name),
                 zIndexOffset: 1000,
@@ -253,8 +273,11 @@ export class EmployeeStoreMap extends Component {
                         <i class="fa ${employee.device_type === 'mobile' ? 'fa-mobile' : employee.device_type === 'tablet' ? 'fa-tablet' : 'fa-laptop'} me-1 text-primary"></i>
                         <span>${employee.device_name}</span>
                     </div>` : ''}
-                    <div class="small mt-1">Cập nhật lúc: <b>${employee.last_location_time || "Chưa rõ"}</b></div>
-                    <div class="mt-1 text-muted small">Tọa độ: ${employee.last_latitude.toFixed(5)}, ${employee.last_longitude.toFixed(5)}</div>
+                    ${ipLine}
+                    ${byIp
+                        ? `<div class="mt-1 text-muted small">Vị trí theo mạng cửa hàng (chưa có GPS)</div>`
+                        : `<div class="small mt-1">Cập nhật lúc: <b>${employee.last_location_time || "Chưa rõ"}</b></div>
+                    <div class="mt-1 text-muted small">Tọa độ: ${empLat.toFixed(5)}, ${empLng.toFixed(5)}</div>`}
                 </div>
             `);
             this.employeeLayerGroup.addLayer(empMarker);
@@ -277,15 +300,15 @@ export class EmployeeStoreMap extends Component {
                 // Nếu có vị trí nhân viên -> vẽ tia mạng lưới (network ray polyline)
                 if (hasEmpCoords) {
                     const distKm = this.calculateHaversineKm(
-                        employee.last_latitude,
-                        employee.last_longitude,
+                        empLat,
+                        empLng,
                         store.latitude,
                         store.longitude
                     );
 
                     const polyline = window.L.polyline(
                         [
-                            [employee.last_latitude, employee.last_longitude],
+                            [empLat, empLng],
                             [store.latitude, store.longitude],
                         ],
                         {

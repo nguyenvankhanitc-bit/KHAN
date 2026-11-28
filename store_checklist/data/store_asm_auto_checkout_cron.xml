@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Mỗi 10 phút: Báo cáo CV ASM đã Check in, quá 30 phút không còn tín hiệu Odoo trên mạng (wifi) cửa hàng -> tự Check out
+         tại thời điểm lần cuối thấy. Số phút chỉnh ở tham số hệ thống store_checklist.asm_auto_checkout_minutes. -->
+    <data noupdate="1">
+        <record id="cron_store_asm_auto_checkout" model="ir.cron">
+            <field name="name">Checklist Audit: Tự Check out Báo cáo CV ASM khi rời mạng cửa hàng</field>
+            <field name="model_id" ref="model_store_asm_work_report"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_auto_check_out()</field>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">10</field>
+            <field name="interval_type">minutes</field>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+</odoo>

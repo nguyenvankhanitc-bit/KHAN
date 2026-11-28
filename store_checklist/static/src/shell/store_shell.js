@@ -4680,6 +4680,56 @@ export class StoreChecklistShell extends Component {
         }
     }
 
+    getAsmGps() {
+        return new Promise((resolve) => {
+            if (!navigator.geolocation) {
+                return resolve({ lat: false, lng: false });
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
+                () => resolve({ lat: false, lng: false, accuracy: false }),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+            );
+        });
+    }
+
+    async onAsmRepCheck(row, actionType) {
+        const ar = this.state.asmRep;
+        const key = `${row.id}_${actionType}`;
+        if (ar.checking) {
+            return;
+        }
+        ar.checking = key;
+        try {
+            const gps = await this.getAsmGps();
+            const updated = await this.orm.call("store.asm.work.report", "do_asm_check", [
+                row.id,
+                actionType,
+                gps.lat,
+                gps.lng,
+                gps.accuracy || false,
+            ]);
+            const idx = (ar.rows || []).findIndex((r) => r.id === row.id);
+            if (idx >= 0 && updated) {
+                ar.rows[idx] = updated;
+            }
+            const lbl = actionType === "in" ? "Check in" : "Check out";
+            const tStr = actionType === "in" ? updated?.check_in_time : updated?.check_out_time;
+            const gpsNote = gps.lat ? " (đã ghi nhận GPS)" : "";
+            const st = actionType === "in" ? updated?.check_in_status : updated?.check_out_status;
+            const stLbl = actionType === "in" ? updated?.check_in_status_label : updated?.check_out_status_label;
+            const bad = ["verify", "invalid", "unknown"].includes(st);
+            this.notification.add(
+                `Đã ${lbl} lúc ${tStr || ""}${gpsNote}.${stLbl ? ` Vị trí: ${stLbl}.` : ""}`,
+                { type: bad ? "warning" : "success" }
+            );
+        } catch (error) {
+            this.notifyError(error);
+        } finally {
+            ar.checking = "";
+        }
+    }
+
     // Lịch xếp ca: tab của Checklist CV ASM chỉ hiện lịch chức vụ ASM; tab của NVBH không hiện lịch ASM
     schedDomain() {
         const base = this.listDomain(this.listBase || []);

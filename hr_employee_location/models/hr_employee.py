@@ -74,6 +74,30 @@ class HrEmployee(models.Model):
         readonly=True,
         help="Số thiết bị tối đa được phép đăng nhập đồng thời được cấu hình cho tài khoản người dùng liên kết.",
     )
+    last_ip = fields.Char(
+        string="IP truy cập gần nhất",
+        readonly=True,
+        help="IP mạng mà nhân viên dùng khi mở Odoo lần gần nhất.",
+    )
+    last_ip_time = fields.Datetime(
+        string="Thời gian ghi nhận IP",
+        readonly=True,
+    )
+    ip_store_id = fields.Many2one(
+        "hr.store",
+        string="Cửa hàng theo IP",
+        readonly=True,
+        help="Cửa hàng có IP WAN trùng IP truy cập gần nhất của nhân viên (đang dùng mạng / wifi cửa hàng).",
+    )
+    ip_store_status = fields.Selection(
+        [
+            ("at_store", "Đang ở cửa hàng (mạng CH)"),
+            ("was_store", "Đã ở cửa hàng (>1h)"),
+            ("none", "Không ở mạng cửa hàng"),
+        ],
+        string="Theo mạng cửa hàng",
+        compute="_compute_ip_store_status",
+    )
     gps_status = fields.Selection(
         [
             ("active", "Đang hoạt động (GPS mới)"),
@@ -84,6 +108,17 @@ class HrEmployee(models.Model):
         compute="_compute_gps_status",
         store=False,
     )
+
+    @api.depends("last_ip_time", "ip_store_id")
+    def _compute_ip_store_status(self):
+        now = fields.Datetime.now()
+        for emp in self:
+            if not emp.ip_store_id or not emp.last_ip_time:
+                emp.ip_store_status = "none"
+            elif emp.last_ip_time >= now - timedelta(hours=1):
+                emp.ip_store_status = "at_store"
+            else:
+                emp.ip_store_status = "was_store"
 
     @api.depends("last_location_time", "last_latitude", "last_longitude")
     def _compute_gps_status(self):
@@ -109,3 +144,7 @@ class HrEmployeePublic(models.Model):
     device_name = fields.Char(related="employee_id.device_name", readonly=True)
     device_type = fields.Selection(related="employee_id.device_type", readonly=True)
     max_device_count = fields.Integer(related="employee_id.max_device_count", readonly=True)
+    last_ip = fields.Char(related="employee_id.last_ip", readonly=True)
+    last_ip_time = fields.Datetime(related="employee_id.last_ip_time", readonly=True)
+    ip_store_id = fields.Many2one(related="employee_id.ip_store_id", readonly=True)
+    ip_store_status = fields.Selection(related="employee_id.ip_store_status", readonly=True)

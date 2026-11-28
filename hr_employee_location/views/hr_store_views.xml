@@ -12,9 +12,23 @@
                             string="Định vị tọa độ (geopy)"
                             class="btn-primary"
                             icon="fa-map-marker"/>
+                    <button name="action_sync_wan_ip"
+                            type="object"
+                            string="Cập nhật IP"
+                            class="btn-secondary"
+                            icon="fa-refresh"
+                            invisible="not ddns_domain"/>
+                    <button name="action_geolocate_by_ip"
+                            type="object"
+                            string="Ước tính vị trí theo IP"
+                            class="btn-secondary"
+                            icon="fa-globe"
+                            invisible="not ddns_domain"
+                            confirm="Vị trí theo IP chỉ gần đúng (có thể lệch vài đến vài chục km). IP WAN sẽ được gửi tới dịch vụ tra IP bên ngoài (ipwho.is / ipinfo.io). Tiếp tục?"/>
                 </header>
             </xpath>
-            <xpath expr="//field[@name='street']" position="after">
+            <!-- Tọa độ + Mạng cửa hàng (DDNS): hàng riêng rộng hết form, dưới khối thông tin chính -->
+            <xpath expr="//field[@name='street']/../.." position="after">
                 <group string="Tọa độ OpenStreetMap (Vĩ độ / Kinh độ)">
                     <group>
                         <field name="latitude"/>
@@ -24,9 +38,20 @@
                         <field name="geocode_status" widget="badge"
                                decoration-success="geocode_status == 'success'"
                                decoration-info="geocode_status == 'manual'"
+                               decoration-warning="geocode_status == 'ip'"
                                decoration-danger="geocode_status == 'failed'"
                                decoration-muted="geocode_status == 'draft'"/>
                         <field name="last_geocode_time"/>
+                    </group>
+                </group>
+                <group string="Mạng cửa hàng (DDNS)">
+                    <group>
+                        <field name="ddns_domain" placeholder="vd: sangtamlugkdv.ddns.net"/>
+                        <field name="wan_ip"/>
+                    </group>
+                    <group>
+                        <field name="last_ip_sync"/>
+                        <field name="ip_location" invisible="not ip_location"/>
                     </group>
                 </group>
             </xpath>

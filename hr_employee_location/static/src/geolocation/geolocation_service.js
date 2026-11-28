@@ -59,6 +59,7 @@ export const geolocationService = {
     start() {
         const STORAGE_KEY = "odoo_last_gps_sync";
         const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 phút throttle
+        const RESUME_MIN_GAP_MS = 60 * 1000; // mở lại app: tối đa 1 lần / phút
         // Đánh dấu thiết bị đã được hỏi quyền định vị (lưu lâu dài theo trình duyệt)
         const ASKED_KEY = "hr_employee_location_gps_asked";
 
@@ -81,15 +82,15 @@ export const geolocationService = {
             return "unknown";
         };
 
-        const queryAndSyncLocation = () => {
+        const queryAndSyncLocation = (minGapMs = SYNC_INTERVAL_MS) => {
             if (!user.userId) {
                 return;
             }
 
             const lastSync = parseInt(sessionStorage.getItem(STORAGE_KEY) || "0", 10);
             const now = Date.now();
-            if (now - lastSync < SYNC_INTERVAL_MS) {
-                return; // Chưa đến chu kỳ 5 phút
+            if (now - lastSync < minGapMs) {
+                return; // Chưa đến chu kỳ gửi tín hiệu
             }
 
             const info = getDeviceInfo();
@@ -126,8 +127,8 @@ export const geolocationService = {
                     () => sendPayload(null), // Nếu từ chối cấp quyền GPS hoặc timeout, vẫn đồng bộ thông tin thiết bị
                     {
                         enableHighAccuracy: false,
-                        timeout: 5000,
-                        maximumAge: 300000,
+                        timeout: 8000,
+                        maximumAge: 60000,
                     }
                 );
             };
@@ -149,10 +150,24 @@ export const geolocationService = {
         };
 
         // Kích hoạt khi tải trang và sau khi login
-        setTimeout(queryAndSyncLocation, 2000);
+        setTimeout(() => queryAndSyncLocation(), 2000);
+
+        // Odoo đang mở: gửi tín hiệu định kỳ 5 phút (để tự Check in / Check out theo wifi cửa hàng)
+        setInterval(() => {
+            if (document.visibilityState === "visible") {
+                queryAndSyncLocation();
+            }
+        }, SYNC_INTERVAL_MS);
+
+        // Mở lại app / chuyển lại tab Odoo: gửi ngay (tối đa 1 lần mỗi phút)
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "visible") {
+                queryAndSyncLocation(RESUME_MIN_GAP_MS);
+            }
+        });
 
         return {
-            syncNow: queryAndSyncLocation,
+            syncNow: () => queryAndSyncLocation(0),
             getDeviceInfo,
         };
     },

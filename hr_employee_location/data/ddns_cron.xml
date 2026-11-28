@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Cập nhật IP WAN từ Tên miền DDNS của cửa hàng: 15 phút / lần -->
+    <record id="ir_cron_hr_store_sync_wan_ip" model="ir.cron">
+        <field name="name">Cửa hàng: cập nhật IP WAN từ tên miền DDNS</field>
+        <field name="model_id" ref="hr_store.model_hr_store"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_sync_wan_ip()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

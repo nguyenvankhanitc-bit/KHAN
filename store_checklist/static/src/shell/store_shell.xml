@@ -2074,6 +2074,8 @@
                                     <th>Ngày</th>
                                     <th>Tên cửa hàng</th>
                                     <th>Thời gian</th>
+                                    <th>Check in</th>
+                                    <th>Check out</th>
                                     <th>Tên ASM</th>
                                     <th>Nhóm công việc</th>
                                     <th>Mục tiêu / kế hoạch</th>
@@ -2089,7 +2091,7 @@
                             <tbody>
                                 <t t-foreach="asmRepGroups" t-as="grp" t-key="grp.key">
                                 <tr class="ar_grp_row" t-on-click="() => this.toggleAsmRepStore(grp.key)">
-                                    <td colspan="13">
+                                    <td colspan="15">
                                         <i t-attf-class="fa #{grp.open ? 'fa-caret-down' : 'fa-caret-right'} ar_grp_caret"/>
                                         <b t-esc="grp.name"/> (<t t-esc="grp.rows.length"/>)
                                     </td>
@@ -2102,6 +2104,36 @@
                                             <span t-if="row.time_in">Vào: <b t-esc="row.time_in"/></span>
                                             <span t-if="row.time_out">Ra: <b t-esc="row.time_out"/></span>
                                         </t>
+                                        <span t-else="" class="text-muted">-</span>
+                                    </td>
+                                    <td class="c ar_chk_cell" data-label="Check in">
+                                        <div class="ar_chk_info" t-if="row.check_in_at">
+                                            <span class="ar_chk_time in"><i class="fa fa-sign-in"/> <b t-esc="row.check_in_time"/></span>
+                                            <small class="ar_chk_dt" t-esc="row.check_in_date"/>
+                                            <a t-if="row.check_in_map_url" class="ar_chk_gps" t-att-href="row.check_in_map_url" target="_blank" t-att-title="row.check_in_gps"><i class="fa fa-map-marker"/> GPS</a>
+                                            <span t-if="row.check_in_status" t-att-class="'ar_loc ' + row.check_in_status" t-att-title="row.check_in_note" t-esc="row.check_in_status_label"/>
+                                            <small t-if="row.check_in_auto" class="ar_auto" title="Tự Check in khi Odoo mở trên wifi cửa hàng"><i class="fa fa-wifi"/> Tự động</small>
+                                        </div>
+                                        <button type="button" class="ar_chk_btn in" t-elif="row.can_edit"
+                                                t-att-disabled="ar.checking === (row.id + '_in')"
+                                                t-on-click="() => this.onAsmRepCheck(row, 'in')">
+                                            <i t-att-class="ar.checking === (row.id + '_in') ? 'fa fa-spinner fa-spin' : 'fa fa-sign-in'"/> Check in
+                                        </button>
+                                        <span t-else="" class="text-muted">-</span>
+                                    </td>
+                                    <td class="c ar_chk_cell" data-label="Check out">
+                                        <div class="ar_chk_info" t-if="row.check_out_at">
+                                            <span class="ar_chk_time out"><i class="fa fa-sign-out"/> <b t-esc="row.check_out_time"/></span>
+                                            <small class="ar_chk_dt" t-esc="row.check_out_date"/>
+                                            <a t-if="row.check_out_map_url" class="ar_chk_gps" t-att-href="row.check_out_map_url" target="_blank" t-att-title="row.check_out_gps"><i class="fa fa-map-marker"/> GPS</a>
+                                            <span t-if="row.check_out_status" t-att-class="'ar_loc ' + row.check_out_status" t-att-title="row.check_out_note" t-esc="row.check_out_status_label"/>
+                                            <small t-if="row.check_out_auto" class="ar_auto" title="Tự Check out theo lần cuối thấy trên wifi cửa hàng"><i class="fa fa-wifi"/> Tự động</small>
+                                        </div>
+                                        <button type="button" class="ar_chk_btn out" t-elif="row.can_edit and row.check_in_at"
+                                                t-att-disabled="ar.checking === (row.id + '_out')"
+                                                t-on-click="() => this.onAsmRepCheck(row, 'out')">
+                                            <i t-att-class="ar.checking === (row.id + '_out') ? 'fa fa-spinner fa-spin' : 'fa fa-sign-out'"/> Check out
+                                        </button>
                                         <span t-else="" class="text-muted">-</span>
                                     </td>
                                     <td class="l b" data-label="Tên ASM" t-esc="row.user_name || '-'"/>

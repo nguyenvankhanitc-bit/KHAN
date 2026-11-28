@@ -108,6 +108,14 @@
                                             </span>
                                         </div>
 
+                                        <!-- Mạng cửa hàng: IP truy cập trùng IP WAN của cửa hàng -->
+                                        <div t-if="emp.ip_store_id and emp.ip_store_status !== 'none'" class="mt-1 text-truncate" style="font-size: 0.74rem;">
+                                            <span t-att-class="'badge border ' + (emp.ip_store_status === 'at_store' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-light text-muted')"
+                                                  t-att-title="'IP ' + (emp.last_ip || '')">
+                                                <i class="fa fa-wifi me-1"/>
+                                                <t t-esc="emp.ip_store_status === 'at_store' ? 'Tại CH' : 'Đã ở CH'"/> <t t-esc="emp.ip_store_id[1]"/>
+                                            </span>
+                                        </div>
                                         <!-- Device info row: Type & Name -->
                                         <div class="d-flex align-items-center gap-1 mt-1 text-truncate" style="font-size: 0.76rem;">
                                             <t t-if="emp.device_name">

@@ -1083,7 +1083,7 @@ class StoreAudit(models.Model):
         for rec in self:
             if not rec.line_ids:
                 if rec.audit_type == 'gs' and rec.store_id:
-                    splace = (rec.store_id.sudo().store_place or '').strip() if 'store_place' in rec.store_id._fields else ''
+                    splace = ', '.join(sorted(self.env['store.audit.place']._store_place_keys(rec.store_id)))
                     if not splace:
                         raise UserError('Cửa hàng "%s" chưa được cấu hình loại hình (Store Place) trong hồ sơ cửa hàng.' % rec.store_id.display_name)
                     raise UserError('Chưa có tiêu chí Điểm chuẩn giám sát nào được gán Store Place "%s" cho cửa hàng "%s".' % (splace, rec.store_id.display_name))

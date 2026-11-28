@@ -24,7 +24,12 @@ export class StorePhotoField extends Many2ManyBinaryField {
             };
             inputs.forEach((input) => {
                 input.setAttribute("accept", "image/*");
-                input.setAttribute("capture", "environment");
+                // nút "Chụp hình" mở thẳng camera; nút "Chọn ảnh" mở thư viện ảnh (không gắn capture)
+                if (input.closest(".o_store_photo_pick")) {
+                    input.removeAttribute("capture");
+                } else {
+                    input.setAttribute("capture", "environment");
+                }
                 input.addEventListener("change", onChange, true);
             });
             return () => inputs.forEach((input) => input.removeEventListener("change", onChange, true));

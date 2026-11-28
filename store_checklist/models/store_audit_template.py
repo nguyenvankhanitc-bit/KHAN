@@ -77,6 +77,36 @@ class StoreAuditPlace(models.Model):
                 })
         return self.sudo().search([], order='sequence, id')
 
+    @api.model
+    def _norm_place(self, value):
+        """So khớp Store Place không phân biệt hoa/thường, khoảng trắng; "Mặt phố" = "Nhà Phố"."""
+        import unicodedata
+        v = ' '.join(unicodedata.normalize('NFC', str(value or '')).split()).casefold()
+        return 'nhà phố' if v == 'mặt phố' else v
+
+    @api.model
+    def _store_place_keys(self, store):
+        """Các giá trị Store Place của cửa hàng (mã + nhãn nếu là Selection, tên / mã nếu là Many2one), đã chuẩn hóa."""
+        st = store.sudo() if store else store
+        if not st or 'store_place' not in st._fields:
+            return set()
+        field = st._fields['store_place']
+        raw = st.store_place
+        vals = []
+        if field.type == 'many2one':
+            if raw:
+                vals.append(raw.display_name or '')
+                for attr in ('code', 'name'):
+                    if attr in raw._fields:
+                        vals.append(raw[attr] or '')
+        elif field.type == 'selection':
+            vals.append(raw or '')
+            if raw:
+                vals.append(dict(field._description_selection(self.env)).get(raw) or '')
+        else:
+            vals.append(raw or '')
+        return {self._norm_place(v) for v in vals if (v or '').strip()}
+
     def init(self):
         self._sync_from_hr_store()
 
@@ -326,11 +356,11 @@ class StoreAuditTemplateLine(models.Model):
         places = self.sudo().store_place_ids
         if not places or not store:
             return False
-        st = store.sudo()
-        splace = (st.store_place or '').strip() if 'store_place' in st._fields else ''
-        if not splace:
+        keys = self.env['store.audit.place']._store_place_keys(store)
+        if not keys:
             return False
-        return splace in {(p.code or '').strip() for p in places}
+        norm = self.env['store.audit.place']._norm_place
+        return bool(keys & ({norm(p.code) for p in places} | {norm(p.name) for p in places}))
 
     def web_read(self, specification):
         """User thường không xem được hồ sơ nhân viên khác (hr_employee_self_only) nên đọc cột này báo MissingError;

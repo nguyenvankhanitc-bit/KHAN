@@ -7,5 +7,24 @@
         <xpath expr="//span[@aria-label='Attach']" position="attributes">
             <attribute name="class">fa fa-camera</attribute>
         </xpath>
+        <xpath expr="//div[hasclass('oe_add')]" position="attributes">
+            <attribute name="class">oe_add o_store_photo_add</attribute>
+        </xpath>
+        <!-- Chọn ảnh đã chụp sẵn (thư viện ảnh / máy tính), chọn nhiều ảnh một lúc -->
+        <xpath expr="//div[hasclass('oe_add')]/FileInput" position="after">
+            <span class="o_store_photo_pick">
+                <FileInput
+                    acceptedFileExtensions="'image/*'"
+                    multiUpload="true"
+                    onUpload.bind="onFileUploaded"
+                    resModel="props.record.resModel"
+                    resId="props.record.resId or 0"
+                >
+                    <button class="btn btn-secondary o_attach" data-tooltip="Chọn ảnh đã chụp">
+                        <span class="fa fa-picture-o"/> Chọn ảnh
+                    </button>
+                </FileInput>
+            </span>
+        </xpath>
     </t>
 </templates>

@@ -2483,6 +2483,9 @@ body:has(.o_internet_master) .modal .modal-header{display: flex; align-items: ce
 }
 
 /* Tô màu icon sidebar: nhóm Checklist NVBH & Báo cáo */
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh{background: #ede9fe !important; color: #4c1d95 !important; border-radius: 8px; font-weight: 700; margin: 2px 0;}
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh:hover{background: #ddd6fe !important;}
+.o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh > i:first-child{color: #6d28d9 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_staff > i:first-child{color: #0891b2 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_jobs > i:first-child{color: #d97706 !important;}
 .o_internet_master.is-internet-nav .o_internet_sidebar.o_phan_he_sidebar .o_phan_he_nav_sub.store-tn-nvbh_today > i:first-child{color: #db2777 !important;}
@@ -5134,3 +5137,7 @@ body.o_store_filling, body.o_store_filling *{cursor: crosshair !important; user-
     textarea { min-height: 120px; font-size: 14px; }
     @media (max-width: 767px) { padding: 10px 8px; }
 }
+
+/* Cột Hình ảnh: 2 nút Chụp hình + Chọn ảnh (ảnh đã chụp sẵn) */
+.o_store_photo_add{display: flex; flex-wrap: wrap; gap: 4px;}
+.o_store_photo_add .o_attach{white-space: nowrap; padding: 2px 8px; font-size: 12px;}

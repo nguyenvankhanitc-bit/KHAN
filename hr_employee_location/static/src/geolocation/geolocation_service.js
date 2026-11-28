@@ -59,6 +59,27 @@ export const geolocationService = {
     start() {
         const STORAGE_KEY = "odoo_last_gps_sync";
         const SYNC_INTERVAL_MS = 5 * 60 * 1000; // 5 phút throttle
+        // Đánh dấu thiết bị đã được hỏi quyền định vị (lưu lâu dài theo trình duyệt)
+        const ASKED_KEY = "hr_employee_location_gps_asked";
+
+        const alreadyAsked = () => {
+            try {
+                return localStorage.getItem(ASKED_KEY) === "1";
+            } catch (_e) {
+                return false;
+            }
+        };
+
+        // Trả về "granted" | "denied" | "prompt" | "unknown"
+        const getPermissionState = async () => {
+            try {
+                if (navigator.permissions && navigator.permissions.query) {
+                    const status = await navigator.permissions.query({ name: "geolocation" });
+                    return status.state;
+                }
+            } catch (_e) {}
+            return "unknown";
+        };
 
         const queryAndSyncLocation = () => {
             if (!user.userId) {
@@ -91,7 +112,15 @@ export const geolocationService = {
                 }
             };
 
-            if (navigator.geolocation) {
+            if (!navigator.geolocation) {
+                sendPayload(null);
+                return;
+            }
+
+            const requestPosition = () => {
+                try {
+                    localStorage.setItem(ASKED_KEY, "1");
+                } catch (_e) {}
                 navigator.geolocation.getCurrentPosition(
                     (position) => sendPayload(position.coords),
                     () => sendPayload(null), // Nếu từ chối cấp quyền GPS hoặc timeout, vẫn đồng bộ thông tin thiết bị
@@ -101,9 +130,22 @@ export const geolocationService = {
                         maximumAge: 300000,
                     }
                 );
-            } else {
-                sendPayload(null);
-            }
+            };
+
+            getPermissionState().then((state) => {
+                if (state === "granted") {
+                    // Đã cấp quyền vĩnh viễn: lấy vị trí, trình duyệt không hiện hộp thoại
+                    requestPosition();
+                } else if (state === "denied") {
+                    sendPayload(null);
+                } else if (state === "prompt" && alreadyAsked()) {
+                    // Thiết bị này đã được hỏi 1 lần rồi -> không tự bật hộp thoại nữa
+                    sendPayload(null);
+                } else {
+                    // Lần đầu trên thiết bị (hoặc trình duyệt không hỗ trợ Permissions API)
+                    requestPosition();
+                }
+            });
         };
 
         // Kích hoạt khi tải trang và sau khi login

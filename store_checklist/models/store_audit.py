@@ -147,19 +147,25 @@ class StoreAudit(models.Model):
         if self.state == 'draft' and not self.staff_mode and self.template_id:
             all_lines = self.line_a_ids | self.line_b_ids | self.line_c_ids | self.line_x_ids
             if not any(all_lines.mapped('is_scored')):
-                self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a', self.store_id)
-                self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b', self.store_id)
-                self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c', self.store_id)
-                self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x', self.store_id)
+                self._reload_template_lines()
 
     @api.onchange('template_id')
     def _onchange_template_id(self):
         # đổi mẫu thì nạp lại tiêu chí theo điểm chuẩn của mẫu (chỉ khi phiếu còn nháp)
         if self.state == 'draft':
-            self.line_a_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'a', self.store_id)
-            self.line_b_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'b', self.store_id)
-            self.line_c_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'c', self.store_id)
-            self.line_x_ids = [Command.clear()] + self._template_line_commands(self.template_id, 'x', self.store_id)
+            self._reload_template_lines()
+
+    def _reload_template_lines(self):
+        """Nạp lại tiêu chí theo mẫu + Store Place của cửa hàng cho 4 tab A/B/C/Nhóm bổ sung.
+        Các tab cùng chung bảng dòng (audit_id): gán từng tab bằng lệnh create thì tab gán sau làm mất dòng của tab trước
+        (phiếu mới chưa lưu), nên tạo hết qua line_ids rồi gán lại từng tab."""
+        tabs = (('line_a_ids', 'a'), ('line_b_ids', 'b'), ('line_c_ids', 'c'), ('line_x_ids', 'x'))
+        # tạo toàn bộ dòng một lần qua line_ids, rồi gán lại từng tab bằng đúng các dòng vừa tạo
+        self.line_ids = [Command.unlink(l.id) for l in self.line_ids] +             self._template_line_commands(self.template_id, None, self.store_id)
+        lines = self.line_ids
+        for f, cat in tabs:
+            self[f] = lines.filtered(
+                lambda l, c=cat: (l.category not in BASE_CATEGORY_CODES) if c == 'x' else l.category == c)
 
     @api.model
     def get_dashboard_data(self, month=None, mien=None, store_id=None):
